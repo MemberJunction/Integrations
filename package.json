@@ -19,7 +19,7 @@
     "migrations:pg": "node scripts/build-pg-migrations.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs",
-    "release": "turbo run build && changeset publish"
+    "release": "turbo run build && changeset publish && node scripts/tag-apps.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",

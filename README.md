@@ -76,7 +76,7 @@ connector packages, tags each `<pkg>@<version>`, and syncs each `mj-app.json` ve
 ## Versioning & install
 
 - **Per-connector independent** versions (changesets non-fixed) — a Salesforce fix never bumps HubSpot.
-- `mj app install …/CRM/HubSpot --version X.Y.Z` resolves the connector's scoped tag (`@memberjunction/connector-hubspot@X.Y.Z`).
+- `mj app install …/CRM/HubSpot --version X.Y.Z` resolves the connector's **subpath-scoped** git tag `CRM-HubSpot@X.Y.Z` (created by `scripts/tag-apps.mjs` in the release flow; the install derives the tag prefix from the subpath, so no naming guesswork).
 - Connectors declare `mjVersionRange` (`>=5.43.0 <6.0.0`) and depend on the published MJ framework as peer deps.
 
 ## Requirements
