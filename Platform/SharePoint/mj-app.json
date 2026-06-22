@@ -14,9 +14,16 @@
   },
   "repository": "https://github.com/MemberJunction/Integrations",
   "mjVersionRange": ">=5.43.0 <6.0.0",
+  "schema": {
+    "name": "mj_connector_sharepoint",
+    "createIfNotExists": true
+  },
+  "migrations": {
+    "directory": "migrations",
+    "engine": "skyway"
+  },
   "metadata": {
-    "directory": "metadata",
-    "processOnInstall": true
+    "directory": "metadata"
   },
   "packages": {
     "server": [

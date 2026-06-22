@@ -61,9 +61,12 @@ for (const manifestPath of manifests) {
     const parsed = mjAppManifestSchema.safeParse(manifest);
     if (!parsed.success) errors.push(`${rel}: manifest fails schema — ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
   }
-  if (manifest.schema) errors.push(`${rel}: connector profile must NOT declare a 'schema' block`);
-  if (manifest.migrations) errors.push(`${rel}: connector profile must NOT declare a 'migrations' block`);
-  if (manifest.metadata?.processOnInstall !== true) errors.push(`${rel}: metadata.processOnInstall must be true`);
+  // Full Open App model: each connector declares its own schema (namespace + flyway anchor),
+  // a migrations block (the seed migrations target __mj), and a metadata source directory.
+  if (!manifest.schema?.name) errors.push(`${rel}: must declare a schema { name } (the Open App namespace)`);
+  else if (!/^mj_connector_[a-z0-9_]+$/.test(manifest.schema.name)) errors.push(`${rel}: schema.name should be 'mj_connector_<name>' (was '${manifest.schema.name}')`);
+  if (!manifest.migrations?.directory) errors.push(`${rel}: must declare a migrations block`);
+  if (!manifest.metadata?.directory) errors.push(`${rel}: must declare a metadata directory`);
 
   // (3) owns its package
   const pkgPath = join(appDir, 'package.json');

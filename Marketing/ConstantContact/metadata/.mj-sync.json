@@ -2,5 +2,10 @@
   "directoryOrder": [
     "integration",
     "actions"
-  ]
+  ],
+  "sqlLogging": {
+    "enabled": true,
+    "outputDirectory": "../migrations",
+    "formatAsMigration": false
+  }
 }

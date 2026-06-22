@@ -2,7 +2,7 @@
   "name": "@memberjunction/integrations-repo",
   "version": "0.0.0",
   "private": true,
-  "description": "MemberJunction Integrations — vendor connectors published as installable Open Apps. Each connector is an Open App under <Category>/<Connector>; all share the @memberjunction/integration-connectors npm package.",
+  "description": "MemberJunction Integrations — vendor connectors, each its own installable Open App + npm package under <Category>/<Connector>. Full Open App model: schema + metadata-seed migrations (SQL Server + Postgres) + CI/CD.",
   "type": "module",
   "license": "ISC",
   "workspaces": [
@@ -11,10 +11,14 @@
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
+    "lint": "node scripts/validate-invariants.mjs && node scripts/validate-migrations.mjs",
     "lint:invariants": "node scripts/validate-invariants.mjs",
-    "scaffold:openapps": "node scripts/scaffold-openapps.mjs",
+    "lint:migrations": "node scripts/validate-migrations.mjs",
+    "new-connector": "node scripts/new-connector.mjs",
+    "migrations:wrap": "node scripts/wrap-migration.mjs",
+    "migrations:pg": "node scripts/build-pg-migrations.mjs",
     "changeset": "changeset",
-    "version-packages": "changeset version",
+    "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs",
     "release": "turbo run build && changeset publish"
   },
   "devDependencies": {

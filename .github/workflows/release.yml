@@ -9,10 +9,11 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
-      contents: write # create the Version Packages PR + git tags
-      id-token: write # npm provenance
+      contents: write       # create the Version Packages PR + per-connector git tags
       pull-requests: write
+      id-token: write        # npm provenance
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,18 +27,22 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Validate connector invariants
+      - name: Connector Open App invariants
         run: npm run lint:invariants
 
-      # Opens/updates the "Version Packages" PR; on merge, publishes the shared
-      # @memberjunction/integration-connectors package and tags the repo (vX.Y.Z).
-      # Per-connector Open Apps are installed by subpath at that ref:
-      #   mj app install https://github.com/MemberJunction/Integrations/CRM/HubSpot
+      - name: PG migrations up to date
+        run: node scripts/build-pg-migrations.mjs --check
+
+      # Opens/updates the "Version Packages" PR; on merge, `npm run release` builds + publishes ONLY the
+      # changed connector packages (changesets non-fixed → per-connector independent versions) and tags each
+      # as <pkg>@<version>. `npm run version-packages` bumps versions AND syncs each connector's mj-app.json
+      # (version + mjVersionRange) via scripts/sync-manifest-versions.mjs. The <pkg>@<version> tags are what
+      # `mj app install .../<Category>/<Connector> --version X.Y.Z` resolves (scoped-tag resolution).
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
-          publish: npm run release
           version: npm run version-packages
+          publish: npm run release
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

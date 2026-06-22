@@ -2,11 +2,12 @@ name: PR
 
 on:
   pull_request:
-    branches: [main]
+    branches: [next, main]
 
 jobs:
-  build-test-lint:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,16 +21,22 @@ jobs:
       - name: Install
         run: npm ci
 
-      # Connector Open App invariants: connector profile (no schema/migrations,
-      # processOnInstall), shared bootstrap package, and the ClassName ↔ ImportPath
-      # three-way invariant — plus full mj-app.json Zod validation.
-      - name: Validate connector invariants
+      # Each connector Open App: full-Open-App shape (schema mj_connector_<name> + migrations + metadata),
+      # owns its package, ClassName <-> ImportPath <-> @RegisterClass three-way invariant, mj-app.json Zod-valid.
+      - name: Connector Open App invariants
         run: npm run lint:invariants
 
-      # Build + unit-test only the packages a PR touches (and their dependents).
-      - name: Build & test changed packages
-        run: npx turbo run build test --filter='...[origin/main]'
+      # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
+      - name: Validate migrations
+        run: node scripts/validate-migrations.mjs
 
-      # A PR that changes the shared package must include a changeset.
-      - name: Require changeset for package changes
-        run: npx changeset status --since=origin/main
+      - name: PG migrations up to date
+        run: node scripts/build-pg-migrations.mjs --check
+
+      # Build + unit-test only the connectors a PR touches (and their dependents, e.g. Fonteva when Salesforce changes).
+      - name: Build & test changed connectors
+        run: npx turbo run build test --filter='...[origin/${{ github.base_ref }}]'
+
+      # A PR that changes a connector package must carry a changeset (drives its independent version bump).
+      - name: Require changeset
+        run: npx changeset status --since=origin/${{ github.base_ref }}
