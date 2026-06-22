@@ -1,0 +1,35 @@
+name: PR
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # turbo + changesets need history
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      # Connector Open App invariants: connector profile (no schema/migrations,
+      # processOnInstall), shared bootstrap package, and the ClassName ↔ ImportPath
+      # three-way invariant — plus full mj-app.json Zod validation.
+      - name: Validate connector invariants
+        run: npm run lint:invariants
+
+      # Build + unit-test only the packages a PR touches (and their dependents).
+      - name: Build & test changed packages
+        run: npx turbo run build test --filter='...[origin/main]'
+
+      # A PR that changes the shared package must include a changeset.
+      - name: Require changeset for package changes
+        run: npx changeset status --since=origin/main

@@ -1,0 +1,34 @@
+{
+  "name": "@memberjunction/integrations-repo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MemberJunction Integrations — vendor connectors published as installable Open Apps. Each connector is an Open App under <Category>/<Connector>; all share the @memberjunction/integration-connectors npm package.",
+  "type": "module",
+  "license": "ISC",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint:invariants": "node scripts/validate-invariants.mjs",
+    "scaffold:openapps": "node scripts/scaffold-openapps.mjs",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.10",
+    "@memberjunction/open-app-engine": "^5.43.0",
+    "turbo": "^2.8.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MemberJunction/Integrations"
+  }
+}
