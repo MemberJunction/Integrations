@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Fonteva",
       "ClassName": "FontevaConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-fonteva",
       "Description": "Fonteva AMS connector: syncs Salesforce-native OrderApi__* + EventApi__* association-management objects (commerce, membership, events, payments, badges, catalog) via FDService Apex REST + the Salesforce platform REST API. Extends SalesforceConnector.",
       "NavigationBaseURL": "https://login.salesforce.com",
       "BatchMaxRequestCount": -1,

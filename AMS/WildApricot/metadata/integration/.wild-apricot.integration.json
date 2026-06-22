@@ -4,7 +4,7 @@
       "Name": "Wild Apricot",
       "Description": "Wild Apricot (part of Personify/Momentive Software) is an AMS for small-to-mid-size associations. This integration syncs contacts, membership levels, events, registrations, invoices, payments, donations, and audit log items via the v2.3 Admin REST API ...",
       "ClassName": "WildApricotConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-wild-apricot",
       "NavigationBaseURL": "https://www.wildapricot.com",
       "BatchMaxRequestCount": 60,
       "BatchRequestWaitTime": 1100,

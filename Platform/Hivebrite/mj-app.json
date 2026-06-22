@@ -20,9 +20,9 @@
   "packages": {
     "server": [
       {
-        "name": "@memberjunction/integration-connectors",
+        "name": "@memberjunction/connector-hivebrite",
         "role": "bootstrap",
-        "startupExport": "registerConnectors"
+        "startupExport": "registerConnector"
       }
     ]
   },

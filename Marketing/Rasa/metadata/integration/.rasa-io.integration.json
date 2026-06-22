@@ -4,7 +4,7 @@
       "Name": "Rasa.io",
       "Description": "Rasa.io newsletter platform integration for syncing persons (subscribers) and posts (content) via the Rasa.io REST API",
       "ClassName": "RasaConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-rasa-io",
       "NavigationBaseURL": "https://rasa.io",
       "BatchMaxRequestCount": 50,
       "BatchRequestWaitTime": 200,

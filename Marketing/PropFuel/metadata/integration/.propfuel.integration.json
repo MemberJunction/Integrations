@@ -7,7 +7,7 @@
       "Name": "PropFuel",
       "ClassName": "PropFuelConnector",
       "Description": "PropFuel AI-powered member insights and engagement platform — data export file-feed integration. Retrieves hourly JSON files via list/download/ack endpoints.",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-propfuel",
       "NavigationBaseURL": "https://app.propfuel.com/",
       "BatchMaxRequestCount": -1,
       "BatchRequestWaitTime": -1,

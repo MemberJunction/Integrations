@@ -6,7 +6,7 @@
     "fields": {
       "Name": "GrowthZone",
       "ClassName": "GrowthZoneConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-growthzone",
       "NavigationBaseURL": "https://{subdomain}.growthzoneapp.com/API",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=GrowthZone OAuth2",
       "Description": "GrowthZone Association Management System (AMS) connector — syncs contacts, memberships, groups, events, store orders, and certifications via GrowthZone REST API with OAuth2 Bearer token authentication.",

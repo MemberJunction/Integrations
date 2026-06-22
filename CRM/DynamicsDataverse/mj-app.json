@@ -20,9 +20,9 @@
   "packages": {
     "server": [
       {
-        "name": "@memberjunction/integration-connectors",
+        "name": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
         "role": "bootstrap",
-        "startupExport": "registerConnectors"
+        "startupExport": "registerConnector"
       }
     ]
   },

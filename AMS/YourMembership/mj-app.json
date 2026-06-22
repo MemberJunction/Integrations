@@ -21,9 +21,9 @@
   "packages": {
     "server": [
       {
-        "name": "@memberjunction/integration-connectors",
+        "name": "@memberjunction/connector-yourmembership",
         "role": "bootstrap",
-        "startupExport": "registerConnectors"
+        "startupExport": "registerConnector"
       }
     ]
   },

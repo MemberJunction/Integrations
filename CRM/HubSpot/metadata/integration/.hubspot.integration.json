@@ -4,7 +4,7 @@
       "Name": "HubSpot",
       "Description": "HubSpot CRM integration for syncing contacts, companies, deals, and activities",
       "ClassName": "HubSpotConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-hubspot",
       "NavigationBaseURL": "https://app.hubspot.com",
       "BatchMaxRequestCount": 100,
       "BatchRequestWaitTime": 250,

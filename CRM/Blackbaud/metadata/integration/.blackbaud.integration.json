@@ -4,7 +4,7 @@
       "Name": "Blackbaud",
       "Description": "Blackbaud integration connector for MemberJunction",
       "ClassName": "BlackbaudConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-blackbaud",
       "NavigationBaseURL": null,
       "BatchMaxRequestCount": -1,
       "BatchRequestWaitTime": -1,

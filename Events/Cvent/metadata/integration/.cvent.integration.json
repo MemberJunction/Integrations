@@ -62,7 +62,7 @@
           "CID/Attendee Identification Service - authentication flow, not event-data records"
         ]
       },
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-cvent",
       "Description": "Cvent event management platform connector. Syncs events, contacts, attendees, sessions, speakers, exhibitors, housing, surveys, RFPs, webcasts, and related objects via the Cvent Platform REST API (OAuth 2.0 client credentials).",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OAuth2 Client Credentials"
     },

@@ -1,90 +1,92 @@
 # MemberJunction Integrations
 
-Vendor integration **connectors for MemberJunction, published as installable Open Apps.** Each connector
-lives under `<Category>/<Connector>/` and installs on demand:
+Vendor integration **connectors for MemberJunction, each published as its own independent Open App**.
+Every connector lives under `<Category>/<Connector>/` and installs on demand:
 
 ```bash
 mj app install https://github.com/MemberJunction/Integrations/CRM/HubSpot
 ```
 
-Nothing is seeded into a MemberJunction database until you install the connector you want — which is the
-whole point: the core MJ install no longer carries the full IntegrationObject/IntegrationObjectField
-catalog for every vendor.
+Nothing is seeded into a MemberJunction database until you install the connector you want, and
+**installing one connector pulls only that connector's package** — connectors are fully decoupled.
 
 ## How it works
 
-- **One shared npm package** — [`@memberjunction/integration-connectors`](packages/integration-connectors)
-  holds every connector's code (the `@RegisterClass(BaseIntegrationConnector, …)` classes). Every connector
-  Open App references this same package; only the seeded **metadata** differs per connector.
-- **Connector-profile Open Apps** — each `<Category>/<Connector>/mj-app.json` is a *connector profile*: it
-  declares **no database schema and no migrations**, only `metadata.processOnInstall: true`. Installing it
-  runs `npm install @memberjunction/integration-connectors` + a scoped `mj sync push` of the connector's
-  `metadata/` (its `MJ: Integrations` row + `MJ: Integration Objects` / `…Object Fields` + `MJ: Actions`)
-  and wires the package into the server so the MJ ClassFactory can resolve the connector at runtime.
-- **The framework stays in core MJ** — `@memberjunction/integration-engine` (+ `-engine-base`,
+- **One package per connector.** Each `<Category>/<Connector>/` directory is a self-contained npm
+  package (`@memberjunction/connector-<name>`) *and* an Open App: its own `package.json` + `src/`
+  (the `@RegisterClass(BaseIntegrationConnector, …)` class + tests) + `mj-app.json` + `metadata/`.
+  Installing HubSpot installs only `@memberjunction/connector-hubspot` — never any other connector.
+- **Connector-profile Open Apps.** Each `mj-app.json` declares **no database schema and no migrations**,
+  only `metadata.processOnInstall: true`. Installing it runs `npm install` of that one connector
+  package + a scoped `mj sync push` of the connector's `metadata/` (its `MJ: Integrations` row +
+  `MJ: Integration Objects` / `…Object Fields` + `MJ: Actions`), and wires the package into the server
+  so the MJ ClassFactory resolves the connector at runtime.
+- **The framework stays in core MJ.** `@memberjunction/integration-engine` (+ `-engine-base`,
   `-schema-builder`, `-pk-classifier`, `-actions`, the Integration/IO/IOF tables, runtime discovery,
-  credential types, and the bizapps Action-Category tree) all remain in the MemberJunction monorepo and are
-  consumed from npm. This repo ships **connectors only**.
+  credential types, the bizapps Action-Category tree) all remain in the MemberJunction monorepo and
+  are consumed as **peer dependencies**, so a connector binds to the host app's framework copy (no
+  duplicate `integration-engine`, which would split the `@RegisterClass` registry).
 
-The **three-way invariant** is preserved unchanged for every connector:
-`Integration.ClassName` (metadata) == the `@RegisterClass` driver string (code) == the connector's
-`IntegrationName` getter. `scripts/validate-invariants.mjs` enforces it (plus full `mj-app.json` Zod
-validation) on every PR.
+The **three-way invariant** holds per connector: `Integration.ClassName` (metadata) == the
+`@RegisterClass` driver (code) == the connector's `IntegrationName` getter; plus
+`packages.server[0].name` == the sibling `package.json` name == the Integration's `ImportPath`.
+`scripts/validate-invariants.mjs` enforces all of it (+ full `mj-app.json` Zod validation) on every PR.
 
 ## Repository layout
 
 ```
 Integrations/
-├── packages/integration-connectors/   # @memberjunction/integration-connectors — all connector classes
-│   └── src/                            # <Vendor>Connector.ts + __tests__ + registerConnectors() shim
 ├── CRM/        HubSpot, Salesforce, NeonCRM, DynamicsDataverse, Blackbaud
 ├── AMS/        Aptify, iMIS, NimbleAMS, Novi, NetForum, Fonteva, GrowthZone, Rhythm, MemberSuite, Wicket, WildApricot, YourMembership
 ├── LMS/        PathLMS, Reach360
 ├── Marketing/  Mailchimp, ConstantContact, MagnetMail, Rasa, PropFuel
 ├── Finance/    QuickBooks, SageIntacct, NetSuite
 ├── Events/     Cvent, PheedLoop, OpenWater
-├── Platform/   SharePoint, ORCID, Hivebrite, MJtoMJ
-├── scripts/    scaffold-openapps.mjs, validate-invariants.mjs
-└── .github/workflows/  pr.yml, release.yml
+├── Platform/   SharePoint, ORCID, Hivebrite, MJtoMJ, RelationalDB*, FileFeed*
+└── scripts/    validate-invariants.mjs, scaffold-openapps.mjs, split-into-packages.mjs
+
+  <Category>/<Connector>/
+  ├── package.json          @memberjunction/connector-<name>  (framework as peerDependencies)
+  ├── tsconfig.json  vitest.config.ts
+  ├── src/<Class>.ts  src/index.ts (re-export + registerConnector shim)  src/__tests__/
+  ├── mj-app.json           connector profile → references THIS package
+  └── metadata/             integration/ (curated IO/IOF) + actions/
 ```
 
-Each connector directory is **both** an installable Open App (its `mj-app.json` + `metadata/`, fetched over
-GitHub at install time) and — only for `packages/integration-connectors` — an npm workspace member. The
-`mj-app.json` + `metadata/` siblings are invisible to npm/turbo.
+`*` `RelationalDB` / `FileFeed` are framework-generic primitives with no vendor catalog, so they are
+code-only packages (no `mj-app.json`). Workspaces glob: `["*/*"]`.
+
+A connector may depend on another (e.g. Fonteva extends Salesforce) — that's a normal package
+dependency (`@memberjunction/connector-salesforce`), declared in its `package.json`.
 
 ## Versioning & install
 
-- The shared package is versioned with **changesets**; releases cut a repo-wide `vX.Y.Z` git tag.
-- `mj app install …/CRM/HubSpot --version 1.2.0` reads `CRM/HubSpot/mj-app.json` at that tag (the in-repo
-  subpath selects the app; the tag selects the version).
-- Connectors declare `mjVersionRange` (`>=5.43.0 <6.0.0`) and depend on the published MJ framework packages
-  as **peer dependencies**, so a connector binds to the host app's framework copy (no duplicate
-  `integration-engine`, which would split the `@RegisterClass` registry).
+- Each connector package is versioned **independently** with **changesets**; releases publish only the
+  changed packages and tag the repo.
+- `mj app install …/CRM/HubSpot --version X.Y.Z` reads `CRM/HubSpot/mj-app.json` at that ref (the
+  in-repo subpath selects the app; the tag selects the version).
+- Connectors declare `mjVersionRange` (`>=5.43.0 <6.0.0`) and depend on the published MJ framework
+  packages as peer dependencies.
 
 ## Requirements
 
-Requires a MemberJunction host running **≥ 5.43.0** — the release that adds multi-app-per-repo subpath
-installs and the connector-profile (`metadata.processOnInstall`) install mode to `@memberjunction/open-app-engine`.
+Requires a MemberJunction host **≥ 5.43.0** — the release that adds multi-app-per-repo subpath installs
+and the connector-profile (`metadata.processOnInstall`) install mode to `@memberjunction/open-app-engine`.
 
 ## Development
 
 ```bash
 npm install
-npm run build            # turbo build of the shared package
-npm test                 # vitest (credential-free unit tests; live e2e self-skips without a DB)
+npm run build            # turbo build of every connector package
+npm test                 # vitest (credential-free unit tests)
 npm run lint:invariants  # connector Open App floor-check
 ```
 
-To (re)generate the per-connector Open App directories from the MJ core metadata (one-time extraction /
-refresh tool):
-
-```bash
-MJ_METADATA_DIR=/path/to/MJ/metadata npm run scaffold:openapps
-```
+`scripts/scaffold-openapps.mjs` (generate Open App dirs from MJ core metadata) and
+`scripts/split-into-packages.mjs` (the one-time split from a single shared package into per-connector
+packages) are the extraction tools used to bring this repo up.
 
 ## Notes
 
-- `RelationalDBConnector` / `FileFeedConnector` are framework-generic primitives (no static vendor catalog),
-  so they ship in the shared package but have no per-vendor Open App.
-- Connector **Actions** `@lookup` the bizapps Action-Category tree and **credential types**, both of which
-  remain core-seeded MJ metadata.
+Connector **Actions** `@lookup` the bizapps Action-Category tree and **credential types**, both of which
+remain core-seeded MJ metadata.

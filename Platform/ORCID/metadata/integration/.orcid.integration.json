@@ -4,7 +4,7 @@
       "Name": "ORCID",
       "ClassName": "ORCIDConnector",
       "Description": "ORCID Public API v3.0 read-only connector. Resolves researcher iD universes via per-connection Lucene search and/or explicit iD lists, then fetches the record and activity sections. Pull-only / read-public; OAuth2 client-credentials.",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-orcid",
       "NavigationBaseURL": "https://orcid.org/",
       "BatchMaxRequestCount": 12,
       "BatchRequestWaitTime": 1,

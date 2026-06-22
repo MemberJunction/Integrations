@@ -127,7 +127,7 @@
         }
       },
       "Description": "NetForum Enterprise integration connector for MemberJunction",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-netforum-enterprise",
       "Icon": "fa-solid fa-network-wired",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=NetForum Enterprise Token"
     },

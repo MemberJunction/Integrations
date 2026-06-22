@@ -4,7 +4,7 @@
       "Name": "MJ to MJ",
       "Description": "Read-only connector that pulls conversational data (Conversations, Conversation Details, optional AI Agent Runs/Steps) from a remote MemberJunction instance via its GraphQL API. Maps to MJ: Conversations and MJ: Conversation Details. Every MJ deploymen...",
       "ClassName": "MJToMJConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-mj-to-mj",
       "NavigationBaseURL": null,
       "BatchMaxRequestCount": 50,
       "BatchRequestWaitTime": 250,

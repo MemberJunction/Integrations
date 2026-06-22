@@ -4,7 +4,7 @@
       "Name": "MagnetMail",
       "Description": "Higher Logic MagnetMail (formerly Real Magnet) email marketing platform. Legacy SOAP API covering recipients, groups, messages, tracking, upload jobs, saved searches, personalization fields, and the Personify subscription bridge. Auth is two-step (Auth...",
       "ClassName": "MagnetMailConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-magnetmail",
       "NavigationBaseURL": null,
       "BatchMaxRequestCount": 1,
       "BatchRequestWaitTime": 500,

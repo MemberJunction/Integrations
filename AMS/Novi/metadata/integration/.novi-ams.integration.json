@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Novi AMS",
       "ClassName": "NoviConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-novi-ams",
       "NavigationBaseURL": "https://api-docs.noviams.com/",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=API Key",
       "Description": "Novi AMS connector — syncs members, events, ecommerce, custom fields, webhooks, blogs, site content, NPS surveys, and catalog items via the Novi REST API (HTTP Basic with raw API key, per-tenant base URL https://www.<assoc>.org/api/).",

@@ -4,7 +4,7 @@
       "Name": "Wicket",
       "Description": "Wicket membership management platform integration for syncing people, organizations, memberships, groups, connections, and contact information via JSON:API",
       "ClassName": "WicketConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-wicket",
       "NavigationBaseURL": "https://wicket.io",
       "BatchMaxRequestCount": 100,
       "BatchRequestWaitTime": 125,

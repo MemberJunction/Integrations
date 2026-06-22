@@ -3,7 +3,7 @@
     "fields": {
       "Name": "PheedLoop",
       "ClassName": "PheedLoopConnector",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-pheedloop",
       "NavigationBaseURL": "https://api.pheedloop.com/api/v3",
       "Description": "PheedLoop event-management connector — syncs attendees, events, sessions, speakers, exhibitors, sponsors, registrations, memberships and 20+ objects via PheedLoop REST API v3 (dual API-key + API-secret headers, org-scoped URL paths).",
       "BatchMaxRequestCount": -1,

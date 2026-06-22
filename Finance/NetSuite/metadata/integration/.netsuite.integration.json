@@ -4,7 +4,7 @@
       "Name": "NetSuite",
       "ClassName": "NetSuiteConnector",
       "Description": "Oracle NetSuite ERP/CRM connector: SuiteTalk REST Record Service (CRUD) + SuiteQL reads across standard and custom record types; incremental via lastModifiedDate; OAuth 1.0a TBA / OAuth 2.0; per-account host; runtime metadata-catalog discovery.",
-      "ImportPath": "@memberjunction/integration-connectors",
+      "ImportPath": "@memberjunction/connector-netsuite",
       "NavigationBaseURL": "https://<accountId>.suitetalk.api.netsuite.com",
       "BatchMaxRequestCount": 15,
       "BatchRequestWaitTime": -1,

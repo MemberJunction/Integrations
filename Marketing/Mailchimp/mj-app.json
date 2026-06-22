@@ -22,9 +22,9 @@
   "packages": {
     "server": [
       {
-        "name": "@memberjunction/integration-connectors",
+        "name": "@memberjunction/connector-mailchimp",
         "role": "bootstrap",
-        "startupExport": "registerConnectors"
+        "startupExport": "registerConnector"
       }
     ]
   },

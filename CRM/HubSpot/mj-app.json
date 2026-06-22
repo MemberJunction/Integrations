@@ -22,12 +22,19 @@
   "packages": {
     "server": [
       {
-        "name": "@memberjunction/integration-connectors",
+        "name": "@memberjunction/connector-hubspot",
         "role": "bootstrap",
-        "startupExport": "registerConnectors"
+        "startupExport": "registerConnector"
       }
     ]
   },
-  "categories": ["crm"],
-  "tags": ["hubspot", "crm", "connector", "integration"]
+  "categories": [
+    "crm"
+  ],
+  "tags": [
+    "hubspot",
+    "crm",
+    "connector",
+    "integration"
+  ]
 }
