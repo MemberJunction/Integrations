@@ -1,0 +1,110 @@
+{
+  "growthzone": [
+    {
+      "TableName": "Contact",
+      "PrimaryKey": [
+        {
+          "FieldName": "ContactId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Directory",
+      "PrimaryKey": [
+        {
+          "FieldName": "DirectoryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DirectoryListingType",
+      "PrimaryKey": [
+        {
+          "FieldName": "DirectoryListingTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Event",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventSponsorshipBenefit",
+      "PrimaryKey": [
+        {
+          "FieldName": "SponsorshipBenefitId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventTask",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaskItemId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "EventId",
+          "SchemaName": "growthzone",
+          "RelatedTable": "Event",
+          "RelatedField": "EventId"
+        },
+        {
+          "FieldName": "ContactId",
+          "SchemaName": "growthzone",
+          "RelatedTable": "Contact",
+          "RelatedField": "ContactId"
+        }
+      ]
+    },
+    {
+      "TableName": "Group",
+      "PrimaryKey": [
+        {
+          "FieldName": "GroupId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventSponsor",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventSponsorId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "EventId",
+          "SchemaName": "growthzone",
+          "RelatedTable": "Event",
+          "RelatedField": "EventId"
+        },
+        {
+          "FieldName": "EventDetailId",
+          "SchemaName": "growthzone",
+          "RelatedTable": "Event",
+          "RelatedField": "EventId"
+        },
+        {
+          "FieldName": "ContactId",
+          "SchemaName": "growthzone",
+          "RelatedTable": "Contact",
+          "RelatedField": "ContactId"
+        }
+      ]
+    }
+  ]
+}

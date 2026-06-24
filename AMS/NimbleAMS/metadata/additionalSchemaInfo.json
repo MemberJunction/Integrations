@@ -1,0 +1,130 @@
+{
+  "nimble_ams": [
+    {
+      "TableName": "NU__Subscription__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Session__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Product__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Payment__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__OrderItem__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Order__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__MembershipType__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Membership__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Invoice__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__EventRegistration__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Event__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NU__Donation__c",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Account",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Contact",
+      "PrimaryKey": [
+        {
+          "FieldName": "Id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}

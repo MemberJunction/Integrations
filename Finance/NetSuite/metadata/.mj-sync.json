@@ -1,7 +1,7 @@
 {
   "directoryOrder": [
-    "integration",
-    "actions"
+    "credential-type",
+    "integration"
   ],
   "sqlLogging": {
     "enabled": true,

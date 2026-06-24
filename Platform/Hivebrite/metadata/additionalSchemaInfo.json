@@ -1,0 +1,815 @@
+{
+  "hivebrite": [
+    {
+      "TableName": "VentureEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "User",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "role_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Role",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "TicketEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "EventEntity",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "TeamMemberEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "venture_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "VentureEntity",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Subscription",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "membership_type_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "MembershipType",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "RSVPEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "EventEntity",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Role",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Receipt",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Network",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MembershipType",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Group",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V2_MediaCenter_FilesFullEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "folder_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Admin_V2_MediaCenter_FolderEntity",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V2_MediaCenter_FolderEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V2_Memberships_PaymentOptionsEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "membership_type_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "MembershipType",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V2_NetworkEvents_WaitlistEntryEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "EventEntity",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "ticket_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "TicketEntity",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V2_Users_CurrentLocationEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Comments_CommentEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Comments_CommentWithRepliesEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_EmailAnalyticsV2_DeliveryEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "campaign_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "EmailingCampaign",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Forums_DiscussionEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Mentoring_MenteeProfileEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "mentee_id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Mentoring_MentorProfileEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "mentor_id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Mentoring_ProgramEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Mentoring_RelationshipEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "mentee_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Admin_V3_Mentoring_MenteeProfileEntity",
+          "RelatedField": "mentee_id"
+        },
+        {
+          "FieldName": "mentor_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Admin_V3_Mentoring_MentorProfileEntity",
+          "RelatedField": "mentor_id"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_NotificationEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Admin_V3_Posts_PostEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "group_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Group",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Approvals_Network",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AttendeeEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "ticket_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "TicketEntity",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "booking_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "BookingEntity",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "EventEntity",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "BookingEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "receipt_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Receipt",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "BusinessOpportunity_Request",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "creator_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "company_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Companies_Company",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CampaignEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CategoryEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Citizenship",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Companies_Company",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Currency",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomizableAttribute",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DonationGiftEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "fund_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "FundEntity",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "campaign_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "CampaignEntity",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "order_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "DonationOrderEntity",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "DonationOrderEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "receipt_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "Receipt",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "campaign_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "CampaignEntity",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Education",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "EmailingCampaign",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Experience",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "user_id",
+          "SchemaName": "hivebrite",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "FieldOfStudy",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "FundEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "IndustryStudy",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "JobFunction",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NetworkCategory",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NewsPost",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PageCustomizable",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PaymentAccountEntity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PostalAddress",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SubNetwork",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Topic",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TopicCategory",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}

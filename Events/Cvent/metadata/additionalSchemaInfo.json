@@ -1,0 +1,2015 @@
+{
+  "cvent": [
+    {
+      "TableName": "transaction_item_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "transaction_detail_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "survey_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "standard_survey_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "survey",
+          "SchemaName": "cvent",
+          "RelatedTable": "survey_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "standard_survey_respondent",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "invitationList",
+          "SchemaName": "cvent",
+          "RelatedTable": "invitation_list_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "standard_survey_question_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "survey",
+          "SchemaName": "cvent",
+          "RelatedTable": "survey_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "speaker_program_item",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "programItem",
+          "SchemaName": "cvent",
+          "RelatedTable": "program_item",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "session_speaker_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "sessions_enrollment_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "session_segment",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "sessions_attendance_response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "account_budget_item_list_response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "rfp",
+          "SchemaName": "cvent",
+          "RelatedTable": "Rfp",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "activity_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "AgendaItem1",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Anniversary",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "appointment_attendee",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "contact",
+          "SchemaName": "cvent",
+          "RelatedTable": "contact",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "appointmentEvent",
+          "SchemaName": "cvent",
+          "RelatedTable": "appointment_event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "appointment_availability",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "appointmentEvent",
+          "SchemaName": "cvent",
+          "RelatedTable": "appointment_event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "appointment_event",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "appointment_type_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "appointment_with_questions",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "appointmentEvent",
+          "SchemaName": "cvent",
+          "RelatedTable": "appointment_event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "attendee",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "invitationList",
+          "SchemaName": "cvent",
+          "RelatedTable": "invitation_list_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "attendee_appointment_meeting_interest",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "appointmentEvent",
+          "SchemaName": "cvent",
+          "RelatedTable": "appointment_event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "attendee_credit_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "attendee_insights",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "attendee_signature_response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "audience_segment_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "available_time_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "location",
+          "SchemaName": "cvent",
+          "RelatedTable": "location_json",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "appointmentType",
+          "SchemaName": "cvent",
+          "RelatedTable": "appointment_type_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "badge",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "booth_staff_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "brand",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "budget_item_list_response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "rfp",
+          "SchemaName": "cvent",
+          "RelatedTable": "Rfp",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "budget_vendor_response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "bulk_job",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "bulk_result_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "card_details_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "card_transaction_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "chain",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "communication_log_message_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "contact",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "contact_group",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "contact_obfuscation_status",
+      "PrimaryKey": [
+        {
+          "FieldName": "obfuscateId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "contact",
+          "SchemaName": "cvent",
+          "RelatedTable": "contact",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "contact_type_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "currency_conversion_rate_list_response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DonationItem1",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "email_history_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "email_send_status",
+      "PrimaryKey": [
+        {
+          "FieldName": "emailRequestId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "email_template_data_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "event",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "event_async_status",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "event_email_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "invitationList",
+          "SchemaName": "cvent",
+          "RelatedTable": "invitation_list_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "event_question_choice_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "event_question_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "event_role_assignment_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "event_survey_question_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "survey",
+          "SchemaName": "cvent",
+          "RelatedTable": "survey_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "event_survey_respondent",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "event_survey_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "survey",
+          "SchemaName": "cvent",
+          "RelatedTable": "survey_json",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "event_survey_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "exhibitor_admin_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "exhibitor_category_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "exhibitor_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ExhibitorCategoryId",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ExhibitorId",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_admission_item",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_attendee_link",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_audio_track",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_badge_print_job",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_badge_printer_pool",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_custom_field",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_duration",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_exhibitor_question",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_file",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_hub",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_player",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_registration_path_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_registration_type_with_associated_reg_path_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_reservation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_reservation_request",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "housingEvent",
+          "SchemaName": "cvent",
+          "RelatedTable": "housing_event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_seat",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_seating",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_speaker",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_speaker_category",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_sponsorship_level",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_table_with_seats",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_video_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_video_text_track",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_webcast",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "existing_weblink",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ExistingDiscountCode",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ExistingELiteratureRequestDataForLead",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "lead",
+          "SchemaName": "cvent",
+          "RelatedTable": "Lead",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ExistingExhibitorAnswer",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ExistingMember",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "external_activity_metadata",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "FeeItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "fileWithAudit",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "housing_event",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "housing_event_hotel",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "housingEvent",
+          "SchemaName": "cvent",
+          "RelatedTable": "housing_event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "invitation_list_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "large_choice_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "question",
+          "SchemaName": "cvent",
+          "RelatedTable": "question_json2",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Lead",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "LeadQualificationAnswers",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "lead",
+          "SchemaName": "cvent",
+          "RelatedTable": "Lead",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "LeadQualificationQuestion",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "location_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "meeting_request",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "meeting_request_document_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "meeting_request_form",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "order_detail",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "order_item_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "payment_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "planning_document_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "process_form_submission_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "program_item",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "program_item_session_document",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "programItem",
+          "SchemaName": "cvent",
+          "RelatedTable": "program_item",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "property",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "property_room",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "quantity_item",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "question",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "question_with_program_id_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "question_json2",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "survey",
+          "SchemaName": "cvent",
+          "RelatedTable": "survey_json",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "registration_pack_response",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ResourceType",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "respondent_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "invitationList",
+          "SchemaName": "cvent",
+          "RelatedTable": "invitation_list_json",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "survey",
+          "SchemaName": "cvent",
+          "RelatedTable": "survey_json",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "contact",
+          "SchemaName": "cvent",
+          "RelatedTable": "contact",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "attendee",
+          "SchemaName": "cvent",
+          "RelatedTable": "attendee",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "session",
+          "SchemaName": "cvent",
+          "RelatedTable": "session",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "survey",
+          "SchemaName": "cvent",
+          "RelatedTable": "survey_json",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Rfp",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "rfp_agenda_item_schedule_with_id_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "rfp_agenda_item_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "rfp_attachment_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "rfp_internal_document_json_0",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "rfp_past_event_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "rfp_question_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RfpLeadSource",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RfpLeadSourceSection",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "room_type_details",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "housingEvent",
+          "SchemaName": "cvent",
+          "RelatedTable": "housing_event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "segment_attendee_response_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "session",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "event",
+          "SchemaName": "cvent",
+          "RelatedTable": "event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "session_category",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "session_location",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SpeakerSession",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "standard_survey_email_template_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "standard_survey_json",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Tax",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "travel_account",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "travel_program",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "travel_proposal",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "travel_proposal_bid",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "User",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "user_group_json1",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UsersSchema",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}

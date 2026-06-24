@@ -1,0 +1,267 @@
+{
+  "openwater": [
+    {
+      "TableName": "User",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Session",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "programId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Program",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ScheduleTimeSlot",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ScheduleRoom",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ScheduleItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "scheduleRoomId",
+          "SchemaName": "openwater",
+          "RelatedTable": "ScheduleRoom",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "scheduleTimeSlotId",
+          "SchemaName": "openwater",
+          "RelatedTable": "ScheduleTimeSlot",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "scheduleDayId",
+          "SchemaName": "openwater",
+          "RelatedTable": "ScheduleDay",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ScheduleDay",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Rounds",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Refund",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Program",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Payment",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "JudgeTeam",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "roundId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Rounds",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "JudgeRecusal",
+      "PrimaryKey": [
+        {
+          "FieldName": "applicationId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "userId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "userId",
+          "SchemaName": "openwater",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Application",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "BillingLineItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "invoiceId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Invoice",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "deletedApplicationId",
+          "SchemaName": "openwater",
+          "RelatedTable": "DeletedApplication",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "applicationId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Application",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "DeletedApplication",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "applicationId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Application",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "DeletedSession",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "sessionId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Session",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Evaluation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "applicationId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Application",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Fund",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Invoice",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}
