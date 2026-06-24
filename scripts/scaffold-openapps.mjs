@@ -3,7 +3,7 @@
  * Scaffolds (or refreshes) the per-connector Open App directories in this repo from the
  * MemberJunction core integration metadata. Each connector becomes an installable Open App
  * under <Category>/<AppDir>/ with:
- *   - mj-app.json          (connector profile: metadata.processOnInstall, no schema/migrations)
+ *   - mj-app.json          (stage-1 metadata pointer; upgrade-to-full-openapp adds schema+migrations)
  *   - metadata/.mj-sync.json + integration/ + actions/   (the curated IO/IOF catalog + Actions)
  *
  * Every connector references the SAME shared package @memberjunction/integration-connectors;
@@ -152,7 +152,7 @@ for (const file of findIntegrationFiles()) {
     publisher: { name: 'MemberJunction', email: 'dev@memberjunction.com', url: 'https://memberjunction.com' },
     repository: REPO_URL,
     mjVersionRange: MJ_VERSION_RANGE,
-    metadata: { directory: 'metadata', processOnInstall: true },
+    metadata: { directory: 'metadata' },
     packages: { server: [{ name: SHARED_PACKAGE, role: 'bootstrap', startupExport: 'registerConnectors' }] },
     categories: [placement.category.toLowerCase()],
     tags: [slug, placement.category.toLowerCase(), 'connector', 'integration'].slice(0, 20),
