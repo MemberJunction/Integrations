@@ -1,0 +1,39 @@
+{
+  "name": "@memberjunction/integrations-repo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MemberJunction Integrations — vendor connectors, each its own installable Open App + npm package under <Category>/<Connector>. Full Open App model: schema + metadata-seed migrations (SQL Server + Postgres) + CI/CD.",
+  "type": "module",
+  "license": "ISC",
+  "workspaces": [
+    "*/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "node scripts/validate-invariants.mjs && node scripts/validate-migrations.mjs",
+    "lint:invariants": "node scripts/validate-invariants.mjs",
+    "lint:migrations": "node scripts/validate-migrations.mjs",
+    "new-connector": "node scripts/new-connector.mjs",
+    "migrations:wrap": "node scripts/wrap-migration.mjs",
+    "migrations:pg": "node scripts/build-pg-migrations.mjs",
+    "changeset": "changeset",
+    "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs",
+    "release": "turbo run build && changeset publish && node scripts/tag-apps.mjs"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.10",
+    "@memberjunction/open-app-engine": "^5.42.0",
+    "turbo": "^2.8.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MemberJunction/Integrations"
+  },
+  "packageManager": "npm@11.7.0"
+}

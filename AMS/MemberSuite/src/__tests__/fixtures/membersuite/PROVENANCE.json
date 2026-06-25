@@ -1,0 +1,25 @@
+{
+  "Entries": [
+    {
+      "URL": "https://rest.membersuite.com/platform/swagger/docs/v2",
+      "AccessedAt": "2026-06-20T20:46:05.665Z",
+      "UsedFor": "AuthenticationData token-exchange response shape ({accessToken, idToken, refreshToken}) for auth-response.json fixture",
+      "SourceTier": 2,
+      "SourceCategory": "OpenAPISpec",
+      "EvidenceStrength": "ImpliedFromExample",
+      "TargetField": "fixture.auth-response",
+      "Excerpt": "AuthenticationData schema: { accessToken: string, idToken: string, refreshToken: string }. POST /platform/v2/msc_authdata/{tenantId} with a 6-part signed credential set returns this shape."
+    },
+    {
+      "URL": "https://rest.membersuite.com/crm/swagger/docs/v1",
+      "AccessedAt": "2026-06-20T20:46:05.665Z",
+      "UsedFor": "CRM list response paged envelope ({results, totalCount, page, pageSize}) + Activity definition fields for activities-list.json fixture",
+      "SourceTier": 2,
+      "SourceCategory": "OpenAPISpec",
+      "EvidenceStrength": "ImpliedFromExample",
+      "TargetField": "fixture.activities-list",
+      "Excerpt": "GET /crm/v1/activities/{tenantId} returns a paged list. Activity definition exposes id (string), lastModifiedDate (date-time). PageNumber pagination: page (1-indexed), pageSize."
+    }
+  ],
+  "Note": "Synthetic, doc-shaped fixtures. No live credential was available for this connector (operator scope ceiling T8 read-only); these payloads are constructed from the published swagger response schemas, contain NO PII (synthetic ids + test dates only), and exercise NormalizeResponse + ExtractPaginationInfo + watermark math + write-request construction against the documented contract shape."
+}
