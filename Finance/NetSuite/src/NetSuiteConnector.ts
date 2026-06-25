@@ -366,7 +366,7 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         body?: unknown
     ): Promise<RESTResponse> {
         const nsAuth = auth as NSAuthContext;
-        const effectiveHeaders = { ...headers, 'Authorization': this.BuildAuthorizationHeader(nsAuth, url, method) };
+        const effectiveHeaders: Record<string, string> = { ...headers, 'Authorization': this.BuildAuthorizationHeader(nsAuth, url, method) };
         if (body !== undefined && method !== 'GET' && method !== 'DELETE') {
             // Record bodies use NetSuite's vendor media type unless a caller (SuiteQL) set its own.
             if (!effectiveHeaders['Content-Type']) effectiveHeaders['Content-Type'] = NS_RECORD_MEDIA_TYPE;

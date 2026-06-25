@@ -2823,7 +2823,7 @@ export class YourMembershipConnector extends BaseRESTIntegrationConnector {
 
     protected async Authenticate(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
+        contextUser?: UserInfo
     ): Promise<RESTAuthContext> {
         console.log(`[YM] Authenticating...`);
         const config = await this.ParseConfig(companyIntegration, contextUser);
@@ -3238,7 +3238,7 @@ export class YourMembershipConnector extends BaseRESTIntegrationConnector {
                 NextOffset: pageResult.NextOffset,
                 NextPage: pageResult.NextPage,
                 NextCursor: pageResult.NextCursor,
-                NewWatermarkValue: !pageResult.HasMore ? newWatermark : undefined,
+                NewWatermarkValue: !pageResult.HasMore ? (newWatermark ?? undefined) : undefined,
             };
         }
 
@@ -3250,7 +3250,7 @@ export class YourMembershipConnector extends BaseRESTIntegrationConnector {
             NextOffset: pageResult.NextOffset,
             NextPage: pageResult.NextPage,
             NextCursor: pageResult.NextCursor,
-            NewWatermarkValue: !pageResult.HasMore ? newWatermark : undefined,
+            NewWatermarkValue: !pageResult.HasMore ? (newWatermark ?? undefined) : undefined,
         };
     }
 
@@ -3325,7 +3325,7 @@ export class YourMembershipConnector extends BaseRESTIntegrationConnector {
             NextOffset: pageResult.NextOffset,
             NextPage: pageResult.NextPage,
             NextCursor: pageResult.NextCursor,
-            NewWatermarkValue: !pageResult.HasMore ? newWatermark : undefined,
+            NewWatermarkValue: !pageResult.HasMore ? (newWatermark ?? undefined) : undefined,
         };
     }
 

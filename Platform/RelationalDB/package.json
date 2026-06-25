@@ -29,7 +29,8 @@
     "vitest": "^4.0.18",
     "@memberjunction/core": "^5.42.0",
     "@memberjunction/core-entities": "^5.42.0",
-    "@memberjunction/integration-engine": "^5.42.0"
+    "@memberjunction/integration-engine": "^5.42.0",
+    "@types/mssql": "^12.3.0"
   },
   "repository": {
     "type": "git",

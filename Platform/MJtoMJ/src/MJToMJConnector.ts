@@ -618,7 +618,7 @@ export class MJToMJConnector extends BaseIntegrationConnector {
     private parseObjectHints(obj: MJIntegrationObjectEntity): ObjectQueryHints {
         const parsed = this.safeParseJson(obj.DefaultQueryParams);
         const graphQLFields = this.extractFieldListFromHints(parsed, obj.ID);
-        const watermarkField = this.pickString(parsed, 'watermark_field') ?? null;
+        const watermarkField = this.pickString(parsed ?? {}, 'watermark_field') ?? null;
         const graphQLQueryName = obj.APIPath?.trim() || obj.Name;
         const responseDataKey = obj.ResponseDataKey?.trim() || graphQLQueryName;
         return { GraphQLFields: graphQLFields, WatermarkField: watermarkField, GraphQLQueryName: graphQLQueryName, ResponseDataKey: responseDataKey };

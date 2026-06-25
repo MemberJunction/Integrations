@@ -1378,6 +1378,9 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             exp: now + 300, // 5 minutes
         };
 
+        if (!config.PrivateKey) {
+            throw new Error('Salesforce JWT Bearer authentication requires a PrivateKey.');
+        }
         const pem = this.NormalizePem(config.PrivateKey);
         return jwt.sign(payload, pem, { algorithm: 'RS256' });
     }
