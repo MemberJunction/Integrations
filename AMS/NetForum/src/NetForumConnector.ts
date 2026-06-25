@@ -339,7 +339,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 Name: name,
                 Label: declared?.Label ?? name,
                 Description: declared?.Description ?? (description || undefined),
-                DataType: declared?.DataType ?? this.MapSoapType(dataType),
+                DataType: declared?.DataType ?? this.MapSoapType(dataType ?? null),
                 IsRequired: declared?.IsRequired ?? false,
                 AllowsNull: allowsNull,
                 IsPrimaryKey: declared?.IsPrimaryKey ?? false,
