@@ -15,9 +15,9 @@
   "author": "MemberJunction.com",
   "license": "ISC",
   "peerDependencies": {
-    "@memberjunction/core": ">=5.43.0 <6.0.0",
-    "@memberjunction/core-entities": ">=5.43.0 <6.0.0",
-    "@memberjunction/integration-engine": ">=5.43.0 <6.0.0"
+    "@memberjunction/core": ">=5.42.0 <6.0.0",
+    "@memberjunction/core-entities": ">=5.42.0 <6.0.0",
+    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
   },
   "dependencies": {
     "mssql": "^12.2.0"
@@ -27,9 +27,9 @@
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
-    "@memberjunction/core": "^5.43.0",
-    "@memberjunction/core-entities": "^5.43.0",
-    "@memberjunction/integration-engine": "^5.43.0"
+    "@memberjunction/core": "^5.42.0",
+    "@memberjunction/core-entities": "^5.42.0",
+    "@memberjunction/integration-engine": "^5.42.0"
   },
   "repository": {
     "type": "git",
