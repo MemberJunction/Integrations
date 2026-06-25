@@ -1,0 +1,23 @@
+{
+  "results": [
+    {
+      "id": "ACT-1001",
+      "name": "Course Completion",
+      "lastModifiedDate": "2026-03-01T12:00:00Z",
+      "activityType": "CEU",
+      "owner": "IND-5001",
+      "customField_external_activity_id": "ext-act-aaa"
+    },
+    {
+      "id": "ACT-1002",
+      "name": "Webinar Attendance",
+      "lastModifiedDate": "2026-03-05T09:30:00Z",
+      "activityType": "Event",
+      "owner": "IND-5002",
+      "customField_external_activity_id": "ext-act-bbb"
+    }
+  ],
+  "totalCount": 2,
+  "page": 1,
+  "pageSize": 50
+}
