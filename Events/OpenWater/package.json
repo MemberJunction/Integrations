@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-openwater",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "MemberJunction OpenWater connector.",
   "type": "module",
   "main": "dist/index.js",

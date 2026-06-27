@@ -5,3 +5,6 @@ dist/
 .DS_Store
 *.log
 coverage/
+
+# transformers / embeddings model cache (never commit — 100MB+ ONNX models)
+.cache/

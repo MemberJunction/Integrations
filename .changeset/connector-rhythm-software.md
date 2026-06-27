@@ -1,5 +1,5 @@
 ---
-"@memberjunction/connector-rhythm-software": patch
+"@memberjunction/connector-rhythm-software": major
 ---
 
 Initial release: self-contained Open App shipping its Integration metadata (objects + fields) and credential type. Strict-TypeScript build clean.

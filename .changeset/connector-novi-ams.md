@@ -1,5 +1,5 @@
 ---
-"@memberjunction/connector-novi-ams": patch
+"@memberjunction/connector-novi-ams": major
 ---
 
 Initial release: self-contained Open App shipping its Integration metadata (objects + fields) and credential type. Strict-TypeScript build clean.

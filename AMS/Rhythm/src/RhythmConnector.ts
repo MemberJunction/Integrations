@@ -38,7 +38,7 @@
  *   creates (ID auto-generated, returned in the body); PATCH updates (RFC 6902); DELETE is a hard
  *   delete. Subdomain + {tenantId} routing is layered in via GetBaseURL/MakeHTTPRequest.
  */
-import { RegisterClass, UUIDsEqual } from '@memberjunction/global';
+import { RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type {
     MJCompanyIntegrationEntity,
@@ -84,6 +84,12 @@ export interface RhythmConnectionConfig {
     ClientId: string;
     /** OAuth2 (Auth0 M2M) client secret. */
     ClientSecret: string;
+    /**
+     * Pre-provided OAuth2 bearer access token. When supplied, the connector uses it DIRECTLY and skips the
+     * Auth0 client_credentials mint (ClientId/Secret + Auth0Domain then become optional). Used by the
+     * credential-free e2e harness (AccessToken bypass) and token-passthrough deployments.
+     */
+    AccessToken?: string;
     /** Tenant-specific Auth0 domain (e.g. `your-tenant.us.auth0.com`) the token is minted from. */
     Auth0Domain: string;
     /** Auth0 API audience. Default `https://api.rhythmsoftware.com`. */
@@ -259,7 +265,11 @@ export class RhythmConnector extends BaseRESTIntegrationConnector {
         if (this.authCache) return this.authCache;
 
         const config = await this.ParseConfig(companyIntegration, contextUser);
-        const token = await this.MintToken(config);
+        // Honor a pre-provided AccessToken (credential-free e2e bypass + token-passthrough deployments):
+        // use it directly and skip the Auth0 client_credentials mint when a bearer is supplied.
+        const token = (config.AccessToken && config.AccessToken.length > 0)
+            ? config.AccessToken
+            : await this.MintToken(config);
 
         const auth: RhythmAuthContext = { Token: token, Config: config };
         this.authCache = auth;
@@ -524,7 +534,7 @@ export class RhythmConnector extends BaseRESTIntegrationConnector {
         const siblings = IntegrationEngineBase.Instance.GetActiveIntegrationObjects(integration.ID);
         const fkField = fields.find(f => f.Name?.toLowerCase() === fkVar.toLowerCase() && f.RelatedIntegrationObjectID);
         if (fkField?.RelatedIntegrationObjectID) {
-            const byId = siblings.find(s => UUIDsEqual(s.ID, fkField.RelatedIntegrationObjectID));
+            const byId = siblings.find(s => s.ID === fkField.RelatedIntegrationObjectID);
             if (byId) return byId;
         }
         const segs = readPath.split('/').filter(Boolean);
@@ -788,14 +798,19 @@ export class RhythmConnector extends BaseRESTIntegrationConnector {
             return undefined;
         };
 
+        const accessToken = getStr('accesstoken', 'access_token');
         const clientId = getStr('clientid', 'client_id');
         const clientSecret = getStr('clientsecret', 'client_secret');
-        if (!clientId || !clientSecret) {
-            throw new Error('Rhythm OAuth2 configuration missing required field: ClientId / ClientSecret');
-        }
         const auth0Domain = getStr('auth0domain', 'auth0_domain', 'authdomain', 'domain');
-        if (!auth0Domain) {
-            throw new Error('Rhythm OAuth2 configuration missing required field: Auth0Domain');
+        // ClientId/Secret + Auth0Domain are required ONLY to mint a token; a pre-provided AccessToken
+        // bypasses the mint (e2e harness / token-passthrough), so they're optional in that case.
+        if (!accessToken) {
+            if (!clientId || !clientSecret) {
+                throw new Error('Rhythm OAuth2 configuration missing required field: ClientId / ClientSecret');
+            }
+            if (!auth0Domain) {
+                throw new Error('Rhythm OAuth2 configuration missing required field: Auth0Domain');
+            }
         }
         const tenantId = getStr('tenantid', 'tenant_id', 'tenant');
         if (!tenantId) {
@@ -803,9 +818,10 @@ export class RhythmConnector extends BaseRESTIntegrationConnector {
         }
 
         return {
-            ClientId: clientId,
-            ClientSecret: clientSecret,
-            Auth0Domain: auth0Domain,
+            AccessToken: accessToken,
+            ClientId: clientId ?? '',
+            ClientSecret: clientSecret ?? '',
+            Auth0Domain: auth0Domain ?? '',
             Audience: getStr('audience') ?? DEFAULT_AUDIENCE,
             TenantId: tenantId,
             TokenURL: getStr('tokenurl', 'token_url'),

@@ -6057,7 +6057,7 @@
                   "AllowsNull": true,
                   "Sequence": 4,
                   "Status": "Active",
-                  "Description": "The customer's opt-in status. This value will never overwrite the opt-in status of a pre-existing Mailchimp list member, but will apply to list members that are added through the e-commerce API endpoints. Customers who don't opt in to your Mailchimp list [will be added as `Transactional` members](https://mailchimp.com/developer/marketing/docs/e-commerce/#customers)."
+                  "Description": "The customer's opt-in status. This value will never overwrite the opt-in status of a pre-existing Mailchimp list member, but will apply to list members that are added through the e-commerce API endpoints. Customers who don't opt in to your Mailchimp li..."
                 },
                 "primaryKey": {
                   "ID": "5D64F82B-8AF0-4508-8FE4-A9D8C794C05E"
@@ -10765,7 +10765,7 @@
                   "AllowsNull": true,
                   "Sequence": 12,
                   "Status": "Active",
-                  "Description": "Whether the list supports [multiple formats for emails](https://mailchimp.com/help/change-audience-name-defaults/). When set to `true`, subscribers can choose whether they want to receive HTML or plain-text emails. When set to `false`, subscribers will receive HTML emails, with a plain-text alternative backup."
+                  "Description": "Whether the list supports [multiple formats for emails](https://mailchimp.com/help/change-audience-name-defaults/). When set to `true`, subscribers can choose whether they want to receive HTML or plain-text emails. When set to `false`, subscribers will..."
                 },
                 "primaryKey": {
                   "ID": "B85DCDF7-08CB-4848-8966-5488F37325FE"

@@ -69,7 +69,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Budgetable reporting period name. These are the reporting periods shown on the Reporting Periods list with the budgetable flag set to true . System periods (Today, Current Month, Current Year to Date, etc) and non-budgetable reporting periods are not supported.",
+                  "Description": "Budgetable reporting period name. These are the reporting periods shown on the Reporting Periods list with the budgetable flag set to true . System periods (Today, Current Month, Current Year to Date, etc) and non-budgetable reporting periods are not s...",
                   "Sequence": 2,
                   "Status": "Active"
                 },
@@ -160,7 +160,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Reporting book ID. System standard book IDs include ACCRUAL , CASH , GAAPADJACCRUAL , GAAPADJCASH , TAXADJACCRUAL , TAXADJCASH , GAAPACCRUAL , GAAPCASH , TAXACCRUAL , TAXCASH , GAAPTAXACCRUAL , and GAAPTAXCASH . Keep in mind, these are dependent on the company/GL configuration. In addition to these, a Sage Intacct company may also have User Defined Books and/or Consolidation books. In the case of User Defined Books, the system appends ACCRUAL and CASH to the end of the User Defined Book ID to...",
+                  "Description": "Reporting book ID. System standard book IDs include ACCRUAL , CASH , GAAPADJACCRUAL , GAAPADJCASH , TAXADJACCRUAL , TAXADJCASH , GAAPACCRUAL , GAAPCASH , TAXACCRUAL , TAXCASH , GAAPTAXACCRUAL , and GAAPTAXCASH . Keep in mind, these are dependent on the...",
                   "Sequence": 6,
                   "Status": "Active"
                 },
@@ -364,7 +364,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Currency code. If the company is multi-currency and the request is run at the top level, your list will contain all currencies and not just the base. You should run the request privately in an entity or provide a currency filter with the base currency and whatever entity/location hierarchy is needed. If the base and transaction currency are different, filter for the base currency or both amounts will be included in response even if running from the entity.",
+                  "Description": "Currency code. If the company is multi-currency and the request is run at the top level, your list will contain all currencies and not just the base. You should run the request privately in an entity or provide a currency filter with the base currency ...",
                   "Sequence": 15,
                   "Status": "Active"
                 },
@@ -2203,7 +2203,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "How the transaction allocation is split across dimensions. Use Percentage to specify entries as percentages (default). Use Absolute to specify entries as fixed amounts. Use Fixed amount with over/under logic for a combination of both. Exact amounts are distributed first, in the order they occur in the transaction allocation definition. Any remaining amount is distributed using the percentage allocations. Entries for exact amounts must come before entries for percentages, and percentages must ...",
+                  "Description": "How the transaction allocation is split across dimensions. Use Percentage to specify entries as percentages (default). Use Absolute to specify entries as fixed amounts. Use Fixed amount with over/under logic for a combination of both. Exact amounts are...",
                   "Sequence": 22,
                   "Status": "Active"
                 },
@@ -3197,7 +3197,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the adjustment line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the adjustment line and the tax rate of the tax detail ( detailid ) for the tax entry. (AU, GB, ZA only)",
+                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the adjustment line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the adjustment line and the ...",
                   "Sequence": 33,
                   "Status": "Active"
                 },
@@ -3425,7 +3425,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB...",
                   "Sequence": 43,
                   "Status": "Active"
                 },
@@ -4759,7 +4759,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( TRX_AMOUNT ) for the bill line and the transaction tax ( TRX_TAX ) for the tax entry based on the value supplied for TOTALTRXAMOUNT on the bill line and the tax rate of the tax detail ( DETAILID ) for the tax entry. (AU, GB, ZA only)",
+                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( TRX_AMOUNT ) for the bill line and the transaction tax ( TRX_TAX ) for the tax entry based on the value supplied for TOTALTRXAMOUNT on the bill line and the tax rate of ...",
                   "Sequence": 49,
                   "Status": "Active"
                 },
@@ -5306,7 +5306,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB...",
                   "Sequence": 73,
                   "Status": "Active"
                 },
@@ -5395,7 +5395,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Transaction amount for the line including taxes, which is required if INCLUSIVETAX is set to true on the header. The system uses the value you provide here and the tax rate of the tax detail ( DETAILID ) for the tax entry to calculate the transaction amount ( TRX_AMOUNT ) for the line and transaction tax ( TRX_TAX ) for the tax entry. (AU, GB, ZA only)",
+                  "Description": "Transaction amount for the line including taxes, which is required if INCLUSIVETAX is set to true on the header. The system uses the value you provide here and the tax rate of the tax detail ( DETAILID ) for the tax entry to calculate the transaction a...",
                   "Sequence": 77,
                   "Status": "Active"
                 },
@@ -6185,7 +6185,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Details for the payment, including line items, discounts, adjustments, and so forth. The new array of payment details will replace the existing array. To add a payment detail, supply all the original payment details along with the new one To delete a payment detail, supply only the payment details for the ones you want to keep.",
+                  "Description": "Details for the payment, including line items, discounts, adjustments, and so forth. The new array of payment details will replace the existing array. To add a payment detail, supply all the original payment details along with the new one To delete a p...",
                   "Sequence": 2,
                   "Status": "Active"
                 },
@@ -6433,7 +6433,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Discount date in format mm/dd/yyyy . All discounts available at this date are applied. You can supply a date in the past to access a discount whose deadline has already passed. You must provide the correct TRX_PAYMENTAMOUNT for the entire amount due (with the discount amount calculated in) for the discount to apply. Discounts are not applied when bill lines are provided. Not supported for joint checks.",
+                  "Description": "Discount date in format mm/dd/yyyy . All discounts available at this date are applied. You can supply a date in the past to access a discount whose deadline has already passed. You must provide the correct TRX_PAYMENTAMOUNT for the entire amount due (w...",
                   "Sequence": 13,
                   "Status": "Active"
                 },
@@ -6837,7 +6837,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Payment method. Can be omitted when creating a credit-only payment. For all other payments, provide one of the following: Printed Check Joint Check - PAYMENTREQUESTMETHOD must be set to bill Cash EFT Credit Card ACH Check Delivery WF Check WF Domestic ACH WF USD Wire Electronic payment providers (Early Adopter program) support their own sets of payment methods .",
+                  "Description": "Payment method. Can be omitted when creating a credit-only payment. For all other payments, provide one of the following: Printed Check Joint Check - PAYMENTREQUESTMETHOD must be set to bill Cash EFT Credit Card ACH Check Delivery WF Check WF Domestic ...",
                   "Sequence": 31,
                   "Status": "Active"
                 },
@@ -6883,7 +6883,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Approach for paying the bill. vendorpref - apply the preference for the vendor as specified in the Sage Intacct UI (default) vendor - pay all bills from the vendor in one payment bill - pay each bill from the vendor as as separate payment payto - merge the request into one per vendor pay-to contact",
+                  "Description": "Approach for paying the bill. vendorpref - apply the preference for the vendor as specified in the Sage Intacct UI (default) vendor - pay all bills from the vendor in one payment bill - pay each bill from the vendor as as separate payment payto - merge...",
                   "Sequence": 33,
                   "Status": "Active"
                 },
@@ -9304,7 +9304,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoice/bill date , or of 6th month from invoice/bill date . (Default: from invoice/bill date ).",
+                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoic...",
                   "Sequence": 6,
                   "Status": "Active"
                 },
@@ -9439,7 +9439,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoice/bill date , or of 6th month from invoice/bill date . (Default: from invoice/bill date ).",
+                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoic...",
                   "Sequence": 12,
                   "Status": "Active"
                 },
@@ -10660,7 +10660,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB...",
                   "Sequence": 36,
                   "Status": "Active"
                 },
@@ -11745,7 +11745,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Name of the summary to post to. A request must contain either PRBATCH or PRBATCHKEY if AR is configured for user-specified summary posting. Ignored if automatic summaries are enabled. (If values for both PRBATCHKEY and PRBATCH are included in your request and those values indicate different summaries, Sage Intacct posts to the summary identified by PRBATCHKEY .)",
+                  "Description": "Name of the summary to post to. A request must contain either PRBATCH or PRBATCHKEY if AR is configured for user-specified summary posting. Ignored if automatic summaries are enabled. (If values for both PRBATCHKEY and PRBATCH are included in your requ...",
                   "Sequence": 32,
                   "Status": "Active"
                 },
@@ -11768,7 +11768,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Key ( RECORDNO ) of the summary to post to. A request must contain either PRBATCH or PRBATCHKEY if AR is configured for user-specified summary posting. Ignored if automatic summaries are enabled. (If values for both PRBATCHKEY and PRBATCH are included in your request and those values indicate different summaries, Sage Intacct posts to the summary identified by PRBATCHKEY .)",
+                  "Description": "Key ( RECORDNO ) of the summary to post to. A request must contain either PRBATCH or PRBATCHKEY if AR is configured for user-specified summary posting. Ignored if automatic summaries are enabled. (If values for both PRBATCHKEY and PRBATCH are included ...",
                   "Sequence": 33,
                   "Status": "Active"
                 },
@@ -13057,7 +13057,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be found in the Sage Intacct UI in the Taxes application from the top level of a multi-entity company. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be fou...",
                   "Sequence": 51,
                   "Status": "Active"
                 },
@@ -13522,7 +13522,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Details for the payment, including line items, discounts, adjustments, and so forth. When issuing an update request, if you include payment details in your request, be sure to include all details you want to retain. If an update request includes payment details, any details that are omitted are deleted.",
+                  "Description": "Details for the payment, including line items, discounts, adjustments, and so forth. When issuing an update request, if you include payment details in your request, be sure to include all details you want to retain. If an update request includes paymen...",
                   "Sequence": 7,
                   "Status": "Active"
                 },
@@ -13997,7 +13997,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Discount date in the mm/dd/yyyy format. All discounts available at this date are applied. You can supply a date in the past to access a discount whose deadline has already passed. You must provide the correct TRX_PAYMENTAMOUNT for the entire amount due (with the discount amount calculated in) for the discount to apply. Do not use if TRX_TOTALDISCOUNTTOAPPLY is provided.",
+                  "Description": "Discount date in the mm/dd/yyyy format. All discounts available at this date are applied. You can supply a date in the past to access a discount whose deadline has already passed. You must provide the correct TRX_PAYMENTAMOUNT for the entire amount due...",
                   "Sequence": 28,
                   "Status": "Active"
                 },
@@ -15012,7 +15012,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Name of the payer who is paying invoices on behalf of multiple customers. Required to receive payments for multiple customers in a single request. The payer name and the corresponding payment ID are displayed in AR Sales and other reports to identify multiple payments made in a single request.",
+                  "Description": "Name of the payer who is paying invoices on behalf of multiple customers. Required to receive payments for multiple customers in a single request. The payer name and the corresponding payment ID are displayed in AR Sales and other reports to identify m...",
                   "Sequence": 73,
                   "Status": "Active"
                 },
@@ -15217,7 +15217,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Undeposited funds account. Required if not using a financial entity ( FINANCIALENTITY ) or summary ( PRBATCH ). You can record the deposit so that your books reflect the transfer of funds from your undeposited funds account to your bank account when you move the held payments.",
+                  "Description": "Undeposited funds account. Required if not using a financial entity ( FINANCIALENTITY ) or summary ( PRBATCH ). You can record the deposit so that your books reflect the transfer of funds from your undeposited funds account to your bank account when yo...",
                   "Sequence": 82,
                   "Status": "Active"
                 },
@@ -16409,7 +16409,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be found in the Sage Intacct UI in the Taxes application from the top level of a multi-entity company. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be fou...",
                   "Sequence": 48,
                   "Status": "Active"
                 },
@@ -16922,7 +16922,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoice/bill date , or of 6th month from invoice/bill date . (Default: from invoice/bill date )",
+                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoic...",
                   "Sequence": 6,
                   "Status": "Active"
                 },
@@ -17057,7 +17057,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoice/bill date , or of 6th month from invoice/bill date . (Default: from invoice/bill date )",
+                  "Description": "Due from. Use from invoice/bill date , of the month of invoice/bill date , of next month from invoice/bill date , of 2nd month from invoice/bill date , of 3rd month from invoice/bill date , of 4th month from invoice/bill date , of 5th month from invoic...",
                   "Sequence": 12,
                   "Status": "Active"
                 },
@@ -17737,7 +17737,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Cut-off date for the reconciliation, which is the date from which you want to reconcile transactions. Required only for the first reconciliation. This date can be the day before you transitioned to Sage Intacct, or another date if you donât want to go all the way back to when you first started using Sage Intacct. (Typically, itâs the day before the statement start date.)",
+                  "Description": "Cut-off date for the reconciliation, which is the date from which you want to reconcile transactions. Required only for the first reconciliation. This date can be the day before you transitioned to Sage Intacct, or another date if you donât want to g...",
                   "Sequence": 6,
                   "Status": "Active"
                 },
@@ -19436,7 +19436,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the charge card transaction line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the transaction line and the tax rate of the tax detail ( detailid ) for the tax entry. (AU, GB, ZA only). (Default: false )",
+                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the charge card transaction line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the transaction...",
                   "Sequence": 24,
                   "Status": "Active"
                 },
@@ -19666,7 +19666,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be found in the Sage Intacct UI in the Taxes application from the top level of a multi-entity company. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be fou...",
                   "Sequence": 34,
                   "Status": "Active"
                 },
@@ -19920,7 +19920,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "ID of a project, either the same project specified on the header or one of its descendants. Required when creating a new change request entry. A descendant can only be specified if it has the same customer as the parent project and either the same location as the parent or a descendant of that location.",
+                  "Description": "ID of a project, either the same project specified on the header or one of its descendants. Required when creating a new change request entry. A descendant can only be specified if it has the same customer as the parent project and either the same loca...",
                   "Sequence": 4,
                   "Status": "Active"
                 },
@@ -20056,7 +20056,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "GL account number to use when posting this change request (if you want to override the account number on the cost type for this entry). Your company must be configured to allow this override. Note that an account number is needed when the specified project ID has a primary estimate that posts to the GL budget, and the change request status is set to a value other than none .",
+                  "Description": "GL account number to use when posting this change request (if you want to override the account number on the cost type for this entry). Your company must be configured to allow this override. Note that an account number is needed when the specified pro...",
                   "Sequence": 10,
                   "Status": "Active"
                 },
@@ -20327,7 +20327,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Number of production units, which are units that track several inputs of cost (such as for material, labor, equipment). When specifying production units, you must also provide a task ID, from which the production unit description, if present, is inherited.",
+                  "Description": "Number of production units, which are units that track several inputs of cost (such as for material, labor, equipment). When specifying production units, you must also provide a task ID, from which the production unit description, if present, is inheri...",
                   "Sequence": 22,
                   "Status": "Active"
                 },
@@ -20508,7 +20508,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "State of the change request. Use Draft to save without posting (regardless of the status of the change request or the mapped estimate workflow type), or Posted to allow posting to proceed as configured. You cannot change a Posted change request back to Draft .",
+                  "Description": "State of the change request. Use Draft to save without posting (regardless of the status of the change request or the mapped estimate workflow type), or Posted to allow posting to proceed as configured. You cannot change a Posted change request back to...",
                   "Sequence": 30,
                   "Status": "Active"
                 },
@@ -20531,7 +20531,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Name of a change request status that is mapped to the workflow type you want for this change request (a workflow type other than none enables posting to the primary project estimate). If you omit this parameter, the change request automatically gets a workflow type of none .",
+                  "Description": "Name of a change request status that is mapped to the workflow type you want for this change request (a workflow type other than none enables posting to the primary project estimate). If you omit this parameter, the change request automatically gets a ...",
                   "Sequence": 31,
                   "Status": "Active"
                 },
@@ -20576,7 +20576,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Cost effective date of the change request. When posting change request entries to a project estimate, the estimate entry EFFECTIVEDATE field will be populated from this value. If the COSTEFFECTIVEDATE is null, the estimate entry EFFECTIVEDATE field will be populated with the change request date.",
+                  "Description": "Cost effective date of the change request. When posting change request entries to a project estimate, the estimate entry EFFECTIVEDATE field will be populated from this value. If the COSTEFFECTIVEDATE is null, the estimate entry EFFECTIVEDATE field wil...",
                   "Sequence": 33,
                   "Status": "Active"
                 },
@@ -21412,7 +21412,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Where this change request integrates with project contracts: none - (default) PROJECTCONTRACTID and PROJECTCONTRACTLINEID cannot be used. project change order - PROJECTCONTRACTID and PROJECTCONTRACTLINEID are inherited from the project change order. change request - PROJECTCONTRACTID and PROJECTCONTRACTLINEID can be used on the change request and will be inherited by the change request entries. change request entry - PROJECTCONTRACTID and PROJECTCONTRACTLINEID can be entered on change request...",
+                  "Description": "Where this change request integrates with project contracts: none - (default) PROJECTCONTRACTID and PROJECTCONTRACTLINEID cannot be used. project change order - PROJECTCONTRACTID and PROJECTCONTRACTLINEID are inherited from the project change order. ch...",
                   "Sequence": 70,
                   "Status": "Active"
                 },
@@ -22693,7 +22693,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Requirement category: Insurance - use for general liability insurance, workers comp insurance, etc. Lien waiver - use to ensure that subcontractors and suppliers have signed lien waiver agreements before releasing payment. Automatically generates lien waiver documents at AP bill or AP payment creation for transaction definitions in which PRIMARYDOC is set to true. When Lien waiver is used, then ALLOWNEGATIVELIENWAIVERS may be set. Miscellaneous - use for permits, licenses, bonds, etc.",
+                  "Description": "Requirement category: Insurance - use for general liability insurance, workers comp insurance, etc. Lien waiver - use to ensure that subcontractors and suppliers have signed lien waiver agreements before releasing payment. Automatically generates lien ...",
                   "Sequence": 2,
                   "Status": "Active"
                 },
@@ -22739,7 +22739,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Action to take when a vendor is out of compliance with this definition and a payment is attempted: Ignore - no error returned and payments to the vendor are allowed (default) Warning - a warning is returned and payments to the vendor are still allowed Error - an error is returned and payments to the vendor are blocked.",
+                  "Description": "Action to take when a vendor is out of compliance with this definition and a payment is attempted: Ignore - no error returned and payments to the vendor are allowed (default) Warning - a warning is returned and payments to the vendor are still allowed ...",
                   "Sequence": 4,
                   "Status": "Active"
                 },
@@ -22784,7 +22784,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Use true (default) to indicate that lien waivers can be generated with negative amounts, otherwise use false . Applies only when CATEGORY is set to Lien waiver . If CATEGORY is not Lien waiver and a value is supplied, an error is returned. This value only affects the generation of future lien waiver compliance records.",
+                  "Description": "Use true (default) to indicate that lien waivers can be generated with negative amounts, otherwise use false . Applies only when CATEGORY is set to Lien waiver . If CATEGORY is not Lien waiver and a value is supplied, an error is returned. This value o...",
                   "Sequence": 6,
                   "Status": "Active"
                 },
@@ -22807,7 +22807,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "List of vendor types or primary document IDs for which to generate compliance records when GENERATERULE is set to Automatic by type . Options are: VENDTYPENAME - The name of a vendor type. Used when TRACKBY is set to Vendor . DOCPARID - The ID of a purchasing transaction definition that has PRIMARYDOCUMENT set to true . Used when TRACKBY is set to Primarydoc .",
+                  "Description": "List of vendor types or primary document IDs for which to generate compliance records when GENERATERULE is set to Automatic by type . Options are: VENDTYPENAME - The name of a vendor type. Used when TRACKBY is set to Vendor . DOCPARID - The ID of a pur...",
                   "Sequence": 7,
                   "Status": "Active"
                 },
@@ -22853,7 +22853,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "The type of transaction for which to generate lien waiver documents. Required if CATEGORY is set to Lien waiver ; not applicable to other categories. APBill - Generate lien waiver documents for bills (default) APPayment - Generate lien waiver documents for payments",
+                  "Description": "The type of transaction for which to generate lien waiver documents. Required if CATEGORY is set to Lien waiver ; not applicable to other categories. APBill - Generate lien waiver documents for bills (default) APPayment - Generate lien waiver documents...",
                   "Sequence": 9,
                   "Status": "Active"
                 },
@@ -22876,7 +22876,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Indicates whether to automatically generate compliance records and how to do so. For example, users can select which vendor types automatically generate compliance records. Do not generate - Compliance records are not generated automatically. (default) Automatic by type - Generate compliance records based on the list of types in COMPDEFENTRIES .",
+                  "Description": "Indicates whether to automatically generate compliance records and how to do so. For example, users can select which vendor types automatically generate compliance records. Do not generate - Compliance records are not generated automatically. (default)...",
                   "Sequence": 10,
                   "Status": "Active"
                 },
@@ -22898,7 +22898,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "When CATEGORY is set to Lien waiver , sets a minimum amount required for a lien waiver to be generated. For example, users might want orders of less than $10,000, which might be partial orders, to not require a lien waiver. Use 0 or a null value for no minimum.",
+                  "Description": "When CATEGORY is set to Lien waiver , sets a minimum amount required for a lien waiver to be generated. For example, users might want orders of less than $10,000, which might be partial orders, to not require a lien waiver. Use 0 or a null value for no...",
                   "Sequence": 11,
                   "Status": "Active"
                 },
@@ -22920,7 +22920,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "When CATEGORY is set to Lien waiver , sets a minimum amount required for a lien waiver to be generated based on the primary document. For example, users might want orders of less than $10,000, which might be partial orders, to not require a lien waiver. Use 0 or a null value for no minimum.",
+                  "Description": "When CATEGORY is set to Lien waiver , sets a minimum amount required for a lien waiver to be generated based on the primary document. For example, users might want orders of less than $10,000, which might be partial orders, to not require a lien waiver...",
                   "Sequence": 12,
                   "Status": "Active"
                 },
@@ -22943,7 +22943,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Status of compliance definition. active - the compliance record can be assigned to compliance types, and compliance records are validated against the definition. (default) inactive - The compliance definition is not used in compliance validation, and cannot be used to create a new compliance type.",
+                  "Description": "Status of compliance definition. active - the compliance record can be assigned to compliance types, and compliance records are validated against the definition. (default) inactive - The compliance definition is not used in compliance validation, and c...",
                   "Sequence": 13,
                   "Status": "Active"
                 },
@@ -23448,7 +23448,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Boolean field that indicates whether a lien waiver is generated for the secondary vendor for compliance purposes. When lien waivers are generated from the primary document, this field is set to true . Additionally, the secondary vendor compliance template is used when the printed document template for the compliance records is printed and emailed.",
+                  "Description": "Boolean field that indicates whether a lien waiver is generated for the secondary vendor for compliance purposes. When lien waivers are generated from the primary document, this field is set to true . Additionally, the secondary vendor compliance templ...",
                   "Sequence": 19,
                   "Status": "Active"
                 },
@@ -23471,7 +23471,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "The name of the secondary vendor, if one is used. When a secondary vendor is used and a lien waiver is created for compliance purposes, the value of this field defaults to the secondary vendor name that appears on the primary document. Otherwise, this field can be null.",
+                  "Description": "The name of the secondary vendor, if one is used. When a secondary vendor is used and a lien waiver is created for compliance purposes, the value of this field defaults to the secondary vendor name that appears on the primary document. Otherwise, this ...",
                   "Sequence": 20,
                   "Status": "Active"
                 },
@@ -23751,7 +23751,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Status of compliance type: active - the compliance type can be assigned to compliance records. (default) inactive - The compliance type cannot be used to create new compliance records. Existing compliance records that use the compliance type are still active.",
+                  "Description": "Status of compliance type: active - the compliance type can be assigned to compliance records. (default) inactive - The compliance type cannot be used to create new compliance records. Existing compliance records that use the compliance type are still ...",
                   "Sequence": 6,
                   "Status": "Active"
                 },
@@ -26297,7 +26297,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "When creating Project percent complete , or Task percent complete templates, specifies whether to base the percentages on Estimated hours , Observed % completed , or Planned hours . Budgeted hours is also available for Project percent complete . (Default: Estimated hours )",
+                  "Description": "When creating Project percent complete , or Task percent complete templates, specifies whether to base the percentages on Estimated hours , Observed % completed , or Planned hours . Budgeted hours is also available for Project percent complete . (Defau...",
                   "Sequence": 7,
                   "Status": "Active"
                 },
@@ -26716,7 +26716,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Specifies whether the Bill to contact name on the line is overridden when the Bill to contact name on the contract itself is modified. Use Contract value to allow this overriding or User-specified value to preserve the Bill to contact name on the line. (Default: If BILLTOCONTACTNAME is set and not equal to the contract Bill to, defaults to User-specified value , otherwise, defaults to Contract value ).",
+                  "Description": "Specifies whether the Bill to contact name on the line is overridden when the Bill to contact name on the contract itself is modified. Use Contract value to allow this overriding or User-specified value to preserve the Bill to contact name on the line....",
                   "Sequence": 15,
                   "Status": "Active"
                 },
@@ -26989,7 +26989,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Date the Unbilled AR and Unbilled deferred revenue posts, in format mm/dd/yyyy . Leave blank to use the contract line start date minus the bill-in-advance period (if this would occur in a closed period, the first date in the first available open period is used instead).",
+                  "Description": "Date the Unbilled AR and Unbilled deferred revenue posts, in format mm/dd/yyyy . Leave blank to use the contract line start date minus the bill-in-advance period (if this would occur in a closed period, the first date in the first available open period...",
                   "Sequence": 27,
                   "Status": "Active"
                 },
@@ -27214,7 +27214,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Name of a renewal billing template. Ensure the renewal billing template term is less than or equal to the contract renewal term. Only used if RENEWAL is true . If BILLINGOPTIONS is set to Use billing template on the contract line, a billing template is required. If RENEWALBILLINGTEMPLATENAME is omitted, the system first defaults to the BILLINGTEMPLATENAME on the contract line, then to the default billing template defined on the item.",
+                  "Description": "Name of a renewal billing template. Ensure the renewal billing template term is less than or equal to the contract renewal term. Only used if RENEWAL is true . If BILLINGOPTIONS is set to Use billing template on the contract line, a billing template is...",
                   "Sequence": 37,
                   "Status": "Active"
                 },
@@ -27420,7 +27420,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Specifies whether the Ship to contact name on the line is overridden when the Ship to contact name on the contract itself is modified. Use Contract value to allow this overriding or User-specified value to preserve the Ship to contact name on the line. (Default: If SHIPTOCONTACTNAME is set and not equal to the contract Ship to, defaults to User-specified value , otherwise, defaults to Contract value )",
+                  "Description": "Specifies whether the Ship to contact name on the line is overridden when the Ship to contact name on the contract itself is modified. Use Contract value to allow this overriding or User-specified value to preserve the Ship to contact name on the line....",
                   "Sequence": 46,
                   "Status": "Active"
                 },
@@ -27443,7 +27443,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "State in which to create the contract line. Use Draft for a contract line that will not yet post to the GL, Renewal only for a contract line that will be included in the next renewal, or In progress . To move a contract line from Draft to In progress , use the post function. (Default: In progress )",
+                  "Description": "State in which to create the contract line. Use Draft for a contract line that will not yet post to the GL, Renewal only for a contract line that will be included in the next renewal, or In progress . To move a contract line from Draft to In progress ,...",
                   "Sequence": 47,
                   "Status": "Active"
                 },
@@ -27511,7 +27511,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Usage quantity recurs. If set to true , every usage record for a line item is treated as a recurring usage record. This means that each period, new usage records are created in order to re-invoice the quantities (for example, user licenses). Changing this field affects how the system calculates usage billing. Only applicable if BILLINGMETHOD is set to Quantity based .",
+                  "Description": "Usage quantity recurs. If set to true , every usage record for a line item is treated as a recurring usage record. This means that each period, new usage records are created in order to re-invoice the quantities (for example, user licenses). Changing t...",
                   "Sequence": 50,
                   "Status": "Active"
                 },
@@ -27534,7 +27534,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Reset usage quantity. Determines when the included units are counted and determines when the system billing counter resets. Use either After each invoice or After each renewal . Only applicable if BILLINGMETHOD is set to Quantity based . Also, the contract must have a billing price list set (via PRCLIST ).",
+                  "Description": "Reset usage quantity. Determines when the included units are counted and determines when the system billing counter resets. Use either After each invoice or After each renewal . Only applicable if BILLINGMETHOD is set to Quantity based . Also, the cont...",
                   "Sequence": 51,
                   "Status": "Active"
                 },
@@ -29662,7 +29662,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Override amount for the allocation. Only used if you want to override the calculated amount, which would otherwise be generated based on the MEA price list. The MEA amount total for a bundle must equal the Extended transaction value of the lines being bundled. See MEA allocations in the Sage Intacct product help for more information.",
+                  "Description": "Override amount for the allocation. Only used if you want to override the calculated amount, which would otherwise be generated based on the MEA price list. The MEA amount total for a bundle must equal the Extended transaction value of the lines being ...",
                   "Sequence": 13,
                   "Status": "Active"
                 },
@@ -30561,7 +30561,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Threshold percentage for Step revenue when using Project percent complete/Task percent complete. Useful if you recognize revenue in stages as a project progresses, but donât recognize the revenue in exact proportion to the projectâs percentage of completion as many last minute changes usually come in at the end of a project. The percentages must be in ascending order, for example, the first entry might be at 25, the next at 50, 75, then 100.",
+                  "Description": "Threshold percentage for Step revenue when using Project percent complete/Task percent complete. Useful if you recognize revenue in stages as a project progresses, but donât recognize the revenue in exact proportion to the projectâs percentage of c...",
                   "Sequence": 5,
                   "Status": "Active"
                 },
@@ -30653,7 +30653,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Revenue adjustment option. Determines how the system handles revenue scheduled prior to the itemâs delivery date. This option is only applicable for Straight line or Daily rate revenue recognition methods. You must have Fulfillment status tracking enabled for your company. Use One time , Distributed , or Walk forward .",
+                  "Description": "Revenue adjustment option. Determines how the system handles revenue scheduled prior to the itemâs delivery date. This option is only applicable for Straight line or Daily rate revenue recognition methods. You must have Fulfillment status tracking en...",
                   "Sequence": 9,
                   "Status": "Active"
                 },
@@ -30676,7 +30676,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Recognition method source for Project percent complete or Task percent complete recognition methods. Use Estimated hours , Observed % completed or Planned hours . For Project percent complete , Budgeted hours is available as well. (Default: Estimated hours )",
+                  "Description": "Recognition method source for Project percent complete or Task percent complete recognition methods. Use Estimated hours , Observed % completed or Planned hours . For Project percent complete , Budgeted hours is available as well. (Default: Estimated h...",
                   "Sequence": 10,
                   "Status": "Active"
                 },
@@ -31097,7 +31097,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Identifies the start date of a billed service period based on usage. When used, the service period start date should be the first day of the month of USAGEDATE. For example, if USAGEDATE falls anytime in September, 2024, then SERVICEPERIODSTARTDATE should be 09/01/2024.",
+                  "Description": "Identifies the start date of a billed service period based on usage. When used, the service period start date should be the first day of the month of USAGEDATE. For example, if USAGEDATE falls anytime in September, 2024, then SERVICEPERIODSTARTDATE sho...",
                   "Sequence": 8,
                   "Status": "Active"
                 },
@@ -31631,7 +31631,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Required if updating an existing customer email template selection (a custom email template and optional corresponding transaction definition previously designated for this customer). You can specify a different email template by name, or you can specify a different transaction definition for the current email template, or both. The record number remains unchanged.",
+                  "Description": "Required if updating an existing customer email template selection (a custom email template and optional corresponding transaction definition previously designated for this customer). You can specify a different email template by name, or you can speci...",
                   "Sequence": 1,
                   "Status": "Active"
                 },
@@ -32365,7 +32365,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Contact list (alternative to CUSTOMERCONTACTS ). Multiple individual CONTACT_LIST_INFO elements may be passed. If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing an empty CONTACT_LIST_INFO element deletes the contact list. If this parameter and CUSTOMERCONTACTS are both provided, CUSTOMERCONTACTS is used. If not provided and not already existing, any values supplied for other contacts (Primary, Bill to, o...",
+                  "Description": "Contact list (alternative to CUSTOMERCONTACTS ). Multiple individual CONTACT_LIST_INFO elements may be passed. If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing a...",
                   "Sequence": 33,
                   "Status": "Active"
                 },
@@ -32502,7 +32502,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Contact list (alternative to CONTACT_LIST_INFO ). If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing an empty CUSTOMERCONTACTS element deletes the contact list. If this parameter and CONTACT_LIST_INFO are both provided, CUSTOMERCONTACTS is used. If not provided and not already existing, any values supplied for other contacts (Primary, Bill to, or Ship to) are used to create a contact list.",
+                  "Description": "Contact list (alternative to CONTACT_LIST_INFO ). If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing an empty CUSTOMERCONTACTS element deletes the contact list. If...",
                   "Sequence": 39,
                   "Status": "Active"
                 },
@@ -35910,7 +35910,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Each argument is specified by its name (as defined in the report definition) and includes the value to be substituted into the report argument. Report arguments are defined in the report in one of two ways. Some report arguments are hard-coded in the definition of the report. Other report arguments are defined as run-time parameters and are selected by the user when running the report.",
+                  "Description": "Each argument is specified by its name (as defined in the report definition) and includes the value to be substituted into the report argument. Report arguments are defined in the report in one of two ways. Some report arguments are hard-coded in the d...",
                   "Sequence": 19,
                   "Status": "Active"
                 },
@@ -36209,7 +36209,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "For PERIODSTARTDATE and PERIODENDDATE , provide both the period start and end date in the format mm/dd/yyyy . For PERIOD , provide the name of a budgetable reporting period (Ex: Month Ended April 2019 ) or a system reporting period (Ex: Current Month ). Partial periods are not supported, and the system reports full period ranges. For example, the whole April period will be used if you enter a start date of 04/15/2019 and an end date of 04/29/2019.",
+                  "Description": "For PERIODSTARTDATE and PERIODENDDATE , provide both the period start and end date in the format mm/dd/yyyy . For PERIOD , provide the name of a budgetable reporting period (Ex: Month Ended April 2019 ) or a system reporting period (Ex: Current Month )...",
                   "Sequence": 9,
                   "Status": "Active"
                 },
@@ -38120,7 +38120,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the expense report line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the expense report line and the tax rate of the tax detail ( detailid ) for the tax entry. (AU, GB, ZA only)",
+                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the expense report line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the expense report line ...",
                   "Sequence": 33,
                   "Status": "Active"
                 },
@@ -38394,7 +38394,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB...",
                   "Sequence": 45,
                   "Status": "Active"
                 },
@@ -39878,7 +39878,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Form 1099-DIV box values. Use: â¢ 1A for 1a - Total Ordinary dividends â¢ 1B for 1b - Qualified dividends â¢ 2A for 2a - Total capital gain distr â¢ 2B for 2b - Unrecap. sec. 1250 gain â¢ 2C for 2c - Section 1202 gain â¢ 2D for 2d - Collectibles (28%) gain â¢ 3 for 3 - Nontaxable distributions â¢ 4 for 4 - Federal income tax withheld â¢ 5 for 5 - Investment expenses â¢ 6 for 6 - Foreign tax paid â¢ 8 for 8 - Cash liquidation distr â¢ 9 for 9 - Noncash liquidation distr â¢ 10 for ...",
+                  "Description": "Form 1099-DIV box values. Use: â¢ 1A for 1a - Total Ordinary dividends â¢ 1B for 1b - Qualified dividends â¢ 2A for 2a - Total capital gain distr â¢ 2B for 2b - Unrecap. sec. 1250 gain â¢ 2C for 2c - Section 1202 gain â¢ 2D for 2d - Collectibles ...",
                   "Sequence": 2,
                   "Status": "Active"
                 },
@@ -39901,7 +39901,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Form 1099 types. Use: â¢ DIV for dividend Income (Form 1099-DIV) â¢ INT for interest income (Form 1099-INT) â¢ MISC for miscellaneous income (Form 1099-MISC) â¢ R for distributions from pensions, annuities â¦(Form 1099-R) â¢ S for proceeds from real estate transactions (Form 1099-S) â¢ PATR for taxable distributions received (Form 1099-PATR) â¢ G for certain government payments (Form 1099-G) â¢ W-2G for certain gambling winnings (Form W-2G)",
+                  "Description": "Form 1099 types. Use: â¢ DIV for dividend Income (Form 1099-DIV) â¢ INT for interest income (Form 1099-INT) â¢ MISC for miscellaneous income (Form 1099-MISC) â¢ R for distributions from pensions, annuities â¦(Form 1099-R) â¢ S for proceeds from r...",
                   "Sequence": 3,
                   "Status": "Active"
                 },
@@ -41238,7 +41238,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the expense adjustment line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the expense adjustment line and the tax rate of the tax detail ( detailid ) for the tax entry. (AU, GB, ZA only)",
+                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the expense adjustment line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the expense adjustme...",
                   "Sequence": 30,
                   "Status": "Active"
                 },
@@ -41466,7 +41466,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB...",
                   "Sequence": 40,
                   "Status": "Active"
                 },
@@ -42703,7 +42703,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Exchange Rate type to use. Ending spot rate - the currency exchange rate at the close of the specified date or period Weighted average rate. - for income statement accounts where an average value over a period of time is a generally accepted accounting principle Historical rate - the currency exchange rate in effect at the time the transaction is performed",
+                  "Description": "Exchange Rate type to use. Ending spot rate - the currency exchange rate at the close of the specified date or period Weighted average rate. - for income statement accounts where an average value over a period of time is a generally accepted accounting...",
                   "Sequence": 4,
                   "Status": "Active"
                 },
@@ -43436,7 +43436,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Use true to indicate that the consolidation books of the structure should automatically clear inter-entity balances. Automatically clearing inter-entity balances means that transactions between entities do not affect reporting in the consolidated book. Otherwise, use false (default).",
+                  "Description": "Use true to indicate that the consolidation books of the structure should automatically clear inter-entity balances. Automatically clearing inter-entity balances means that transactions between entities do not affect reporting in the consolidated book....",
                   "Sequence": 3,
                   "Status": "Active"
                 },
@@ -43648,7 +43648,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "The consolidation method to use for the entity. CONSOLIDATION : If selected then the ownership accounts must be selected. PROPORTIONAL : If selected, then indicate the percentage to apply in OWNERSHIPPERCENTAGE . FULL CONSOLIDATION : Default when OWNERSHIPPERCENTAGE is 100. .",
+                  "Description": "The consolidation method to use for the entity. CONSOLIDATION : If selected then the ownership accounts must be selected. PROPORTIONAL : If selected, then indicate the percentage to apply in OWNERSHIPPERCENTAGE . FULL CONSOLIDATION : Default when OWNER...",
                   "Sequence": 4,
                   "Status": "Active"
                 },
@@ -44319,7 +44319,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Filter to see only approved or unapproved transactions. Approved - Billable transactions that are approved. Unapproved - Billable transactions (such as vendor invoices, expense reports, and timesheets) that have not posted to the GL and are either in a Draft, Submitted, or Declined State. Both - Ignore Approval status when filtering results.",
+                  "Description": "Filter to see only approved or unapproved transactions. Approved - Billable transactions that are approved. Unapproved - Billable transactions (such as vendor invoices, expense reports, and timesheets) that have not posted to the GL and are either in a...",
                   "Sequence": 5,
                   "Status": "Active"
                 },
@@ -44845,7 +44845,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Specifies how the invoices are organized and consolidated: CUSTOMER#~#CONTRACT - A separate invoice for each contract (Legacy value: CONTRACT ). (default) CUSTOMER#~#CONTRACT#~#BILLTO - A separate invoice for each contract per contract line level Bill to contact. CUSTOMER - A separate invoice for each customer CUSTOMER#~#BILLTO - A separate invoice for each customer per contract line level Bill to contact. CUSTOMER#~#CONTRACT#~#PROJECT - A separate invoice for each project associated with the...",
+                  "Description": "Specifies how the invoices are organized and consolidated: CUSTOMER#~#CONTRACT - A separate invoice for each contract (Legacy value: CONTRACT ). (default) CUSTOMER#~#CONTRACT#~#BILLTO - A separate invoice for each contract per contract line level Bill ...",
                   "Sequence": 28,
                   "Status": "Active"
                 },
@@ -44937,7 +44937,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "The NAME of an order entry price list to use to override pricing for billable transactions related to projects. This price list overrides any price list set on the selected transaction definition, customer, and so on. This field is only applicable if your company is subscribed to Projects.",
+                  "Description": "The NAME of an order entry price list to use to override pricing for billable transactions related to projects. This price list overrides any price list set on the selected transaction definition, customer, and so on. This field is only applicable if y...",
                   "Sequence": 32,
                   "Status": "Active"
                 },
@@ -45119,7 +45119,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "As-of date to be used when generating invoices. For example, if SETASOFDATE = End of this month and this month is June, Intacct will set the As of date to June 30 when you generate invoices using this policy. Today Yesterday End of this week End of last week Beginning of this month End of this month End of last month (Default: todayâs date)",
+                  "Description": "As-of date to be used when generating invoices. For example, if SETASOFDATE = End of this month and this month is June, Intacct will set the As of date to June 30 when you generate invoices using this policy. Today Yesterday End of this week End of las...",
                   "Sequence": 40,
                   "Status": "Active"
                 },
@@ -45377,7 +45377,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Start date (in format mm/dd/yyyy ) when using a date range to filter for open billing. The ASOFDATE is used as the end of the range. This parameter applies only to scheduled contract billing (not usage, timesheets, expenses, AP bills, or Purchasing transactions).",
+                  "Description": "Start date (in format mm/dd/yyyy ) when using a date range to filter for open billing. The ASOFDATE is used as the end of the range. This parameter applies only to scheduled contract billing (not usage, timesheets, expenses, AP bills, or Purchasing tra...",
                   "Sequence": 7,
                   "Status": "Active"
                 },
@@ -45628,7 +45628,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Specifies how the invoices are organized and consolidated: â¢ CUSTOMER#~#CONTRACT : A separate invoice for each contract (Legacy value: CONTRACT ). â¢ CUSTOMER#~#CONTRACT#~#BILLTO : A separate invoice for each contract per contract line level Bill to contact. â¢ CUSTOMER : A separate invoice for each customer. â¢ CUSTOMER#~#BILLTO : A separate invoice for each customer per contract line level Bill to contact. â¢ CUSTOMER#~#CONTRACT#~#PROJECT : A separate invoice for each project associat...",
+                  "Description": "Specifies how the invoices are organized and consolidated: â¢ CUSTOMER#~#CONTRACT : A separate invoice for each contract (Legacy value: CONTRACT ). â¢ CUSTOMER#~#CONTRACT#~#BILLTO : A separate invoice for each contract per contract line level Bill to...",
                   "Sequence": 18,
                   "Status": "Active"
                 },
@@ -45858,7 +45858,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Indicates whether SERVICEPERIODSTARTDATE and SERVICEPERIODENDDATE in the invoice lines that come from a CONTRACTBILLINGSCHEDULEENTRY or CONTRACTUSAGE record are overridden. Valid options are: Do not override - Indicates that the values in SERVICEPERIODSTARTDATE and SERVICEPERIODENDDATE from CONTRACTBILLINGSCHEDULEENTRY or CONTRACTUSAGE are used to generate the invoice preview. Override empty dates only - When used, include values for SERVICEPERIODSTARTDATE and SERVICEPERIODENDDATE, which over...",
+                  "Description": "Indicates whether SERVICEPERIODSTARTDATE and SERVICEPERIODENDDATE in the invoice lines that come from a CONTRACTBILLINGSCHEDULEENTRY or CONTRACTUSAGE record are overridden. Valid options are: Do not override - Indicates that the values in SERVICEPERIOD...",
                   "Sequence": 28,
                   "Status": "Active"
                 },
@@ -47010,7 +47010,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Basis time period. You can use the same time period as the source pool, or you can select a different time period for your basis. Current Month Prior Month Current Quarter Prior Quarter Current Year Current Year To Date Prior Year Prior Year Current Month Prior Year Current Quarter Fiscal - Current Quarter Fiscal - Prior Quarter Fiscal - Current Year Fiscal - Current Year To Date Fiscal - Prior Year Inception To Date (applies only for Project dimension allocation focus).",
+                  "Description": "Basis time period. You can use the same time period as the source pool, or you can select a different time period for your basis. Current Month Prior Month Current Quarter Prior Quarter Current Year Current Year To Date Prior Year Prior Year Current Mo...",
                   "Sequence": 15,
                   "Status": "Active"
                 },
@@ -47033,7 +47033,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Activity Delta. false (default) true : Before allocation, validate that the account setup is designed to clear the source amounts with each allocation generation. This is done by making sure that the accounts selected for your source pool are used as the reversing source pool selection, or if an alternate specific account is used for the reversal, that it's included in the source pool account group so that it removes any prior allocation activity. This option is only effective if the source a...",
+                  "Description": "Activity Delta. false (default) true : Before allocation, validate that the account setup is designed to clear the source amounts with each allocation generation. This is done by making sure that the accounts selected for your source pool are used as t...",
                   "Sequence": 16,
                   "Status": "Active"
                 },
@@ -47285,7 +47285,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Class. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on the c...",
+                  "Description": "Dimensions treatment for Class. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow...",
                   "Sequence": 27,
                   "Status": "Active"
                 },
@@ -47331,7 +47331,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Customer. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on th...",
+                  "Description": "Dimensions treatment for Customer. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to nar...",
                   "Sequence": 29,
                   "Status": "Active"
                 },
@@ -47354,7 +47354,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Department. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on ...",
+                  "Description": "Dimensions treatment for Department. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to n...",
                   "Sequence": 30,
                   "Status": "Active"
                 },
@@ -47377,7 +47377,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Employee. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on th...",
+                  "Description": "Dimensions treatment for Employee. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to nar...",
                   "Sequence": 31,
                   "Status": "Active"
                 },
@@ -47400,7 +47400,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Item. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on the ca...",
+                  "Description": "Dimensions treatment for Item. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow ...",
                   "Sequence": 32,
                   "Status": "Active"
                 },
@@ -47423,7 +47423,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Location. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on th...",
+                  "Description": "Dimensions treatment for Location. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to nar...",
                   "Sequence": 33,
                   "Status": "Active"
                 },
@@ -47446,7 +47446,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Project. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on the...",
+                  "Description": "Dimensions treatment for Project. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narr...",
                   "Sequence": 34,
                   "Status": "Active"
                 },
@@ -47469,7 +47469,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Dimensions treatment for Vendor. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narrow the source pool or basis. You can either leave the dimension with no value in the allocated entry, or apply a single value by using the override parameters in the GLACCTALLOCATIONTARGET . Allocation focus - Allocate or reclassify based on the ...",
+                  "Description": "Dimensions treatment for Vendor. Specifies how the dimension is used in the allocation calculation. Not considered - (default) The dimension is not used for calculations during the generation of the allocation but can still be used as a filter to narro...",
                   "Sequence": 35,
                   "Status": "Active"
                 },
@@ -48162,7 +48162,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Account allocation group members. If one allocation is dependent on the completion of a previous allocation, order the members accordingly. When updating group members, supply all the original members along with the ones to add. To delete a member, supply only the members you want to keep.",
+                  "Description": "Account allocation group members. If one allocation is dependent on the completion of a previous allocation, order the members accordingly. When updating group members, supply all the original members along with the ones to add. To delete a member, sup...",
                   "Sequence": 4,
                   "Status": "Active"
                 },
@@ -48185,7 +48185,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Group error processing method. If the group contains dependencies where sequential processing is important, use Stop if a group member in the sequence fails . If the grouping is for convenience and sequential processing is not important, you can use Skip and continue if a group in the sequence fails .",
+                  "Description": "Group error processing method. If the group contains dependencies where sequential processing is important, use Stop if a group member in the sequence fails . If the grouping is for convenience and sequential processing is not important, you can use Sk...",
                   "Sequence": 5,
                   "Status": "Active"
                 },
@@ -51762,7 +51762,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. See Tax Solutions for more information. (GB...",
                   "Sequence": 80,
                   "Status": "Active"
                 },
@@ -52411,7 +52411,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Module key for the application area. Use 2.GL for General Ledger, 3.AP for Accounts Payable, 4.AR for Accounts Receivable, 6.EE for Employee Expenses, 7.INV for Inventory Control, 8.SO for Order Entry, 9.PO for Purchasing, 11.CM for Cash Management, 48.PROJACCT for Project and Resource Management, 55.CONTRACT for Contracts and Revenue Management.",
+                  "Description": "Module key for the application area. Use 2.GL for General Ledger, 3.AP for Accounts Payable, 4.AR for Accounts Receivable, 6.EE for Employee Expenses, 7.INV for Inventory Control, 8.SO for Order Entry, 9.PO for Purchasing, 11.CM for Cash Management, 48...",
                   "Sequence": 3,
                   "Status": "Active"
                 },
@@ -53199,7 +53199,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Sets the TRANSFERSTATE of the transfer. If TRANSFERTYPE = Immediate â¢ valid values are Draft or Post â¢ default value is Post . If TRANSFERTYPE = In transit â¢ valid values are Draft , Transfer out or Transfer in â¢ If current TRANSFERSTATE = Draft , default value is Transfer in . â¢ If current TRANSFERSTATE = In transit , default value is Transfer out . Note: You cannot change the TRANSFERSTATE of a Posted transfer, and you cannot set an In transit transfer back to Draft .",
+                  "Description": "Sets the TRANSFERSTATE of the transfer. If TRANSFERTYPE = Immediate â¢ valid values are Draft or Post â¢ default value is Post . If TRANSFERTYPE = In transit â¢ valid values are Draft , Transfer out or Transfer in â¢ If current TRANSFERSTATE = Draf...",
                   "Sequence": 9,
                   "Status": "Active"
                 },
@@ -55648,7 +55648,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Allow multiple item tax groups per item, which is needed when an item is taxed at different rates in different tax jurisdictions. false (default) true - allow multiple item tax groups When you set this to true and provide an item tax group mapping ( ITEMTAXGRPITEMMAPS ), the tax group at the header level is ignored and the mapping is used instead. (GB, AU, and ZA only)",
+                  "Description": "Allow multiple item tax groups per item, which is needed when an item is taxed at different rates in different tax jurisdictions. false (default) true - allow multiple item tax groups When you set this to true and provide an item tax group mapping ( IT...",
                   "Sequence": 9,
                   "Status": "Active"
                 },
@@ -56123,7 +56123,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Units of measure default for base units for inventory replenishment for this item in the Vendor history. For example, with the Count unit of measure group, you can specify each , dozen , or pair . See the information about unit of measure groups in the Sage Intacct product help.",
+                  "Description": "Units of measure default for base units for inventory replenishment for this item in the Vendor history. For example, with the Count unit of measure group, you can specify each , dozen , or pair . See the information about unit of measure groups in the...",
                   "Sequence": 30,
                   "Status": "Active"
                 },
@@ -56844,7 +56844,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Vendor Entries. Provides replenishment parameters for this item according to given warehouse and vendor combinations. These parameters override the values for the Vendor entries in the Vendor history. Multiple ITEMWAREHOUSEVENDORENTRIES elements may be passed.",
+                  "Description": "Vendor Entries. Provides replenishment parameters for this item according to given warehouse and vendor combinations. These parameters override the values for the Vendor entries in the Vendor history. Multiple ITEMWAREHOUSEVENDORENTRIES elements may be...",
                   "Sequence": 62,
                   "Status": "Active"
                 },
@@ -56936,7 +56936,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "The size of the item, useful for calculating storage bin and shipping box size requirements. Specify the unit of measure and the length, width, and height. You must specify all four values or none. LWHUOM must be set to one of the values defined for the length unit of measure .",
+                  "Description": "The size of the item, useful for calculating storage bin and shipping box size requirements. Specify the unit of measure and the length, width, and height. You must specify all four values or none. LWHUOM must be set to one of the values defined for th...",
                   "Sequence": 66,
                   "Status": "Active"
                 },
@@ -57319,7 +57319,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Reorder point specifying the quantity of inventory that you donât want to fall below. When the current net inventory falls to the reorder point plus the safety stock, the item is triggered for reorder. Use blank or positive integers. Applies when the REPLENISHMENT_METHOD is Reorder point . (Default: 1)",
+                  "Description": "Reorder point specifying the quantity of inventory that you donât want to fall below. When the current net inventory falls to the reorder point plus the safety stock, the item is triggered for reorder. Use blank or positive integers. Applies when the...",
                   "Sequence": 83,
                   "Status": "Active"
                 },
@@ -57341,7 +57341,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Reorder quantity for this item in the Vendor history. As an example, if 12 units are needed according to other replenishment calculations, a reorder quantity of 50 would cause the generated purchase order to be for 50. Applies when the REPLENISHMENT_METHOD is Reorder point . (Default is 0, meaning no suggestion)",
+                  "Description": "Reorder quantity for this item in the Vendor history. As an example, if 12 units are needed according to other replenishment calculations, a reorder quantity of 50 would cause the generated purchase order to be for 50. Applies when the REPLENISHMENT_ME...",
                   "Sequence": 84,
                   "Status": "Active"
                 },
@@ -57364,7 +57364,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Replenishment method for this item in the Vendor history. Specifies how the amount to reorder is calculated. Reorder point - base calculation on a specific reorder quantity and optional safety stock quantity Demand forecast by single value - base calculation on lead time for the vendor Demand forecast by fluctuating values - base calculation on fluctuating forecast for an item See the information about replenishment methods and calculations in the Sage Intacct product help. (Default: Reorder ...",
+                  "Description": "Replenishment method for this item in the Vendor history. Specifies how the amount to reorder is calculated. Reorder point - base calculation on a specific reorder quantity and optional safety stock quantity Demand forecast by single value - base calcu...",
                   "Sequence": 85,
                   "Status": "Active"
                 },
@@ -58022,7 +58022,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "The thickness of the item, useful for calculating storage bin or shipping box size requirements. Specify the unit of measure, actual thickness, and minimum and maximum thickness. You must specify all four values or none. If the item thickness does not vary, set all three thickness fields to the same value. THICKNESSUOM must be set to one of the values defined for the length unit of measure .",
+                  "Description": "The thickness of the item, useful for calculating storage bin or shipping box size requirements. Specify the unit of measure, actual thickness, and minimum and maximum thickness. You must specify all four values or none. If the item thickness does not ...",
                   "Sequence": 114,
                   "Status": "Active"
                 },
@@ -58410,7 +58410,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "The weight of the item: unit of measure, net weight and shipping weight (also called gross weight). You can specify SHIP_WEIGHT without WEIGHTUOM or NETWEIGHT , but if you specify NETWEIGHT you must also specify the other two. WEIGHTUOM must be set to one of the values defined for the Weight unit of measure .",
+                  "Description": "The weight of the item: unit of measure, net weight and shipping weight (also called gross weight). You can specify SHIP_WEIGHT without WEIGHTUOM or NETWEIGHT , but if you specify NETWEIGHT you must also specify the other two. WEIGHTUOM must be set to ...",
                   "Sequence": 131,
                   "Status": "Active"
                 },
@@ -58765,7 +58765,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Job type. Use DDS job , Asynchronous API requests , CSV import , Scheduled memorized report , Scheduled financial report , Update report , Process & store report , Scheduled report , Email report , Process & store report group , Scheduled report group , Recurring consolidation , Offline consolidation , Run action , Contract invoices , Project invoices , Check run , Confirm check run , Void check run , or Wells Fargo payments . For more information about these, see queue administration in the ...",
+                  "Description": "Job type. Use DDS job , Asynchronous API requests , CSV import , Scheduled memorized report , Scheduled financial report , Update report , Process & store report , Scheduled report , Email report , Process & store report group , Scheduled report group ...",
                   "Sequence": 2,
                   "Status": "Active"
                 },
@@ -60538,7 +60538,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the receipt line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the receipt line and the tax rate of the tax detail ( detailid ) for the tax entry. (AU, GB, ZA only). (Default: false )",
+                  "Description": "Inclusive taxes. Set to true to have the system calculate the transaction amount ( trx_amount ) for the receipt line and the transaction tax ( trx_tax ) for the tax entry based on the value supplied for totaltrxamount on the receipt line and the tax ra...",
                   "Sequence": 25,
                   "Status": "Active"
                 },
@@ -60745,7 +60745,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be found in the Sage Intacct UI in the Taxes application from the top level of a multi-entity company. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be fou...",
                   "Sequence": 34,
                   "Status": "Active"
                 },
@@ -61161,7 +61161,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Date that the transaction entry comes into effect from a GL budget or reporting perspective. This can be useful for differentiating approved change entries added later than original entries. Required if POSTTO is set to Effective date and POSTED is true . Specified in the format mm/dd/yyyy .",
+                  "Description": "Date that the transaction entry comes into effect from a GL budget or reporting perspective. This can be useful for differentiating approved change entries added later than original entries. Required if POSTTO is set to Effective date and POSTED is tru...",
                   "Sequence": 12,
                   "Status": "Active"
                 },
@@ -61230,7 +61230,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Date of the project estimate, which must be in a budgetable period. Required if POSTTO is set to Estimate date and POSTED is true . The meaning of this date can vary according to the customerâs workflow. It can be the date the estimate was created, the date the estimate was presented as a quote, or the date of the forecast. Specified in the format mm/dd/yyyy .",
+                  "Description": "Date of the project estimate, which must be in a budgetable period. Required if POSTTO is set to Estimate date and POSTED is true . The meaning of this date can vary according to the customerâs workflow. It can be the date the estimate was created, t...",
                   "Sequence": 15,
                   "Status": "Active"
                 },
@@ -61276,7 +61276,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "ID of the existing GL budget to use. The budget must be configured for a project estimate in the Sage Intacct UI. If you change the budget ID and POSTED is set to true , any previously posted budget entries are deleted and a new post to the specified GL budget is performed.",
+                  "Description": "ID of the existing GL budget to use. The budget must be configured for a project estimate in the Sage Intacct UI. If you change the budget ID and POSTED is set to true , any previously posted budget entries are deleted and a new post to the specified G...",
                   "Sequence": 17,
                   "Status": "Active"
                 },
@@ -61298,7 +61298,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Specifies whether this is the primary estimate for the project. Use true for primary, false otherwise. A project can have zero or one primary estimates and multiple non-primary estimates. The first estimate for a project is automatically set as primary when it is created. To set another estimate as primary, update the first estimate to set ISPRIMARY to false and then update the desired estimate to set it to true . (Default: true for the first estimate created for a project, false otherwise)",
+                  "Description": "Specifies whether this is the primary estimate for the project. Use true for primary, false otherwise. A project can have zero or one primary estimates and multiple non-primary estimates. The first estimate for a project is automatically set as primary...",
                   "Sequence": 18,
                   "Status": "Active"
                 },
@@ -61390,7 +61390,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Name of a project estimate type that defines a subset of workflow types. This subset specifies which entries post to the GL budget (if POSTED is true ), and can be used for reporting purposes. When this parameter is not supplied, all workflow types post to the GL budget. If the given project estimate type doesnât include workflow types, no entries post to the GL budget.",
+                  "Description": "Name of a project estimate type that defines a subset of workflow types. This subset specifies which entries post to the GL budget (if POSTED is true ), and can be used for reporting purposes. When this parameter is not supplied, all workflow types pos...",
                   "Sequence": 22,
                   "Status": "Active"
                 },
@@ -61434,7 +61434,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "GL Budget period, either First period , All periods , Estimate date , or Effective date . If you change the budget period and POSTED is set to true , any previously posted budget entries for that period are deleted and a new post for the specified period is performed.",
+                  "Description": "GL Budget period, either First period , All periods , Estimate date , or Effective date . If you change the budget period and POSTED is set to true , any previously posted budget entries for that period are deleted and a new post for the specified peri...",
                   "Sequence": 24,
                   "Status": "Active"
                 },
@@ -61456,7 +61456,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Number of production units, which are units that track several inputs of cost (such as for material, labor, equipment). If specified, then amount, quantity, and unit cost all become optional. When specifying production units, you must also provide a task ID, from which the production unit description, if present, is inherited. (Construction subscription)",
+                  "Description": "Number of production units, which are units that track several inputs of cost (such as for material, labor, equipment). If specified, then amount, quantity, and unit cost all become optional. When specifying production units, you must also provide a ta...",
                   "Sequence": 25,
                   "Status": "Active"
                 },
@@ -61872,7 +61872,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Date that the transaction entry comes into effect from a GL budget or reporting perspective. This can be useful for differentiating approved change entries added later than original entries. Required if POSTTO is set to Effective date and POSTED is true . Specified in the format mm/dd/yyyy .",
+                  "Description": "Date that the transaction entry comes into effect from a GL budget or reporting perspective. This can be useful for differentiating approved change entries added later than original entries. Required if POSTTO is set to Effective date and POSTED is tru...",
                   "Sequence": 10,
                   "Status": "Active"
                 },
@@ -61986,7 +61986,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Number of production units, which are units that track several inputs of cost (such as for material, labor, equipment). If specified, then amount, quantity, and unit cost all become optional. When specifying production units, you must also provide a task ID, from which the production unit description, if present, is inherited. (Construction subscription)",
+                  "Description": "Number of production units, which are units that track several inputs of cost (such as for material, labor, equipment). If specified, then amount, quantity, and unit cost all become optional. When specifying production units, you must also provide a ta...",
                   "Sequence": 15,
                   "Status": "Active"
                 },
@@ -62219,7 +62219,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Standard project estimate categories for Construction projects. Use one of the following or a null value: Current Estimate Original Estimate Current Forecast - At Completion Historical Forecast - At Completion Future Forecast - At Completion Current Forecast - To Completion Historical Forecast - To Completion Future Forecast - To Completion",
+                  "Description": "Standard project estimate categories for Construction projects. Use one of the following or a null value: Current Estimate Original Estimate Current Forecast - At Completion Historical Forecast - At Completion Future Forecast - At Completion Current Fo...",
                   "Sequence": 3,
                   "Status": "Active"
                 },
@@ -62952,7 +62952,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Change log number for tracking the number of changes applied to a source transaction. When you create a source transaction, its changelognumber is set to 0 by default. Then, each time you submit a change transaction against it, the number on the source is incremented. When you create a change transaction, itâs changelognumber is set to 1 by default. (Default: 0 for a source transaction, 1 for a change transaction) (Construction subscription)",
+                  "Description": "Change log number for tracking the number of changes applied to a source transaction. When you create a source transaction, its changelognumber is set to 0 by default. Then, each time you submit a change transaction against it, the number on the source...",
                   "Sequence": 29,
                   "Status": "Active"
                 },
@@ -63090,7 +63090,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Conversion type to use when converting the transaction to the next step in the workflow (for example, purchase order to vendor invoice). Price - conversion based on the price (for non-inventory items only) Quantity - conversion based on the quantity and unit If using Price , set Quantity to 1 and provide a unit that is a base unit (unit factor is 1). (Construction subscription)",
+                  "Description": "Conversion type to use when converting the transaction to the next step in the workflow (for example, purchase order to vendor invoice). Price - conversion based on the price (for non-inventory items only) Quantity - conversion based on the quantity an...",
                   "Sequence": 35,
                   "Status": "Active"
                 },
@@ -63980,7 +63980,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Internal reference source when the transaction originated from another document or workflow. Can be an internal or external source. For example, a request for information (RFI) or a project change request. Use 100 or fewer characters. (Construction subscription)",
+                  "Description": "Internal reference source when the transaction originated from another document or workflow. Can be an internal or external source. For example, a request for information (RFI) or a project change request. Use 100 or fewer characters. (Construction sub...",
                   "Sequence": 74,
                   "Status": "Active"
                 },
@@ -64790,7 +64790,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Enables downstream conversions to be either positive or negative so that you can reduce the previously converted amount of a line item. false - No (default) true - Yes Purchasing configuration option to enable conversion reversal for non-inventory items must be set. (Construction subscription)",
+                  "Description": "Enables downstream conversions to be either positive or negative so that you can reduce the previously converted amount of a line item. false - No (default) true - Yes Purchasing configuration option to enable conversion reversal for non-inventory item...",
                   "Sequence": 110,
                   "Status": "Active"
                 },
@@ -65243,7 +65243,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be found in the Sage Intacct UI in the Taxes application from the top level of a multi-entity company. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be fou...",
                   "Sequence": 130,
                   "Status": "Active"
                 },
@@ -65819,7 +65819,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Transaction posting account mapping for either Accounts Payable or General Ledger transaction posting. There must be one credit and one debit account. Note: AR_ACCOUNT is shared across applications, which is why there isnât an AP_ACCOUNT mapping parameter as you might expect.",
+                  "Description": "Transaction posting account mapping for either Accounts Payable or General Ledger transaction posting. There must be one credit and one debit account. Note: AR_ACCOUNT is shared across applications, which is why there isnât an AP_ACCOUNT mapping para...",
                   "Sequence": 13,
                   "Status": "Active"
                 },
@@ -65888,7 +65888,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Create policy for the transaction type in the Security Configuration. Use New document or Convert to specify that the user can create this transaction as a standalone transaction or by converting the previous transaction in the workflow, or use Convert only to specify that the user can create this transaction only by converting the previous transaction in the workflow. (Default: New document or Convert )",
+                  "Description": "Create policy for the transaction type in the Security Configuration. Use New document or Convert to specify that the user can create this transaction as a standalone transaction or by converting the previous transaction in the workflow, or use Convert...",
                   "Sequence": 16,
                   "Status": "Active"
                 },
@@ -65956,7 +65956,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Delete policy for the transaction type in the Security Configuration. Use No Edit to specify that the user cannot delete this transaction after it is created, Before Printing to specify that the user can delete this transaction until it has been printed to PDF, or All to specify that the user can delete this transaction as allowed by the transactionâs condition. (Default: No Edit )",
+                  "Description": "Delete policy for the transaction type in the Security Configuration. Use No Edit to specify that the user cannot delete this transaction after it is created, Before Printing to specify that the user can delete this transaction until it has been printe...",
                   "Sequence": 19,
                   "Status": "Active"
                 },
@@ -66069,7 +66069,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Edit policy for the transaction type in the Security Configuration. Use No Edit to specify that the user cannot edit this transaction after it is created, Before Printing to specify that the user can edit this transaction until it has been printed to PDF, or All to specify that the user can edit this transaction as allowed by the transactionâs condition. (Default: No Edit )",
+                  "Description": "Edit policy for the transaction type in the Security Configuration. Use No Edit to specify that the user cannot edit this transaction after it is created, Before Printing to specify that the user can edit this transaction until it has been printed to P...",
                   "Sequence": 24,
                   "Status": "Active"
                 },
@@ -66091,7 +66091,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Enables Bond parameters. This includes PERFORMANCEBONDREQUIRED , PERFORMANCEBONDRECEIVED , PERFORMANCEBONDAMOUNT , PERFORMANCESURETYCOMPANYKEY , PERFORMANCESURETYCOMPANY , PAYMENTBONDREQUIRED , PAYMENTBONDRECEIVED , PAYMENTBONDAMOUNT , PAYMENTSURETYCOMPANYKEY , and PAYMENTSURETYCOMPANY .",
+                  "Description": "Enables Bond parameters. This includes PERFORMANCEBONDREQUIRED , PERFORMANCEBONDRECEIVED , PERFORMANCEBONDAMOUNT , PERFORMANCESURETYCOMPANYKEY , PERFORMANCESURETYCOMPANY , PAYMENTBONDREQUIRED , PAYMENTBONDRECEIVED , PAYMENTBONDAMOUNT , PAYMENTSURETYCOM...",
                   "Sequence": 25,
                   "Status": "Active"
                 },
@@ -66202,7 +66202,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Enable change management for transactions. Use Enable Change for source transactions that can accept change orders, use Change Order for transactions that are themselves change orders, or No Change for transactions that do not use change management. You can modify an existing transaction definition to be a source. You can modify an existing transaction definition without any transactions to be a change order. You can modify an existing source transaction definition to prevent change orders if...",
+                  "Description": "Enable change management for transactions. Use Enable Change for source transactions that can accept change orders, use Change Order for transactions that are themselves change orders, or No Change for transactions that do not use change management. Yo...",
                   "Sequence": 30,
                   "Status": "Active"
                 },
@@ -66451,7 +66451,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Specifies whether the user can hide line item prices in transactions created from the transaction definition. Use true if you want to allow this, false otherwise. The OVERRIDE_PRICE field must be set to false if this field is set to true . (Default: false )",
+                  "Description": "Specifies whether the user can hide line item prices in transactions created from the transaction definition. Use true if you want to allow this, false otherwise. The OVERRIDE_PRICE field must be set to false if this field is set to true . (Default: fa...",
                   "Sequence": 41,
                   "Status": "Active"
                 },
@@ -66788,7 +66788,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Enables the primary document feature within a workflow. Use true to enable, false otherwise. When set to true , all documents created using the purchasing transaction definition are marked as primary documents, and all documents that result from conversions or change orders from a primary document have links back to the primary document. Available in companies with a Construction subscription. When you set PRIMARYDOC to true , you canât disable it. (Default: false )",
+                  "Description": "Enables the primary document feature within a workflow. Use true to enable, false otherwise. When set to true , all documents created using the purchasing transaction definition are marked as primary documents, and all documents that result from conver...",
                   "Sequence": 56,
                   "Status": "Active"
                 },
@@ -67081,7 +67081,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Standard reporting categories for Construction projects. Use one of the following or a null value: Bids and Quotes , Purchase Orders , Purchase Order Change Orders , Purchase Receivers , Purchase Order Invoices , Purchase Returns , Purchase Credits , Purchase Debits , Purchase Clearing Receivers , Subcontract Bids , Subcontracts , Subcontract Change Orders , Subcontract Invoices , Internal Supply Requisitions , Purchase Requisitions , Blanket POs or Vendor Contracts , Grant Requests , or Gran...",
+                  "Description": "Standard reporting categories for Construction projects. Use one of the following or a null value: Bids and Quotes , Purchase Orders , Purchase Order Change Orders , Purchase Receivers , Purchase Order Invoices , Purchase Returns , Purchase Credits , P...",
                   "Sequence": 69,
                   "Status": "Active"
                 },
@@ -71808,7 +71808,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Whether project contract lines should be posted as budget details to general ledger budgets. true - Post to GL budgets. Requires a value for POSTTO and for at least one of the GLBUDGETID fields. false - (default) Project contract lines are not posted to GL budgets.",
+                  "Description": "Whether project contract lines should be posted as budget details to general ledger budgets. true - Post to GL budgets. Requires a value for POSTTO and for at least one of the GLBUDGETID fields. false - (default) Project contract lines are not posted t...",
                   "Sequence": 39,
                   "Status": "Active"
                 },
@@ -71831,7 +71831,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Posting period to use when creating GL budget entries. Must be a budgetable posting period. Project contract date (default) - Period containing the project contract date Project begin date - Period containing the project begin date Project contract line date - Each project contract line posts to the period containing the line date Entry effective date - Each project contract line entry and change request entry posts to the period containing the entry effective date",
+                  "Description": "Posting period to use when creating GL budget entries. Must be a budgetable posting period. Project contract date (default) - Period containing the project contract date Project begin date - Period containing the project begin date Project contract lin...",
                   "Sequence": 40,
                   "Status": "Active"
                 },
@@ -72334,7 +72334,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "AllowsNull": false,
-                  "Description": "Maximum billing method. Total revised price (default) This is the only valid value when BILLINGTYPE is set to Progress . Specified amount No maximum Validation and processing rules: When BILLINGTYPE is set to Progress the MAXIMUMBILLING must be set to Total revised price . When the BILLINGTYPE is set to TM and the MAXIMUMBILLING is set to Specified amount , the amount billed against this project contract line cannot exceed the MAXIMUMBILLINGAMOUNT value during invoice generation. When the BIL...",
+                  "Description": "Maximum billing method. Total revised price (default) This is the only valid value when BILLINGTYPE is set to Progress . Specified amount No maximum Validation and processing rules: When BILLINGTYPE is set to Progress the MAXIMUMBILLING must be set to ...",
                   "Sequence": 6,
                   "Status": "Active"
                 },
@@ -72925,7 +72925,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Whether to exclude all values for the project contract line from posting to a GL budget, including any linked change request entries. false - (default) the project contract line can post to a GL budget. true - the project contract does not post to a GL budget.",
+                  "Description": "Whether to exclude all values for the project contract line from posting to a GL budget, including any linked change request entries. false - (default) the project contract line can post to a GL budget. true - the project contract does not post to a GL...",
                   "Sequence": 32,
                   "Status": "Active"
                 },
@@ -73557,7 +73557,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Whether the project contract line is a summary line or not. false (default) The project contract line is not a summary line. true T&M expenses can be assigned to this line, but the billing output for this line will be to a single OE invoice line. The Extended price for this line will be the sum of all the billed expenses associated to this project contract line. All related expenses will still be marked as billed.",
+                  "Description": "Whether the project contract line is a summary line or not. false (default) The project contract line is not a summary line. true T&M expenses can be assigned to this line, but the billing output for this line will be to a single OE invoice line. The E...",
                   "Sequence": 60,
                   "Status": "Active"
                 },
@@ -74873,7 +74873,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Allocate through period end. Use true to specify that the recurring allocation will run on the day following the end of selected period, which ensures all entries for the period are considered in the allocation. Sage Intacct will use an As Of Date and a GL Posting date that corresponds to the last day of the period. Use false otherwise. (Default: false).",
+                  "Description": "Allocate through period end. Use true to specify that the recurring allocation will run on the day following the end of selected period, which ensures all entries for the period are considered in the allocation. Sage Intacct will use an As Of Date and ...",
                   "Sequence": 11,
                   "Status": "Active"
                 },
@@ -75387,7 +75387,7 @@
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "AllowsNull": true,
-                  "Description": "Revenue recognition method. Use E for Straight line, S for Straight-line, prorate exact days, P for Straight-line, percent allocation, F for Straight-line, percent allocation, end of period, X for Exact days per period, prorate days, D for Exact days per period, prorate days, end of period, T for Percent Completed, M for Milestone, or C for Custom.",
+                  "Description": "Revenue recognition method. Use E for Straight line, S for Straight-line, prorate exact days, P for Straight-line, percent allocation, F for Straight-line, percent allocation, end of period, X for Exact days per period, prorate days, D for Exact days p...",
                   "Sequence": 10,
                   "Status": "Active"
                 },
@@ -77097,7 +77097,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Log number for tracking the number of changes applied to a source transaction. When you create a source transaction, its changelognumber is set to 0 by default. Then, each time you submit a change transaction against it, the number on the source is incremented. When you create a change transaction, itâs changelognumber is set to 1 by default. (Default: 0 for a source transaction, 1 for a change transaction) (Construction subscription)",
+                  "Description": "Log number for tracking the number of changes applied to a source transaction. When you create a source transaction, its changelognumber is set to 0 by default. Then, each time you submit a change transaction against it, the number on the source is inc...",
                   "Sequence": 29,
                   "Status": "Active"
                 },
@@ -77212,7 +77212,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Conversion type to use when converting the transaction to the next step in the workflow (for example, sales order to sales invoice). Price - conversion based on the price (for non-inventory items only) Quantity - conversion based on the quantity and unit If using Price , set Quantity to 1 and provide a unit that is a base unit (unit factor is 1). (Construction subscription)",
+                  "Description": "Conversion type to use when converting the transaction to the next step in the workflow (for example, sales order to sales invoice). Price - conversion based on the price (for non-inventory items only) Quantity - conversion based on the quantity and un...",
                   "Sequence": 34,
                   "Status": "Active"
                 },
@@ -78168,7 +78168,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Internal reference source when the transaction originated from another document or workflow. Can be an internal or external source. For example, a request for information (RFI) or a project change request. Use 100 or fewer characters. (Construction subscription)",
+                  "Description": "Internal reference source when the transaction originated from another document or workflow. Can be an internal or external source. For example, a request for information (RFI) or a project change request. Use 100 or fewer characters. (Construction sub...",
                   "Sequence": 76,
                   "Status": "Active"
                 },
@@ -79367,7 +79367,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Indicates whether a line is a reverse conversion for entries of non-inventory items. Items set as available for dropship, but-to-order, or stockable kits are not eligible for reverse conversion. Must be opposite sign used in the original entry. false (default) true",
+                  "Description": "Indicates whether a line is a reverse conversion for entries of non-inventory items. Items set as available for dropship, but-to-order, or stockable kits are not eligible for reverse conversion. Must be opposite sign used in the original entry. false (...",
                   "Sequence": 129,
                   "Status": "Active"
                 },
@@ -79663,7 +79663,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Ship by date, which is the date the shipment must go out in order to arrive when the customer needs it ( needbydate ). This date will be automatically calculated based on the needbydate and the estimated days in transit value specified as part of the shipping method in the Sage Intacct UI. You can provide your own value to override the calculated one. (Default: Automatically calculated value)",
+                  "Description": "Ship by date, which is the date the shipment must go out in order to arrive when the customer needs it ( needbydate ). This date will be automatically calculated based on the needbydate and the estimated days in transit value specified as part of the s...",
                   "Sequence": 142,
                   "Status": "Active"
                 },
@@ -79959,7 +79959,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be found in the Sage Intacct UI in the Taxes application from the top level of a multi-entity company. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the transaction is occurring at the top level of the company. The available tax solution names can be fou...",
                   "Sequence": 155,
                   "Status": "Active"
                 },
@@ -82001,7 +82001,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the recurring transaction will occur at the top level of the company. The available tax solution names can be found in the Sage Intacct UI in the Taxes application from the top level of a multi-entity company. (GB, AU, and ZA only)",
+                  "Description": "Tax solution name, such as United Kingdom - VAT or Australia - GST . Required only if the company is configured for multiple tax jurisdictions and the recurring transaction will occur at the top level of the company. The available tax solution names ca...",
                   "Sequence": 67,
                   "Status": "Active"
                 },
@@ -87186,7 +87186,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "User type. business user - default employee user view only user dashboard user project manager user construction manager user platform user warehouse user payment approver - only for clients of Accountant consoles CRM user - user must have `LOGINDISABLED` set to true",
+                  "Description": "User type. business user - default employee user view only user dashboard user project manager user construction manager user platform user warehouse user payment approver - only for clients of Accountant consoles CRM user - user must have `LOGINDISABL...",
                   "Sequence": 16,
                   "Status": "Active"
                 },
@@ -88760,7 +88760,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Contact list (alternative to VENDORCONTACTS ). Multiple individual CONTACT_LIST_INFO elements may be passed. If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing an empty CONTACT_LIST_INFO element deletes the contact list. If this parameter and VENDORCONTACTS are both provided, VENDORCONTACTS is used. If there is not an existing contact list, any values supplied for other contacts (Primary, Pay to, or Retur...",
+                  "Description": "Contact list (alternative to VENDORCONTACTS ). Multiple individual CONTACT_LIST_INFO elements may be passed. If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing an ...",
                   "Sequence": 57,
                   "Status": "Active"
                 },
@@ -90405,7 +90405,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Electronic payment providers to link to this vendor. If this parameter is omitted, the original set remains intact. If you supply new elements, these replace the original set. You can also update a PROVIDERVENDOR object directly, but you cannot delete a PROVIDERVENDOR object. (Early Adopter program)",
+                  "Description": "Electronic payment providers to link to this vendor. If this parameter is omitted, the original set remains intact. If you supply new elements, these replace the original set. You can also update a PROVIDERVENDOR object directly, but you cannot delete ...",
                   "Sequence": 129,
                   "Status": "Active"
                 },
@@ -90863,7 +90863,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Vendor location assigned account numbers (alternative to VENDOR_ACCTNO_LOC_HEAD ). If this parameter is omitted, the original set remains intact. If you supply new elements, these replace the original set. Passing an empty VENDORACCTNOLOCATIONS element deletes the set. If this parameter and VENDOR_ACCTNO_LOC_HEAD are both provided, VENDORACCTNOLOCATIONS is used.",
+                  "Description": "Vendor location assigned account numbers (alternative to VENDOR_ACCTNO_LOC_HEAD ). If this parameter is omitted, the original set remains intact. If you supply new elements, these replace the original set. Passing an empty VENDORACCTNOLOCATIONS element...",
                   "Sequence": 149,
                   "Status": "Active"
                 },
@@ -90909,7 +90909,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Contact list (alternative to CONTACT_LIST_INFO ). If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing an empty VENDORCONTACTS element deletes the contact list. If this parameter and CONTACT_LIST_INFO are both provided, VENDORCONTACTS is used. If there is not an existing contact list, any values supplied for other contacts (Primary, Pay to, or Return to) are used to create a contact list.",
+                  "Description": "Contact list (alternative to CONTACT_LIST_INFO ). If this parameter is omitted, the original contact list remains intact. If you supply new elements, these are appended to the list. Passing an empty VENDORCONTACTS element deletes the contact list. If t...",
                   "Sequence": 151,
                   "Status": "Active"
                 },
@@ -90955,7 +90955,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Vendor location assigned account numbers (alternative to VENDORACCTNOLOCATIONS ). If this parameter is omitted, the original set remains intact. Multiple individual VENDOR_ACCTNO_LOC_HEAD elements may be passed. If this parameter and VENDORACCTNOLOCATIONS are both provided, VENDORACCTNOLOCATIONS is used.",
+                  "Description": "Vendor location assigned account numbers (alternative to VENDORACCTNOLOCATIONS ). If this parameter is omitted, the original set remains intact. Multiple individual VENDOR_ACCTNO_LOC_HEAD elements may be passed. If this parameter and VENDORACCTNOLOCATI...",
                   "Sequence": 153,
                   "Status": "Active"
                 },
@@ -91447,7 +91447,7 @@
                   "IsRequired": false,
                   "IsReadOnly": false,
                   "AllowsNull": true,
-                  "Description": "Enable negative inventory for this warehouse. This option lets you enable negative inventory for a specific warehouse, assuming that the company is not already configured to allow negative inventory. Use true to enable negative inventory for this warehouse, otherwise use false . (Default: false )",
+                  "Description": "Enable negative inventory for this warehouse. This option lets you enable negative inventory for a specific warehouse, assuming that the company is not already configured to allow negative inventory. Use true to enable negative inventory for this wareh...",
                   "Sequence": 9,
                   "Status": "Active"
                 },

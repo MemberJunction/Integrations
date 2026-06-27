@@ -72,7 +72,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "propfuel_data_export_file",
             "DisplayName": "Data Export File",
-            "Description": "A PropFuel hourly data-export file. Each file is a JSON array of records of one data type (encoded in the filename suffix). Discovered via the list endpoint, retrieved via download/{file}, and removed from the queue via ack/{file}. Per-record field schema is NOT documented by any credential-free source and is discovered at sync time via runtime custom-column capture.",
+            "Description": "A PropFuel hourly data-export file. Each file is a JSON array of records of one data type (encoded in the filename suffix). Discovered via the list endpoint, retrieved via download/{file}, and removed from the queue via ack/{file}. Per-record field sch...",
             "APIPath": "/dataexport/{AccountID}/list",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -101,9 +101,20 @@
               "recordSchemaProvenance": "UNDOCUMENTED in all credential-free sources (SOURCES.json SourceGaps: \"Response Schema & Data Types\", severity HIGH). Per-record fields discovered at runtime/sync-time via full-record pass-through + custom-column promotion.",
               "pkProvenance": "DEFERRED — no identifying record column is provable. Base falls back to a deterministic content-hash identity (connector §4) until runtime D4."
             }
+          },
+          "primaryKey": {
+            "ID": "EFB3EBA0-9AC4-482D-8279-436164552249"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:00:54.929Z",
+            "checksum": "7ab56825c4febdfff2183d8c0f187506b9c5dbd29e7bc73537b2b469c9005d47"
           }
         }
       ]
+    },
+    "sync": {
+      "lastModified": "2026-06-27T19:00:54.903Z",
+      "checksum": "289d0bd58bc892d618ec0854aacb27fd7560e05173221e9e41c1e9e5dbac1bca"
     }
   }
 ]

@@ -1,0 +1,31 @@
+{
+  "_comment": "The 20 connectors published in 1.0.0. The other 14 live on `next` but are NOT published (no changeset → changeset publish skips them). Update this list as connectors graduate.",
+  "publish": [
+    "AMS/GrowthZone",
+    "Events/PheedLoop",
+    "Platform/SharePoint",
+    "Marketing/PropFuel",
+    "Platform/ORCID",
+    "CRM/NeonCRM",
+    "Finance/NetSuite",
+    "CRM/DynamicsDataverse",
+    "AMS/Fonteva",
+    "AMS/NimbleAMS",
+    "LMS/PathLMS",
+    "Events/Cvent",
+    "AMS/MemberSuite",
+    "AMS/iMIS",
+    "Platform/Hivebrite",
+    "AMS/Rhythm",
+    "AMS/NetForum",
+    "Events/OpenWater",
+    "AMS/Novi",
+    "CRM/Salesforce"
+  ],
+  "hold": [
+    "AMS/Aptify", "AMS/Wicket", "AMS/WildApricot", "AMS/YourMembership",
+    "CRM/Blackbaud", "CRM/HubSpot", "Finance/QuickBooks", "Finance/SageIntacct",
+    "LMS/Reach360", "Marketing/ConstantContact", "Marketing/MagnetMail",
+    "Marketing/Mailchimp", "Marketing/Rasa", "Platform/MJtoMJ"
+  ]
+}

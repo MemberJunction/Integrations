@@ -161,7 +161,7 @@
           "fields": {
             "Name": "record",
             "DisplayName": "Record",
-            "Description": "Full ORCID record for a researcher: orcid-identifier, preferences, history, person section (name/biography/emails/urls/keywords/external-ids/addresses), and activities-summary. Root IO; iD universe resolved at runtime via CompanyIntegration.Configuration (searchQuery / orcidIds). PK = ORCID iD.",
+            "Description": "Full ORCID record for a researcher: orcid-identifier, preferences, history, person section (name/biography/emails/urls/keywords/external-ids/addresses), and activities-summary. Root IO; iD universe resolved at runtime via CompanyIntegration.Configurati...",
             "APIPath": "/{iD}/record",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -193,6 +193,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "37FE5031-D75C-4273-94B4-EFF6FF94B921"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.265Z",
+                  "checksum": "2d8639d7dca66fc227fd033326a73529a51e6cc5b5dabf4babe87c79c8a40266"
                 }
               },
               {
@@ -210,6 +217,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AE149ED6-F22D-4D8F-8D9A-3042E580335E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.280Z",
+                  "checksum": "489b55d4bb6dae7d81df674d0ecc9f24c8383f18d3655a8ad20831c57dc76a65"
                 }
               },
               {
@@ -227,6 +241,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "36699330-54EE-49B1-A8A2-9B4E7FEAAEAB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.296Z",
+                  "checksum": "d5fc6b55bc6031b58a0b284712856f42bdfbb64dc2f1fafaff3cc30070984750"
                 }
               },
               {
@@ -244,6 +265,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7553FD66-5E52-473E-A375-DD8C641BB223"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.312Z",
+                  "checksum": "ec4c3f605b24df78c411939a2323859a85f756f56345489a76e44882e7dfe694"
                 }
               },
               {
@@ -261,6 +289,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0DEE33D0-D277-4F2D-A1E6-A98DA72BCB07"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.326Z",
+                  "checksum": "38cdc6f43ca2a5296283e7554cae89e9e5067af3eeb85781098f25c30bf1a25a"
                 }
               },
               {
@@ -278,6 +313,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DF9CAAFD-E57F-454C-AD08-2B1D066DF0CF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.341Z",
+                  "checksum": "164c29dfb28880678566ba94b444331ed0eba23888ea65c6f1af77657872622b"
                 }
               },
               {
@@ -295,6 +337,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C5E20BA6-94F6-4753-A13B-6D49872C3527"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.355Z",
+                  "checksum": "895a3ae1dc406dada0bdf6728825761b40c0d9bb6964109b131b81a8a0d27079"
                 }
               },
               {
@@ -312,6 +361,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5B82D284-BB1B-4C0F-8EDE-DFD6F9989265"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.369Z",
+                  "checksum": "ac325ea4cf4f3d0ba90590bb9f45044e4665c09253cbb2401ed000cce314aff8"
                 }
               },
               {
@@ -329,6 +385,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C7733AC7-C17A-48F0-B1EA-9BE1B6C92980"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.398Z",
+                  "checksum": "4f461112ca9443395c0b017369743a14a71a3fdaf26a6fa9b67347ead580f334"
                 }
               },
               {
@@ -347,6 +410,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AA8E4ED6-C87C-4BAE-9643-9E0A6F40927B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.384Z",
+                  "checksum": "59ab72199b9ddccb51689263565d2e5ef98a96b55251fd8552c271381abf8fa1"
                 }
               },
               {
@@ -365,6 +435,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "934620B0-011D-404C-8EAC-2C01661948F6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.424Z",
+                  "checksum": "747d40eac9fb968addbf47cf6ea2ba6b0097cc8fccaf402adf8888c1c242e7ad"
                 }
               },
               {
@@ -383,6 +460,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A42E7FBE-CFCB-48AB-8892-D062FA739244"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.439Z",
+                  "checksum": "90ac76f5a6739f8bb979b0303e35b3f705ae644e85ea9688e6e67461ea2d43b6"
                 }
               },
               {
@@ -400,6 +484,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3CEA5FF1-A634-4D81-910E-52CBFC916434"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.454Z",
+                  "checksum": "5fbfef90889cf707d506efafe34448ea47d387ef0e319d0a64ec9b98e98481fa"
                 }
               },
               {
@@ -417,6 +508,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1A1862A9-AE23-41C1-88FE-4C18C5F9F0A6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.469Z",
+                  "checksum": "9599c827af3951fc57fefe53bf29f0d610b2a57d77bc12f5d4061563280d6abf"
                 }
               },
               {
@@ -434,6 +532,13 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "12C285BB-8333-4C88-979F-DC774F80A202"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.485Z",
+                  "checksum": "91840fd73007c12e818b647aeb8227aaf1c449623bc890b8d5334261e71b0f0e"
                 }
               },
               {
@@ -451,6 +556,13 @@
                   "IsCustom": false,
                   "Sequence": 15,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B0DFBD80-2442-4CFB-96FD-EF698E212F59"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.501Z",
+                  "checksum": "055fcb38e5fa3ed689c58066feacefa98f790bc0a8b9fdb566bc3267ad900744"
                 }
               },
               {
@@ -468,6 +580,13 @@
                   "IsCustom": false,
                   "Sequence": 16,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E865F0B1-8C78-4F6A-89B6-06E4731A673C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.516Z",
+                  "checksum": "15024ff656612699676687375dae73b010382b5c36034464954cd0dc6541352e"
                 }
               },
               {
@@ -485,6 +604,13 @@
                   "IsCustom": false,
                   "Sequence": 17,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FD33B81F-A123-433E-908B-1A26AB71B108"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.530Z",
+                  "checksum": "2d2eddde970719c2095384bb78d54d47d1c054e7017591c01d346120c7ec612d"
                 }
               },
               {
@@ -502,9 +628,23 @@
                   "IsCustom": false,
                   "Sequence": 18,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E0581131-6009-4CA8-A871-9D76E847617F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.545Z",
+                  "checksum": "69e8eff9444dea7c903ead670ce251b84b19b0a0f258b9a9c3173f810a1759ae"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "73AED6B8-468D-403B-B994-F3C786C98BC0"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.016Z",
+            "checksum": "96569bacfae1bb6bd14f7f7df37a78768941b888bb1e06a556e62c21800d73bb"
           }
         },
         {
@@ -537,7 +677,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -545,6 +685,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3B0FCBB7-650A-4E53-96CF-36B9FDB28E11"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.559Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -562,6 +709,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "43FAEDF7-B245-4753-AAA6-E0B84B77C8A4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.585Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -580,6 +734,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "604FCA0E-430C-46F1-B169-BD933B75165D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.600Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -597,6 +758,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6A416C0C-13E2-4960-8401-63421F711807"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.615Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -614,6 +782,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8A3F9348-07D4-4259-8D00-53D6B9B24B7C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.630Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -631,6 +806,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3D663632-C3FE-4876-B7C0-95A4AF369DB5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.647Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -648,6 +830,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "83E11992-DCAD-4077-A833-63D3DC3269CD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.661Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -665,6 +854,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1C8A668E-DB29-435A-A084-6E2D85B06327"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.675Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -682,6 +878,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4D8D275F-0837-454C-8D5F-3613B3BD2F52"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.690Z",
+                  "checksum": "0645e24919dd1fc200dae36ef559d8187007588d836078a3ca065b5cc01f8876"
                 }
               },
               {
@@ -700,6 +903,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DC7BF53E-2397-4765-B31E-606B1FE3AE4E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.705Z",
+                  "checksum": "29f09a276f5c86a862863e863b7b4c368bdb43683c735938e8d4b44faebce0c7"
                 }
               },
               {
@@ -718,6 +928,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1A93133C-CB3C-4747-9ED6-03E63ED239BC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.717Z",
+                  "checksum": "7a342008e15e63046aaa5e7d723d87828d08fe6e8a32cc9755af429b1df10371"
                 }
               },
               {
@@ -735,6 +952,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "874E1DAA-A7A0-4F6D-91A6-6BCA81853028"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.744Z",
+                  "checksum": "57d8f2931e219c26c7569ae68f8ffa9faca85f2ecac3e65e3a70688c0f4a09b5"
                 }
               },
               {
@@ -752,6 +976,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B5E05B4C-9CA9-4389-A5E5-5A1D58DB9E66"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.758Z",
+                  "checksum": "a61299702d861d36ec2e693e93d82bac7d15fea09b186bb03c3a872f860c5adf"
                 }
               },
               {
@@ -769,6 +1000,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A3014842-723C-4BC3-80B3-A231BD706A34"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.774Z",
+                  "checksum": "cb306a3d1ca549573791ecc07c945c01e85a09eb3c43f5269e1f9a3eef4b043c"
                 }
               },
               {
@@ -786,6 +1024,13 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F809AF3B-2C6F-4C94-B8FB-3DA03E48E5CB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.789Z",
+                  "checksum": "ef7b4e2ecd42b4a6cef3c63fc4ed1f97b00b4471b7c97528be091d754ed73ba0"
                 }
               },
               {
@@ -803,6 +1048,13 @@
                   "IsCustom": false,
                   "Sequence": 15,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B68D3451-E7B9-4376-8992-58256216A5FE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.804Z",
+                  "checksum": "12a957bdf4b5dd8a8f001dd53b9b59da76d3da69e410744182a17826a9e91679"
                 }
               },
               {
@@ -820,6 +1072,13 @@
                   "IsCustom": false,
                   "Sequence": 16,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4B2DFB3E-5D87-4B92-AC41-E20AB9DDF8E4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.820Z",
+                  "checksum": "d0b6abfcd77beeb553884e04a00c7d73f1fd0610a3bc57c2c4606aa34efeeac6"
                 }
               },
               {
@@ -837,6 +1096,13 @@
                   "IsCustom": false,
                   "Sequence": 17,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3C2A0DA3-1BD7-464B-BE4E-AE946AA2B307"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.835Z",
+                  "checksum": "b9d50ab8de8586d6c5153a46142ebeff8161d690ec11ecf4e3508d801c1f4938"
                 }
               },
               {
@@ -854,9 +1120,23 @@
                   "IsCustom": false,
                   "Sequence": 18,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1D06CB44-3E43-4443-BBB7-7C66A583AED1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.851Z",
+                  "checksum": "c871adb39a60e5f6474705d712fc1b888b35b74d69880745fa9176034c73c102"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "1D853840-A875-41E9-AB35-940345EF1434"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.039Z",
+            "checksum": "9583336bfb3e56768065df50e92762f247a87d5e4e45aceacb9e7d4c35efded4"
           }
         },
         {
@@ -889,7 +1169,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -897,6 +1177,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "09F3A0A7-2BA4-4B26-BBE2-2FADBAE9D1ED"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.867Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -914,6 +1201,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1C13C4CB-E338-4FF2-83C7-4271A29809C5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.878Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -932,6 +1226,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "ACC2B97F-1DEE-4A0A-A1B6-71B7BC6D3915"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.906Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -949,6 +1250,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B86E1680-D2C6-40F9-9120-77A8509DB25A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.921Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -966,6 +1274,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1AAEE69F-04E7-4ED0-9D15-3B669CB0CD03"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.936Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -983,6 +1298,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9ED107A9-989E-4649-B5AA-D6336CB099B4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.952Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -1000,6 +1322,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "39BD42C5-EC98-42F1-9CF0-CD104441C905"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.967Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -1017,6 +1346,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "30744F43-A876-42C7-BE85-E51A1B3C3D2B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.981Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -1035,6 +1371,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6E49C8D5-0B74-4C0B-BF96-067E47CB92FC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:06.998Z",
+                  "checksum": "82d4576896e4b485d4f15bd3e21ecaed75e2207ab1f4f895274048fa9383d6ca"
                 }
               },
               {
@@ -1053,6 +1396,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FD1AC4B9-6AC9-451B-B354-CA0F01761D6B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.012Z",
+                  "checksum": "70c3372ecf0385f9db20f1766d8dad705ed398a76517e11a18d99536d00ba1f0"
                 }
               },
               {
@@ -1070,6 +1420,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "08EAB6D8-C6FA-4A26-8031-A3108833A365"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.027Z",
+                  "checksum": "eb91ff28b46b60d165b5e3c2065354cbacaed68d7e331af14a282e602f5daac9"
                 }
               },
               {
@@ -1087,6 +1444,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5656AB35-055A-4434-A8FB-86132B53894A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.040Z",
+                  "checksum": "3626d4abe2edc6accbc5488e4edef4a9243231dc920340e8b310de7ddfbd4e9f"
                 }
               },
               {
@@ -1104,6 +1468,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "ED5C9FA9-E29B-4552-9493-C86C0A8378EE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.068Z",
+                  "checksum": "f32a2236c1ae76958c122f71ad3a99f0f61646160a6b0a620d68e4c1f2b2aebf"
                 }
               },
               {
@@ -1121,6 +1492,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "80029C41-0AB2-4C8A-BE4A-C601C2AED00F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.084Z",
+                  "checksum": "18d67492f66b37011873767bf2f88b5499efe5f1aa263dbbff83f929f52a9683"
                 }
               },
               {
@@ -1138,9 +1516,23 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1549B583-AD80-4301-AF74-1FB82BB1EB0F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.100Z",
+                  "checksum": "f40a76977ff000422d5ef41fe621ca2356569d222b186bb96eea9948524b2371"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "5F90FE9B-3498-4DC2-A188-6173B8EA842B"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.059Z",
+            "checksum": "08fd92d48f21aaa1426221487b936d4fa70d162b6481f0467fc454279f120466"
           }
         },
         {
@@ -1173,7 +1565,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -1181,6 +1573,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BCB19455-4793-4F1C-8974-818079DD46CF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.116Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -1198,6 +1597,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F5129C6C-A363-4ECF-B604-CE9DA686E13F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.131Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -1216,6 +1622,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B44CA7AD-DF76-41DC-B944-9E489873538D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.146Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -1233,6 +1646,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0087C193-8C4C-4204-A949-39CCA0735A2A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.162Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -1250,6 +1670,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9EA49BC1-D26C-4C9A-A674-EF3B393C87EE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.178Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -1267,6 +1694,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1B3D60F3-632E-4236-A17C-A319F3F601B1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.193Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -1284,6 +1718,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DA3F947D-19E2-411F-9E75-24E9DD9BD6BC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.206Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -1301,6 +1742,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "35CB9826-E9C0-426E-9145-A65A9F5D092C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.234Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -1319,6 +1767,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EBDC1F8F-FB6C-4C6B-B983-130C13E111BB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.249Z",
+                  "checksum": "82d4576896e4b485d4f15bd3e21ecaed75e2207ab1f4f895274048fa9383d6ca"
                 }
               },
               {
@@ -1337,6 +1792,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8FF8A5E3-61A2-4CF8-90E9-21EB54804367"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.266Z",
+                  "checksum": "70c3372ecf0385f9db20f1766d8dad705ed398a76517e11a18d99536d00ba1f0"
                 }
               },
               {
@@ -1354,6 +1816,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4EA3EF30-9920-4B7E-8C8F-A5E6197070EF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.281Z",
+                  "checksum": "eb91ff28b46b60d165b5e3c2065354cbacaed68d7e331af14a282e602f5daac9"
                 }
               },
               {
@@ -1371,6 +1840,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F8622CC3-7125-42CA-98B9-CEE352520FD9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.295Z",
+                  "checksum": "3626d4abe2edc6accbc5488e4edef4a9243231dc920340e8b310de7ddfbd4e9f"
                 }
               },
               {
@@ -1388,6 +1864,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C2E7CD13-4D30-4EC5-866F-D8DD787AFE9C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.309Z",
+                  "checksum": "f32a2236c1ae76958c122f71ad3a99f0f61646160a6b0a620d68e4c1f2b2aebf"
                 }
               },
               {
@@ -1405,6 +1888,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "01229C87-3F02-403B-B4BC-FD87895465A0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.323Z",
+                  "checksum": "18d67492f66b37011873767bf2f88b5499efe5f1aa263dbbff83f929f52a9683"
                 }
               },
               {
@@ -1422,9 +1912,23 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1D88C16F-4075-471C-82F8-4421A2892B37"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.338Z",
+                  "checksum": "f40a76977ff000422d5ef41fe621ca2356569d222b186bb96eea9948524b2371"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "16E0F29F-B9FF-4EED-97B7-47F355A0F9FF"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.079Z",
+            "checksum": "68d8ab19512c23ea7d5d729e9e3390303a75db10a2f3e72df31de429a3830879"
           }
         },
         {
@@ -1457,7 +1961,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -1465,6 +1969,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "38712EC4-D9E1-4EFF-B9B4-11C075227265"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.354Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -1482,6 +1993,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6E13E3BA-A3EA-4D71-A9FA-8E0E92D08159"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.365Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -1500,6 +2018,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1E5479C1-A821-4C99-BF1A-7E96098C280F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.393Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -1517,6 +2042,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "57B7C47D-B366-4520-808D-8FB9647B2471"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.409Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -1534,6 +2066,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8CB1CFC1-5378-4B2E-B347-293B8A4DB0B5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.425Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -1551,6 +2090,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BE201BE1-C1AC-4FB5-9051-D819DB4DBD2B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.441Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -1568,6 +2114,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A650ECD4-E27F-41AE-A7C1-68E679B763FA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.457Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -1585,6 +2138,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BA242D95-BE6F-465C-829F-E86092B093FA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.472Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -1603,6 +2163,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5AD9BAFE-71FF-4D50-95B6-941684F02292"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.488Z",
+                  "checksum": "82d4576896e4b485d4f15bd3e21ecaed75e2207ab1f4f895274048fa9383d6ca"
                 }
               },
               {
@@ -1621,6 +2188,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7E1F81B3-1A22-41E5-A562-7B61601AB856"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.503Z",
+                  "checksum": "70c3372ecf0385f9db20f1766d8dad705ed398a76517e11a18d99536d00ba1f0"
                 }
               },
               {
@@ -1638,6 +2212,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E349858F-2388-4500-B150-A2849B2289C8"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.518Z",
+                  "checksum": "eb91ff28b46b60d165b5e3c2065354cbacaed68d7e331af14a282e602f5daac9"
                 }
               },
               {
@@ -1655,6 +2236,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F856D33D-A44A-4723-96F1-45B8D7E46E25"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.532Z",
+                  "checksum": "3626d4abe2edc6accbc5488e4edef4a9243231dc920340e8b310de7ddfbd4e9f"
                 }
               },
               {
@@ -1672,6 +2260,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DCAB720D-C489-4080-867B-6E2CA02AE273"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.559Z",
+                  "checksum": "f32a2236c1ae76958c122f71ad3a99f0f61646160a6b0a620d68e4c1f2b2aebf"
                 }
               },
               {
@@ -1689,6 +2284,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B3F70F9D-420E-4F70-8D00-FEED1E216F37"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.575Z",
+                  "checksum": "18d67492f66b37011873767bf2f88b5499efe5f1aa263dbbff83f929f52a9683"
                 }
               },
               {
@@ -1706,9 +2308,23 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F927C499-71C3-46C6-800B-C0AB2A3E60A2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.591Z",
+                  "checksum": "f40a76977ff000422d5ef41fe621ca2356569d222b186bb96eea9948524b2371"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "A28BB703-8E34-4725-AF07-CDE7E42EB046"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.100Z",
+            "checksum": "862b2a655c1ac187ceabe23b112d4880d7c0cea9631ac9c61db3710a1ae2c014"
           }
         },
         {
@@ -1741,7 +2357,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -1749,6 +2365,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0AF7864C-2828-47DD-9CFD-BF93D9BE7FCE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.606Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -1766,6 +2389,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7603AA2D-00DE-45B6-993E-B339C40427E5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.623Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -1784,6 +2414,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0400C761-F7B1-4769-AA48-9397F5F29466"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.638Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -1801,6 +2438,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AB67D39A-79D9-4CCF-B4EE-8FE7A1789042"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.653Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -1818,6 +2462,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7652A558-0E6B-47E5-9648-2695B2A979BE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.667Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -1835,6 +2486,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E2237262-B718-4588-8283-EEF22FBA0F36"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.681Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -1852,6 +2510,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0A500D19-1ABC-412F-8081-A44949D64C2E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.693Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -1869,6 +2534,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C8EB3CC3-BF80-4727-9B52-74A9BE4FE8F6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.722Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -1887,6 +2559,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "555C8635-6571-4CF9-9051-5BDBC6C02F74"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.737Z",
+                  "checksum": "82d4576896e4b485d4f15bd3e21ecaed75e2207ab1f4f895274048fa9383d6ca"
                 }
               },
               {
@@ -1905,6 +2584,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "089EDF9A-C749-45E6-B5E0-59EDA8EFC1DF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.752Z",
+                  "checksum": "70c3372ecf0385f9db20f1766d8dad705ed398a76517e11a18d99536d00ba1f0"
                 }
               },
               {
@@ -1922,6 +2608,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1612B802-853D-4B80-8C2B-EECA5E3BFCED"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.767Z",
+                  "checksum": "eb91ff28b46b60d165b5e3c2065354cbacaed68d7e331af14a282e602f5daac9"
                 }
               },
               {
@@ -1939,6 +2632,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EF443E1F-E1F0-4BF3-AC4A-287379C88280"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.782Z",
+                  "checksum": "3626d4abe2edc6accbc5488e4edef4a9243231dc920340e8b310de7ddfbd4e9f"
                 }
               },
               {
@@ -1956,6 +2656,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "37A083D3-19CF-418D-9701-EC0FAD137129"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.800Z",
+                  "checksum": "f32a2236c1ae76958c122f71ad3a99f0f61646160a6b0a620d68e4c1f2b2aebf"
                 }
               },
               {
@@ -1973,6 +2680,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6DCEA359-CE0F-4982-973F-ADBC31A65B88"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.815Z",
+                  "checksum": "18d67492f66b37011873767bf2f88b5499efe5f1aa263dbbff83f929f52a9683"
                 }
               },
               {
@@ -1990,9 +2704,23 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5997D733-0109-4122-B1DE-4A42AEF1441E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.831Z",
+                  "checksum": "f40a76977ff000422d5ef41fe621ca2356569d222b186bb96eea9948524b2371"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "2139B63E-5944-4542-BE5E-7213D64B9750"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.119Z",
+            "checksum": "6b868a0378efd77c65dd60ad22a4410518063da504a7eb00f6f60998bd3d65eb"
           }
         },
         {
@@ -2025,7 +2753,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -2033,6 +2761,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FD54E2DA-F4B4-48A8-B938-916DBAC0B44F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.846Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -2050,6 +2785,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4D1240D0-8EB8-4C5A-8DB1-B273FBDE10D0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.859Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -2068,6 +2810,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9B634EC0-EC15-44DF-8146-927AEDE0AEA2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.888Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -2085,6 +2834,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B9C82A70-B7D2-438E-91CC-53235C94B2B6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.904Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -2102,6 +2858,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "35BAF45A-3DFF-4426-A0BF-FC4D8AFAB3C1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.920Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -2119,6 +2882,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E70CB70B-0171-46EE-9DE0-ACB8AC3F0B31"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.935Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -2136,6 +2906,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2863FDAA-F4C5-4B88-9056-6205BA177AD6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.950Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -2153,6 +2930,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D908E4F9-B12E-49FD-817C-2FF08CA610B7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.965Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -2171,6 +2955,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5A0DC432-8091-4C97-9AA9-DEF6A858DDAD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.982Z",
+                  "checksum": "82d4576896e4b485d4f15bd3e21ecaed75e2207ab1f4f895274048fa9383d6ca"
                 }
               },
               {
@@ -2189,6 +2980,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C87CDCA5-FD5F-4C44-9B8A-5385D35943C2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:07.998Z",
+                  "checksum": "70c3372ecf0385f9db20f1766d8dad705ed398a76517e11a18d99536d00ba1f0"
                 }
               },
               {
@@ -2206,6 +3004,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7285930B-9DBA-44A1-B333-A2B8FEE18EB5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.015Z",
+                  "checksum": "eb91ff28b46b60d165b5e3c2065354cbacaed68d7e331af14a282e602f5daac9"
                 }
               },
               {
@@ -2223,6 +3028,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "949906AE-F78E-4DF5-BCF5-21D9E0640BB9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.027Z",
+                  "checksum": "3626d4abe2edc6accbc5488e4edef4a9243231dc920340e8b310de7ddfbd4e9f"
                 }
               },
               {
@@ -2240,6 +3052,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F7778741-76CF-4C8D-86AA-B0EE08A58607"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.055Z",
+                  "checksum": "f32a2236c1ae76958c122f71ad3a99f0f61646160a6b0a620d68e4c1f2b2aebf"
                 }
               },
               {
@@ -2257,6 +3076,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CA734C28-1C4B-4990-898F-E412DDD41DF8"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.072Z",
+                  "checksum": "18d67492f66b37011873767bf2f88b5499efe5f1aa263dbbff83f929f52a9683"
                 }
               },
               {
@@ -2274,9 +3100,23 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3B88D231-48A9-4436-A5B1-33D831D95D8D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.088Z",
+                  "checksum": "f40a76977ff000422d5ef41fe621ca2356569d222b186bb96eea9948524b2371"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "5DD9CF05-1571-454E-BA40-D65E6B9C2131"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.139Z",
+            "checksum": "15888d303036069ff9006e8ed671a39b2e90fce89373e4a4cc0b736b83c075f4"
           }
         },
         {
@@ -2309,7 +3149,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -2317,6 +3157,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B1149A51-AA1B-4EC4-8A42-2FB8067A5D52"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.103Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -2334,6 +3181,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DB9607C2-18D0-43EA-9A52-E9649B114425"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.119Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -2352,6 +3206,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A733D139-5C37-45F3-AD8B-F585C97541A9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.133Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -2369,6 +3230,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CFB9193C-10D1-4C5D-BD78-51D6E79E82D5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.148Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -2386,6 +3254,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C2D2CB94-1C22-434A-A48E-83AF9640A6A2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.164Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -2403,6 +3278,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4C26D105-9DE4-4BA2-BEA7-EB0B041A6702"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.180Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -2420,6 +3302,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D2F1304D-28F3-41A0-A069-15BEBB0999A0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.192Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -2437,6 +3326,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3142289A-A295-4154-B539-9DC4FC9CD814"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.219Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -2455,6 +3351,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EC35DCCC-E259-4A2D-BDEB-32E145D4671E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.234Z",
+                  "checksum": "82d4576896e4b485d4f15bd3e21ecaed75e2207ab1f4f895274048fa9383d6ca"
                 }
               },
               {
@@ -2473,6 +3376,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "58A643DC-80BA-4E6A-8978-214086383877"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.251Z",
+                  "checksum": "70c3372ecf0385f9db20f1766d8dad705ed398a76517e11a18d99536d00ba1f0"
                 }
               },
               {
@@ -2490,6 +3400,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2C63E0CC-DFA3-4DEE-9A19-D3ACC3103B6E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.265Z",
+                  "checksum": "eb91ff28b46b60d165b5e3c2065354cbacaed68d7e331af14a282e602f5daac9"
                 }
               },
               {
@@ -2507,6 +3424,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E9A1986C-2A96-4F34-BA02-0E84583055E5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.279Z",
+                  "checksum": "3626d4abe2edc6accbc5488e4edef4a9243231dc920340e8b310de7ddfbd4e9f"
                 }
               },
               {
@@ -2524,6 +3448,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6DB658AB-8CC6-4C93-95D2-B032ED28EF75"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.294Z",
+                  "checksum": "f32a2236c1ae76958c122f71ad3a99f0f61646160a6b0a620d68e4c1f2b2aebf"
                 }
               },
               {
@@ -2541,6 +3472,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BBB6E0A8-9323-4954-B4DC-295E909FD197"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.310Z",
+                  "checksum": "18d67492f66b37011873767bf2f88b5499efe5f1aa263dbbff83f929f52a9683"
                 }
               },
               {
@@ -2558,9 +3496,23 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A15AAD32-F055-45ED-89B3-3464DC8F2B54"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.326Z",
+                  "checksum": "f40a76977ff000422d5ef41fe621ca2356569d222b186bb96eea9948524b2371"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "B696CEFA-C2D9-4441-AA6C-D11506F8EA05"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.159Z",
+            "checksum": "73e22c6f8a96d7c64dcc5a26303642ed6a52069ba69d9758fdec15262851a9a5"
           }
         },
         {
@@ -2593,7 +3545,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -2601,6 +3553,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D0FF4967-9D63-4867-9B24-E644FF04405B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.342Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -2618,6 +3577,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "18EDBE8A-B3FD-489C-AEF7-832E6EA865E1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.355Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -2636,6 +3602,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5FFF1908-A03B-4E45-BE4C-8ECC1774C89B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.381Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -2653,6 +3626,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8D2984CF-9960-4E99-9DEE-95BF8AC0DA9F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.396Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -2670,6 +3650,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "52218F35-9C9C-467A-B095-A3B8BCEBBCF4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.410Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -2687,6 +3674,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CFC8926E-B553-4617-B456-4C5363A16672"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.427Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -2704,6 +3698,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "26835EBF-E931-43EB-8FC8-F0A80A2BDED1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.441Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -2721,6 +3722,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E1AC1FAD-BABF-4983-B16E-9F96830B266F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.455Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -2739,6 +3747,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1AA29C23-6FC2-435F-9888-601648ABDFF0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.469Z",
+                  "checksum": "82d4576896e4b485d4f15bd3e21ecaed75e2207ab1f4f895274048fa9383d6ca"
                 }
               },
               {
@@ -2757,6 +3772,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7BAACFE4-6081-4A82-A124-1194D3C40AC0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.484Z",
+                  "checksum": "70c3372ecf0385f9db20f1766d8dad705ed398a76517e11a18d99536d00ba1f0"
                 }
               },
               {
@@ -2774,6 +3796,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A38F634F-3288-47C6-A666-FF3090105F15"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.501Z",
+                  "checksum": "eb91ff28b46b60d165b5e3c2065354cbacaed68d7e331af14a282e602f5daac9"
                 }
               },
               {
@@ -2791,6 +3820,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A229862C-8146-4498-B07B-191697BDFD08"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.515Z",
+                  "checksum": "3626d4abe2edc6accbc5488e4edef4a9243231dc920340e8b310de7ddfbd4e9f"
                 }
               },
               {
@@ -2808,6 +3844,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "730CA06C-F77D-4419-A27F-D8BDEFF1BE0B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.542Z",
+                  "checksum": "f32a2236c1ae76958c122f71ad3a99f0f61646160a6b0a620d68e4c1f2b2aebf"
                 }
               },
               {
@@ -2825,6 +3868,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B92F31F0-B2FC-4EBD-B097-4972CB89BF2D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.557Z",
+                  "checksum": "18d67492f66b37011873767bf2f88b5499efe5f1aa263dbbff83f929f52a9683"
                 }
               },
               {
@@ -2842,9 +3892,23 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2E0AF95D-B8B9-4E83-9898-7CB819C597B7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.572Z",
+                  "checksum": "f40a76977ff000422d5ef41fe621ca2356569d222b186bb96eea9948524b2371"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "35593E67-CBB4-4C88-9438-80C1D7F4B2D0"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.177Z",
+            "checksum": "32fb9629c81fb106250c949fbd012e0e38e2800f5c40c9e9b09ac5264206dd94"
           }
         },
         {
@@ -2877,7 +3941,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -2885,6 +3949,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B15037DC-3D1F-4B36-8D29-B78FFE2A42FD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.587Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -2902,6 +3973,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4FD9CF70-3ADE-4DC2-8C7F-999573BD72C7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.606Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -2920,6 +3998,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F4E3591E-03E3-43DE-9575-388E5811FB30"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.622Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -2937,6 +4022,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4CD3D5BE-55A6-4C29-B8E5-D8E7220AFCA3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.638Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -2954,6 +4046,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "978E2EEB-8056-499B-BF67-3EA567CBCA1D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.654Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -2971,6 +4070,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3DB8F3D3-1D38-4BCB-A45C-0E62E5033674"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.669Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -2988,6 +4094,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "45620454-DC62-467D-B6D9-28FF6BC95EDC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.680Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -3005,6 +4118,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3F40ABDC-D2A1-4EA1-B723-3A46000F335E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.707Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -3022,6 +4142,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "25A154E1-19CA-46DF-9F9C-2F440D610E10"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.723Z",
+                  "checksum": "837711276e8111a4d6c0cd11ca5c859def089a34014638f27aaf9cdca83478c8"
                 }
               },
               {
@@ -3039,6 +4166,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "97FF5A86-1BAE-4FA0-9305-06081B4F67E5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.739Z",
+                  "checksum": "764ed2f252319508d146bff4edf669cf0f82e26842d17e31675c7af6eb2d5642"
                 }
               },
               {
@@ -3056,6 +4190,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EC1B7EE9-7FC8-4F22-9D63-F823A9D7FE86"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.753Z",
+                  "checksum": "0a77e23ab00a598895591a9e04b5433e40ec77dbb462027fd2bec72933974c13"
                 }
               },
               {
@@ -3074,6 +4215,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CA9C3538-45B5-4187-A5A7-F7F397D61970"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.768Z",
+                  "checksum": "352b74cc62894413e4a862a1dc45f7ff98f874c3043377e0528f7d38e23fadb1"
                 }
               },
               {
@@ -3091,6 +4239,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C021B7A8-B722-492E-83C4-26422D9528DD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.785Z",
+                  "checksum": "4b4acd20c6a817bf46f55f579943e278b0f0d7f6006aaeeeb22173c0c4c65ba4"
                 }
               },
               {
@@ -3108,6 +4263,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "271C88EF-4FC2-419D-A26B-C463410BD06B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.800Z",
+                  "checksum": "527b6b3e40c789a0e3e1885b2db9acf1cf816d8a009f84e65493a0b35b0eb1b2"
                 }
               },
               {
@@ -3125,6 +4287,13 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "18A09149-BE01-4520-96CD-FA66A49AD4D3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.814Z",
+                  "checksum": "e5ddce391ee1ed7bd8eeb13a86c6e0145f65b4e271a318a3cb8dace059c15b74"
                 }
               },
               {
@@ -3142,6 +4311,13 @@
                   "IsCustom": false,
                   "Sequence": 15,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3AFCB5AC-28A5-40C5-85F7-8888321ADED9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.829Z",
+                  "checksum": "d5c59f67fc49b1f3ade2ea40c59ab2493a1c4024c18d881a86b2216730b0e815"
                 }
               },
               {
@@ -3159,6 +4335,13 @@
                   "IsCustom": false,
                   "Sequence": 16,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "819D689C-B5D7-4EAF-AF25-9548D965E6B4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.841Z",
+                  "checksum": "7cfb52b17afbdab2421cc7513230cf26d01495c8c3252c816be17f529a9269d3"
                 }
               },
               {
@@ -3176,6 +4359,13 @@
                   "IsCustom": false,
                   "Sequence": 17,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B83726A4-B379-4BA8-ABA5-BE07DB2E2930"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.869Z",
+                  "checksum": "dde8e48b168575e52532b69c1867911ef665eab2b6f37c9f3177bf87868f3885"
                 }
               },
               {
@@ -3193,9 +4383,23 @@
                   "IsCustom": false,
                   "Sequence": 18,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6FDE3CC4-1E4D-4F72-90BC-3D9EFC5E9B82"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.884Z",
+                  "checksum": "28ef9341c72764eaae63b99d39b290d5ea47cf3825295483a5174538e30595b4"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "BEF82B0E-3D8F-4E5E-BB7B-671D6B0E31AD"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.192Z",
+            "checksum": "9a8066440e8b6b7f06a950ea1dd95620046c83c2d5c0ea296066197fc671876b"
           }
         },
         {
@@ -3228,7 +4432,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -3236,6 +4440,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0EA314B8-1969-4D96-BE68-D5CC2A0D38F9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.900Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -3253,6 +4464,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9D2CDEF0-CBA0-46CC-859E-6E214F166EE8"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.916Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -3271,6 +4489,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DA969FB4-C60D-439F-9343-9B2B7C5A8695"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.931Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -3288,6 +4513,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BB26550B-69A0-4C94-B955-133D1B3B534B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.946Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -3305,6 +4537,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "46FEEDA3-A84F-416F-A561-CF241B00FAB6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.962Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -3322,6 +4561,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "58CC7BF8-1563-47B0-A367-AFC165F45BCC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.977Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -3339,6 +4585,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B394E213-E195-4BEC-A692-53306C75666A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:08.991Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -3356,6 +4609,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CC288683-AE7E-4FD1-9ABE-8A645C2AC600"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.002Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -3373,6 +4633,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C658365F-6C26-4B0F-8A26-127AFC0D8C2B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.029Z",
+                  "checksum": "514acd0868ea47d5f8cb389141d9bcf71f86db5968358602dad743b0262d2309"
                 }
               },
               {
@@ -3390,6 +4657,13 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B4C792C5-59BF-4134-B36E-BF697FCB917B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.046Z",
+                  "checksum": "c57dde35c17a740091f38cae3afb464aa726a4712d8405723ebcf818723629cf"
                 }
               },
               {
@@ -3407,6 +4681,13 @@
                   "IsCustom": false,
                   "Sequence": 10,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8328BD57-F654-4778-A34B-4E0D6762FDA4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.061Z",
+                  "checksum": "37ccc5ed7c079927dc31158b2f3105dee23a88d08680dd9715b324fe67bc4de0"
                 }
               },
               {
@@ -3424,6 +4705,13 @@
                   "IsCustom": false,
                   "Sequence": 11,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8C72D751-6B1C-4365-8095-886781284361"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.077Z",
+                  "checksum": "715f4f73299cc88f0a0ddb601f365f22fedca993c530327814edc6be2495335f"
                 }
               },
               {
@@ -3441,6 +4729,13 @@
                   "IsCustom": false,
                   "Sequence": 12,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "87FBD9BA-FB31-4D1E-BBCC-A0823059DB2B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.091Z",
+                  "checksum": "d85286a4b867db95ce0908ee0525f09b90e4b6ebed7e394b6f8e34974f5f95cd"
                 }
               },
               {
@@ -3458,6 +4753,13 @@
                   "IsCustom": false,
                   "Sequence": 13,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "46FF9E36-9824-4FDA-B7D1-A79DE8807A0F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.105Z",
+                  "checksum": "836331fcf39ff62e4ecac14977bf37f6096319c11249bece75c558df18393801"
                 }
               },
               {
@@ -3475,6 +4777,13 @@
                   "IsCustom": false,
                   "Sequence": 14,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "416D6C6D-9DBF-4BCD-8D9A-E90CBD36DF31"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.122Z",
+                  "checksum": "8d49ec7de9736ff2c3fc515b761f15f3cdd93cfdfc687e64e0b46ec3aef8f7a4"
                 }
               },
               {
@@ -3493,6 +4802,13 @@
                   "IsCustom": false,
                   "Sequence": 15,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "99828876-C3B7-484A-9E25-A9D8805F515C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.139Z",
+                  "checksum": "5ff61762f10e917cd1aad5d38103876b701726b76fce8edafd30a0b6515ede5d"
                 }
               },
               {
@@ -3510,6 +4826,13 @@
                   "IsCustom": false,
                   "Sequence": 16,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AA7F9982-45C6-4715-BC67-178355212677"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.155Z",
+                  "checksum": "d7c67d98b6c89046dc2293a789cb225638672581f5e70f50a102d905bbdf4c25"
                 }
               },
               {
@@ -3527,6 +4850,13 @@
                   "IsCustom": false,
                   "Sequence": 17,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "185F56B5-3A5D-4083-80A1-F1690712A417"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.166Z",
+                  "checksum": "a82295d36043e636a2b7cd98d4b0d68b5f2a77addb4168157e4b8262fb34ac57"
                 }
               },
               {
@@ -3544,6 +4874,13 @@
                   "IsCustom": false,
                   "Sequence": 18,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "93F11ABC-4361-47EE-A7E9-789938CE0B7F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.194Z",
+                  "checksum": "8276ad2a754fec346d290269333f2733a5e553dda918d56dfb114c0d89fab705"
                 }
               },
               {
@@ -3561,9 +4898,23 @@
                   "IsCustom": false,
                   "Sequence": 19,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "28730291-6B0F-430A-9DE7-8C380A01B7BC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.209Z",
+                  "checksum": "8b7474e45c9202a067acd3d2a1cb8508459c2dfbd837427a10d9ef633f6d4252"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "BE77C4D0-3FEA-477B-84AB-5D02012EFF8F"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.223Z",
+            "checksum": "6c09ea47d6d4ec30ef198dfd1bab2bc735398b25ac9f299555544558ecc3b78a"
           }
         },
         {
@@ -3596,7 +4947,7 @@
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=record&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "orcid-id",
                   "AllowsNull": true,
                   "Status": "Active",
@@ -3604,6 +4955,13 @@
                   "IsCustom": false,
                   "Sequence": 0,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7DE6060B-CEBC-40C5-89C9-1C5BB32705F8"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.226Z",
+                  "checksum": "d1623a1c084768394ffec33af79b1f9aae25479dcd2bf4ea8196eaa38468d9a7"
                 }
               },
               {
@@ -3621,6 +4979,13 @@
                   "IsCustom": false,
                   "Sequence": 1,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8E81FF84-7AB2-4F6C-AB8F-325C6FE2230D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.242Z",
+                  "checksum": "c3416b24de6838b02628d0b4cdeab0d084ae78b0751c677c88be01aa6fa9d2b2"
                 }
               },
               {
@@ -3639,6 +5004,13 @@
                   "IsCustom": false,
                   "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "89AF2B97-9C0C-4FFA-A957-7C936FDD7F70"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.257Z",
+                  "checksum": "a22ca347630eda501930a222a2c87135f1eb0656183e39b3c41f87a863904842"
                 }
               },
               {
@@ -3656,6 +5028,13 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "57F206F4-13F6-4F37-AD7C-E7DB9547DE8B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.271Z",
+                  "checksum": "0ccd3729318c22026cc6db96018476a159979f7910561e2e321ce69b5b7b9d06"
                 }
               },
               {
@@ -3673,6 +5052,13 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5FDC2625-05DA-441D-83F2-C80AEA2F3069"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.286Z",
+                  "checksum": "2ce97509d75364ce1fcb59a50d16f91dc611e4a68906afa8c207f963e342bc20"
                 }
               },
               {
@@ -3690,6 +5076,13 @@
                   "IsCustom": false,
                   "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4414CD51-4A8B-4F1B-B390-938F0E002D1A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.300Z",
+                  "checksum": "e9a96e930bcf23bd9f1b1840dfb7b69e2cdd0313c4c4bc2da714964ef9cd304e"
                 }
               },
               {
@@ -3707,6 +5100,13 @@
                   "IsCustom": false,
                   "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0861DEE9-4279-4065-BB71-91C987CD5AB0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.317Z",
+                  "checksum": "2c34196f4d655d6013a271b5b378e1aaf8a6b65dc5938ada22cbda0fca169213"
                 }
               },
               {
@@ -3724,6 +5124,13 @@
                   "IsCustom": false,
                   "Sequence": 7,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7FA1A3AC-5C8D-4A2B-8BE5-7567182A80A1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.329Z",
+                  "checksum": "b5ff5fd933d120a66b7aa332ffe815a81e7a2cb76a92ea1136e67fe0507457c1"
                 }
               },
               {
@@ -3741,6 +5148,13 @@
                   "IsCustom": false,
                   "Sequence": 8,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "519878D3-4AFF-4C9D-B7A7-6D32411D4A87"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.350Z",
+                  "checksum": "285c48c0ce9907115d58ac4bc326c825c58d53c29d420705805957d55d39d3d9"
                 }
               },
               {
@@ -3758,12 +5172,33 @@
                   "IsCustom": false,
                   "Sequence": 9,
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4CC0FA83-9EF0-4706-86AF-94FB482ECF50"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:01:09.362Z",
+                  "checksum": "ba8f5ea9d784be5df81a848bf69e67f8488cf7ba02a946ea61febbc1f02c5601"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "E52B947C-796A-46F1-BD69-BD9CD92FA046"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:01:06.238Z",
+            "checksum": "c0d64e0b245916438f142f86757a8e170c65552806b8ec339220f8ebdba8b309"
           }
         }
       ]
+    },
+    "primaryKey": {
+      "ID": "D2E0507F-6F7F-4C10-8493-21DAF94AE18E"
+    },
+    "sync": {
+      "lastModified": "2026-06-27T19:01:05.970Z",
+      "checksum": "59b7f4c404cbcf0b1df1ac404f8a37c46af5d10b404c3506b4878e39692fb2e9"
     }
   }
 ]
