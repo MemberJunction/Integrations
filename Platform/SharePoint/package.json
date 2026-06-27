@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-sharepoint",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "MemberJunction SharePoint connector.",
   "type": "module",
   "main": "dist/index.js",

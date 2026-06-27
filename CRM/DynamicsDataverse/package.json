@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "MemberJunction DynamicsDataverse connector.",
   "type": "module",
   "main": "dist/index.js",

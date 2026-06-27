@@ -2932,7 +2932,7 @@
               {
                 "fields": {
                   "Name": "unsubscribed",
-                  "Description": "DEPRECATED: True indicates this attendee is unsubscribed from this event's emails. They'll still receive emails triggered by their own actions (like registration modification). This field has been deprecated. Please use PUT /attendees/{id}/email-subscriptions instead.",
+                  "Description": "DEPRECATED: True indicates this attendee is unsubscribed from this event's emails. They'll still receive emails triggered by their own actions (like registration modification). This field has been deprecated. Please use PUT /attendees/{id}/email-subscr...",
                   "Type": "Boolean",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3188,7 +3188,7 @@
               {
                 "fields": {
                   "Name": "attendeeLastModified",
-                  "Description": "The ISO 8601 zoned date-time indicates when the attendee's non-contact properties were modified. Updates to the attendee's contact properties do not update this field. This field is updated when planners or attendees make changes to the attendee record, such as flagging as a participant. It is not updated for registration or product changes.",
+                  "Description": "The ISO 8601 zoned date-time indicates when the attendee's non-contact properties were modified. Updates to the attendee's contact properties do not update this field. This field is updated when planners or attendees make changes to the attendee record...",
                   "Type": "Date",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -8922,7 +8922,7 @@
               {
                 "fields": {
                   "Name": "id",
-                  "Description": "The ID of the question choice. If you supply the choice's existing ID in a PUT call, the choice keeps its current ID and the choice text is updated. If this `id` field is left blank in a PUT call, this choice text will be replaced with the text supplied, and a new choice ID is created.",
+                  "Description": "The ID of the question choice. If you supply the choice's existing ID in a PUT call, the choice keeps its current ID and the choice text is updated. If this `id` field is left blank in a PUT call, this choice text will be replaced with the text supplie...",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": true,
@@ -17013,7 +17013,7 @@
               {
                 "fields": {
                   "Name": "mimeType",
-                  "Description": "The MIME type of the document. Supported MIME types: application/pdf, application/vnd.ms-powerpoint, application/msword, text/plain, application/vnd.ms-excel, image/gif, image/jpeg, image/bmp, image/tiff, image/png, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.openxmlformats-officedocument.presentationml.presentation, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/postscr",
+                  "Description": "The MIME type of the document. Supported MIME types: application/pdf, application/vnd.ms-powerpoint, application/msword, text/plain, application/vnd.ms-excel, image/gif, image/jpeg, image/bmp, image/tiff, image/png, application/vnd.openxmlformats-offic...",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -27459,7 +27459,7 @@
               {
                 "fields": {
                   "Name": "startTime",
-                  "Description": "The start time of the agenda item in 24-hour format (HH:mm:ss). This represents the local time at event location. For RFPs spanning multiple time zones, this time applies uniformly in each location's respective timezone (e.g., 13:00:00 means 1 PM local time at every venue).",
+                  "Description": "The start time of the agenda item in 24-hour format (HH:mm:ss). This represents the local time at event location. For RFPs spanning multiple time zones, this time applies uniformly in each location's respective timezone (e.g., 13:00:00 means 1 PM local...",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -27474,7 +27474,7 @@
               {
                 "fields": {
                   "Name": "endTime",
-                  "Description": "The end time of the agenda item in 24-hour format (HH:mm:ss). This represents the local time at event location. For RFPs spanning multiple time zones, this time applies uniformly in each location's respective timezone (e.g., 14:00:00 means 2 PM local time at every venue).",
+                  "Description": "The end time of the agenda item in 24-hour format (HH:mm:ss). This represents the local time at event location. For RFPs spanning multiple time zones, this time applies uniformly in each location's respective timezone (e.g., 14:00:00 means 2 PM local t...",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -28011,7 +28011,7 @@
               {
                 "fields": {
                   "Name": "customField",
-                  "Description": "An object containing custom field data. By default, contains only the field ID.\n\nThis is an **expandable** object. When requested via the `expand` query parameter with value `customField`, this object expands to include all properties of a custom field definition.\n\nSee the `expand` parameter documentation and refer to the [Get Custom Field](#tag/Custom-Fields/operation/getCustomField) API for the complete expanded schema.",
+                  "Description": "An object containing custom field data. By default, contains only the field ID.\n\nThis is an **expandable** object. When requested via the `expand` query parameter with value `customField`, this object expands to include all properties of a custom field...",
                   "Type": "json",
                   "IsRequired": true,
                   "IsReadOnly": true,
@@ -30323,7 +30323,7 @@
               {
                 "fields": {
                   "Name": "emails",
-                  "Description": "The email of the user. The Cvent user can have only one email address.<br> If multiple email addresses are provided, only one is accepted and rest are ignored. One email is selected based on the following sequence of criteria: primary email, then work type, and finally first in the sequence.",
+                  "Description": "The email of the user. The Cvent user can have only one email address.<br> If multiple email addresses are provided, only one is accepted and rest are ignored. One email is selected based on the following sequence of criteria: primary email, then work ...",
                   "Type": "json",
                   "IsRequired": true,
                   "IsReadOnly": false,
@@ -30960,7 +30960,7 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Description": "Detailed description of the session. HTML is supported, but only a limited set of elements and attributes are allowed. Use of HTML will count towards the character limit. Planners are responsible for confirming the visual output of HTML content.\n\nAllowed elements: b, strong, i, em, u, a, strike, del, s, sup, sub, ul, ol, li, p, font, mark, span\n\nAllowed attributes:\n- color on font\n- style on p, font, li, ul, ol, span\n- href, target, rel on a",
+                  "Description": "Detailed description of the session. HTML is supported, but only a limited set of elements and attributes are allowed. Use of HTML will count towards the character limit. Planners are responsible for confirming the visual output of HTML content.\n\nAllow...",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,

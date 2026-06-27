@@ -1220,7 +1220,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "person-attributes",
             "DisplayName": "Person Attributes",
-            "Description": "Flattened per-person custom attributes fetched from GET /v1/persons/{person_id}/attributes. One row per (person_id, attribute_name) pair. Custom attributes in Rasa are free-form — there is no schema discovery endpoint, so attribute names/values are whatever the client has populated.",
+            "Description": "Flattened per-person custom attributes fetched from GET /v1/persons/{person_id}/attributes. One row per (person_id, attribute_name) pair. Custom attributes in Rasa are free-form — there is no schema discovery endpoint, so attribute names/values are wha...",
             "Category": "Insights",
             "APIPath": "/persons/{person_id}/attributes",
             "ResponseDataKey": "results",

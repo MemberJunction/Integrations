@@ -209,7 +209,7 @@
           "fields": {
             "Name": "FuseEndpoint",
             "DisplayName": "Nimble Fuse Integration",
-            "Description": "The single Nimble Fuse integration endpoint (/services/apexrest/NUINT/NUIntegrationService). A POST-only Apex REST endpoint that routes to admin-configured inbound (External-ID upsert) or outbound (named SOQL read) integration settings. Not a data record type itself; represents the Fuse contract.",
+            "Description": "The single Nimble Fuse integration endpoint (/services/apexrest/NUINT/NUIntegrationService). A POST-only Apex REST endpoint that routes to admin-configured inbound (External-ID upsert) or outbound (named SOQL read) integration settings. Not a data reco...",
             "APIPath": "/services/apexrest/NUINT/NUIntegrationService",
             "SupportsWrite": false,
             "SupportsIncrementalSync": false,
@@ -252,6 +252,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B4A46DDD-6A5E-4930-A51E-62FE1FFCFAAC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.759Z",
+                  "checksum": "802b3a127b04aba78160bc03a7aebc0176ae680d06038e34c0f78d21a1c8f3fa"
                 }
               },
               {
@@ -267,6 +274,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "3606CDC4-6589-4797-9CFD-E333F6DED9D5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.776Z",
+                  "checksum": "9a0249047747c99f0d4dfa41f321d1d7de3e651e7b361ef09458fd2201b8fc0e"
                 }
               },
               {
@@ -282,6 +296,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "06926FCE-B3A1-49EF-B7CA-0220F76EB72B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.791Z",
+                  "checksum": "f0b61db7e133a31466b71b4c2af0215dd870670c4d9458467ccfe87c5844e1dc"
                 }
               },
               {
@@ -297,6 +318,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8C57B3F2-BF8D-4D7D-854C-DE7D5463121A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.806Z",
+                  "checksum": "2bba4a668590c4cdd052b01d3e264e8b5d65114cb0da6db674eab6b9d730dd3d"
                 }
               },
               {
@@ -312,6 +340,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "D090F4A9-CB63-4981-9B1B-AE50371AFCF2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.820Z",
+                  "checksum": "c71f3b4103da4d64e13c56683155a8d772ee98def5d0fe7a556da02b07f7ea8a"
                 }
               },
               {
@@ -327,6 +362,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8FCAAB01-D28C-4DBC-901F-3A04DA967C0B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.836Z",
+                  "checksum": "833ef06d0d576b9eb35f54abeb5168bcd0a26acd79254c2995d61f635d43ebea"
                 }
               },
               {
@@ -342,6 +384,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "D0FDE861-FA97-426E-AAE8-16F38045179A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.852Z",
+                  "checksum": "a2be56faff1f8caf157299b41ed194e4fe8b088aa62e0e07e36b9a360fdfe6d3"
                 }
               },
               {
@@ -357,16 +406,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "95584982-EF57-479C-8C42-C261FF59A032"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.868Z",
+                  "checksum": "f09db5fdf046b4d0cb089c51213645268027ca6973088091e568483414509384"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "7CD81FDB-379F-40D0-81A0-083DD02E03CA"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.084Z",
+            "checksum": "e60773768f30227f2d28650770b8550898b8732057d94105e98e887208dfdbf2"
           }
         },
         {
           "fields": {
             "Name": "Account",
             "DisplayName": "Account",
-            "Description": "Nimble AMS Account (Salesforce sObject Account). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Account (Salesforce sObject Account). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce syste...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+Account",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -422,6 +485,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4A4B14FA-50AD-451C-AD43-6BF072205AEB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.884Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -437,6 +507,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "077214BB-6409-48C4-B3C2-960FC44B0863"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.897Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -452,6 +529,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B129C573-E84A-44BD-93CB-2928F252957E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.924Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -467,6 +551,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "CEA61AA0-083E-4BFE-B7C9-31FEF7F8F07D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.940Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -482,16 +573,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "1D059C77-2389-46AB-B6BA-8715F7BE4568"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.957Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "E2B0CFDE-5F23-4656-8321-C07457641B9C"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.107Z",
+            "checksum": "1f92b79fa66ed3665378618746f95841737afbde14bf2d70de0f8e026e58683a"
           }
         },
         {
           "fields": {
             "Name": "CartItem__c",
             "DisplayName": "Cart Item",
-            "Description": "Nimble AMS Cart Item (Salesforce sObject CartItem__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Cart Item (Salesforce sObject CartItem__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+CartItem__c",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -537,6 +642,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8175E6A3-A342-47DA-98B9-D7C27C8B381B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.972Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -552,6 +664,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "456FF52B-ABAA-4FB6-AA85-D027AEAA60AC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:13.986Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -567,6 +686,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "62E8E0D5-4794-420E-931C-0CA6D80FC8E7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.001Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -582,6 +708,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "E8CFED2A-5A87-43E1-AEC6-1B59B6BE84C0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.016Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -597,16 +730,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "ADB88122-371A-46E4-BEF1-DB43058CDF61"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.031Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "F188D851-49E9-46A5-B619-FAFBEA55CEE6"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.126Z",
+            "checksum": "2bb80e41ed606e51a85a9577518424f41844f19a6188cbd2a2673d21ff228214"
           }
         },
         {
           "fields": {
             "Name": "CartItemLine__c",
             "DisplayName": "Cart Item Line",
-            "Description": "Nimble AMS Cart Item Line (Salesforce sObject CartItemLine__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Cart Item Line (Salesforce sObject CartItemLine__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal S...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+CartItemLine__c",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -652,6 +799,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "98AE12AE-68BA-41DE-B0C3-590731F6A8B1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.049Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -667,6 +821,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "7FD77771-03AE-4AD1-AC41-A61DD0C6F474"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.061Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -682,6 +843,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "3CDE9DB5-A837-4B2B-BD0A-A13837A86C3B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.089Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -697,6 +865,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "6A2CD9CC-50F4-455E-B6D8-3CFAB6F27F2B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.105Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -712,16 +887,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "16D63281-1B2B-487A-A17D-2F889A744012"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.119Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "677F56AF-5D70-4BA6-884A-B6C632ADF1E6"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.144Z",
+            "checksum": "fb7c79e7941d9a48a6d0033c94e60afde29bcc3f866d9414506e81bf48690eac"
           }
         },
         {
           "fields": {
             "Name": "Contact",
             "DisplayName": "Contact",
-            "Description": "Nimble AMS Contact (Salesforce sObject Contact). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Contact (Salesforce sObject Contact). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce syste...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+Contact",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -767,6 +956,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "5A87A0F7-7E42-41A1-9DA3-6379A9EEC6E0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.136Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -782,6 +978,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "DF00FC7A-02FB-4232-8EAF-6507673859ED"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.150Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -797,6 +1000,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "7AEBB332-31EC-417F-88F2-833B30A06FFF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.166Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -812,6 +1022,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "DD82F3BB-0ECB-4BBE-BE8F-2F5695554841"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.181Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -827,16 +1044,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "2374553D-E190-4177-942F-B5A1E893F165"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.196Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "076EBBAA-E436-478B-B0A8-4A39DD1AC0E7"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.164Z",
+            "checksum": "89980f43aa59d453c43763aa0882c8b173ea3943dfe51f3ebcc14ddff4e55e35"
           }
         },
         {
           "fields": {
             "Name": "EventAnswer__c",
             "DisplayName": "Event Answer",
-            "Description": "Nimble AMS Event Answer (Salesforce sObject EventAnswer__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Event Answer (Salesforce sObject EventAnswer__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Sale...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+EventAnswer__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -895,6 +1126,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "044809EC-B69D-47DB-B12D-061EB5492EED"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.211Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -910,6 +1148,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B7655821-52E4-409E-87A5-7E2D490D37EC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.225Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -925,6 +1170,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "D2D6C94E-C173-434A-86EB-CD04ADE6C296"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.250Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -940,6 +1192,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B413C0D0-72FD-48AF-B4E4-FCFB6433E6C2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.265Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -955,16 +1214,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4FE99F64-DA2D-4DD1-A5AA-3E0B793F669A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.279Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "615995A8-DADE-4C53-8BAB-A0D91E3D95AD"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.184Z",
+            "checksum": "1d4fce4acf86e519f8f940633638b9dfbc29f9f080965a637e856d70fa0c5e49"
           }
         },
         {
           "fields": {
             "Name": "EventBadge__c",
             "DisplayName": "Event Badge",
-            "Description": "Nimble AMS Event Badge (Salesforce sObject EventBadge__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Event Badge (Salesforce sObject EventBadge__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesf...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+EventBadge__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -1023,6 +1296,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "AD45BE22-E542-4003-BDD9-7BBAD6387909"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.295Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -1038,6 +1318,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "7E76331C-B27F-4D3B-A5AA-9D08B83475CF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.311Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -1053,6 +1340,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "21A1C2D4-D1B9-42C5-87A7-7E1CD4E2D9E6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.326Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -1068,6 +1362,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "A5C4D797-9DEE-4509-BBEE-409DF3F4A0A4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.341Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -1083,16 +1384,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "98EB5492-4137-4EC7-925E-A90C82B7D49E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.357Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "A8C54622-4CCD-4E3A-A536-93D22B4A9C4D"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.204Z",
+            "checksum": "3c173fac181c6a67435f584d98ddca4d3dbf080d59169329cb6155277f20f16b"
           }
         },
         {
           "fields": {
             "Name": "EventSessionGroup__c",
             "DisplayName": "Event Session Group",
-            "Description": "Nimble AMS Event Session Group (Salesforce sObject EventSessionGroup__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Event Session Group (Salesforce sObject EventSessionGroup__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the u...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+EventSessionGroup__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -1151,6 +1466,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4F9A7BCD-C554-47D7-BCF8-8B274FFA7BEF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.372Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -1166,6 +1488,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "31A693B6-BB53-4C66-AF99-35CF7E6F9558"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.384Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -1181,6 +1510,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "FF488E1E-681C-4821-8A79-E20C951B3C5E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.412Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -1196,6 +1532,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "417AF9F1-A78B-43E6-AAD1-DB317453A758"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.427Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -1211,9 +1554,23 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "A6C71E68-E7DE-432A-A33C-DF99744FBB0E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.441Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "0C8F4B41-18C8-4E3B-AEB7-64780FEC9ED5"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.225Z",
+            "checksum": "26bc0dd1bedd4aa21a0952a3914784a8cf82433e41ba778b0f04f48c482f798b"
           }
         },
         {
@@ -1267,6 +1624,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "9966F59E-143A-45D5-A39C-3A763649C4C9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.456Z",
+                  "checksum": "a7b4f3740fed9763795dd819f4060b1ee5f807a163f95c8bf572e6fe56ebeab9"
                 }
               },
               {
@@ -1282,6 +1646,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "3279778B-EEFD-4A09-BEC6-2BADF2B10826"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.474Z",
+                  "checksum": "8dc8f4afdb6235b5917b03d65fad6e17747b046b35bf6a5e0c45c2a918ca1c5d"
                 }
               },
               {
@@ -1297,6 +1668,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B6D30657-DAF8-4CE0-A4B6-A92E5BCEEE88"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.489Z",
+                  "checksum": "8e4e5c665b23013e81fce10309f5610feb51120174711a8f717618bbf5c41217"
                 }
               },
               {
@@ -1312,9 +1690,23 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B6CD98C8-AF90-40AA-B0B1-232BA23DA7CA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.505Z",
+                  "checksum": "8b7bfbbe5e8d640e688f492fb30b91bd510a26068b752f68712df82442a76979"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "011D88AA-4D9F-4720-B6EC-BB4F1680543A"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.244Z",
+            "checksum": "89d3c551e84fa63b9b9832246f44f58664c773f198e5a00472a254d625e380c9"
           }
         },
         {
@@ -1374,6 +1766,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "10C8B5B7-8234-44FC-B4E9-2BAFB23E7F73"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.520Z",
+                  "checksum": "ab2f1280be3b13a69a6eae6f64bd10edc4d6315d526e9856c25ec58fadeee602"
                 }
               },
               {
@@ -1389,13 +1788,20 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "94EC4D4F-A911-480C-82BD-809D5490C60C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.534Z",
+                  "checksum": "a2d580b68f348d472d51f4c427bd7db32deb0cb44966afe2795fb03716710f51"
                 }
               },
               {
                 "fields": {
                   "Name": "product",
                   "DisplayName": "Product",
-                  "Description": "Embedded nested LMS product object (access-path, NOT a scalar FK). The Get Purchases response nests product as { productType, name, id, description }; it has no scalar id pointing at a separate LmsProduct row, so it is a 1:N/embedded access-path on the purchase, not a foreign key.",
+                  "Description": "Embedded nested LMS product object (access-path, NOT a scalar FK). The Get Purchases response nests product as { productType, name, id, description }; it has no scalar id pointing at a separate LmsProduct row, so it is a 1:N/embedded access-path on the...",
                   "Type": "json",
                   "IsRequired": false,
                   "IsReadOnly": true,
@@ -1404,6 +1810,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "AA44F001-B436-4767-AEA1-0E96BFA2CE3B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.547Z",
+                  "checksum": "c83bf5f040ecffa13c5a71fadae4fd54235ce3be46b9acbcbb4b6616ca64ccdf"
                 }
               },
               {
@@ -1419,6 +1832,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "6E2DECE2-A679-483B-9EBF-1FF64EE5179E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.576Z",
+                  "checksum": "ad23079ac0cc7aad8bb2fd2985a009a76c35cbdbbbe5e05f5e9306837a4df18d"
                 }
               },
               {
@@ -1434,6 +1854,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8359CCAB-17E7-48D5-83C3-749A69637A72"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.590Z",
+                  "checksum": "dd89237fc9f0126b4811131240681e3f7148211cec911f982c85f1859c4e6036"
                 }
               },
               {
@@ -1449,6 +1876,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "338AFC0F-982C-4012-A134-4389BE7340E5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.605Z",
+                  "checksum": "1ebfb017c0e4e396b7f78a924cc86fe33b16566c7c39836dee8a69071dfde796"
                 }
               },
               {
@@ -1464,16 +1898,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "34770717-8681-4739-BB47-1EE8E23889BA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.619Z",
+                  "checksum": "643917d603c9eb7d3616bff4a46b97940342d97dcb417de8161989b94884f4b5"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "0FD95897-8F96-4BF5-9C67-67F911AA48B7"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.259Z",
+            "checksum": "96c0ef26aa31563a68e576cc975a7a31f53ed54d474f28de4431f1e2f6f82bbe"
           }
         },
         {
           "fields": {
             "Name": "NU__Affiliation__c",
             "DisplayName": "Affiliation",
-            "Description": "Nimble AMS Affiliation (Salesforce sObject NU__Affiliation__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Affiliation (Salesforce sObject NU__Affiliation__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal S...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Affiliation__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -1532,6 +1980,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "40ABFE04-03CF-40FD-A46B-42FE3C734C3A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.637Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -1547,6 +2002,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "E7528461-9CEF-45B1-8046-5F9200142822"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.651Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -1562,6 +2024,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "37A2177B-54A3-46A9-9F30-9AF261DD81B0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.668Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -1577,6 +2046,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "131A8F44-3314-4BE1-BE21-8113079E4C58"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.684Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -1592,16 +2068,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4D942868-846A-43DB-83DE-E2D5E4E6BE5E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.700Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "5355C342-6518-4987-BE37-E101AA883471"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.299Z",
+            "checksum": "f205b67fafdae952d13525e9956d0081b7fe58ce5514a5a2669bc0abedb53b9f"
           }
         },
         {
           "fields": {
             "Name": "NU__Badge__c",
             "DisplayName": "Badge",
-            "Description": "Nimble AMS Badge (Salesforce sObject NU__Badge__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Badge (Salesforce sObject NU__Badge__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce sy...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Badge__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -1660,6 +2150,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4095F914-57E3-4846-B480-0830B231070B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.713Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -1675,6 +2172,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "54730956-C688-4048-B764-22C11EABB5E6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.742Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -1690,6 +2194,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4A096555-1C12-4865-95D2-6578179608A6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.757Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -1705,6 +2216,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "09D6EDFE-D84C-42FC-AF7F-87107ADEB2DD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.772Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -1720,16 +2238,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "CBB3EE90-3A26-4A32-88D7-455C3E9FAEF0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.787Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "83E1F2DE-0375-4106-B568-27DA956D8CB7"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.319Z",
+            "checksum": "5e5451af4a273c8d0ebf10b3cbf95a1965efff6eb8d41754a6bf3d678d686509"
           }
         },
         {
           "fields": {
             "Name": "NU__Campaign__c",
             "DisplayName": "Campaign",
-            "Description": "Nimble AMS Campaign (Salesforce sObject NU__Campaign__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Campaign (Salesforce sObject NU__Campaign__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesfo...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Campaign__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -1788,6 +2320,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "88F1496E-33F7-4F2B-8642-8C432B6C69F3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.805Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -1803,6 +2342,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "35A6574B-FCC8-42E3-95DA-1D810DDAF848"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.820Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -1818,6 +2364,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "DFE7200B-6E60-4428-93C0-E86993A39B91"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.835Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -1833,6 +2386,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B2582BAF-D423-4EEE-B08E-BBCBB3333586"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.851Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -1848,16 +2408,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "75833928-7459-4D0F-9C57-AA9EB5E40B82"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.867Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "F417FF82-DD89-45A5-8F1C-C5426298D744"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.340Z",
+            "checksum": "f458ddbaf6174f1c6848f34a2bb43b632ff579274cd955639993f30497d8aa5c"
           }
         },
         {
           "fields": {
             "Name": "NU__Chapter__c",
             "DisplayName": "Chapter",
-            "Description": "Nimble AMS Chapter (Salesforce sObject NU__Chapter__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Chapter (Salesforce sObject NU__Chapter__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforc...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Chapter__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -1916,6 +2490,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "E5E82252-F354-47DB-A481-2E276889B2BC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.880Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -1931,6 +2512,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "1428C885-001B-4251-A2A9-2449AE7B438C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.909Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -1946,6 +2534,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "94FC9922-9532-449A-9A77-EE4AE8B6A7FC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.925Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -1961,6 +2556,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "60FDFB29-A7F4-49B6-8335-FFB1BE70FEA3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.941Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -1976,16 +2578,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "BA437B1B-6677-40A8-A17C-5332EA0BDCD8"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.957Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "3324B47E-205A-4A42-A584-06C2E902841A"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.359Z",
+            "checksum": "8141c44d9d08e38de62b3b895065e428974bcd352c84605750e2cd0b55ee6667"
           }
         },
         {
           "fields": {
             "Name": "NU__Committee__c",
             "DisplayName": "Committee",
-            "Description": "Nimble AMS Committee (Salesforce sObject NU__Committee__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Committee (Salesforce sObject NU__Committee__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Sales...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Committee__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2044,6 +2660,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "46407897-DE3C-497C-8AB3-1A17AAAA8C99"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.974Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2059,6 +2682,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "F98247E6-7D60-4AB2-AE9E-E16BD0C8E0DB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:14.989Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2074,6 +2704,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "96B9C1C5-3E73-42BF-B801-C1E23F224E5C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.005Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2089,6 +2726,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "80FCBC68-2741-4FCF-9631-891AA4116A24"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.020Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2104,16 +2748,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "3C974E23-970B-4F41-A6A3-965300247CAC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.037Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "4F59984E-A857-4B0B-83B6-9A1AC8D7D9E0"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.379Z",
+            "checksum": "3f2677c5dabdafe1ac15ee4cde2b6f43e6898524ff69824b5070a1cf0f6c5e13"
           }
         },
         {
           "fields": {
             "Name": "NU__CommitteeMembership__c",
             "DisplayName": "Committee Membership",
-            "Description": "Nimble AMS Committee Membership (Salesforce sObject NU__CommitteeMembership__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Committee Membership (Salesforce sObject NU__CommitteeMembership__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); onl...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__CommitteeMembership__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2172,6 +2830,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "1905322D-A181-49E7-8E7E-B1C3A211D1CF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.051Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2187,6 +2852,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "A5A9EC44-E52E-4960-8A2B-3671467CF3A5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.077Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2202,6 +2874,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B1CA8FD3-D886-4C7D-9EEF-967641505BE6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.091Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2217,6 +2896,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8D5AFE8A-2F61-4395-A969-3BBC9C93630B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.105Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2232,16 +2918,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "27ED288F-2F9C-46A9-BE55-2DBDCACF21D2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.120Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "0ADF3D0E-6275-47B8-844D-8A62306AE4CE"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.398Z",
+            "checksum": "7db40174ee0ae3e0504f66a07de22a0f51d124730347c60dc4a52cc9f3102910"
           }
         },
         {
           "fields": {
             "Name": "NU__Credential__c",
             "DisplayName": "Credential",
-            "Description": "Nimble AMS Credential (Salesforce sObject NU__Credential__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Credential (Salesforce sObject NU__Credential__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Sal...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Credential__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2300,6 +3000,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "BF8E6076-A054-487D-91C1-F15CBAD241C5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.136Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2315,6 +3022,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4DEA21BF-2050-49A7-B4EE-BFDBFF212F9D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.151Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2330,6 +3044,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "D76CE128-7B66-4CF5-8F88-2E7E5301C229"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.166Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2345,6 +3066,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "DD3AC3C6-BB19-40E4-AE00-9FBFFFBA759E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.181Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2360,16 +3088,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "99B906D9-4774-4BF0-8FA8-146BD5CBF39C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.196Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "32FEBE4E-EC64-4108-9365-0A8DC7C82635"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.418Z",
+            "checksum": "61203cebd290756cfa7538851534ea4fd00d7514a317876b3fe6982c106018c7"
           }
         },
         {
           "fields": {
             "Name": "NU__Donation__c",
             "DisplayName": "Donation",
-            "Description": "Nimble AMS Donation (Salesforce sObject NU__Donation__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Donation (Salesforce sObject NU__Donation__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesfo...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Donation__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2428,6 +3170,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "3FB8A4B8-B802-440E-966B-2CA7C342D266"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.208Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2443,6 +3192,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "C0E44221-5E94-46F0-8383-C3721BEFCDC6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.236Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2458,6 +3214,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "18413F10-67D4-47BF-A1D5-FD5B5C5924EE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.250Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2473,6 +3236,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "6D56E0D9-14EA-41BB-B217-10D0A0836C78"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.265Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2488,16 +3258,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "C66D0981-E3F1-46F7-B93D-260D3F1AA808"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.280Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "21648BCD-6A57-410F-BD88-E555D2E4D4DB"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.438Z",
+            "checksum": "fda5f6c0782f1c9cfd1214c1860fe865a55f515d33bb2cd0ce05dd124c8580a8"
           }
         },
         {
           "fields": {
             "Name": "NU__Evaluation__c",
             "DisplayName": "Evaluation",
-            "Description": "Nimble AMS Evaluation (Salesforce sObject NU__Evaluation__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Evaluation (Salesforce sObject NU__Evaluation__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Sal...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Evaluation__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2556,6 +3340,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "08D607A0-8D3B-44C7-A487-42031BDA492F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.296Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2571,6 +3362,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "2D804961-FD57-45DA-91E0-5A25DC9DE8FD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.311Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2586,6 +3384,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "E5080A12-47C1-415A-9F46-D81B9355A0FE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.326Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2601,6 +3406,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "C099C1C1-30FA-42C3-927E-14EA7A9C7C47"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.341Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2616,16 +3428,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "F261D6C5-5E80-40A6-9D05-3A6B1CA41BD2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.356Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "9DADD836-F2D9-4032-A155-C1CC2CDCC457"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.457Z",
+            "checksum": "b5b2d6a54bd2824dc830c8ed648f39ac9a511e4280046c03f81ebd082d6b1685"
           }
         },
         {
           "fields": {
             "Name": "NU__Event__c",
             "DisplayName": "Event",
-            "Description": "Nimble AMS Event (Salesforce sObject NU__Event__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Event (Salesforce sObject NU__Event__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce sy...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Event__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2684,6 +3510,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "591DA328-5F6A-4838-A498-5AE10E58FE9B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.368Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2699,6 +3532,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "B4FBECF6-CD68-49BA-B249-34262668B0F7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.397Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2714,6 +3554,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "364D9DA7-51BB-4D90-A0B6-4B76C3E8D5AF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.411Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2729,6 +3576,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8B65C455-91AD-4320-B659-A090539FEEE4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.426Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2744,16 +3598,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "68F49BFA-4B5F-47E3-AAD5-B9B042E8AED2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.442Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "09CD1C98-DBB8-4C96-BA2A-CA179DA618BF"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.473Z",
+            "checksum": "6c3c1e78e2bfe8c878cf7cea2f26538b79429d505a95bb9357fafc13e2c728cb"
           }
         },
         {
           "fields": {
             "Name": "NU__Invoice__c",
             "DisplayName": "Invoice",
-            "Description": "Nimble AMS Invoice (Salesforce sObject NU__Invoice__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Invoice (Salesforce sObject NU__Invoice__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforc...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Invoice__c",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -2799,6 +3667,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "1C0F02DE-4A08-49B8-AF3A-664428D45D10"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.459Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2814,6 +3689,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "5EBC5BA8-357E-4CD6-BD64-56991EE3F646"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.475Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2829,6 +3711,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "2E566408-0691-4FDB-A4B5-B5C15EF4BAD2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.490Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2844,6 +3733,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "1F8548EB-71C1-467F-99D8-F78578896C87"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.506Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2859,16 +3755,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "CF6F08CA-6205-4D6C-8487-35A1108A46E6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.521Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "858DDDEA-E414-40C9-9357-BA24103861C5"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.511Z",
+            "checksum": "68aaafd5260b516fdaf0a2dc5f218001b053e04b1c108e84cfde6478886e0982"
           }
         },
         {
           "fields": {
             "Name": "NU__Membership__c",
             "DisplayName": "Membership",
-            "Description": "Nimble AMS Membership (Salesforce sObject NU__Membership__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Membership (Salesforce sObject NU__Membership__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Sal...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Membership__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2927,6 +3837,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "74D8B0F1-925F-4BE0-8866-CD07E35C3D03"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.535Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -2942,6 +3859,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "3238593F-3468-4E81-825B-475B28110507"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.563Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -2957,6 +3881,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "537AEF23-CAAE-42C5-88E0-92809C5B30C3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.577Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -2972,6 +3903,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "5A929BA9-30EC-47E3-AF70-B81F939A8C01"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.592Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -2987,16 +3925,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "F68690EE-1382-4361-820D-9A41C4FC5ED2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.608Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "5BF8289D-B9C1-488A-A91C-CE5A2EB5FED9"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.534Z",
+            "checksum": "ae00d17a02becffb2f1486f2f11a8b00fd85467b6fc7014d11f2700bd68bf487"
           }
         },
         {
           "fields": {
             "Name": "NU__MembershipType__c",
             "DisplayName": "Membership Type",
-            "Description": "Nimble AMS Membership Type (Salesforce sObject NU__MembershipType__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Membership Type (Salesforce sObject NU__MembershipType__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the univ...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__MembershipType__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3055,6 +4007,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "6A34B508-8487-4E6C-9C32-941F76CC82D1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.625Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3070,6 +4029,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "36D80C13-A04A-4D4B-86C6-803CBB5DA70A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.640Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3085,6 +4051,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "65B854EC-44C0-499B-80A8-C9D0603182D1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.656Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3100,6 +4073,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "C84ADA64-D2ED-465B-B03A-DD00FCED6096"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.673Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3115,16 +4095,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "292251F5-CB9C-4CC1-8ECD-407B3D31B4D4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.689Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "32CA92AF-2525-42DB-B791-959B44A81521"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.553Z",
+            "checksum": "c2a0a4a0e7b6e376bf9a13b8fd37610d7b46dc93c63a015264893cd0bbd19415"
           }
         },
         {
           "fields": {
             "Name": "NU__Order__c",
             "DisplayName": "Order",
-            "Description": "Nimble AMS Order (Salesforce sObject NU__Order__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Order (Salesforce sObject NU__Order__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce sy...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Order__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3183,6 +4177,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "A4AC780E-4446-45D3-BC5F-36F5DC74532F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.701Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3198,6 +4199,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "80EC234A-853D-4E8C-B88E-D2BD9063535C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.729Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3213,6 +4221,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "DFBBBEC5-DACB-41DF-A138-B212F735B317"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.745Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3228,6 +4243,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "69071F90-F413-4A7C-84CC-C36982A93C8A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.760Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3243,16 +4265,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8E7F6661-AFD7-451D-BDCB-8645F2C1EA20"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.775Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "F7293C36-6BD8-46A1-A413-B4C580AF4512"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.572Z",
+            "checksum": "a946a20c7151c9faca106e1bbceae1029e336d2d4176c4211009a856d7e2a7cc"
           }
         },
         {
           "fields": {
             "Name": "NU__OrderItem__c",
             "DisplayName": "Order Item",
-            "Description": "Nimble AMS Order Item (Salesforce sObject NU__OrderItem__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Order Item (Salesforce sObject NU__OrderItem__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Sale...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__OrderItem__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3311,6 +4347,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "A63C4368-FC57-44B9-8356-6FFE0DD77C54"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.792Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3326,6 +4369,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "7B3CFBD9-A08C-401E-82F7-DBCE4CBA4099"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.807Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3341,6 +4391,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "DAE9BAAA-F096-4403-A019-06BFE4FAA76B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.823Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3356,6 +4413,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "1B3D72C7-1857-494E-A5B0-581F247292B4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.838Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3371,16 +4435,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "8C7087BE-97D5-4524-B920-B6AA21F6EA8C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.853Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "9A8B5BA4-D89A-454E-8378-608B8BC05E6F"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.593Z",
+            "checksum": "5d55bc6870fcaee3508605a93ab21b6eded5a987808fafddb43c5efb71299441"
           }
         },
         {
           "fields": {
             "Name": "NU__OrderItemLine__c",
             "DisplayName": "Order Item Line",
-            "Description": "Nimble AMS Order Item Line (Salesforce sObject NU__OrderItemLine__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Order Item Line (Salesforce sObject NU__OrderItemLine__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the unive...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__OrderItemLine__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3439,6 +4517,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "EBFB9EC5-35EF-403F-9A61-515F22AB91D7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.866Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3454,6 +4539,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "38074EEC-1E21-4DA2-93E6-B0643885A52A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.895Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3469,6 +4561,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "D706FF47-3DDF-4FA5-AC3C-5B381CD7C8EE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.909Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3484,6 +4583,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "E49CB189-E16A-4395-A724-9EE91FC7825A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.924Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3499,16 +4605,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "F314DDE7-0C62-4DE2-9D2E-8D64E69F406E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.939Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "BB84FC64-4E0A-4DAD-8AFD-DECF08087B29"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.613Z",
+            "checksum": "40315ce608089e66446e1595835863ef44c3a38880de394567711cdf38c6582b"
           }
         },
         {
           "fields": {
             "Name": "NU__Payment__c",
             "DisplayName": "Payment",
-            "Description": "Nimble AMS Payment (Salesforce sObject NU__Payment__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Payment (Salesforce sObject NU__Payment__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforc...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Payment__c",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -3554,6 +4674,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "18795B4B-ACA6-4539-A8C4-8123F1161590"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.956Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3569,6 +4696,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "BCBB8163-EE46-4DAB-8094-C67A740EBAF4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.971Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3584,6 +4718,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "436B8BB0-9B97-4118-8428-4484B7BC14A0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:15.987Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3599,6 +4740,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "79AC7C0A-2044-4891-806A-778BA265EC4D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.003Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3614,16 +4762,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "BF3F2FE3-E783-4263-A745-B329F1BFCC23"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.019Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "D34D65EF-D43E-4AA7-B3F0-807D42576805"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.631Z",
+            "checksum": "b0265e5a82d26efb8195e44d65fff9947290be70bb6031ff7ee85017efa30aad"
           }
         },
         {
           "fields": {
             "Name": "NU__Product__c",
             "DisplayName": "Product",
-            "Description": "Nimble AMS Product (Salesforce sObject NU__Product__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Product (Salesforce sObject NU__Product__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforc...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Product__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3682,6 +4844,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "02FF6FCE-2274-441C-A988-B8B52AEA9A19"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.031Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3697,6 +4866,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "ECE66C2D-9BA6-45F0-964C-1ACE332B87BF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.060Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3712,6 +4888,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "C7C15FA6-D92C-49F9-B06F-00A2E5A4BC45"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.076Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3727,6 +4910,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "2C0B2074-1ECD-4275-B635-766BBE9E1EC5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.091Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3742,16 +4932,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "78B8A6B5-C7D1-44FE-AD64-2C48C0B28E62"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.106Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "5D517CD0-A3E7-4D86-944C-51E991703E19"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.651Z",
+            "checksum": "41a225c231d524c767b52edc6aac3a8422361b6c0df888a9d2c8c7b3b90907de"
           }
         },
         {
           "fields": {
             "Name": "NU__Schedule__c",
             "DisplayName": "Schedule",
-            "Description": "Nimble AMS Schedule (Salesforce sObject NU__Schedule__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Schedule (Salesforce sObject NU__Schedule__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesfo...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Schedule__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3810,6 +5014,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "D198D88D-A670-4EEC-A473-3EB259695556"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.124Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3825,6 +5036,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "F16559D7-301F-4140-9DD6-77F5F95BE365"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.139Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3840,6 +5058,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "56A4D451-B32A-46C3-9631-279C487C3ED9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.154Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3855,6 +5080,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "E438A81E-67A6-4127-B7A5-5B73CDC578CF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.168Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3870,16 +5102,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "56436DFB-77E4-4107-8955-E005B58D18C4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.184Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "CA6F33B8-C50F-4980-BC6C-EE034A683FC0"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.671Z",
+            "checksum": "c223a9f2fd933434285262cdaa11ad1ff708e3d129a893eec7601292a6dbb472"
           }
         },
         {
           "fields": {
             "Name": "NU__Session__c",
             "DisplayName": "Session",
-            "Description": "Nimble AMS Session (Salesforce sObject NU__Session__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Session (Salesforce sObject NU__Session__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforc...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Session__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3938,6 +5184,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "2F51E66F-62B2-4F08-89D8-CA38B27FF5AD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.197Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -3953,6 +5206,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "71159D70-17ED-4A13-991D-55B6F6F780EF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.225Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -3968,6 +5228,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "63CD8DD7-6399-4DD0-B98C-1BE833896487"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.240Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -3983,6 +5250,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "43AD5A6C-9D8B-49F3-8700-E1F3876F9E8E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.255Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -3998,16 +5272,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "60F4DFAF-A8C8-4DB4-B2AB-C922907EE85C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.270Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "60304E89-4C84-40B9-BC89-D069FF57D21D"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.685Z",
+            "checksum": "bb78d32cfe8eb2dd9f7c254f6e34fb72b998694099a40216198ca050b2fb974f"
           }
         },
         {
           "fields": {
             "Name": "NU__Subscription__c",
             "DisplayName": "Subscription",
-            "Description": "Nimble AMS Subscription (Salesforce sObject NU__Subscription__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Subscription (Salesforce sObject NU__Subscription__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+NU__Subscription__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -4066,6 +5354,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "98E97EF6-7CBF-4EDE-BB2B-C8DCA0D9F38A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.288Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -4081,6 +5376,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "578F2D14-ECA0-4E30-9240-C4933F5D12A2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.304Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -4096,6 +5398,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "CFB817DB-B977-41CA-8DE2-7C8DDAFE2E3A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.320Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -4111,6 +5420,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "1CBAFAC7-6BA6-43D6-BE3B-5D0181C0D29F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.335Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -4126,16 +5442,30 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "4BBB6242-BAA1-4C58-B71C-B133DC747140"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.351Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "D21A60F4-D706-4E5E-A324-6362C798F4D0"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.717Z",
+            "checksum": "4cc3f830107754aa34f09e163039eda5091f144398e27250f47f08c7f54c66d3"
           }
         },
         {
           "fields": {
             "Name": "Registration2__c",
             "DisplayName": "Registration2",
-            "Description": "Nimble AMS Registration2 (Salesforce sObject Registration2__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal Salesforce system fields are credential-free-provable and declared here.",
+            "Description": "Nimble AMS Registration2 (Salesforce sObject Registration2__c). Accessed via Salesforce REST SOQL / the Nimble Fuse outbound named-SOQL door. Business-field schema is runtime-Discovered via Salesforce sObject describe (auth-gated); only the universal S...",
             "APIPath": "/services/data/v{apiVersion}/query?q=SELECT+FIELDS(ALL)+FROM+Registration2__c",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -4194,6 +5524,13 @@
                   "Status": "Active",
                   "Length": 18,
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "64C8ADCE-FABA-4FD7-8E61-E4250F0DCACD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.363Z",
+                  "checksum": "6b20daaf29cde7a39ebd03bedcdaf76bbb155b56da9eb0bd532b63764652b5df"
                 }
               },
               {
@@ -4209,6 +5546,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "49454B62-C6F2-48B7-B0E4-DBEC59BD5DBC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.388Z",
+                  "checksum": "15ee106caa1a12a8ffd544c6fbef67a185632ffb92c40e27930b0ac4b226687f"
                 }
               },
               {
@@ -4224,6 +5568,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "3DAA6DE7-A9DF-4AC7-B610-48C17416AE59"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.403Z",
+                  "checksum": "095d2ae8d043d03fa509da8bfca64a3de03f0e005e4cb9f069b368c59fa69dea"
                 }
               },
               {
@@ -4239,6 +5590,13 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "309E6BB9-A98A-444A-ACB5-8EB927A9CA08"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.417Z",
+                  "checksum": "3cb847b5ba0c23363472717f88602d0f0fa1b96748c733efaa7d2d434e4eeeec"
                 }
               },
               {
@@ -4254,15 +5612,33 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "IsForeignKey": false
+                },
+                "primaryKey": {
+                  "ID": "5B3C91B5-FAC5-44A8-B15A-5AD94AC876DB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:10:16.429Z",
+                  "checksum": "b64eaa65f9526550d2e2518561eb408b636d45bd4de5f427c0d680242bac2b46"
                 }
               }
             ]
+          },
+          "primaryKey": {
+            "ID": "20B37A1A-5FDF-4C50-8C7F-6E379376C80E"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:10:13.731Z",
+            "checksum": "445c97fa0cc508263f3f8351df82c15e09b6262fe792456b55f1276e2bd05441"
           }
         }
       ]
     },
     "primaryKey": {
       "ID": "76A12FB4-654B-49F7-9745-8DF72912AB2A"
+    },
+    "sync": {
+      "lastModified": "2026-06-27T19:10:13.040Z",
+      "checksum": "ffcac24ed235b9319e119f08eeefc64c59a97415811913469662ee78d2dc272c"
     }
   }
 ]

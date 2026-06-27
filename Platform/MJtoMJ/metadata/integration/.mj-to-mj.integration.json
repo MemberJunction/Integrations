@@ -1365,7 +1365,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "AIAgentRunSteps",
             "DisplayName": "AI Agent Run Steps",
-            "Description": "Step-level detail within an AI Agent Run on the remote MJ. Inactive by default — enable when detailed run telemetry is needed. GraphQL query name escapes 'MJ: AI Agent Run Steps' to 'MJ_AIAgentRunSteps'. Watermark on __mj_UpdatedAt. Parent-child of AIAgentRuns via AgentRunID.",
+            "Description": "Step-level detail within an AI Agent Run on the remote MJ. Inactive by default — enable when detailed run telemetry is needed. GraphQL query name escapes 'MJ: AI Agent Run Steps' to 'MJ_AIAgentRunSteps'. Watermark on __mj_UpdatedAt. Parent-child of AIA...",
             "Category": "Telemetry",
             "APIPath": "MJ_AIAgentRunSteps",
             "ResponseDataKey": "MJ_AIAgentRunSteps",
