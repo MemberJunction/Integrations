@@ -1,6 +1,7 @@
 {
   "name": "@memberjunction/connector-sage-intacct",
   "version": "1.0.0",
+  "private": true,
   "description": "MemberJunction SageIntacct connector.",
   "type": "module",
   "main": "dist/index.js",
