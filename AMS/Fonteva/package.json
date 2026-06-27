@@ -22,7 +22,7 @@
     "@memberjunction/integration-engine-base": ">=5.42.0 <6.0.0"
   },
   "dependencies": {
-    "@memberjunction/connector-salesforce": "^1.0.0"
+    "@memberjunction/connector-salesforce": "*"
   },
   "devDependencies": {
     "@types/node": "24.10.11",
