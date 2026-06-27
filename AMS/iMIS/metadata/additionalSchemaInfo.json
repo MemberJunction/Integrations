@@ -1,0 +1,2312 @@
+{
+  "imis": [
+    {
+      "TableName": "AdAdjustment",
+      "PrimaryKey": [
+        {
+          "FieldName": "AdAdjustmentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AddressFormat",
+      "PrimaryKey": [
+        {
+          "FieldName": "AddressFormatId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AddressPurpose",
+      "PrimaryKey": [
+        {
+          "FieldName": "AddressPurposeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AdIssueDate",
+      "PrimaryKey": [
+        {
+          "FieldName": "IssueDateId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AdSize",
+      "PrimaryKey": [
+        {
+          "FieldName": "AdSizeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AdvertiserAgencyMap",
+      "PrimaryKey": [
+        {
+          "FieldName": "AdvertiserAgencyMapId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AdvertiserRepTerritoryMap",
+      "PrimaryKey": [
+        {
+          "FieldName": "AdvertiserRepTerritoryMapId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ApiDefinition",
+      "PrimaryKey": [
+        {
+          "FieldName": "Name",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AppealSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "AppealId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CampaignId",
+          "SchemaName": "imis",
+          "RelatedTable": "CampaignSummary",
+          "RelatedField": "CampaignId"
+        }
+      ]
+    },
+    {
+      "TableName": "AutoPayAccount",
+      "PrimaryKey": [
+        {
+          "FieldName": "AutoPayAccountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AutoPayInstruction",
+      "PrimaryKey": [
+        {
+          "FieldName": "InstructionId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "AutoPayAccountId",
+          "SchemaName": "imis",
+          "RelatedTable": "AutoPayAccount",
+          "RelatedField": "AutoPayAccountId"
+        }
+      ]
+    },
+    {
+      "TableName": "BatchSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "BatchId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "BillingIssueNotificationLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "BillingIssueNotificationLogKey",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "BillingLogKey",
+          "SchemaName": "imis",
+          "RelatedTable": "BillingLog",
+          "RelatedField": "BillingLogKey"
+        }
+      ]
+    },
+    {
+      "TableName": "BillingIssueNotificationLogDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "BillingIssueNotificationLogDetailKey",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "BillingIssueNotificationLogKey",
+          "SchemaName": "imis",
+          "RelatedTable": "BillingIssueNotificationLog",
+          "RelatedField": "BillingIssueNotificationLogKey"
+        }
+      ]
+    },
+    {
+      "TableName": "BillingLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "BillingLogKey",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "BillingLogItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "BillingLogKey",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "BillingItemId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "BillingPartyId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "BillingLogKey",
+          "SchemaName": "imis",
+          "RelatedTable": "BillingLog",
+          "RelatedField": "BillingLogKey"
+        }
+      ]
+    },
+    {
+      "TableName": "BOEntityDefinition",
+      "PrimaryKey": [
+        {
+          "FieldName": "BOEntityDefinitionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CampaignSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "CampaignId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Cart",
+      "PrimaryKey": [
+        {
+          "FieldName": "CartId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificationProgram",
+      "PrimaryKey": [
+        {
+          "FieldName": "CertificationProgramId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificationProgramComponent",
+      "PrimaryKey": [
+        {
+          "FieldName": "CertificationProgramComponentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificationProgramGroup",
+      "PrimaryKey": [
+        {
+          "FieldName": "CertificationProgramGroupId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificationProgramRegistration",
+      "PrimaryKey": [
+        {
+          "FieldName": "CertificationProgramRegistrationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificationProgramSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "CertificationProgramId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ChapterZipCode",
+      "PrimaryKey": [
+        {
+          "FieldName": "ZipCode",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ComboOrder",
+      "PrimaryKey": [
+        {
+          "FieldName": "ComboOrderId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "OrderTypeCode",
+          "SchemaName": "imis",
+          "RelatedTable": "LegacyOrderType",
+          "RelatedField": "OrderTypeCode"
+        }
+      ]
+    },
+    {
+      "TableName": "CommitteeMinutes",
+      "PrimaryKey": [
+        {
+          "FieldName": "CommitteeMinutesId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Communication",
+      "PrimaryKey": [
+        {
+          "FieldName": "CommunicationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CommunicationType",
+      "PrimaryKey": [
+        {
+          "FieldName": "CommunicationTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ContactInteraction",
+      "PrimaryKey": [
+        {
+          "FieldName": "ContactInteractionId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "InteractionTypeCode",
+          "SchemaName": "imis",
+          "RelatedTable": "InteractionType",
+          "RelatedField": "InteractionTypeCode"
+        },
+        {
+          "FieldName": "InteractionActionCode",
+          "SchemaName": "imis",
+          "RelatedTable": "InteractionAction",
+          "RelatedField": "InteractionActionCode"
+        }
+      ]
+    },
+    {
+      "TableName": "Country",
+      "PrimaryKey": [
+        {
+          "FieldName": "CountryCode",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CountryName",
+          "SchemaName": "imis",
+          "RelatedTable": "LegacyCountryDetail",
+          "RelatedField": "CountryName"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditInvoiceExport",
+      "PrimaryKey": [
+        {
+          "FieldName": "CreditInvoiceExportId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditInvoiceExportItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "CreditInvoiceExportId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "InvoiceId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CreditInvoiceExportId",
+          "SchemaName": "imis",
+          "RelatedTable": "CreditInvoiceExport",
+          "RelatedField": "CreditInvoiceExportId"
+        }
+      ]
+    },
+    {
+      "TableName": "CultureFormat",
+      "PrimaryKey": [
+        {
+          "FieldName": "CultureFormatId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DataVaultLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "DataVaultLogId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DeferralMatrix",
+      "PrimaryKey": [
+        {
+          "FieldName": "DeferralMatrixId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "GLExportId",
+          "SchemaName": "imis",
+          "RelatedTable": "GLExport",
+          "RelatedField": "GLExportId"
+        }
+      ]
+    },
+    {
+      "TableName": "DeliveryMethod",
+      "PrimaryKey": [
+        {
+          "FieldName": "DeliveryMethodId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DeliveryMethodSet",
+      "PrimaryKey": [
+        {
+          "FieldName": "DeliveryMethodSetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Document",
+      "PrimaryKey": [
+        {
+          "FieldName": "DocumentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DocumentSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "DocumentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DonationPremium",
+      "PrimaryKey": [
+        {
+          "FieldName": "DonationPremiumId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DuesImportPackage",
+      "PrimaryKey": [
+        {
+          "FieldName": "DuesImportPackageId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EngagementScore",
+      "PrimaryKey": [
+        {
+          "FieldName": "EngagementScoreId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Event",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventCategory",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventCategoryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventFunction",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventFunctionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventRegistration",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventRegistrationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventRegistrationSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventRegistrationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventResource",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventResourceId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventResourceType",
+      "PrimaryKey": [
+        {
+          "FieldName": "ResourceGroup",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "ResourceCategory",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "ResourceCode",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ExperienceGrade",
+      "PrimaryKey": [
+        {
+          "FieldName": "ExperienceGradeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ExperienceLocation",
+      "PrimaryKey": [
+        {
+          "FieldName": "ExperienceLocationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ExperienceUnit",
+      "PrimaryKey": [
+        {
+          "FieldName": "ExperienceUnitId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "FormDefinition",
+      "PrimaryKey": [
+        {
+          "FieldName": "FormDefinitionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "FormResponse",
+      "PrimaryKey": [
+        {
+          "FieldName": "FormResponseId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "FormDefinitionId",
+          "SchemaName": "imis",
+          "RelatedTable": "FormDefinition",
+          "RelatedField": "FormDefinitionId"
+        }
+      ]
+    },
+    {
+      "TableName": "GatewayAccount",
+      "PrimaryKey": [
+        {
+          "FieldName": "AccountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GenTable",
+      "PrimaryKey": [
+        {
+          "FieldName": "TableName",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "Code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "TableName",
+          "SchemaName": "imis",
+          "RelatedTable": "TaskCommonTable",
+          "RelatedField": "TableName"
+        }
+      ]
+    },
+    {
+      "TableName": "GiftAdjustmentLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "GiftAdjustmentLogId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GiftAdjustmentLogDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "PropertyName",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "GiftAdjustmentLogId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "GiftAdjustmentLogId",
+          "SchemaName": "imis",
+          "RelatedTable": "GiftAdjustmentLog",
+          "RelatedField": "GiftAdjustmentLogId"
+        }
+      ]
+    },
+    {
+      "TableName": "GiftInformationBatch",
+      "PrimaryKey": [
+        {
+          "FieldName": "BatchId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GiftPremium",
+      "PrimaryKey": [
+        {
+          "FieldName": "GiftPremiumId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GiftPremiumRule",
+      "PrimaryKey": [
+        {
+          "FieldName": "GiftPremiumRuleId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GiftPremiumSet",
+      "PrimaryKey": [
+        {
+          "FieldName": "GiftPremiumSetId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "GiftPremiumRuleId",
+          "SchemaName": "imis",
+          "RelatedTable": "GiftPremiumRule",
+          "RelatedField": "GiftPremiumRuleId"
+        }
+      ]
+    },
+    {
+      "TableName": "GLAccount",
+      "PrimaryKey": [
+        {
+          "FieldName": "GLAccountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GLExport",
+      "PrimaryKey": [
+        {
+          "FieldName": "GLExportId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Group",
+      "PrimaryKey": [
+        {
+          "FieldName": "GroupId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GroupClass",
+      "PrimaryKey": [
+        {
+          "FieldName": "GroupClassId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GroupClassSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "GroupClassId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GroupMember",
+      "PrimaryKey": [
+        {
+          "FieldName": "GroupMemberId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GroupMemberSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "GroupMemberId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GroupSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "GroupId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ImportBatch",
+      "PrimaryKey": [
+        {
+          "FieldName": "BatchId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ImportBatchLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "ImportBatchLogId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ImportBatchSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "BatchId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ImportFileType",
+      "PrimaryKey": [
+        {
+          "FieldName": "ImportFileTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "InstituteTypeRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "InstituteTypeCode",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "InteractionAction",
+      "PrimaryKey": [
+        {
+          "FieldName": "InteractionActionCode",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "InteractionType",
+      "PrimaryKey": [
+        {
+          "FieldName": "InteractionTypeCode",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "InteractionTypeAction",
+      "PrimaryKey": [
+        {
+          "FieldName": "ExternalTypeId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "InteractionActionCode",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "InteractionTypeCode",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "InteractionActionCode",
+          "SchemaName": "imis",
+          "RelatedTable": "InteractionAction",
+          "RelatedField": "InteractionActionCode"
+        },
+        {
+          "FieldName": "InteractionTypeCode",
+          "SchemaName": "imis",
+          "RelatedTable": "InteractionType",
+          "RelatedField": "InteractionTypeCode"
+        }
+      ]
+    },
+    {
+      "TableName": "Invoice",
+      "PrimaryKey": [
+        {
+          "FieldName": "InvoiceId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "InvoiceSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "InvoiceId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Item",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ItemClass",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemClassId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ItemClassSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemClassId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ItemPrice",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemPriceId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ItemSale",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemSaleId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "SourceCodeId",
+          "SchemaName": "imis",
+          "RelatedTable": "SourceCodeSummary",
+          "RelatedField": "SourceCodeId"
+        }
+      ]
+    },
+    {
+      "TableName": "ItemSetItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ItemSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyActivityAttachment",
+      "PrimaryKey": [
+        {
+          "FieldName": "AttachmentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyActivityType",
+      "PrimaryKey": [
+        {
+          "FieldName": "ActivityTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyBillingCycle",
+      "PrimaryKey": [
+        {
+          "FieldName": "LegacyBillingCycleId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyBillingItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyCashAccount",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentMethodId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyCountryDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "CountryName",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CountryCode",
+          "SchemaName": "imis",
+          "RelatedTable": "Country",
+          "RelatedField": "CountryCode"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyCustomerType",
+      "PrimaryKey": [
+        {
+          "FieldName": "CustomerTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyDueToDueFrom",
+      "PrimaryKey": [
+        {
+          "FieldName": "DueFromDueToId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyEventFunctionAttendance",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventFunctionAttendanceId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyFreightRate",
+      "PrimaryKey": [
+        {
+          "FieldName": "ZoneId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "MinimumWeight",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "DeliveryMethod",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyFreightZone",
+      "PrimaryKey": [
+        {
+          "FieldName": "ZoneTableId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyItemClassDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemClassId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyOrder",
+      "PrimaryKey": [
+        {
+          "FieldName": "LegacyOrderId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "OrderTypeCode",
+          "SchemaName": "imis",
+          "RelatedTable": "LegacyOrderType",
+          "RelatedField": "OrderTypeCode"
+        },
+        {
+          "FieldName": "OrderId",
+          "SchemaName": "imis",
+          "RelatedTable": "Order",
+          "RelatedField": "OrderId"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyOrderType",
+      "PrimaryKey": [
+        {
+          "FieldName": "OrderTypeCode",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyPartyMembership",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyProductItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemLocationId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyVatRule",
+      "PrimaryKey": [
+        {
+          "FieldName": "RuleId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LegacyVatRuleSet",
+      "PrimaryKey": [
+        {
+          "FieldName": "RuleSetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LocalizationControlType",
+      "PrimaryKey": [
+        {
+          "FieldName": "LocalizationControlTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LocalizationCulture",
+      "PrimaryKey": [
+        {
+          "FieldName": "LocalizationCultureId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "LocalizationPhrase",
+      "PrimaryKey": [
+        {
+          "FieldName": "LocalizationPhraseId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaAdTypeRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaAdTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaAsset",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaAssetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaAssetGroup",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaAssetGroupId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaAssetSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaAssetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaColorRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaColorId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaFrequencyRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaFrequencyId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaInventoryDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "InventoryDetailId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaInventoryMaster",
+      "PrimaryKey": [
+        {
+          "FieldName": "InventoryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaOrder",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaOrderId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "AdSizeId",
+          "SchemaName": "imis",
+          "RelatedTable": "AdSize",
+          "RelatedField": "AdSizeId"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaOrderLine",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaOrderLineId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaOrderProductionDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaOrderProductionDetailId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaOrderRep",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaOrderRepId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaOrderSignedDocuments",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaOrderSignedDocumentsId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaOrderSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaOrderId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "RateCardDetailId",
+          "SchemaName": "imis",
+          "RelatedTable": "RateCardDetail",
+          "RelatedField": "RateCardDetailId"
+        },
+        {
+          "FieldName": "RateCardId",
+          "SchemaName": "imis",
+          "RelatedTable": "RateCard",
+          "RelatedField": "RateCardId"
+        },
+        {
+          "FieldName": "AdSizeId",
+          "SchemaName": "imis",
+          "RelatedTable": "AdSize",
+          "RelatedField": "AdSizeId"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaPositionRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaPositionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaProductionStageRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaProductionStageId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaProductionStatusRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaProductionStatusId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaRep",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaRepId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaSeparationRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaSeparationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaTerritory",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaTerritoryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MediaTypeRef",
+      "PrimaryKey": [
+        {
+          "FieldName": "MediaTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MembershipLogin",
+      "PrimaryKey": [
+        {
+          "FieldName": "Identity",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "EntityTypeName",
+          "SchemaName": "imis",
+          "RelatedTable": "BOEntityDefinition",
+          "RelatedField": "EntityTypeName"
+        }
+      ]
+    },
+    {
+      "TableName": "Message",
+      "PrimaryKey": [
+        {
+          "FieldName": "MessageId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NameDesignation",
+      "PrimaryKey": [
+        {
+          "FieldName": "Code",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NamePrefix",
+      "PrimaryKey": [
+        {
+          "FieldName": "Code",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NameSuffix",
+      "PrimaryKey": [
+        {
+          "FieldName": "Code",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NotificationSet",
+      "PrimaryKey": [
+        {
+          "FieldName": "NotificationSetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "NotificationSetDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "NotificationSetDetailId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "NotificationSetId",
+          "SchemaName": "imis",
+          "RelatedTable": "NotificationSet",
+          "RelatedField": "NotificationSetId"
+        }
+      ]
+    },
+    {
+      "TableName": "Order",
+      "PrimaryKey": [
+        {
+          "FieldName": "OrderId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "OrderStageProcessingNotificationLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "OrderStageProcessingNotificationLogKey",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "OrderStageProcessingNotificationLogDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "OrderStageProcessingNotificationLogDetailKey",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "OrderStageProcessingNotificationLogKey",
+          "SchemaName": "imis",
+          "RelatedTable": "OrderStageProcessingNotificationLog",
+          "RelatedField": "OrderStageProcessingNotificationLogKey"
+        }
+      ]
+    },
+    {
+      "TableName": "Organization",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CountryName",
+          "SchemaName": "imis",
+          "RelatedTable": "LegacyCountryDetail",
+          "RelatedField": "CountryName"
+        }
+      ]
+    },
+    {
+      "TableName": "OrganizationMerge",
+      "PrimaryKey": [
+        {
+          "FieldName": "OrganizationMergeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PanelDefinition",
+      "PrimaryKey": [
+        {
+          "FieldName": "PanelDefinitionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PanelDefinitionSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "PanelDefinitionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PanelSourceSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "Name",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Party",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CountryName",
+          "SchemaName": "imis",
+          "RelatedTable": "LegacyCountryDetail",
+          "RelatedField": "CountryName"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyDeleteLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyDeleteLogId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyDuplicate",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyDuplicateId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyEventAvailability",
+      "PrimaryKey": [
+        {
+          "FieldName": "EventId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyImage",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyImageId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyItemAvailability",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyItemPrice",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyMerge",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyMergeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyNote",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyNoteId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartySalutation",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartySalutationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartySalutationMethodSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartySalutationMethodId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartyStatus",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyStatusId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PartySummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CountryName",
+          "SchemaName": "imis",
+          "RelatedTable": "LegacyCountryDetail",
+          "RelatedField": "CountryName"
+        }
+      ]
+    },
+    {
+      "TableName": "Payment",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PaymentMethod",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentMethodId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "GLAccountId",
+          "SchemaName": "imis",
+          "RelatedTable": "GLAccount",
+          "RelatedField": "GLAccountId"
+        }
+      ]
+    },
+    {
+      "TableName": "PaymentMethodSet",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentMethodSetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PaymentSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PaymentTerms",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentTermsId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PaymentTermsMethodSet",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentTermsMethodSetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PaymentTermsSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "PaymentTermsId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Person",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CountryName",
+          "SchemaName": "imis",
+          "RelatedTable": "LegacyCountryDetail",
+          "RelatedField": "CountryName"
+        }
+      ]
+    },
+    {
+      "TableName": "PriceSheet",
+      "PrimaryKey": [
+        {
+          "FieldName": "PriceSheetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PriceSheetGroup",
+      "PrimaryKey": [
+        {
+          "FieldName": "PriceSheetGroupId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PriceSheetProductPrice",
+      "PrimaryKey": [
+        {
+          "FieldName": "CustomerTypeCode",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "Name",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "PriceSheetSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "PriceSheetId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductInventory",
+      "PrimaryKey": [
+        {
+          "FieldName": "ProductInventoryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "ItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductTransaction",
+      "PrimaryKey": [
+        {
+          "FieldName": "TransactionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductTransactionDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "TransactionDetailId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Promotion",
+      "PrimaryKey": [
+        {
+          "FieldName": "PromotionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProrateSchedule",
+      "PrimaryKey": [
+        {
+          "FieldName": "ProrateScheduleId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "QueryDefinition",
+      "PrimaryKey": [
+        {
+          "FieldName": "QueryDefinitionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "QueryParameterDefinition",
+      "PrimaryKey": [
+        {
+          "FieldName": "QueryParameterDefinitionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RateCard",
+      "PrimaryKey": [
+        {
+          "FieldName": "RateCardId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RateCardDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "RateCardDetailId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "RateCardId",
+          "SchemaName": "imis",
+          "RelatedTable": "RateCard",
+          "RelatedField": "RateCardId"
+        }
+      ]
+    },
+    {
+      "TableName": "Receipt",
+      "PrimaryKey": [
+        {
+          "FieldName": "ReceiptId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RedirectRule",
+      "PrimaryKey": [
+        {
+          "FieldName": "RedirectRuleId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RepTerritory",
+      "PrimaryKey": [
+        {
+          "FieldName": "RepTerritoryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Role",
+      "PrimaryKey": [
+        {
+          "FieldName": "RoleKey",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ScheduledPayment",
+      "PrimaryKey": [
+        {
+          "FieldName": "ScheduledPaymentId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SocialNetwork",
+      "PrimaryKey": [
+        {
+          "FieldName": "SocialNetworkId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SoftCreditType",
+      "PrimaryKey": [
+        {
+          "FieldName": "SoftCreditTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SolicitationSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "SolicitationId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "AppealId",
+          "SchemaName": "imis",
+          "RelatedTable": "AppealSummary",
+          "RelatedField": "AppealId"
+        }
+      ]
+    },
+    {
+      "TableName": "SourceCodeSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "SourceCodeId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "SolicitationId",
+          "SchemaName": "imis",
+          "RelatedTable": "SolicitationSummary",
+          "RelatedField": "SolicitationId"
+        }
+      ]
+    },
+    {
+      "TableName": "Subscription",
+      "PrimaryKey": [
+        {
+          "FieldName": "PartyId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Tag",
+      "PrimaryKey": [
+        {
+          "FieldName": "TagId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TaskActionLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaskLogDetailId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "TaskActionLogId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "TaskLogDetailId",
+          "SchemaName": "imis",
+          "RelatedTable": "TaskLogDetail",
+          "RelatedField": "TaskLogDetailId"
+        }
+      ]
+    },
+    {
+      "TableName": "TaskActionLogDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaskActionLogDetailId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TaskCommonTable",
+      "PrimaryKey": [
+        {
+          "FieldName": "TableName",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TaskDefinition",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaskDefinitionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TaskLog",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaskLogId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "TaskDefinitionId",
+          "SchemaName": "imis",
+          "RelatedTable": "TaskDefinition",
+          "RelatedField": "TaskDefinitionId"
+        }
+      ]
+    },
+    {
+      "TableName": "TaskLogDetail",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaskLogDetailId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "TaskLogId",
+          "SchemaName": "imis",
+          "RelatedTable": "TaskLog",
+          "RelatedField": "TaskLogId"
+        }
+      ]
+    },
+    {
+      "TableName": "TaskSubscription",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaskSubscriptionId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "TaskDefinitionId",
+          "SchemaName": "imis",
+          "RelatedTable": "TaskDefinition",
+          "RelatedField": "TaskDefinitionId"
+        }
+      ]
+    },
+    {
+      "TableName": "TaxAuthority",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaxAuthorityId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "CountryCode",
+          "SchemaName": "imis",
+          "RelatedTable": "Country",
+          "RelatedField": "CountryCode"
+        }
+      ]
+    },
+    {
+      "TableName": "TaxAuthoritySummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaxAuthorityId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TaxCategorySummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaxCategoryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TaxSchedule",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaxScheduleId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TaxScheduleSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "TaxScheduleId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Template",
+      "PrimaryKey": [
+        {
+          "FieldName": "TemplateId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Themes",
+      "PrimaryKey": [
+        {
+          "FieldName": "ThemeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TributeType",
+      "PrimaryKey": [
+        {
+          "FieldName": "TributeTypeId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UomGroup",
+      "PrimaryKey": [
+        {
+          "FieldName": "UomGroupId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "User",
+      "PrimaryKey": [
+        {
+          "FieldName": "UserId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UserCommercePreferences",
+      "PrimaryKey": [
+        {
+          "FieldName": "UserCommercePreferencesId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UserSecurity",
+      "PrimaryKey": [
+        {
+          "FieldName": "UserId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "WarehouseSummary",
+      "PrimaryKey": [
+        {
+          "FieldName": "FacilityId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "QueryService",
+      "PrimaryKey": [
+        {
+          "FieldName": "QueryServiceId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ContentItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "ContentItemId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}

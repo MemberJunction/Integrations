@@ -1,0 +1,4701 @@
+[
+  {
+    "fields": {
+      "Name": "OpenWater",
+      "Icon": "fa-solid fa-trophy",
+      "ClassName": "OpenWaterConnector",
+      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector — pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "ImportPath": "@memberjunction/connector-openwater",
+      "NavigationBaseURL": "https://api.getopenwater.com",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API"
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "Name": "Program",
+            "DisplayName": "Program",
+            "Description": "OpenWater Program (door). Source schema: Models.Program.ProgramListItemModel. Access: /v2/Programs.",
+            "APIPath": "/v2/Programs",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "createdSinceUtc",
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Program id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CF9FA4FD-59C1-4B99-A803-1AF788167A1F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.421Z",
+                  "checksum": "e337b566e05602f66e91008bc5d0849c31c2173ef6790076a6600c9fdd66d943"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "Program Code",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6C2A0228-8689-4F07-AE4C-9DADB5C85C03"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.436Z",
+                  "checksum": "e1e428ba808b5e8e8e04d85be3c5ae57bea4aefea786db9f51d6bfeb28c81d07"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Program Name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8F736A90-B55D-4C30-B23D-E1F3C78220AE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.452Z",
+                  "checksum": "0557026f20314b8d8251804eeeb552b23210c859958fe67fcd6205a96b3ede64"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "tag",
+                  "DisplayName": "Tag",
+                  "Description": "Program Tag",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9CF624DD-9CE8-4A55-95E1-EA08A433FF72"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.469Z",
+                  "checksum": "1f64530ab0be9152f8f073073ffd3805d6d38e459118752cadbd5f79969d48aa"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isArchived",
+                  "DisplayName": "Is Archived",
+                  "Description": "Is program archived",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3973260B-ADB4-4A10-A68E-8E82601719F9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.486Z",
+                  "checksum": "c211ffac358857953db5bc0b54b9cfe598324785e393a65fe163b306fc7d4d24"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "enableSessions",
+                  "DisplayName": "Enable Sessions",
+                  "Description": "Are sessions enabled in a program",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "738BA7F1-C664-4EC8-93EC-9A97B76CA6EB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.502Z",
+                  "checksum": "3eaf29057660380b564e660546bde7c4fc5fb13cb1478f35faa2ffe2868ffc0f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "enableScheduler",
+                  "DisplayName": "Enable Scheduler",
+                  "Description": "Is scheduler enabled in a program",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9781354A-EFDF-4564-B605-E60945930398"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.518Z",
+                  "checksum": "2b91f400cdc12f680a7a66671fa1b2839499cf20de479ed4e76a40fbd02377a3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdAtUtc",
+                  "DisplayName": "Created At Utc",
+                  "Description": "Program created date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F71F1645-25EE-4491-83FA-FA734F9CB728"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.535Z",
+                  "checksum": "da5babcb2ac86c588b81981abed62bc07831310d8d7af6bc89f5b60252f5b33e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "rounds",
+                  "DisplayName": "Rounds",
+                  "Description": "Program rounds",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "72B577D3-824C-46AE-88AD-FCB9B64B1BE5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.551Z",
+                  "checksum": "f104d5c575b16187c6943a24e4213b62793474d35ea46217d79f87d78eae7a7e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationCategories",
+                  "DisplayName": "Application Categories",
+                  "Description": "Program application categories",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "AE2C1E4C-1401-4F10-9544-D5AA817415A7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.564Z",
+                  "checksum": "57b98437d9dd18516b666b6b682eb8aead3cb59be1e2df97d7125b776b9d7bb8"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "026EDFDD-2E62-40C7-8BCD-971470764BF7"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:04.861Z",
+            "checksum": "375c0536225f5032b49d93716b00386d423f5d9340473a43e0ba29b19d6b0843"
+          }
+        },
+        {
+          "fields": {
+            "Name": "User",
+            "DisplayName": "User",
+            "Description": "OpenWater User (door). Source schema: Models.User.UserListItemModel. Access: /v2/Users.",
+            "APIPath": "/v2/Users",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "lastModifiedSinceUtc",
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/Users",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "body",
+            "SupportsUpdate": true,
+            "UpdateAPIPath": "/v2/Users/{id}",
+            "UpdateMethod": "PATCH",
+            "UpdateBodyShape": "flat",
+            "UpdateIDLocation": "path",
+            "SupportsDelete": false,
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "User id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E9455A86-FA63-4538-841A-F035D4F0F36A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.596Z",
+                  "checksum": "1d3fb901b42e282cd2bf45dbe97373ac317c427c289efc4dec273351e7394acb"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "User email",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C2D02E5F-7232-4562-82D0-BFEC3F4CB128"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.612Z",
+                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "User first name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A10D17D3-AAB4-4178-A662-1ACCAC865F26"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.629Z",
+                  "checksum": "8312846266659357aa013482d0fbdd04950f3ab653e2bf72ea2f8e341dbd7fa3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "User last name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "989141B9-6E9D-46BF-BEE9-97C04E7CA27B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.646Z",
+                  "checksum": "226e8d325b4440231fb7da741bf286aea722d652d573b11f5b54daee117c589e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "thirdPartyUniqueId",
+                  "DisplayName": "Third Party Unique Id",
+                  "Description": "User 3rd party unique id",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "0C669E7F-9561-47E9-9BEB-E463DD0D3685"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.662Z",
+                  "checksum": "b99a456e1a2ca569d193dd77e965de6d3809b696a13d67bd78988eff65ce70c5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "externalAuthData",
+                  "DisplayName": "External Auth Data",
+                  "Description": "User external auth data",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6095E8E5-06F5-423B-A757-E35F2AC1613A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.679Z",
+                  "checksum": "a1c699a96da1004feb79a2da2b86252e004688569eafe021dc489865341b10d7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdAtUtc",
+                  "DisplayName": "Created At Utc",
+                  "Description": "User created date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "860BF05C-FC9D-44C8-A1DB-09A9047A3E75"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.697Z",
+                  "checksum": "db27de862f4be1150d88e90380116ad5cea136f39454dfbb43efb42ba1f378a7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastModifiedAtUtc",
+                  "DisplayName": "Last Modified At Utc",
+                  "Description": "User last modified date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2F873EC5-EFDA-4098-8517-DF2564CFF17F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.711Z",
+                  "checksum": "d9565bc2ec0640474c20bd99c4415ab58962cb8f6219cb63fff5552048b98076"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastLoggedInUtc",
+                  "DisplayName": "Last Logged In Utc",
+                  "Description": "User last logged in date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "DE38EF79-DDD6-4FC5-9527-49266DB3DBE3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.728Z",
+                  "checksum": "8eda190011570268f1e34c6d55671753f98d4d99a7f8db5af20d9a82b07a0a9e"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "5E4FBD5E-2633-429D-9510-21E36CBC6FA7"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:04.885Z",
+            "checksum": "e8d05b6f2290644cac5e5d06348342f3aa4430e92719200a12b85d7de2b7450b"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Application",
+            "DisplayName": "Application",
+            "Description": "OpenWater Application (door). Source schema: Models.Application.ApplicationListItemModel. Access: /v2/Applications.",
+            "APIPath": "/v2/Applications",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "lastModifiedSinceUtc",
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/Applications",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "body",
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2/Applications/{id}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Application id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "56EFDAD9-E8C5-4042-B5B7-57B246D99A16"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.742Z",
+                  "checksum": "e220b07df536c0ed814d5258354c641832b4bce4a58f6f595e4b542fbd4837f3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Program id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Program"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "F4C09D89-50F0-4592-8959-5A34CADF325B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.771Z",
+                  "checksum": "c16b5cd592c2e2de6182f406bce17fdd46f9bb0aeb0123b454c7690e48763461"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "userId",
+                  "DisplayName": "User Id",
+                  "Description": "Application owner user Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "44727EF5-9290-4BE2-ABCC-275F825F92DD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.788Z",
+                  "checksum": "04bcdf135672f98f08f51ffcad09bed9143cfafa8815a9395cd87e5bc79e012f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "Application code",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "97F43C00-B7E1-4805-8459-5FF21E1E677F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.803Z",
+                  "checksum": "0f5e80edec2b8933be694e44de5a8ca197ceae4801612658ff3e510701a0c6b2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Application name",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4172CBC1-F5CB-475F-A68E-7205016C9751"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.819Z",
+                  "checksum": "b6d0c80e8efd26c7831e5b5230f4efbb00b0beace62396061f9c7a474bb566a0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "categoryName",
+                  "DisplayName": "Category Name",
+                  "Description": "Application category name",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3DFC8F86-8F89-4A03-B23E-3C0248186AB1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.837Z",
+                  "checksum": "b697088fcf127ebe9be22c92b7a4258c1a96d5f8062d4d60cb6b994db44a890b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "categoryFriendlyPath",
+                  "DisplayName": "Category Friendly Path",
+                  "Description": "Application category friendly path",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "27E79E57-E13C-49E2-A05E-DE7B3D40D446"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.853Z",
+                  "checksum": "49f6368c422b0533fbb1f265d13ac95dcb0bdbdb403136d7530683fd39763c30"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastModifiedUtc",
+                  "DisplayName": "Last Modified Utc",
+                  "Description": "Application last modified since date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5724BF6F-421E-415D-9B96-7DF6F5FF1B63"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.869Z",
+                  "checksum": "ffe82cd774ef317e934923671b1db6aaf6b15c14c6e15a4a41f7578392bbfa22"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "143FFF7D-932C-4509-A02B-4DFF4A93D7B1"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:04.907Z",
+            "checksum": "e48f2e94b8df2226179258ec35686c7d4ce45386da632fa89412b2845a908a8c"
+          }
+        },
+        {
+          "fields": {
+            "Name": "DeletedApplication",
+            "DisplayName": "Deleted Application",
+            "Description": "OpenWater DeletedApplication (door). Source schema: Models.DeletedApplication.DeletedApplicationListItemModel. Access: /v2/Applications/DeletedData.",
+            "APIPath": "/v2/Applications/DeletedData",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "deletedSinceUtc",
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Deleted application id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E497EA01-6335-4EE8-B629-65E23632FCCB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.885Z",
+                  "checksum": "11bc43903b8e7cc2ac960900631f45896e6cea559e36c27ca976856a1e415268"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Program id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Program"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "F8CAF5F2-D75E-48C1-8046-45272983DCA1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.902Z",
+                  "checksum": "c16b5cd592c2e2de6182f406bce17fdd46f9bb0aeb0123b454c7690e48763461"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "Application id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Application"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "9AC6ADEA-A93C-4AAD-9150-02E16CF2E5EA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.914Z",
+                  "checksum": "418966eba3c7c796d6c6a8168a2c70c793140c04c36afb9271e71499b8777aee"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationCode",
+                  "DisplayName": "Application Code",
+                  "Description": "Application code",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "425AC6A5-387B-4FFF-ACEF-35ACFC3E5EBC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.944Z",
+                  "checksum": "9c585f19d5d2921af4605d3f34b41a42310eba97264c1e525cbcdd45346f1f82"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationName",
+                  "DisplayName": "Application Name",
+                  "Description": "Application name",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "23B1340B-6865-47C3-BB33-810BD02F5763"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.961Z",
+                  "checksum": "bed9a18daa9b148ea5992edb770653b4528da6413b1bb0e4e7ea40aca3e2caf0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "userId",
+                  "DisplayName": "User Id",
+                  "Description": "User id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "4807E464-FF9F-4469-8E9B-ABD88E1F9FE1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.978Z",
+                  "checksum": "ab5ca0af95178aba08b0a19138c99ded3250b6774a5211453ee43009e789d12d"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "User email",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9EA86648-550B-426C-9D4F-A8612DCFBF26"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:05.994Z",
+                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "User first name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "AC0AC79A-09C8-4C08-8127-56902CA2D99E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.012Z",
+                  "checksum": "8312846266659357aa013482d0fbdd04950f3ab653e2bf72ea2f8e341dbd7fa3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "User last name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "32C550BD-DC3D-4EC0-AEAF-B687AA6EE500"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.029Z",
+                  "checksum": "226e8d325b4440231fb7da741bf286aea722d652d573b11f5b54daee117c589e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "deletedAtUtc",
+                  "DisplayName": "Deleted At Utc",
+                  "Description": "Deleted since date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1D3DCC82-9992-405F-A66B-8274CF06609A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.045Z",
+                  "checksum": "516809cbbe82f440f6ac84580aa8e3a463c169fb375452c41c1df4602b9bc13c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "0CFBACDC-8033-4AF3-974D-0710860DA6CF"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:04.929Z",
+            "checksum": "0af64d504c56d7ae06262e646c10dd027e1ed2fe5392cbb3837f7c898c3868b8"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Invoice",
+            "DisplayName": "Invoice",
+            "Description": "OpenWater Invoice (door). Source schema: Models.Invoice.InvoiceListItemModel. Access: /v2/Invoices.",
+            "APIPath": "/v2/Invoices",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "mostRecentTransactionSinceUtc",
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Invoice id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3E5CD506-3291-43A4-932D-892627EC52A3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.060Z",
+                  "checksum": "0896efd8bfc860722d776b7e81bedff9298da6dd94c97fef72cdd15042ce0413"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Program id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Program"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "8EF157BA-1E12-40FF-928B-6454F332F350"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.076Z",
+                  "checksum": "c16b5cd592c2e2de6182f406bce17fdd46f9bb0aeb0123b454c7690e48763461"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programCode",
+                  "DisplayName": "Program Code",
+                  "Description": "Program code",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8060CAE7-8B09-4AE9-AE1B-E17669BAAA49"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.090Z",
+                  "checksum": "73f0104c24d390d71a48708590007dcd5451923b4241aad5b55c99aea4cdae91"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "thirdPartyCorporateId",
+                  "DisplayName": "Third Party Corporate Id",
+                  "Description": "User 3rd party unique id",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "BAE8C57A-EDBD-4DCF-A86C-F196EF95EDBD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.119Z",
+                  "checksum": "e07ed1385e9de8409d1f3392d06c10975f298523163bb8727737b5e3ff7d729c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdAtUtc",
+                  "DisplayName": "Created At Utc",
+                  "Description": "Invoice created date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C0CADC0B-F0C3-4339-AD26-AA7546FB2800"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.134Z",
+                  "checksum": "867fb1af1c221d7dfeeb3396ea1c7b5fa982b18d665a76ae30aad6d7a74c017a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "mostRecentTransactionDateUtc",
+                  "DisplayName": "Most Recent Transaction Date Utc",
+                  "Description": "Invoice most recent transaction date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "BEAD79E8-3B5F-4089-B513-35ED60D00039"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.149Z",
+                  "checksum": "eeae5e5b0a186f937d26c04d86ce800c9fab1cca47960de8c6884f48b193a74c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "EFC8189B-E523-468B-A9EA-F46CF3BD0C21"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:04.950Z",
+            "checksum": "9612cb6ad56e6ba6968cd26fce211df5e6da98d18d6b60d2636b39dd95687885"
+          }
+        },
+        {
+          "fields": {
+            "Name": "BillingLineItem",
+            "DisplayName": "Billing Line Item",
+            "Description": "OpenWater BillingLineItem (door). Source schema: Models.Invoice.BillingLineItemListItemModel. Access: /v2/Invoices/BillingLineItems.",
+            "APIPath": "/v2/Invoices/BillingLineItems",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "lastModifiedUtc",
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Billing line item id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6C6823C0-012C-495E-95FA-C5F8ABC1A24E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.164Z",
+                  "checksum": "29a4e58bad0556e701be2b74ef12944468f63906bf2e2ced94520eab2e648b21"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "Related application id",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Application"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "D8297070-0E4D-4825-9E80-37DA19EF6F35"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.181Z",
+                  "checksum": "b10d11991c599bc378f53998c873ff445e5e1432ad6e7894cb3a480b9d4be586"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "deletedApplicationId",
+                  "DisplayName": "Deleted Application Id",
+                  "Description": "Related deleted application id",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "DeletedApplication"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=DeletedApplication&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "897B9A00-AC1D-4DA7-A2B3-D7AA2A3169A8"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.197Z",
+                  "checksum": "06f91cbc44566cffc87b5413530f8de97434609c8cd8c7d9723a29b55cf96523"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceId",
+                  "DisplayName": "Invoice Id",
+                  "Description": "Invoice id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Invoice"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "3FB3A228-0E34-498A-A1EE-6029F459FE70"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.211Z",
+                  "checksum": "4d6e385bc99916e2001af32871ba44b2724c2f9aa5fb65a0d4d7c4a9ba3a8a74"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "amount",
+                  "DisplayName": "Amount",
+                  "Description": "Billing line item Amount",
+                  "Type": "Decimal",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CFCD7870-9B87-488C-865B-C7653CC0D28D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.226Z",
+                  "checksum": "a546858878a719ac8294ffd6dabe4c1f25dbbe06f09ade8105ea1b8aa03911c0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notes",
+                  "DisplayName": "Notes",
+                  "Description": "Billing line item Notes",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2091109B-A9AB-4D8D-B8E7-E1D7EBB5AC73"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.241Z",
+                  "checksum": "41bdc720f49684fa60089e2d17a7aa760e20d97fd3b84cd6250ed050a688e694"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "details",
+                  "DisplayName": "Details",
+                  "Description": "Billing line item Details",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "AB54E7DF-318C-417E-BB75-038E1C087893"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.252Z",
+                  "checksum": "8ee5ef34e8e1a072fa7bbd2a77298a38b9e7df3a1925130c2d12a4f28c009b7f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "targetType",
+                  "DisplayName": "Target Type",
+                  "Description": "Billing line item target",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3186D41A-5CB9-4657-8522-457401FD5B5F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.281Z",
+                  "checksum": "1245071fb556ebc87558b63eef5d68f83b9075c0821d854c90f469286858fda5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isVat",
+                  "DisplayName": "Is Vat",
+                  "Description": "Is billing line item related to VAT",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "85C55E88-D473-4FDA-A165-A8480A5F0F78"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.297Z",
+                  "checksum": "59d1c8035efa6e7fcfd59afa4549ec989bc85016ce43b1450e0971a01114025a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isManualAdjustment",
+                  "DisplayName": "Is Manual Adjustment",
+                  "Description": "Is billing line item related to manual adjustment",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9FA2B4B2-4803-47BB-B63C-E237B1184787"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.314Z",
+                  "checksum": "ed3c3d4bc4ffe546371b57ee0e3214f4e1b58c15df44c6dc2cf558dda24d63a8"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdAtUtc",
+                  "DisplayName": "Created At Utc",
+                  "Description": "Billing line item created date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "571F7CA9-8C56-49B1-8574-7B9F2D6FECD0"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.329Z",
+                  "checksum": "6ca88d6caccc7456e44620f9860101987bf4f4de06734b3a95e933ef867999d9"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "D48CCFD2-F346-4DF2-A29D-EAB3B35484FF"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:04.971Z",
+            "checksum": "ee212b85a93a5e31f27f6a560cd0e6d4b276d7264e5baa546661f94fce9d31db"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Session",
+            "DisplayName": "Session",
+            "Description": "OpenWater Session (door). Source schema: Models.Session.SessionListItemModel. Access: /v2/Sessions.",
+            "APIPath": "/v2/Sessions",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "lastModifiedSinceUtc",
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/Sessions",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "literal",
+            "CreateIDLocation": "body",
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2/Sessions/{id}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared",
+            "Configuration": {
+              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId — generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
+            }
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Session id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "92BFE266-AD82-4D3B-9A6C-7B7868FEA24A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.344Z",
+                  "checksum": "128f3a01af3939006ef7d4a62fdf904ff94183a0c15308d836d08f4ab4962d78"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Program id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Program"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "1EB61DC3-255D-4B80-BCDE-70F59F19CD6D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.361Z",
+                  "checksum": "c16b5cd592c2e2de6182f406bce17fdd46f9bb0aeb0123b454c7690e48763461"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationIds",
+                  "DisplayName": "Application Ids",
+                  "Description": "Application ids assigned to session",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "253BC3B4-7A81-466C-ABA7-A68331DE7753"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.376Z",
+                  "checksum": "ab89b2eb3c61c398432efd68552f9d067f083daabfc2c12484cf86fb0637b2b5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Session name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F611CB90-EBC7-4CF2-974A-D4A94302FA48"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.393Z",
+                  "checksum": "c153ac9d8b93e815b10e8361d2d8ac6a13828661cab0c47b556fc2f3759633c4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "typeName",
+                  "DisplayName": "Type Name",
+                  "Description": "Session type name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D70D81B5-7FF4-4479-8FF3-EABFD757B301"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.409Z",
+                  "checksum": "68cf14e3ff33ac855044625f402d3be642c2da6c9f9affa56b72a0a7fb8a8a71"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationItemCount",
+                  "DisplayName": "Application Item Count",
+                  "Description": "Session applicationItemCount",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "97C6B13B-A9F8-41D5-B9B5-DA015C5C7408"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.422Z",
+                  "checksum": "04326aee17a4ada9ca627a840c49a83a3daa3e00f8a5936df93dcd479ab94fdb"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "otherTimeItemCount",
+                  "DisplayName": "Other Time Item Count",
+                  "Description": "Session otherTimeItemCount",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F9EE6837-00FE-4747-9C44-2EB2E0AA58CA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.452Z",
+                  "checksum": "95e0260c87501ea276928a161166ff19a2d223d31029e7b193ee06e6f785e02a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "totalSessionItemCount",
+                  "DisplayName": "Total Session Item Count",
+                  "Description": "Session totalSessionItemCount",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "7EF84BFA-88FB-4225-B48B-B2AD9FD48C79"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.468Z",
+                  "checksum": "d09b3ae75e929c600f5c8630e89f35ec44ef3b7982d51a3e7c377a8bbe16567a"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "5CCECC31-5956-4261-8941-6BFF1C03CD24"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:04.991Z",
+            "checksum": "b0de2a445d61b141cef5022b79cb2f46757a063be69ce3f061be666d6fc95cef"
+          }
+        },
+        {
+          "fields": {
+            "Name": "DeletedSession",
+            "DisplayName": "Deleted Session",
+            "Description": "OpenWater DeletedSession (door). Source schema: Models.DeletedSession.DeletedSessionListItemModel. Access: /v2/Sessions/DeletedData.",
+            "APIPath": "/v2/Sessions/DeletedData",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "deletedSinceUtc",
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Deleted session id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2A65945C-95C9-40B0-81E0-4B3FB01BCC5A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.485Z",
+                  "checksum": "42db5013c6ddea1e105e0a7634626c0377f30061785df3dcc77ff056d73a2248"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Solicitation id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Program"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "74C6F07E-CF52-4301-A6A8-8B0537F57A64"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.501Z",
+                  "checksum": "e36193507c67f1c88d6d8cd323e3b1412c0303ffc1777c30cafa879b136c5e3f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sessionId",
+                  "DisplayName": "Session Id",
+                  "Description": "Session id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Session"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Session&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "2A4F2EAF-0A6F-44AD-92F5-4B65C2986026"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.519Z",
+                  "checksum": "9dee12c81f61357fa3a0f0ab1dae38feef15327debdb208e92f46cc1b164bc31"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "typeName",
+                  "DisplayName": "Type Name",
+                  "Description": "Session type name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5E972666-D053-4C5B-A6BC-646200866248"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.535Z",
+                  "checksum": "68cf14e3ff33ac855044625f402d3be642c2da6c9f9affa56b72a0a7fb8a8a71"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sessionName",
+                  "DisplayName": "Session Name",
+                  "Description": "Session name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F1949473-1123-4B6B-A13A-1E5A14E0196F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.550Z",
+                  "checksum": "b7cd6fb78bbf47b00616a005080b44a5392243cadfa84748101fd48c87d689ae"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "deletedByUserId",
+                  "DisplayName": "Deleted By User Id",
+                  "Description": "Deleted by user id",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "DFAB0E15-DB98-4C6A-A512-D1B5FE7EA3FF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.566Z",
+                  "checksum": "1cfb489bf5c55511a85ca5ae524cc1b9d078c8bef5d118facfa2080ec0ca4062"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "deletedAtUtc",
+                  "DisplayName": "Deleted At Utc",
+                  "Description": "Deleted since date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8E8FACF6-3C1D-447E-822F-C250B82BEC66"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.582Z",
+                  "checksum": "516809cbbe82f440f6ac84580aa8e3a463c169fb375452c41c1df4602b9bc13c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "EA447A4C-6A07-4321-B7BD-DE29B7EF18EA"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.014Z",
+            "checksum": "2db6da0fad8965e72f6cb9cb338916c44adad361430a4887c19df002db74b4ce"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Rounds",
+            "DisplayName": "Rounds",
+            "Description": "OpenWater Rounds (embedded). Source schema: Models.Program.RoundModel. Access: Programs -> rounds[].",
+            "APIPath": "(embedded in Models.Program.ProgramListItemModel.rounds[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "nestingSegments": [
+                  "rounds[]"
+                ],
+                "extractionMode": "embedded-array"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Round id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4F26A94B-2BB3-4992-9358-440543FF7F4A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.593Z",
+                  "checksum": "006cf447f7f69b19c32449a1ee430ac432ad59bd1641f5a705ea0a9c9b46213c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Round name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F23192ED-EDB1-41CE-9DAA-41CE48F73D0F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.624Z",
+                  "checksum": "8cde7020f4b68b49229b9bb482dcad3a6e3b710d0180f4359b715500a107893d"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isJudgingOnly",
+                  "DisplayName": "Is Judging Only",
+                  "Description": "Is round judging only",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B86F9E39-591D-46D7-80A7-F55B51579D29"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.640Z",
+                  "checksum": "fabad2b5689783f960050f31480c077e25ae669682cb37bda06f5d668c24256e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "submissionStartDateUtc",
+                  "DisplayName": "Submission Start Date Utc",
+                  "Description": "Submission period start date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "0EF8D78C-58AD-48D8-B11C-B2BF5D543C22"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.656Z",
+                  "checksum": "2761caec678d4da7a4e5b9bcae2c77b8299aeb83513b8716c6391366ad6c4bf9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "submissionEndDateUtc",
+                  "DisplayName": "Submission End Date Utc",
+                  "Description": "Submission period end date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1B083EF3-120D-4F74-81AD-220054FEF6CD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.671Z",
+                  "checksum": "518a5ae9214ac2f1c0723b48123e9955b0f74d04ef0483e54824e1860bc33b42"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "judgingStartDateUtc",
+                  "DisplayName": "Judging Start Date Utc",
+                  "Description": "Judging period start date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C66644C4-D8C9-454F-87E7-C04F22717048"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.687Z",
+                  "checksum": "3529c755b11f13b7185d181ad6f8f3335d2d47ca668697f01e6dca323b376bcd"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "judgingEndDateUtc",
+                  "DisplayName": "Judging End Date Utc",
+                  "Description": "Judging period end date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5D4B92E6-CCC9-4B77-8EFD-8B4DB448D7C6"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.704Z",
+                  "checksum": "9b4a15cf1755e0f9db18dc96d9a07fb6e5004ae211171ec0b0ccd8d150f5908b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "winnerTypes",
+                  "DisplayName": "Winner Types",
+                  "Description": "Round winner types",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A7066230-072C-4C33-8493-96C209D7C5CC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.719Z",
+                  "checksum": "95a03795e32e4a154564fc64a6538043d15d0ae34605867de2422394480383c7"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "B26CFE74-0CD6-4A8C-AAA3-622A9BC1743A"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.033Z",
+            "checksum": "59aea1bb85c8decd0fd71c9a6eb2b29385b5c5c87e3be084df8f108445a8ce32"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Evaluation",
+            "DisplayName": "Evaluation",
+            "Description": "OpenWater Evaluation (door). Source schema: Models.Evaluation.EvaluationListItemModel. Access: /v2/Evaluations.",
+            "APIPath": "/v2/Evaluations",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "lastModifiedSinceUtc",
+            "PaginationType": "PageNumber",
+            "SupportsCreate": false,
+            "SupportsUpdate": true,
+            "UpdateAPIPath": "/v2/Evaluations/{id}",
+            "UpdateMethod": "PATCH",
+            "UpdateBodyShape": "flat",
+            "UpdateIDLocation": "path",
+            "SupportsDelete": false,
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Evaluation id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "68F15F6E-BD97-4645-B5AB-B39BF246B74B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.735Z",
+                  "checksum": "0a4825d580701a3639cba703e225d46e98689e6e08fc51e1b00564a6a0e132e5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Program id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Program"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "58BA7A46-58EA-4520-A9A9-A17D708438B8"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.751Z",
+                  "checksum": "c16b5cd592c2e2de6182f406bce17fdd46f9bb0aeb0123b454c7690e48763461"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Rounds"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "8DA076D3-1B92-4B97-89FD-DBBDC20F606C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.765Z",
+                  "checksum": "22bd7f9efd8a875cd93ffb1ba8de55c69c4447ba8f2ddcd7245dfa0a1344d671"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "judgeUserId",
+                  "DisplayName": "Judge User Id",
+                  "Description": "Judge user id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "A3B659D6-9359-411D-B597-9825999BA857"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.794Z",
+                  "checksum": "924569b7678c4661e1c0034bb29052adb5cac5caded022381d7a9f1d38d05906"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "Application id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Application"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "CB7AA424-C140-4F48-8A0A-11B801567AF3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.811Z",
+                  "checksum": "418966eba3c7c796d6c6a8168a2c70c793140c04c36afb9271e71499b8777aee"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationCode",
+                  "DisplayName": "Application Code",
+                  "Description": "Application code",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A305C054-3339-412D-A8F4-CC0F50232212"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.829Z",
+                  "checksum": "648b0fcbc77fd1a96f3a692b938df29e5e5f86d7829f9a96ae80b99a6355d310"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Evaluation Status",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8DB19D08-732D-44F7-BF1A-43955E1E6DC3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.845Z",
+                  "checksum": "df747c0afe8e316ec9f22a3dda5754173f2131cd01815eeaa1904a9fc2f97e6f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "totalScore",
+                  "DisplayName": "Total Score",
+                  "Description": "Evaluation total score",
+                  "Type": "Decimal",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9A789AE8-CBC7-48C2-B924-EA25375D65F3"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.861Z",
+                  "checksum": "d24fe1159149b144eb11d590d07ea76e6ab3ec34c3f1154c3bb988b8c74b305e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "startedAtUtc",
+                  "DisplayName": "Started At Utc",
+                  "Description": "Evaluation started date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "77DC6014-25FB-4273-B80B-28313CBC2E87"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.883Z",
+                  "checksum": "31161b5904eea7ed92b54ac930b89610afb98a3ba675386c5564de6c1639df6a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedAtUtc",
+                  "DisplayName": "Updated At Utc",
+                  "Description": "Evaluation updated date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "26354925-A161-4A7F-9A86-136DAB454CEC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.906Z",
+                  "checksum": "d419189126fc9517c4098e234f1c77975cd1ff1f7419d51fbfa37e520216303a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "evaluationDateUtc",
+                  "DisplayName": "Evaluation Date Utc",
+                  "Description": "Evaluation date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "447AEB27-4732-45AD-95D6-99EF94E5A7FD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.925Z",
+                  "checksum": "2a6a12e971367d10ed5a4406883e2cf1caf4c4a38136b35ea97250d17cdeea96"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "16E1EB33-9FD7-4A01-B315-6F20B35E5476"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.050Z",
+            "checksum": "e0df134bdf27b98088a4e53e9dbdd7ec24622c53aa0f1563b0b368a5d4f606bc"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Fund",
+            "DisplayName": "Fund",
+            "Description": "OpenWater Fund (door). Source schema: Models.Fund.FundListItemModel. Access: /v2/Funds.",
+            "APIPath": "/v2/Funds",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Fund id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8C7D0D00-91EC-4666-9A04-90C835AEF585"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.941Z",
+                  "checksum": "e7fd026f4aae9c92413a0a1455838b202f26a7c2989c5b79aaa27645413477ae"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Fund name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "254D7840-9CE4-43E8-A247-F5FFAAF967FC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.955Z",
+                  "checksum": "137331a18aeb331a76f01883af7a174a2b6c7587e81bfdc4bbe042e8a1eb3040"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "currency",
+                  "DisplayName": "Currency",
+                  "Description": "Fund currency",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "7D88B5C4-6381-49A0-A5D0-761A90F913EE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.982Z",
+                  "checksum": "674ac3a723365577a53bd29c5fa8697349fc1af17a5afe598e839c3515252bbb"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "totalAmount",
+                  "DisplayName": "Total Amount",
+                  "Description": "Fund total amount",
+                  "Type": "Decimal",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "DDBE2240-AB4A-4160-8144-80BE8AB9C71F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:06.995Z",
+                  "checksum": "6a4f19ee329b81190a4065c1082e1e8d52f267d7b6e56a98a3884344490dc815"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isArchived",
+                  "DisplayName": "Is Archived",
+                  "Description": "Is fund archived",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8063C07A-8304-4658-9C07-922F0952828E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.011Z",
+                  "checksum": "adc20d38ec2ff36caced7433386c930dfbd396834267f7ee4c03002c79db59df"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "2B9EFC51-9A29-4814-8765-23149BF75A9C"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.091Z",
+            "checksum": "1a3bd6350fe73ecded35b2c4ff87d5b6a21f45abe7b13119698e95c2dba65cc4"
+          }
+        },
+        {
+          "fields": {
+            "Name": "JudgeTeam",
+            "DisplayName": "Judge Team",
+            "Description": "OpenWater JudgeTeam (door). Source schema: Models.JudgeTeam.JudgeTeamListItemModel. Access: /v2/JudgeTeams.",
+            "APIPath": "/v2/JudgeTeams",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/JudgeTeams",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "body",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Judge team id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "05FBA96F-EF24-45E0-AFE5-A80BB6EF99AC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.027Z",
+                  "checksum": "34f0c9492e60144e86216089cbfdd0064ddd7d245f8c7465caef8e87e424f144"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Judge team round id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Rounds"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "9893B9BB-8004-4E94-A1FE-5EFE6F5716ED"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.044Z",
+                  "checksum": "9362d790ec21a537e5f41f7c9d60124b59b88fbe9f332fe6e0624dc1ca4d2e9a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Judge team name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "01DF09D4-B144-4540-8328-6EE29B8A6EE5"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.060Z",
+                  "checksum": "942033638a3ae9ef4b2ae1f7a67ff1fa6ccf277eefad5a94b596a653ee4a97e2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "judges",
+                  "DisplayName": "Judges",
+                  "Description": "Judge team members",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5935BA6E-C917-4A9E-93DB-5F6A77AAD64E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.076Z",
+                  "checksum": "e639b597faefa64bd01e5738e28d2072798e398003b28f31e9a082976e349479"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "managers",
+                  "DisplayName": "Managers",
+                  "Description": "Judge team managers",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D1162A33-8CFB-415C-A0A2-EBCCD8AE8DA1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.092Z",
+                  "checksum": "65849f686de55511a8f90bfba426b0da74f3e2c8a8f45b587d8ab4303ad080b1"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "7DB93C1F-C65B-4900-9C40-9E92699D3772"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.113Z",
+            "checksum": "cb84785a5dafe044a2fabaf39e530309d1edf99a24f78552cacbc836a586f688"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Payment",
+            "DisplayName": "Payment",
+            "Description": "OpenWater Payment (door). Source schema: Models.Invoice.PaymentListItemModel. Access: /v2/Invoices/Payments.",
+            "APIPath": "/v2/Invoices/Payments",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "lastModifiedUtc",
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Payment id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B3D0AB60-26E8-4634-A7B0-ED7807112709"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.109Z",
+                  "checksum": "b4ae36f3b1fb27e252ff3f1cd893ebb28c11850476cfb3990b8b122fbfd27e53"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceId",
+                  "DisplayName": "Invoice Id",
+                  "Description": "Invoice id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Invoice"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "30C6F991-5F3A-423B-90D4-B388FE5D6D8B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.122Z",
+                  "checksum": "4d6e385bc99916e2001af32871ba44b2724c2f9aa5fb65a0d4d7c4a9ba3a8a74"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "amount",
+                  "DisplayName": "Amount",
+                  "Description": "Payment amount",
+                  "Type": "Decimal",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E42BAAA6-96C4-4CD4-A49D-C554616E7B7B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.152Z",
+                  "checksum": "dd1d9c7eab666f52c3dcd9a72f78b7008d258a962fd0349ea7acebf7d2101675"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isManualAdjustment",
+                  "DisplayName": "Is Manual Adjustment",
+                  "Description": "Is payment related to manual adjustment",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FBFFA022-3546-4964-A0BA-00CD16602170"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.169Z",
+                  "checksum": "f037e7f6a07d3e747651d0c9a4acf47974aec97483ed4c43b92dc4002d1e2661"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isPromissoryNote",
+                  "DisplayName": "Is Promissory Note",
+                  "Description": "Is payment related to promissory note",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F0D1A2EE-2386-42E9-B7BE-E731D7423DBE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.186Z",
+                  "checksum": "11f203c1d93f4fcc70e35230b14981d0f2e305323de22f0464364281ac0409db"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "canRefund",
+                  "DisplayName": "Can Refund",
+                  "Description": "Can payment be refund",
+                  "Type": "Boolean",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2DEC99CB-403B-4187-BF90-98004E7E4DB7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.204Z",
+                  "checksum": "e94a3c020f403c80fcf7864aeb9fbc96c01eb12c420392ea54a8e7fb267c9007"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "externalPaymentTransactionData",
+                  "DisplayName": "External Payment Transaction Data",
+                  "Description": "External payment transaction data",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "081476E0-79A8-420D-88ED-B5181FDCF346"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.221Z",
+                  "checksum": "0ee0ac4d01b9082d298ed35c33367f09d8860639d4d302824313381e6c4b76a9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "billingName",
+                  "DisplayName": "Billing Name",
+                  "Description": "Payment billing name",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C7EC753B-71C9-4588-8B1A-649E5805EA9B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.238Z",
+                  "checksum": "b7cd3371784de7872f7d9e5b8a144f5f945e5b7ec1880e5d4cf6fa3a852cdd26"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "referenceNumber",
+                  "DisplayName": "Reference Number",
+                  "Description": "Payment reference number",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "573649F5-8762-44B7-A89E-27C796B922EE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.254Z",
+                  "checksum": "42cf565ecc91089e6b851a5b839680e194a54f84655b872bcd27d66635386de1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notes",
+                  "DisplayName": "Notes",
+                  "Description": "Payment notes",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D582FCE5-33DF-4901-AE2F-2CB7E4819C17"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.271Z",
+                  "checksum": "8a0fe9afe97ff0e068f1254aecb5fa03d3a3cfa1186e24e22e14db99883180bb"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "method",
+                  "DisplayName": "Method",
+                  "Description": "Payment method",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "92AEA30D-2031-4519-A542-DE5855F0523E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.288Z",
+                  "checksum": "9db236b288673002c92e5c6bdc451f1854bcb77714057ee5c8619f3cbf497505"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "details",
+                  "DisplayName": "Details",
+                  "Description": "Payment details",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1E282CEF-C7AF-4D3A-8CA9-BB526B666CCA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.301Z",
+                  "checksum": "0f4326f73329cad018a83b030166c6cd58bc7216b320516adb144ad04474cc80"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdAtUtc",
+                  "DisplayName": "Created At Utc",
+                  "Description": "Payment created date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9778D181-819C-4D85-8CBB-F6CDCDD44194"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.331Z",
+                  "checksum": "a20accaa8ebf3a1f7e1160dc6b5dd35c270c5a1fa368b132ba117cd66ccd36c5"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "999E111C-983A-4DC2-8851-A2DAA68F5526"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.135Z",
+            "checksum": "7bd94cc229759db6a8715100c80f4ef81a13805d39f5b7f5f142a9d543e27db3"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Refund",
+            "DisplayName": "Refund",
+            "Description": "OpenWater Refund (door). Source schema: Models.Invoice.RefundListItemModel. Access: /v2/Invoices/Refunds.",
+            "APIPath": "/v2/Invoices/Refunds",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "lastModifiedUtc",
+            "PaginationType": "PageNumber",
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Refund id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A64DB860-8D6A-4092-89B0-AADADA46ECD7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.347Z",
+                  "checksum": "936ecfeaf5eb9b1e2dcf39133fe2fe67e1b65d1db418570dbc94dbde43cd9222"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceId",
+                  "DisplayName": "Invoice Id",
+                  "Description": "Invoice id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Invoice"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "B1D5189A-D657-405D-8FFE-D84BACA1D75A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.363Z",
+                  "checksum": "4d6e385bc99916e2001af32871ba44b2724c2f9aa5fb65a0d4d7c4a9ba3a8a74"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "amount",
+                  "DisplayName": "Amount",
+                  "Description": "Refund amount",
+                  "Type": "Decimal",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B1C1F6FC-7332-4F3F-9D50-DDC3AE8E5E0A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.378Z",
+                  "checksum": "fba78f272de2c2992a513aa4151589ea93f38fa6aad574afd8416134aeb67321"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notes",
+                  "DisplayName": "Notes",
+                  "Description": "Refund notes",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4777B9F4-E9F9-4905-B357-621103A8BCDA"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.395Z",
+                  "checksum": "dd82e29146c0f40c81276606bca9cb6b900f8cfc512294047d1046edc1f686a5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "details",
+                  "DisplayName": "Details",
+                  "Description": "Refund details",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "99A41678-06F2-403B-A68D-3C1B2AADB806"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.409Z",
+                  "checksum": "7413c3e59c992eb024cff6af9ffa37338f211cc605aac79822b4897e64debd65"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdAtUtc",
+                  "DisplayName": "Created At Utc",
+                  "Description": "Refund created date (UTC)",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C02C93BF-2D00-4799-A12B-06F8C309B0EF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.425Z",
+                  "checksum": "53e97694071a24d16b2f19cd7266c950dd650cf13c07951b7abbbf2d2a27d0c7"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "C148193A-554A-490F-8B3D-4C81D9B8010B"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.157Z",
+            "checksum": "0c47de6be0479e255beca0fc0ccfed78dd9015afa7e892cd77872c48542ac448"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationCategory",
+            "DisplayName": "Application Category",
+            "Description": "OpenWater ApplicationCategory (nested). Source schema: Models.ApplicationCategory.ApplicationCategoryListItemModel. Access: Programs -> programId -> ApplicationCategories.",
+            "APIPath": "/v2/Programs/{programId}/ApplicationCategories",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "parentParamName": "programId",
+                "nestingSegments": [
+                  "applicationCategories"
+                ],
+                "entryPath": "/v2/Programs/{programId}/ApplicationCategories"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Application category Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "14F0444B-2E75-4646-B071-EF5AFC9FF69D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.441Z",
+                  "checksum": "a9b48e504ab6c046f3048edb78f7c26b4263784c09ba67c5616ea7ec6ea35cb0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Application category name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "69CA94B7-C59B-434E-85BE-FA0B396D88D7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.457Z",
+                  "checksum": "2e11c41afc5408233255c7d4893d9371a54605067ec5976ad179ef6110eb329a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "Application category code",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "271BD209-F839-41CE-B005-DFB51AB39970"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.470Z",
+                  "checksum": "6f5563e1c8b6e5453b9cb647d27baa18b66d8860c402cd830b637c394bf40c91"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "path",
+                  "DisplayName": "Path",
+                  "Description": "Application category path",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "79670652-4B6D-4DC1-BFE1-9B4FBC8A4A8A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.498Z",
+                  "checksum": "e559b27026f5f4764a1a193702bbef3d70f170a0be547444b43976be77940813"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "051C148C-4AE3-4FD2-99F3-D1E17579E5EB"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.177Z",
+            "checksum": "10e6f37fd9f1f8c67817797ca884dd42245e72d2e67729d93deaf7193a967181"
+          }
+        },
+        {
+          "fields": {
+            "Name": "FundTransaction",
+            "DisplayName": "Fund Transaction",
+            "Description": "OpenWater FundTransaction (nested). Source schema: Models.FundTransaction.FundTransactionListItemModel. Access: Funds -> fundId -> Transactions.",
+            "APIPath": "/v2/Funds/{fundId}/Transactions",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Fund",
+                "doorPath": "/v2/Funds",
+                "parentParamName": "fundId",
+                "nestingSegments": [
+                  "transactions"
+                ],
+                "entryPath": "/v2/Funds/{fundId}/Transactions"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Fund transaction id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A79105F4-3647-438A-A064-78F8C88FEF63"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.514Z",
+                  "checksum": "71a4e9cf7a571e073e49f104bc84754ba6d448123fac8661c273be27a32ab779"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "Application id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Application"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "68F372A9-ED12-4189-8CAB-808805395455"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.529Z",
+                  "checksum": "418966eba3c7c796d6c6a8168a2c70c793140c04c36afb9271e71499b8777aee"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "approvedByUserId",
+                  "DisplayName": "Approved By User Id",
+                  "Description": "Approved by user id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "8A5505CF-B48E-4BC4-9984-E7F35B5BD7C9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.546Z",
+                  "checksum": "a2dfe6709d103fd28f47bfea24f0e82a357ac7ecdf87ac5a954b06cffcae0108"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "amount",
+                  "DisplayName": "Amount",
+                  "Description": "Fund transaction amount",
+                  "Type": "Decimal",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "44CDCABC-BCF5-4B82-9D9E-7668908EAAFF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.563Z",
+                  "checksum": "1d4fdc909302c75dc545b09d8676883aabf0481e6e794900fa46a254b46b4ad1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Fund transaction description",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "176AB13A-58C7-4772-B643-426126110DAC"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.578Z",
+                  "checksum": "d2baf39b3c70e79103e1b35cc47fb75df08b45669f0e1a2e99561ca3dbe1e91b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "date",
+                  "DisplayName": "Date",
+                  "Description": "Fund transaction date",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A459A8B8-DB68-455A-BD00-73F8C231B6EF"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.595Z",
+                  "checksum": "e535de963d12fd5b390bcf215eb67a50ac692e4665b33ee3816694f2b5de4e6c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "1968AF9B-EDF4-4D62-9E67-AEBD98530E1A"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.196Z",
+            "checksum": "2b11cb98e88799ab354008869259a1b8d0003f687ca4aef88ce9b5833ab4a6f5"
+          }
+        },
+        {
+          "fields": {
+            "Name": "JudgeAssignment",
+            "DisplayName": "Judge Assignment",
+            "Description": "OpenWater JudgeAssignment (nested). Source schema: Models.JudgeAssignment.JudgeListItemModel. Access: Programs -> rounds[] -> roundId -> JudgeAssignments.",
+            "APIPath": "/v2/JudgeAssignments/AssignedToRound",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/JudgeAssignments/Round",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "literal",
+            "CreateIDLocation": "n/a",
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2/JudgeAssignments/Round",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "n/a",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "nestingSegments": [
+                  "rounds[]"
+                ],
+                "parentParamName": "roundId",
+                "entryPath": "/v2/JudgeAssignments/AssignedToRound",
+                "parentParamIn": "query"
+              },
+              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} — generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "userId",
+                  "DisplayName": "User Id",
+                  "Description": "User id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "45DF5E9C-54F8-4625-8491-5444D9D98A60"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.612Z",
+                  "checksum": "3eaa5fe11a9a7e18332581f59ea5f5c1860e45fc973ab4f097c9796924364370"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "User first name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "66C239A0-58EA-4439-856C-A000DC5226F1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.629Z",
+                  "checksum": "8312846266659357aa013482d0fbdd04950f3ab653e2bf72ea2f8e341dbd7fa3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "User last name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E408DA38-2266-44AE-AC45-B5E74F6EBAF2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.644Z",
+                  "checksum": "226e8d325b4440231fb7da741bf286aea722d652d573b11f5b54daee117c589e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "User email",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FAE98E46-6C91-413E-B2E0-232AE847689D"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.673Z",
+                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "judgeTeams",
+                  "DisplayName": "Judge Teams",
+                  "Description": "Judge teams where judge belongs to",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "61DC8144-BA71-48EF-A778-E34A6DED3D4C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.691Z",
+                  "checksum": "61b75d370ba9cb408d3d7fc211009b122b8649d9372fb60756cea3cb75da9bc9"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "065D6F04-E812-42E1-A418-3651563D1350"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.218Z",
+            "checksum": "1af097bccc537b70709441ec7481d34bffc90ff75a683b053e84f378b0282540"
+          }
+        },
+        {
+          "fields": {
+            "Name": "JudgeRecusal",
+            "DisplayName": "Judge Recusal",
+            "Description": "OpenWater JudgeRecusal (nested). Source schema: Models.Judge.JudgeRecusalListItemModel. Access: Programs -> rounds[] -> roundId -> Recusals.",
+            "APIPath": "/v2/Judges/Recusals",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "nestingSegments": [
+                  "rounds[]"
+                ],
+                "parentParamName": "roundId",
+                "entryPath": "/v2/Judges/Recusals",
+                "parentParamIn": "query"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "userId",
+                  "DisplayName": "User Id",
+                  "Description": "Judge user id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "88F0C479-8EF2-41AA-A634-A1B0440E7137"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.707Z",
+                  "checksum": "9ce36b1f176b9523d781cc6bba7b38e8516a058c7a9421717b82dfbc6ff930f3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "Application id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "Application"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "BA7A4E1E-FA66-473E-8D5F-085C00423EB9"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.723Z",
+                  "checksum": "156dd6f50d3c1799316eff8ee48be75a45d421bbe11024750a03b24683e15e96"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "Judge first name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1EF60CE0-9FF0-46BB-8B74-87EEAE991D22"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.742Z",
+                  "checksum": "6eb417a86b30b6e5c22496f80af5eb0a3a9fc3e9549b1aeb9844d33fb9a118c0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Judge last name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D16E557F-A46B-4E77-93EF-E364B8F8FD75"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.759Z",
+                  "checksum": "c77b19c22a0e51246d8cd4b69ca52f51fc99113e061a1701faa9fabdcc536023"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Judge email",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "23966173-14BE-4193-AB69-29A807ACF4E1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.776Z",
+                  "checksum": "7255454584c0e248414cf419d11340b76d2fbbe46741bde067fbac1e9e9d6144"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "recusalReason",
+                  "DisplayName": "Recusal Reason",
+                  "Description": "Recusal reason",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "396BA380-A4D9-4F32-B927-42407BD783C7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.792Z",
+                  "checksum": "e73274d31af27ff03ea968faabebe6215bf51568f11de39df627ea72a3996438"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "778DA151-D0E7-4F30-A8D5-167DCE0424FF"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.238Z",
+            "checksum": "253e0a92f292caef9c28fbe94d80b8608bc81b71de820c5d6e602a54eeb57cd9"
+          }
+        },
+        {
+          "fields": {
+            "Name": "OtherSessionItemType",
+            "DisplayName": "Other Session Item Type",
+            "Description": "OpenWater OtherSessionItemType (nested). Source schema: Models.OtherSessionItemType.OtherSessionItemTypeListItemModel. Access: Programs -> programId -> OtherSessionItemTypes.",
+            "APIPath": "/v2/Programs/{programId}/OtherSessionItemTypes",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "parentParamName": "programId",
+                "entryPath": "/v2/Programs/{programId}/OtherSessionItemTypes"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Other session item type id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1A1D2197-492F-4E47-B8A6-2D9A9E9EE929"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.807Z",
+                  "checksum": "4812f649a98222dc628e53afaee166e6e3c066877dcb2336924b3322e90901c8"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Other session item type name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "27585B06-2CAE-4FAC-BA6A-6A23A31AA0E1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.817Z",
+                  "checksum": "21c40d091f4a9dbdd8b8c483a6dc353ea75f0965873fea5fd1566bc2ac82c3fe"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Other session item type description",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CE2A003B-4201-47EC-BF6E-41CA07FABE6F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.848Z",
+                  "checksum": "37d26e69113675b27239ba7d1e1c52171d20238e2b9031e3d3153a6a84eed2ea"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "5695AF7A-8713-487B-B6BD-A67045D11B20"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.258Z",
+            "checksum": "aa59a720a389b8cc2b6a948a357f6d6c3ccc7c72e688720c4382fab2f42afdd0"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Report",
+            "DisplayName": "Report",
+            "Description": "OpenWater Report (nested). Source schema: Models.Report.ReportListItemModel. Access: Programs -> rounds[] -> roundId -> ApplicationReports | JudgeReports; Programs -> programId -> SessionReports.",
+            "APIPath": "/v2/Rounds/{roundId}/ApplicationReports",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "nestingSegments": [
+                  "rounds[]"
+                ],
+                "parentParamName": "roundId",
+                "entryPath": "/v2/Rounds/{roundId}/ApplicationReports",
+                "alternativePaths": [
+                  "/v2/Rounds/{roundId}/JudgeReports",
+                  "/v2/Programs/{programId}/SessionReports"
+                ]
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Report Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B9EC9FAE-A572-4039-87A8-6EE8F15688ED"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.865Z",
+                  "checksum": "3e8751414c1f5619db64c5057bf97c0c12025a8f3d6e07ae889d1a4f20e6d784"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Report name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1E5912B8-5C5E-4BAE-94DE-518753DE47B2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.882Z",
+                  "checksum": "c55027dfb06ad0f1b024253571cb9e17bb1afe637b7fb704d2dede30a6317899"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "0A601554-1702-4F8C-89C0-8240FAD1120A"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.275Z",
+            "checksum": "bf64118aa5129cd6c977fd13f309552bca03241cf670ef6d9e55809cdd407f90"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ScheduleDay",
+            "DisplayName": "Schedule Day",
+            "Description": "OpenWater ScheduleDay (nested). Source schema: Models.ScheduleDay.ScheduleDayListItemModel. Access: Programs -> programId -> Scheduler.Days.",
+            "APIPath": "/v2/Programs/{programId}/Scheduler/Days",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/Programs/{programId}/Scheduler/Days",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "body",
+            "SupportsUpdate": true,
+            "UpdateAPIPath": "/v2/Programs/Scheduler/Days/{scheduleDayId}",
+            "UpdateMethod": "PATCH",
+            "UpdateBodyShape": "flat",
+            "UpdateIDLocation": "path",
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2/Programs/Scheduler/Days/{scheduleDayId}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "parentParamName": "programId",
+                "entryPath": "/v2/Programs/{programId}/Scheduler/Days"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Schedule day Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "7AEBFC78-6D35-438E-9F18-80227BA800BD"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.899Z",
+                  "checksum": "62ef5b22e67a3c327f30a211138f8881f854b29959ae7b8ef8a42e40bb9a4508"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Schedule day name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6DCC6733-8D8E-46B7-97E0-70E3BEDC525E"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.916Z",
+                  "checksum": "d3b291072ad1d5a993fadb82e07d27a4f31c2081c2a9aede8d8da4d169c8c0a5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "Schedule day code",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "05DB4DC3-14BA-4C61-9B59-311F3B81FF8A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.933Z",
+                  "checksum": "b18a25214ab3c51f71eda7a7b4e1419259901bf2cbb2e8990c78cd9150dde72f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "date",
+                  "DisplayName": "Date",
+                  "Description": "Schedule day Date",
+                  "Type": "DateTime",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C4B3B1BA-9074-47AA-865B-29D54D85D1B4"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.949Z",
+                  "checksum": "67e023f31dbfa2d8250bae7c376f09564b5f261f9b75bb75e00f0e328520edb3"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "CE7A7925-D07F-40C6-B531-E3D9264CE991"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.309Z",
+            "checksum": "58346884b808cc6bc533d3ec5dfba90e29c5031ecff01a53616c866bf3b4b6d4"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ScheduleRoom",
+            "DisplayName": "Schedule Room",
+            "Description": "OpenWater ScheduleRoom (nested). Source schema: Models.ScheduleRoom.ScheduleRoomListItemModel. Access: Programs -> programId -> Scheduler.Rooms.",
+            "APIPath": "/v2/Programs/{programId}/Scheduler/Rooms",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/Programs/{programId}/Scheduler/Rooms",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "body",
+            "SupportsUpdate": true,
+            "UpdateAPIPath": "/v2/Programs/Scheduler/Rooms/{scheduleRoomId}",
+            "UpdateMethod": "PATCH",
+            "UpdateBodyShape": "flat",
+            "UpdateIDLocation": "path",
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2/Programs/Scheduler/Rooms/{scheduleRoomId}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "parentParamName": "programId",
+                "entryPath": "/v2/Programs/{programId}/Scheduler/Rooms"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Schedule room Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "43729C8B-E009-44C7-8AAB-58B3EF7B43D2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.965Z",
+                  "checksum": "d180240f768cc2b4c0c7bdea0757e61cb26941a385643e95aa9a63b07ed13b80"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Schedule room name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "41288686-77F3-4D70-8A09-E7E7A03161AB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.980Z",
+                  "checksum": "de35c12cbefa10970dc223ba437c402cedbefe71173e328ec74958727b098ab3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "Schedule room code",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "EC1A5E6F-2346-4859-BDD1-5C3872F1A2F1"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:07.993Z",
+                  "checksum": "a2021ae66571e880c7cd3d720766111d916d2fabb444d3c96c874809116da899"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "capacity",
+                  "DisplayName": "Capacity",
+                  "Description": "Schedule room capacity",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5196E8DE-319C-427A-921A-50DA538F0F7F"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.020Z",
+                  "checksum": "8324a723ee642198604485fe581581d7b5da28c960d66c65a8e54759fa3034cb"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notes",
+                  "DisplayName": "Notes",
+                  "Description": "Schedule room notes",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5263652B-DDA1-44EA-A728-516E3E3DA6AB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.036Z",
+                  "checksum": "fac4e8609a6b8723d5f06738d4f16ba4ea40ec45f11cdb849b4d53aa9066111c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "CC3956DE-4B7D-4C09-928A-0536DE03B793"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.331Z",
+            "checksum": "1f5594ec1ad494bbece6daed3a2b88a07f643679c6f247d2ab2829b414ab16a8"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ScheduleTimeSlot",
+            "DisplayName": "Schedule Time Slot",
+            "Description": "OpenWater ScheduleTimeSlot (nested). Source schema: Models.ScheduleTimeSlot.ScheduleTimeSlotListItemModel. Access: Programs -> programId -> Scheduler.TimeSlots.",
+            "APIPath": "/v2/Programs/{programId}/Scheduler/TimeSlots",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/Programs/{programId}/Scheduler/TimeSlots",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "literal",
+            "CreateIDLocation": "body",
+            "SupportsUpdate": true,
+            "UpdateAPIPath": "/v2/Programs/Scheduler/TimeSlots/{scheduleTimeSlotId}",
+            "UpdateMethod": "PATCH",
+            "UpdateBodyShape": "literal",
+            "UpdateIDLocation": "path",
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2/Programs/Scheduler/TimeSlots/{scheduleTimeSlotId}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "parentParamName": "programId",
+                "entryPath": "/v2/Programs/{programId}/Scheduler/TimeSlots"
+              },
+              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) — generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
+              "LiteralUpdateReason": "Update UpdateRequest requires scheduleDayIds (array of int); read-side IOF is availableOnlyInDayIds. Generic flat body omits/misnames it -> 422. Connector overrides UpdateRecord to supply scheduleDayIds from availableOnlyInDayIds. Mirrors LiteralCreateReason."
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Schedule time slot Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FA9CAF33-E9F1-4FD9-9CDC-39E0880451B7"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.054Z",
+                  "checksum": "06866af99278cc43dc1f189394e7c88a95d8fa56df946a503489e2df797ce6ab"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Schedule time slot name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "81D5C2B6-2E67-4AE1-B8BA-5825766EEF89"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.070Z",
+                  "checksum": "4f4787259ce89567874af8163fa1ea3a44b8e04fd2643bdf04060a6d27a5fb1c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "Schedule time slot code",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8C349F66-CEAB-4CE4-BC83-EB7317573D03"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.088Z",
+                  "checksum": "0ed2c148b01297173eaa9883f6668f7846e7c32a7306cd343b292b3bd1a10f74"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "startTime",
+                  "DisplayName": "Start Time",
+                  "Description": "Schedule time slot start time",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FFA70380-C0FC-4D3D-BCC9-F1F770C4276C"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.104Z",
+                  "checksum": "297fbafee4a4b4e51c2c5ac2d12d157359b60268ae52af56b0c2720ce1b59f00"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "endTime",
+                  "DisplayName": "End Time",
+                  "Description": "Schedule time slot end time",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A7132804-54DA-4C3B-BE2D-E02340CB6856"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.119Z",
+                  "checksum": "1ce9ca9b4e7f715b98916a25623749036794330c8bc3c0c7716d5feb25338c2c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "availableOnlyInDayIds",
+                  "DisplayName": "Available Only In Day Ids",
+                  "Description": "Schedule day Ids where time slot is available (available in all days if NULL or empty)",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C65E8DAD-2814-4F96-98DB-ED5497F28B41"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.135Z",
+                  "checksum": "1463d2b4bc7411865cd0cd8ed8d741ac5ab8ee1fe37ff6a9c89bf2613f56ea5e"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "AC4EC38B-0772-4178-A875-4BEB4D45A49E"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.352Z",
+            "checksum": "93e267664c975396c467e6ae8cc7a4076f08845306d3bc7d06100bec2915de5f"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ScheduleItem",
+            "DisplayName": "Schedule Item",
+            "Description": "OpenWater ScheduleItem (nested). Source schema: Models.ScheduleItem.ScheduleItemListItemModel. Access: Programs -> programId -> Scheduler.ScheduleItems.",
+            "APIPath": "/v2/Programs/{programId}/Scheduler/ScheduleItems",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "SupportsCreate": true,
+            "CreateAPIPath": "/v2/Programs/{programId}/Scheduler/ScheduleItems",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "body",
+            "SupportsUpdate": false,
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2/Programs/Scheduler/ScheduleItems/{scheduleItemId}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "parentParamName": "programId",
+                "entryPath": "/v2/Programs/{programId}/Scheduler/ScheduleItems"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Schedule item Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "15B8F7BA-ADD9-453E-8F73-5DED582EFBCB"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.150Z",
+                  "checksum": "8759aefee50224a7b2a4da390ddc20c1b2ae18e42462c4117567bc5f1a93ab6e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "scheduleRoomId",
+                  "DisplayName": "Schedule Room Id",
+                  "Description": "Schedule room Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "ScheduleRoom"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=ScheduleRoom&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "98308C2F-D6E0-40D1-B6A9-72224C5439FE"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.161Z",
+                  "checksum": "7a8a79e1d321a499e4b6ae88136d10a093d875a6f1bfa0f82b92122dafa30638"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "scheduleDayId",
+                  "DisplayName": "Schedule Day Id",
+                  "Description": "Schedule day Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "ScheduleDay"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=ScheduleDay&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "BAF77F9C-0F1A-4AF0-8E57-300BD0C81A13"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.188Z",
+                  "checksum": "04bc91b5f35c1bc7e39aeafbda4cb9b7cf5dfa1ad50f4f5530f1a57751340ff8"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "scheduleTimeSlotId",
+                  "DisplayName": "Schedule Time Slot Id",
+                  "Description": "Schedule time slot Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Configuration": {
+                    "ReferencedType": "ScheduleTimeSlot"
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=ScheduleTimeSlot&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "E7227B56-6F39-4FB7-AD38-9559B03AE649"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.204Z",
+                  "checksum": "1e749f66cfd68a846e0cdf3e405642f471ea346c0d5956a6da47e14f535bea15"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "targetType",
+                  "DisplayName": "Target Type",
+                  "Description": "Target entry type (primary, other)",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FC78EFBF-1861-4FFD-995E-32E0947402E2"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.220Z",
+                  "checksum": "f4e10a03f257ba5284ebb5f3244364e9c0292be52122cf328393ea1510a6d950"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "targetId",
+                  "DisplayName": "Target Id",
+                  "Description": "Target entry Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2BDAB360-8D31-4595-9231-F2906F4E3B9B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.237Z",
+                  "checksum": "ef130af4573dbfe702bf03e884abe9bf07f3e345a8d892f11aa3b86b11ecfdd7"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "ECB854C1-D659-468C-B764-1397C2173780"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.373Z",
+            "checksum": "7b48a6c83ea7b2af357d76c5b0668ece51943e7097d1bdf8892f97c4bd2ba4d6"
+          }
+        },
+        {
+          "fields": {
+            "Name": "SessionType",
+            "DisplayName": "Session Type",
+            "Description": "OpenWater SessionType (nested). Source schema: Models.SessionType.SessionTypeListItemModel. Access: Programs -> programId -> SessionTypes.",
+            "APIPath": "/v2/Programs/{programId}/SessionTypes",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "PaginationType": "PageNumber",
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "parentParamName": "programId",
+                "entryPath": "/v2/Programs/{programId}/SessionTypes"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": true,
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Session type Id",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4B762BFA-D227-4C00-8F1E-0DB0BD6D853B"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.253Z",
+                  "checksum": "b7efcfb6fa223c8889db7d67854922e39398e8ccc1ea49e3a8bdad95ade23b75"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Session type name",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6BA11A16-1AFF-43A7-8DE5-B87D44D9877A"
+                },
+                "sync": {
+                  "lastModified": "2026-06-27T19:23:08.266Z",
+                  "checksum": "33bea927633f5afe6cc17c1c09631e4ca97f5946c3f0e896e3e341d4348bb7b7"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "C85BA694-890B-431E-B486-E36B7D19C86A"
+          },
+          "sync": {
+            "lastModified": "2026-06-27T19:23:05.391Z",
+            "checksum": "0127007d757c34854925fc243f5e64547015fdb12680e98e598f51f7031cb0d7"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "F2209CE3-5BC2-4E5C-9661-F409BE8FF9AA"
+    },
+    "sync": {
+      "lastModified": "2026-06-27T19:23:04.788Z",
+      "checksum": "fe9a6d0f8aa14d7855d6621e3d2e3f2f9b237fc67b4c679c945cd093144bfb5b"
+    }
+  }
+]

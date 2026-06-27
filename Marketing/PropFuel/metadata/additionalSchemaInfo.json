@@ -1,0 +1,67 @@
+{
+  "propfuel": [
+    {
+      "TableName": "Tags",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Segments",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Conversations",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Contacts",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Captures",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Campaigns",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "checkin_questions",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}

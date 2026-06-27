@@ -1,0 +1,200 @@
+{
+  "orcid": [
+    {
+      "TableName": "works",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "services",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "research_resources",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "record",
+      "PrimaryKey": [
+        {
+          "FieldName": "orcid_id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "qualifications",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "peer_reviews",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "memberships",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "invited_positions",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "fundings",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "employments",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "educations",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    },
+    {
+      "TableName": "distinctions",
+      "PrimaryKey": [
+        {
+          "FieldName": "put_code",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orcid_id",
+          "SchemaName": "orcid",
+          "RelatedTable": "record",
+          "RelatedField": "orcid_id"
+        }
+      ]
+    }
+  ]
+}

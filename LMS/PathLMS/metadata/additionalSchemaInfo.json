@@ -1,0 +1,857 @@
+{
+  "path_lms": [
+    {
+      "TableName": "Webinar",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "UserView",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "UserSale",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "UserPresentation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UserMetadataTemplate",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UserMetadata",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "userMetadataTemplateId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "UserMetadataTemplate",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "userId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "UserCertificate",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "userId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "User",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "User",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Team",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Assessment",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseItemId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "CourseItem",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "AssessmentScore",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Assignment",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "AssignmentSubmission",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "AssignmentUserView",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Certificate",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificateForUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificateItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseItemId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "CourseItem",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CertificateUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CertifiedCredit",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Completion",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ContentSale",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Coupon",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Course",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CourseItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CourseItemView",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CoursePresentation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CourseUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CourseUserVisits",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditsAssignedValues",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditsCertifiedValues",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditsCompletedUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditsCompletedValue",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditTypeForCompletedValue",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CreditTypeForCreditCertified",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Discount",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Event",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "EventPresentation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ExternalActivity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Group",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "GuestUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "InPersonEvent",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ItemVisit",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Metadata",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MetadataLabel",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MetadataTemplate",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MetadataValue",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Order",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "OrderDiscount",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "orderId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Order",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "OrderItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Refund",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RefundOrder",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RefundOrderItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Scorm",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ScormUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "scormId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Scorm",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "SimpleUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "teamId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Team",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Survey",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "courseId",
+          "SchemaName": "path_lms",
+          "RelatedTable": "Course",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "SurveyCompletion",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SurveyMatrixQuestion",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SurveyMatrixQuestionColumn",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SurveyMatrixQuestionRow",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SurveyMultipleChoiceQuestion",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SurveyOpenEndedQuestion",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SurveyQuestionChoice",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UserItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "VideoVisit",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "WebinarAttendee",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}

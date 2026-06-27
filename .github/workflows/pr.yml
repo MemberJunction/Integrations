@@ -1,0 +1,42 @@
+name: PR
+
+on:
+  pull_request:
+    branches: [next, main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # turbo + changesets need history
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      # Each connector Open App: full-Open-App shape (schema mj_connector_<name> + migrations + metadata),
+      # owns its package, ClassName <-> ImportPath <-> @RegisterClass three-way invariant, mj-app.json Zod-valid.
+      - name: Connector Open App invariants
+        run: npm run lint:invariants
+
+      # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
+      - name: Validate migrations
+        run: node scripts/validate-migrations.mjs
+
+      - name: PG migrations up to date
+        run: node scripts/build-pg-migrations.mjs --check
+
+      # Build + unit-test only the connectors a PR touches (and their dependents, e.g. Fonteva when Salesforce changes).
+      - name: Build & test changed connectors
+        run: npx turbo run build test --filter='...[origin/${{ github.base_ref }}]'
+
+      # A PR that changes a connector package must carry a changeset (drives its independent version bump).
+      - name: Require changeset
+        run: npx changeset status --since=origin/${{ github.base_ref }}

@@ -1,0 +1,933 @@
+{
+  "neon_crm": [
+    {
+      "TableName": "Account",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AccountContacts",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AccountOrder",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "AccountOrderItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AccountRoleApi",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "AccountWindfall",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Acknowledgee",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Activity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "grantId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Grant",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Address",
+      "PrimaryKey": [
+        {
+          "FieldName": "addressId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "BillingAddress",
+      "PrimaryKey": [
+        {
+          "FieldName": "countryId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Campaign",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Catalog",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Category",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ClientAccount",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CompanyAccount",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Consent",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "Contact",
+      "PrimaryKey": [
+        {
+          "FieldName": "contactId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomField",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomFieldData",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomFieldGroup",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomFieldOption",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomObjectFieldResponse",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomObjectLayoutPageItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "layoutId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomObjectRelation",
+      "PrimaryKey": [
+        {
+          "FieldName": "relationId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomObjectResponse",
+      "PrimaryKey": [
+        {
+          "FieldName": "objectId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "CustomObjectValidatorRuleResponse",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DafPayPayment",
+      "PrimaryKey": [
+        {
+          "FieldName": "distributionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "DiscountItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "orderItemId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "discountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Donation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "DonationItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "DynaRecurringDonation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "ECheckPayment",
+      "PrimaryKey": [
+        {
+          "FieldName": "plaidAccountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Event",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventAttendee",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventCustomFieldData",
+      "PrimaryKey": [
+        {
+          "FieldName": "eventId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "EventRegistration",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "eventId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "EventRegistrationItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "eventId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "EventTicket",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Grant",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "systemUserId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "SystemUser",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "IndividualAccount",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Installment",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "pledgeId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Pledge",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ListHouseHoldContactDto",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ListHouseHoldDto",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Membership",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "MembershipAutoRenewal",
+      "PrimaryKey": [
+        {
+          "FieldName": "membershipId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MembershipItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "MembershipLevel",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MembershipLevelId",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "MembershipTerm",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Opportunity",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "contactId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Contact",
+          "RelatedField": "contactId"
+        },
+        {
+          "FieldName": "eventId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Event",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "OpportunityShift",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Order",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "OrganizationProfile",
+      "PrimaryKey": [
+        {
+          "FieldName": "orgId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Payment",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Pledge",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "PledgeDafPayDistribution",
+      "PrimaryKey": [
+        {
+          "FieldName": "distributionId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "grantId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "grantId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Grant",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "PledgePayment",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "installmentId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Installment",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "pledgeId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Pledge",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Product",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductImage",
+      "PrimaryKey": [
+        {
+          "FieldName": "sequenceId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "productId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductOption",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductOptionItem",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductOptionSelection",
+      "PrimaryKey": [
+        {
+          "FieldName": "itemId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "optionId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ProductTypeId",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RecordResponse",
+      "PrimaryKey": [
+        {
+          "FieldName": "recordId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "RecurringDonation",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "RelationTypeDto",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ShippingAddress",
+      "PrimaryKey": [
+        {
+          "FieldName": "addressId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SoftCredit",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "donationId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Donation",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "membershipId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Membership",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "eventRegistrationId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "EventRegistration",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "Solicitor",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "SubMembership",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "SystemUser",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Ticket",
+      "PrimaryKey": [
+        {
+          "FieldName": "ticketId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "TimeSheetApi",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "accountId",
+          "SchemaName": "neon_crm",
+          "RelatedTable": "Account",
+          "RelatedField": "accountId"
+        }
+      ]
+    },
+    {
+      "TableName": "TimeSheetItemApi",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "UserGroupApi",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "VolunteerApi",
+      "PrimaryKey": [
+        {
+          "FieldName": "accountId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "VolunteerRoleApi",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "Webhook",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
+    }
+  ]
+}

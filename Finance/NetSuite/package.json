@@ -1,0 +1,42 @@
+{
+  "name": "@memberjunction/connector-netsuite",
+  "version": "0.0.0",
+  "description": "MemberJunction NetSuite connector.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "build": "tsc && tsc-alias -f",
+    "test": "vitest run --passWithNoTests"
+  },
+  "author": "MemberJunction.com",
+  "license": "ISC",
+  "peerDependencies": {
+    "@memberjunction/core": ">=5.42.0 <6.0.0",
+    "@memberjunction/core-entities": ">=5.42.0 <6.0.0",
+    "@memberjunction/global": ">=5.42.0 <6.0.0",
+    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0",
+    "@memberjunction/integration-engine-base": ">=5.42.0 <6.0.0"
+  },
+  "dependencies": {
+    "zod": "~3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.11",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "@memberjunction/core": "^5.42.0",
+    "@memberjunction/core-entities": "^5.42.0",
+    "@memberjunction/global": "^5.42.0",
+    "@memberjunction/integration-engine": "^5.42.0",
+    "@memberjunction/integration-engine-base": "^5.42.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MemberJunction/Integrations"
+  }
+}
