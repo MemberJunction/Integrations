@@ -856,7 +856,7 @@
         },
         {
           "fields": {
-            "Name": "available-time.json",
+            "Name": "available-time",
             "DisplayName": "Available Times",
             "Description": "Time availability for an event appointment,",
             "APIPath": "/appointment-events/{id}/appointment-available-times",
@@ -959,7 +959,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=appointment-type.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=appointment-type&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -975,7 +975,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=location.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=location&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -1002,7 +1002,7 @@
         },
         {
           "fields": {
-            "Name": "appointment-type.json",
+            "Name": "appointment-type",
             "DisplayName": "Appointment Type",
             "Description": "This is used for storing details of an appointment type.",
             "APIPath": "/appointment-events/{id}/appointment-types",
@@ -1101,7 +1101,7 @@
         },
         {
           "fields": {
-            "Name": "location.json",
+            "Name": "location",
             "DisplayName": "Location",
             "Description": "Details of a location.",
             "APIPath": "/appointment-events/{id}/locations",
@@ -1938,7 +1938,7 @@
         },
         {
           "fields": {
-            "Name": "attendee-credit.json",
+            "Name": "attendee-credit",
             "DisplayName": "AttendeeCredit",
             "Description": "Credit details for an attendee.",
             "APIPath": "/attendee-credits",
@@ -2287,7 +2287,7 @@
         },
         {
           "fields": {
-            "Name": "scores.json",
+            "Name": "scores",
             "DisplayName": "Scores",
             "Description": "Insight score and ranking.",
             "APIPath": "/attendee-insights/{id}/scores",
@@ -2770,7 +2770,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -3235,7 +3235,7 @@
         },
         {
           "fields": {
-            "Name": "activity.json",
+            "Name": "activity",
             "DisplayName": "AttendeeActivity",
             "Description": "An attendee activity.",
             "APIPath": "/attendees/activities",
@@ -3571,7 +3571,7 @@
         },
         {
           "fields": {
-            "Name": "attendee-audience-segment-association.json",
+            "Name": "attendee-audience-segment-association",
             "DisplayName": "AttendeeAudienceSegmentAssociation",
             "Description": "Represents an audience segment associated with an attendee.",
             "APIPath": "/attendees/{attendeeId}/audience-segments",
@@ -3817,7 +3817,7 @@
         },
         {
           "fields": {
-            "Name": "segment-attendee-response.json",
+            "Name": "segment-attendee-response",
             "DisplayName": "SegmentAttendee",
             "Description": "Represents the attendees that are associated/disassociated to/from a segment",
             "APIPath": "/audience-segments/{audienceSegmentId}/attendees",
@@ -3961,7 +3961,7 @@
         },
         {
           "fields": {
-            "Name": "bounce-details.json",
+            "Name": "bounce-details",
             "DisplayName": "Bounce details",
             "Description": "Email bounce details.",
             "APIPath": "/bounces",
@@ -4180,7 +4180,7 @@
         },
         {
           "fields": {
-            "Name": "account-budget-item-list-response.json",
+            "Name": "account-budget-item-list-response",
             "DisplayName": "AccountBudgetItemListResponse",
             "Description": "The response from a request to retrieve list of budget items across all events linked to the account.",
             "APIPath": "/budget-items",
@@ -4418,7 +4418,7 @@
         },
         {
           "fields": {
-            "Name": "budget-vendor-response.json",
+            "Name": "budget-vendor-response",
             "DisplayName": "BudgetVendorResponse",
             "Description": "Represents an account-level budget vendor configured in Admin > Budget > Vendors.",
             "APIPath": "/budget-vendors",
@@ -4921,7 +4921,7 @@
         },
         {
           "fields": {
-            "Name": "bulk-result.json",
+            "Name": "bulk-result",
             "DisplayName": "BulkResult",
             "Description": "This entity is used to represent a single item that is returned as part of a Bulk Job Result call.",
             "APIPath": "/bulk-jobs/{id}/results",
@@ -5065,7 +5065,7 @@
         },
         {
           "fields": {
-            "Name": "campaign-data.json",
+            "Name": "campaign-data",
             "DisplayName": "Campaign Data",
             "Description": "Campaign data model.",
             "APIPath": "/campaigns",
@@ -5254,7 +5254,7 @@
         },
         {
           "fields": {
-            "Name": "card-details.json",
+            "Name": "card-details",
             "DisplayName": "CardDetails",
             "Description": "Card details associated with an event.",
             "APIPath": "/cards",
@@ -5595,7 +5595,7 @@
         },
         {
           "fields": {
-            "Name": "card-transaction.json",
+            "Name": "card-transaction",
             "DisplayName": "CardTransaction",
             "Description": "Card transaction associated with an event.",
             "APIPath": "/cards/transactions",
@@ -6005,7 +6005,7 @@
         },
         {
           "fields": {
-            "Name": "contact-type.json",
+            "Name": "contact-type",
             "DisplayName": "ContactType",
             "Description": "This entity represents a contact type at contact level.",
             "APIPath": "/contact-types",
@@ -6207,7 +6207,7 @@
         },
         {
           "fields": {
-            "Name": "contact-history.json",
+            "Name": "contact-history",
             "DisplayName": "ContactHistory",
             "Description": "A single instance of change for a specific contact in the contact's change history.",
             "APIPath": "/contacts/{contactId}/history",
@@ -7090,7 +7090,7 @@
         },
         {
           "fields": {
-            "Name": "currency-conversion-rate-list-response.json",
+            "Name": "currency-conversion-rate-list-response",
             "DisplayName": "CurrencyConversionRateListResponse",
             "Description": "Currency conversion rate list response for a currency in an account.",
             "APIPath": "/currencies/{currency}/conversion-rates",
@@ -7755,7 +7755,7 @@
         },
         {
           "fields": {
-            "Name": "email-history.json",
+            "Name": "email-history",
             "DisplayName": "Email History",
             "Description": "Email History record.",
             "APIPath": "/emails",
@@ -8193,7 +8193,7 @@
         },
         {
           "fields": {
-            "Name": "email-template-data.json",
+            "Name": "email-template-data",
             "DisplayName": "Email Template Response",
             "Description": "Response object to get email templates for an unique campaign.",
             "APIPath": "/emarketing/campaigns/{campaignId}/email-templates",
@@ -8646,7 +8646,7 @@
         },
         {
           "fields": {
-            "Name": "event-question.json",
+            "Name": "event-question",
             "DisplayName": "EventQuestion",
             "Description": "Represents a question associated with an event.",
             "APIPath": "/event-questions",
@@ -8885,7 +8885,7 @@
         },
         {
           "fields": {
-            "Name": "event-question-choice.json",
+            "Name": "event-question-choice",
             "DisplayName": "Choice",
             "Description": "This is used to denote the choice of questions in an event.",
             "APIPath": "/event-questions/{questionId}/choices",
@@ -8969,7 +8969,7 @@
         },
         {
           "fields": {
-            "Name": "event-role-assignment.json",
+            "Name": "event-role-assignment",
             "DisplayName": "EventRoleAssignment",
             "Description": "An assignment of an event role to a user for an event.",
             "APIPath": "/event-roles/assignments",
@@ -10126,7 +10126,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -10229,7 +10229,7 @@
         },
         {
           "fields": {
-            "Name": "message-recipients-response.json",
+            "Name": "message-recipients-response",
             "DisplayName": "Message Recipient Response",
             "Description": "Members of the channel who received a message.",
             "APIPath": "/events/{eventId}/attendee-messages/members",
@@ -10735,7 +10735,7 @@
         },
         {
           "fields": {
-            "Name": "budget-item-list-response.json",
+            "Name": "budget-item-list-response",
             "DisplayName": "BudgetItemListResponse",
             "Description": "The response from a request to get the budget items for the event.",
             "APIPath": "/events/{id}/budget-items",
@@ -11184,7 +11184,7 @@
         },
         {
           "fields": {
-            "Name": "budget-allocations-paginated-response.json",
+            "Name": "budget-allocations-paginated-response",
             "DisplayName": "BudgetAllocationsPaginatedResponse",
             "Description": "Information about an allocation.",
             "APIPath": "/events/{id}/budget-items/allocations",
@@ -11551,7 +11551,7 @@
         },
         {
           "fields": {
-            "Name": "event-budget-totals.json",
+            "Name": "event-budget-totals",
             "DisplayName": "Event Budget Totals",
             "Description": "Budget Totals for a Event.",
             "APIPath": "/events/{id}/budget-totals",
@@ -11973,7 +11973,7 @@
         },
         {
           "fields": {
-            "Name": "event-email.json",
+            "Name": "event-email",
             "DisplayName": "EventEmail",
             "Description": "An email and its details for a specific event.",
             "APIPath": "/events/{id}/emails",
@@ -12196,7 +12196,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -15274,7 +15274,7 @@
         },
         {
           "fields": {
-            "Name": "event-feature.json",
+            "Name": "event-feature",
             "DisplayName": "EventFeature",
             "Description": "Representation of an event's feature along with its properties",
             "APIPath": "/events/{id}/features",
@@ -15713,7 +15713,7 @@
         },
         {
           "fields": {
-            "Name": "invitation-list.json",
+            "Name": "invitation-list",
             "DisplayName": "InvitationList",
             "Description": "Object encapsulating relevant information about an invitation list.",
             "APIPath": "/events/{id}/invitation-lists",
@@ -16838,7 +16838,7 @@
         },
         {
           "fields": {
-            "Name": "planning-document.json",
+            "Name": "planning-document",
             "DisplayName": "PlanningDocument",
             "Description": "Represents a planning document associated with an event.",
             "APIPath": "/events/{id}/planning-documents",
@@ -17284,7 +17284,7 @@
         },
         {
           "fields": {
-            "Name": "existing-registration-path.json",
+            "Name": "existing-registration-path",
             "DisplayName": "ExistingRegistrationPath",
             "Description": "Represents the details of an existing registration path.",
             "APIPath": "/events/{id}/registration-paths",
@@ -17386,7 +17386,7 @@
         },
         {
           "fields": {
-            "Name": "existing-registration-type-with-associated-reg-path.json",
+            "Name": "existing-registration-type-with-associated-reg-path",
             "DisplayName": "ExistingRegistrationTypeWithAssociatedRegPath",
             "Description": "Represents the details of an existing registration type and registration path associated to it.",
             "APIPath": "/events/{id}/registration-types",
@@ -17708,7 +17708,7 @@
         },
         {
           "fields": {
-            "Name": "table-assignment.json",
+            "Name": "table-assignment",
             "DisplayName": "TableAssignment",
             "Description": "The assignment of an attendee to a seat on a table for a given event seating",
             "APIPath": "/events/{id}/seatings/assignments",
@@ -18283,7 +18283,7 @@
         },
         {
           "fields": {
-            "Name": "event-survey.json",
+            "Name": "event-survey",
             "DisplayName": "EventSurvey",
             "Description": "An event survey.",
             "APIPath": "/events/{id}/surveys",
@@ -18578,7 +18578,7 @@
         },
         {
           "fields": {
-            "Name": "event-survey-question.json",
+            "Name": "event-survey-question",
             "DisplayName": "EventSurveyQuestion",
             "Description": "An event survey question.",
             "APIPath": "/events/{id}/surveys/{surveyId}/questions",
@@ -18621,7 +18621,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -20204,7 +20204,7 @@
         },
         {
           "fields": {
-            "Name": "event-weblink.json",
+            "Name": "event-weblink",
             "DisplayName": "EventWeblink",
             "Description": "Metadata for an event weblink.",
             "APIPath": "/events/{id}/weblinks",
@@ -20995,7 +20995,7 @@
         },
         {
           "fields": {
-            "Name": "available-night.json",
+            "Name": "available-night",
             "DisplayName": "AvailableNight",
             "Description": "Night availability details.",
             "APIPath": "/housing-events/{housingEventId}/hotels/{hotelId}/available-nights",
@@ -21404,7 +21404,7 @@
         },
         {
           "fields": {
-            "Name": "room-inventory.json",
+            "Name": "room-inventory",
             "DisplayName": "room-inventory.json",
             "Description": "Room inventory details for single night.",
             "APIPath": "/housing-events/{housingEventId}/hotels/{hotelId}/room-types/{roomTypeId}/inventory",
@@ -23032,7 +23032,7 @@
         },
         {
           "fields": {
-            "Name": "large-choice.json",
+            "Name": "large-choice",
             "DisplayName": "LargeChoice",
             "Description": "Choice of large choices question.",
             "APIPath": "/large-choices",
@@ -23105,7 +23105,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=question.json2&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=question2&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -23678,7 +23678,7 @@
         },
         {
           "fields": {
-            "Name": "communication-log-message.json",
+            "Name": "communication-log-message",
             "DisplayName": "CommunicationLogMessage",
             "Description": "A communication log message.",
             "APIPath": "/logs/communications/messages",
@@ -23921,7 +23921,7 @@
         },
         {
           "fields": {
-            "Name": "meeting-request-document.json",
+            "Name": "meeting-request-document",
             "DisplayName": "MeetingRequestDocument",
             "Description": "Document attached to a meeting request that can be downloaded.",
             "APIPath": "/meeting-requests/{requestId}/documents",
@@ -24111,7 +24111,7 @@
         },
         {
           "fields": {
-            "Name": "process-form-submission.json",
+            "Name": "process-form-submission",
             "DisplayName": "ProcessFormSubmission",
             "Description": "Represents a process form submission in the context of a specific event.",
             "APIPath": "/process-forms/submissions",
@@ -25130,7 +25130,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -25604,7 +25604,7 @@
         },
         {
           "fields": {
-            "Name": "respondent.json",
+            "Name": "respondent",
             "DisplayName": "Respondent",
             "Description": "Respondent object for survey respondents.",
             "APIPath": "/respondents",
@@ -25695,7 +25695,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -25771,7 +25771,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -26023,7 +26023,7 @@
         },
         {
           "fields": {
-            "Name": "response.json",
+            "Name": "response",
             "DisplayName": "Survey Responses",
             "Description": "Response object for survey responses.",
             "APIPath": "/responses",
@@ -26113,7 +26113,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -27270,7 +27270,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-agenda-item.json",
+            "Name": "rfp-agenda-item",
             "DisplayName": "RfpAgendaItem",
             "Description": "Agenda item associated with an RFP.",
             "APIPath": "/rfps/{rfpId}/agenda-items",
@@ -27611,7 +27611,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-agenda-item-schedule-with-id.json",
+            "Name": "rfp-agenda-item-schedule-with-id",
             "DisplayName": "RfpAgendaItemScheduleWithId",
             "Description": "Contains RFP specific agenda items schedule information with agenda item id.",
             "APIPath": "/rfps/{rfpId}/agenda-items/schedules",
@@ -27695,7 +27695,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-attachment.json",
+            "Name": "rfp-attachment",
             "DisplayName": "RfpAttachment",
             "Description": "This object contains Rfp specific attachments attributes.",
             "APIPath": "/rfps/{rfpId}/attachments",
@@ -27974,7 +27974,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-custom-field.json",
+            "Name": "rfp-custom-field",
             "DisplayName": "RfpCustomField",
             "Description": "This object contains RFP custom fields attributes only.",
             "APIPath": "/rfps/{rfpId}/custom-fields/answers",
@@ -28332,7 +28332,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-past-event.json",
+            "Name": "rfp-past-event",
             "DisplayName": "RfpPastEvent",
             "Description": "This object includes information about past events hosted by the planner.",
             "APIPath": "/rfps/{rfpId}/past-events",
@@ -28526,7 +28526,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-question.json",
+            "Name": "rfp-question",
             "DisplayName": "RfpQuestion",
             "Description": "Question associated with an RFP.",
             "APIPath": "/rfps/{rfpId}/questions",
@@ -29184,7 +29184,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-recipient-log-entry.json",
+            "Name": "rfp-recipient-log-entry",
             "DisplayName": "RfpRecipientLogEntry",
             "Description": "Contains the log entry when the recipient was copied on an RFP.",
             "APIPath": "/rfps/{rfpId}/recipients/history",
@@ -29329,7 +29329,7 @@
         },
         {
           "fields": {
-            "Name": "rfp-supplier.json",
+            "Name": "rfp-supplier",
             "DisplayName": "RfpSupplier",
             "Description": "Supplier data for an RFP.",
             "APIPath": "/rfps/{rfpId}/suppliers",
@@ -31401,7 +31401,7 @@
         },
         {
           "fields": {
-            "Name": "sessions-attendance-response.json",
+            "Name": "sessions-attendance-response",
             "DisplayName": "SessionsAttendance",
             "Description": "Represents session attendance details.",
             "APIPath": "/sessions/attendance",
@@ -31623,7 +31623,7 @@
         },
         {
           "fields": {
-            "Name": "sessions-enrollment.json",
+            "Name": "sessions-enrollment",
             "DisplayName": "SessionsEnrollment",
             "Description": "Represents the attendee registration action for a session.",
             "APIPath": "/sessions/enrollment",
@@ -31944,7 +31944,7 @@
         },
         {
           "fields": {
-            "Name": "session-speaker.json",
+            "Name": "session-speaker",
             "DisplayName": "SessionSpeaker",
             "Description": "A session speaker",
             "APIPath": "/sessions/{id}/speakers",
@@ -32044,7 +32044,7 @@
         },
         {
           "fields": {
-            "Name": "attendee-signature-response.json",
+            "Name": "attendee-signature-response",
             "DisplayName": "AttendeeSignatureResponse",
             "Description": "Attendee's Signature Response.",
             "APIPath": "/signatures",
@@ -32940,7 +32940,7 @@
         },
         {
           "fields": {
-            "Name": "standard-survey.json",
+            "Name": "standard-survey",
             "DisplayName": "StandardSurvey",
             "Description": "A standard survey.",
             "APIPath": "/standard-surveys",
@@ -33248,7 +33248,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -33410,7 +33410,7 @@
         },
         {
           "fields": {
-            "Name": "standard-survey-email-template.json",
+            "Name": "standard-survey-email-template",
             "DisplayName": "StandardSurveyEmailTemplates",
             "Description": "A standard survey email template",
             "APIPath": "/standard-surveys/{surveyId}/email-templates",
@@ -33689,7 +33689,7 @@
         },
         {
           "fields": {
-            "Name": "standard-survey-question.json",
+            "Name": "standard-survey-question",
             "DisplayName": "StandardSurveyQuestion",
             "Description": "A standard survey question.",
             "APIPath": "/standard-surveys/{surveyId}/questions",
@@ -33732,7 +33732,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=survey&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -34162,7 +34162,7 @@
                   "IsReadOnly": false,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list.json&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=invitation-list&IntegrationID=@parent:IntegrationID",
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": true,
@@ -34429,7 +34429,7 @@
         },
         {
           "fields": {
-            "Name": "survey.json",
+            "Name": "survey",
             "DisplayName": "Survey",
             "Description": "Parent survey detail object. It can be of two types namely: 'Event' and 'Standalone'",
             "APIPath": "/surveys",
@@ -35327,7 +35327,7 @@
         },
         {
           "fields": {
-            "Name": "question-with-program-id.json",
+            "Name": "question-with-program-id",
             "DisplayName": "Travel Program Question",
             "Description": "A question, defined by the program, for the supplier to answer as part of their proposal.",
             "APIPath": "/travel-programs/questions",
@@ -37888,7 +37888,7 @@
         },
         {
           "fields": {
-            "Name": "video-view.json",
+            "Name": "video-view",
             "DisplayName": "VideoView",
             "Description": "Details of a single video view",
             "APIPath": "/videos/views",
@@ -38283,7 +38283,7 @@
         },
         {
           "fields": {
-            "Name": "video-rendition.json",
+            "Name": "video-rendition",
             "DisplayName": "VideoRendition",
             "Description": "Video rendition",
             "APIPath": "/videos/{videoId}/renditions",

@@ -38,6 +38,10 @@ export interface SharePointConnectionConfig {
     GraphBaseUrl?: string;
     /** OAuth scope. Default: https://graph.microsoft.com/.default */
     Scope?: string;
+    /** Optional override for the Azure AD authority host. Default: https://login.microsoftonline.com.
+     *  Set for sovereign clouds — Azure Government (https://login.microsoftonline.us), Azure China
+     *  (https://login.chinacloudapi.cn). Mirrors DynamicsDataverseConnector.AuthorityHost. */
+    AuthorityHost?: string;
 
     // ── Performance overrides ───────────────────────────────────
     /** Maximum retries for rate-limited or failed requests. Default: 5 */
@@ -109,9 +113,13 @@ const GRAPH_V1_BASE_URL = 'https://graph.microsoft.com/v1.0';
 /** Default OAuth scope for app-only Graph access. */
 const DEFAULT_SCOPE = 'https://graph.microsoft.com/.default';
 
-/** Azure AD token endpoint template. */
-const AAD_TOKEN_ENDPOINT = (tenantId: string): string =>
-    `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/token`;
+/** Default Azure AD authority host (public cloud). Overridden via config.AuthorityHost for sovereign clouds. */
+const DEFAULT_AUTHORITY_HOST = 'https://login.microsoftonline.com';
+
+/** Azure AD token endpoint template. authorityHost defaults to the public-cloud host; override for
+ *  sovereign clouds (Azure Gov / China) via SharePointConnectionConfig.AuthorityHost. */
+const AAD_TOKEN_ENDPOINT = (tenantId: string, authorityHost: string = DEFAULT_AUTHORITY_HOST): string =>
+    `${authorityHost.replace(/\/+$/, '')}/${encodeURIComponent(tenantId)}/oauth2/v2.0/token`;
 
 /** Default minimum interval between API calls (Graph baseline is ~4 req/s). */
 const DEFAULT_MIN_REQUEST_INTERVAL_MS = 250;
@@ -589,7 +597,7 @@ export class SharePointConnector extends BaseRESTIntegrationConnector {
     }
 
     private async RequestGraphToken(config: SharePointConnectionConfig): Promise<GraphTokenResponse> {
-        const url = AAD_TOKEN_ENDPOINT(config.TenantId);
+        const url = AAD_TOKEN_ENDPOINT(config.TenantId, config.AuthorityHost);
         const scope = config.Scope ?? DEFAULT_SCOPE;
         const form = new URLSearchParams({
             client_id: config.ClientId,
@@ -653,6 +661,8 @@ export class SharePointConnector extends BaseRESTIntegrationConnector {
                 ClientSecret: raw.clientSecret as string | undefined ?? raw.ClientSecret as string | undefined,
                 GraphBaseUrl: raw.graphBaseUrl as string | undefined ?? raw.GraphBaseUrl as string | undefined,
                 Scope: raw.scope as string | undefined ?? raw.Scope as string | undefined,
+                AuthorityHost: raw.authorityHost as string | undefined ?? raw.AuthorityHost as string | undefined
+                    ?? raw.authority_host as string | undefined ?? raw.authority as string | undefined,
             };
             return this.ValidateConfig(parsed);
         } catch {
@@ -671,6 +681,7 @@ export class SharePointConnector extends BaseRESTIntegrationConnector {
             ClientSecret: raw.ClientSecret,
             GraphBaseUrl: raw.GraphBaseUrl,
             Scope: raw.Scope,
+            AuthorityHost: raw.AuthorityHost,
             MaxRetries: raw.MaxRetries ?? DEFAULT_MAX_RETRIES,
             RequestTimeoutMs: raw.RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
             MinRequestIntervalMs: raw.MinRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS,
