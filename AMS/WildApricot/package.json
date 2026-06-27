@@ -1,6 +1,7 @@
 {
   "name": "@memberjunction/connector-wild-apricot",
   "version": "1.0.0",
+  "private": true,
   "description": "MemberJunction WildApricot connector.",
   "type": "module",
   "main": "dist/index.js",
