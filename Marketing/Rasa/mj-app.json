@@ -13,7 +13,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.43.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <6.0.0",
   "schema": {
     "name": "mj_connector_rasa_io",
     "createIfNotExists": true

@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-path-lms",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "MemberJunction PathLMS connector.",
   "type": "module",
   "main": "dist/index.js",
