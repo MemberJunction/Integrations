@@ -162,7 +162,7 @@ const MIN_REQUEST_INTERVAL_MS = 50;
 
 // ─── Connector ──────────────────────────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'MemberSuiteConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-membersuite')
 export class MemberSuiteConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
     private lastRequestTime = 0;

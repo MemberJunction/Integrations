@@ -53,7 +53,7 @@ BEGIN
   p_Name_24a4f97a := 'GrowthZone';
   p_Description_24a4f97a := 'GrowthZone Association Management System (AMS) connector — syncs contacts, memberships, groups, events, store orders, and certifications via GrowthZone REST API with OAuth2 Bearer token authentication.';
   p_NavigationBaseURL_24a4f97a := 'https://{subdomain}.growthzoneapp.com/API';
-  p_ClassName_24a4f97a := 'GrowthZoneConnector';
+  p_ClassName_24a4f97a := '@memberjunction/connector-growthzone';
   p_ImportPath_24a4f97a := '@memberjunction/connector-growthzone';
   p_BatchMaxRequestCount_24a4f97a := -1;
   p_BatchRequestWaitTime_24a4f97a := -1;

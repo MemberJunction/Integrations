@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_24a4f97a = N'https://{subdomain}.growthzoneapp.com/API'
 SET
-  @ClassName_24a4f97a = N'GrowthZoneConnector'
+  @ClassName_24a4f97a = N'@memberjunction/connector-growthzone'
 SET
   @ImportPath_24a4f97a = N'@memberjunction/connector-growthzone'
 SET

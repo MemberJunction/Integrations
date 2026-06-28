@@ -52,7 +52,7 @@ DECLARE
 BEGIN
   p_Name_2af10715 := 'iMIS';
   p_Description_2af10715 := 'iMIS EMS (Advanced Solutions International) REST API connector for associations and nonprofits. Supports parties, memberships, events, fundraising, invoicing, and commerce via iMIS REST API with OAuth2 password-grant Bearer token authentication.';
-  p_ClassName_2af10715 := 'IMISConnector';
+  p_ClassName_2af10715 := '@memberjunction/connector-imis';
   p_ImportPath_2af10715 := '@memberjunction/connector-imis';
   p_BatchMaxRequestCount_2af10715 := 100;
   p_BatchRequestWaitTime_2af10715 := 250;

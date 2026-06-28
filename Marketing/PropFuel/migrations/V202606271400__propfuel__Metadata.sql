@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_02117260 = N'https://app.propfuel.com/'
 SET
-  @ClassName_02117260 = N'PropFuelConnector'
+  @ClassName_02117260 = N'@memberjunction/connector-propfuel'
 SET
   @ImportPath_02117260 = N'@memberjunction/connector-propfuel'
 SET

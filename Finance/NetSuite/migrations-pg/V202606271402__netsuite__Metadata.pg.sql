@@ -53,7 +53,7 @@ BEGIN
   p_Name_cf14fcde := 'NetSuite';
   p_Description_cf14fcde := 'Oracle NetSuite ERP/CRM connector: SuiteTalk REST Record Service (CRUD) + SuiteQL reads across standard and custom record types; incremental via lastModifiedDate; OAuth 1.0a TBA / OAuth 2.0; per-account host; runtime metadata-catalog discovery.';
   p_NavigationBaseURL_cf14fcde := 'https://<accountId>.suitetalk.api.netsuite.com';
-  p_ClassName_cf14fcde := 'NetSuiteConnector';
+  p_ClassName_cf14fcde := '@memberjunction/connector-netsuite';
   p_ImportPath_cf14fcde := '@memberjunction/connector-netsuite';
   p_BatchMaxRequestCount_cf14fcde := 15;
   p_BatchRequestWaitTime_cf14fcde := -1;

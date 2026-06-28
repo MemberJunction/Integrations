@@ -5,7 +5,7 @@
     },
     "fields": {
       "Name": "GrowthZone",
-      "ClassName": "GrowthZoneConnector",
+      "ClassName": "@memberjunction/connector-growthzone",
       "ImportPath": "@memberjunction/connector-growthzone",
       "NavigationBaseURL": "https://{subdomain}.growthzoneapp.com/API",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=GrowthZone OAuth2",

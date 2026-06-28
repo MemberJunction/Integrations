@@ -53,7 +53,7 @@ BEGIN
   p_Name_e05a45f2 := 'SharePoint';
   p_Description_e05a45f2 := 'Microsoft SharePoint Online connector via Microsoft Graph API v1.0. Syncs Sites, Drives, DriveItems (files/folders), Lists, ListItems, ContentTypes, Columns, Permissions, and Subscriptions. Authenticates via OAuth2 Client Credentials (Azure app registr...';
   p_NavigationBaseURL_e05a45f2 := 'https://graph.microsoft.com/v1.0';
-  p_ClassName_e05a45f2 := 'SharePointConnector';
+  p_ClassName_e05a45f2 := '@memberjunction/connector-sharepoint';
   p_ImportPath_e05a45f2 := '@memberjunction/connector-sharepoint';
   p_BatchMaxRequestCount_e05a45f2 := 20;
   p_BatchRequestWaitTime_e05a45f2 := 250;

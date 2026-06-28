@@ -161,7 +161,7 @@ const GROWTHZONE_NULL_DATE = '0001-01-01T00:00:00';
 
 // ─── Connector Implementation ────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'GrowthZoneConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-growthzone')
 export class GrowthZoneConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context for the current sync run. */
