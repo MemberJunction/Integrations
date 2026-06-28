@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_e05a45f2 = N'https://graph.microsoft.com/v1.0'
 SET
-  @ClassName_e05a45f2 = N'SharePointConnector'
+  @ClassName_e05a45f2 = N'@memberjunction/connector-sharepoint'
 SET
   @ImportPath_e05a45f2 = N'@memberjunction/connector-sharepoint'
 SET

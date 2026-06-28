@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "MemberSuite",
-      "ClassName": "MemberSuiteConnector",
+      "ClassName": "@memberjunction/connector-membersuite",
       "ImportPath": "@memberjunction/connector-membersuite",
       "Description": "MemberSuite AMS connector — syncs members, organizations, memberships, chapters, events, registrations, orders, and certifications via MemberSuite REST API v2.",
       "NavigationBaseURL": "https://rest.membersuite.com",

@@ -63,7 +63,7 @@ import { z } from 'zod';
  * constant — it is fetched + parsed from the public page at discovery time (only the small set of non-record
  * SDL types to *exclude* is a documented constant, NOT the catalog itself).
  */
-@RegisterClass(BaseIntegrationConnector, 'PathLMSConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-path-lms')
 export class PathLMSConnector extends BaseRESTIntegrationConnector {
 
     /** Per-process token cache, keyed by credential identity (applicationId). Survives across fetches. */

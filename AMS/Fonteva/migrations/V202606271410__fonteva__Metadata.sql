@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_6cf13a72 = N'https://login.salesforce.com'
 SET
-  @ClassName_6cf13a72 = N'FontevaConnector'
+  @ClassName_6cf13a72 = N'@memberjunction/connector-fonteva'
 SET
   @ImportPath_6cf13a72 = N'@memberjunction/connector-fonteva'
 SET

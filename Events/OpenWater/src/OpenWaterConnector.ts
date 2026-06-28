@@ -137,7 +137,7 @@ const RATE_LIMIT_TOKENS_PER_SEC = 3;
 
 // ─── Connector ──────────────────────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'OpenWaterConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-openwater')
 export class OpenWaterConnector extends BaseRESTIntegrationConnector {
 
     private authState: OpenWaterAuthContext | null = null;

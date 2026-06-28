@@ -157,7 +157,7 @@ interface NSCatalogResponse {
 
 // ─── Connector ────────────────────────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'NetSuiteConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-netsuite')
 export class NetSuiteConnector extends BaseRESTIntegrationConnector {
     private oauth2Manager = new OAuth2TokenManager();
 

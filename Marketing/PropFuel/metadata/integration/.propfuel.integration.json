@@ -5,7 +5,7 @@
     },
     "fields": {
       "Name": "PropFuel",
-      "ClassName": "PropFuelConnector",
+      "ClassName": "@memberjunction/connector-propfuel",
       "Description": "PropFuel AI-powered member insights and engagement platform — data export file-feed integration. Retrieves hourly JSON files via list/download/ack endpoints.",
       "ImportPath": "@memberjunction/connector-propfuel",
       "NavigationBaseURL": "https://app.propfuel.com/",

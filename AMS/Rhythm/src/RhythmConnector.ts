@@ -174,7 +174,7 @@ const MAX_PAGES_PER_FETCH = 10_000;
 
 // ─── Connector Implementation ────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'RhythmConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-rhythm-software')
 export class RhythmConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context for the current sync run. */

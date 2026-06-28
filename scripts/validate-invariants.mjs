@@ -41,7 +41,7 @@ function exportedClasses(appDir) {
     const src = readFileSync(file, 'utf-8');
     for (const m of src.matchAll(/export\s*\*\s*from\s*['"]\.\/(\w+)\.js['"]/g)) {
       const cf = join(appDir, 'src', `${m[1]}.ts`);
-      if (existsSync(cf)) for (const r of readFileSync(cf, 'utf-8').matchAll(/@RegisterClass\([^,]+,\s*['"](\w+)['"]/g)) names.add(r[1]);
+      if (existsSync(cf)) for (const r of readFileSync(cf, 'utf-8').matchAll(/@RegisterClass\([^,]+,\s*['"]([^'"]+)['"]/g)) names.add(r[1]);
     }
     for (const m of src.matchAll(/export\s*\{\s*([A-Za-z0-9_]+)/g)) names.add(m[1]);
   }

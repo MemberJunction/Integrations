@@ -177,7 +177,7 @@ const IMIS_TYPE_MAP: Record<string, string> = {
 
 // ─── Connector Implementation ────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'IMISConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-imis')
 export class IMISConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context for the current sync run. */

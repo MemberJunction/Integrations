@@ -103,7 +103,7 @@ const RATE_LIMIT_BURST = 20;
  * BodyShape/IDLocation, DeleteAPIPath/Method/IDLocation) driven entirely by the IO
  * metadata — no per-verb override.
  */
-@RegisterClass(BaseIntegrationConnector, 'NoviConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-novi-ams')
 export class NoviConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context (raw key + resolved per-tenant host). */

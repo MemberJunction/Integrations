@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_3eb0fc5c = N'https://api.getopenwater.com'
 SET
-  @ClassName_3eb0fc5c = N'OpenWaterConnector'
+  @ClassName_3eb0fc5c = N'@memberjunction/connector-openwater'
 SET
   @ImportPath_3eb0fc5c = N'@memberjunction/connector-openwater'
 SET

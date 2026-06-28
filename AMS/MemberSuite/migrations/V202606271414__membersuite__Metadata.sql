@@ -57,7 +57,7 @@ SET
 SET
   @NavigationBaseURL_9ac31384 = N'https://rest.membersuite.com'
 SET
-  @ClassName_9ac31384 = N'MemberSuiteConnector'
+  @ClassName_9ac31384 = N'@memberjunction/connector-membersuite'
 SET
   @ImportPath_9ac31384 = N'@memberjunction/connector-membersuite'
 SET

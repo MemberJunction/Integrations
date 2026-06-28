@@ -53,7 +53,7 @@ BEGIN
   p_Name_3eb0fc5c := 'OpenWater';
   p_Description_3eb0fc5c := 'OpenWater awards/grants/abstracts/fellowship platform connector — pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).';
   p_NavigationBaseURL_3eb0fc5c := 'https://api.getopenwater.com';
-  p_ClassName_3eb0fc5c := 'OpenWaterConnector';
+  p_ClassName_3eb0fc5c := '@memberjunction/connector-openwater';
   p_ImportPath_3eb0fc5c := '@memberjunction/connector-openwater';
   p_BatchMaxRequestCount_3eb0fc5c := -1;
   p_BatchRequestWaitTime_3eb0fc5c := -1;
