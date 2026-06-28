@@ -1,0 +1,18 @@
+name: main-source-guard
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  next-only:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only next may merge into main
+        run: |
+          echo "PR head branch: ${{ github.head_ref }}"
+          if [ "${{ github.head_ref }}" != "next" ]; then
+            echo "::error::main accepts merges ONLY from 'next' (this PR head is '${{ github.head_ref }}'). Promote your change through next, then open a next -> main PR."
+            exit 1
+          fi
+          echo "source is 'next' — allowed"
