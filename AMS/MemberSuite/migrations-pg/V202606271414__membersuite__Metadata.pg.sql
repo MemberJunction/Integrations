@@ -73,7 +73,7 @@ BEGIN
   p_Name_9ac31384 := 'MemberSuite';
   p_Description_9ac31384 := 'MemberSuite AMS connector — syncs members, organizations, memberships, chapters, events, registrations, orders, and certifications via MemberSuite REST API v2.';
   p_NavigationBaseURL_9ac31384 := 'https://rest.membersuite.com';
-  p_ClassName_9ac31384 := 'MemberSuiteConnector';
+  p_ClassName_9ac31384 := '@memberjunction/connector-membersuite';
   p_ImportPath_9ac31384 := '@memberjunction/connector-membersuite';
   p_BatchMaxRequestCount_9ac31384 := -1;
   p_BatchRequestWaitTime_9ac31384 := -1;

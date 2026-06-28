@@ -53,7 +53,7 @@ BEGIN
   p_Name_5c3357b2 := 'Hivebrite';
   p_Description_5c3357b2 := 'Hivebrite community management platform connector — syncs users, companies, events, memberships, donations, groups, and 40+ other objects via Hivebrite Admin API (v1/v2/v3) with OAuth2 password grant authentication.';
   p_NavigationBaseURL_5c3357b2 := 'https://{community-domain}/api';
-  p_ClassName_5c3357b2 := 'HivebriteConnector';
+  p_ClassName_5c3357b2 := '@memberjunction/connector-hivebrite';
   p_ImportPath_5c3357b2 := '@memberjunction/connector-hivebrite';
   p_BatchMaxRequestCount_5c3357b2 := 300;
   p_BatchRequestWaitTime_5c3357b2 := 60;

@@ -53,7 +53,7 @@ BEGIN
   p_Name_02117260 := 'PropFuel';
   p_Description_02117260 := 'PropFuel AI-powered member insights and engagement platform — data export file-feed integration. Retrieves hourly JSON files via list/download/ack endpoints.';
   p_NavigationBaseURL_02117260 := 'https://app.propfuel.com/';
-  p_ClassName_02117260 := 'PropFuelConnector';
+  p_ClassName_02117260 := '@memberjunction/connector-propfuel';
   p_ImportPath_02117260 := '@memberjunction/connector-propfuel';
   p_BatchMaxRequestCount_02117260 := -1;
   p_BatchRequestWaitTime_02117260 := -1;

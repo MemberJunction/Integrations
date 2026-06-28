@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "ORCID",
-      "ClassName": "ORCIDConnector",
+      "ClassName": "@memberjunction/connector-orcid",
       "Description": "ORCID Public API v3.0 read-only connector. Resolves researcher iD universes via per-connection Lucene search and/or explicit iD lists, then fetches the record and activity sections. Pull-only / read-public; OAuth2 client-credentials.",
       "ImportPath": "@memberjunction/connector-orcid",
       "NavigationBaseURL": "https://orcid.org/",

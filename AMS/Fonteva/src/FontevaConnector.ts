@@ -132,7 +132,7 @@ const DEFAULT_FDSERVICE_BASE_PATH = '/services/apexrest/FDService';
  * enough to warrant overriding the sObject write path (the metadata routes all
  * writes through the platform sObject endpoints).
  */
-@RegisterClass(BaseIntegrationConnector, 'FontevaConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-fonteva')
 export class FontevaConnector extends SalesforceConnector {
 
     private _fontevaConfig: FontevaConnectionConfig | null = null;

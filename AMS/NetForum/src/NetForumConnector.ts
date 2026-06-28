@@ -141,7 +141,7 @@ interface NFObjectConfig {
     writeOps?: { createOp?: string; updateOp?: string };
 }
 
-@RegisterClass(BaseIntegrationConnector, 'NetForumConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-netforum-enterprise')
 export class NetForumConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
     private lastRequestTime = 0;

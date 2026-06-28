@@ -53,7 +53,7 @@ BEGIN
   p_Name_8fdf1618 := 'ORCID';
   p_Description_8fdf1618 := 'ORCID Public API v3.0 read-only connector. Resolves researcher iD universes via per-connection Lucene search and/or explicit iD lists, then fetches the record and activity sections. Pull-only / read-public; OAuth2 client-credentials.';
   p_NavigationBaseURL_8fdf1618 := 'https://orcid.org/';
-  p_ClassName_8fdf1618 := 'ORCIDConnector';
+  p_ClassName_8fdf1618 := '@memberjunction/connector-orcid';
   p_ImportPath_8fdf1618 := '@memberjunction/connector-orcid';
   p_BatchMaxRequestCount_8fdf1618 := 12;
   p_BatchRequestWaitTime_8fdf1618 := 1;

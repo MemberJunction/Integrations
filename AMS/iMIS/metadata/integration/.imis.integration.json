@@ -5,7 +5,7 @@
     },
     "fields": {
       "Name": "iMIS",
-      "ClassName": "IMISConnector",
+      "ClassName": "@memberjunction/connector-imis",
       "Description": "iMIS EMS (Advanced Solutions International) REST API connector for associations and nonprofits. Supports parties, memberships, events, fundraising, invoicing, and commerce via iMIS REST API with OAuth2 password-grant Bearer token authentication.",
       "ImportPath": "@memberjunction/connector-imis",
       "Icon": "fa-solid fa-hands-holding-circle",

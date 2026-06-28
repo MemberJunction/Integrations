@@ -52,7 +52,7 @@ DECLARE
 BEGIN
   p_Name_dfa93855 := 'Nimble AMS';
   p_Description_dfa93855 := 'Nimble AMS connector — Salesforce-native AMS; data lives as SF sObjects (standard + NU__ managed-package customs). Surfaces: Nimble Fuse (NUINT inbound/outbound), Salesforce REST (sObject CRUD, SOQL, describe), and NAMS LMS REST.';
-  p_ClassName_dfa93855 := 'NimbleAMSConnector';
+  p_ClassName_dfa93855 := '@memberjunction/connector-nimble-ams';
   p_ImportPath_dfa93855 := '@memberjunction/connector-nimble-ams';
   p_BatchMaxRequestCount_dfa93855 := 25;
   p_BatchRequestWaitTime_dfa93855 := 200;

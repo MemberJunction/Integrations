@@ -53,7 +53,7 @@ BEGIN
   p_Name_2877472a := 'Neon CRM';
   p_Description_2877472a := 'Neon CRM (Neon One) connector — syncs accounts, donations, memberships, events, registrations, campaigns, activities, grants, orders, payments, pledges, volunteers, and custom objects via the Neon REST API v2 (HTTP Basic auth).';
   p_NavigationBaseURL_2877472a := 'https://api.neoncrm.com/v2';
-  p_ClassName_2877472a := 'NeonCRMConnector';
+  p_ClassName_2877472a := '@memberjunction/connector-neon-crm';
   p_ImportPath_2877472a := '@memberjunction/connector-neon-crm';
   p_BatchMaxRequestCount_2877472a := 5;
   p_BatchRequestWaitTime_2877472a := -1;

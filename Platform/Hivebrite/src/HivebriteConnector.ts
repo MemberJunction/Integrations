@@ -140,7 +140,7 @@ const HIVEBRITE_BURST = 10;
 
 // ─── Connector Implementation ────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'HivebriteConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-hivebrite')
 export class HivebriteConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context for the current sync run. */

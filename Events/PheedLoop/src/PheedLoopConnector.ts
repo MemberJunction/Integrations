@@ -37,7 +37,7 @@ import { z } from 'zod';
  * so no auth-helper applies (a helper would only matter for HMAC/OAuth/Basic encoding); the headers are
  * assembled directly, which is NOT inline crypto.
  */
-@RegisterClass(BaseIntegrationConnector, 'PheedLoopConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-pheedloop')
 export class PheedLoopConnector extends BaseRESTIntegrationConnector {
 
     /** Verbatim three-way invariant: ClassName / IntegrationName getter / MJ: Integrations.Name. */

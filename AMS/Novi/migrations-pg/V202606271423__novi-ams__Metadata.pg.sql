@@ -53,7 +53,7 @@ BEGIN
   p_Name_eee26622 := 'Novi AMS';
   p_Description_eee26622 := 'Novi AMS connector — syncs members, events, ecommerce, custom fields, webhooks, blogs, site content, NPS surveys, and catalog items via the Novi REST API (HTTP Basic with raw API key, per-tenant base URL https://www.<assoc>.org/api/).';
   p_NavigationBaseURL_eee26622 := 'https://api-docs.noviams.com/';
-  p_ClassName_eee26622 := 'NoviConnector';
+  p_ClassName_eee26622 := '@memberjunction/connector-novi-ams';
   p_ImportPath_eee26622 := '@memberjunction/connector-novi-ams';
   p_BatchMaxRequestCount_eee26622 := 10;
   p_BatchRequestWaitTime_eee26622 := 1;
