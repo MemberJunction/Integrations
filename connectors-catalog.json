@@ -1,0 +1,405 @@
+{
+  "schemaVersion": 1,
+  "count": 19,
+  "connectors": [
+    {
+      "name": "Fonteva",
+      "displayName": "Fonteva Connector",
+      "description": "Fonteva AMS connector: syncs Salesforce-native OrderApi__* + EventApi__* association-management objects (commerce, membership, events, payments, badges, catalog) via FDService Apex REST + the Salesforce platform REST API. Extends SalesforceConnector.",
+      "category": "AMS",
+      "tags": [
+        "fonteva",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://login.salesforce.com",
+      "objectCount": 28,
+      "className": "@memberjunction/connector-fonteva",
+      "npmPackage": "@memberjunction/connector-fonteva",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/Fonteva",
+      "installTag": "AMS-Fonteva@1.0.0"
+    },
+    {
+      "name": "GrowthZone",
+      "displayName": "GrowthZone Connector",
+      "description": "GrowthZone Association Management System (AMS) connector — syncs contacts, memberships, groups, events, store orders, and certifications via GrowthZone REST API with OAuth2 Bearer token authentication.",
+      "category": "AMS",
+      "tags": [
+        "growthzone",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://{subdomain}.growthzoneapp.com/API",
+      "objectCount": 38,
+      "className": "@memberjunction/connector-growthzone",
+      "npmPackage": "@memberjunction/connector-growthzone",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/GrowthZone",
+      "installTag": "AMS-GrowthZone@1.0.0"
+    },
+    {
+      "name": "iMIS",
+      "displayName": "iMIS Connector",
+      "description": "iMIS EMS (Advanced Solutions International) REST API connector for associations and nonprofits. Supports parties, memberships, events, fundraising, invoicing, and commerce via iMIS REST API with OAuth2 password-grant Bearer token authentication.",
+      "category": "AMS",
+      "tags": [
+        "imis",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-hands-holding-circle",
+      "navigationBaseURL": null,
+      "objectCount": 216,
+      "className": "@memberjunction/connector-imis",
+      "npmPackage": "@memberjunction/connector-imis",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/iMIS",
+      "installTag": "AMS-iMIS@1.0.0"
+    },
+    {
+      "name": "MemberSuite",
+      "displayName": "MemberSuite Connector",
+      "description": "MemberSuite AMS connector — syncs members, organizations, memberships, chapters, events, registrations, orders, and certifications via MemberSuite REST API v2.",
+      "category": "AMS",
+      "tags": [
+        "membersuite",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://rest.membersuite.com",
+      "objectCount": 196,
+      "className": "@memberjunction/connector-membersuite",
+      "npmPackage": "@memberjunction/connector-membersuite",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/MemberSuite",
+      "installTag": "AMS-MemberSuite@1.0.0"
+    },
+    {
+      "name": "NetForum Enterprise",
+      "displayName": "NetForum Enterprise Connector",
+      "description": "NetForum Enterprise integration connector for MemberJunction",
+      "category": "AMS",
+      "tags": [
+        "netforum-enterprise",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-network-wired",
+      "navigationBaseURL": null,
+      "objectCount": 34,
+      "className": "@memberjunction/connector-netforum-enterprise",
+      "npmPackage": "@memberjunction/connector-netforum-enterprise",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/NetForum",
+      "installTag": "AMS-NetForum@1.0.0"
+    },
+    {
+      "name": "Nimble AMS",
+      "displayName": "Nimble AMS Connector",
+      "description": "Nimble AMS connector — Salesforce-native AMS; data lives as SF sObjects (standard + NU__ managed-package customs). Surfaces: Nimble Fuse (NUINT inbound/outbound), Salesforce REST (sObject CRUD, SOQL, describe), and NAMS LMS REST.",
+      "category": "AMS",
+      "tags": [
+        "nimble-ams",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-id-badge",
+      "navigationBaseURL": null,
+      "objectCount": 32,
+      "className": "@memberjunction/connector-nimble-ams",
+      "npmPackage": "@memberjunction/connector-nimble-ams",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/NimbleAMS",
+      "installTag": "AMS-NimbleAMS@1.0.0"
+    },
+    {
+      "name": "Novi AMS",
+      "displayName": "Novi AMS Connector",
+      "description": "Novi AMS connector — syncs members, events, ecommerce, custom fields, webhooks, blogs, site content, NPS surveys, and catalog items via the Novi REST API (HTTP Basic with raw API key, per-tenant base URL https://www.<assoc>.org/api/).",
+      "category": "AMS",
+      "tags": [
+        "novi-ams",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://api-docs.noviams.com/",
+      "objectCount": 32,
+      "className": "@memberjunction/connector-novi-ams",
+      "npmPackage": "@memberjunction/connector-novi-ams",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/Novi",
+      "installTag": "AMS-Novi@1.0.0"
+    },
+    {
+      "name": "Rhythm Software",
+      "displayName": "Rhythm Software Connector",
+      "description": "Rhythm Software AMS connector — syncs contacts, organizations, memberships, committees, events, certifications, finance, commerce, fundraising, awards, accreditation, sponsorship and submissions via the Rhythm REST API (15 per-module OpenAPI specs).",
+      "category": "AMS",
+      "tags": [
+        "rhythm-software",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": null,
+      "objectCount": 377,
+      "className": "@memberjunction/connector-rhythm-software",
+      "npmPackage": "@memberjunction/connector-rhythm-software",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/Rhythm",
+      "installTag": "AMS-Rhythm@1.0.0"
+    },
+    {
+      "name": "Microsoft Dynamics 365 (Dataverse)",
+      "displayName": "Microsoft Dynamics 365 (Dataverse) Connector",
+      "description": "Microsoft Dynamics 365 / Dataverse Web API (OData v4) connector for CE/model-driven app tables. OAuth2 client credentials (Entra ID); per-environment base URL; runtime EntityDefinitions discovery; change-tracking incremental; full CRUD.",
+      "category": "CRM",
+      "tags": [
+        "microsoft-dynamics-365-dataverse",
+        "crm",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/overview",
+      "objectCount": 592,
+      "className": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
+      "npmPackage": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "CRM/DynamicsDataverse",
+      "installTag": "CRM-DynamicsDataverse@1.0.0"
+    },
+    {
+      "name": "Neon CRM",
+      "displayName": "Neon CRM Connector",
+      "description": "Neon CRM (Neon One) connector — syncs accounts, donations, memberships, events, registrations, campaigns, activities, grants, orders, payments, pledges, volunteers, and custom objects via the Neon REST API v2 (HTTP Basic auth).",
+      "category": "CRM",
+      "tags": [
+        "neon-crm",
+        "crm",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://api.neoncrm.com/v2",
+      "objectCount": 119,
+      "className": "@memberjunction/connector-neon-crm",
+      "npmPackage": "@memberjunction/connector-neon-crm",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "CRM/NeonCRM",
+      "installTag": "CRM-NeonCRM@1.0.0"
+    },
+    {
+      "name": "Salesforce",
+      "displayName": "Salesforce Connector",
+      "description": "Salesforce REST connector: syncs CRM SObjects (Account, Contact, Lead, Opportunity, Case, Campaign, Task, Event, User) via SOQL watermark incremental sync; CRUD for most objects; custom __c discovered at runtime; OAuth2 JWT/Client Credentials.",
+      "category": "CRM",
+      "tags": [
+        "salesforce",
+        "crm",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://login.salesforce.com",
+      "objectCount": 1695,
+      "className": "@memberjunction/connector-salesforce",
+      "npmPackage": "@memberjunction/connector-salesforce",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "CRM/Salesforce",
+      "installTag": "CRM-Salesforce@1.0.0"
+    },
+    {
+      "name": "OpenWater",
+      "displayName": "OpenWater Connector",
+      "description": "OpenWater awards/grants/abstracts/fellowship platform connector — pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "category": "Events",
+      "tags": [
+        "openwater",
+        "events",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-trophy",
+      "navigationBaseURL": "https://api.getopenwater.com",
+      "objectCount": 25,
+      "className": "@memberjunction/connector-openwater",
+      "npmPackage": "@memberjunction/connector-openwater",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Events/OpenWater",
+      "installTag": "Events-OpenWater@1.0.0"
+    },
+    {
+      "name": "PheedLoop",
+      "displayName": "PheedLoop Connector",
+      "description": "PheedLoop event-management connector — syncs attendees, events, sessions, speakers, exhibitors, sponsors, registrations, memberships and 20+ objects via PheedLoop REST API v3 (dual API-key + API-secret headers, org-scoped URL paths).",
+      "category": "Events",
+      "tags": [
+        "pheedloop",
+        "events",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://api.pheedloop.com/api/v3",
+      "objectCount": 28,
+      "className": "@memberjunction/connector-pheedloop",
+      "npmPackage": "@memberjunction/connector-pheedloop",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Events/PheedLoop",
+      "installTag": "Events-PheedLoop@1.0.0"
+    },
+    {
+      "name": "NetSuite",
+      "displayName": "NetSuite Connector",
+      "description": "Oracle NetSuite ERP/CRM connector: SuiteTalk REST Record Service (CRUD) + SuiteQL reads across standard and custom record types; incremental via lastModifiedDate; OAuth 1.0a TBA / OAuth 2.0; per-account host; runtime metadata-catalog discovery.",
+      "category": "Finance",
+      "tags": [
+        "netsuite",
+        "finance",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://<accountId>.suitetalk.api.netsuite.com",
+      "objectCount": 205,
+      "className": "@memberjunction/connector-netsuite",
+      "npmPackage": "@memberjunction/connector-netsuite",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Finance/NetSuite",
+      "installTag": "Finance-NetSuite@1.0.0"
+    },
+    {
+      "name": "Path LMS",
+      "displayName": "Path LMS Connector",
+      "description": "Path LMS (Blue Sky eLearn) Reporting API connector — pull-only GraphQL analytics over 16 report query surfaces. Two-step bearer auth (applicationId + applicationSecret then 12-hour JWT); no writes. All data via POST to the single GraphQL endpoint.",
+      "category": "LMS",
+      "tags": [
+        "path-lms",
+        "lms",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-graduation-cap",
+      "navigationBaseURL": "https://data-api.pathlms.com/",
+      "objectCount": 84,
+      "className": "@memberjunction/connector-path-lms",
+      "npmPackage": "@memberjunction/connector-path-lms",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "LMS/PathLMS",
+      "installTag": "LMS-PathLMS@1.0.0"
+    },
+    {
+      "name": "PropFuel",
+      "displayName": "PropFuel Connector",
+      "description": "PropFuel AI-powered member insights and engagement platform — data export file-feed integration. Retrieves hourly JSON files via list/download/ack endpoints.",
+      "category": "Marketing",
+      "tags": [
+        "propfuel",
+        "marketing",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-file-export",
+      "navigationBaseURL": "https://app.propfuel.com/",
+      "objectCount": 1,
+      "className": "@memberjunction/connector-propfuel",
+      "npmPackage": "@memberjunction/connector-propfuel",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Marketing/PropFuel",
+      "installTag": "Marketing-PropFuel@1.0.0"
+    },
+    {
+      "name": "Hivebrite",
+      "displayName": "Hivebrite Connector",
+      "description": "Hivebrite community management platform connector — syncs users, companies, events, memberships, donations, groups, and 40+ other objects via Hivebrite Admin API (v1/v2/v3) with OAuth2 password grant authentication.",
+      "category": "Platform",
+      "tags": [
+        "hivebrite",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://{community-domain}/api",
+      "objectCount": 98,
+      "className": "@memberjunction/connector-hivebrite",
+      "npmPackage": "@memberjunction/connector-hivebrite",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Platform/Hivebrite",
+      "installTag": "Platform-Hivebrite@1.0.0"
+    },
+    {
+      "name": "ORCID",
+      "displayName": "ORCID Connector",
+      "description": "ORCID Public API v3.0 read-only connector. Resolves researcher iD universes via per-connection Lucene search and/or explicit iD lists, then fetches the record and activity sections. Pull-only / read-public; OAuth2 client-credentials.",
+      "category": "Platform",
+      "tags": [
+        "orcid",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://orcid.org/",
+      "objectCount": 12,
+      "className": "@memberjunction/connector-orcid",
+      "npmPackage": "@memberjunction/connector-orcid",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Platform/ORCID",
+      "installTag": "Platform-ORCID@1.0.0"
+    },
+    {
+      "name": "SharePoint",
+      "displayName": "SharePoint Connector",
+      "description": "Microsoft SharePoint Online connector via Microsoft Graph API v1.0. Syncs Sites, Drives, DriveItems (files/folders), Lists, ListItems, ContentTypes, Columns, Permissions, and Subscriptions. Authenticates via OAuth2 Client Credentials (Azure app registr...",
+      "category": "Platform",
+      "tags": [
+        "sharepoint",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-microsoft",
+      "navigationBaseURL": "https://graph.microsoft.com/v1.0",
+      "objectCount": 25,
+      "className": "@memberjunction/connector-sharepoint",
+      "npmPackage": "@memberjunction/connector-sharepoint",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Platform/SharePoint",
+      "installTag": "Platform-SharePoint@1.0.0"
+    }
+  ]
+}
