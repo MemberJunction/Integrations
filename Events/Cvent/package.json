@@ -1,7 +1,7 @@
 {
   "name": "@memberjunction/connector-cvent",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "description": "MemberJunction Cvent connector.",
   "type": "module",
   "main": "dist/index.js",
