@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "Cvent",
-      "ClassName": "CventConnector",
+      "ClassName": "@memberjunction/connector-cvent",
       "BatchMaxRequestCount": 10,
       "BatchRequestWaitTime": 1,
       "NavigationBaseURL": "https://api-platform.cvent.com/ea",
