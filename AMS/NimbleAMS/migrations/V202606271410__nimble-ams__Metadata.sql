@@ -25,7 +25,7 @@ SET
 SET
   @Description_dfa93855 = N'Nimble AMS connector — Salesforce-native AMS; data lives as SF sObjects (standard + NU__ managed-package customs). Surfaces: Nimble Fuse (NUINT inbound/outbound), Salesforce REST (sObject CRUD, SOQL, describe), and NAMS LMS REST.'
 SET
-  @ClassName_dfa93855 = N'NimbleAMSConnector'
+  @ClassName_dfa93855 = N'@memberjunction/connector-nimble-ams'
 SET
   @ImportPath_dfa93855 = N'@memberjunction/connector-nimble-ams'
 SET

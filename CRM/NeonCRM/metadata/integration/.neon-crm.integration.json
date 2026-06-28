@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "Neon CRM",
-      "ClassName": "NeonCRMConnector",
+      "ClassName": "@memberjunction/connector-neon-crm",
       "ImportPath": "@memberjunction/connector-neon-crm",
       "NavigationBaseURL": "https://api.neoncrm.com/v2",
       "Description": "Neon CRM (Neon One) connector — syncs accounts, donations, memberships, events, registrations, campaigns, activities, grants, orders, payments, pledges, volunteers, and custom objects via the Neon REST API v2 (HTTP Basic auth).",

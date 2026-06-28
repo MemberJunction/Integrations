@@ -53,7 +53,7 @@ BEGIN
   p_Name_2751c522 := 'PheedLoop';
   p_Description_2751c522 := 'PheedLoop event-management connector — syncs attendees, events, sessions, speakers, exhibitors, sponsors, registrations, memberships and 20+ objects via PheedLoop REST API v3 (dual API-key + API-secret headers, org-scoped URL paths).';
   p_NavigationBaseURL_2751c522 := 'https://api.pheedloop.com/api/v3';
-  p_ClassName_2751c522 := 'PheedLoopConnector';
+  p_ClassName_2751c522 := '@memberjunction/connector-pheedloop';
   p_ImportPath_2751c522 := '@memberjunction/connector-pheedloop';
   p_BatchMaxRequestCount_2751c522 := -1;
   p_BatchRequestWaitTime_2751c522 := -1;

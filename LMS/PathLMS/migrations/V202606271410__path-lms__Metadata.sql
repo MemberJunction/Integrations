@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_bdc1b3f8 = N'https://data-api.pathlms.com/'
 SET
-  @ClassName_bdc1b3f8 = N'PathLMSConnector'
+  @ClassName_bdc1b3f8 = N'@memberjunction/connector-path-lms'
 SET
   @ImportPath_bdc1b3f8 = N'@memberjunction/connector-path-lms'
 SET

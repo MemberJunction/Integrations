@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "Novi AMS",
-      "ClassName": "NoviConnector",
+      "ClassName": "@memberjunction/connector-novi-ams",
       "ImportPath": "@memberjunction/connector-novi-ams",
       "NavigationBaseURL": "https://api-docs.noviams.com/",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=API Key",

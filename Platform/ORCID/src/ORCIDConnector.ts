@@ -140,7 +140,7 @@ const ROOT_OBJECT_NAME = 'record';
  * ROOT (record) iD set is sourced from the Configuration universe rather than a
  * parent table, then delegate child sections to the same per-iD fan-out.
  */
-@RegisterClass(BaseIntegrationConnector, 'ORCIDConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-orcid')
 export class ORCIDConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context (token + resolved host). Invalidated on token expiry or 401. */

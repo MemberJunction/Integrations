@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_5c3357b2 = N'https://{community-domain}/api'
 SET
-  @ClassName_5c3357b2 = N'HivebriteConnector'
+  @ClassName_5c3357b2 = N'@memberjunction/connector-hivebrite'
 SET
   @ImportPath_5c3357b2 = N'@memberjunction/connector-hivebrite'
 SET

@@ -53,7 +53,7 @@ BEGIN
   p_Name_6cf13a72 := 'Fonteva';
   p_Description_6cf13a72 := 'Fonteva AMS connector: syncs Salesforce-native OrderApi__* + EventApi__* association-management objects (commerce, membership, events, payments, badges, catalog) via FDService Apex REST + the Salesforce platform REST API. Extends SalesforceConnector.';
   p_NavigationBaseURL_6cf13a72 := 'https://login.salesforce.com';
-  p_ClassName_6cf13a72 := 'FontevaConnector';
+  p_ClassName_6cf13a72 := '@memberjunction/connector-fonteva';
   p_ImportPath_6cf13a72 := '@memberjunction/connector-fonteva';
   p_BatchMaxRequestCount_6cf13a72 := -1;
   p_BatchRequestWaitTime_6cf13a72 := -1;

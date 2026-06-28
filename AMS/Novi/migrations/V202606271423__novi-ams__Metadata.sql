@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_eee26622 = N'https://api-docs.noviams.com/'
 SET
-  @ClassName_eee26622 = N'NoviConnector'
+  @ClassName_eee26622 = N'@memberjunction/connector-novi-ams'
 SET
   @ImportPath_eee26622 = N'@memberjunction/connector-novi-ams'
 SET

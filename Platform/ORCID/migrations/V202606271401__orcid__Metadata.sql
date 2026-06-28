@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_8fdf1618 = N'https://orcid.org/'
 SET
-  @ClassName_8fdf1618 = N'ORCIDConnector'
+  @ClassName_8fdf1618 = N'@memberjunction/connector-orcid'
 SET
   @ImportPath_8fdf1618 = N'@memberjunction/connector-orcid'
 SET

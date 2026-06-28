@@ -185,7 +185,7 @@ const LISTITEM_CREATE_OBJECT = 'ListItem';
  * standard objects come from Declared metadata; runtime field discovery only ADDS
  * tenant-specific list columns. Absence in a refresh never deactivates.
  */
-@RegisterClass(BaseIntegrationConnector, 'SharePointConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-sharepoint')
 export class SharePointConnector extends BaseRESTIntegrationConnector {
 
     // ── State ────────────────────────────────────────────────────────
