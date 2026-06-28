@@ -37,6 +37,9 @@ jobs:
       - name: Build & test changed connectors
         run: npx turbo run build test --filter='...[origin/${{ github.base_ref }}]'
 
-      # A PR that changes a connector package must carry a changeset (drives its independent version bump).
-      - name: Require changeset
-        run: npx changeset status --since=origin/${{ github.base_ref }}
+      # A changeset is required ONLY for an ALREADY-PUBLISHED connector that changed (its version is on
+      # npm, so shipping the change needs a bump). New/unpublished connectors ship via the no-changeset
+      # publish path, so they don't need one — npm-aware gate (replaces the blanket `changeset status`,
+      # which false-failed every connector change). Red iff a real problem, green otherwise.
+      - name: Require changeset (npm-aware)
+        run: node scripts/require-changeset.mjs origin/${{ github.base_ref }}

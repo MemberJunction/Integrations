@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 19,
+  "count": 20,
   "connectors": [
     {
       "name": "Fonteva",
@@ -232,6 +232,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/Salesforce",
       "installTag": "CRM-Salesforce@1.0.0"
+    },
+    {
+      "name": "Cvent",
+      "displayName": "Cvent Connector",
+      "description": "Cvent event management platform connector. Syncs events, contacts, attendees, sessions, speakers, exhibitors, housing, surveys, RFPs, webcasts, and related objects via the Cvent Platform REST API (OAuth 2.0 client credentials).",
+      "category": "Events",
+      "tags": [
+        "cvent",
+        "events",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://api-platform.cvent.com/ea",
+      "objectCount": 179,
+      "className": "@memberjunction/connector-cvent",
+      "npmPackage": "@memberjunction/connector-cvent",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Events/Cvent",
+      "installTag": "Events-Cvent@1.0.0"
     },
     {
       "name": "OpenWater",
