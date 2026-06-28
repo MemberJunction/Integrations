@@ -53,7 +53,7 @@ BEGIN
   p_Name_bdc1b3f8 := 'Path LMS';
   p_Description_bdc1b3f8 := 'Path LMS (Blue Sky eLearn) Reporting API connector — pull-only GraphQL analytics over 16 report query surfaces. Two-step bearer auth (applicationId + applicationSecret then 12-hour JWT); no writes. All data via POST to the single GraphQL endpoint.';
   p_NavigationBaseURL_bdc1b3f8 := 'https://data-api.pathlms.com/';
-  p_ClassName_bdc1b3f8 := 'PathLMSConnector';
+  p_ClassName_bdc1b3f8 := '@memberjunction/connector-path-lms';
   p_ImportPath_bdc1b3f8 := '@memberjunction/connector-path-lms';
   p_BatchMaxRequestCount_bdc1b3f8 := -1;
   p_BatchRequestWaitTime_bdc1b3f8 := -1;

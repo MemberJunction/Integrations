@@ -25,7 +25,7 @@ SET
 SET
   @Description_2af10715 = N'iMIS EMS (Advanced Solutions International) REST API connector for associations and nonprofits. Supports parties, memberships, events, fundraising, invoicing, and commerce via iMIS REST API with OAuth2 password-grant Bearer token authentication.'
 SET
-  @ClassName_2af10715 = N'IMISConnector'
+  @ClassName_2af10715 = N'@memberjunction/connector-imis'
 SET
   @ImportPath_2af10715 = N'@memberjunction/connector-imis'
 SET

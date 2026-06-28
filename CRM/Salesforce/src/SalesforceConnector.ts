@@ -221,7 +221,7 @@ const TOOLING_API_DENYLIST = new Set([
  * Extends BaseRESTIntegrationConnector but overrides FetchChanges entirely
  * because Salesforce uses SOQL queries instead of standard REST list endpoints.
  */
-@RegisterClass(BaseIntegrationConnector, 'SalesforceConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-salesforce')
 export class SalesforceConnector extends BaseRESTIntegrationConnector {
 
     // ── Token cache ─────────────────────────────────────────────────

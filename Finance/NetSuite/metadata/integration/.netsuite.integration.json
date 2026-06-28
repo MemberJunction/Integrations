@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "NetSuite",
-      "ClassName": "NetSuiteConnector",
+      "ClassName": "@memberjunction/connector-netsuite",
       "Description": "Oracle NetSuite ERP/CRM connector: SuiteTalk REST Record Service (CRUD) + SuiteQL reads across standard and custom record types; incremental via lastModifiedDate; OAuth 1.0a TBA / OAuth 2.0; per-account host; runtime metadata-catalog discovery.",
       "ImportPath": "@memberjunction/connector-netsuite",
       "NavigationBaseURL": "https://<accountId>.suitetalk.api.netsuite.com",

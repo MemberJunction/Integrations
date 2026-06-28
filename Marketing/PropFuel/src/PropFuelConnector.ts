@@ -42,7 +42,7 @@ import { z } from 'zod';
  * AccountID and the bearer Token both come from the credential (or Configuration JSON) — the
  * AccountID is per-tenant config and is NEVER hardcoded.
  */
-@RegisterClass(BaseIntegrationConnector, 'PropFuelConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-propfuel')
 export class PropFuelConnector extends BaseRESTIntegrationConnector {
 
     /** Verbatim three-way invariant name: ClassName / IntegrationName getter / MJ: Integrations.Name. */

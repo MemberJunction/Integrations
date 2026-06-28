@@ -152,7 +152,7 @@ const MIN_REQUEST_INTERVAL_MS = 50;
 
 // ─── Connector ──────────────────────────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'NimbleAMSConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-nimble-ams')
 export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
     private lastRequestTime = 0;

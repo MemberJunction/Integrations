@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_cf14fcde = N'https://<accountId>.suitetalk.api.netsuite.com'
 SET
-  @ClassName_cf14fcde = N'NetSuiteConnector'
+  @ClassName_cf14fcde = N'@memberjunction/connector-netsuite'
 SET
   @ImportPath_cf14fcde = N'@memberjunction/connector-netsuite'
 SET

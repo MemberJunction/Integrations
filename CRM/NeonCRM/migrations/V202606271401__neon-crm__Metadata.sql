@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_2877472a = N'https://api.neoncrm.com/v2'
 SET
-  @ClassName_2877472a = N'NeonCRMConnector'
+  @ClassName_2877472a = N'@memberjunction/connector-neon-crm'
 SET
   @ImportPath_2877472a = N'@memberjunction/connector-neon-crm'
 SET

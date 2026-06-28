@@ -240,7 +240,7 @@ interface NestingSegment {
 
 // ─── Connector Implementation ────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'NeonCRMConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-neon-crm')
 export class NeonCRMConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context for the current sync run. */

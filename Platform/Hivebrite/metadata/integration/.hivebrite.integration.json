@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "Hivebrite",
-      "ClassName": "HivebriteConnector",
+      "ClassName": "@memberjunction/connector-hivebrite",
       "ImportPath": "@memberjunction/connector-hivebrite",
       "Description": "Hivebrite community management platform connector — syncs users, companies, events, memberships, donations, groups, and 40+ other objects via Hivebrite Admin API (v1/v2/v3) with OAuth2 password grant authentication.",
       "NavigationBaseURL": "https://{community-domain}/api",

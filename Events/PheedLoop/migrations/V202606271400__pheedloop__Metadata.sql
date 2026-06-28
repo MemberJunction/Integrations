@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_2751c522 = N'https://api.pheedloop.com/api/v3'
 SET
-  @ClassName_2751c522 = N'PheedLoopConnector'
+  @ClassName_2751c522 = N'@memberjunction/connector-pheedloop'
 SET
   @ImportPath_2751c522 = N'@memberjunction/connector-pheedloop'
 SET

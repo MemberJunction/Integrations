@@ -160,7 +160,7 @@ const MAX_ODATA_PAGE_SIZE = 5_000;
  * - **Incremental**: change-tracking delta (`Prefer: odata.track-changes` →
  *   `@odata.deltaLink`) when a table declares it; `modifiedon`-polling fallback otherwise.
  */
-@RegisterClass(BaseIntegrationConnector, 'DynamicsDataverseConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-microsoft-dynamics-365-dataverse')
 export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
 
     // ── State ────────────────────────────────────────────────────────
