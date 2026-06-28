@@ -131,7 +131,7 @@ const CVENT_BURST = 10;
 
 // ─── Connector Implementation ────────────────────────────────────────
 
-@RegisterClass(BaseIntegrationConnector, 'CventConnector')
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-cvent')
 export class CventConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth context for the current sync run. */
