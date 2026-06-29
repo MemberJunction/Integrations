@@ -4,7 +4,7 @@
   "name": "connector-neon-crm",
   "displayName": "Neon CRM Connector",
   "description": "Neon CRM (Neon One) connector — syncs accounts, donations, memberships, events, registrations, campaigns, activities, grants, orders, payments, pledges, volunteers, and custom objects via the Neon REST API v2 (HTTP Basic auth).",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",

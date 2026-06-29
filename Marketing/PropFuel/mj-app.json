@@ -4,7 +4,7 @@
   "name": "connector-propfuel",
   "displayName": "PropFuel Connector",
   "description": "PropFuel AI-powered member insights and engagement platform — data export file-feed integration. Retrieves hourly JSON files via list/download/ack endpoints.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "ISC",
   "icon": "fa-solid fa-file-export",
   "publisher": {
