@@ -1,0 +1,32 @@
+{
+  "ticket_groups": [
+    {
+      "id": "111000000001",
+      "name": "VIP Group",
+      "status": "live",
+      "event_ticket_ids": {
+        "550000000001": [
+          "990000000001"
+        ]
+      }
+    },
+    {
+      "id": "111000000002",
+      "name": "VIP Group",
+      "status": "live",
+      "event_ticket_ids": {
+        "550000000001": [
+          "990000000001"
+        ]
+      }
+    }
+  ],
+  "pagination": {
+    "object_count": 3,
+    "page_number": 1,
+    "page_size": 50,
+    "page_count": 2,
+    "has_more_items": false,
+    "continuation": "cont_final_token"
+  }
+}

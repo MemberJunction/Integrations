@@ -1,0 +1,36 @@
+{
+  "attendees": [
+    {
+      "id": "133000000099",
+      "event_id": "550000000001",
+      "answers": [
+        {
+          "question_id": "144000000001",
+          "question": "Dietary preference?",
+          "answer": "<redacted>",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "133000000100",
+      "event_id": "550000000001",
+      "answers": [
+        {
+          "question_id": "144000000001",
+          "question": "Dietary preference?",
+          "answer": "<redacted>",
+          "type": "text"
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "object_count": 3,
+    "page_number": 1,
+    "page_size": 50,
+    "page_count": 2,
+    "has_more_items": true,
+    "continuation": "cont_next_page_token_abc123"
+  }
+}

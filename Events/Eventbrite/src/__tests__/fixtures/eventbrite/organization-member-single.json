@@ -1,0 +1,11 @@
+{
+  "id": "440000000001",
+  "user_id": "210000000002",
+  "email": "example+2@example.com",
+  "role": "Owner",
+  "name": "<scrubbed-name-2>",
+  "first_name": "<scrubbed",
+  "last_name": "<scrubbed-name-3>",
+  "status": "active",
+  "created": "2026-03-01T10:00:00Z"
+}
