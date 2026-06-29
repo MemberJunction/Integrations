@@ -4,7 +4,7 @@
   "name": "connector-netforum-enterprise",
   "displayName": "NetForum Enterprise Connector",
   "description": "NetForum Enterprise integration connector for MemberJunction",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-network-wired",
   "publisher": {

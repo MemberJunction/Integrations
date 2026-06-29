@@ -4,7 +4,7 @@
   "name": "connector-fonteva",
   "displayName": "Fonteva Connector",
   "description": "Fonteva AMS connector: syncs Salesforce-native OrderApi__* + EventApi__* association-management objects (commerce, membership, events, payments, badges, catalog) via FDService Apex REST + the Salesforce platform REST API. Extends SalesforceConnector.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",

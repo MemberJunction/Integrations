@@ -4,7 +4,7 @@
   "name": "connector-salesforce",
   "displayName": "Salesforce Connector",
   "description": "Salesforce REST connector: syncs CRM SObjects (Account, Contact, Lead, Opportunity, Case, Campaign, Task, Event, User) via SOQL watermark incremental sync; CRUD for most objects; custom __c discovered at runtime; OAuth2 JWT/Client Credentials.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "color": "#00a1e0",
   "publisher": {
