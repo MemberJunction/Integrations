@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-imis",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "MemberJunction IMIS connector.",
   "type": "module",
   "main": "dist/index.js",
