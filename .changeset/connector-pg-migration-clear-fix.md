@@ -16,6 +16,8 @@
 "@memberjunction/connector-hivebrite": minor
 "@memberjunction/connector-orcid": minor
 "@memberjunction/connector-sharepoint": minor
+"@memberjunction/connector-novi-ams": minor
+"@memberjunction/connector-rhythm-software": minor
 ---
 
 Fix the PostgreSQL seed migration so `mj app install` succeeds on PostgreSQL.
