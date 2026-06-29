@@ -67,7 +67,7 @@ BEGIN
   "SandboxTokenURL": "https://sandbox.orcid.org/oauth/token",
   "ProductionBaseURL": "https://pub.orcid.org/v3.0/",
   "SandboxBaseURL": "https://pub.sandbox.orcid.org/v3.0/",
-  "BaseURLNote": "Active host is chosen per-connection from CompanyIntegration."Configuration" (sandbox vs production). NOT a baked constant.",
+  "BaseURLNote": "Active host is chosen per-connection from CompanyIntegration.Configuration (sandbox vs production). NOT a baked constant.",
   "APIVersioningStrategy": "url-path",
   "APIVersioningNote": "Version is encoded in the URL path as /v3.0/. Current stable version is v3.0.",
   "PaginationDefaults": {
@@ -151,7 +151,7 @@ BEGIN
   "CustomFieldMarkerPattern": null,
   "CustomObjectMarkerNote": "ORCID uses a fixed XSD-defined schema. No custom object/field patterns in Public API.",
   "NotEnumerable": true,
-  "NotEnumerableReason": "ORCID has no list-all-records endpoint. iD universe resolved per-connection via CompanyIntegration."Configuration".",
+  "NotEnumerableReason": "ORCID has no list-all-records endpoint. iD universe resolved per-connection via CompanyIntegration.Configuration.",
   "SearchPath": "/search",
   "ExpandedSearchPath": "/expanded-search",
   "SearchPaginationParams": {
@@ -161,7 +161,7 @@ BEGIN
     "totalCap": 10000
   },
   "ScopeConfigSchema": {
-    "description": "Per-connection CompanyIntegration."Configuration" knobs. At least one of searchQuery or orcidIds must be set.",
+    "description": "Per-connection CompanyIntegration.Configuration knobs. At least one of searchQuery or orcidIds must be set.",
     "properties": {
       "searchQuery": {
         "type": "string",
@@ -204,7 +204,7 @@ BEGIN
   ],
   "OutOfScopeReason": "In scope = the ORCID Public API v3.0 READ surface (record/person + activity sections), reachable self-serve with a read-public OAuth2 client. The partner-gated MEMBER API write/update surface is real but requires partner approval and is not the reachable/useful surface for this read-public connector; recorded out-of-scope-with-reason so a future Member-API build can expand without re-discovering."
 }';
-  PERFORM __mj."spCreateIntegration"(p_Name := p_Name_8fdf1618, p_Description := p_Description_8fdf1618, p_NavigationBaseURL := p_NavigationBaseURL_8fdf1618, p_ClassName := p_ClassName_8fdf1618, p_ImportPath := p_ImportPath_8fdf1618, p_BatchMaxRequestCount := p_BatchMaxRequestCount_8fdf1618, p_BatchRequestWaitTime := p_BatchRequestWaitTime_8fdf1618, p_ID := p_ID_8fdf1618, p_CredentialTypeID := p_CredentialTypeID_8fdf1618, p_Icon := p_Icon_8fdf1618, p_Icon_Clear := 1, p_Configuration := p_Configuration_8fdf1618);
+  PERFORM __mj."spCreateIntegration"(p_Name := p_Name_8fdf1618, p_Description := p_Description_8fdf1618, p_NavigationBaseURL := p_NavigationBaseURL_8fdf1618, p_ClassName := p_ClassName_8fdf1618, p_ImportPath := p_ImportPath_8fdf1618, p_BatchMaxRequestCount := p_BatchMaxRequestCount_8fdf1618, p_BatchRequestWaitTime := p_BatchRequestWaitTime_8fdf1618, p_ID := p_ID_8fdf1618, p_CredentialTypeID := p_CredentialTypeID_8fdf1618, p_Icon := p_Icon_8fdf1618, p_Icon_Clear := TRUE, p_Configuration := p_Configuration_8fdf1618);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -256,26 +256,26 @@ BEGIN
   p_IntegrationID_c31bdab3 := 'D2E0507F-6F7F-4C10-8493-21DAF94AE18E';
   p_Name_c31bdab3 := 'record';
   p_DisplayName_c31bdab3 := 'Record';
-  p_Description_c31bdab3 := 'Full ORCID record for a researcher: orcid-identifier, preferences, history, person section (name/biography/emails/urls/keywords/external-ids/addresses), and activities-summary. Root IO; iD universe resolved at runtime via CompanyIntegration."Configurati"...';
+  p_Description_c31bdab3 := 'Full ORCID record for a researcher: orcid-identifier, preferences, history, person section (name/biography/emails/urls/keywords/external-ids/addresses), and activities-summary. Root IO; iD universe resolved at runtime via CompanyIntegration.Configurati...';
   p_APIPath_c31bdab3 := '/{iD}/record';
   p_DefaultPageSize_c31bdab3 := 100;
-  p_SupportsPagination_c31bdab3 := 0;
+  p_SupportsPagination_c31bdab3 := FALSE;
   p_PaginationType_c31bdab3 := 'None';
-  p_SupportsIncrementalSync_c31bdab3 := 1;
-  p_SupportsWrite_c31bdab3 := 0;
-  p_Configuration_c31bdab3 := '{"endpoint": "/{iD}/record", "fetchModel": "per-iD full record (GET /{iD}/record)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_c31bdab3 := TRUE;
+  p_SupportsWrite_c31bdab3 := FALSE;
+  p_Configuration_c31bdab3 := '{"endpoint": "/{iD}/record", "fetchModel": "per-iD full record (GET /{iD}/record)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_c31bdab3 := 0;
   p_Status_c31bdab3 := 'Active';
   p_WriteMethod_c31bdab3 := 'POST';
   p_DeleteMethod_c31bdab3 := 'DELETE';
-  p_IsCustom_c31bdab3 := 0;
+  p_IsCustom_c31bdab3 := FALSE;
   p_IncrementalWatermarkField_c31bdab3 := 'last-modified-date';
   p_MetadataSource_c31bdab3 := 'Declared';
-  p_SupportsCreate_c31bdab3 := 0;
-  p_SupportsUpdate_c31bdab3 := 0;
-  p_SupportsDelete_c31bdab3 := 0;
-  p_ContentHashApplicable_c31bdab3 := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_c31bdab3, p_IntegrationID := p_IntegrationID_c31bdab3, p_Name := p_Name_c31bdab3, p_DisplayName := p_DisplayName_c31bdab3, p_Description := p_Description_c31bdab3, p_Category := p_Category_c31bdab3, p_Category_Clear := 1, p_APIPath := p_APIPath_c31bdab3, p_ResponseDataKey := p_ResponseDataKey_c31bdab3, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_c31bdab3, p_SupportsPagination := p_SupportsPagination_c31bdab3, p_PaginationType := p_PaginationType_c31bdab3, p_SupportsIncrementalSync := p_SupportsIncrementalSync_c31bdab3, p_SupportsWrite := p_SupportsWrite_c31bdab3, p_DefaultQueryParams := p_DefaultQueryParams_c31bdab3, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_c31bdab3, p_Sequence := p_Sequence_c31bdab3, p_Status := p_Status_c31bdab3, p_WriteAPIPath := p_WriteAPIPath_c31bdab3, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_c31bdab3, p_DeleteMethod := p_DeleteMethod_c31bdab3, p_IsCustom := p_IsCustom_c31bdab3, p_CreateAPIPath := p_CreateAPIPath_c31bdab3, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_c31bdab3, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_c31bdab3, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_c31bdab3, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_c31bdab3, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_c31bdab3, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_c31bdab3, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_c31bdab3, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_c31bdab3, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_c31bdab3, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_c31bdab3, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_c31bdab3, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_c31bdab3, p_MetadataSource := p_MetadataSource_c31bdab3, p_SupportsCreate := p_SupportsCreate_c31bdab3, p_SupportsUpdate := p_SupportsUpdate_c31bdab3, p_SupportsDelete := p_SupportsDelete_c31bdab3, p_SyncStrategy := p_SyncStrategy_c31bdab3, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_c31bdab3, p_StableOrderingKey := p_StableOrderingKey_c31bdab3, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_c31bdab3 := FALSE;
+  p_SupportsUpdate_c31bdab3 := FALSE;
+  p_SupportsDelete_c31bdab3 := FALSE;
+  p_ContentHashApplicable_c31bdab3 := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_c31bdab3, p_IntegrationID := p_IntegrationID_c31bdab3, p_Name := p_Name_c31bdab3, p_DisplayName := p_DisplayName_c31bdab3, p_Description := p_Description_c31bdab3, p_Category := p_Category_c31bdab3, p_Category_Clear := TRUE, p_APIPath := p_APIPath_c31bdab3, p_ResponseDataKey := p_ResponseDataKey_c31bdab3, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_c31bdab3, p_SupportsPagination := p_SupportsPagination_c31bdab3, p_PaginationType := p_PaginationType_c31bdab3, p_SupportsIncrementalSync := p_SupportsIncrementalSync_c31bdab3, p_SupportsWrite := p_SupportsWrite_c31bdab3, p_DefaultQueryParams := p_DefaultQueryParams_c31bdab3, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_c31bdab3, p_Sequence := p_Sequence_c31bdab3, p_Status := p_Status_c31bdab3, p_WriteAPIPath := p_WriteAPIPath_c31bdab3, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_c31bdab3, p_DeleteMethod := p_DeleteMethod_c31bdab3, p_IsCustom := p_IsCustom_c31bdab3, p_CreateAPIPath := p_CreateAPIPath_c31bdab3, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_c31bdab3, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_c31bdab3, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_c31bdab3, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_c31bdab3, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_c31bdab3, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_c31bdab3, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_c31bdab3, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_c31bdab3, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_c31bdab3, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_c31bdab3, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_c31bdab3, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_c31bdab3, p_MetadataSource := p_MetadataSource_c31bdab3, p_SupportsCreate := p_SupportsCreate_c31bdab3, p_SupportsUpdate := p_SupportsUpdate_c31bdab3, p_SupportsDelete := p_SupportsDelete_c31bdab3, p_SyncStrategy := p_SyncStrategy_c31bdab3, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_c31bdab3, p_StableOrderingKey := p_StableOrderingKey_c31bdab3, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -330,23 +330,23 @@ BEGIN
   p_Description_0b0e1e75 := 'works activity section for a researcher, fetched via GET /{ORCID-iD}/works. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_0b0e1e75 := '/{iD}/works';
   p_DefaultPageSize_0b0e1e75 := 100;
-  p_SupportsPagination_0b0e1e75 := 0;
+  p_SupportsPagination_0b0e1e75 := FALSE;
   p_PaginationType_0b0e1e75 := 'None';
-  p_SupportsIncrementalSync_0b0e1e75 := 1;
-  p_SupportsWrite_0b0e1e75 := 0;
-  p_Configuration_0b0e1e75 := '{"endpoint": "/{iD}/works", "fetchModel": "per-iD full section (GET /{iD}/works)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_0b0e1e75 := TRUE;
+  p_SupportsWrite_0b0e1e75 := FALSE;
+  p_Configuration_0b0e1e75 := '{"endpoint": "/{iD}/works", "fetchModel": "per-iD full section (GET /{iD}/works)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_0b0e1e75 := 1;
   p_Status_0b0e1e75 := 'Active';
   p_WriteMethod_0b0e1e75 := 'POST';
   p_DeleteMethod_0b0e1e75 := 'DELETE';
-  p_IsCustom_0b0e1e75 := 0;
+  p_IsCustom_0b0e1e75 := FALSE;
   p_IncrementalWatermarkField_0b0e1e75 := 'last-modified-date';
   p_MetadataSource_0b0e1e75 := 'Declared';
-  p_SupportsCreate_0b0e1e75 := 0;
-  p_SupportsUpdate_0b0e1e75 := 0;
-  p_SupportsDelete_0b0e1e75 := 0;
-  p_ContentHashApplicable_0b0e1e75 := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_0b0e1e75, p_IntegrationID := p_IntegrationID_0b0e1e75, p_Name := p_Name_0b0e1e75, p_DisplayName := p_DisplayName_0b0e1e75, p_Description := p_Description_0b0e1e75, p_Category := p_Category_0b0e1e75, p_Category_Clear := 1, p_APIPath := p_APIPath_0b0e1e75, p_ResponseDataKey := p_ResponseDataKey_0b0e1e75, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_0b0e1e75, p_SupportsPagination := p_SupportsPagination_0b0e1e75, p_PaginationType := p_PaginationType_0b0e1e75, p_SupportsIncrementalSync := p_SupportsIncrementalSync_0b0e1e75, p_SupportsWrite := p_SupportsWrite_0b0e1e75, p_DefaultQueryParams := p_DefaultQueryParams_0b0e1e75, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_0b0e1e75, p_Sequence := p_Sequence_0b0e1e75, p_Status := p_Status_0b0e1e75, p_WriteAPIPath := p_WriteAPIPath_0b0e1e75, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_0b0e1e75, p_DeleteMethod := p_DeleteMethod_0b0e1e75, p_IsCustom := p_IsCustom_0b0e1e75, p_CreateAPIPath := p_CreateAPIPath_0b0e1e75, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_0b0e1e75, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_0b0e1e75, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_0b0e1e75, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_0b0e1e75, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_0b0e1e75, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_0b0e1e75, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_0b0e1e75, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_0b0e1e75, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_0b0e1e75, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_0b0e1e75, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_0b0e1e75, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_0b0e1e75, p_MetadataSource := p_MetadataSource_0b0e1e75, p_SupportsCreate := p_SupportsCreate_0b0e1e75, p_SupportsUpdate := p_SupportsUpdate_0b0e1e75, p_SupportsDelete := p_SupportsDelete_0b0e1e75, p_SyncStrategy := p_SyncStrategy_0b0e1e75, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_0b0e1e75, p_StableOrderingKey := p_StableOrderingKey_0b0e1e75, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_0b0e1e75 := FALSE;
+  p_SupportsUpdate_0b0e1e75 := FALSE;
+  p_SupportsDelete_0b0e1e75 := FALSE;
+  p_ContentHashApplicable_0b0e1e75 := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_0b0e1e75, p_IntegrationID := p_IntegrationID_0b0e1e75, p_Name := p_Name_0b0e1e75, p_DisplayName := p_DisplayName_0b0e1e75, p_Description := p_Description_0b0e1e75, p_Category := p_Category_0b0e1e75, p_Category_Clear := TRUE, p_APIPath := p_APIPath_0b0e1e75, p_ResponseDataKey := p_ResponseDataKey_0b0e1e75, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_0b0e1e75, p_SupportsPagination := p_SupportsPagination_0b0e1e75, p_PaginationType := p_PaginationType_0b0e1e75, p_SupportsIncrementalSync := p_SupportsIncrementalSync_0b0e1e75, p_SupportsWrite := p_SupportsWrite_0b0e1e75, p_DefaultQueryParams := p_DefaultQueryParams_0b0e1e75, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_0b0e1e75, p_Sequence := p_Sequence_0b0e1e75, p_Status := p_Status_0b0e1e75, p_WriteAPIPath := p_WriteAPIPath_0b0e1e75, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_0b0e1e75, p_DeleteMethod := p_DeleteMethod_0b0e1e75, p_IsCustom := p_IsCustom_0b0e1e75, p_CreateAPIPath := p_CreateAPIPath_0b0e1e75, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_0b0e1e75, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_0b0e1e75, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_0b0e1e75, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_0b0e1e75, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_0b0e1e75, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_0b0e1e75, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_0b0e1e75, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_0b0e1e75, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_0b0e1e75, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_0b0e1e75, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_0b0e1e75, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_0b0e1e75, p_MetadataSource := p_MetadataSource_0b0e1e75, p_SupportsCreate := p_SupportsCreate_0b0e1e75, p_SupportsUpdate := p_SupportsUpdate_0b0e1e75, p_SupportsDelete := p_SupportsDelete_0b0e1e75, p_SyncStrategy := p_SyncStrategy_0b0e1e75, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_0b0e1e75, p_StableOrderingKey := p_StableOrderingKey_0b0e1e75, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -401,23 +401,23 @@ BEGIN
   p_Description_a8e00d0e := 'employments activity section for a researcher, fetched via GET /{ORCID-iD}/employments. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_a8e00d0e := '/{iD}/employments';
   p_DefaultPageSize_a8e00d0e := 100;
-  p_SupportsPagination_a8e00d0e := 0;
+  p_SupportsPagination_a8e00d0e := FALSE;
   p_PaginationType_a8e00d0e := 'None';
-  p_SupportsIncrementalSync_a8e00d0e := 1;
-  p_SupportsWrite_a8e00d0e := 0;
-  p_Configuration_a8e00d0e := '{"endpoint": "/{iD}/employments", "fetchModel": "per-iD full section (GET /{iD}/employments)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_a8e00d0e := TRUE;
+  p_SupportsWrite_a8e00d0e := FALSE;
+  p_Configuration_a8e00d0e := '{"endpoint": "/{iD}/employments", "fetchModel": "per-iD full section (GET /{iD}/employments)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_a8e00d0e := 2;
   p_Status_a8e00d0e := 'Active';
   p_WriteMethod_a8e00d0e := 'POST';
   p_DeleteMethod_a8e00d0e := 'DELETE';
-  p_IsCustom_a8e00d0e := 0;
+  p_IsCustom_a8e00d0e := FALSE;
   p_IncrementalWatermarkField_a8e00d0e := 'last-modified-date';
   p_MetadataSource_a8e00d0e := 'Declared';
-  p_SupportsCreate_a8e00d0e := 0;
-  p_SupportsUpdate_a8e00d0e := 0;
-  p_SupportsDelete_a8e00d0e := 0;
-  p_ContentHashApplicable_a8e00d0e := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_a8e00d0e, p_IntegrationID := p_IntegrationID_a8e00d0e, p_Name := p_Name_a8e00d0e, p_DisplayName := p_DisplayName_a8e00d0e, p_Description := p_Description_a8e00d0e, p_Category := p_Category_a8e00d0e, p_Category_Clear := 1, p_APIPath := p_APIPath_a8e00d0e, p_ResponseDataKey := p_ResponseDataKey_a8e00d0e, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_a8e00d0e, p_SupportsPagination := p_SupportsPagination_a8e00d0e, p_PaginationType := p_PaginationType_a8e00d0e, p_SupportsIncrementalSync := p_SupportsIncrementalSync_a8e00d0e, p_SupportsWrite := p_SupportsWrite_a8e00d0e, p_DefaultQueryParams := p_DefaultQueryParams_a8e00d0e, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_a8e00d0e, p_Sequence := p_Sequence_a8e00d0e, p_Status := p_Status_a8e00d0e, p_WriteAPIPath := p_WriteAPIPath_a8e00d0e, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_a8e00d0e, p_DeleteMethod := p_DeleteMethod_a8e00d0e, p_IsCustom := p_IsCustom_a8e00d0e, p_CreateAPIPath := p_CreateAPIPath_a8e00d0e, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_a8e00d0e, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_a8e00d0e, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_a8e00d0e, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_a8e00d0e, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_a8e00d0e, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_a8e00d0e, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_a8e00d0e, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_a8e00d0e, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_a8e00d0e, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_a8e00d0e, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_a8e00d0e, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_a8e00d0e, p_MetadataSource := p_MetadataSource_a8e00d0e, p_SupportsCreate := p_SupportsCreate_a8e00d0e, p_SupportsUpdate := p_SupportsUpdate_a8e00d0e, p_SupportsDelete := p_SupportsDelete_a8e00d0e, p_SyncStrategy := p_SyncStrategy_a8e00d0e, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_a8e00d0e, p_StableOrderingKey := p_StableOrderingKey_a8e00d0e, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_a8e00d0e := FALSE;
+  p_SupportsUpdate_a8e00d0e := FALSE;
+  p_SupportsDelete_a8e00d0e := FALSE;
+  p_ContentHashApplicable_a8e00d0e := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_a8e00d0e, p_IntegrationID := p_IntegrationID_a8e00d0e, p_Name := p_Name_a8e00d0e, p_DisplayName := p_DisplayName_a8e00d0e, p_Description := p_Description_a8e00d0e, p_Category := p_Category_a8e00d0e, p_Category_Clear := TRUE, p_APIPath := p_APIPath_a8e00d0e, p_ResponseDataKey := p_ResponseDataKey_a8e00d0e, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_a8e00d0e, p_SupportsPagination := p_SupportsPagination_a8e00d0e, p_PaginationType := p_PaginationType_a8e00d0e, p_SupportsIncrementalSync := p_SupportsIncrementalSync_a8e00d0e, p_SupportsWrite := p_SupportsWrite_a8e00d0e, p_DefaultQueryParams := p_DefaultQueryParams_a8e00d0e, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_a8e00d0e, p_Sequence := p_Sequence_a8e00d0e, p_Status := p_Status_a8e00d0e, p_WriteAPIPath := p_WriteAPIPath_a8e00d0e, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_a8e00d0e, p_DeleteMethod := p_DeleteMethod_a8e00d0e, p_IsCustom := p_IsCustom_a8e00d0e, p_CreateAPIPath := p_CreateAPIPath_a8e00d0e, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_a8e00d0e, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_a8e00d0e, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_a8e00d0e, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_a8e00d0e, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_a8e00d0e, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_a8e00d0e, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_a8e00d0e, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_a8e00d0e, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_a8e00d0e, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_a8e00d0e, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_a8e00d0e, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_a8e00d0e, p_MetadataSource := p_MetadataSource_a8e00d0e, p_SupportsCreate := p_SupportsCreate_a8e00d0e, p_SupportsUpdate := p_SupportsUpdate_a8e00d0e, p_SupportsDelete := p_SupportsDelete_a8e00d0e, p_SyncStrategy := p_SyncStrategy_a8e00d0e, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_a8e00d0e, p_StableOrderingKey := p_StableOrderingKey_a8e00d0e, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -472,23 +472,23 @@ BEGIN
   p_Description_7b5ccc12 := 'educations activity section for a researcher, fetched via GET /{ORCID-iD}/educations. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_7b5ccc12 := '/{iD}/educations';
   p_DefaultPageSize_7b5ccc12 := 100;
-  p_SupportsPagination_7b5ccc12 := 0;
+  p_SupportsPagination_7b5ccc12 := FALSE;
   p_PaginationType_7b5ccc12 := 'None';
-  p_SupportsIncrementalSync_7b5ccc12 := 1;
-  p_SupportsWrite_7b5ccc12 := 0;
-  p_Configuration_7b5ccc12 := '{"endpoint": "/{iD}/educations", "fetchModel": "per-iD full section (GET /{iD}/educations)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_7b5ccc12 := TRUE;
+  p_SupportsWrite_7b5ccc12 := FALSE;
+  p_Configuration_7b5ccc12 := '{"endpoint": "/{iD}/educations", "fetchModel": "per-iD full section (GET /{iD}/educations)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_7b5ccc12 := 3;
   p_Status_7b5ccc12 := 'Active';
   p_WriteMethod_7b5ccc12 := 'POST';
   p_DeleteMethod_7b5ccc12 := 'DELETE';
-  p_IsCustom_7b5ccc12 := 0;
+  p_IsCustom_7b5ccc12 := FALSE;
   p_IncrementalWatermarkField_7b5ccc12 := 'last-modified-date';
   p_MetadataSource_7b5ccc12 := 'Declared';
-  p_SupportsCreate_7b5ccc12 := 0;
-  p_SupportsUpdate_7b5ccc12 := 0;
-  p_SupportsDelete_7b5ccc12 := 0;
-  p_ContentHashApplicable_7b5ccc12 := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_7b5ccc12, p_IntegrationID := p_IntegrationID_7b5ccc12, p_Name := p_Name_7b5ccc12, p_DisplayName := p_DisplayName_7b5ccc12, p_Description := p_Description_7b5ccc12, p_Category := p_Category_7b5ccc12, p_Category_Clear := 1, p_APIPath := p_APIPath_7b5ccc12, p_ResponseDataKey := p_ResponseDataKey_7b5ccc12, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_7b5ccc12, p_SupportsPagination := p_SupportsPagination_7b5ccc12, p_PaginationType := p_PaginationType_7b5ccc12, p_SupportsIncrementalSync := p_SupportsIncrementalSync_7b5ccc12, p_SupportsWrite := p_SupportsWrite_7b5ccc12, p_DefaultQueryParams := p_DefaultQueryParams_7b5ccc12, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_7b5ccc12, p_Sequence := p_Sequence_7b5ccc12, p_Status := p_Status_7b5ccc12, p_WriteAPIPath := p_WriteAPIPath_7b5ccc12, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_7b5ccc12, p_DeleteMethod := p_DeleteMethod_7b5ccc12, p_IsCustom := p_IsCustom_7b5ccc12, p_CreateAPIPath := p_CreateAPIPath_7b5ccc12, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_7b5ccc12, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_7b5ccc12, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_7b5ccc12, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_7b5ccc12, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_7b5ccc12, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_7b5ccc12, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_7b5ccc12, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_7b5ccc12, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_7b5ccc12, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_7b5ccc12, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_7b5ccc12, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_7b5ccc12, p_MetadataSource := p_MetadataSource_7b5ccc12, p_SupportsCreate := p_SupportsCreate_7b5ccc12, p_SupportsUpdate := p_SupportsUpdate_7b5ccc12, p_SupportsDelete := p_SupportsDelete_7b5ccc12, p_SyncStrategy := p_SyncStrategy_7b5ccc12, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_7b5ccc12, p_StableOrderingKey := p_StableOrderingKey_7b5ccc12, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_7b5ccc12 := FALSE;
+  p_SupportsUpdate_7b5ccc12 := FALSE;
+  p_SupportsDelete_7b5ccc12 := FALSE;
+  p_ContentHashApplicable_7b5ccc12 := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_7b5ccc12, p_IntegrationID := p_IntegrationID_7b5ccc12, p_Name := p_Name_7b5ccc12, p_DisplayName := p_DisplayName_7b5ccc12, p_Description := p_Description_7b5ccc12, p_Category := p_Category_7b5ccc12, p_Category_Clear := TRUE, p_APIPath := p_APIPath_7b5ccc12, p_ResponseDataKey := p_ResponseDataKey_7b5ccc12, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_7b5ccc12, p_SupportsPagination := p_SupportsPagination_7b5ccc12, p_PaginationType := p_PaginationType_7b5ccc12, p_SupportsIncrementalSync := p_SupportsIncrementalSync_7b5ccc12, p_SupportsWrite := p_SupportsWrite_7b5ccc12, p_DefaultQueryParams := p_DefaultQueryParams_7b5ccc12, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_7b5ccc12, p_Sequence := p_Sequence_7b5ccc12, p_Status := p_Status_7b5ccc12, p_WriteAPIPath := p_WriteAPIPath_7b5ccc12, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_7b5ccc12, p_DeleteMethod := p_DeleteMethod_7b5ccc12, p_IsCustom := p_IsCustom_7b5ccc12, p_CreateAPIPath := p_CreateAPIPath_7b5ccc12, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_7b5ccc12, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_7b5ccc12, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_7b5ccc12, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_7b5ccc12, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_7b5ccc12, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_7b5ccc12, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_7b5ccc12, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_7b5ccc12, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_7b5ccc12, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_7b5ccc12, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_7b5ccc12, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_7b5ccc12, p_MetadataSource := p_MetadataSource_7b5ccc12, p_SupportsCreate := p_SupportsCreate_7b5ccc12, p_SupportsUpdate := p_SupportsUpdate_7b5ccc12, p_SupportsDelete := p_SupportsDelete_7b5ccc12, p_SyncStrategy := p_SyncStrategy_7b5ccc12, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_7b5ccc12, p_StableOrderingKey := p_StableOrderingKey_7b5ccc12, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -543,23 +543,23 @@ BEGIN
   p_Description_d489344b := 'qualifications activity section for a researcher, fetched via GET /{ORCID-iD}/qualifications. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_d489344b := '/{iD}/qualifications';
   p_DefaultPageSize_d489344b := 100;
-  p_SupportsPagination_d489344b := 0;
+  p_SupportsPagination_d489344b := FALSE;
   p_PaginationType_d489344b := 'None';
-  p_SupportsIncrementalSync_d489344b := 1;
-  p_SupportsWrite_d489344b := 0;
-  p_Configuration_d489344b := '{"endpoint": "/{iD}/qualifications", "fetchModel": "per-iD full section (GET /{iD}/qualifications)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_d489344b := TRUE;
+  p_SupportsWrite_d489344b := FALSE;
+  p_Configuration_d489344b := '{"endpoint": "/{iD}/qualifications", "fetchModel": "per-iD full section (GET /{iD}/qualifications)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_d489344b := 4;
   p_Status_d489344b := 'Active';
   p_WriteMethod_d489344b := 'POST';
   p_DeleteMethod_d489344b := 'DELETE';
-  p_IsCustom_d489344b := 0;
+  p_IsCustom_d489344b := FALSE;
   p_IncrementalWatermarkField_d489344b := 'last-modified-date';
   p_MetadataSource_d489344b := 'Declared';
-  p_SupportsCreate_d489344b := 0;
-  p_SupportsUpdate_d489344b := 0;
-  p_SupportsDelete_d489344b := 0;
-  p_ContentHashApplicable_d489344b := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_d489344b, p_IntegrationID := p_IntegrationID_d489344b, p_Name := p_Name_d489344b, p_DisplayName := p_DisplayName_d489344b, p_Description := p_Description_d489344b, p_Category := p_Category_d489344b, p_Category_Clear := 1, p_APIPath := p_APIPath_d489344b, p_ResponseDataKey := p_ResponseDataKey_d489344b, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_d489344b, p_SupportsPagination := p_SupportsPagination_d489344b, p_PaginationType := p_PaginationType_d489344b, p_SupportsIncrementalSync := p_SupportsIncrementalSync_d489344b, p_SupportsWrite := p_SupportsWrite_d489344b, p_DefaultQueryParams := p_DefaultQueryParams_d489344b, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_d489344b, p_Sequence := p_Sequence_d489344b, p_Status := p_Status_d489344b, p_WriteAPIPath := p_WriteAPIPath_d489344b, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_d489344b, p_DeleteMethod := p_DeleteMethod_d489344b, p_IsCustom := p_IsCustom_d489344b, p_CreateAPIPath := p_CreateAPIPath_d489344b, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_d489344b, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_d489344b, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_d489344b, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_d489344b, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_d489344b, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_d489344b, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_d489344b, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_d489344b, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_d489344b, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_d489344b, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_d489344b, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_d489344b, p_MetadataSource := p_MetadataSource_d489344b, p_SupportsCreate := p_SupportsCreate_d489344b, p_SupportsUpdate := p_SupportsUpdate_d489344b, p_SupportsDelete := p_SupportsDelete_d489344b, p_SyncStrategy := p_SyncStrategy_d489344b, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_d489344b, p_StableOrderingKey := p_StableOrderingKey_d489344b, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_d489344b := FALSE;
+  p_SupportsUpdate_d489344b := FALSE;
+  p_SupportsDelete_d489344b := FALSE;
+  p_ContentHashApplicable_d489344b := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_d489344b, p_IntegrationID := p_IntegrationID_d489344b, p_Name := p_Name_d489344b, p_DisplayName := p_DisplayName_d489344b, p_Description := p_Description_d489344b, p_Category := p_Category_d489344b, p_Category_Clear := TRUE, p_APIPath := p_APIPath_d489344b, p_ResponseDataKey := p_ResponseDataKey_d489344b, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_d489344b, p_SupportsPagination := p_SupportsPagination_d489344b, p_PaginationType := p_PaginationType_d489344b, p_SupportsIncrementalSync := p_SupportsIncrementalSync_d489344b, p_SupportsWrite := p_SupportsWrite_d489344b, p_DefaultQueryParams := p_DefaultQueryParams_d489344b, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_d489344b, p_Sequence := p_Sequence_d489344b, p_Status := p_Status_d489344b, p_WriteAPIPath := p_WriteAPIPath_d489344b, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_d489344b, p_DeleteMethod := p_DeleteMethod_d489344b, p_IsCustom := p_IsCustom_d489344b, p_CreateAPIPath := p_CreateAPIPath_d489344b, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_d489344b, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_d489344b, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_d489344b, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_d489344b, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_d489344b, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_d489344b, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_d489344b, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_d489344b, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_d489344b, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_d489344b, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_d489344b, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_d489344b, p_MetadataSource := p_MetadataSource_d489344b, p_SupportsCreate := p_SupportsCreate_d489344b, p_SupportsUpdate := p_SupportsUpdate_d489344b, p_SupportsDelete := p_SupportsDelete_d489344b, p_SyncStrategy := p_SyncStrategy_d489344b, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_d489344b, p_StableOrderingKey := p_StableOrderingKey_d489344b, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -614,23 +614,23 @@ BEGIN
   p_Description_ba3ea1c9 := 'distinctions activity section for a researcher, fetched via GET /{ORCID-iD}/distinctions. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_ba3ea1c9 := '/{iD}/distinctions';
   p_DefaultPageSize_ba3ea1c9 := 100;
-  p_SupportsPagination_ba3ea1c9 := 0;
+  p_SupportsPagination_ba3ea1c9 := FALSE;
   p_PaginationType_ba3ea1c9 := 'None';
-  p_SupportsIncrementalSync_ba3ea1c9 := 1;
-  p_SupportsWrite_ba3ea1c9 := 0;
-  p_Configuration_ba3ea1c9 := '{"endpoint": "/{iD}/distinctions", "fetchModel": "per-iD full section (GET /{iD}/distinctions)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_ba3ea1c9 := TRUE;
+  p_SupportsWrite_ba3ea1c9 := FALSE;
+  p_Configuration_ba3ea1c9 := '{"endpoint": "/{iD}/distinctions", "fetchModel": "per-iD full section (GET /{iD}/distinctions)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_ba3ea1c9 := 5;
   p_Status_ba3ea1c9 := 'Active';
   p_WriteMethod_ba3ea1c9 := 'POST';
   p_DeleteMethod_ba3ea1c9 := 'DELETE';
-  p_IsCustom_ba3ea1c9 := 0;
+  p_IsCustom_ba3ea1c9 := FALSE;
   p_IncrementalWatermarkField_ba3ea1c9 := 'last-modified-date';
   p_MetadataSource_ba3ea1c9 := 'Declared';
-  p_SupportsCreate_ba3ea1c9 := 0;
-  p_SupportsUpdate_ba3ea1c9 := 0;
-  p_SupportsDelete_ba3ea1c9 := 0;
-  p_ContentHashApplicable_ba3ea1c9 := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_ba3ea1c9, p_IntegrationID := p_IntegrationID_ba3ea1c9, p_Name := p_Name_ba3ea1c9, p_DisplayName := p_DisplayName_ba3ea1c9, p_Description := p_Description_ba3ea1c9, p_Category := p_Category_ba3ea1c9, p_Category_Clear := 1, p_APIPath := p_APIPath_ba3ea1c9, p_ResponseDataKey := p_ResponseDataKey_ba3ea1c9, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_ba3ea1c9, p_SupportsPagination := p_SupportsPagination_ba3ea1c9, p_PaginationType := p_PaginationType_ba3ea1c9, p_SupportsIncrementalSync := p_SupportsIncrementalSync_ba3ea1c9, p_SupportsWrite := p_SupportsWrite_ba3ea1c9, p_DefaultQueryParams := p_DefaultQueryParams_ba3ea1c9, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_ba3ea1c9, p_Sequence := p_Sequence_ba3ea1c9, p_Status := p_Status_ba3ea1c9, p_WriteAPIPath := p_WriteAPIPath_ba3ea1c9, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_ba3ea1c9, p_DeleteMethod := p_DeleteMethod_ba3ea1c9, p_IsCustom := p_IsCustom_ba3ea1c9, p_CreateAPIPath := p_CreateAPIPath_ba3ea1c9, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_ba3ea1c9, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_ba3ea1c9, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_ba3ea1c9, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_ba3ea1c9, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_ba3ea1c9, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_ba3ea1c9, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_ba3ea1c9, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_ba3ea1c9, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_ba3ea1c9, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_ba3ea1c9, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_ba3ea1c9, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_ba3ea1c9, p_MetadataSource := p_MetadataSource_ba3ea1c9, p_SupportsCreate := p_SupportsCreate_ba3ea1c9, p_SupportsUpdate := p_SupportsUpdate_ba3ea1c9, p_SupportsDelete := p_SupportsDelete_ba3ea1c9, p_SyncStrategy := p_SyncStrategy_ba3ea1c9, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_ba3ea1c9, p_StableOrderingKey := p_StableOrderingKey_ba3ea1c9, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_ba3ea1c9 := FALSE;
+  p_SupportsUpdate_ba3ea1c9 := FALSE;
+  p_SupportsDelete_ba3ea1c9 := FALSE;
+  p_ContentHashApplicable_ba3ea1c9 := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_ba3ea1c9, p_IntegrationID := p_IntegrationID_ba3ea1c9, p_Name := p_Name_ba3ea1c9, p_DisplayName := p_DisplayName_ba3ea1c9, p_Description := p_Description_ba3ea1c9, p_Category := p_Category_ba3ea1c9, p_Category_Clear := TRUE, p_APIPath := p_APIPath_ba3ea1c9, p_ResponseDataKey := p_ResponseDataKey_ba3ea1c9, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_ba3ea1c9, p_SupportsPagination := p_SupportsPagination_ba3ea1c9, p_PaginationType := p_PaginationType_ba3ea1c9, p_SupportsIncrementalSync := p_SupportsIncrementalSync_ba3ea1c9, p_SupportsWrite := p_SupportsWrite_ba3ea1c9, p_DefaultQueryParams := p_DefaultQueryParams_ba3ea1c9, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_ba3ea1c9, p_Sequence := p_Sequence_ba3ea1c9, p_Status := p_Status_ba3ea1c9, p_WriteAPIPath := p_WriteAPIPath_ba3ea1c9, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_ba3ea1c9, p_DeleteMethod := p_DeleteMethod_ba3ea1c9, p_IsCustom := p_IsCustom_ba3ea1c9, p_CreateAPIPath := p_CreateAPIPath_ba3ea1c9, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_ba3ea1c9, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_ba3ea1c9, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_ba3ea1c9, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_ba3ea1c9, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_ba3ea1c9, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_ba3ea1c9, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_ba3ea1c9, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_ba3ea1c9, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_ba3ea1c9, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_ba3ea1c9, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_ba3ea1c9, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_ba3ea1c9, p_MetadataSource := p_MetadataSource_ba3ea1c9, p_SupportsCreate := p_SupportsCreate_ba3ea1c9, p_SupportsUpdate := p_SupportsUpdate_ba3ea1c9, p_SupportsDelete := p_SupportsDelete_ba3ea1c9, p_SyncStrategy := p_SyncStrategy_ba3ea1c9, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_ba3ea1c9, p_StableOrderingKey := p_StableOrderingKey_ba3ea1c9, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -685,23 +685,23 @@ BEGIN
   p_Description_b65599ea := 'invited-positions activity section for a researcher, fetched via GET /{ORCID-iD}/invited-positions. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_b65599ea := '/{iD}/invited-positions';
   p_DefaultPageSize_b65599ea := 100;
-  p_SupportsPagination_b65599ea := 0;
+  p_SupportsPagination_b65599ea := FALSE;
   p_PaginationType_b65599ea := 'None';
-  p_SupportsIncrementalSync_b65599ea := 1;
-  p_SupportsWrite_b65599ea := 0;
-  p_Configuration_b65599ea := '{"endpoint": "/{iD}/invited-positions", "fetchModel": "per-iD full section (GET /{iD}/invited-positions)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_b65599ea := TRUE;
+  p_SupportsWrite_b65599ea := FALSE;
+  p_Configuration_b65599ea := '{"endpoint": "/{iD}/invited-positions", "fetchModel": "per-iD full section (GET /{iD}/invited-positions)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_b65599ea := 6;
   p_Status_b65599ea := 'Active';
   p_WriteMethod_b65599ea := 'POST';
   p_DeleteMethod_b65599ea := 'DELETE';
-  p_IsCustom_b65599ea := 0;
+  p_IsCustom_b65599ea := FALSE;
   p_IncrementalWatermarkField_b65599ea := 'last-modified-date';
   p_MetadataSource_b65599ea := 'Declared';
-  p_SupportsCreate_b65599ea := 0;
-  p_SupportsUpdate_b65599ea := 0;
-  p_SupportsDelete_b65599ea := 0;
-  p_ContentHashApplicable_b65599ea := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_b65599ea, p_IntegrationID := p_IntegrationID_b65599ea, p_Name := p_Name_b65599ea, p_DisplayName := p_DisplayName_b65599ea, p_Description := p_Description_b65599ea, p_Category := p_Category_b65599ea, p_Category_Clear := 1, p_APIPath := p_APIPath_b65599ea, p_ResponseDataKey := p_ResponseDataKey_b65599ea, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_b65599ea, p_SupportsPagination := p_SupportsPagination_b65599ea, p_PaginationType := p_PaginationType_b65599ea, p_SupportsIncrementalSync := p_SupportsIncrementalSync_b65599ea, p_SupportsWrite := p_SupportsWrite_b65599ea, p_DefaultQueryParams := p_DefaultQueryParams_b65599ea, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_b65599ea, p_Sequence := p_Sequence_b65599ea, p_Status := p_Status_b65599ea, p_WriteAPIPath := p_WriteAPIPath_b65599ea, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_b65599ea, p_DeleteMethod := p_DeleteMethod_b65599ea, p_IsCustom := p_IsCustom_b65599ea, p_CreateAPIPath := p_CreateAPIPath_b65599ea, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_b65599ea, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_b65599ea, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_b65599ea, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_b65599ea, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_b65599ea, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_b65599ea, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_b65599ea, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_b65599ea, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_b65599ea, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_b65599ea, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_b65599ea, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_b65599ea, p_MetadataSource := p_MetadataSource_b65599ea, p_SupportsCreate := p_SupportsCreate_b65599ea, p_SupportsUpdate := p_SupportsUpdate_b65599ea, p_SupportsDelete := p_SupportsDelete_b65599ea, p_SyncStrategy := p_SyncStrategy_b65599ea, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_b65599ea, p_StableOrderingKey := p_StableOrderingKey_b65599ea, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_b65599ea := FALSE;
+  p_SupportsUpdate_b65599ea := FALSE;
+  p_SupportsDelete_b65599ea := FALSE;
+  p_ContentHashApplicable_b65599ea := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_b65599ea, p_IntegrationID := p_IntegrationID_b65599ea, p_Name := p_Name_b65599ea, p_DisplayName := p_DisplayName_b65599ea, p_Description := p_Description_b65599ea, p_Category := p_Category_b65599ea, p_Category_Clear := TRUE, p_APIPath := p_APIPath_b65599ea, p_ResponseDataKey := p_ResponseDataKey_b65599ea, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_b65599ea, p_SupportsPagination := p_SupportsPagination_b65599ea, p_PaginationType := p_PaginationType_b65599ea, p_SupportsIncrementalSync := p_SupportsIncrementalSync_b65599ea, p_SupportsWrite := p_SupportsWrite_b65599ea, p_DefaultQueryParams := p_DefaultQueryParams_b65599ea, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_b65599ea, p_Sequence := p_Sequence_b65599ea, p_Status := p_Status_b65599ea, p_WriteAPIPath := p_WriteAPIPath_b65599ea, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_b65599ea, p_DeleteMethod := p_DeleteMethod_b65599ea, p_IsCustom := p_IsCustom_b65599ea, p_CreateAPIPath := p_CreateAPIPath_b65599ea, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_b65599ea, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_b65599ea, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_b65599ea, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_b65599ea, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_b65599ea, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_b65599ea, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_b65599ea, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_b65599ea, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_b65599ea, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_b65599ea, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_b65599ea, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_b65599ea, p_MetadataSource := p_MetadataSource_b65599ea, p_SupportsCreate := p_SupportsCreate_b65599ea, p_SupportsUpdate := p_SupportsUpdate_b65599ea, p_SupportsDelete := p_SupportsDelete_b65599ea, p_SyncStrategy := p_SyncStrategy_b65599ea, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_b65599ea, p_StableOrderingKey := p_StableOrderingKey_b65599ea, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -756,23 +756,23 @@ BEGIN
   p_Description_f59ca13d := 'memberships activity section for a researcher, fetched via GET /{ORCID-iD}/memberships. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_f59ca13d := '/{iD}/memberships';
   p_DefaultPageSize_f59ca13d := 100;
-  p_SupportsPagination_f59ca13d := 0;
+  p_SupportsPagination_f59ca13d := FALSE;
   p_PaginationType_f59ca13d := 'None';
-  p_SupportsIncrementalSync_f59ca13d := 1;
-  p_SupportsWrite_f59ca13d := 0;
-  p_Configuration_f59ca13d := '{"endpoint": "/{iD}/memberships", "fetchModel": "per-iD full section (GET /{iD}/memberships)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_f59ca13d := TRUE;
+  p_SupportsWrite_f59ca13d := FALSE;
+  p_Configuration_f59ca13d := '{"endpoint": "/{iD}/memberships", "fetchModel": "per-iD full section (GET /{iD}/memberships)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_f59ca13d := 7;
   p_Status_f59ca13d := 'Active';
   p_WriteMethod_f59ca13d := 'POST';
   p_DeleteMethod_f59ca13d := 'DELETE';
-  p_IsCustom_f59ca13d := 0;
+  p_IsCustom_f59ca13d := FALSE;
   p_IncrementalWatermarkField_f59ca13d := 'last-modified-date';
   p_MetadataSource_f59ca13d := 'Declared';
-  p_SupportsCreate_f59ca13d := 0;
-  p_SupportsUpdate_f59ca13d := 0;
-  p_SupportsDelete_f59ca13d := 0;
-  p_ContentHashApplicable_f59ca13d := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_f59ca13d, p_IntegrationID := p_IntegrationID_f59ca13d, p_Name := p_Name_f59ca13d, p_DisplayName := p_DisplayName_f59ca13d, p_Description := p_Description_f59ca13d, p_Category := p_Category_f59ca13d, p_Category_Clear := 1, p_APIPath := p_APIPath_f59ca13d, p_ResponseDataKey := p_ResponseDataKey_f59ca13d, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_f59ca13d, p_SupportsPagination := p_SupportsPagination_f59ca13d, p_PaginationType := p_PaginationType_f59ca13d, p_SupportsIncrementalSync := p_SupportsIncrementalSync_f59ca13d, p_SupportsWrite := p_SupportsWrite_f59ca13d, p_DefaultQueryParams := p_DefaultQueryParams_f59ca13d, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_f59ca13d, p_Sequence := p_Sequence_f59ca13d, p_Status := p_Status_f59ca13d, p_WriteAPIPath := p_WriteAPIPath_f59ca13d, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_f59ca13d, p_DeleteMethod := p_DeleteMethod_f59ca13d, p_IsCustom := p_IsCustom_f59ca13d, p_CreateAPIPath := p_CreateAPIPath_f59ca13d, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_f59ca13d, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_f59ca13d, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_f59ca13d, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_f59ca13d, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_f59ca13d, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_f59ca13d, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_f59ca13d, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_f59ca13d, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_f59ca13d, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_f59ca13d, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_f59ca13d, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_f59ca13d, p_MetadataSource := p_MetadataSource_f59ca13d, p_SupportsCreate := p_SupportsCreate_f59ca13d, p_SupportsUpdate := p_SupportsUpdate_f59ca13d, p_SupportsDelete := p_SupportsDelete_f59ca13d, p_SyncStrategy := p_SyncStrategy_f59ca13d, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_f59ca13d, p_StableOrderingKey := p_StableOrderingKey_f59ca13d, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_f59ca13d := FALSE;
+  p_SupportsUpdate_f59ca13d := FALSE;
+  p_SupportsDelete_f59ca13d := FALSE;
+  p_ContentHashApplicable_f59ca13d := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_f59ca13d, p_IntegrationID := p_IntegrationID_f59ca13d, p_Name := p_Name_f59ca13d, p_DisplayName := p_DisplayName_f59ca13d, p_Description := p_Description_f59ca13d, p_Category := p_Category_f59ca13d, p_Category_Clear := TRUE, p_APIPath := p_APIPath_f59ca13d, p_ResponseDataKey := p_ResponseDataKey_f59ca13d, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_f59ca13d, p_SupportsPagination := p_SupportsPagination_f59ca13d, p_PaginationType := p_PaginationType_f59ca13d, p_SupportsIncrementalSync := p_SupportsIncrementalSync_f59ca13d, p_SupportsWrite := p_SupportsWrite_f59ca13d, p_DefaultQueryParams := p_DefaultQueryParams_f59ca13d, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_f59ca13d, p_Sequence := p_Sequence_f59ca13d, p_Status := p_Status_f59ca13d, p_WriteAPIPath := p_WriteAPIPath_f59ca13d, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_f59ca13d, p_DeleteMethod := p_DeleteMethod_f59ca13d, p_IsCustom := p_IsCustom_f59ca13d, p_CreateAPIPath := p_CreateAPIPath_f59ca13d, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_f59ca13d, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_f59ca13d, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_f59ca13d, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_f59ca13d, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_f59ca13d, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_f59ca13d, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_f59ca13d, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_f59ca13d, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_f59ca13d, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_f59ca13d, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_f59ca13d, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_f59ca13d, p_MetadataSource := p_MetadataSource_f59ca13d, p_SupportsCreate := p_SupportsCreate_f59ca13d, p_SupportsUpdate := p_SupportsUpdate_f59ca13d, p_SupportsDelete := p_SupportsDelete_f59ca13d, p_SyncStrategy := p_SyncStrategy_f59ca13d, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_f59ca13d, p_StableOrderingKey := p_StableOrderingKey_f59ca13d, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -827,23 +827,23 @@ BEGIN
   p_Description_2d9124bc := 'services activity section for a researcher, fetched via GET /{ORCID-iD}/services. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_2d9124bc := '/{iD}/services';
   p_DefaultPageSize_2d9124bc := 100;
-  p_SupportsPagination_2d9124bc := 0;
+  p_SupportsPagination_2d9124bc := FALSE;
   p_PaginationType_2d9124bc := 'None';
-  p_SupportsIncrementalSync_2d9124bc := 1;
-  p_SupportsWrite_2d9124bc := 0;
-  p_Configuration_2d9124bc := '{"endpoint": "/{iD}/services", "fetchModel": "per-iD full section (GET /{iD}/services)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_2d9124bc := TRUE;
+  p_SupportsWrite_2d9124bc := FALSE;
+  p_Configuration_2d9124bc := '{"endpoint": "/{iD}/services", "fetchModel": "per-iD full section (GET /{iD}/services)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_2d9124bc := 8;
   p_Status_2d9124bc := 'Active';
   p_WriteMethod_2d9124bc := 'POST';
   p_DeleteMethod_2d9124bc := 'DELETE';
-  p_IsCustom_2d9124bc := 0;
+  p_IsCustom_2d9124bc := FALSE;
   p_IncrementalWatermarkField_2d9124bc := 'last-modified-date';
   p_MetadataSource_2d9124bc := 'Declared';
-  p_SupportsCreate_2d9124bc := 0;
-  p_SupportsUpdate_2d9124bc := 0;
-  p_SupportsDelete_2d9124bc := 0;
-  p_ContentHashApplicable_2d9124bc := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_2d9124bc, p_IntegrationID := p_IntegrationID_2d9124bc, p_Name := p_Name_2d9124bc, p_DisplayName := p_DisplayName_2d9124bc, p_Description := p_Description_2d9124bc, p_Category := p_Category_2d9124bc, p_Category_Clear := 1, p_APIPath := p_APIPath_2d9124bc, p_ResponseDataKey := p_ResponseDataKey_2d9124bc, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_2d9124bc, p_SupportsPagination := p_SupportsPagination_2d9124bc, p_PaginationType := p_PaginationType_2d9124bc, p_SupportsIncrementalSync := p_SupportsIncrementalSync_2d9124bc, p_SupportsWrite := p_SupportsWrite_2d9124bc, p_DefaultQueryParams := p_DefaultQueryParams_2d9124bc, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_2d9124bc, p_Sequence := p_Sequence_2d9124bc, p_Status := p_Status_2d9124bc, p_WriteAPIPath := p_WriteAPIPath_2d9124bc, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_2d9124bc, p_DeleteMethod := p_DeleteMethod_2d9124bc, p_IsCustom := p_IsCustom_2d9124bc, p_CreateAPIPath := p_CreateAPIPath_2d9124bc, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_2d9124bc, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_2d9124bc, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_2d9124bc, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_2d9124bc, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_2d9124bc, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_2d9124bc, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_2d9124bc, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_2d9124bc, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_2d9124bc, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_2d9124bc, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_2d9124bc, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_2d9124bc, p_MetadataSource := p_MetadataSource_2d9124bc, p_SupportsCreate := p_SupportsCreate_2d9124bc, p_SupportsUpdate := p_SupportsUpdate_2d9124bc, p_SupportsDelete := p_SupportsDelete_2d9124bc, p_SyncStrategy := p_SyncStrategy_2d9124bc, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_2d9124bc, p_StableOrderingKey := p_StableOrderingKey_2d9124bc, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_2d9124bc := FALSE;
+  p_SupportsUpdate_2d9124bc := FALSE;
+  p_SupportsDelete_2d9124bc := FALSE;
+  p_ContentHashApplicable_2d9124bc := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_2d9124bc, p_IntegrationID := p_IntegrationID_2d9124bc, p_Name := p_Name_2d9124bc, p_DisplayName := p_DisplayName_2d9124bc, p_Description := p_Description_2d9124bc, p_Category := p_Category_2d9124bc, p_Category_Clear := TRUE, p_APIPath := p_APIPath_2d9124bc, p_ResponseDataKey := p_ResponseDataKey_2d9124bc, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_2d9124bc, p_SupportsPagination := p_SupportsPagination_2d9124bc, p_PaginationType := p_PaginationType_2d9124bc, p_SupportsIncrementalSync := p_SupportsIncrementalSync_2d9124bc, p_SupportsWrite := p_SupportsWrite_2d9124bc, p_DefaultQueryParams := p_DefaultQueryParams_2d9124bc, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_2d9124bc, p_Sequence := p_Sequence_2d9124bc, p_Status := p_Status_2d9124bc, p_WriteAPIPath := p_WriteAPIPath_2d9124bc, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_2d9124bc, p_DeleteMethod := p_DeleteMethod_2d9124bc, p_IsCustom := p_IsCustom_2d9124bc, p_CreateAPIPath := p_CreateAPIPath_2d9124bc, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_2d9124bc, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_2d9124bc, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_2d9124bc, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_2d9124bc, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_2d9124bc, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_2d9124bc, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_2d9124bc, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_2d9124bc, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_2d9124bc, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_2d9124bc, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_2d9124bc, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_2d9124bc, p_MetadataSource := p_MetadataSource_2d9124bc, p_SupportsCreate := p_SupportsCreate_2d9124bc, p_SupportsUpdate := p_SupportsUpdate_2d9124bc, p_SupportsDelete := p_SupportsDelete_2d9124bc, p_SyncStrategy := p_SyncStrategy_2d9124bc, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_2d9124bc, p_StableOrderingKey := p_StableOrderingKey_2d9124bc, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -898,23 +898,23 @@ BEGIN
   p_Description_e3f2235a := 'fundings activity section for a researcher, fetched via GET /{ORCID-iD}/fundings. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_e3f2235a := '/{iD}/fundings';
   p_DefaultPageSize_e3f2235a := 100;
-  p_SupportsPagination_e3f2235a := 0;
+  p_SupportsPagination_e3f2235a := FALSE;
   p_PaginationType_e3f2235a := 'None';
-  p_SupportsIncrementalSync_e3f2235a := 1;
-  p_SupportsWrite_e3f2235a := 0;
-  p_Configuration_e3f2235a := '{"endpoint": "/{iD}/fundings", "fetchModel": "per-iD full section (GET /{iD}/fundings)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_e3f2235a := TRUE;
+  p_SupportsWrite_e3f2235a := FALSE;
+  p_Configuration_e3f2235a := '{"endpoint": "/{iD}/fundings", "fetchModel": "per-iD full section (GET /{iD}/fundings)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_e3f2235a := 9;
   p_Status_e3f2235a := 'Active';
   p_WriteMethod_e3f2235a := 'POST';
   p_DeleteMethod_e3f2235a := 'DELETE';
-  p_IsCustom_e3f2235a := 0;
+  p_IsCustom_e3f2235a := FALSE;
   p_IncrementalWatermarkField_e3f2235a := 'last-modified-date';
   p_MetadataSource_e3f2235a := 'Declared';
-  p_SupportsCreate_e3f2235a := 0;
-  p_SupportsUpdate_e3f2235a := 0;
-  p_SupportsDelete_e3f2235a := 0;
-  p_ContentHashApplicable_e3f2235a := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_e3f2235a, p_IntegrationID := p_IntegrationID_e3f2235a, p_Name := p_Name_e3f2235a, p_DisplayName := p_DisplayName_e3f2235a, p_Description := p_Description_e3f2235a, p_Category := p_Category_e3f2235a, p_Category_Clear := 1, p_APIPath := p_APIPath_e3f2235a, p_ResponseDataKey := p_ResponseDataKey_e3f2235a, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_e3f2235a, p_SupportsPagination := p_SupportsPagination_e3f2235a, p_PaginationType := p_PaginationType_e3f2235a, p_SupportsIncrementalSync := p_SupportsIncrementalSync_e3f2235a, p_SupportsWrite := p_SupportsWrite_e3f2235a, p_DefaultQueryParams := p_DefaultQueryParams_e3f2235a, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_e3f2235a, p_Sequence := p_Sequence_e3f2235a, p_Status := p_Status_e3f2235a, p_WriteAPIPath := p_WriteAPIPath_e3f2235a, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_e3f2235a, p_DeleteMethod := p_DeleteMethod_e3f2235a, p_IsCustom := p_IsCustom_e3f2235a, p_CreateAPIPath := p_CreateAPIPath_e3f2235a, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_e3f2235a, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_e3f2235a, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_e3f2235a, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_e3f2235a, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_e3f2235a, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_e3f2235a, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_e3f2235a, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_e3f2235a, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_e3f2235a, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_e3f2235a, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_e3f2235a, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_e3f2235a, p_MetadataSource := p_MetadataSource_e3f2235a, p_SupportsCreate := p_SupportsCreate_e3f2235a, p_SupportsUpdate := p_SupportsUpdate_e3f2235a, p_SupportsDelete := p_SupportsDelete_e3f2235a, p_SyncStrategy := p_SyncStrategy_e3f2235a, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_e3f2235a, p_StableOrderingKey := p_StableOrderingKey_e3f2235a, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_e3f2235a := FALSE;
+  p_SupportsUpdate_e3f2235a := FALSE;
+  p_SupportsDelete_e3f2235a := FALSE;
+  p_ContentHashApplicable_e3f2235a := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_e3f2235a, p_IntegrationID := p_IntegrationID_e3f2235a, p_Name := p_Name_e3f2235a, p_DisplayName := p_DisplayName_e3f2235a, p_Description := p_Description_e3f2235a, p_Category := p_Category_e3f2235a, p_Category_Clear := TRUE, p_APIPath := p_APIPath_e3f2235a, p_ResponseDataKey := p_ResponseDataKey_e3f2235a, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_e3f2235a, p_SupportsPagination := p_SupportsPagination_e3f2235a, p_PaginationType := p_PaginationType_e3f2235a, p_SupportsIncrementalSync := p_SupportsIncrementalSync_e3f2235a, p_SupportsWrite := p_SupportsWrite_e3f2235a, p_DefaultQueryParams := p_DefaultQueryParams_e3f2235a, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_e3f2235a, p_Sequence := p_Sequence_e3f2235a, p_Status := p_Status_e3f2235a, p_WriteAPIPath := p_WriteAPIPath_e3f2235a, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_e3f2235a, p_DeleteMethod := p_DeleteMethod_e3f2235a, p_IsCustom := p_IsCustom_e3f2235a, p_CreateAPIPath := p_CreateAPIPath_e3f2235a, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_e3f2235a, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_e3f2235a, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_e3f2235a, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_e3f2235a, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_e3f2235a, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_e3f2235a, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_e3f2235a, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_e3f2235a, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_e3f2235a, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_e3f2235a, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_e3f2235a, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_e3f2235a, p_MetadataSource := p_MetadataSource_e3f2235a, p_SupportsCreate := p_SupportsCreate_e3f2235a, p_SupportsUpdate := p_SupportsUpdate_e3f2235a, p_SupportsDelete := p_SupportsDelete_e3f2235a, p_SyncStrategy := p_SyncStrategy_e3f2235a, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_e3f2235a, p_StableOrderingKey := p_StableOrderingKey_e3f2235a, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -969,23 +969,23 @@ BEGIN
   p_Description_ea4f7a76 := 'peer-reviews activity section for a researcher, fetched via GET /{ORCID-iD}/peer-reviews. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_ea4f7a76 := '/{iD}/peer-reviews';
   p_DefaultPageSize_ea4f7a76 := 100;
-  p_SupportsPagination_ea4f7a76 := 0;
+  p_SupportsPagination_ea4f7a76 := FALSE;
   p_PaginationType_ea4f7a76 := 'None';
-  p_SupportsIncrementalSync_ea4f7a76 := 1;
-  p_SupportsWrite_ea4f7a76 := 0;
-  p_Configuration_ea4f7a76 := '{"endpoint": "/{iD}/peer-reviews", "fetchModel": "per-iD full section (GET /{iD}/peer-reviews)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_ea4f7a76 := TRUE;
+  p_SupportsWrite_ea4f7a76 := FALSE;
+  p_Configuration_ea4f7a76 := '{"endpoint": "/{iD}/peer-reviews", "fetchModel": "per-iD full section (GET /{iD}/peer-reviews)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_ea4f7a76 := 10;
   p_Status_ea4f7a76 := 'Active';
   p_WriteMethod_ea4f7a76 := 'POST';
   p_DeleteMethod_ea4f7a76 := 'DELETE';
-  p_IsCustom_ea4f7a76 := 0;
+  p_IsCustom_ea4f7a76 := FALSE;
   p_IncrementalWatermarkField_ea4f7a76 := 'last-modified-date';
   p_MetadataSource_ea4f7a76 := 'Declared';
-  p_SupportsCreate_ea4f7a76 := 0;
-  p_SupportsUpdate_ea4f7a76 := 0;
-  p_SupportsDelete_ea4f7a76 := 0;
-  p_ContentHashApplicable_ea4f7a76 := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_ea4f7a76, p_IntegrationID := p_IntegrationID_ea4f7a76, p_Name := p_Name_ea4f7a76, p_DisplayName := p_DisplayName_ea4f7a76, p_Description := p_Description_ea4f7a76, p_Category := p_Category_ea4f7a76, p_Category_Clear := 1, p_APIPath := p_APIPath_ea4f7a76, p_ResponseDataKey := p_ResponseDataKey_ea4f7a76, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_ea4f7a76, p_SupportsPagination := p_SupportsPagination_ea4f7a76, p_PaginationType := p_PaginationType_ea4f7a76, p_SupportsIncrementalSync := p_SupportsIncrementalSync_ea4f7a76, p_SupportsWrite := p_SupportsWrite_ea4f7a76, p_DefaultQueryParams := p_DefaultQueryParams_ea4f7a76, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_ea4f7a76, p_Sequence := p_Sequence_ea4f7a76, p_Status := p_Status_ea4f7a76, p_WriteAPIPath := p_WriteAPIPath_ea4f7a76, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_ea4f7a76, p_DeleteMethod := p_DeleteMethod_ea4f7a76, p_IsCustom := p_IsCustom_ea4f7a76, p_CreateAPIPath := p_CreateAPIPath_ea4f7a76, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_ea4f7a76, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_ea4f7a76, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_ea4f7a76, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_ea4f7a76, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_ea4f7a76, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_ea4f7a76, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_ea4f7a76, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_ea4f7a76, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_ea4f7a76, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_ea4f7a76, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_ea4f7a76, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_ea4f7a76, p_MetadataSource := p_MetadataSource_ea4f7a76, p_SupportsCreate := p_SupportsCreate_ea4f7a76, p_SupportsUpdate := p_SupportsUpdate_ea4f7a76, p_SupportsDelete := p_SupportsDelete_ea4f7a76, p_SyncStrategy := p_SyncStrategy_ea4f7a76, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_ea4f7a76, p_StableOrderingKey := p_StableOrderingKey_ea4f7a76, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_ea4f7a76 := FALSE;
+  p_SupportsUpdate_ea4f7a76 := FALSE;
+  p_SupportsDelete_ea4f7a76 := FALSE;
+  p_ContentHashApplicable_ea4f7a76 := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_ea4f7a76, p_IntegrationID := p_IntegrationID_ea4f7a76, p_Name := p_Name_ea4f7a76, p_DisplayName := p_DisplayName_ea4f7a76, p_Description := p_Description_ea4f7a76, p_Category := p_Category_ea4f7a76, p_Category_Clear := TRUE, p_APIPath := p_APIPath_ea4f7a76, p_ResponseDataKey := p_ResponseDataKey_ea4f7a76, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_ea4f7a76, p_SupportsPagination := p_SupportsPagination_ea4f7a76, p_PaginationType := p_PaginationType_ea4f7a76, p_SupportsIncrementalSync := p_SupportsIncrementalSync_ea4f7a76, p_SupportsWrite := p_SupportsWrite_ea4f7a76, p_DefaultQueryParams := p_DefaultQueryParams_ea4f7a76, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_ea4f7a76, p_Sequence := p_Sequence_ea4f7a76, p_Status := p_Status_ea4f7a76, p_WriteAPIPath := p_WriteAPIPath_ea4f7a76, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_ea4f7a76, p_DeleteMethod := p_DeleteMethod_ea4f7a76, p_IsCustom := p_IsCustom_ea4f7a76, p_CreateAPIPath := p_CreateAPIPath_ea4f7a76, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_ea4f7a76, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_ea4f7a76, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_ea4f7a76, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_ea4f7a76, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_ea4f7a76, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_ea4f7a76, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_ea4f7a76, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_ea4f7a76, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_ea4f7a76, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_ea4f7a76, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_ea4f7a76, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_ea4f7a76, p_MetadataSource := p_MetadataSource_ea4f7a76, p_SupportsCreate := p_SupportsCreate_ea4f7a76, p_SupportsUpdate := p_SupportsUpdate_ea4f7a76, p_SupportsDelete := p_SupportsDelete_ea4f7a76, p_SyncStrategy := p_SyncStrategy_ea4f7a76, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_ea4f7a76, p_StableOrderingKey := p_StableOrderingKey_ea4f7a76, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Objects (core SP call only)
@@ -1040,23 +1040,23 @@ BEGIN
   p_Description_9ef10595 := 'research-resources activity section for a researcher, fetched via GET /{ORCID-iD}/research-resources. Child of the record IO; put-code is the integer PK. last-modified-date is the incremental watermark.';
   p_APIPath_9ef10595 := '/{iD}/research-resources';
   p_DefaultPageSize_9ef10595 := 100;
-  p_SupportsPagination_9ef10595 := 0;
+  p_SupportsPagination_9ef10595 := FALSE;
   p_PaginationType_9ef10595 := 'None';
-  p_SupportsIncrementalSync_9ef10595 := 1;
-  p_SupportsWrite_9ef10595 := 0;
-  p_Configuration_9ef10595 := '{"endpoint": "/{iD}/research-resources", "fetchModel": "per-iD full section (GET /{iD}/research-resources)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration."Configuration".searchQuery / orcidIds"}';
+  p_SupportsIncrementalSync_9ef10595 := TRUE;
+  p_SupportsWrite_9ef10595 := FALSE;
+  p_Configuration_9ef10595 := '{"endpoint": "/{iD}/research-resources", "fetchModel": "per-iD full section (GET /{iD}/research-resources)", "watermark": "last-modified-date", "nonEnumerable": true, "scopedBy": "CompanyIntegration.Configuration.searchQuery / orcidIds"}';
   p_Sequence_9ef10595 := 11;
   p_Status_9ef10595 := 'Active';
   p_WriteMethod_9ef10595 := 'POST';
   p_DeleteMethod_9ef10595 := 'DELETE';
-  p_IsCustom_9ef10595 := 0;
+  p_IsCustom_9ef10595 := FALSE;
   p_IncrementalWatermarkField_9ef10595 := 'last-modified-date';
   p_MetadataSource_9ef10595 := 'Declared';
-  p_SupportsCreate_9ef10595 := 0;
-  p_SupportsUpdate_9ef10595 := 0;
-  p_SupportsDelete_9ef10595 := 0;
-  p_ContentHashApplicable_9ef10595 := 1;
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_9ef10595, p_IntegrationID := p_IntegrationID_9ef10595, p_Name := p_Name_9ef10595, p_DisplayName := p_DisplayName_9ef10595, p_Description := p_Description_9ef10595, p_Category := p_Category_9ef10595, p_Category_Clear := 1, p_APIPath := p_APIPath_9ef10595, p_ResponseDataKey := p_ResponseDataKey_9ef10595, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_9ef10595, p_SupportsPagination := p_SupportsPagination_9ef10595, p_PaginationType := p_PaginationType_9ef10595, p_SupportsIncrementalSync := p_SupportsIncrementalSync_9ef10595, p_SupportsWrite := p_SupportsWrite_9ef10595, p_DefaultQueryParams := p_DefaultQueryParams_9ef10595, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_9ef10595, p_Sequence := p_Sequence_9ef10595, p_Status := p_Status_9ef10595, p_WriteAPIPath := p_WriteAPIPath_9ef10595, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_9ef10595, p_DeleteMethod := p_DeleteMethod_9ef10595, p_IsCustom := p_IsCustom_9ef10595, p_CreateAPIPath := p_CreateAPIPath_9ef10595, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_9ef10595, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_9ef10595, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_9ef10595, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_9ef10595, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_9ef10595, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_9ef10595, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_9ef10595, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_9ef10595, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_9ef10595, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_9ef10595, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_9ef10595, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_9ef10595, p_MetadataSource := p_MetadataSource_9ef10595, p_SupportsCreate := p_SupportsCreate_9ef10595, p_SupportsUpdate := p_SupportsUpdate_9ef10595, p_SupportsDelete := p_SupportsDelete_9ef10595, p_SyncStrategy := p_SyncStrategy_9ef10595, p_SyncStrategy_Clear := 1, p_ContentHashApplicable := p_ContentHashApplicable_9ef10595, p_StableOrderingKey := p_StableOrderingKey_9ef10595, p_StableOrderingKey_Clear := 1);
+  p_SupportsCreate_9ef10595 := FALSE;
+  p_SupportsUpdate_9ef10595 := FALSE;
+  p_SupportsDelete_9ef10595 := FALSE;
+  p_ContentHashApplicable_9ef10595 := TRUE;
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_9ef10595, p_IntegrationID := p_IntegrationID_9ef10595, p_Name := p_Name_9ef10595, p_DisplayName := p_DisplayName_9ef10595, p_Description := p_Description_9ef10595, p_Category := p_Category_9ef10595, p_Category_Clear := TRUE, p_APIPath := p_APIPath_9ef10595, p_ResponseDataKey := p_ResponseDataKey_9ef10595, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_9ef10595, p_SupportsPagination := p_SupportsPagination_9ef10595, p_PaginationType := p_PaginationType_9ef10595, p_SupportsIncrementalSync := p_SupportsIncrementalSync_9ef10595, p_SupportsWrite := p_SupportsWrite_9ef10595, p_DefaultQueryParams := p_DefaultQueryParams_9ef10595, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_9ef10595, p_Sequence := p_Sequence_9ef10595, p_Status := p_Status_9ef10595, p_WriteAPIPath := p_WriteAPIPath_9ef10595, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_9ef10595, p_DeleteMethod := p_DeleteMethod_9ef10595, p_IsCustom := p_IsCustom_9ef10595, p_CreateAPIPath := p_CreateAPIPath_9ef10595, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_9ef10595, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_9ef10595, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_9ef10595, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_9ef10595, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_9ef10595, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_9ef10595, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_9ef10595, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_9ef10595, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_9ef10595, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_9ef10595, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_9ef10595, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_9ef10595, p_MetadataSource := p_MetadataSource_9ef10595, p_SupportsCreate := p_SupportsCreate_9ef10595, p_SupportsUpdate := p_SupportsUpdate_9ef10595, p_SupportsDelete := p_SupportsDelete_9ef10595, p_SyncStrategy := p_SyncStrategy_9ef10595, p_SyncStrategy_Clear := TRUE, p_ContentHashApplicable := p_ContentHashApplicable_9ef10595, p_StableOrderingKey := p_StableOrderingKey_9ef10595, p_StableOrderingKey_Clear := TRUE);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1093,16 +1093,16 @@ BEGIN
   p_Description_14623dc5 := 'The ORCID iD (16-char path, e.g. 0000-0002-1825-0097). Primary key of the record/person IO; the natural identity used to address GET /{iD}/record. (common-3.0.xsd orcid-identifier / orcid-id, orcid-path pattern)';
   p_Type_14623dc5 := 'String';
   p_Length_14623dc5 := 19;
-  p_AllowsNull_14623dc5 := 0;
-  p_IsPrimaryKey_14623dc5 := 1;
-  p_IsUniqueKey_14623dc5 := 1;
-  p_IsReadOnly_14623dc5 := 1;
-  p_IsRequired_14623dc5 := 1;
+  p_AllowsNull_14623dc5 := FALSE;
+  p_IsPrimaryKey_14623dc5 := TRUE;
+  p_IsUniqueKey_14623dc5 := TRUE;
+  p_IsReadOnly_14623dc5 := TRUE;
+  p_IsRequired_14623dc5 := TRUE;
   p_Sequence_14623dc5 := 0;
   p_Status_14623dc5 := 'Active';
-  p_IsCustom_14623dc5 := 0;
+  p_IsCustom_14623dc5 := FALSE;
   p_MetadataSource_14623dc5 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_14623dc5, p_IntegrationObjectID := p_IntegrationObjectID_14623dc5, p_Name := p_Name_14623dc5, p_DisplayName := p_DisplayName_14623dc5, p_Description := p_Description_14623dc5, p_Category := p_Category_14623dc5, p_Category_Clear := 1, p_Type := p_Type_14623dc5, p_Length := p_Length_14623dc5, p_Precision := p_Precision_14623dc5, p_Precision_Clear := 1, p_Scale := p_Scale_14623dc5, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_14623dc5, p_DefaultValue := p_DefaultValue_14623dc5, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_14623dc5, p_IsUniqueKey := p_IsUniqueKey_14623dc5, p_IsReadOnly := p_IsReadOnly_14623dc5, p_IsRequired := p_IsRequired_14623dc5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_14623dc5, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_14623dc5, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_14623dc5, p_Configuration := p_Configuration_14623dc5, p_Configuration_Clear := 1, p_Status := p_Status_14623dc5, p_IsCustom := p_IsCustom_14623dc5, p_MetadataSource := p_MetadataSource_14623dc5);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_14623dc5, p_IntegrationObjectID := p_IntegrationObjectID_14623dc5, p_Name := p_Name_14623dc5, p_DisplayName := p_DisplayName_14623dc5, p_Description := p_Description_14623dc5, p_Category := p_Category_14623dc5, p_Category_Clear := TRUE, p_Type := p_Type_14623dc5, p_Length := p_Length_14623dc5, p_Precision := p_Precision_14623dc5, p_Precision_Clear := TRUE, p_Scale := p_Scale_14623dc5, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_14623dc5, p_DefaultValue := p_DefaultValue_14623dc5, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_14623dc5, p_IsUniqueKey := p_IsUniqueKey_14623dc5, p_IsReadOnly := p_IsReadOnly_14623dc5, p_IsRequired := p_IsRequired_14623dc5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_14623dc5, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_14623dc5, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_14623dc5, p_Configuration := p_Configuration_14623dc5, p_Configuration_Clear := TRUE, p_Status := p_Status_14623dc5, p_IsCustom := p_IsCustom_14623dc5, p_MetadataSource := p_MetadataSource_14623dc5);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1138,16 +1138,16 @@ BEGIN
   p_DisplayName_d5b5c91e := 'Orcid Identifier';
   p_Description_d5b5c91e := 'Full ORCID identifier object: uri, path, host. (record-3.0.xsd orcid-identifier; common-3.0.xsd orcid-id)';
   p_Type_d5b5c91e := 'json';
-  p_AllowsNull_d5b5c91e := 1;
-  p_IsPrimaryKey_d5b5c91e := 0;
-  p_IsUniqueKey_d5b5c91e := 0;
-  p_IsReadOnly_d5b5c91e := 1;
-  p_IsRequired_d5b5c91e := 0;
+  p_AllowsNull_d5b5c91e := TRUE;
+  p_IsPrimaryKey_d5b5c91e := FALSE;
+  p_IsUniqueKey_d5b5c91e := FALSE;
+  p_IsReadOnly_d5b5c91e := TRUE;
+  p_IsRequired_d5b5c91e := FALSE;
   p_Sequence_d5b5c91e := 1;
   p_Status_d5b5c91e := 'Active';
-  p_IsCustom_d5b5c91e := 0;
+  p_IsCustom_d5b5c91e := FALSE;
   p_MetadataSource_d5b5c91e := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d5b5c91e, p_IntegrationObjectID := p_IntegrationObjectID_d5b5c91e, p_Name := p_Name_d5b5c91e, p_DisplayName := p_DisplayName_d5b5c91e, p_Description := p_Description_d5b5c91e, p_Category := p_Category_d5b5c91e, p_Category_Clear := 1, p_Type := p_Type_d5b5c91e, p_Length := p_Length_d5b5c91e, p_Length_Clear := 1, p_Precision := p_Precision_d5b5c91e, p_Precision_Clear := 1, p_Scale := p_Scale_d5b5c91e, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d5b5c91e, p_DefaultValue := p_DefaultValue_d5b5c91e, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d5b5c91e, p_IsUniqueKey := p_IsUniqueKey_d5b5c91e, p_IsReadOnly := p_IsReadOnly_d5b5c91e, p_IsRequired := p_IsRequired_d5b5c91e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d5b5c91e, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d5b5c91e, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d5b5c91e, p_Configuration := p_Configuration_d5b5c91e, p_Configuration_Clear := 1, p_Status := p_Status_d5b5c91e, p_IsCustom := p_IsCustom_d5b5c91e, p_MetadataSource := p_MetadataSource_d5b5c91e);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d5b5c91e, p_IntegrationObjectID := p_IntegrationObjectID_d5b5c91e, p_Name := p_Name_d5b5c91e, p_DisplayName := p_DisplayName_d5b5c91e, p_Description := p_Description_d5b5c91e, p_Category := p_Category_d5b5c91e, p_Category_Clear := TRUE, p_Type := p_Type_d5b5c91e, p_Length := p_Length_d5b5c91e, p_Length_Clear := TRUE, p_Precision := p_Precision_d5b5c91e, p_Precision_Clear := TRUE, p_Scale := p_Scale_d5b5c91e, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d5b5c91e, p_DefaultValue := p_DefaultValue_d5b5c91e, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d5b5c91e, p_IsUniqueKey := p_IsUniqueKey_d5b5c91e, p_IsReadOnly := p_IsReadOnly_d5b5c91e, p_IsRequired := p_IsRequired_d5b5c91e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d5b5c91e, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d5b5c91e, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d5b5c91e, p_Configuration := p_Configuration_d5b5c91e, p_Configuration_Clear := TRUE, p_Status := p_Status_d5b5c91e, p_IsCustom := p_IsCustom_d5b5c91e, p_MetadataSource := p_MetadataSource_d5b5c91e);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1183,16 +1183,16 @@ BEGIN
   p_DisplayName_7e2f334f := 'Preferences';
   p_Description_7e2f334f := 'Record preferences (locale). (record-3.0.xsd ref preferences:preferences)';
   p_Type_7e2f334f := 'json';
-  p_AllowsNull_7e2f334f := 1;
-  p_IsPrimaryKey_7e2f334f := 0;
-  p_IsUniqueKey_7e2f334f := 0;
-  p_IsReadOnly_7e2f334f := 1;
-  p_IsRequired_7e2f334f := 0;
+  p_AllowsNull_7e2f334f := TRUE;
+  p_IsPrimaryKey_7e2f334f := FALSE;
+  p_IsUniqueKey_7e2f334f := FALSE;
+  p_IsReadOnly_7e2f334f := TRUE;
+  p_IsRequired_7e2f334f := FALSE;
   p_Sequence_7e2f334f := 2;
   p_Status_7e2f334f := 'Active';
-  p_IsCustom_7e2f334f := 0;
+  p_IsCustom_7e2f334f := FALSE;
   p_MetadataSource_7e2f334f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7e2f334f, p_IntegrationObjectID := p_IntegrationObjectID_7e2f334f, p_Name := p_Name_7e2f334f, p_DisplayName := p_DisplayName_7e2f334f, p_Description := p_Description_7e2f334f, p_Category := p_Category_7e2f334f, p_Category_Clear := 1, p_Type := p_Type_7e2f334f, p_Length := p_Length_7e2f334f, p_Length_Clear := 1, p_Precision := p_Precision_7e2f334f, p_Precision_Clear := 1, p_Scale := p_Scale_7e2f334f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_7e2f334f, p_DefaultValue := p_DefaultValue_7e2f334f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_7e2f334f, p_IsUniqueKey := p_IsUniqueKey_7e2f334f, p_IsReadOnly := p_IsReadOnly_7e2f334f, p_IsRequired := p_IsRequired_7e2f334f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7e2f334f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7e2f334f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_7e2f334f, p_Configuration := p_Configuration_7e2f334f, p_Configuration_Clear := 1, p_Status := p_Status_7e2f334f, p_IsCustom := p_IsCustom_7e2f334f, p_MetadataSource := p_MetadataSource_7e2f334f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7e2f334f, p_IntegrationObjectID := p_IntegrationObjectID_7e2f334f, p_Name := p_Name_7e2f334f, p_DisplayName := p_DisplayName_7e2f334f, p_Description := p_Description_7e2f334f, p_Category := p_Category_7e2f334f, p_Category_Clear := TRUE, p_Type := p_Type_7e2f334f, p_Length := p_Length_7e2f334f, p_Length_Clear := TRUE, p_Precision := p_Precision_7e2f334f, p_Precision_Clear := TRUE, p_Scale := p_Scale_7e2f334f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_7e2f334f, p_DefaultValue := p_DefaultValue_7e2f334f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_7e2f334f, p_IsUniqueKey := p_IsUniqueKey_7e2f334f, p_IsReadOnly := p_IsReadOnly_7e2f334f, p_IsRequired := p_IsRequired_7e2f334f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7e2f334f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7e2f334f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_7e2f334f, p_Configuration := p_Configuration_7e2f334f, p_Configuration_Clear := TRUE, p_Status := p_Status_7e2f334f, p_IsCustom := p_IsCustom_7e2f334f, p_MetadataSource := p_MetadataSource_7e2f334f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1228,16 +1228,16 @@ BEGIN
   p_DisplayName_2890c8b1 := 'History';
   p_Description_2890c8b1 := 'Record history: creation-method, completion-date, submission-date, last-modified-date, claimed, verified-email, verified-primary-email, deactivation-date. (history-3.0.xsd history)';
   p_Type_2890c8b1 := 'json';
-  p_AllowsNull_2890c8b1 := 1;
-  p_IsPrimaryKey_2890c8b1 := 0;
-  p_IsUniqueKey_2890c8b1 := 0;
-  p_IsReadOnly_2890c8b1 := 1;
-  p_IsRequired_2890c8b1 := 0;
+  p_AllowsNull_2890c8b1 := TRUE;
+  p_IsPrimaryKey_2890c8b1 := FALSE;
+  p_IsUniqueKey_2890c8b1 := FALSE;
+  p_IsReadOnly_2890c8b1 := TRUE;
+  p_IsRequired_2890c8b1 := FALSE;
   p_Sequence_2890c8b1 := 3;
   p_Status_2890c8b1 := 'Active';
-  p_IsCustom_2890c8b1 := 0;
+  p_IsCustom_2890c8b1 := FALSE;
   p_MetadataSource_2890c8b1 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2890c8b1, p_IntegrationObjectID := p_IntegrationObjectID_2890c8b1, p_Name := p_Name_2890c8b1, p_DisplayName := p_DisplayName_2890c8b1, p_Description := p_Description_2890c8b1, p_Category := p_Category_2890c8b1, p_Category_Clear := 1, p_Type := p_Type_2890c8b1, p_Length := p_Length_2890c8b1, p_Length_Clear := 1, p_Precision := p_Precision_2890c8b1, p_Precision_Clear := 1, p_Scale := p_Scale_2890c8b1, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_2890c8b1, p_DefaultValue := p_DefaultValue_2890c8b1, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_2890c8b1, p_IsUniqueKey := p_IsUniqueKey_2890c8b1, p_IsReadOnly := p_IsReadOnly_2890c8b1, p_IsRequired := p_IsRequired_2890c8b1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2890c8b1, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2890c8b1, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_2890c8b1, p_Configuration := p_Configuration_2890c8b1, p_Configuration_Clear := 1, p_Status := p_Status_2890c8b1, p_IsCustom := p_IsCustom_2890c8b1, p_MetadataSource := p_MetadataSource_2890c8b1);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2890c8b1, p_IntegrationObjectID := p_IntegrationObjectID_2890c8b1, p_Name := p_Name_2890c8b1, p_DisplayName := p_DisplayName_2890c8b1, p_Description := p_Description_2890c8b1, p_Category := p_Category_2890c8b1, p_Category_Clear := TRUE, p_Type := p_Type_2890c8b1, p_Length := p_Length_2890c8b1, p_Length_Clear := TRUE, p_Precision := p_Precision_2890c8b1, p_Precision_Clear := TRUE, p_Scale := p_Scale_2890c8b1, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_2890c8b1, p_DefaultValue := p_DefaultValue_2890c8b1, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_2890c8b1, p_IsUniqueKey := p_IsUniqueKey_2890c8b1, p_IsReadOnly := p_IsReadOnly_2890c8b1, p_IsRequired := p_IsRequired_2890c8b1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2890c8b1, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2890c8b1, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_2890c8b1, p_Configuration := p_Configuration_2890c8b1, p_Configuration_Clear := TRUE, p_Status := p_Status_2890c8b1, p_IsCustom := p_IsCustom_2890c8b1, p_MetadataSource := p_MetadataSource_2890c8b1);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1273,16 +1273,16 @@ BEGIN
   p_DisplayName_a59aa2f8 := 'Submission Date';
   p_Description_a59aa2f8 := 'The date-time the ORCID record was first created. (history-3.0.xsd submission-date, xs:dateTime)';
   p_Type_a59aa2f8 := 'DateTime';
-  p_AllowsNull_a59aa2f8 := 1;
-  p_IsPrimaryKey_a59aa2f8 := 0;
-  p_IsUniqueKey_a59aa2f8 := 0;
-  p_IsReadOnly_a59aa2f8 := 1;
-  p_IsRequired_a59aa2f8 := 0;
+  p_AllowsNull_a59aa2f8 := TRUE;
+  p_IsPrimaryKey_a59aa2f8 := FALSE;
+  p_IsUniqueKey_a59aa2f8 := FALSE;
+  p_IsReadOnly_a59aa2f8 := TRUE;
+  p_IsRequired_a59aa2f8 := FALSE;
   p_Sequence_a59aa2f8 := 4;
   p_Status_a59aa2f8 := 'Active';
-  p_IsCustom_a59aa2f8 := 0;
+  p_IsCustom_a59aa2f8 := FALSE;
   p_MetadataSource_a59aa2f8 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a59aa2f8, p_IntegrationObjectID := p_IntegrationObjectID_a59aa2f8, p_Name := p_Name_a59aa2f8, p_DisplayName := p_DisplayName_a59aa2f8, p_Description := p_Description_a59aa2f8, p_Category := p_Category_a59aa2f8, p_Category_Clear := 1, p_Type := p_Type_a59aa2f8, p_Length := p_Length_a59aa2f8, p_Length_Clear := 1, p_Precision := p_Precision_a59aa2f8, p_Precision_Clear := 1, p_Scale := p_Scale_a59aa2f8, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_a59aa2f8, p_DefaultValue := p_DefaultValue_a59aa2f8, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_a59aa2f8, p_IsUniqueKey := p_IsUniqueKey_a59aa2f8, p_IsReadOnly := p_IsReadOnly_a59aa2f8, p_IsRequired := p_IsRequired_a59aa2f8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a59aa2f8, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a59aa2f8, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_a59aa2f8, p_Configuration := p_Configuration_a59aa2f8, p_Configuration_Clear := 1, p_Status := p_Status_a59aa2f8, p_IsCustom := p_IsCustom_a59aa2f8, p_MetadataSource := p_MetadataSource_a59aa2f8);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a59aa2f8, p_IntegrationObjectID := p_IntegrationObjectID_a59aa2f8, p_Name := p_Name_a59aa2f8, p_DisplayName := p_DisplayName_a59aa2f8, p_Description := p_Description_a59aa2f8, p_Category := p_Category_a59aa2f8, p_Category_Clear := TRUE, p_Type := p_Type_a59aa2f8, p_Length := p_Length_a59aa2f8, p_Length_Clear := TRUE, p_Precision := p_Precision_a59aa2f8, p_Precision_Clear := TRUE, p_Scale := p_Scale_a59aa2f8, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_a59aa2f8, p_DefaultValue := p_DefaultValue_a59aa2f8, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_a59aa2f8, p_IsUniqueKey := p_IsUniqueKey_a59aa2f8, p_IsReadOnly := p_IsReadOnly_a59aa2f8, p_IsRequired := p_IsRequired_a59aa2f8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a59aa2f8, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a59aa2f8, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_a59aa2f8, p_Configuration := p_Configuration_a59aa2f8, p_Configuration_Clear := TRUE, p_Status := p_Status_a59aa2f8, p_IsCustom := p_IsCustom_a59aa2f8, p_MetadataSource := p_MetadataSource_a59aa2f8);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1318,16 +1318,16 @@ BEGIN
   p_DisplayName_5786beaf := 'Last Modified Date';
   p_Description_5786beaf := 'The date-time the record was last modified. Incremental watermark field for the record IO. (history-3.0.xsd / person-3.0.xsd last-modified-date, xs:dateTime)';
   p_Type_5786beaf := 'DateTime';
-  p_AllowsNull_5786beaf := 1;
-  p_IsPrimaryKey_5786beaf := 0;
-  p_IsUniqueKey_5786beaf := 0;
-  p_IsReadOnly_5786beaf := 1;
-  p_IsRequired_5786beaf := 0;
+  p_AllowsNull_5786beaf := TRUE;
+  p_IsPrimaryKey_5786beaf := FALSE;
+  p_IsUniqueKey_5786beaf := FALSE;
+  p_IsReadOnly_5786beaf := TRUE;
+  p_IsRequired_5786beaf := FALSE;
   p_Sequence_5786beaf := 5;
   p_Status_5786beaf := 'Active';
-  p_IsCustom_5786beaf := 0;
+  p_IsCustom_5786beaf := FALSE;
   p_MetadataSource_5786beaf := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5786beaf, p_IntegrationObjectID := p_IntegrationObjectID_5786beaf, p_Name := p_Name_5786beaf, p_DisplayName := p_DisplayName_5786beaf, p_Description := p_Description_5786beaf, p_Category := p_Category_5786beaf, p_Category_Clear := 1, p_Type := p_Type_5786beaf, p_Length := p_Length_5786beaf, p_Length_Clear := 1, p_Precision := p_Precision_5786beaf, p_Precision_Clear := 1, p_Scale := p_Scale_5786beaf, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5786beaf, p_DefaultValue := p_DefaultValue_5786beaf, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5786beaf, p_IsUniqueKey := p_IsUniqueKey_5786beaf, p_IsReadOnly := p_IsReadOnly_5786beaf, p_IsRequired := p_IsRequired_5786beaf, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5786beaf, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5786beaf, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_5786beaf, p_Configuration := p_Configuration_5786beaf, p_Configuration_Clear := 1, p_Status := p_Status_5786beaf, p_IsCustom := p_IsCustom_5786beaf, p_MetadataSource := p_MetadataSource_5786beaf);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5786beaf, p_IntegrationObjectID := p_IntegrationObjectID_5786beaf, p_Name := p_Name_5786beaf, p_DisplayName := p_DisplayName_5786beaf, p_Description := p_Description_5786beaf, p_Category := p_Category_5786beaf, p_Category_Clear := TRUE, p_Type := p_Type_5786beaf, p_Length := p_Length_5786beaf, p_Length_Clear := TRUE, p_Precision := p_Precision_5786beaf, p_Precision_Clear := TRUE, p_Scale := p_Scale_5786beaf, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5786beaf, p_DefaultValue := p_DefaultValue_5786beaf, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5786beaf, p_IsUniqueKey := p_IsUniqueKey_5786beaf, p_IsReadOnly := p_IsReadOnly_5786beaf, p_IsRequired := p_IsRequired_5786beaf, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5786beaf, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5786beaf, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_5786beaf, p_Configuration := p_Configuration_5786beaf, p_Configuration_Clear := TRUE, p_Status := p_Status_5786beaf, p_IsCustom := p_IsCustom_5786beaf, p_MetadataSource := p_MetadataSource_5786beaf);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1363,16 +1363,16 @@ BEGIN
   p_DisplayName_48ba86e7 := 'Verified Email';
   p_Description_48ba86e7 := 'True if the user has a verified email. (history-3.0.xsd verified-email, xs:boolean)';
   p_Type_48ba86e7 := 'Boolean';
-  p_AllowsNull_48ba86e7 := 1;
-  p_IsPrimaryKey_48ba86e7 := 0;
-  p_IsUniqueKey_48ba86e7 := 0;
-  p_IsReadOnly_48ba86e7 := 1;
-  p_IsRequired_48ba86e7 := 0;
+  p_AllowsNull_48ba86e7 := TRUE;
+  p_IsPrimaryKey_48ba86e7 := FALSE;
+  p_IsUniqueKey_48ba86e7 := FALSE;
+  p_IsReadOnly_48ba86e7 := TRUE;
+  p_IsRequired_48ba86e7 := FALSE;
   p_Sequence_48ba86e7 := 6;
   p_Status_48ba86e7 := 'Active';
-  p_IsCustom_48ba86e7 := 0;
+  p_IsCustom_48ba86e7 := FALSE;
   p_MetadataSource_48ba86e7 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_48ba86e7, p_IntegrationObjectID := p_IntegrationObjectID_48ba86e7, p_Name := p_Name_48ba86e7, p_DisplayName := p_DisplayName_48ba86e7, p_Description := p_Description_48ba86e7, p_Category := p_Category_48ba86e7, p_Category_Clear := 1, p_Type := p_Type_48ba86e7, p_Length := p_Length_48ba86e7, p_Length_Clear := 1, p_Precision := p_Precision_48ba86e7, p_Precision_Clear := 1, p_Scale := p_Scale_48ba86e7, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_48ba86e7, p_DefaultValue := p_DefaultValue_48ba86e7, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_48ba86e7, p_IsUniqueKey := p_IsUniqueKey_48ba86e7, p_IsReadOnly := p_IsReadOnly_48ba86e7, p_IsRequired := p_IsRequired_48ba86e7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_48ba86e7, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_48ba86e7, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_48ba86e7, p_Configuration := p_Configuration_48ba86e7, p_Configuration_Clear := 1, p_Status := p_Status_48ba86e7, p_IsCustom := p_IsCustom_48ba86e7, p_MetadataSource := p_MetadataSource_48ba86e7);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_48ba86e7, p_IntegrationObjectID := p_IntegrationObjectID_48ba86e7, p_Name := p_Name_48ba86e7, p_DisplayName := p_DisplayName_48ba86e7, p_Description := p_Description_48ba86e7, p_Category := p_Category_48ba86e7, p_Category_Clear := TRUE, p_Type := p_Type_48ba86e7, p_Length := p_Length_48ba86e7, p_Length_Clear := TRUE, p_Precision := p_Precision_48ba86e7, p_Precision_Clear := TRUE, p_Scale := p_Scale_48ba86e7, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_48ba86e7, p_DefaultValue := p_DefaultValue_48ba86e7, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_48ba86e7, p_IsUniqueKey := p_IsUniqueKey_48ba86e7, p_IsReadOnly := p_IsReadOnly_48ba86e7, p_IsRequired := p_IsRequired_48ba86e7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_48ba86e7, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_48ba86e7, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_48ba86e7, p_Configuration := p_Configuration_48ba86e7, p_Configuration_Clear := TRUE, p_Status := p_Status_48ba86e7, p_IsCustom := p_IsCustom_48ba86e7, p_MetadataSource := p_MetadataSource_48ba86e7);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1408,16 +1408,16 @@ BEGIN
   p_DisplayName_bd011972 := 'Claimed';
   p_Description_bd011972 := 'True if the record has been claimed by the researcher. (history-3.0.xsd claimed, xs:boolean)';
   p_Type_bd011972 := 'Boolean';
-  p_AllowsNull_bd011972 := 1;
-  p_IsPrimaryKey_bd011972 := 0;
-  p_IsUniqueKey_bd011972 := 0;
-  p_IsReadOnly_bd011972 := 1;
-  p_IsRequired_bd011972 := 0;
+  p_AllowsNull_bd011972 := TRUE;
+  p_IsPrimaryKey_bd011972 := FALSE;
+  p_IsUniqueKey_bd011972 := FALSE;
+  p_IsReadOnly_bd011972 := TRUE;
+  p_IsRequired_bd011972 := FALSE;
   p_Sequence_bd011972 := 7;
   p_Status_bd011972 := 'Active';
-  p_IsCustom_bd011972 := 0;
+  p_IsCustom_bd011972 := FALSE;
   p_MetadataSource_bd011972 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bd011972, p_IntegrationObjectID := p_IntegrationObjectID_bd011972, p_Name := p_Name_bd011972, p_DisplayName := p_DisplayName_bd011972, p_Description := p_Description_bd011972, p_Category := p_Category_bd011972, p_Category_Clear := 1, p_Type := p_Type_bd011972, p_Length := p_Length_bd011972, p_Length_Clear := 1, p_Precision := p_Precision_bd011972, p_Precision_Clear := 1, p_Scale := p_Scale_bd011972, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_bd011972, p_DefaultValue := p_DefaultValue_bd011972, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_bd011972, p_IsUniqueKey := p_IsUniqueKey_bd011972, p_IsReadOnly := p_IsReadOnly_bd011972, p_IsRequired := p_IsRequired_bd011972, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bd011972, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bd011972, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_bd011972, p_Configuration := p_Configuration_bd011972, p_Configuration_Clear := 1, p_Status := p_Status_bd011972, p_IsCustom := p_IsCustom_bd011972, p_MetadataSource := p_MetadataSource_bd011972);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bd011972, p_IntegrationObjectID := p_IntegrationObjectID_bd011972, p_Name := p_Name_bd011972, p_DisplayName := p_DisplayName_bd011972, p_Description := p_Description_bd011972, p_Category := p_Category_bd011972, p_Category_Clear := TRUE, p_Type := p_Type_bd011972, p_Length := p_Length_bd011972, p_Length_Clear := TRUE, p_Precision := p_Precision_bd011972, p_Precision_Clear := TRUE, p_Scale := p_Scale_bd011972, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_bd011972, p_DefaultValue := p_DefaultValue_bd011972, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_bd011972, p_IsUniqueKey := p_IsUniqueKey_bd011972, p_IsReadOnly := p_IsReadOnly_bd011972, p_IsRequired := p_IsRequired_bd011972, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bd011972, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bd011972, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_bd011972, p_Configuration := p_Configuration_bd011972, p_Configuration_Clear := TRUE, p_Status := p_Status_bd011972, p_IsCustom := p_IsCustom_bd011972, p_MetadataSource := p_MetadataSource_bd011972);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1454,16 +1454,16 @@ BEGIN
   p_Description_6766644d := 'Given (first) name(s) of the researcher. (personal-details-3.0.xsd name/given-names, common:string-150)';
   p_Type_6766644d := 'String';
   p_Length_6766644d := 150;
-  p_AllowsNull_6766644d := 1;
-  p_IsPrimaryKey_6766644d := 0;
-  p_IsUniqueKey_6766644d := 0;
-  p_IsReadOnly_6766644d := 1;
-  p_IsRequired_6766644d := 0;
+  p_AllowsNull_6766644d := TRUE;
+  p_IsPrimaryKey_6766644d := FALSE;
+  p_IsUniqueKey_6766644d := FALSE;
+  p_IsReadOnly_6766644d := TRUE;
+  p_IsRequired_6766644d := FALSE;
   p_Sequence_6766644d := 9;
   p_Status_6766644d := 'Active';
-  p_IsCustom_6766644d := 0;
+  p_IsCustom_6766644d := FALSE;
   p_MetadataSource_6766644d := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6766644d, p_IntegrationObjectID := p_IntegrationObjectID_6766644d, p_Name := p_Name_6766644d, p_DisplayName := p_DisplayName_6766644d, p_Description := p_Description_6766644d, p_Category := p_Category_6766644d, p_Category_Clear := 1, p_Type := p_Type_6766644d, p_Length := p_Length_6766644d, p_Precision := p_Precision_6766644d, p_Precision_Clear := 1, p_Scale := p_Scale_6766644d, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_6766644d, p_DefaultValue := p_DefaultValue_6766644d, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_6766644d, p_IsUniqueKey := p_IsUniqueKey_6766644d, p_IsReadOnly := p_IsReadOnly_6766644d, p_IsRequired := p_IsRequired_6766644d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6766644d, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6766644d, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_6766644d, p_Configuration := p_Configuration_6766644d, p_Configuration_Clear := 1, p_Status := p_Status_6766644d, p_IsCustom := p_IsCustom_6766644d, p_MetadataSource := p_MetadataSource_6766644d);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6766644d, p_IntegrationObjectID := p_IntegrationObjectID_6766644d, p_Name := p_Name_6766644d, p_DisplayName := p_DisplayName_6766644d, p_Description := p_Description_6766644d, p_Category := p_Category_6766644d, p_Category_Clear := TRUE, p_Type := p_Type_6766644d, p_Length := p_Length_6766644d, p_Precision := p_Precision_6766644d, p_Precision_Clear := TRUE, p_Scale := p_Scale_6766644d, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_6766644d, p_DefaultValue := p_DefaultValue_6766644d, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_6766644d, p_IsUniqueKey := p_IsUniqueKey_6766644d, p_IsReadOnly := p_IsReadOnly_6766644d, p_IsRequired := p_IsRequired_6766644d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6766644d, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6766644d, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_6766644d, p_Configuration := p_Configuration_6766644d, p_Configuration_Clear := TRUE, p_Status := p_Status_6766644d, p_IsCustom := p_IsCustom_6766644d, p_MetadataSource := p_MetadataSource_6766644d);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1499,16 +1499,16 @@ BEGIN
   p_DisplayName_e8d7abff := 'Person';
   p_Description_e8d7abff := 'Person section: name, biography, other-names, researcher-urls, emails, addresses, keywords, external-identifiers. Nested per non-enumerable architecture (person sub-structures are fields within the record IO). (person-3.0.xsd person)';
   p_Type_e8d7abff := 'json';
-  p_AllowsNull_e8d7abff := 1;
-  p_IsPrimaryKey_e8d7abff := 0;
-  p_IsUniqueKey_e8d7abff := 0;
-  p_IsReadOnly_e8d7abff := 1;
-  p_IsRequired_e8d7abff := 0;
+  p_AllowsNull_e8d7abff := TRUE;
+  p_IsPrimaryKey_e8d7abff := FALSE;
+  p_IsUniqueKey_e8d7abff := FALSE;
+  p_IsReadOnly_e8d7abff := TRUE;
+  p_IsRequired_e8d7abff := FALSE;
   p_Sequence_e8d7abff := 8;
   p_Status_e8d7abff := 'Active';
-  p_IsCustom_e8d7abff := 0;
+  p_IsCustom_e8d7abff := FALSE;
   p_MetadataSource_e8d7abff := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e8d7abff, p_IntegrationObjectID := p_IntegrationObjectID_e8d7abff, p_Name := p_Name_e8d7abff, p_DisplayName := p_DisplayName_e8d7abff, p_Description := p_Description_e8d7abff, p_Category := p_Category_e8d7abff, p_Category_Clear := 1, p_Type := p_Type_e8d7abff, p_Length := p_Length_e8d7abff, p_Length_Clear := 1, p_Precision := p_Precision_e8d7abff, p_Precision_Clear := 1, p_Scale := p_Scale_e8d7abff, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e8d7abff, p_DefaultValue := p_DefaultValue_e8d7abff, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e8d7abff, p_IsUniqueKey := p_IsUniqueKey_e8d7abff, p_IsReadOnly := p_IsReadOnly_e8d7abff, p_IsRequired := p_IsRequired_e8d7abff, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e8d7abff, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e8d7abff, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e8d7abff, p_Configuration := p_Configuration_e8d7abff, p_Configuration_Clear := 1, p_Status := p_Status_e8d7abff, p_IsCustom := p_IsCustom_e8d7abff, p_MetadataSource := p_MetadataSource_e8d7abff);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e8d7abff, p_IntegrationObjectID := p_IntegrationObjectID_e8d7abff, p_Name := p_Name_e8d7abff, p_DisplayName := p_DisplayName_e8d7abff, p_Description := p_Description_e8d7abff, p_Category := p_Category_e8d7abff, p_Category_Clear := TRUE, p_Type := p_Type_e8d7abff, p_Length := p_Length_e8d7abff, p_Length_Clear := TRUE, p_Precision := p_Precision_e8d7abff, p_Precision_Clear := TRUE, p_Scale := p_Scale_e8d7abff, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e8d7abff, p_DefaultValue := p_DefaultValue_e8d7abff, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e8d7abff, p_IsUniqueKey := p_IsUniqueKey_e8d7abff, p_IsReadOnly := p_IsReadOnly_e8d7abff, p_IsRequired := p_IsRequired_e8d7abff, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e8d7abff, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e8d7abff, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e8d7abff, p_Configuration := p_Configuration_e8d7abff, p_Configuration_Clear := TRUE, p_Status := p_Status_e8d7abff, p_IsCustom := p_IsCustom_e8d7abff, p_MetadataSource := p_MetadataSource_e8d7abff);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1545,16 +1545,16 @@ BEGIN
   p_Description_b5b34707 := 'Family (last) name of the researcher (optional — some cultures use only given names). (personal-details-3.0.xsd name/family-name, common:string-150)';
   p_Type_b5b34707 := 'String';
   p_Length_b5b34707 := 150;
-  p_AllowsNull_b5b34707 := 1;
-  p_IsPrimaryKey_b5b34707 := 0;
-  p_IsUniqueKey_b5b34707 := 0;
-  p_IsReadOnly_b5b34707 := 1;
-  p_IsRequired_b5b34707 := 0;
+  p_AllowsNull_b5b34707 := TRUE;
+  p_IsPrimaryKey_b5b34707 := FALSE;
+  p_IsUniqueKey_b5b34707 := FALSE;
+  p_IsReadOnly_b5b34707 := TRUE;
+  p_IsRequired_b5b34707 := FALSE;
   p_Sequence_b5b34707 := 10;
   p_Status_b5b34707 := 'Active';
-  p_IsCustom_b5b34707 := 0;
+  p_IsCustom_b5b34707 := FALSE;
   p_MetadataSource_b5b34707 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b5b34707, p_IntegrationObjectID := p_IntegrationObjectID_b5b34707, p_Name := p_Name_b5b34707, p_DisplayName := p_DisplayName_b5b34707, p_Description := p_Description_b5b34707, p_Category := p_Category_b5b34707, p_Category_Clear := 1, p_Type := p_Type_b5b34707, p_Length := p_Length_b5b34707, p_Precision := p_Precision_b5b34707, p_Precision_Clear := 1, p_Scale := p_Scale_b5b34707, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b5b34707, p_DefaultValue := p_DefaultValue_b5b34707, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b5b34707, p_IsUniqueKey := p_IsUniqueKey_b5b34707, p_IsReadOnly := p_IsReadOnly_b5b34707, p_IsRequired := p_IsRequired_b5b34707, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b5b34707, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b5b34707, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b5b34707, p_Configuration := p_Configuration_b5b34707, p_Configuration_Clear := 1, p_Status := p_Status_b5b34707, p_IsCustom := p_IsCustom_b5b34707, p_MetadataSource := p_MetadataSource_b5b34707);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b5b34707, p_IntegrationObjectID := p_IntegrationObjectID_b5b34707, p_Name := p_Name_b5b34707, p_DisplayName := p_DisplayName_b5b34707, p_Description := p_Description_b5b34707, p_Category := p_Category_b5b34707, p_Category_Clear := TRUE, p_Type := p_Type_b5b34707, p_Length := p_Length_b5b34707, p_Precision := p_Precision_b5b34707, p_Precision_Clear := TRUE, p_Scale := p_Scale_b5b34707, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b5b34707, p_DefaultValue := p_DefaultValue_b5b34707, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b5b34707, p_IsUniqueKey := p_IsUniqueKey_b5b34707, p_IsReadOnly := p_IsReadOnly_b5b34707, p_IsRequired := p_IsRequired_b5b34707, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b5b34707, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b5b34707, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b5b34707, p_Configuration := p_Configuration_b5b34707, p_Configuration_Clear := TRUE, p_Status := p_Status_b5b34707, p_IsCustom := p_IsCustom_b5b34707, p_MetadataSource := p_MetadataSource_b5b34707);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1591,16 +1591,16 @@ BEGIN
   p_Description_69544bc9 := 'Full name as the researcher prefers it displayed. (personal-details-3.0.xsd credit-name, common:string-150)';
   p_Type_69544bc9 := 'String';
   p_Length_69544bc9 := 150;
-  p_AllowsNull_69544bc9 := 1;
-  p_IsPrimaryKey_69544bc9 := 0;
-  p_IsUniqueKey_69544bc9 := 0;
-  p_IsReadOnly_69544bc9 := 1;
-  p_IsRequired_69544bc9 := 0;
+  p_AllowsNull_69544bc9 := TRUE;
+  p_IsPrimaryKey_69544bc9 := FALSE;
+  p_IsUniqueKey_69544bc9 := FALSE;
+  p_IsReadOnly_69544bc9 := TRUE;
+  p_IsRequired_69544bc9 := FALSE;
   p_Sequence_69544bc9 := 11;
   p_Status_69544bc9 := 'Active';
-  p_IsCustom_69544bc9 := 0;
+  p_IsCustom_69544bc9 := FALSE;
   p_MetadataSource_69544bc9 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_69544bc9, p_IntegrationObjectID := p_IntegrationObjectID_69544bc9, p_Name := p_Name_69544bc9, p_DisplayName := p_DisplayName_69544bc9, p_Description := p_Description_69544bc9, p_Category := p_Category_69544bc9, p_Category_Clear := 1, p_Type := p_Type_69544bc9, p_Length := p_Length_69544bc9, p_Precision := p_Precision_69544bc9, p_Precision_Clear := 1, p_Scale := p_Scale_69544bc9, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_69544bc9, p_DefaultValue := p_DefaultValue_69544bc9, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_69544bc9, p_IsUniqueKey := p_IsUniqueKey_69544bc9, p_IsReadOnly := p_IsReadOnly_69544bc9, p_IsRequired := p_IsRequired_69544bc9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_69544bc9, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_69544bc9, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_69544bc9, p_Configuration := p_Configuration_69544bc9, p_Configuration_Clear := 1, p_Status := p_Status_69544bc9, p_IsCustom := p_IsCustom_69544bc9, p_MetadataSource := p_MetadataSource_69544bc9);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_69544bc9, p_IntegrationObjectID := p_IntegrationObjectID_69544bc9, p_Name := p_Name_69544bc9, p_DisplayName := p_DisplayName_69544bc9, p_Description := p_Description_69544bc9, p_Category := p_Category_69544bc9, p_Category_Clear := TRUE, p_Type := p_Type_69544bc9, p_Length := p_Length_69544bc9, p_Precision := p_Precision_69544bc9, p_Precision_Clear := TRUE, p_Scale := p_Scale_69544bc9, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_69544bc9, p_DefaultValue := p_DefaultValue_69544bc9, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_69544bc9, p_IsUniqueKey := p_IsUniqueKey_69544bc9, p_IsReadOnly := p_IsReadOnly_69544bc9, p_IsRequired := p_IsRequired_69544bc9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_69544bc9, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_69544bc9, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_69544bc9, p_Configuration := p_Configuration_69544bc9, p_Configuration_Clear := TRUE, p_Status := p_Status_69544bc9, p_IsCustom := p_IsCustom_69544bc9, p_MetadataSource := p_MetadataSource_69544bc9);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1636,16 +1636,16 @@ BEGIN
   p_DisplayName_a81f15f6 := 'Biography';
   p_Description_a81f15f6 := 'The researcher biography content. (personal-details-3.0.xsd biography/content, common:non-empty-string)';
   p_Type_a81f15f6 := 'String';
-  p_AllowsNull_a81f15f6 := 1;
-  p_IsPrimaryKey_a81f15f6 := 0;
-  p_IsUniqueKey_a81f15f6 := 0;
-  p_IsReadOnly_a81f15f6 := 1;
-  p_IsRequired_a81f15f6 := 0;
+  p_AllowsNull_a81f15f6 := TRUE;
+  p_IsPrimaryKey_a81f15f6 := FALSE;
+  p_IsUniqueKey_a81f15f6 := FALSE;
+  p_IsReadOnly_a81f15f6 := TRUE;
+  p_IsRequired_a81f15f6 := FALSE;
   p_Sequence_a81f15f6 := 12;
   p_Status_a81f15f6 := 'Active';
-  p_IsCustom_a81f15f6 := 0;
+  p_IsCustom_a81f15f6 := FALSE;
   p_MetadataSource_a81f15f6 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a81f15f6, p_IntegrationObjectID := p_IntegrationObjectID_a81f15f6, p_Name := p_Name_a81f15f6, p_DisplayName := p_DisplayName_a81f15f6, p_Description := p_Description_a81f15f6, p_Category := p_Category_a81f15f6, p_Category_Clear := 1, p_Type := p_Type_a81f15f6, p_Length := p_Length_a81f15f6, p_Length_Clear := 1, p_Precision := p_Precision_a81f15f6, p_Precision_Clear := 1, p_Scale := p_Scale_a81f15f6, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_a81f15f6, p_DefaultValue := p_DefaultValue_a81f15f6, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_a81f15f6, p_IsUniqueKey := p_IsUniqueKey_a81f15f6, p_IsReadOnly := p_IsReadOnly_a81f15f6, p_IsRequired := p_IsRequired_a81f15f6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a81f15f6, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a81f15f6, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_a81f15f6, p_Configuration := p_Configuration_a81f15f6, p_Configuration_Clear := 1, p_Status := p_Status_a81f15f6, p_IsCustom := p_IsCustom_a81f15f6, p_MetadataSource := p_MetadataSource_a81f15f6);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a81f15f6, p_IntegrationObjectID := p_IntegrationObjectID_a81f15f6, p_Name := p_Name_a81f15f6, p_DisplayName := p_DisplayName_a81f15f6, p_Description := p_Description_a81f15f6, p_Category := p_Category_a81f15f6, p_Category_Clear := TRUE, p_Type := p_Type_a81f15f6, p_Length := p_Length_a81f15f6, p_Length_Clear := TRUE, p_Precision := p_Precision_a81f15f6, p_Precision_Clear := TRUE, p_Scale := p_Scale_a81f15f6, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_a81f15f6, p_DefaultValue := p_DefaultValue_a81f15f6, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_a81f15f6, p_IsUniqueKey := p_IsUniqueKey_a81f15f6, p_IsReadOnly := p_IsReadOnly_a81f15f6, p_IsRequired := p_IsRequired_a81f15f6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a81f15f6, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a81f15f6, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_a81f15f6, p_Configuration := p_Configuration_a81f15f6, p_Configuration_Clear := TRUE, p_Status := p_Status_a81f15f6, p_IsCustom := p_IsCustom_a81f15f6, p_MetadataSource := p_MetadataSource_a81f15f6);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1681,16 +1681,16 @@ BEGIN
   p_DisplayName_c71a4182 := 'Emails';
   p_Description_c71a4182 := 'Emails collection. (person-3.0.xsd ref email:emails; email-3.0.xsd)';
   p_Type_c71a4182 := 'json';
-  p_AllowsNull_c71a4182 := 1;
-  p_IsPrimaryKey_c71a4182 := 0;
-  p_IsUniqueKey_c71a4182 := 0;
-  p_IsReadOnly_c71a4182 := 1;
-  p_IsRequired_c71a4182 := 0;
+  p_AllowsNull_c71a4182 := TRUE;
+  p_IsPrimaryKey_c71a4182 := FALSE;
+  p_IsUniqueKey_c71a4182 := FALSE;
+  p_IsReadOnly_c71a4182 := TRUE;
+  p_IsRequired_c71a4182 := FALSE;
   p_Sequence_c71a4182 := 13;
   p_Status_c71a4182 := 'Active';
-  p_IsCustom_c71a4182 := 0;
+  p_IsCustom_c71a4182 := FALSE;
   p_MetadataSource_c71a4182 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c71a4182, p_IntegrationObjectID := p_IntegrationObjectID_c71a4182, p_Name := p_Name_c71a4182, p_DisplayName := p_DisplayName_c71a4182, p_Description := p_Description_c71a4182, p_Category := p_Category_c71a4182, p_Category_Clear := 1, p_Type := p_Type_c71a4182, p_Length := p_Length_c71a4182, p_Length_Clear := 1, p_Precision := p_Precision_c71a4182, p_Precision_Clear := 1, p_Scale := p_Scale_c71a4182, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c71a4182, p_DefaultValue := p_DefaultValue_c71a4182, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c71a4182, p_IsUniqueKey := p_IsUniqueKey_c71a4182, p_IsReadOnly := p_IsReadOnly_c71a4182, p_IsRequired := p_IsRequired_c71a4182, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c71a4182, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c71a4182, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c71a4182, p_Configuration := p_Configuration_c71a4182, p_Configuration_Clear := 1, p_Status := p_Status_c71a4182, p_IsCustom := p_IsCustom_c71a4182, p_MetadataSource := p_MetadataSource_c71a4182);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c71a4182, p_IntegrationObjectID := p_IntegrationObjectID_c71a4182, p_Name := p_Name_c71a4182, p_DisplayName := p_DisplayName_c71a4182, p_Description := p_Description_c71a4182, p_Category := p_Category_c71a4182, p_Category_Clear := TRUE, p_Type := p_Type_c71a4182, p_Length := p_Length_c71a4182, p_Length_Clear := TRUE, p_Precision := p_Precision_c71a4182, p_Precision_Clear := TRUE, p_Scale := p_Scale_c71a4182, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c71a4182, p_DefaultValue := p_DefaultValue_c71a4182, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c71a4182, p_IsUniqueKey := p_IsUniqueKey_c71a4182, p_IsReadOnly := p_IsReadOnly_c71a4182, p_IsRequired := p_IsRequired_c71a4182, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c71a4182, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c71a4182, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c71a4182, p_Configuration := p_Configuration_c71a4182, p_Configuration_Clear := TRUE, p_Status := p_Status_c71a4182, p_IsCustom := p_IsCustom_c71a4182, p_MetadataSource := p_MetadataSource_c71a4182);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1726,16 +1726,16 @@ BEGIN
   p_DisplayName_07324754 := 'Researcher Urls';
   p_Description_07324754 := 'Researcher URLs collection. (person-3.0.xsd ref researcher-url:researcher-urls)';
   p_Type_07324754 := 'json';
-  p_AllowsNull_07324754 := 1;
-  p_IsPrimaryKey_07324754 := 0;
-  p_IsUniqueKey_07324754 := 0;
-  p_IsReadOnly_07324754 := 1;
-  p_IsRequired_07324754 := 0;
+  p_AllowsNull_07324754 := TRUE;
+  p_IsPrimaryKey_07324754 := FALSE;
+  p_IsUniqueKey_07324754 := FALSE;
+  p_IsReadOnly_07324754 := TRUE;
+  p_IsRequired_07324754 := FALSE;
   p_Sequence_07324754 := 14;
   p_Status_07324754 := 'Active';
-  p_IsCustom_07324754 := 0;
+  p_IsCustom_07324754 := FALSE;
   p_MetadataSource_07324754 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_07324754, p_IntegrationObjectID := p_IntegrationObjectID_07324754, p_Name := p_Name_07324754, p_DisplayName := p_DisplayName_07324754, p_Description := p_Description_07324754, p_Category := p_Category_07324754, p_Category_Clear := 1, p_Type := p_Type_07324754, p_Length := p_Length_07324754, p_Length_Clear := 1, p_Precision := p_Precision_07324754, p_Precision_Clear := 1, p_Scale := p_Scale_07324754, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_07324754, p_DefaultValue := p_DefaultValue_07324754, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_07324754, p_IsUniqueKey := p_IsUniqueKey_07324754, p_IsReadOnly := p_IsReadOnly_07324754, p_IsRequired := p_IsRequired_07324754, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_07324754, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_07324754, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_07324754, p_Configuration := p_Configuration_07324754, p_Configuration_Clear := 1, p_Status := p_Status_07324754, p_IsCustom := p_IsCustom_07324754, p_MetadataSource := p_MetadataSource_07324754);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_07324754, p_IntegrationObjectID := p_IntegrationObjectID_07324754, p_Name := p_Name_07324754, p_DisplayName := p_DisplayName_07324754, p_Description := p_Description_07324754, p_Category := p_Category_07324754, p_Category_Clear := TRUE, p_Type := p_Type_07324754, p_Length := p_Length_07324754, p_Length_Clear := TRUE, p_Precision := p_Precision_07324754, p_Precision_Clear := TRUE, p_Scale := p_Scale_07324754, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_07324754, p_DefaultValue := p_DefaultValue_07324754, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_07324754, p_IsUniqueKey := p_IsUniqueKey_07324754, p_IsReadOnly := p_IsReadOnly_07324754, p_IsRequired := p_IsRequired_07324754, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_07324754, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_07324754, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_07324754, p_Configuration := p_Configuration_07324754, p_Configuration_Clear := TRUE, p_Status := p_Status_07324754, p_IsCustom := p_IsCustom_07324754, p_MetadataSource := p_MetadataSource_07324754);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1771,16 +1771,16 @@ BEGIN
   p_DisplayName_b6769ef3 := 'Keywords';
   p_Description_b6769ef3 := 'Keywords collection. (person-3.0.xsd ref keyword:keywords)';
   p_Type_b6769ef3 := 'json';
-  p_AllowsNull_b6769ef3 := 1;
-  p_IsPrimaryKey_b6769ef3 := 0;
-  p_IsUniqueKey_b6769ef3 := 0;
-  p_IsReadOnly_b6769ef3 := 1;
-  p_IsRequired_b6769ef3 := 0;
+  p_AllowsNull_b6769ef3 := TRUE;
+  p_IsPrimaryKey_b6769ef3 := FALSE;
+  p_IsUniqueKey_b6769ef3 := FALSE;
+  p_IsReadOnly_b6769ef3 := TRUE;
+  p_IsRequired_b6769ef3 := FALSE;
   p_Sequence_b6769ef3 := 15;
   p_Status_b6769ef3 := 'Active';
-  p_IsCustom_b6769ef3 := 0;
+  p_IsCustom_b6769ef3 := FALSE;
   p_MetadataSource_b6769ef3 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b6769ef3, p_IntegrationObjectID := p_IntegrationObjectID_b6769ef3, p_Name := p_Name_b6769ef3, p_DisplayName := p_DisplayName_b6769ef3, p_Description := p_Description_b6769ef3, p_Category := p_Category_b6769ef3, p_Category_Clear := 1, p_Type := p_Type_b6769ef3, p_Length := p_Length_b6769ef3, p_Length_Clear := 1, p_Precision := p_Precision_b6769ef3, p_Precision_Clear := 1, p_Scale := p_Scale_b6769ef3, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b6769ef3, p_DefaultValue := p_DefaultValue_b6769ef3, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b6769ef3, p_IsUniqueKey := p_IsUniqueKey_b6769ef3, p_IsReadOnly := p_IsReadOnly_b6769ef3, p_IsRequired := p_IsRequired_b6769ef3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b6769ef3, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b6769ef3, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b6769ef3, p_Configuration := p_Configuration_b6769ef3, p_Configuration_Clear := 1, p_Status := p_Status_b6769ef3, p_IsCustom := p_IsCustom_b6769ef3, p_MetadataSource := p_MetadataSource_b6769ef3);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b6769ef3, p_IntegrationObjectID := p_IntegrationObjectID_b6769ef3, p_Name := p_Name_b6769ef3, p_DisplayName := p_DisplayName_b6769ef3, p_Description := p_Description_b6769ef3, p_Category := p_Category_b6769ef3, p_Category_Clear := TRUE, p_Type := p_Type_b6769ef3, p_Length := p_Length_b6769ef3, p_Length_Clear := TRUE, p_Precision := p_Precision_b6769ef3, p_Precision_Clear := TRUE, p_Scale := p_Scale_b6769ef3, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b6769ef3, p_DefaultValue := p_DefaultValue_b6769ef3, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b6769ef3, p_IsUniqueKey := p_IsUniqueKey_b6769ef3, p_IsReadOnly := p_IsReadOnly_b6769ef3, p_IsRequired := p_IsRequired_b6769ef3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b6769ef3, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b6769ef3, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b6769ef3, p_Configuration := p_Configuration_b6769ef3, p_Configuration_Clear := TRUE, p_Status := p_Status_b6769ef3, p_IsCustom := p_IsCustom_b6769ef3, p_MetadataSource := p_MetadataSource_b6769ef3);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1816,16 +1816,16 @@ BEGIN
   p_DisplayName_bb5d4910 := 'Other Names';
   p_Description_bb5d4910 := 'Other names collection. (person-3.0.xsd ref other-name:other-names)';
   p_Type_bb5d4910 := 'json';
-  p_AllowsNull_bb5d4910 := 1;
-  p_IsPrimaryKey_bb5d4910 := 0;
-  p_IsUniqueKey_bb5d4910 := 0;
-  p_IsReadOnly_bb5d4910 := 1;
-  p_IsRequired_bb5d4910 := 0;
+  p_AllowsNull_bb5d4910 := TRUE;
+  p_IsPrimaryKey_bb5d4910 := FALSE;
+  p_IsUniqueKey_bb5d4910 := FALSE;
+  p_IsReadOnly_bb5d4910 := TRUE;
+  p_IsRequired_bb5d4910 := FALSE;
   p_Sequence_bb5d4910 := 16;
   p_Status_bb5d4910 := 'Active';
-  p_IsCustom_bb5d4910 := 0;
+  p_IsCustom_bb5d4910 := FALSE;
   p_MetadataSource_bb5d4910 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bb5d4910, p_IntegrationObjectID := p_IntegrationObjectID_bb5d4910, p_Name := p_Name_bb5d4910, p_DisplayName := p_DisplayName_bb5d4910, p_Description := p_Description_bb5d4910, p_Category := p_Category_bb5d4910, p_Category_Clear := 1, p_Type := p_Type_bb5d4910, p_Length := p_Length_bb5d4910, p_Length_Clear := 1, p_Precision := p_Precision_bb5d4910, p_Precision_Clear := 1, p_Scale := p_Scale_bb5d4910, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_bb5d4910, p_DefaultValue := p_DefaultValue_bb5d4910, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_bb5d4910, p_IsUniqueKey := p_IsUniqueKey_bb5d4910, p_IsReadOnly := p_IsReadOnly_bb5d4910, p_IsRequired := p_IsRequired_bb5d4910, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bb5d4910, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bb5d4910, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_bb5d4910, p_Configuration := p_Configuration_bb5d4910, p_Configuration_Clear := 1, p_Status := p_Status_bb5d4910, p_IsCustom := p_IsCustom_bb5d4910, p_MetadataSource := p_MetadataSource_bb5d4910);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bb5d4910, p_IntegrationObjectID := p_IntegrationObjectID_bb5d4910, p_Name := p_Name_bb5d4910, p_DisplayName := p_DisplayName_bb5d4910, p_Description := p_Description_bb5d4910, p_Category := p_Category_bb5d4910, p_Category_Clear := TRUE, p_Type := p_Type_bb5d4910, p_Length := p_Length_bb5d4910, p_Length_Clear := TRUE, p_Precision := p_Precision_bb5d4910, p_Precision_Clear := TRUE, p_Scale := p_Scale_bb5d4910, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_bb5d4910, p_DefaultValue := p_DefaultValue_bb5d4910, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_bb5d4910, p_IsUniqueKey := p_IsUniqueKey_bb5d4910, p_IsReadOnly := p_IsReadOnly_bb5d4910, p_IsRequired := p_IsRequired_bb5d4910, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bb5d4910, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bb5d4910, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_bb5d4910, p_Configuration := p_Configuration_bb5d4910, p_Configuration_Clear := TRUE, p_Status := p_Status_bb5d4910, p_IsCustom := p_IsCustom_bb5d4910, p_MetadataSource := p_MetadataSource_bb5d4910);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1861,16 +1861,16 @@ BEGIN
   p_DisplayName_c59ebd46 := 'Addresses';
   p_Description_c59ebd46 := 'Addresses (country) collection. (person-3.0.xsd ref address:addresses)';
   p_Type_c59ebd46 := 'json';
-  p_AllowsNull_c59ebd46 := 1;
-  p_IsPrimaryKey_c59ebd46 := 0;
-  p_IsUniqueKey_c59ebd46 := 0;
-  p_IsReadOnly_c59ebd46 := 1;
-  p_IsRequired_c59ebd46 := 0;
+  p_AllowsNull_c59ebd46 := TRUE;
+  p_IsPrimaryKey_c59ebd46 := FALSE;
+  p_IsUniqueKey_c59ebd46 := FALSE;
+  p_IsReadOnly_c59ebd46 := TRUE;
+  p_IsRequired_c59ebd46 := FALSE;
   p_Sequence_c59ebd46 := 17;
   p_Status_c59ebd46 := 'Active';
-  p_IsCustom_c59ebd46 := 0;
+  p_IsCustom_c59ebd46 := FALSE;
   p_MetadataSource_c59ebd46 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c59ebd46, p_IntegrationObjectID := p_IntegrationObjectID_c59ebd46, p_Name := p_Name_c59ebd46, p_DisplayName := p_DisplayName_c59ebd46, p_Description := p_Description_c59ebd46, p_Category := p_Category_c59ebd46, p_Category_Clear := 1, p_Type := p_Type_c59ebd46, p_Length := p_Length_c59ebd46, p_Length_Clear := 1, p_Precision := p_Precision_c59ebd46, p_Precision_Clear := 1, p_Scale := p_Scale_c59ebd46, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c59ebd46, p_DefaultValue := p_DefaultValue_c59ebd46, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c59ebd46, p_IsUniqueKey := p_IsUniqueKey_c59ebd46, p_IsReadOnly := p_IsReadOnly_c59ebd46, p_IsRequired := p_IsRequired_c59ebd46, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c59ebd46, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c59ebd46, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c59ebd46, p_Configuration := p_Configuration_c59ebd46, p_Configuration_Clear := 1, p_Status := p_Status_c59ebd46, p_IsCustom := p_IsCustom_c59ebd46, p_MetadataSource := p_MetadataSource_c59ebd46);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c59ebd46, p_IntegrationObjectID := p_IntegrationObjectID_c59ebd46, p_Name := p_Name_c59ebd46, p_DisplayName := p_DisplayName_c59ebd46, p_Description := p_Description_c59ebd46, p_Category := p_Category_c59ebd46, p_Category_Clear := TRUE, p_Type := p_Type_c59ebd46, p_Length := p_Length_c59ebd46, p_Length_Clear := TRUE, p_Precision := p_Precision_c59ebd46, p_Precision_Clear := TRUE, p_Scale := p_Scale_c59ebd46, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c59ebd46, p_DefaultValue := p_DefaultValue_c59ebd46, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c59ebd46, p_IsUniqueKey := p_IsUniqueKey_c59ebd46, p_IsReadOnly := p_IsReadOnly_c59ebd46, p_IsRequired := p_IsRequired_c59ebd46, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c59ebd46, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c59ebd46, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c59ebd46, p_Configuration := p_Configuration_c59ebd46, p_Configuration_Clear := TRUE, p_Status := p_Status_c59ebd46, p_IsCustom := p_IsCustom_c59ebd46, p_MetadataSource := p_MetadataSource_c59ebd46);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1906,16 +1906,16 @@ BEGIN
   p_DisplayName_e093fe6f := 'External Identifiers';
   p_Description_e093fe6f := 'Person external identifiers collection. (person-3.0.xsd ref external-identifier:external-identifiers)';
   p_Type_e093fe6f := 'json';
-  p_AllowsNull_e093fe6f := 1;
-  p_IsPrimaryKey_e093fe6f := 0;
-  p_IsUniqueKey_e093fe6f := 0;
-  p_IsReadOnly_e093fe6f := 1;
-  p_IsRequired_e093fe6f := 0;
+  p_AllowsNull_e093fe6f := TRUE;
+  p_IsPrimaryKey_e093fe6f := FALSE;
+  p_IsUniqueKey_e093fe6f := FALSE;
+  p_IsReadOnly_e093fe6f := TRUE;
+  p_IsRequired_e093fe6f := FALSE;
   p_Sequence_e093fe6f := 18;
   p_Status_e093fe6f := 'Active';
-  p_IsCustom_e093fe6f := 0;
+  p_IsCustom_e093fe6f := FALSE;
   p_MetadataSource_e093fe6f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e093fe6f, p_IntegrationObjectID := p_IntegrationObjectID_e093fe6f, p_Name := p_Name_e093fe6f, p_DisplayName := p_DisplayName_e093fe6f, p_Description := p_Description_e093fe6f, p_Category := p_Category_e093fe6f, p_Category_Clear := 1, p_Type := p_Type_e093fe6f, p_Length := p_Length_e093fe6f, p_Length_Clear := 1, p_Precision := p_Precision_e093fe6f, p_Precision_Clear := 1, p_Scale := p_Scale_e093fe6f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e093fe6f, p_DefaultValue := p_DefaultValue_e093fe6f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e093fe6f, p_IsUniqueKey := p_IsUniqueKey_e093fe6f, p_IsReadOnly := p_IsReadOnly_e093fe6f, p_IsRequired := p_IsRequired_e093fe6f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e093fe6f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e093fe6f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e093fe6f, p_Configuration := p_Configuration_e093fe6f, p_Configuration_Clear := 1, p_Status := p_Status_e093fe6f, p_IsCustom := p_IsCustom_e093fe6f, p_MetadataSource := p_MetadataSource_e093fe6f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e093fe6f, p_IntegrationObjectID := p_IntegrationObjectID_e093fe6f, p_Name := p_Name_e093fe6f, p_DisplayName := p_DisplayName_e093fe6f, p_Description := p_Description_e093fe6f, p_Category := p_Category_e093fe6f, p_Category_Clear := TRUE, p_Type := p_Type_e093fe6f, p_Length := p_Length_e093fe6f, p_Length_Clear := TRUE, p_Precision := p_Precision_e093fe6f, p_Precision_Clear := TRUE, p_Scale := p_Scale_e093fe6f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e093fe6f, p_DefaultValue := p_DefaultValue_e093fe6f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e093fe6f, p_IsUniqueKey := p_IsUniqueKey_e093fe6f, p_IsReadOnly := p_IsReadOnly_e093fe6f, p_IsRequired := p_IsRequired_e093fe6f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e093fe6f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e093fe6f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e093fe6f, p_Configuration := p_Configuration_e093fe6f, p_Configuration_Clear := TRUE, p_Status := p_Status_e093fe6f, p_IsCustom := p_IsCustom_e093fe6f, p_MetadataSource := p_MetadataSource_e093fe6f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1952,18 +1952,18 @@ BEGIN
   p_Description_be54bbe1 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_be54bbe1 := 'String';
   p_Length_be54bbe1 := 19;
-  p_AllowsNull_be54bbe1 := 1;
-  p_IsPrimaryKey_be54bbe1 := 0;
-  p_IsUniqueKey_be54bbe1 := 0;
-  p_IsReadOnly_be54bbe1 := 1;
-  p_IsRequired_be54bbe1 := 1;
+  p_AllowsNull_be54bbe1 := TRUE;
+  p_IsPrimaryKey_be54bbe1 := FALSE;
+  p_IsUniqueKey_be54bbe1 := FALSE;
+  p_IsReadOnly_be54bbe1 := TRUE;
+  p_IsRequired_be54bbe1 := TRUE;
   p_RelatedIntegrationObjectID_be54bbe1 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_be54bbe1 := 'orcid-id';
   p_Sequence_be54bbe1 := 0;
   p_Status_be54bbe1 := 'Active';
-  p_IsCustom_be54bbe1 := 0;
+  p_IsCustom_be54bbe1 := FALSE;
   p_MetadataSource_be54bbe1 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_be54bbe1, p_IntegrationObjectID := p_IntegrationObjectID_be54bbe1, p_Name := p_Name_be54bbe1, p_DisplayName := p_DisplayName_be54bbe1, p_Description := p_Description_be54bbe1, p_Category := p_Category_be54bbe1, p_Category_Clear := 1, p_Type := p_Type_be54bbe1, p_Length := p_Length_be54bbe1, p_Precision := p_Precision_be54bbe1, p_Precision_Clear := 1, p_Scale := p_Scale_be54bbe1, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_be54bbe1, p_DefaultValue := p_DefaultValue_be54bbe1, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_be54bbe1, p_IsUniqueKey := p_IsUniqueKey_be54bbe1, p_IsReadOnly := p_IsReadOnly_be54bbe1, p_IsRequired := p_IsRequired_be54bbe1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_be54bbe1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_be54bbe1, p_Sequence := p_Sequence_be54bbe1, p_Configuration := p_Configuration_be54bbe1, p_Configuration_Clear := 1, p_Status := p_Status_be54bbe1, p_IsCustom := p_IsCustom_be54bbe1, p_MetadataSource := p_MetadataSource_be54bbe1);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_be54bbe1, p_IntegrationObjectID := p_IntegrationObjectID_be54bbe1, p_Name := p_Name_be54bbe1, p_DisplayName := p_DisplayName_be54bbe1, p_Description := p_Description_be54bbe1, p_Category := p_Category_be54bbe1, p_Category_Clear := TRUE, p_Type := p_Type_be54bbe1, p_Length := p_Length_be54bbe1, p_Precision := p_Precision_be54bbe1, p_Precision_Clear := TRUE, p_Scale := p_Scale_be54bbe1, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_be54bbe1, p_DefaultValue := p_DefaultValue_be54bbe1, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_be54bbe1, p_IsUniqueKey := p_IsUniqueKey_be54bbe1, p_IsReadOnly := p_IsReadOnly_be54bbe1, p_IsRequired := p_IsRequired_be54bbe1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_be54bbe1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_be54bbe1, p_Sequence := p_Sequence_be54bbe1, p_Configuration := p_Configuration_be54bbe1, p_Configuration_Clear := TRUE, p_Status := p_Status_be54bbe1, p_IsCustom := p_IsCustom_be54bbe1, p_MetadataSource := p_MetadataSource_be54bbe1);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -1999,16 +1999,16 @@ BEGIN
   p_DisplayName_1defbb38 := 'Put Code';
   p_Description_1defbb38 := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_1defbb38 := 'Integer';
-  p_AllowsNull_1defbb38 := 0;
-  p_IsPrimaryKey_1defbb38 := 1;
-  p_IsUniqueKey_1defbb38 := 1;
-  p_IsReadOnly_1defbb38 := 1;
-  p_IsRequired_1defbb38 := 1;
+  p_AllowsNull_1defbb38 := FALSE;
+  p_IsPrimaryKey_1defbb38 := TRUE;
+  p_IsUniqueKey_1defbb38 := TRUE;
+  p_IsReadOnly_1defbb38 := TRUE;
+  p_IsRequired_1defbb38 := TRUE;
   p_Sequence_1defbb38 := 1;
   p_Status_1defbb38 := 'Active';
-  p_IsCustom_1defbb38 := 0;
+  p_IsCustom_1defbb38 := FALSE;
   p_MetadataSource_1defbb38 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1defbb38, p_IntegrationObjectID := p_IntegrationObjectID_1defbb38, p_Name := p_Name_1defbb38, p_DisplayName := p_DisplayName_1defbb38, p_Description := p_Description_1defbb38, p_Category := p_Category_1defbb38, p_Category_Clear := 1, p_Type := p_Type_1defbb38, p_Length := p_Length_1defbb38, p_Length_Clear := 1, p_Precision := p_Precision_1defbb38, p_Precision_Clear := 1, p_Scale := p_Scale_1defbb38, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_1defbb38, p_DefaultValue := p_DefaultValue_1defbb38, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_1defbb38, p_IsUniqueKey := p_IsUniqueKey_1defbb38, p_IsReadOnly := p_IsReadOnly_1defbb38, p_IsRequired := p_IsRequired_1defbb38, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1defbb38, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1defbb38, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_1defbb38, p_Configuration := p_Configuration_1defbb38, p_Configuration_Clear := 1, p_Status := p_Status_1defbb38, p_IsCustom := p_IsCustom_1defbb38, p_MetadataSource := p_MetadataSource_1defbb38);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1defbb38, p_IntegrationObjectID := p_IntegrationObjectID_1defbb38, p_Name := p_Name_1defbb38, p_DisplayName := p_DisplayName_1defbb38, p_Description := p_Description_1defbb38, p_Category := p_Category_1defbb38, p_Category_Clear := TRUE, p_Type := p_Type_1defbb38, p_Length := p_Length_1defbb38, p_Length_Clear := TRUE, p_Precision := p_Precision_1defbb38, p_Precision_Clear := TRUE, p_Scale := p_Scale_1defbb38, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_1defbb38, p_DefaultValue := p_DefaultValue_1defbb38, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_1defbb38, p_IsUniqueKey := p_IsUniqueKey_1defbb38, p_IsReadOnly := p_IsReadOnly_1defbb38, p_IsRequired := p_IsRequired_1defbb38, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1defbb38, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1defbb38, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_1defbb38, p_Configuration := p_Configuration_1defbb38, p_Configuration_Clear := TRUE, p_Status := p_Status_1defbb38, p_IsCustom := p_IsCustom_1defbb38, p_MetadataSource := p_MetadataSource_1defbb38);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2045,16 +2045,16 @@ BEGIN
   p_Description_9fd33cbb := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_9fd33cbb := 'String';
   p_Length_9fd33cbb := 500;
-  p_AllowsNull_9fd33cbb := 1;
-  p_IsPrimaryKey_9fd33cbb := 0;
-  p_IsUniqueKey_9fd33cbb := 0;
-  p_IsReadOnly_9fd33cbb := 1;
-  p_IsRequired_9fd33cbb := 0;
+  p_AllowsNull_9fd33cbb := TRUE;
+  p_IsPrimaryKey_9fd33cbb := FALSE;
+  p_IsUniqueKey_9fd33cbb := FALSE;
+  p_IsReadOnly_9fd33cbb := TRUE;
+  p_IsRequired_9fd33cbb := FALSE;
   p_Sequence_9fd33cbb := 2;
   p_Status_9fd33cbb := 'Active';
-  p_IsCustom_9fd33cbb := 0;
+  p_IsCustom_9fd33cbb := FALSE;
   p_MetadataSource_9fd33cbb := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9fd33cbb, p_IntegrationObjectID := p_IntegrationObjectID_9fd33cbb, p_Name := p_Name_9fd33cbb, p_DisplayName := p_DisplayName_9fd33cbb, p_Description := p_Description_9fd33cbb, p_Category := p_Category_9fd33cbb, p_Category_Clear := 1, p_Type := p_Type_9fd33cbb, p_Length := p_Length_9fd33cbb, p_Precision := p_Precision_9fd33cbb, p_Precision_Clear := 1, p_Scale := p_Scale_9fd33cbb, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_9fd33cbb, p_DefaultValue := p_DefaultValue_9fd33cbb, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_9fd33cbb, p_IsUniqueKey := p_IsUniqueKey_9fd33cbb, p_IsReadOnly := p_IsReadOnly_9fd33cbb, p_IsRequired := p_IsRequired_9fd33cbb, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9fd33cbb, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9fd33cbb, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_9fd33cbb, p_Configuration := p_Configuration_9fd33cbb, p_Configuration_Clear := 1, p_Status := p_Status_9fd33cbb, p_IsCustom := p_IsCustom_9fd33cbb, p_MetadataSource := p_MetadataSource_9fd33cbb);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9fd33cbb, p_IntegrationObjectID := p_IntegrationObjectID_9fd33cbb, p_Name := p_Name_9fd33cbb, p_DisplayName := p_DisplayName_9fd33cbb, p_Description := p_Description_9fd33cbb, p_Category := p_Category_9fd33cbb, p_Category_Clear := TRUE, p_Type := p_Type_9fd33cbb, p_Length := p_Length_9fd33cbb, p_Precision := p_Precision_9fd33cbb, p_Precision_Clear := TRUE, p_Scale := p_Scale_9fd33cbb, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_9fd33cbb, p_DefaultValue := p_DefaultValue_9fd33cbb, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_9fd33cbb, p_IsUniqueKey := p_IsUniqueKey_9fd33cbb, p_IsReadOnly := p_IsReadOnly_9fd33cbb, p_IsRequired := p_IsRequired_9fd33cbb, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9fd33cbb, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9fd33cbb, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_9fd33cbb, p_Configuration := p_Configuration_9fd33cbb, p_Configuration_Clear := TRUE, p_Status := p_Status_9fd33cbb, p_IsCustom := p_IsCustom_9fd33cbb, p_MetadataSource := p_MetadataSource_9fd33cbb);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2090,16 +2090,16 @@ BEGIN
   p_DisplayName_5e3bb199 := 'Visibility';
   p_Description_5e3bb199 := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_5e3bb199 := 'String';
-  p_AllowsNull_5e3bb199 := 1;
-  p_IsPrimaryKey_5e3bb199 := 0;
-  p_IsUniqueKey_5e3bb199 := 0;
-  p_IsReadOnly_5e3bb199 := 1;
-  p_IsRequired_5e3bb199 := 0;
+  p_AllowsNull_5e3bb199 := TRUE;
+  p_IsPrimaryKey_5e3bb199 := FALSE;
+  p_IsUniqueKey_5e3bb199 := FALSE;
+  p_IsReadOnly_5e3bb199 := TRUE;
+  p_IsRequired_5e3bb199 := FALSE;
   p_Sequence_5e3bb199 := 3;
   p_Status_5e3bb199 := 'Active';
-  p_IsCustom_5e3bb199 := 0;
+  p_IsCustom_5e3bb199 := FALSE;
   p_MetadataSource_5e3bb199 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5e3bb199, p_IntegrationObjectID := p_IntegrationObjectID_5e3bb199, p_Name := p_Name_5e3bb199, p_DisplayName := p_DisplayName_5e3bb199, p_Description := p_Description_5e3bb199, p_Category := p_Category_5e3bb199, p_Category_Clear := 1, p_Type := p_Type_5e3bb199, p_Length := p_Length_5e3bb199, p_Length_Clear := 1, p_Precision := p_Precision_5e3bb199, p_Precision_Clear := 1, p_Scale := p_Scale_5e3bb199, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5e3bb199, p_DefaultValue := p_DefaultValue_5e3bb199, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5e3bb199, p_IsUniqueKey := p_IsUniqueKey_5e3bb199, p_IsReadOnly := p_IsReadOnly_5e3bb199, p_IsRequired := p_IsRequired_5e3bb199, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5e3bb199, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5e3bb199, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_5e3bb199, p_Configuration := p_Configuration_5e3bb199, p_Configuration_Clear := 1, p_Status := p_Status_5e3bb199, p_IsCustom := p_IsCustom_5e3bb199, p_MetadataSource := p_MetadataSource_5e3bb199);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5e3bb199, p_IntegrationObjectID := p_IntegrationObjectID_5e3bb199, p_Name := p_Name_5e3bb199, p_DisplayName := p_DisplayName_5e3bb199, p_Description := p_Description_5e3bb199, p_Category := p_Category_5e3bb199, p_Category_Clear := TRUE, p_Type := p_Type_5e3bb199, p_Length := p_Length_5e3bb199, p_Length_Clear := TRUE, p_Precision := p_Precision_5e3bb199, p_Precision_Clear := TRUE, p_Scale := p_Scale_5e3bb199, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5e3bb199, p_DefaultValue := p_DefaultValue_5e3bb199, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5e3bb199, p_IsUniqueKey := p_IsUniqueKey_5e3bb199, p_IsReadOnly := p_IsReadOnly_5e3bb199, p_IsRequired := p_IsRequired_5e3bb199, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5e3bb199, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5e3bb199, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_5e3bb199, p_Configuration := p_Configuration_5e3bb199, p_Configuration_Clear := TRUE, p_Status := p_Status_5e3bb199, p_IsCustom := p_IsCustom_5e3bb199, p_MetadataSource := p_MetadataSource_5e3bb199);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2135,16 +2135,16 @@ BEGIN
   p_DisplayName_a3a6eb1c := 'Display Index';
   p_Description_a3a6eb1c := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_a3a6eb1c := 'String';
-  p_AllowsNull_a3a6eb1c := 1;
-  p_IsPrimaryKey_a3a6eb1c := 0;
-  p_IsUniqueKey_a3a6eb1c := 0;
-  p_IsReadOnly_a3a6eb1c := 1;
-  p_IsRequired_a3a6eb1c := 0;
+  p_AllowsNull_a3a6eb1c := TRUE;
+  p_IsPrimaryKey_a3a6eb1c := FALSE;
+  p_IsUniqueKey_a3a6eb1c := FALSE;
+  p_IsReadOnly_a3a6eb1c := TRUE;
+  p_IsRequired_a3a6eb1c := FALSE;
   p_Sequence_a3a6eb1c := 4;
   p_Status_a3a6eb1c := 'Active';
-  p_IsCustom_a3a6eb1c := 0;
+  p_IsCustom_a3a6eb1c := FALSE;
   p_MetadataSource_a3a6eb1c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a3a6eb1c, p_IntegrationObjectID := p_IntegrationObjectID_a3a6eb1c, p_Name := p_Name_a3a6eb1c, p_DisplayName := p_DisplayName_a3a6eb1c, p_Description := p_Description_a3a6eb1c, p_Category := p_Category_a3a6eb1c, p_Category_Clear := 1, p_Type := p_Type_a3a6eb1c, p_Length := p_Length_a3a6eb1c, p_Length_Clear := 1, p_Precision := p_Precision_a3a6eb1c, p_Precision_Clear := 1, p_Scale := p_Scale_a3a6eb1c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_a3a6eb1c, p_DefaultValue := p_DefaultValue_a3a6eb1c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_a3a6eb1c, p_IsUniqueKey := p_IsUniqueKey_a3a6eb1c, p_IsReadOnly := p_IsReadOnly_a3a6eb1c, p_IsRequired := p_IsRequired_a3a6eb1c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a3a6eb1c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a3a6eb1c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_a3a6eb1c, p_Configuration := p_Configuration_a3a6eb1c, p_Configuration_Clear := 1, p_Status := p_Status_a3a6eb1c, p_IsCustom := p_IsCustom_a3a6eb1c, p_MetadataSource := p_MetadataSource_a3a6eb1c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a3a6eb1c, p_IntegrationObjectID := p_IntegrationObjectID_a3a6eb1c, p_Name := p_Name_a3a6eb1c, p_DisplayName := p_DisplayName_a3a6eb1c, p_Description := p_Description_a3a6eb1c, p_Category := p_Category_a3a6eb1c, p_Category_Clear := TRUE, p_Type := p_Type_a3a6eb1c, p_Length := p_Length_a3a6eb1c, p_Length_Clear := TRUE, p_Precision := p_Precision_a3a6eb1c, p_Precision_Clear := TRUE, p_Scale := p_Scale_a3a6eb1c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_a3a6eb1c, p_DefaultValue := p_DefaultValue_a3a6eb1c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_a3a6eb1c, p_IsUniqueKey := p_IsUniqueKey_a3a6eb1c, p_IsReadOnly := p_IsReadOnly_a3a6eb1c, p_IsRequired := p_IsRequired_a3a6eb1c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a3a6eb1c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a3a6eb1c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_a3a6eb1c, p_Configuration := p_Configuration_a3a6eb1c, p_Configuration_Clear := TRUE, p_Status := p_Status_a3a6eb1c, p_IsCustom := p_IsCustom_a3a6eb1c, p_MetadataSource := p_MetadataSource_a3a6eb1c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2180,16 +2180,16 @@ BEGIN
   p_DisplayName_c6f76ae4 := 'Created Date';
   p_Description_c6f76ae4 := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_c6f76ae4 := 'DateTime';
-  p_AllowsNull_c6f76ae4 := 1;
-  p_IsPrimaryKey_c6f76ae4 := 0;
-  p_IsUniqueKey_c6f76ae4 := 0;
-  p_IsReadOnly_c6f76ae4 := 1;
-  p_IsRequired_c6f76ae4 := 0;
+  p_AllowsNull_c6f76ae4 := TRUE;
+  p_IsPrimaryKey_c6f76ae4 := FALSE;
+  p_IsUniqueKey_c6f76ae4 := FALSE;
+  p_IsReadOnly_c6f76ae4 := TRUE;
+  p_IsRequired_c6f76ae4 := FALSE;
   p_Sequence_c6f76ae4 := 5;
   p_Status_c6f76ae4 := 'Active';
-  p_IsCustom_c6f76ae4 := 0;
+  p_IsCustom_c6f76ae4 := FALSE;
   p_MetadataSource_c6f76ae4 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c6f76ae4, p_IntegrationObjectID := p_IntegrationObjectID_c6f76ae4, p_Name := p_Name_c6f76ae4, p_DisplayName := p_DisplayName_c6f76ae4, p_Description := p_Description_c6f76ae4, p_Category := p_Category_c6f76ae4, p_Category_Clear := 1, p_Type := p_Type_c6f76ae4, p_Length := p_Length_c6f76ae4, p_Length_Clear := 1, p_Precision := p_Precision_c6f76ae4, p_Precision_Clear := 1, p_Scale := p_Scale_c6f76ae4, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c6f76ae4, p_DefaultValue := p_DefaultValue_c6f76ae4, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c6f76ae4, p_IsUniqueKey := p_IsUniqueKey_c6f76ae4, p_IsReadOnly := p_IsReadOnly_c6f76ae4, p_IsRequired := p_IsRequired_c6f76ae4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c6f76ae4, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c6f76ae4, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c6f76ae4, p_Configuration := p_Configuration_c6f76ae4, p_Configuration_Clear := 1, p_Status := p_Status_c6f76ae4, p_IsCustom := p_IsCustom_c6f76ae4, p_MetadataSource := p_MetadataSource_c6f76ae4);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c6f76ae4, p_IntegrationObjectID := p_IntegrationObjectID_c6f76ae4, p_Name := p_Name_c6f76ae4, p_DisplayName := p_DisplayName_c6f76ae4, p_Description := p_Description_c6f76ae4, p_Category := p_Category_c6f76ae4, p_Category_Clear := TRUE, p_Type := p_Type_c6f76ae4, p_Length := p_Length_c6f76ae4, p_Length_Clear := TRUE, p_Precision := p_Precision_c6f76ae4, p_Precision_Clear := TRUE, p_Scale := p_Scale_c6f76ae4, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c6f76ae4, p_DefaultValue := p_DefaultValue_c6f76ae4, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c6f76ae4, p_IsUniqueKey := p_IsUniqueKey_c6f76ae4, p_IsReadOnly := p_IsReadOnly_c6f76ae4, p_IsRequired := p_IsRequired_c6f76ae4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c6f76ae4, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c6f76ae4, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c6f76ae4, p_Configuration := p_Configuration_c6f76ae4, p_Configuration_Clear := TRUE, p_Status := p_Status_c6f76ae4, p_IsCustom := p_IsCustom_c6f76ae4, p_MetadataSource := p_MetadataSource_c6f76ae4);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2225,16 +2225,16 @@ BEGIN
   p_DisplayName_e6deab0c := 'Last Modified Date';
   p_Description_e6deab0c := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_e6deab0c := 'DateTime';
-  p_AllowsNull_e6deab0c := 1;
-  p_IsPrimaryKey_e6deab0c := 0;
-  p_IsUniqueKey_e6deab0c := 0;
-  p_IsReadOnly_e6deab0c := 1;
-  p_IsRequired_e6deab0c := 0;
+  p_AllowsNull_e6deab0c := TRUE;
+  p_IsPrimaryKey_e6deab0c := FALSE;
+  p_IsUniqueKey_e6deab0c := FALSE;
+  p_IsReadOnly_e6deab0c := TRUE;
+  p_IsRequired_e6deab0c := FALSE;
   p_Sequence_e6deab0c := 6;
   p_Status_e6deab0c := 'Active';
-  p_IsCustom_e6deab0c := 0;
+  p_IsCustom_e6deab0c := FALSE;
   p_MetadataSource_e6deab0c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e6deab0c, p_IntegrationObjectID := p_IntegrationObjectID_e6deab0c, p_Name := p_Name_e6deab0c, p_DisplayName := p_DisplayName_e6deab0c, p_Description := p_Description_e6deab0c, p_Category := p_Category_e6deab0c, p_Category_Clear := 1, p_Type := p_Type_e6deab0c, p_Length := p_Length_e6deab0c, p_Length_Clear := 1, p_Precision := p_Precision_e6deab0c, p_Precision_Clear := 1, p_Scale := p_Scale_e6deab0c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e6deab0c, p_DefaultValue := p_DefaultValue_e6deab0c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e6deab0c, p_IsUniqueKey := p_IsUniqueKey_e6deab0c, p_IsReadOnly := p_IsReadOnly_e6deab0c, p_IsRequired := p_IsRequired_e6deab0c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e6deab0c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e6deab0c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e6deab0c, p_Configuration := p_Configuration_e6deab0c, p_Configuration_Clear := 1, p_Status := p_Status_e6deab0c, p_IsCustom := p_IsCustom_e6deab0c, p_MetadataSource := p_MetadataSource_e6deab0c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e6deab0c, p_IntegrationObjectID := p_IntegrationObjectID_e6deab0c, p_Name := p_Name_e6deab0c, p_DisplayName := p_DisplayName_e6deab0c, p_Description := p_Description_e6deab0c, p_Category := p_Category_e6deab0c, p_Category_Clear := TRUE, p_Type := p_Type_e6deab0c, p_Length := p_Length_e6deab0c, p_Length_Clear := TRUE, p_Precision := p_Precision_e6deab0c, p_Precision_Clear := TRUE, p_Scale := p_Scale_e6deab0c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e6deab0c, p_DefaultValue := p_DefaultValue_e6deab0c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e6deab0c, p_IsUniqueKey := p_IsUniqueKey_e6deab0c, p_IsReadOnly := p_IsReadOnly_e6deab0c, p_IsRequired := p_IsRequired_e6deab0c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e6deab0c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e6deab0c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e6deab0c, p_Configuration := p_Configuration_e6deab0c, p_Configuration_Clear := TRUE, p_Status := p_Status_e6deab0c, p_IsCustom := p_IsCustom_e6deab0c, p_MetadataSource := p_MetadataSource_e6deab0c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2270,16 +2270,16 @@ BEGIN
   p_DisplayName_f5289606 := 'Source';
   p_Description_f5289606 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_f5289606 := 'json';
-  p_AllowsNull_f5289606 := 1;
-  p_IsPrimaryKey_f5289606 := 0;
-  p_IsUniqueKey_f5289606 := 0;
-  p_IsReadOnly_f5289606 := 1;
-  p_IsRequired_f5289606 := 0;
+  p_AllowsNull_f5289606 := TRUE;
+  p_IsPrimaryKey_f5289606 := FALSE;
+  p_IsUniqueKey_f5289606 := FALSE;
+  p_IsReadOnly_f5289606 := TRUE;
+  p_IsRequired_f5289606 := FALSE;
   p_Sequence_f5289606 := 7;
   p_Status_f5289606 := 'Active';
-  p_IsCustom_f5289606 := 0;
+  p_IsCustom_f5289606 := FALSE;
   p_MetadataSource_f5289606 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f5289606, p_IntegrationObjectID := p_IntegrationObjectID_f5289606, p_Name := p_Name_f5289606, p_DisplayName := p_DisplayName_f5289606, p_Description := p_Description_f5289606, p_Category := p_Category_f5289606, p_Category_Clear := 1, p_Type := p_Type_f5289606, p_Length := p_Length_f5289606, p_Length_Clear := 1, p_Precision := p_Precision_f5289606, p_Precision_Clear := 1, p_Scale := p_Scale_f5289606, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f5289606, p_DefaultValue := p_DefaultValue_f5289606, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f5289606, p_IsUniqueKey := p_IsUniqueKey_f5289606, p_IsReadOnly := p_IsReadOnly_f5289606, p_IsRequired := p_IsRequired_f5289606, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f5289606, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f5289606, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f5289606, p_Configuration := p_Configuration_f5289606, p_Configuration_Clear := 1, p_Status := p_Status_f5289606, p_IsCustom := p_IsCustom_f5289606, p_MetadataSource := p_MetadataSource_f5289606);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f5289606, p_IntegrationObjectID := p_IntegrationObjectID_f5289606, p_Name := p_Name_f5289606, p_DisplayName := p_DisplayName_f5289606, p_Description := p_Description_f5289606, p_Category := p_Category_f5289606, p_Category_Clear := TRUE, p_Type := p_Type_f5289606, p_Length := p_Length_f5289606, p_Length_Clear := TRUE, p_Precision := p_Precision_f5289606, p_Precision_Clear := TRUE, p_Scale := p_Scale_f5289606, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f5289606, p_DefaultValue := p_DefaultValue_f5289606, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f5289606, p_IsUniqueKey := p_IsUniqueKey_f5289606, p_IsReadOnly := p_IsReadOnly_f5289606, p_IsRequired := p_IsRequired_f5289606, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f5289606, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f5289606, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f5289606, p_Configuration := p_Configuration_f5289606, p_Configuration_Clear := TRUE, p_Status := p_Status_f5289606, p_IsCustom := p_IsCustom_f5289606, p_MetadataSource := p_MetadataSource_f5289606);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2315,16 +2315,16 @@ BEGIN
   p_DisplayName_d0c46439 := 'Title';
   p_Description_d0c46439 := 'work field ''title'' (type work:work-title, minOccurs=1). Source: work-3.0.xsd.';
   p_Type_d0c46439 := 'json';
-  p_AllowsNull_d0c46439 := 1;
-  p_IsPrimaryKey_d0c46439 := 0;
-  p_IsUniqueKey_d0c46439 := 0;
-  p_IsReadOnly_d0c46439 := 1;
-  p_IsRequired_d0c46439 := 1;
+  p_AllowsNull_d0c46439 := TRUE;
+  p_IsPrimaryKey_d0c46439 := FALSE;
+  p_IsUniqueKey_d0c46439 := FALSE;
+  p_IsReadOnly_d0c46439 := TRUE;
+  p_IsRequired_d0c46439 := TRUE;
   p_Sequence_d0c46439 := 8;
   p_Status_d0c46439 := 'Active';
-  p_IsCustom_d0c46439 := 0;
+  p_IsCustom_d0c46439 := FALSE;
   p_MetadataSource_d0c46439 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d0c46439, p_IntegrationObjectID := p_IntegrationObjectID_d0c46439, p_Name := p_Name_d0c46439, p_DisplayName := p_DisplayName_d0c46439, p_Description := p_Description_d0c46439, p_Category := p_Category_d0c46439, p_Category_Clear := 1, p_Type := p_Type_d0c46439, p_Length := p_Length_d0c46439, p_Length_Clear := 1, p_Precision := p_Precision_d0c46439, p_Precision_Clear := 1, p_Scale := p_Scale_d0c46439, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d0c46439, p_DefaultValue := p_DefaultValue_d0c46439, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d0c46439, p_IsUniqueKey := p_IsUniqueKey_d0c46439, p_IsReadOnly := p_IsReadOnly_d0c46439, p_IsRequired := p_IsRequired_d0c46439, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d0c46439, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d0c46439, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d0c46439, p_Configuration := p_Configuration_d0c46439, p_Configuration_Clear := 1, p_Status := p_Status_d0c46439, p_IsCustom := p_IsCustom_d0c46439, p_MetadataSource := p_MetadataSource_d0c46439);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d0c46439, p_IntegrationObjectID := p_IntegrationObjectID_d0c46439, p_Name := p_Name_d0c46439, p_DisplayName := p_DisplayName_d0c46439, p_Description := p_Description_d0c46439, p_Category := p_Category_d0c46439, p_Category_Clear := TRUE, p_Type := p_Type_d0c46439, p_Length := p_Length_d0c46439, p_Length_Clear := TRUE, p_Precision := p_Precision_d0c46439, p_Precision_Clear := TRUE, p_Scale := p_Scale_d0c46439, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d0c46439, p_DefaultValue := p_DefaultValue_d0c46439, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d0c46439, p_IsUniqueKey := p_IsUniqueKey_d0c46439, p_IsReadOnly := p_IsReadOnly_d0c46439, p_IsRequired := p_IsRequired_d0c46439, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d0c46439, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d0c46439, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d0c46439, p_Configuration := p_Configuration_d0c46439, p_Configuration_Clear := TRUE, p_Status := p_Status_d0c46439, p_IsCustom := p_IsCustom_d0c46439, p_MetadataSource := p_MetadataSource_d0c46439);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2361,16 +2361,16 @@ BEGIN
   p_Description_11ce8688 := 'work field ''journal-title'' (type common:string-1000, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_11ce8688 := 'String';
   p_Length_11ce8688 := 1000;
-  p_AllowsNull_11ce8688 := 1;
-  p_IsPrimaryKey_11ce8688 := 0;
-  p_IsUniqueKey_11ce8688 := 0;
-  p_IsReadOnly_11ce8688 := 1;
-  p_IsRequired_11ce8688 := 0;
+  p_AllowsNull_11ce8688 := TRUE;
+  p_IsPrimaryKey_11ce8688 := FALSE;
+  p_IsUniqueKey_11ce8688 := FALSE;
+  p_IsReadOnly_11ce8688 := TRUE;
+  p_IsRequired_11ce8688 := FALSE;
   p_Sequence_11ce8688 := 9;
   p_Status_11ce8688 := 'Active';
-  p_IsCustom_11ce8688 := 0;
+  p_IsCustom_11ce8688 := FALSE;
   p_MetadataSource_11ce8688 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_11ce8688, p_IntegrationObjectID := p_IntegrationObjectID_11ce8688, p_Name := p_Name_11ce8688, p_DisplayName := p_DisplayName_11ce8688, p_Description := p_Description_11ce8688, p_Category := p_Category_11ce8688, p_Category_Clear := 1, p_Type := p_Type_11ce8688, p_Length := p_Length_11ce8688, p_Precision := p_Precision_11ce8688, p_Precision_Clear := 1, p_Scale := p_Scale_11ce8688, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_11ce8688, p_DefaultValue := p_DefaultValue_11ce8688, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_11ce8688, p_IsUniqueKey := p_IsUniqueKey_11ce8688, p_IsReadOnly := p_IsReadOnly_11ce8688, p_IsRequired := p_IsRequired_11ce8688, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_11ce8688, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_11ce8688, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_11ce8688, p_Configuration := p_Configuration_11ce8688, p_Configuration_Clear := 1, p_Status := p_Status_11ce8688, p_IsCustom := p_IsCustom_11ce8688, p_MetadataSource := p_MetadataSource_11ce8688);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_11ce8688, p_IntegrationObjectID := p_IntegrationObjectID_11ce8688, p_Name := p_Name_11ce8688, p_DisplayName := p_DisplayName_11ce8688, p_Description := p_Description_11ce8688, p_Category := p_Category_11ce8688, p_Category_Clear := TRUE, p_Type := p_Type_11ce8688, p_Length := p_Length_11ce8688, p_Precision := p_Precision_11ce8688, p_Precision_Clear := TRUE, p_Scale := p_Scale_11ce8688, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_11ce8688, p_DefaultValue := p_DefaultValue_11ce8688, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_11ce8688, p_IsUniqueKey := p_IsUniqueKey_11ce8688, p_IsReadOnly := p_IsReadOnly_11ce8688, p_IsRequired := p_IsRequired_11ce8688, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_11ce8688, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_11ce8688, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_11ce8688, p_Configuration := p_Configuration_11ce8688, p_Configuration_Clear := TRUE, p_Status := p_Status_11ce8688, p_IsCustom := p_IsCustom_11ce8688, p_MetadataSource := p_MetadataSource_11ce8688);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2407,16 +2407,16 @@ BEGIN
   p_Description_b5b97128 := 'work field ''short-description'' (type common:short-description, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_b5b97128 := 'String';
   p_Length_b5b97128 := 5000;
-  p_AllowsNull_b5b97128 := 1;
-  p_IsPrimaryKey_b5b97128 := 0;
-  p_IsUniqueKey_b5b97128 := 0;
-  p_IsReadOnly_b5b97128 := 1;
-  p_IsRequired_b5b97128 := 0;
+  p_AllowsNull_b5b97128 := TRUE;
+  p_IsPrimaryKey_b5b97128 := FALSE;
+  p_IsUniqueKey_b5b97128 := FALSE;
+  p_IsReadOnly_b5b97128 := TRUE;
+  p_IsRequired_b5b97128 := FALSE;
   p_Sequence_b5b97128 := 10;
   p_Status_b5b97128 := 'Active';
-  p_IsCustom_b5b97128 := 0;
+  p_IsCustom_b5b97128 := FALSE;
   p_MetadataSource_b5b97128 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b5b97128, p_IntegrationObjectID := p_IntegrationObjectID_b5b97128, p_Name := p_Name_b5b97128, p_DisplayName := p_DisplayName_b5b97128, p_Description := p_Description_b5b97128, p_Category := p_Category_b5b97128, p_Category_Clear := 1, p_Type := p_Type_b5b97128, p_Length := p_Length_b5b97128, p_Precision := p_Precision_b5b97128, p_Precision_Clear := 1, p_Scale := p_Scale_b5b97128, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b5b97128, p_DefaultValue := p_DefaultValue_b5b97128, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b5b97128, p_IsUniqueKey := p_IsUniqueKey_b5b97128, p_IsReadOnly := p_IsReadOnly_b5b97128, p_IsRequired := p_IsRequired_b5b97128, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b5b97128, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b5b97128, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b5b97128, p_Configuration := p_Configuration_b5b97128, p_Configuration_Clear := 1, p_Status := p_Status_b5b97128, p_IsCustom := p_IsCustom_b5b97128, p_MetadataSource := p_MetadataSource_b5b97128);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b5b97128, p_IntegrationObjectID := p_IntegrationObjectID_b5b97128, p_Name := p_Name_b5b97128, p_DisplayName := p_DisplayName_b5b97128, p_Description := p_Description_b5b97128, p_Category := p_Category_b5b97128, p_Category_Clear := TRUE, p_Type := p_Type_b5b97128, p_Length := p_Length_b5b97128, p_Precision := p_Precision_b5b97128, p_Precision_Clear := TRUE, p_Scale := p_Scale_b5b97128, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b5b97128, p_DefaultValue := p_DefaultValue_b5b97128, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b5b97128, p_IsUniqueKey := p_IsUniqueKey_b5b97128, p_IsReadOnly := p_IsReadOnly_b5b97128, p_IsRequired := p_IsRequired_b5b97128, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b5b97128, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b5b97128, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b5b97128, p_Configuration := p_Configuration_b5b97128, p_Configuration_Clear := TRUE, p_Status := p_Status_b5b97128, p_IsCustom := p_IsCustom_b5b97128, p_MetadataSource := p_MetadataSource_b5b97128);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2452,16 +2452,16 @@ BEGIN
   p_DisplayName_6bc4579d := 'Citation';
   p_Description_6bc4579d := 'work field ''citation'' (type work:citation, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_6bc4579d := 'json';
-  p_AllowsNull_6bc4579d := 1;
-  p_IsPrimaryKey_6bc4579d := 0;
-  p_IsUniqueKey_6bc4579d := 0;
-  p_IsReadOnly_6bc4579d := 1;
-  p_IsRequired_6bc4579d := 0;
+  p_AllowsNull_6bc4579d := TRUE;
+  p_IsPrimaryKey_6bc4579d := FALSE;
+  p_IsUniqueKey_6bc4579d := FALSE;
+  p_IsReadOnly_6bc4579d := TRUE;
+  p_IsRequired_6bc4579d := FALSE;
   p_Sequence_6bc4579d := 11;
   p_Status_6bc4579d := 'Active';
-  p_IsCustom_6bc4579d := 0;
+  p_IsCustom_6bc4579d := FALSE;
   p_MetadataSource_6bc4579d := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6bc4579d, p_IntegrationObjectID := p_IntegrationObjectID_6bc4579d, p_Name := p_Name_6bc4579d, p_DisplayName := p_DisplayName_6bc4579d, p_Description := p_Description_6bc4579d, p_Category := p_Category_6bc4579d, p_Category_Clear := 1, p_Type := p_Type_6bc4579d, p_Length := p_Length_6bc4579d, p_Length_Clear := 1, p_Precision := p_Precision_6bc4579d, p_Precision_Clear := 1, p_Scale := p_Scale_6bc4579d, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_6bc4579d, p_DefaultValue := p_DefaultValue_6bc4579d, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_6bc4579d, p_IsUniqueKey := p_IsUniqueKey_6bc4579d, p_IsReadOnly := p_IsReadOnly_6bc4579d, p_IsRequired := p_IsRequired_6bc4579d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6bc4579d, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6bc4579d, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_6bc4579d, p_Configuration := p_Configuration_6bc4579d, p_Configuration_Clear := 1, p_Status := p_Status_6bc4579d, p_IsCustom := p_IsCustom_6bc4579d, p_MetadataSource := p_MetadataSource_6bc4579d);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6bc4579d, p_IntegrationObjectID := p_IntegrationObjectID_6bc4579d, p_Name := p_Name_6bc4579d, p_DisplayName := p_DisplayName_6bc4579d, p_Description := p_Description_6bc4579d, p_Category := p_Category_6bc4579d, p_Category_Clear := TRUE, p_Type := p_Type_6bc4579d, p_Length := p_Length_6bc4579d, p_Length_Clear := TRUE, p_Precision := p_Precision_6bc4579d, p_Precision_Clear := TRUE, p_Scale := p_Scale_6bc4579d, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_6bc4579d, p_DefaultValue := p_DefaultValue_6bc4579d, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_6bc4579d, p_IsUniqueKey := p_IsUniqueKey_6bc4579d, p_IsReadOnly := p_IsReadOnly_6bc4579d, p_IsRequired := p_IsRequired_6bc4579d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6bc4579d, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6bc4579d, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_6bc4579d, p_Configuration := p_Configuration_6bc4579d, p_Configuration_Clear := TRUE, p_Status := p_Status_6bc4579d, p_IsCustom := p_IsCustom_6bc4579d, p_MetadataSource := p_MetadataSource_6bc4579d);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2497,16 +2497,16 @@ BEGIN
   p_DisplayName_c731247c := 'Type';
   p_Description_c731247c := 'work field ''type'' (type work:work-type, minOccurs=1). Source: work-3.0.xsd.';
   p_Type_c731247c := 'String';
-  p_AllowsNull_c731247c := 1;
-  p_IsPrimaryKey_c731247c := 0;
-  p_IsUniqueKey_c731247c := 0;
-  p_IsReadOnly_c731247c := 1;
-  p_IsRequired_c731247c := 1;
+  p_AllowsNull_c731247c := TRUE;
+  p_IsPrimaryKey_c731247c := FALSE;
+  p_IsUniqueKey_c731247c := FALSE;
+  p_IsReadOnly_c731247c := TRUE;
+  p_IsRequired_c731247c := TRUE;
   p_Sequence_c731247c := 12;
   p_Status_c731247c := 'Active';
-  p_IsCustom_c731247c := 0;
+  p_IsCustom_c731247c := FALSE;
   p_MetadataSource_c731247c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c731247c, p_IntegrationObjectID := p_IntegrationObjectID_c731247c, p_Name := p_Name_c731247c, p_DisplayName := p_DisplayName_c731247c, p_Description := p_Description_c731247c, p_Category := p_Category_c731247c, p_Category_Clear := 1, p_Type := p_Type_c731247c, p_Length := p_Length_c731247c, p_Length_Clear := 1, p_Precision := p_Precision_c731247c, p_Precision_Clear := 1, p_Scale := p_Scale_c731247c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c731247c, p_DefaultValue := p_DefaultValue_c731247c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c731247c, p_IsUniqueKey := p_IsUniqueKey_c731247c, p_IsReadOnly := p_IsReadOnly_c731247c, p_IsRequired := p_IsRequired_c731247c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c731247c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c731247c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c731247c, p_Configuration := p_Configuration_c731247c, p_Configuration_Clear := 1, p_Status := p_Status_c731247c, p_IsCustom := p_IsCustom_c731247c, p_MetadataSource := p_MetadataSource_c731247c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c731247c, p_IntegrationObjectID := p_IntegrationObjectID_c731247c, p_Name := p_Name_c731247c, p_DisplayName := p_DisplayName_c731247c, p_Description := p_Description_c731247c, p_Category := p_Category_c731247c, p_Category_Clear := TRUE, p_Type := p_Type_c731247c, p_Length := p_Length_c731247c, p_Length_Clear := TRUE, p_Precision := p_Precision_c731247c, p_Precision_Clear := TRUE, p_Scale := p_Scale_c731247c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c731247c, p_DefaultValue := p_DefaultValue_c731247c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c731247c, p_IsUniqueKey := p_IsUniqueKey_c731247c, p_IsReadOnly := p_IsReadOnly_c731247c, p_IsRequired := p_IsRequired_c731247c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c731247c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c731247c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c731247c, p_Configuration := p_Configuration_c731247c, p_Configuration_Clear := TRUE, p_Status := p_Status_c731247c, p_IsCustom := p_IsCustom_c731247c, p_MetadataSource := p_MetadataSource_c731247c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2542,16 +2542,16 @@ BEGIN
   p_DisplayName_b6c80316 := 'Publication Date';
   p_Description_b6c80316 := 'work field ''publication-date'' (type common:publication-date, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_b6c80316 := 'json';
-  p_AllowsNull_b6c80316 := 1;
-  p_IsPrimaryKey_b6c80316 := 0;
-  p_IsUniqueKey_b6c80316 := 0;
-  p_IsReadOnly_b6c80316 := 1;
-  p_IsRequired_b6c80316 := 0;
+  p_AllowsNull_b6c80316 := TRUE;
+  p_IsPrimaryKey_b6c80316 := FALSE;
+  p_IsUniqueKey_b6c80316 := FALSE;
+  p_IsReadOnly_b6c80316 := TRUE;
+  p_IsRequired_b6c80316 := FALSE;
   p_Sequence_b6c80316 := 13;
   p_Status_b6c80316 := 'Active';
-  p_IsCustom_b6c80316 := 0;
+  p_IsCustom_b6c80316 := FALSE;
   p_MetadataSource_b6c80316 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b6c80316, p_IntegrationObjectID := p_IntegrationObjectID_b6c80316, p_Name := p_Name_b6c80316, p_DisplayName := p_DisplayName_b6c80316, p_Description := p_Description_b6c80316, p_Category := p_Category_b6c80316, p_Category_Clear := 1, p_Type := p_Type_b6c80316, p_Length := p_Length_b6c80316, p_Length_Clear := 1, p_Precision := p_Precision_b6c80316, p_Precision_Clear := 1, p_Scale := p_Scale_b6c80316, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b6c80316, p_DefaultValue := p_DefaultValue_b6c80316, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b6c80316, p_IsUniqueKey := p_IsUniqueKey_b6c80316, p_IsReadOnly := p_IsReadOnly_b6c80316, p_IsRequired := p_IsRequired_b6c80316, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b6c80316, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b6c80316, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b6c80316, p_Configuration := p_Configuration_b6c80316, p_Configuration_Clear := 1, p_Status := p_Status_b6c80316, p_IsCustom := p_IsCustom_b6c80316, p_MetadataSource := p_MetadataSource_b6c80316);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b6c80316, p_IntegrationObjectID := p_IntegrationObjectID_b6c80316, p_Name := p_Name_b6c80316, p_DisplayName := p_DisplayName_b6c80316, p_Description := p_Description_b6c80316, p_Category := p_Category_b6c80316, p_Category_Clear := TRUE, p_Type := p_Type_b6c80316, p_Length := p_Length_b6c80316, p_Length_Clear := TRUE, p_Precision := p_Precision_b6c80316, p_Precision_Clear := TRUE, p_Scale := p_Scale_b6c80316, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b6c80316, p_DefaultValue := p_DefaultValue_b6c80316, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b6c80316, p_IsUniqueKey := p_IsUniqueKey_b6c80316, p_IsReadOnly := p_IsReadOnly_b6c80316, p_IsRequired := p_IsRequired_b6c80316, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b6c80316, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b6c80316, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b6c80316, p_Configuration := p_Configuration_b6c80316, p_Configuration_Clear := TRUE, p_Status := p_Status_b6c80316, p_IsCustom := p_IsCustom_b6c80316, p_MetadataSource := p_MetadataSource_b6c80316);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2587,16 +2587,16 @@ BEGIN
   p_DisplayName_af5b3976 := 'External Ids';
   p_Description_af5b3976 := 'work field ''external-ids'' (type common:external-ids, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_af5b3976 := 'json';
-  p_AllowsNull_af5b3976 := 1;
-  p_IsPrimaryKey_af5b3976 := 0;
-  p_IsUniqueKey_af5b3976 := 0;
-  p_IsReadOnly_af5b3976 := 1;
-  p_IsRequired_af5b3976 := 0;
+  p_AllowsNull_af5b3976 := TRUE;
+  p_IsPrimaryKey_af5b3976 := FALSE;
+  p_IsUniqueKey_af5b3976 := FALSE;
+  p_IsReadOnly_af5b3976 := TRUE;
+  p_IsRequired_af5b3976 := FALSE;
   p_Sequence_af5b3976 := 14;
   p_Status_af5b3976 := 'Active';
-  p_IsCustom_af5b3976 := 0;
+  p_IsCustom_af5b3976 := FALSE;
   p_MetadataSource_af5b3976 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_af5b3976, p_IntegrationObjectID := p_IntegrationObjectID_af5b3976, p_Name := p_Name_af5b3976, p_DisplayName := p_DisplayName_af5b3976, p_Description := p_Description_af5b3976, p_Category := p_Category_af5b3976, p_Category_Clear := 1, p_Type := p_Type_af5b3976, p_Length := p_Length_af5b3976, p_Length_Clear := 1, p_Precision := p_Precision_af5b3976, p_Precision_Clear := 1, p_Scale := p_Scale_af5b3976, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_af5b3976, p_DefaultValue := p_DefaultValue_af5b3976, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_af5b3976, p_IsUniqueKey := p_IsUniqueKey_af5b3976, p_IsReadOnly := p_IsReadOnly_af5b3976, p_IsRequired := p_IsRequired_af5b3976, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_af5b3976, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_af5b3976, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_af5b3976, p_Configuration := p_Configuration_af5b3976, p_Configuration_Clear := 1, p_Status := p_Status_af5b3976, p_IsCustom := p_IsCustom_af5b3976, p_MetadataSource := p_MetadataSource_af5b3976);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_af5b3976, p_IntegrationObjectID := p_IntegrationObjectID_af5b3976, p_Name := p_Name_af5b3976, p_DisplayName := p_DisplayName_af5b3976, p_Description := p_Description_af5b3976, p_Category := p_Category_af5b3976, p_Category_Clear := TRUE, p_Type := p_Type_af5b3976, p_Length := p_Length_af5b3976, p_Length_Clear := TRUE, p_Precision := p_Precision_af5b3976, p_Precision_Clear := TRUE, p_Scale := p_Scale_af5b3976, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_af5b3976, p_DefaultValue := p_DefaultValue_af5b3976, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_af5b3976, p_IsUniqueKey := p_IsUniqueKey_af5b3976, p_IsReadOnly := p_IsReadOnly_af5b3976, p_IsRequired := p_IsRequired_af5b3976, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_af5b3976, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_af5b3976, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_af5b3976, p_Configuration := p_Configuration_af5b3976, p_Configuration_Clear := TRUE, p_Status := p_Status_af5b3976, p_IsCustom := p_IsCustom_af5b3976, p_MetadataSource := p_MetadataSource_af5b3976);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2632,16 +2632,16 @@ BEGIN
   p_DisplayName_f6d1adbe := 'Url';
   p_Description_f6d1adbe := 'work field ''url'' (type common:url, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_f6d1adbe := 'String';
-  p_AllowsNull_f6d1adbe := 1;
-  p_IsPrimaryKey_f6d1adbe := 0;
-  p_IsUniqueKey_f6d1adbe := 0;
-  p_IsReadOnly_f6d1adbe := 1;
-  p_IsRequired_f6d1adbe := 0;
+  p_AllowsNull_f6d1adbe := TRUE;
+  p_IsPrimaryKey_f6d1adbe := FALSE;
+  p_IsUniqueKey_f6d1adbe := FALSE;
+  p_IsReadOnly_f6d1adbe := TRUE;
+  p_IsRequired_f6d1adbe := FALSE;
   p_Sequence_f6d1adbe := 15;
   p_Status_f6d1adbe := 'Active';
-  p_IsCustom_f6d1adbe := 0;
+  p_IsCustom_f6d1adbe := FALSE;
   p_MetadataSource_f6d1adbe := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f6d1adbe, p_IntegrationObjectID := p_IntegrationObjectID_f6d1adbe, p_Name := p_Name_f6d1adbe, p_DisplayName := p_DisplayName_f6d1adbe, p_Description := p_Description_f6d1adbe, p_Category := p_Category_f6d1adbe, p_Category_Clear := 1, p_Type := p_Type_f6d1adbe, p_Length := p_Length_f6d1adbe, p_Length_Clear := 1, p_Precision := p_Precision_f6d1adbe, p_Precision_Clear := 1, p_Scale := p_Scale_f6d1adbe, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f6d1adbe, p_DefaultValue := p_DefaultValue_f6d1adbe, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f6d1adbe, p_IsUniqueKey := p_IsUniqueKey_f6d1adbe, p_IsReadOnly := p_IsReadOnly_f6d1adbe, p_IsRequired := p_IsRequired_f6d1adbe, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f6d1adbe, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f6d1adbe, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f6d1adbe, p_Configuration := p_Configuration_f6d1adbe, p_Configuration_Clear := 1, p_Status := p_Status_f6d1adbe, p_IsCustom := p_IsCustom_f6d1adbe, p_MetadataSource := p_MetadataSource_f6d1adbe);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f6d1adbe, p_IntegrationObjectID := p_IntegrationObjectID_f6d1adbe, p_Name := p_Name_f6d1adbe, p_DisplayName := p_DisplayName_f6d1adbe, p_Description := p_Description_f6d1adbe, p_Category := p_Category_f6d1adbe, p_Category_Clear := TRUE, p_Type := p_Type_f6d1adbe, p_Length := p_Length_f6d1adbe, p_Length_Clear := TRUE, p_Precision := p_Precision_f6d1adbe, p_Precision_Clear := TRUE, p_Scale := p_Scale_f6d1adbe, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f6d1adbe, p_DefaultValue := p_DefaultValue_f6d1adbe, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f6d1adbe, p_IsUniqueKey := p_IsUniqueKey_f6d1adbe, p_IsReadOnly := p_IsReadOnly_f6d1adbe, p_IsRequired := p_IsRequired_f6d1adbe, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f6d1adbe, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f6d1adbe, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f6d1adbe, p_Configuration := p_Configuration_f6d1adbe, p_Configuration_Clear := TRUE, p_Status := p_Status_f6d1adbe, p_IsCustom := p_IsCustom_f6d1adbe, p_MetadataSource := p_MetadataSource_f6d1adbe);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2677,16 +2677,16 @@ BEGIN
   p_DisplayName_ea9a4502 := 'Contributors';
   p_Description_ea9a4502 := 'work field ''contributors'' (type work:work-contributors, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_ea9a4502 := 'json';
-  p_AllowsNull_ea9a4502 := 1;
-  p_IsPrimaryKey_ea9a4502 := 0;
-  p_IsUniqueKey_ea9a4502 := 0;
-  p_IsReadOnly_ea9a4502 := 1;
-  p_IsRequired_ea9a4502 := 0;
+  p_AllowsNull_ea9a4502 := TRUE;
+  p_IsPrimaryKey_ea9a4502 := FALSE;
+  p_IsUniqueKey_ea9a4502 := FALSE;
+  p_IsReadOnly_ea9a4502 := TRUE;
+  p_IsRequired_ea9a4502 := FALSE;
   p_Sequence_ea9a4502 := 16;
   p_Status_ea9a4502 := 'Active';
-  p_IsCustom_ea9a4502 := 0;
+  p_IsCustom_ea9a4502 := FALSE;
   p_MetadataSource_ea9a4502 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ea9a4502, p_IntegrationObjectID := p_IntegrationObjectID_ea9a4502, p_Name := p_Name_ea9a4502, p_DisplayName := p_DisplayName_ea9a4502, p_Description := p_Description_ea9a4502, p_Category := p_Category_ea9a4502, p_Category_Clear := 1, p_Type := p_Type_ea9a4502, p_Length := p_Length_ea9a4502, p_Length_Clear := 1, p_Precision := p_Precision_ea9a4502, p_Precision_Clear := 1, p_Scale := p_Scale_ea9a4502, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ea9a4502, p_DefaultValue := p_DefaultValue_ea9a4502, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ea9a4502, p_IsUniqueKey := p_IsUniqueKey_ea9a4502, p_IsReadOnly := p_IsReadOnly_ea9a4502, p_IsRequired := p_IsRequired_ea9a4502, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ea9a4502, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ea9a4502, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ea9a4502, p_Configuration := p_Configuration_ea9a4502, p_Configuration_Clear := 1, p_Status := p_Status_ea9a4502, p_IsCustom := p_IsCustom_ea9a4502, p_MetadataSource := p_MetadataSource_ea9a4502);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ea9a4502, p_IntegrationObjectID := p_IntegrationObjectID_ea9a4502, p_Name := p_Name_ea9a4502, p_DisplayName := p_DisplayName_ea9a4502, p_Description := p_Description_ea9a4502, p_Category := p_Category_ea9a4502, p_Category_Clear := TRUE, p_Type := p_Type_ea9a4502, p_Length := p_Length_ea9a4502, p_Length_Clear := TRUE, p_Precision := p_Precision_ea9a4502, p_Precision_Clear := TRUE, p_Scale := p_Scale_ea9a4502, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ea9a4502, p_DefaultValue := p_DefaultValue_ea9a4502, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ea9a4502, p_IsUniqueKey := p_IsUniqueKey_ea9a4502, p_IsReadOnly := p_IsReadOnly_ea9a4502, p_IsRequired := p_IsRequired_ea9a4502, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ea9a4502, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ea9a4502, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ea9a4502, p_Configuration := p_Configuration_ea9a4502, p_Configuration_Clear := TRUE, p_Status := p_Status_ea9a4502, p_IsCustom := p_IsCustom_ea9a4502, p_MetadataSource := p_MetadataSource_ea9a4502);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2722,16 +2722,16 @@ BEGIN
   p_DisplayName_19bc8779 := 'Language Code';
   p_Description_19bc8779 := 'work field ''language-code'' (type common:language-code, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_19bc8779 := 'String';
-  p_AllowsNull_19bc8779 := 1;
-  p_IsPrimaryKey_19bc8779 := 0;
-  p_IsUniqueKey_19bc8779 := 0;
-  p_IsReadOnly_19bc8779 := 1;
-  p_IsRequired_19bc8779 := 0;
+  p_AllowsNull_19bc8779 := TRUE;
+  p_IsPrimaryKey_19bc8779 := FALSE;
+  p_IsUniqueKey_19bc8779 := FALSE;
+  p_IsReadOnly_19bc8779 := TRUE;
+  p_IsRequired_19bc8779 := FALSE;
   p_Sequence_19bc8779 := 17;
   p_Status_19bc8779 := 'Active';
-  p_IsCustom_19bc8779 := 0;
+  p_IsCustom_19bc8779 := FALSE;
   p_MetadataSource_19bc8779 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_19bc8779, p_IntegrationObjectID := p_IntegrationObjectID_19bc8779, p_Name := p_Name_19bc8779, p_DisplayName := p_DisplayName_19bc8779, p_Description := p_Description_19bc8779, p_Category := p_Category_19bc8779, p_Category_Clear := 1, p_Type := p_Type_19bc8779, p_Length := p_Length_19bc8779, p_Length_Clear := 1, p_Precision := p_Precision_19bc8779, p_Precision_Clear := 1, p_Scale := p_Scale_19bc8779, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_19bc8779, p_DefaultValue := p_DefaultValue_19bc8779, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_19bc8779, p_IsUniqueKey := p_IsUniqueKey_19bc8779, p_IsReadOnly := p_IsReadOnly_19bc8779, p_IsRequired := p_IsRequired_19bc8779, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_19bc8779, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_19bc8779, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_19bc8779, p_Configuration := p_Configuration_19bc8779, p_Configuration_Clear := 1, p_Status := p_Status_19bc8779, p_IsCustom := p_IsCustom_19bc8779, p_MetadataSource := p_MetadataSource_19bc8779);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_19bc8779, p_IntegrationObjectID := p_IntegrationObjectID_19bc8779, p_Name := p_Name_19bc8779, p_DisplayName := p_DisplayName_19bc8779, p_Description := p_Description_19bc8779, p_Category := p_Category_19bc8779, p_Category_Clear := TRUE, p_Type := p_Type_19bc8779, p_Length := p_Length_19bc8779, p_Length_Clear := TRUE, p_Precision := p_Precision_19bc8779, p_Precision_Clear := TRUE, p_Scale := p_Scale_19bc8779, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_19bc8779, p_DefaultValue := p_DefaultValue_19bc8779, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_19bc8779, p_IsUniqueKey := p_IsUniqueKey_19bc8779, p_IsReadOnly := p_IsReadOnly_19bc8779, p_IsRequired := p_IsRequired_19bc8779, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_19bc8779, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_19bc8779, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_19bc8779, p_Configuration := p_Configuration_19bc8779, p_Configuration_Clear := TRUE, p_Status := p_Status_19bc8779, p_IsCustom := p_IsCustom_19bc8779, p_MetadataSource := p_MetadataSource_19bc8779);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2767,16 +2767,16 @@ BEGIN
   p_DisplayName_85223fcd := 'Country';
   p_Description_85223fcd := 'work field ''country'' (type common:country, minOccurs=0). Source: work-3.0.xsd.';
   p_Type_85223fcd := 'String';
-  p_AllowsNull_85223fcd := 1;
-  p_IsPrimaryKey_85223fcd := 0;
-  p_IsUniqueKey_85223fcd := 0;
-  p_IsReadOnly_85223fcd := 1;
-  p_IsRequired_85223fcd := 0;
+  p_AllowsNull_85223fcd := TRUE;
+  p_IsPrimaryKey_85223fcd := FALSE;
+  p_IsUniqueKey_85223fcd := FALSE;
+  p_IsReadOnly_85223fcd := TRUE;
+  p_IsRequired_85223fcd := FALSE;
   p_Sequence_85223fcd := 18;
   p_Status_85223fcd := 'Active';
-  p_IsCustom_85223fcd := 0;
+  p_IsCustom_85223fcd := FALSE;
   p_MetadataSource_85223fcd := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_85223fcd, p_IntegrationObjectID := p_IntegrationObjectID_85223fcd, p_Name := p_Name_85223fcd, p_DisplayName := p_DisplayName_85223fcd, p_Description := p_Description_85223fcd, p_Category := p_Category_85223fcd, p_Category_Clear := 1, p_Type := p_Type_85223fcd, p_Length := p_Length_85223fcd, p_Length_Clear := 1, p_Precision := p_Precision_85223fcd, p_Precision_Clear := 1, p_Scale := p_Scale_85223fcd, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_85223fcd, p_DefaultValue := p_DefaultValue_85223fcd, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_85223fcd, p_IsUniqueKey := p_IsUniqueKey_85223fcd, p_IsReadOnly := p_IsReadOnly_85223fcd, p_IsRequired := p_IsRequired_85223fcd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_85223fcd, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_85223fcd, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_85223fcd, p_Configuration := p_Configuration_85223fcd, p_Configuration_Clear := 1, p_Status := p_Status_85223fcd, p_IsCustom := p_IsCustom_85223fcd, p_MetadataSource := p_MetadataSource_85223fcd);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_85223fcd, p_IntegrationObjectID := p_IntegrationObjectID_85223fcd, p_Name := p_Name_85223fcd, p_DisplayName := p_DisplayName_85223fcd, p_Description := p_Description_85223fcd, p_Category := p_Category_85223fcd, p_Category_Clear := TRUE, p_Type := p_Type_85223fcd, p_Length := p_Length_85223fcd, p_Length_Clear := TRUE, p_Precision := p_Precision_85223fcd, p_Precision_Clear := TRUE, p_Scale := p_Scale_85223fcd, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_85223fcd, p_DefaultValue := p_DefaultValue_85223fcd, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_85223fcd, p_IsUniqueKey := p_IsUniqueKey_85223fcd, p_IsReadOnly := p_IsReadOnly_85223fcd, p_IsRequired := p_IsRequired_85223fcd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_85223fcd, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_85223fcd, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_85223fcd, p_Configuration := p_Configuration_85223fcd, p_Configuration_Clear := TRUE, p_Status := p_Status_85223fcd, p_IsCustom := p_IsCustom_85223fcd, p_MetadataSource := p_MetadataSource_85223fcd);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2813,18 +2813,18 @@ BEGIN
   p_Description_daa7e35a := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_daa7e35a := 'String';
   p_Length_daa7e35a := 19;
-  p_AllowsNull_daa7e35a := 1;
-  p_IsPrimaryKey_daa7e35a := 0;
-  p_IsUniqueKey_daa7e35a := 0;
-  p_IsReadOnly_daa7e35a := 1;
-  p_IsRequired_daa7e35a := 1;
+  p_AllowsNull_daa7e35a := TRUE;
+  p_IsPrimaryKey_daa7e35a := FALSE;
+  p_IsUniqueKey_daa7e35a := FALSE;
+  p_IsReadOnly_daa7e35a := TRUE;
+  p_IsRequired_daa7e35a := TRUE;
   p_RelatedIntegrationObjectID_daa7e35a := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_daa7e35a := 'orcid-id';
   p_Sequence_daa7e35a := 0;
   p_Status_daa7e35a := 'Active';
-  p_IsCustom_daa7e35a := 0;
+  p_IsCustom_daa7e35a := FALSE;
   p_MetadataSource_daa7e35a := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_daa7e35a, p_IntegrationObjectID := p_IntegrationObjectID_daa7e35a, p_Name := p_Name_daa7e35a, p_DisplayName := p_DisplayName_daa7e35a, p_Description := p_Description_daa7e35a, p_Category := p_Category_daa7e35a, p_Category_Clear := 1, p_Type := p_Type_daa7e35a, p_Length := p_Length_daa7e35a, p_Precision := p_Precision_daa7e35a, p_Precision_Clear := 1, p_Scale := p_Scale_daa7e35a, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_daa7e35a, p_DefaultValue := p_DefaultValue_daa7e35a, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_daa7e35a, p_IsUniqueKey := p_IsUniqueKey_daa7e35a, p_IsReadOnly := p_IsReadOnly_daa7e35a, p_IsRequired := p_IsRequired_daa7e35a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_daa7e35a, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_daa7e35a, p_Sequence := p_Sequence_daa7e35a, p_Configuration := p_Configuration_daa7e35a, p_Configuration_Clear := 1, p_Status := p_Status_daa7e35a, p_IsCustom := p_IsCustom_daa7e35a, p_MetadataSource := p_MetadataSource_daa7e35a);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_daa7e35a, p_IntegrationObjectID := p_IntegrationObjectID_daa7e35a, p_Name := p_Name_daa7e35a, p_DisplayName := p_DisplayName_daa7e35a, p_Description := p_Description_daa7e35a, p_Category := p_Category_daa7e35a, p_Category_Clear := TRUE, p_Type := p_Type_daa7e35a, p_Length := p_Length_daa7e35a, p_Precision := p_Precision_daa7e35a, p_Precision_Clear := TRUE, p_Scale := p_Scale_daa7e35a, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_daa7e35a, p_DefaultValue := p_DefaultValue_daa7e35a, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_daa7e35a, p_IsUniqueKey := p_IsUniqueKey_daa7e35a, p_IsReadOnly := p_IsReadOnly_daa7e35a, p_IsRequired := p_IsRequired_daa7e35a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_daa7e35a, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_daa7e35a, p_Sequence := p_Sequence_daa7e35a, p_Configuration := p_Configuration_daa7e35a, p_Configuration_Clear := TRUE, p_Status := p_Status_daa7e35a, p_IsCustom := p_IsCustom_daa7e35a, p_MetadataSource := p_MetadataSource_daa7e35a);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2860,16 +2860,16 @@ BEGIN
   p_DisplayName_e61b3e81 := 'Put Code';
   p_Description_e61b3e81 := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_e61b3e81 := 'Integer';
-  p_AllowsNull_e61b3e81 := 0;
-  p_IsPrimaryKey_e61b3e81 := 1;
-  p_IsUniqueKey_e61b3e81 := 1;
-  p_IsReadOnly_e61b3e81 := 1;
-  p_IsRequired_e61b3e81 := 1;
+  p_AllowsNull_e61b3e81 := FALSE;
+  p_IsPrimaryKey_e61b3e81 := TRUE;
+  p_IsUniqueKey_e61b3e81 := TRUE;
+  p_IsReadOnly_e61b3e81 := TRUE;
+  p_IsRequired_e61b3e81 := TRUE;
   p_Sequence_e61b3e81 := 1;
   p_Status_e61b3e81 := 'Active';
-  p_IsCustom_e61b3e81 := 0;
+  p_IsCustom_e61b3e81 := FALSE;
   p_MetadataSource_e61b3e81 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e61b3e81, p_IntegrationObjectID := p_IntegrationObjectID_e61b3e81, p_Name := p_Name_e61b3e81, p_DisplayName := p_DisplayName_e61b3e81, p_Description := p_Description_e61b3e81, p_Category := p_Category_e61b3e81, p_Category_Clear := 1, p_Type := p_Type_e61b3e81, p_Length := p_Length_e61b3e81, p_Length_Clear := 1, p_Precision := p_Precision_e61b3e81, p_Precision_Clear := 1, p_Scale := p_Scale_e61b3e81, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e61b3e81, p_DefaultValue := p_DefaultValue_e61b3e81, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e61b3e81, p_IsUniqueKey := p_IsUniqueKey_e61b3e81, p_IsReadOnly := p_IsReadOnly_e61b3e81, p_IsRequired := p_IsRequired_e61b3e81, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e61b3e81, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e61b3e81, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e61b3e81, p_Configuration := p_Configuration_e61b3e81, p_Configuration_Clear := 1, p_Status := p_Status_e61b3e81, p_IsCustom := p_IsCustom_e61b3e81, p_MetadataSource := p_MetadataSource_e61b3e81);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e61b3e81, p_IntegrationObjectID := p_IntegrationObjectID_e61b3e81, p_Name := p_Name_e61b3e81, p_DisplayName := p_DisplayName_e61b3e81, p_Description := p_Description_e61b3e81, p_Category := p_Category_e61b3e81, p_Category_Clear := TRUE, p_Type := p_Type_e61b3e81, p_Length := p_Length_e61b3e81, p_Length_Clear := TRUE, p_Precision := p_Precision_e61b3e81, p_Precision_Clear := TRUE, p_Scale := p_Scale_e61b3e81, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e61b3e81, p_DefaultValue := p_DefaultValue_e61b3e81, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e61b3e81, p_IsUniqueKey := p_IsUniqueKey_e61b3e81, p_IsReadOnly := p_IsReadOnly_e61b3e81, p_IsRequired := p_IsRequired_e61b3e81, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e61b3e81, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e61b3e81, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e61b3e81, p_Configuration := p_Configuration_e61b3e81, p_Configuration_Clear := TRUE, p_Status := p_Status_e61b3e81, p_IsCustom := p_IsCustom_e61b3e81, p_MetadataSource := p_MetadataSource_e61b3e81);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2906,16 +2906,16 @@ BEGIN
   p_Description_40c91e4f := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_40c91e4f := 'String';
   p_Length_40c91e4f := 500;
-  p_AllowsNull_40c91e4f := 1;
-  p_IsPrimaryKey_40c91e4f := 0;
-  p_IsUniqueKey_40c91e4f := 0;
-  p_IsReadOnly_40c91e4f := 1;
-  p_IsRequired_40c91e4f := 0;
+  p_AllowsNull_40c91e4f := TRUE;
+  p_IsPrimaryKey_40c91e4f := FALSE;
+  p_IsUniqueKey_40c91e4f := FALSE;
+  p_IsReadOnly_40c91e4f := TRUE;
+  p_IsRequired_40c91e4f := FALSE;
   p_Sequence_40c91e4f := 2;
   p_Status_40c91e4f := 'Active';
-  p_IsCustom_40c91e4f := 0;
+  p_IsCustom_40c91e4f := FALSE;
   p_MetadataSource_40c91e4f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_40c91e4f, p_IntegrationObjectID := p_IntegrationObjectID_40c91e4f, p_Name := p_Name_40c91e4f, p_DisplayName := p_DisplayName_40c91e4f, p_Description := p_Description_40c91e4f, p_Category := p_Category_40c91e4f, p_Category_Clear := 1, p_Type := p_Type_40c91e4f, p_Length := p_Length_40c91e4f, p_Precision := p_Precision_40c91e4f, p_Precision_Clear := 1, p_Scale := p_Scale_40c91e4f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_40c91e4f, p_DefaultValue := p_DefaultValue_40c91e4f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_40c91e4f, p_IsUniqueKey := p_IsUniqueKey_40c91e4f, p_IsReadOnly := p_IsReadOnly_40c91e4f, p_IsRequired := p_IsRequired_40c91e4f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_40c91e4f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_40c91e4f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_40c91e4f, p_Configuration := p_Configuration_40c91e4f, p_Configuration_Clear := 1, p_Status := p_Status_40c91e4f, p_IsCustom := p_IsCustom_40c91e4f, p_MetadataSource := p_MetadataSource_40c91e4f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_40c91e4f, p_IntegrationObjectID := p_IntegrationObjectID_40c91e4f, p_Name := p_Name_40c91e4f, p_DisplayName := p_DisplayName_40c91e4f, p_Description := p_Description_40c91e4f, p_Category := p_Category_40c91e4f, p_Category_Clear := TRUE, p_Type := p_Type_40c91e4f, p_Length := p_Length_40c91e4f, p_Precision := p_Precision_40c91e4f, p_Precision_Clear := TRUE, p_Scale := p_Scale_40c91e4f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_40c91e4f, p_DefaultValue := p_DefaultValue_40c91e4f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_40c91e4f, p_IsUniqueKey := p_IsUniqueKey_40c91e4f, p_IsReadOnly := p_IsReadOnly_40c91e4f, p_IsRequired := p_IsRequired_40c91e4f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_40c91e4f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_40c91e4f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_40c91e4f, p_Configuration := p_Configuration_40c91e4f, p_Configuration_Clear := TRUE, p_Status := p_Status_40c91e4f, p_IsCustom := p_IsCustom_40c91e4f, p_MetadataSource := p_MetadataSource_40c91e4f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2951,16 +2951,16 @@ BEGIN
   p_DisplayName_3a2e4dc8 := 'Visibility';
   p_Description_3a2e4dc8 := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_3a2e4dc8 := 'String';
-  p_AllowsNull_3a2e4dc8 := 1;
-  p_IsPrimaryKey_3a2e4dc8 := 0;
-  p_IsUniqueKey_3a2e4dc8 := 0;
-  p_IsReadOnly_3a2e4dc8 := 1;
-  p_IsRequired_3a2e4dc8 := 0;
+  p_AllowsNull_3a2e4dc8 := TRUE;
+  p_IsPrimaryKey_3a2e4dc8 := FALSE;
+  p_IsUniqueKey_3a2e4dc8 := FALSE;
+  p_IsReadOnly_3a2e4dc8 := TRUE;
+  p_IsRequired_3a2e4dc8 := FALSE;
   p_Sequence_3a2e4dc8 := 3;
   p_Status_3a2e4dc8 := 'Active';
-  p_IsCustom_3a2e4dc8 := 0;
+  p_IsCustom_3a2e4dc8 := FALSE;
   p_MetadataSource_3a2e4dc8 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3a2e4dc8, p_IntegrationObjectID := p_IntegrationObjectID_3a2e4dc8, p_Name := p_Name_3a2e4dc8, p_DisplayName := p_DisplayName_3a2e4dc8, p_Description := p_Description_3a2e4dc8, p_Category := p_Category_3a2e4dc8, p_Category_Clear := 1, p_Type := p_Type_3a2e4dc8, p_Length := p_Length_3a2e4dc8, p_Length_Clear := 1, p_Precision := p_Precision_3a2e4dc8, p_Precision_Clear := 1, p_Scale := p_Scale_3a2e4dc8, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_3a2e4dc8, p_DefaultValue := p_DefaultValue_3a2e4dc8, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_3a2e4dc8, p_IsUniqueKey := p_IsUniqueKey_3a2e4dc8, p_IsReadOnly := p_IsReadOnly_3a2e4dc8, p_IsRequired := p_IsRequired_3a2e4dc8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3a2e4dc8, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3a2e4dc8, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_3a2e4dc8, p_Configuration := p_Configuration_3a2e4dc8, p_Configuration_Clear := 1, p_Status := p_Status_3a2e4dc8, p_IsCustom := p_IsCustom_3a2e4dc8, p_MetadataSource := p_MetadataSource_3a2e4dc8);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3a2e4dc8, p_IntegrationObjectID := p_IntegrationObjectID_3a2e4dc8, p_Name := p_Name_3a2e4dc8, p_DisplayName := p_DisplayName_3a2e4dc8, p_Description := p_Description_3a2e4dc8, p_Category := p_Category_3a2e4dc8, p_Category_Clear := TRUE, p_Type := p_Type_3a2e4dc8, p_Length := p_Length_3a2e4dc8, p_Length_Clear := TRUE, p_Precision := p_Precision_3a2e4dc8, p_Precision_Clear := TRUE, p_Scale := p_Scale_3a2e4dc8, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_3a2e4dc8, p_DefaultValue := p_DefaultValue_3a2e4dc8, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_3a2e4dc8, p_IsUniqueKey := p_IsUniqueKey_3a2e4dc8, p_IsReadOnly := p_IsReadOnly_3a2e4dc8, p_IsRequired := p_IsRequired_3a2e4dc8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3a2e4dc8, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3a2e4dc8, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_3a2e4dc8, p_Configuration := p_Configuration_3a2e4dc8, p_Configuration_Clear := TRUE, p_Status := p_Status_3a2e4dc8, p_IsCustom := p_IsCustom_3a2e4dc8, p_MetadataSource := p_MetadataSource_3a2e4dc8);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -2996,16 +2996,16 @@ BEGIN
   p_DisplayName_10027317 := 'Display Index';
   p_Description_10027317 := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_10027317 := 'String';
-  p_AllowsNull_10027317 := 1;
-  p_IsPrimaryKey_10027317 := 0;
-  p_IsUniqueKey_10027317 := 0;
-  p_IsReadOnly_10027317 := 1;
-  p_IsRequired_10027317 := 0;
+  p_AllowsNull_10027317 := TRUE;
+  p_IsPrimaryKey_10027317 := FALSE;
+  p_IsUniqueKey_10027317 := FALSE;
+  p_IsReadOnly_10027317 := TRUE;
+  p_IsRequired_10027317 := FALSE;
   p_Sequence_10027317 := 4;
   p_Status_10027317 := 'Active';
-  p_IsCustom_10027317 := 0;
+  p_IsCustom_10027317 := FALSE;
   p_MetadataSource_10027317 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_10027317, p_IntegrationObjectID := p_IntegrationObjectID_10027317, p_Name := p_Name_10027317, p_DisplayName := p_DisplayName_10027317, p_Description := p_Description_10027317, p_Category := p_Category_10027317, p_Category_Clear := 1, p_Type := p_Type_10027317, p_Length := p_Length_10027317, p_Length_Clear := 1, p_Precision := p_Precision_10027317, p_Precision_Clear := 1, p_Scale := p_Scale_10027317, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_10027317, p_DefaultValue := p_DefaultValue_10027317, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_10027317, p_IsUniqueKey := p_IsUniqueKey_10027317, p_IsReadOnly := p_IsReadOnly_10027317, p_IsRequired := p_IsRequired_10027317, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_10027317, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_10027317, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_10027317, p_Configuration := p_Configuration_10027317, p_Configuration_Clear := 1, p_Status := p_Status_10027317, p_IsCustom := p_IsCustom_10027317, p_MetadataSource := p_MetadataSource_10027317);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_10027317, p_IntegrationObjectID := p_IntegrationObjectID_10027317, p_Name := p_Name_10027317, p_DisplayName := p_DisplayName_10027317, p_Description := p_Description_10027317, p_Category := p_Category_10027317, p_Category_Clear := TRUE, p_Type := p_Type_10027317, p_Length := p_Length_10027317, p_Length_Clear := TRUE, p_Precision := p_Precision_10027317, p_Precision_Clear := TRUE, p_Scale := p_Scale_10027317, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_10027317, p_DefaultValue := p_DefaultValue_10027317, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_10027317, p_IsUniqueKey := p_IsUniqueKey_10027317, p_IsReadOnly := p_IsReadOnly_10027317, p_IsRequired := p_IsRequired_10027317, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_10027317, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_10027317, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_10027317, p_Configuration := p_Configuration_10027317, p_Configuration_Clear := TRUE, p_Status := p_Status_10027317, p_IsCustom := p_IsCustom_10027317, p_MetadataSource := p_MetadataSource_10027317);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3041,16 +3041,16 @@ BEGIN
   p_DisplayName_141ef47b := 'Created Date';
   p_Description_141ef47b := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_141ef47b := 'DateTime';
-  p_AllowsNull_141ef47b := 1;
-  p_IsPrimaryKey_141ef47b := 0;
-  p_IsUniqueKey_141ef47b := 0;
-  p_IsReadOnly_141ef47b := 1;
-  p_IsRequired_141ef47b := 0;
+  p_AllowsNull_141ef47b := TRUE;
+  p_IsPrimaryKey_141ef47b := FALSE;
+  p_IsUniqueKey_141ef47b := FALSE;
+  p_IsReadOnly_141ef47b := TRUE;
+  p_IsRequired_141ef47b := FALSE;
   p_Sequence_141ef47b := 5;
   p_Status_141ef47b := 'Active';
-  p_IsCustom_141ef47b := 0;
+  p_IsCustom_141ef47b := FALSE;
   p_MetadataSource_141ef47b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_141ef47b, p_IntegrationObjectID := p_IntegrationObjectID_141ef47b, p_Name := p_Name_141ef47b, p_DisplayName := p_DisplayName_141ef47b, p_Description := p_Description_141ef47b, p_Category := p_Category_141ef47b, p_Category_Clear := 1, p_Type := p_Type_141ef47b, p_Length := p_Length_141ef47b, p_Length_Clear := 1, p_Precision := p_Precision_141ef47b, p_Precision_Clear := 1, p_Scale := p_Scale_141ef47b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_141ef47b, p_DefaultValue := p_DefaultValue_141ef47b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_141ef47b, p_IsUniqueKey := p_IsUniqueKey_141ef47b, p_IsReadOnly := p_IsReadOnly_141ef47b, p_IsRequired := p_IsRequired_141ef47b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_141ef47b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_141ef47b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_141ef47b, p_Configuration := p_Configuration_141ef47b, p_Configuration_Clear := 1, p_Status := p_Status_141ef47b, p_IsCustom := p_IsCustom_141ef47b, p_MetadataSource := p_MetadataSource_141ef47b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_141ef47b, p_IntegrationObjectID := p_IntegrationObjectID_141ef47b, p_Name := p_Name_141ef47b, p_DisplayName := p_DisplayName_141ef47b, p_Description := p_Description_141ef47b, p_Category := p_Category_141ef47b, p_Category_Clear := TRUE, p_Type := p_Type_141ef47b, p_Length := p_Length_141ef47b, p_Length_Clear := TRUE, p_Precision := p_Precision_141ef47b, p_Precision_Clear := TRUE, p_Scale := p_Scale_141ef47b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_141ef47b, p_DefaultValue := p_DefaultValue_141ef47b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_141ef47b, p_IsUniqueKey := p_IsUniqueKey_141ef47b, p_IsReadOnly := p_IsReadOnly_141ef47b, p_IsRequired := p_IsRequired_141ef47b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_141ef47b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_141ef47b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_141ef47b, p_Configuration := p_Configuration_141ef47b, p_Configuration_Clear := TRUE, p_Status := p_Status_141ef47b, p_IsCustom := p_IsCustom_141ef47b, p_MetadataSource := p_MetadataSource_141ef47b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3086,16 +3086,16 @@ BEGIN
   p_DisplayName_0e32310b := 'Last Modified Date';
   p_Description_0e32310b := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_0e32310b := 'DateTime';
-  p_AllowsNull_0e32310b := 1;
-  p_IsPrimaryKey_0e32310b := 0;
-  p_IsUniqueKey_0e32310b := 0;
-  p_IsReadOnly_0e32310b := 1;
-  p_IsRequired_0e32310b := 0;
+  p_AllowsNull_0e32310b := TRUE;
+  p_IsPrimaryKey_0e32310b := FALSE;
+  p_IsUniqueKey_0e32310b := FALSE;
+  p_IsReadOnly_0e32310b := TRUE;
+  p_IsRequired_0e32310b := FALSE;
   p_Sequence_0e32310b := 6;
   p_Status_0e32310b := 'Active';
-  p_IsCustom_0e32310b := 0;
+  p_IsCustom_0e32310b := FALSE;
   p_MetadataSource_0e32310b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0e32310b, p_IntegrationObjectID := p_IntegrationObjectID_0e32310b, p_Name := p_Name_0e32310b, p_DisplayName := p_DisplayName_0e32310b, p_Description := p_Description_0e32310b, p_Category := p_Category_0e32310b, p_Category_Clear := 1, p_Type := p_Type_0e32310b, p_Length := p_Length_0e32310b, p_Length_Clear := 1, p_Precision := p_Precision_0e32310b, p_Precision_Clear := 1, p_Scale := p_Scale_0e32310b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_0e32310b, p_DefaultValue := p_DefaultValue_0e32310b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_0e32310b, p_IsUniqueKey := p_IsUniqueKey_0e32310b, p_IsReadOnly := p_IsReadOnly_0e32310b, p_IsRequired := p_IsRequired_0e32310b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0e32310b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0e32310b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_0e32310b, p_Configuration := p_Configuration_0e32310b, p_Configuration_Clear := 1, p_Status := p_Status_0e32310b, p_IsCustom := p_IsCustom_0e32310b, p_MetadataSource := p_MetadataSource_0e32310b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0e32310b, p_IntegrationObjectID := p_IntegrationObjectID_0e32310b, p_Name := p_Name_0e32310b, p_DisplayName := p_DisplayName_0e32310b, p_Description := p_Description_0e32310b, p_Category := p_Category_0e32310b, p_Category_Clear := TRUE, p_Type := p_Type_0e32310b, p_Length := p_Length_0e32310b, p_Length_Clear := TRUE, p_Precision := p_Precision_0e32310b, p_Precision_Clear := TRUE, p_Scale := p_Scale_0e32310b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_0e32310b, p_DefaultValue := p_DefaultValue_0e32310b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_0e32310b, p_IsUniqueKey := p_IsUniqueKey_0e32310b, p_IsReadOnly := p_IsReadOnly_0e32310b, p_IsRequired := p_IsRequired_0e32310b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0e32310b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0e32310b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_0e32310b, p_Configuration := p_Configuration_0e32310b, p_Configuration_Clear := TRUE, p_Status := p_Status_0e32310b, p_IsCustom := p_IsCustom_0e32310b, p_MetadataSource := p_MetadataSource_0e32310b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3131,16 +3131,16 @@ BEGIN
   p_DisplayName_ca5ea156 := 'Source';
   p_Description_ca5ea156 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_ca5ea156 := 'json';
-  p_AllowsNull_ca5ea156 := 1;
-  p_IsPrimaryKey_ca5ea156 := 0;
-  p_IsUniqueKey_ca5ea156 := 0;
-  p_IsReadOnly_ca5ea156 := 1;
-  p_IsRequired_ca5ea156 := 0;
+  p_AllowsNull_ca5ea156 := TRUE;
+  p_IsPrimaryKey_ca5ea156 := FALSE;
+  p_IsUniqueKey_ca5ea156 := FALSE;
+  p_IsReadOnly_ca5ea156 := TRUE;
+  p_IsRequired_ca5ea156 := FALSE;
   p_Sequence_ca5ea156 := 7;
   p_Status_ca5ea156 := 'Active';
-  p_IsCustom_ca5ea156 := 0;
+  p_IsCustom_ca5ea156 := FALSE;
   p_MetadataSource_ca5ea156 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ca5ea156, p_IntegrationObjectID := p_IntegrationObjectID_ca5ea156, p_Name := p_Name_ca5ea156, p_DisplayName := p_DisplayName_ca5ea156, p_Description := p_Description_ca5ea156, p_Category := p_Category_ca5ea156, p_Category_Clear := 1, p_Type := p_Type_ca5ea156, p_Length := p_Length_ca5ea156, p_Length_Clear := 1, p_Precision := p_Precision_ca5ea156, p_Precision_Clear := 1, p_Scale := p_Scale_ca5ea156, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ca5ea156, p_DefaultValue := p_DefaultValue_ca5ea156, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ca5ea156, p_IsUniqueKey := p_IsUniqueKey_ca5ea156, p_IsReadOnly := p_IsReadOnly_ca5ea156, p_IsRequired := p_IsRequired_ca5ea156, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ca5ea156, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ca5ea156, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ca5ea156, p_Configuration := p_Configuration_ca5ea156, p_Configuration_Clear := 1, p_Status := p_Status_ca5ea156, p_IsCustom := p_IsCustom_ca5ea156, p_MetadataSource := p_MetadataSource_ca5ea156);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ca5ea156, p_IntegrationObjectID := p_IntegrationObjectID_ca5ea156, p_Name := p_Name_ca5ea156, p_DisplayName := p_DisplayName_ca5ea156, p_Description := p_Description_ca5ea156, p_Category := p_Category_ca5ea156, p_Category_Clear := TRUE, p_Type := p_Type_ca5ea156, p_Length := p_Length_ca5ea156, p_Length_Clear := TRUE, p_Precision := p_Precision_ca5ea156, p_Precision_Clear := TRUE, p_Scale := p_Scale_ca5ea156, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ca5ea156, p_DefaultValue := p_DefaultValue_ca5ea156, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ca5ea156, p_IsUniqueKey := p_IsUniqueKey_ca5ea156, p_IsReadOnly := p_IsReadOnly_ca5ea156, p_IsRequired := p_IsRequired_ca5ea156, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ca5ea156, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ca5ea156, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ca5ea156, p_Configuration := p_Configuration_ca5ea156, p_Configuration_Clear := TRUE, p_Status := p_Status_ca5ea156, p_IsCustom := p_IsCustom_ca5ea156, p_MetadataSource := p_MetadataSource_ca5ea156);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3177,16 +3177,16 @@ BEGIN
   p_Description_ccda2e2c := 'Department within the organization. (common-3.0.xsd affiliation department-name, long-text)';
   p_Type_ccda2e2c := 'String';
   p_Length_ccda2e2c := 4000;
-  p_AllowsNull_ccda2e2c := 1;
-  p_IsPrimaryKey_ccda2e2c := 0;
-  p_IsUniqueKey_ccda2e2c := 0;
-  p_IsReadOnly_ccda2e2c := 1;
-  p_IsRequired_ccda2e2c := 0;
+  p_AllowsNull_ccda2e2c := TRUE;
+  p_IsPrimaryKey_ccda2e2c := FALSE;
+  p_IsUniqueKey_ccda2e2c := FALSE;
+  p_IsReadOnly_ccda2e2c := TRUE;
+  p_IsRequired_ccda2e2c := FALSE;
   p_Sequence_ccda2e2c := 8;
   p_Status_ccda2e2c := 'Active';
-  p_IsCustom_ccda2e2c := 0;
+  p_IsCustom_ccda2e2c := FALSE;
   p_MetadataSource_ccda2e2c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ccda2e2c, p_IntegrationObjectID := p_IntegrationObjectID_ccda2e2c, p_Name := p_Name_ccda2e2c, p_DisplayName := p_DisplayName_ccda2e2c, p_Description := p_Description_ccda2e2c, p_Category := p_Category_ccda2e2c, p_Category_Clear := 1, p_Type := p_Type_ccda2e2c, p_Length := p_Length_ccda2e2c, p_Precision := p_Precision_ccda2e2c, p_Precision_Clear := 1, p_Scale := p_Scale_ccda2e2c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ccda2e2c, p_DefaultValue := p_DefaultValue_ccda2e2c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ccda2e2c, p_IsUniqueKey := p_IsUniqueKey_ccda2e2c, p_IsReadOnly := p_IsReadOnly_ccda2e2c, p_IsRequired := p_IsRequired_ccda2e2c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ccda2e2c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ccda2e2c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ccda2e2c, p_Configuration := p_Configuration_ccda2e2c, p_Configuration_Clear := 1, p_Status := p_Status_ccda2e2c, p_IsCustom := p_IsCustom_ccda2e2c, p_MetadataSource := p_MetadataSource_ccda2e2c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ccda2e2c, p_IntegrationObjectID := p_IntegrationObjectID_ccda2e2c, p_Name := p_Name_ccda2e2c, p_DisplayName := p_DisplayName_ccda2e2c, p_Description := p_Description_ccda2e2c, p_Category := p_Category_ccda2e2c, p_Category_Clear := TRUE, p_Type := p_Type_ccda2e2c, p_Length := p_Length_ccda2e2c, p_Precision := p_Precision_ccda2e2c, p_Precision_Clear := TRUE, p_Scale := p_Scale_ccda2e2c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ccda2e2c, p_DefaultValue := p_DefaultValue_ccda2e2c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ccda2e2c, p_IsUniqueKey := p_IsUniqueKey_ccda2e2c, p_IsReadOnly := p_IsReadOnly_ccda2e2c, p_IsRequired := p_IsRequired_ccda2e2c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ccda2e2c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ccda2e2c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ccda2e2c, p_Configuration := p_Configuration_ccda2e2c, p_Configuration_Clear := TRUE, p_Status := p_Status_ccda2e2c, p_IsCustom := p_IsCustom_ccda2e2c, p_MetadataSource := p_MetadataSource_ccda2e2c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3223,16 +3223,16 @@ BEGIN
   p_Description_3d86dd10 := 'Role or title held at the organization. (common-3.0.xsd affiliation role-title, long-text)';
   p_Type_3d86dd10 := 'String';
   p_Length_3d86dd10 := 4000;
-  p_AllowsNull_3d86dd10 := 1;
-  p_IsPrimaryKey_3d86dd10 := 0;
-  p_IsUniqueKey_3d86dd10 := 0;
-  p_IsReadOnly_3d86dd10 := 1;
-  p_IsRequired_3d86dd10 := 0;
+  p_AllowsNull_3d86dd10 := TRUE;
+  p_IsPrimaryKey_3d86dd10 := FALSE;
+  p_IsUniqueKey_3d86dd10 := FALSE;
+  p_IsReadOnly_3d86dd10 := TRUE;
+  p_IsRequired_3d86dd10 := FALSE;
   p_Sequence_3d86dd10 := 9;
   p_Status_3d86dd10 := 'Active';
-  p_IsCustom_3d86dd10 := 0;
+  p_IsCustom_3d86dd10 := FALSE;
   p_MetadataSource_3d86dd10 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3d86dd10, p_IntegrationObjectID := p_IntegrationObjectID_3d86dd10, p_Name := p_Name_3d86dd10, p_DisplayName := p_DisplayName_3d86dd10, p_Description := p_Description_3d86dd10, p_Category := p_Category_3d86dd10, p_Category_Clear := 1, p_Type := p_Type_3d86dd10, p_Length := p_Length_3d86dd10, p_Precision := p_Precision_3d86dd10, p_Precision_Clear := 1, p_Scale := p_Scale_3d86dd10, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_3d86dd10, p_DefaultValue := p_DefaultValue_3d86dd10, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_3d86dd10, p_IsUniqueKey := p_IsUniqueKey_3d86dd10, p_IsReadOnly := p_IsReadOnly_3d86dd10, p_IsRequired := p_IsRequired_3d86dd10, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3d86dd10, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3d86dd10, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_3d86dd10, p_Configuration := p_Configuration_3d86dd10, p_Configuration_Clear := 1, p_Status := p_Status_3d86dd10, p_IsCustom := p_IsCustom_3d86dd10, p_MetadataSource := p_MetadataSource_3d86dd10);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3d86dd10, p_IntegrationObjectID := p_IntegrationObjectID_3d86dd10, p_Name := p_Name_3d86dd10, p_DisplayName := p_DisplayName_3d86dd10, p_Description := p_Description_3d86dd10, p_Category := p_Category_3d86dd10, p_Category_Clear := TRUE, p_Type := p_Type_3d86dd10, p_Length := p_Length_3d86dd10, p_Precision := p_Precision_3d86dd10, p_Precision_Clear := TRUE, p_Scale := p_Scale_3d86dd10, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_3d86dd10, p_DefaultValue := p_DefaultValue_3d86dd10, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_3d86dd10, p_IsUniqueKey := p_IsUniqueKey_3d86dd10, p_IsReadOnly := p_IsReadOnly_3d86dd10, p_IsRequired := p_IsRequired_3d86dd10, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3d86dd10, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3d86dd10, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_3d86dd10, p_Configuration := p_Configuration_3d86dd10, p_Configuration_Clear := TRUE, p_Status := p_Status_3d86dd10, p_IsCustom := p_IsCustom_3d86dd10, p_MetadataSource := p_MetadataSource_3d86dd10);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3268,16 +3268,16 @@ BEGIN
   p_DisplayName_e95a564d := 'Start Date';
   p_Description_e95a564d := 'Fuzzy start date (year + optional month/day). (common-3.0.xsd start-date, fuzzy-date)';
   p_Type_e95a564d := 'json';
-  p_AllowsNull_e95a564d := 1;
-  p_IsPrimaryKey_e95a564d := 0;
-  p_IsUniqueKey_e95a564d := 0;
-  p_IsReadOnly_e95a564d := 1;
-  p_IsRequired_e95a564d := 0;
+  p_AllowsNull_e95a564d := TRUE;
+  p_IsPrimaryKey_e95a564d := FALSE;
+  p_IsUniqueKey_e95a564d := FALSE;
+  p_IsReadOnly_e95a564d := TRUE;
+  p_IsRequired_e95a564d := FALSE;
   p_Sequence_e95a564d := 10;
   p_Status_e95a564d := 'Active';
-  p_IsCustom_e95a564d := 0;
+  p_IsCustom_e95a564d := FALSE;
   p_MetadataSource_e95a564d := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e95a564d, p_IntegrationObjectID := p_IntegrationObjectID_e95a564d, p_Name := p_Name_e95a564d, p_DisplayName := p_DisplayName_e95a564d, p_Description := p_Description_e95a564d, p_Category := p_Category_e95a564d, p_Category_Clear := 1, p_Type := p_Type_e95a564d, p_Length := p_Length_e95a564d, p_Length_Clear := 1, p_Precision := p_Precision_e95a564d, p_Precision_Clear := 1, p_Scale := p_Scale_e95a564d, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e95a564d, p_DefaultValue := p_DefaultValue_e95a564d, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e95a564d, p_IsUniqueKey := p_IsUniqueKey_e95a564d, p_IsReadOnly := p_IsReadOnly_e95a564d, p_IsRequired := p_IsRequired_e95a564d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e95a564d, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e95a564d, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e95a564d, p_Configuration := p_Configuration_e95a564d, p_Configuration_Clear := 1, p_Status := p_Status_e95a564d, p_IsCustom := p_IsCustom_e95a564d, p_MetadataSource := p_MetadataSource_e95a564d);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e95a564d, p_IntegrationObjectID := p_IntegrationObjectID_e95a564d, p_Name := p_Name_e95a564d, p_DisplayName := p_DisplayName_e95a564d, p_Description := p_Description_e95a564d, p_Category := p_Category_e95a564d, p_Category_Clear := TRUE, p_Type := p_Type_e95a564d, p_Length := p_Length_e95a564d, p_Length_Clear := TRUE, p_Precision := p_Precision_e95a564d, p_Precision_Clear := TRUE, p_Scale := p_Scale_e95a564d, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e95a564d, p_DefaultValue := p_DefaultValue_e95a564d, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e95a564d, p_IsUniqueKey := p_IsUniqueKey_e95a564d, p_IsReadOnly := p_IsReadOnly_e95a564d, p_IsRequired := p_IsRequired_e95a564d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e95a564d, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e95a564d, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e95a564d, p_Configuration := p_Configuration_e95a564d, p_Configuration_Clear := TRUE, p_Status := p_Status_e95a564d, p_IsCustom := p_IsCustom_e95a564d, p_MetadataSource := p_MetadataSource_e95a564d);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3313,16 +3313,16 @@ BEGIN
   p_DisplayName_beb848df := 'End Date';
   p_Description_beb848df := 'Fuzzy end date (year + optional month/day). (common-3.0.xsd end-date, fuzzy-date)';
   p_Type_beb848df := 'json';
-  p_AllowsNull_beb848df := 1;
-  p_IsPrimaryKey_beb848df := 0;
-  p_IsUniqueKey_beb848df := 0;
-  p_IsReadOnly_beb848df := 1;
-  p_IsRequired_beb848df := 0;
+  p_AllowsNull_beb848df := TRUE;
+  p_IsPrimaryKey_beb848df := FALSE;
+  p_IsUniqueKey_beb848df := FALSE;
+  p_IsReadOnly_beb848df := TRUE;
+  p_IsRequired_beb848df := FALSE;
   p_Sequence_beb848df := 11;
   p_Status_beb848df := 'Active';
-  p_IsCustom_beb848df := 0;
+  p_IsCustom_beb848df := FALSE;
   p_MetadataSource_beb848df := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_beb848df, p_IntegrationObjectID := p_IntegrationObjectID_beb848df, p_Name := p_Name_beb848df, p_DisplayName := p_DisplayName_beb848df, p_Description := p_Description_beb848df, p_Category := p_Category_beb848df, p_Category_Clear := 1, p_Type := p_Type_beb848df, p_Length := p_Length_beb848df, p_Length_Clear := 1, p_Precision := p_Precision_beb848df, p_Precision_Clear := 1, p_Scale := p_Scale_beb848df, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_beb848df, p_DefaultValue := p_DefaultValue_beb848df, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_beb848df, p_IsUniqueKey := p_IsUniqueKey_beb848df, p_IsReadOnly := p_IsReadOnly_beb848df, p_IsRequired := p_IsRequired_beb848df, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_beb848df, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_beb848df, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_beb848df, p_Configuration := p_Configuration_beb848df, p_Configuration_Clear := 1, p_Status := p_Status_beb848df, p_IsCustom := p_IsCustom_beb848df, p_MetadataSource := p_MetadataSource_beb848df);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_beb848df, p_IntegrationObjectID := p_IntegrationObjectID_beb848df, p_Name := p_Name_beb848df, p_DisplayName := p_DisplayName_beb848df, p_Description := p_Description_beb848df, p_Category := p_Category_beb848df, p_Category_Clear := TRUE, p_Type := p_Type_beb848df, p_Length := p_Length_beb848df, p_Length_Clear := TRUE, p_Precision := p_Precision_beb848df, p_Precision_Clear := TRUE, p_Scale := p_Scale_beb848df, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_beb848df, p_DefaultValue := p_DefaultValue_beb848df, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_beb848df, p_IsUniqueKey := p_IsUniqueKey_beb848df, p_IsReadOnly := p_IsReadOnly_beb848df, p_IsRequired := p_IsRequired_beb848df, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_beb848df, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_beb848df, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_beb848df, p_Configuration := p_Configuration_beb848df, p_Configuration_Clear := TRUE, p_Status := p_Status_beb848df, p_IsCustom := p_IsCustom_beb848df, p_MetadataSource := p_MetadataSource_beb848df);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3358,16 +3358,16 @@ BEGIN
   p_DisplayName_9f46df41 := 'Organization';
   p_Description_9f46df41 := 'Organization reference: name, address, disambiguated-org-id (ROR/GRID/Ringgold). Required. (common-3.0.xsd organization, minOccurs=1)';
   p_Type_9f46df41 := 'json';
-  p_AllowsNull_9f46df41 := 1;
-  p_IsPrimaryKey_9f46df41 := 0;
-  p_IsUniqueKey_9f46df41 := 0;
-  p_IsReadOnly_9f46df41 := 1;
-  p_IsRequired_9f46df41 := 1;
+  p_AllowsNull_9f46df41 := TRUE;
+  p_IsPrimaryKey_9f46df41 := FALSE;
+  p_IsUniqueKey_9f46df41 := FALSE;
+  p_IsReadOnly_9f46df41 := TRUE;
+  p_IsRequired_9f46df41 := TRUE;
   p_Sequence_9f46df41 := 12;
   p_Status_9f46df41 := 'Active';
-  p_IsCustom_9f46df41 := 0;
+  p_IsCustom_9f46df41 := FALSE;
   p_MetadataSource_9f46df41 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9f46df41, p_IntegrationObjectID := p_IntegrationObjectID_9f46df41, p_Name := p_Name_9f46df41, p_DisplayName := p_DisplayName_9f46df41, p_Description := p_Description_9f46df41, p_Category := p_Category_9f46df41, p_Category_Clear := 1, p_Type := p_Type_9f46df41, p_Length := p_Length_9f46df41, p_Length_Clear := 1, p_Precision := p_Precision_9f46df41, p_Precision_Clear := 1, p_Scale := p_Scale_9f46df41, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_9f46df41, p_DefaultValue := p_DefaultValue_9f46df41, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_9f46df41, p_IsUniqueKey := p_IsUniqueKey_9f46df41, p_IsReadOnly := p_IsReadOnly_9f46df41, p_IsRequired := p_IsRequired_9f46df41, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9f46df41, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9f46df41, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_9f46df41, p_Configuration := p_Configuration_9f46df41, p_Configuration_Clear := 1, p_Status := p_Status_9f46df41, p_IsCustom := p_IsCustom_9f46df41, p_MetadataSource := p_MetadataSource_9f46df41);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9f46df41, p_IntegrationObjectID := p_IntegrationObjectID_9f46df41, p_Name := p_Name_9f46df41, p_DisplayName := p_DisplayName_9f46df41, p_Description := p_Description_9f46df41, p_Category := p_Category_9f46df41, p_Category_Clear := TRUE, p_Type := p_Type_9f46df41, p_Length := p_Length_9f46df41, p_Length_Clear := TRUE, p_Precision := p_Precision_9f46df41, p_Precision_Clear := TRUE, p_Scale := p_Scale_9f46df41, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_9f46df41, p_DefaultValue := p_DefaultValue_9f46df41, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_9f46df41, p_IsUniqueKey := p_IsUniqueKey_9f46df41, p_IsReadOnly := p_IsReadOnly_9f46df41, p_IsRequired := p_IsRequired_9f46df41, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9f46df41, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9f46df41, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_9f46df41, p_Configuration := p_Configuration_9f46df41, p_Configuration_Clear := TRUE, p_Status := p_Status_9f46df41, p_IsCustom := p_IsCustom_9f46df41, p_MetadataSource := p_MetadataSource_9f46df41);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3403,16 +3403,16 @@ BEGIN
   p_DisplayName_0f47b94b := 'Url';
   p_Description_0f47b94b := 'A URL associated with the affiliation. (common-3.0.xsd affiliation url)';
   p_Type_0f47b94b := 'String';
-  p_AllowsNull_0f47b94b := 1;
-  p_IsPrimaryKey_0f47b94b := 0;
-  p_IsUniqueKey_0f47b94b := 0;
-  p_IsReadOnly_0f47b94b := 1;
-  p_IsRequired_0f47b94b := 0;
+  p_AllowsNull_0f47b94b := TRUE;
+  p_IsPrimaryKey_0f47b94b := FALSE;
+  p_IsUniqueKey_0f47b94b := FALSE;
+  p_IsReadOnly_0f47b94b := TRUE;
+  p_IsRequired_0f47b94b := FALSE;
   p_Sequence_0f47b94b := 13;
   p_Status_0f47b94b := 'Active';
-  p_IsCustom_0f47b94b := 0;
+  p_IsCustom_0f47b94b := FALSE;
   p_MetadataSource_0f47b94b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0f47b94b, p_IntegrationObjectID := p_IntegrationObjectID_0f47b94b, p_Name := p_Name_0f47b94b, p_DisplayName := p_DisplayName_0f47b94b, p_Description := p_Description_0f47b94b, p_Category := p_Category_0f47b94b, p_Category_Clear := 1, p_Type := p_Type_0f47b94b, p_Length := p_Length_0f47b94b, p_Length_Clear := 1, p_Precision := p_Precision_0f47b94b, p_Precision_Clear := 1, p_Scale := p_Scale_0f47b94b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_0f47b94b, p_DefaultValue := p_DefaultValue_0f47b94b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_0f47b94b, p_IsUniqueKey := p_IsUniqueKey_0f47b94b, p_IsReadOnly := p_IsReadOnly_0f47b94b, p_IsRequired := p_IsRequired_0f47b94b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0f47b94b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0f47b94b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_0f47b94b, p_Configuration := p_Configuration_0f47b94b, p_Configuration_Clear := 1, p_Status := p_Status_0f47b94b, p_IsCustom := p_IsCustom_0f47b94b, p_MetadataSource := p_MetadataSource_0f47b94b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0f47b94b, p_IntegrationObjectID := p_IntegrationObjectID_0f47b94b, p_Name := p_Name_0f47b94b, p_DisplayName := p_DisplayName_0f47b94b, p_Description := p_Description_0f47b94b, p_Category := p_Category_0f47b94b, p_Category_Clear := TRUE, p_Type := p_Type_0f47b94b, p_Length := p_Length_0f47b94b, p_Length_Clear := TRUE, p_Precision := p_Precision_0f47b94b, p_Precision_Clear := TRUE, p_Scale := p_Scale_0f47b94b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_0f47b94b, p_DefaultValue := p_DefaultValue_0f47b94b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_0f47b94b, p_IsUniqueKey := p_IsUniqueKey_0f47b94b, p_IsReadOnly := p_IsReadOnly_0f47b94b, p_IsRequired := p_IsRequired_0f47b94b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0f47b94b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0f47b94b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_0f47b94b, p_Configuration := p_Configuration_0f47b94b, p_Configuration_Clear := TRUE, p_Status := p_Status_0f47b94b, p_IsCustom := p_IsCustom_0f47b94b, p_MetadataSource := p_MetadataSource_0f47b94b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3448,16 +3448,16 @@ BEGIN
   p_DisplayName_1b923299 := 'External Ids';
   p_Description_1b923299 := 'External identifiers for the affiliation (type+value+relationship). (common-3.0.xsd external-ids)';
   p_Type_1b923299 := 'json';
-  p_AllowsNull_1b923299 := 1;
-  p_IsPrimaryKey_1b923299 := 0;
-  p_IsUniqueKey_1b923299 := 0;
-  p_IsReadOnly_1b923299 := 1;
-  p_IsRequired_1b923299 := 0;
+  p_AllowsNull_1b923299 := TRUE;
+  p_IsPrimaryKey_1b923299 := FALSE;
+  p_IsUniqueKey_1b923299 := FALSE;
+  p_IsReadOnly_1b923299 := TRUE;
+  p_IsRequired_1b923299 := FALSE;
   p_Sequence_1b923299 := 14;
   p_Status_1b923299 := 'Active';
-  p_IsCustom_1b923299 := 0;
+  p_IsCustom_1b923299 := FALSE;
   p_MetadataSource_1b923299 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1b923299, p_IntegrationObjectID := p_IntegrationObjectID_1b923299, p_Name := p_Name_1b923299, p_DisplayName := p_DisplayName_1b923299, p_Description := p_Description_1b923299, p_Category := p_Category_1b923299, p_Category_Clear := 1, p_Type := p_Type_1b923299, p_Length := p_Length_1b923299, p_Length_Clear := 1, p_Precision := p_Precision_1b923299, p_Precision_Clear := 1, p_Scale := p_Scale_1b923299, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_1b923299, p_DefaultValue := p_DefaultValue_1b923299, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_1b923299, p_IsUniqueKey := p_IsUniqueKey_1b923299, p_IsReadOnly := p_IsReadOnly_1b923299, p_IsRequired := p_IsRequired_1b923299, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1b923299, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1b923299, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_1b923299, p_Configuration := p_Configuration_1b923299, p_Configuration_Clear := 1, p_Status := p_Status_1b923299, p_IsCustom := p_IsCustom_1b923299, p_MetadataSource := p_MetadataSource_1b923299);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1b923299, p_IntegrationObjectID := p_IntegrationObjectID_1b923299, p_Name := p_Name_1b923299, p_DisplayName := p_DisplayName_1b923299, p_Description := p_Description_1b923299, p_Category := p_Category_1b923299, p_Category_Clear := TRUE, p_Type := p_Type_1b923299, p_Length := p_Length_1b923299, p_Length_Clear := TRUE, p_Precision := p_Precision_1b923299, p_Precision_Clear := TRUE, p_Scale := p_Scale_1b923299, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_1b923299, p_DefaultValue := p_DefaultValue_1b923299, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_1b923299, p_IsUniqueKey := p_IsUniqueKey_1b923299, p_IsReadOnly := p_IsReadOnly_1b923299, p_IsRequired := p_IsRequired_1b923299, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1b923299, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1b923299, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_1b923299, p_Configuration := p_Configuration_1b923299, p_Configuration_Clear := TRUE, p_Status := p_Status_1b923299, p_IsCustom := p_IsCustom_1b923299, p_MetadataSource := p_MetadataSource_1b923299);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3494,18 +3494,18 @@ BEGIN
   p_Description_3ae04ba4 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_3ae04ba4 := 'String';
   p_Length_3ae04ba4 := 19;
-  p_AllowsNull_3ae04ba4 := 1;
-  p_IsPrimaryKey_3ae04ba4 := 0;
-  p_IsUniqueKey_3ae04ba4 := 0;
-  p_IsReadOnly_3ae04ba4 := 1;
-  p_IsRequired_3ae04ba4 := 1;
+  p_AllowsNull_3ae04ba4 := TRUE;
+  p_IsPrimaryKey_3ae04ba4 := FALSE;
+  p_IsUniqueKey_3ae04ba4 := FALSE;
+  p_IsReadOnly_3ae04ba4 := TRUE;
+  p_IsRequired_3ae04ba4 := TRUE;
   p_RelatedIntegrationObjectID_3ae04ba4 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_3ae04ba4 := 'orcid-id';
   p_Sequence_3ae04ba4 := 0;
   p_Status_3ae04ba4 := 'Active';
-  p_IsCustom_3ae04ba4 := 0;
+  p_IsCustom_3ae04ba4 := FALSE;
   p_MetadataSource_3ae04ba4 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3ae04ba4, p_IntegrationObjectID := p_IntegrationObjectID_3ae04ba4, p_Name := p_Name_3ae04ba4, p_DisplayName := p_DisplayName_3ae04ba4, p_Description := p_Description_3ae04ba4, p_Category := p_Category_3ae04ba4, p_Category_Clear := 1, p_Type := p_Type_3ae04ba4, p_Length := p_Length_3ae04ba4, p_Precision := p_Precision_3ae04ba4, p_Precision_Clear := 1, p_Scale := p_Scale_3ae04ba4, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_3ae04ba4, p_DefaultValue := p_DefaultValue_3ae04ba4, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_3ae04ba4, p_IsUniqueKey := p_IsUniqueKey_3ae04ba4, p_IsReadOnly := p_IsReadOnly_3ae04ba4, p_IsRequired := p_IsRequired_3ae04ba4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3ae04ba4, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3ae04ba4, p_Sequence := p_Sequence_3ae04ba4, p_Configuration := p_Configuration_3ae04ba4, p_Configuration_Clear := 1, p_Status := p_Status_3ae04ba4, p_IsCustom := p_IsCustom_3ae04ba4, p_MetadataSource := p_MetadataSource_3ae04ba4);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3ae04ba4, p_IntegrationObjectID := p_IntegrationObjectID_3ae04ba4, p_Name := p_Name_3ae04ba4, p_DisplayName := p_DisplayName_3ae04ba4, p_Description := p_Description_3ae04ba4, p_Category := p_Category_3ae04ba4, p_Category_Clear := TRUE, p_Type := p_Type_3ae04ba4, p_Length := p_Length_3ae04ba4, p_Precision := p_Precision_3ae04ba4, p_Precision_Clear := TRUE, p_Scale := p_Scale_3ae04ba4, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_3ae04ba4, p_DefaultValue := p_DefaultValue_3ae04ba4, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_3ae04ba4, p_IsUniqueKey := p_IsUniqueKey_3ae04ba4, p_IsReadOnly := p_IsReadOnly_3ae04ba4, p_IsRequired := p_IsRequired_3ae04ba4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3ae04ba4, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3ae04ba4, p_Sequence := p_Sequence_3ae04ba4, p_Configuration := p_Configuration_3ae04ba4, p_Configuration_Clear := TRUE, p_Status := p_Status_3ae04ba4, p_IsCustom := p_IsCustom_3ae04ba4, p_MetadataSource := p_MetadataSource_3ae04ba4);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3541,16 +3541,16 @@ BEGIN
   p_DisplayName_8f68e1ab := 'Put Code';
   p_Description_8f68e1ab := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_8f68e1ab := 'Integer';
-  p_AllowsNull_8f68e1ab := 0;
-  p_IsPrimaryKey_8f68e1ab := 1;
-  p_IsUniqueKey_8f68e1ab := 1;
-  p_IsReadOnly_8f68e1ab := 1;
-  p_IsRequired_8f68e1ab := 1;
+  p_AllowsNull_8f68e1ab := FALSE;
+  p_IsPrimaryKey_8f68e1ab := TRUE;
+  p_IsUniqueKey_8f68e1ab := TRUE;
+  p_IsReadOnly_8f68e1ab := TRUE;
+  p_IsRequired_8f68e1ab := TRUE;
   p_Sequence_8f68e1ab := 1;
   p_Status_8f68e1ab := 'Active';
-  p_IsCustom_8f68e1ab := 0;
+  p_IsCustom_8f68e1ab := FALSE;
   p_MetadataSource_8f68e1ab := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8f68e1ab, p_IntegrationObjectID := p_IntegrationObjectID_8f68e1ab, p_Name := p_Name_8f68e1ab, p_DisplayName := p_DisplayName_8f68e1ab, p_Description := p_Description_8f68e1ab, p_Category := p_Category_8f68e1ab, p_Category_Clear := 1, p_Type := p_Type_8f68e1ab, p_Length := p_Length_8f68e1ab, p_Length_Clear := 1, p_Precision := p_Precision_8f68e1ab, p_Precision_Clear := 1, p_Scale := p_Scale_8f68e1ab, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_8f68e1ab, p_DefaultValue := p_DefaultValue_8f68e1ab, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_8f68e1ab, p_IsUniqueKey := p_IsUniqueKey_8f68e1ab, p_IsReadOnly := p_IsReadOnly_8f68e1ab, p_IsRequired := p_IsRequired_8f68e1ab, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8f68e1ab, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8f68e1ab, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_8f68e1ab, p_Configuration := p_Configuration_8f68e1ab, p_Configuration_Clear := 1, p_Status := p_Status_8f68e1ab, p_IsCustom := p_IsCustom_8f68e1ab, p_MetadataSource := p_MetadataSource_8f68e1ab);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8f68e1ab, p_IntegrationObjectID := p_IntegrationObjectID_8f68e1ab, p_Name := p_Name_8f68e1ab, p_DisplayName := p_DisplayName_8f68e1ab, p_Description := p_Description_8f68e1ab, p_Category := p_Category_8f68e1ab, p_Category_Clear := TRUE, p_Type := p_Type_8f68e1ab, p_Length := p_Length_8f68e1ab, p_Length_Clear := TRUE, p_Precision := p_Precision_8f68e1ab, p_Precision_Clear := TRUE, p_Scale := p_Scale_8f68e1ab, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_8f68e1ab, p_DefaultValue := p_DefaultValue_8f68e1ab, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_8f68e1ab, p_IsUniqueKey := p_IsUniqueKey_8f68e1ab, p_IsReadOnly := p_IsReadOnly_8f68e1ab, p_IsRequired := p_IsRequired_8f68e1ab, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8f68e1ab, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8f68e1ab, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_8f68e1ab, p_Configuration := p_Configuration_8f68e1ab, p_Configuration_Clear := TRUE, p_Status := p_Status_8f68e1ab, p_IsCustom := p_IsCustom_8f68e1ab, p_MetadataSource := p_MetadataSource_8f68e1ab);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3587,16 +3587,16 @@ BEGIN
   p_Description_f8e2a604 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_f8e2a604 := 'String';
   p_Length_f8e2a604 := 500;
-  p_AllowsNull_f8e2a604 := 1;
-  p_IsPrimaryKey_f8e2a604 := 0;
-  p_IsUniqueKey_f8e2a604 := 0;
-  p_IsReadOnly_f8e2a604 := 1;
-  p_IsRequired_f8e2a604 := 0;
+  p_AllowsNull_f8e2a604 := TRUE;
+  p_IsPrimaryKey_f8e2a604 := FALSE;
+  p_IsUniqueKey_f8e2a604 := FALSE;
+  p_IsReadOnly_f8e2a604 := TRUE;
+  p_IsRequired_f8e2a604 := FALSE;
   p_Sequence_f8e2a604 := 2;
   p_Status_f8e2a604 := 'Active';
-  p_IsCustom_f8e2a604 := 0;
+  p_IsCustom_f8e2a604 := FALSE;
   p_MetadataSource_f8e2a604 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f8e2a604, p_IntegrationObjectID := p_IntegrationObjectID_f8e2a604, p_Name := p_Name_f8e2a604, p_DisplayName := p_DisplayName_f8e2a604, p_Description := p_Description_f8e2a604, p_Category := p_Category_f8e2a604, p_Category_Clear := 1, p_Type := p_Type_f8e2a604, p_Length := p_Length_f8e2a604, p_Precision := p_Precision_f8e2a604, p_Precision_Clear := 1, p_Scale := p_Scale_f8e2a604, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f8e2a604, p_DefaultValue := p_DefaultValue_f8e2a604, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f8e2a604, p_IsUniqueKey := p_IsUniqueKey_f8e2a604, p_IsReadOnly := p_IsReadOnly_f8e2a604, p_IsRequired := p_IsRequired_f8e2a604, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f8e2a604, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f8e2a604, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f8e2a604, p_Configuration := p_Configuration_f8e2a604, p_Configuration_Clear := 1, p_Status := p_Status_f8e2a604, p_IsCustom := p_IsCustom_f8e2a604, p_MetadataSource := p_MetadataSource_f8e2a604);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f8e2a604, p_IntegrationObjectID := p_IntegrationObjectID_f8e2a604, p_Name := p_Name_f8e2a604, p_DisplayName := p_DisplayName_f8e2a604, p_Description := p_Description_f8e2a604, p_Category := p_Category_f8e2a604, p_Category_Clear := TRUE, p_Type := p_Type_f8e2a604, p_Length := p_Length_f8e2a604, p_Precision := p_Precision_f8e2a604, p_Precision_Clear := TRUE, p_Scale := p_Scale_f8e2a604, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f8e2a604, p_DefaultValue := p_DefaultValue_f8e2a604, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f8e2a604, p_IsUniqueKey := p_IsUniqueKey_f8e2a604, p_IsReadOnly := p_IsReadOnly_f8e2a604, p_IsRequired := p_IsRequired_f8e2a604, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f8e2a604, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f8e2a604, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f8e2a604, p_Configuration := p_Configuration_f8e2a604, p_Configuration_Clear := TRUE, p_Status := p_Status_f8e2a604, p_IsCustom := p_IsCustom_f8e2a604, p_MetadataSource := p_MetadataSource_f8e2a604);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3632,16 +3632,16 @@ BEGIN
   p_DisplayName_9950de64 := 'Visibility';
   p_Description_9950de64 := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_9950de64 := 'String';
-  p_AllowsNull_9950de64 := 1;
-  p_IsPrimaryKey_9950de64 := 0;
-  p_IsUniqueKey_9950de64 := 0;
-  p_IsReadOnly_9950de64 := 1;
-  p_IsRequired_9950de64 := 0;
+  p_AllowsNull_9950de64 := TRUE;
+  p_IsPrimaryKey_9950de64 := FALSE;
+  p_IsUniqueKey_9950de64 := FALSE;
+  p_IsReadOnly_9950de64 := TRUE;
+  p_IsRequired_9950de64 := FALSE;
   p_Sequence_9950de64 := 3;
   p_Status_9950de64 := 'Active';
-  p_IsCustom_9950de64 := 0;
+  p_IsCustom_9950de64 := FALSE;
   p_MetadataSource_9950de64 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9950de64, p_IntegrationObjectID := p_IntegrationObjectID_9950de64, p_Name := p_Name_9950de64, p_DisplayName := p_DisplayName_9950de64, p_Description := p_Description_9950de64, p_Category := p_Category_9950de64, p_Category_Clear := 1, p_Type := p_Type_9950de64, p_Length := p_Length_9950de64, p_Length_Clear := 1, p_Precision := p_Precision_9950de64, p_Precision_Clear := 1, p_Scale := p_Scale_9950de64, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_9950de64, p_DefaultValue := p_DefaultValue_9950de64, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_9950de64, p_IsUniqueKey := p_IsUniqueKey_9950de64, p_IsReadOnly := p_IsReadOnly_9950de64, p_IsRequired := p_IsRequired_9950de64, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9950de64, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9950de64, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_9950de64, p_Configuration := p_Configuration_9950de64, p_Configuration_Clear := 1, p_Status := p_Status_9950de64, p_IsCustom := p_IsCustom_9950de64, p_MetadataSource := p_MetadataSource_9950de64);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9950de64, p_IntegrationObjectID := p_IntegrationObjectID_9950de64, p_Name := p_Name_9950de64, p_DisplayName := p_DisplayName_9950de64, p_Description := p_Description_9950de64, p_Category := p_Category_9950de64, p_Category_Clear := TRUE, p_Type := p_Type_9950de64, p_Length := p_Length_9950de64, p_Length_Clear := TRUE, p_Precision := p_Precision_9950de64, p_Precision_Clear := TRUE, p_Scale := p_Scale_9950de64, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_9950de64, p_DefaultValue := p_DefaultValue_9950de64, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_9950de64, p_IsUniqueKey := p_IsUniqueKey_9950de64, p_IsReadOnly := p_IsReadOnly_9950de64, p_IsRequired := p_IsRequired_9950de64, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9950de64, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9950de64, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_9950de64, p_Configuration := p_Configuration_9950de64, p_Configuration_Clear := TRUE, p_Status := p_Status_9950de64, p_IsCustom := p_IsCustom_9950de64, p_MetadataSource := p_MetadataSource_9950de64);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3677,16 +3677,16 @@ BEGIN
   p_DisplayName_2cb5d73a := 'Display Index';
   p_Description_2cb5d73a := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_2cb5d73a := 'String';
-  p_AllowsNull_2cb5d73a := 1;
-  p_IsPrimaryKey_2cb5d73a := 0;
-  p_IsUniqueKey_2cb5d73a := 0;
-  p_IsReadOnly_2cb5d73a := 1;
-  p_IsRequired_2cb5d73a := 0;
+  p_AllowsNull_2cb5d73a := TRUE;
+  p_IsPrimaryKey_2cb5d73a := FALSE;
+  p_IsUniqueKey_2cb5d73a := FALSE;
+  p_IsReadOnly_2cb5d73a := TRUE;
+  p_IsRequired_2cb5d73a := FALSE;
   p_Sequence_2cb5d73a := 4;
   p_Status_2cb5d73a := 'Active';
-  p_IsCustom_2cb5d73a := 0;
+  p_IsCustom_2cb5d73a := FALSE;
   p_MetadataSource_2cb5d73a := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2cb5d73a, p_IntegrationObjectID := p_IntegrationObjectID_2cb5d73a, p_Name := p_Name_2cb5d73a, p_DisplayName := p_DisplayName_2cb5d73a, p_Description := p_Description_2cb5d73a, p_Category := p_Category_2cb5d73a, p_Category_Clear := 1, p_Type := p_Type_2cb5d73a, p_Length := p_Length_2cb5d73a, p_Length_Clear := 1, p_Precision := p_Precision_2cb5d73a, p_Precision_Clear := 1, p_Scale := p_Scale_2cb5d73a, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_2cb5d73a, p_DefaultValue := p_DefaultValue_2cb5d73a, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_2cb5d73a, p_IsUniqueKey := p_IsUniqueKey_2cb5d73a, p_IsReadOnly := p_IsReadOnly_2cb5d73a, p_IsRequired := p_IsRequired_2cb5d73a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2cb5d73a, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2cb5d73a, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_2cb5d73a, p_Configuration := p_Configuration_2cb5d73a, p_Configuration_Clear := 1, p_Status := p_Status_2cb5d73a, p_IsCustom := p_IsCustom_2cb5d73a, p_MetadataSource := p_MetadataSource_2cb5d73a);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2cb5d73a, p_IntegrationObjectID := p_IntegrationObjectID_2cb5d73a, p_Name := p_Name_2cb5d73a, p_DisplayName := p_DisplayName_2cb5d73a, p_Description := p_Description_2cb5d73a, p_Category := p_Category_2cb5d73a, p_Category_Clear := TRUE, p_Type := p_Type_2cb5d73a, p_Length := p_Length_2cb5d73a, p_Length_Clear := TRUE, p_Precision := p_Precision_2cb5d73a, p_Precision_Clear := TRUE, p_Scale := p_Scale_2cb5d73a, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_2cb5d73a, p_DefaultValue := p_DefaultValue_2cb5d73a, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_2cb5d73a, p_IsUniqueKey := p_IsUniqueKey_2cb5d73a, p_IsReadOnly := p_IsReadOnly_2cb5d73a, p_IsRequired := p_IsRequired_2cb5d73a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2cb5d73a, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2cb5d73a, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_2cb5d73a, p_Configuration := p_Configuration_2cb5d73a, p_Configuration_Clear := TRUE, p_Status := p_Status_2cb5d73a, p_IsCustom := p_IsCustom_2cb5d73a, p_MetadataSource := p_MetadataSource_2cb5d73a);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3722,16 +3722,16 @@ BEGIN
   p_DisplayName_60068d5d := 'Created Date';
   p_Description_60068d5d := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_60068d5d := 'DateTime';
-  p_AllowsNull_60068d5d := 1;
-  p_IsPrimaryKey_60068d5d := 0;
-  p_IsUniqueKey_60068d5d := 0;
-  p_IsReadOnly_60068d5d := 1;
-  p_IsRequired_60068d5d := 0;
+  p_AllowsNull_60068d5d := TRUE;
+  p_IsPrimaryKey_60068d5d := FALSE;
+  p_IsUniqueKey_60068d5d := FALSE;
+  p_IsReadOnly_60068d5d := TRUE;
+  p_IsRequired_60068d5d := FALSE;
   p_Sequence_60068d5d := 5;
   p_Status_60068d5d := 'Active';
-  p_IsCustom_60068d5d := 0;
+  p_IsCustom_60068d5d := FALSE;
   p_MetadataSource_60068d5d := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_60068d5d, p_IntegrationObjectID := p_IntegrationObjectID_60068d5d, p_Name := p_Name_60068d5d, p_DisplayName := p_DisplayName_60068d5d, p_Description := p_Description_60068d5d, p_Category := p_Category_60068d5d, p_Category_Clear := 1, p_Type := p_Type_60068d5d, p_Length := p_Length_60068d5d, p_Length_Clear := 1, p_Precision := p_Precision_60068d5d, p_Precision_Clear := 1, p_Scale := p_Scale_60068d5d, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_60068d5d, p_DefaultValue := p_DefaultValue_60068d5d, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_60068d5d, p_IsUniqueKey := p_IsUniqueKey_60068d5d, p_IsReadOnly := p_IsReadOnly_60068d5d, p_IsRequired := p_IsRequired_60068d5d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_60068d5d, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_60068d5d, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_60068d5d, p_Configuration := p_Configuration_60068d5d, p_Configuration_Clear := 1, p_Status := p_Status_60068d5d, p_IsCustom := p_IsCustom_60068d5d, p_MetadataSource := p_MetadataSource_60068d5d);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_60068d5d, p_IntegrationObjectID := p_IntegrationObjectID_60068d5d, p_Name := p_Name_60068d5d, p_DisplayName := p_DisplayName_60068d5d, p_Description := p_Description_60068d5d, p_Category := p_Category_60068d5d, p_Category_Clear := TRUE, p_Type := p_Type_60068d5d, p_Length := p_Length_60068d5d, p_Length_Clear := TRUE, p_Precision := p_Precision_60068d5d, p_Precision_Clear := TRUE, p_Scale := p_Scale_60068d5d, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_60068d5d, p_DefaultValue := p_DefaultValue_60068d5d, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_60068d5d, p_IsUniqueKey := p_IsUniqueKey_60068d5d, p_IsReadOnly := p_IsReadOnly_60068d5d, p_IsRequired := p_IsRequired_60068d5d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_60068d5d, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_60068d5d, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_60068d5d, p_Configuration := p_Configuration_60068d5d, p_Configuration_Clear := TRUE, p_Status := p_Status_60068d5d, p_IsCustom := p_IsCustom_60068d5d, p_MetadataSource := p_MetadataSource_60068d5d);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3767,16 +3767,16 @@ BEGIN
   p_DisplayName_b292353c := 'Last Modified Date';
   p_Description_b292353c := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_b292353c := 'DateTime';
-  p_AllowsNull_b292353c := 1;
-  p_IsPrimaryKey_b292353c := 0;
-  p_IsUniqueKey_b292353c := 0;
-  p_IsReadOnly_b292353c := 1;
-  p_IsRequired_b292353c := 0;
+  p_AllowsNull_b292353c := TRUE;
+  p_IsPrimaryKey_b292353c := FALSE;
+  p_IsUniqueKey_b292353c := FALSE;
+  p_IsReadOnly_b292353c := TRUE;
+  p_IsRequired_b292353c := FALSE;
   p_Sequence_b292353c := 6;
   p_Status_b292353c := 'Active';
-  p_IsCustom_b292353c := 0;
+  p_IsCustom_b292353c := FALSE;
   p_MetadataSource_b292353c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b292353c, p_IntegrationObjectID := p_IntegrationObjectID_b292353c, p_Name := p_Name_b292353c, p_DisplayName := p_DisplayName_b292353c, p_Description := p_Description_b292353c, p_Category := p_Category_b292353c, p_Category_Clear := 1, p_Type := p_Type_b292353c, p_Length := p_Length_b292353c, p_Length_Clear := 1, p_Precision := p_Precision_b292353c, p_Precision_Clear := 1, p_Scale := p_Scale_b292353c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b292353c, p_DefaultValue := p_DefaultValue_b292353c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b292353c, p_IsUniqueKey := p_IsUniqueKey_b292353c, p_IsReadOnly := p_IsReadOnly_b292353c, p_IsRequired := p_IsRequired_b292353c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b292353c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b292353c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b292353c, p_Configuration := p_Configuration_b292353c, p_Configuration_Clear := 1, p_Status := p_Status_b292353c, p_IsCustom := p_IsCustom_b292353c, p_MetadataSource := p_MetadataSource_b292353c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b292353c, p_IntegrationObjectID := p_IntegrationObjectID_b292353c, p_Name := p_Name_b292353c, p_DisplayName := p_DisplayName_b292353c, p_Description := p_Description_b292353c, p_Category := p_Category_b292353c, p_Category_Clear := TRUE, p_Type := p_Type_b292353c, p_Length := p_Length_b292353c, p_Length_Clear := TRUE, p_Precision := p_Precision_b292353c, p_Precision_Clear := TRUE, p_Scale := p_Scale_b292353c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b292353c, p_DefaultValue := p_DefaultValue_b292353c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b292353c, p_IsUniqueKey := p_IsUniqueKey_b292353c, p_IsReadOnly := p_IsReadOnly_b292353c, p_IsRequired := p_IsRequired_b292353c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b292353c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b292353c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b292353c, p_Configuration := p_Configuration_b292353c, p_Configuration_Clear := TRUE, p_Status := p_Status_b292353c, p_IsCustom := p_IsCustom_b292353c, p_MetadataSource := p_MetadataSource_b292353c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3812,16 +3812,16 @@ BEGIN
   p_DisplayName_d735db02 := 'Source';
   p_Description_d735db02 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_d735db02 := 'json';
-  p_AllowsNull_d735db02 := 1;
-  p_IsPrimaryKey_d735db02 := 0;
-  p_IsUniqueKey_d735db02 := 0;
-  p_IsReadOnly_d735db02 := 1;
-  p_IsRequired_d735db02 := 0;
+  p_AllowsNull_d735db02 := TRUE;
+  p_IsPrimaryKey_d735db02 := FALSE;
+  p_IsUniqueKey_d735db02 := FALSE;
+  p_IsReadOnly_d735db02 := TRUE;
+  p_IsRequired_d735db02 := FALSE;
   p_Sequence_d735db02 := 7;
   p_Status_d735db02 := 'Active';
-  p_IsCustom_d735db02 := 0;
+  p_IsCustom_d735db02 := FALSE;
   p_MetadataSource_d735db02 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d735db02, p_IntegrationObjectID := p_IntegrationObjectID_d735db02, p_Name := p_Name_d735db02, p_DisplayName := p_DisplayName_d735db02, p_Description := p_Description_d735db02, p_Category := p_Category_d735db02, p_Category_Clear := 1, p_Type := p_Type_d735db02, p_Length := p_Length_d735db02, p_Length_Clear := 1, p_Precision := p_Precision_d735db02, p_Precision_Clear := 1, p_Scale := p_Scale_d735db02, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d735db02, p_DefaultValue := p_DefaultValue_d735db02, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d735db02, p_IsUniqueKey := p_IsUniqueKey_d735db02, p_IsReadOnly := p_IsReadOnly_d735db02, p_IsRequired := p_IsRequired_d735db02, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d735db02, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d735db02, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d735db02, p_Configuration := p_Configuration_d735db02, p_Configuration_Clear := 1, p_Status := p_Status_d735db02, p_IsCustom := p_IsCustom_d735db02, p_MetadataSource := p_MetadataSource_d735db02);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d735db02, p_IntegrationObjectID := p_IntegrationObjectID_d735db02, p_Name := p_Name_d735db02, p_DisplayName := p_DisplayName_d735db02, p_Description := p_Description_d735db02, p_Category := p_Category_d735db02, p_Category_Clear := TRUE, p_Type := p_Type_d735db02, p_Length := p_Length_d735db02, p_Length_Clear := TRUE, p_Precision := p_Precision_d735db02, p_Precision_Clear := TRUE, p_Scale := p_Scale_d735db02, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d735db02, p_DefaultValue := p_DefaultValue_d735db02, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d735db02, p_IsUniqueKey := p_IsUniqueKey_d735db02, p_IsReadOnly := p_IsReadOnly_d735db02, p_IsRequired := p_IsRequired_d735db02, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d735db02, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d735db02, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d735db02, p_Configuration := p_Configuration_d735db02, p_Configuration_Clear := TRUE, p_Status := p_Status_d735db02, p_IsCustom := p_IsCustom_d735db02, p_MetadataSource := p_MetadataSource_d735db02);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3858,16 +3858,16 @@ BEGIN
   p_Description_1f10b60a := 'Department within the organization. (common-3.0.xsd affiliation department-name, long-text)';
   p_Type_1f10b60a := 'String';
   p_Length_1f10b60a := 4000;
-  p_AllowsNull_1f10b60a := 1;
-  p_IsPrimaryKey_1f10b60a := 0;
-  p_IsUniqueKey_1f10b60a := 0;
-  p_IsReadOnly_1f10b60a := 1;
-  p_IsRequired_1f10b60a := 0;
+  p_AllowsNull_1f10b60a := TRUE;
+  p_IsPrimaryKey_1f10b60a := FALSE;
+  p_IsUniqueKey_1f10b60a := FALSE;
+  p_IsReadOnly_1f10b60a := TRUE;
+  p_IsRequired_1f10b60a := FALSE;
   p_Sequence_1f10b60a := 8;
   p_Status_1f10b60a := 'Active';
-  p_IsCustom_1f10b60a := 0;
+  p_IsCustom_1f10b60a := FALSE;
   p_MetadataSource_1f10b60a := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1f10b60a, p_IntegrationObjectID := p_IntegrationObjectID_1f10b60a, p_Name := p_Name_1f10b60a, p_DisplayName := p_DisplayName_1f10b60a, p_Description := p_Description_1f10b60a, p_Category := p_Category_1f10b60a, p_Category_Clear := 1, p_Type := p_Type_1f10b60a, p_Length := p_Length_1f10b60a, p_Precision := p_Precision_1f10b60a, p_Precision_Clear := 1, p_Scale := p_Scale_1f10b60a, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_1f10b60a, p_DefaultValue := p_DefaultValue_1f10b60a, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_1f10b60a, p_IsUniqueKey := p_IsUniqueKey_1f10b60a, p_IsReadOnly := p_IsReadOnly_1f10b60a, p_IsRequired := p_IsRequired_1f10b60a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1f10b60a, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1f10b60a, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_1f10b60a, p_Configuration := p_Configuration_1f10b60a, p_Configuration_Clear := 1, p_Status := p_Status_1f10b60a, p_IsCustom := p_IsCustom_1f10b60a, p_MetadataSource := p_MetadataSource_1f10b60a);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1f10b60a, p_IntegrationObjectID := p_IntegrationObjectID_1f10b60a, p_Name := p_Name_1f10b60a, p_DisplayName := p_DisplayName_1f10b60a, p_Description := p_Description_1f10b60a, p_Category := p_Category_1f10b60a, p_Category_Clear := TRUE, p_Type := p_Type_1f10b60a, p_Length := p_Length_1f10b60a, p_Precision := p_Precision_1f10b60a, p_Precision_Clear := TRUE, p_Scale := p_Scale_1f10b60a, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_1f10b60a, p_DefaultValue := p_DefaultValue_1f10b60a, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_1f10b60a, p_IsUniqueKey := p_IsUniqueKey_1f10b60a, p_IsReadOnly := p_IsReadOnly_1f10b60a, p_IsRequired := p_IsRequired_1f10b60a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1f10b60a, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1f10b60a, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_1f10b60a, p_Configuration := p_Configuration_1f10b60a, p_Configuration_Clear := TRUE, p_Status := p_Status_1f10b60a, p_IsCustom := p_IsCustom_1f10b60a, p_MetadataSource := p_MetadataSource_1f10b60a);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3904,16 +3904,16 @@ BEGIN
   p_Description_27403555 := 'Role or title held at the organization. (common-3.0.xsd affiliation role-title, long-text)';
   p_Type_27403555 := 'String';
   p_Length_27403555 := 4000;
-  p_AllowsNull_27403555 := 1;
-  p_IsPrimaryKey_27403555 := 0;
-  p_IsUniqueKey_27403555 := 0;
-  p_IsReadOnly_27403555 := 1;
-  p_IsRequired_27403555 := 0;
+  p_AllowsNull_27403555 := TRUE;
+  p_IsPrimaryKey_27403555 := FALSE;
+  p_IsUniqueKey_27403555 := FALSE;
+  p_IsReadOnly_27403555 := TRUE;
+  p_IsRequired_27403555 := FALSE;
   p_Sequence_27403555 := 9;
   p_Status_27403555 := 'Active';
-  p_IsCustom_27403555 := 0;
+  p_IsCustom_27403555 := FALSE;
   p_MetadataSource_27403555 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_27403555, p_IntegrationObjectID := p_IntegrationObjectID_27403555, p_Name := p_Name_27403555, p_DisplayName := p_DisplayName_27403555, p_Description := p_Description_27403555, p_Category := p_Category_27403555, p_Category_Clear := 1, p_Type := p_Type_27403555, p_Length := p_Length_27403555, p_Precision := p_Precision_27403555, p_Precision_Clear := 1, p_Scale := p_Scale_27403555, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_27403555, p_DefaultValue := p_DefaultValue_27403555, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_27403555, p_IsUniqueKey := p_IsUniqueKey_27403555, p_IsReadOnly := p_IsReadOnly_27403555, p_IsRequired := p_IsRequired_27403555, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_27403555, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_27403555, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_27403555, p_Configuration := p_Configuration_27403555, p_Configuration_Clear := 1, p_Status := p_Status_27403555, p_IsCustom := p_IsCustom_27403555, p_MetadataSource := p_MetadataSource_27403555);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_27403555, p_IntegrationObjectID := p_IntegrationObjectID_27403555, p_Name := p_Name_27403555, p_DisplayName := p_DisplayName_27403555, p_Description := p_Description_27403555, p_Category := p_Category_27403555, p_Category_Clear := TRUE, p_Type := p_Type_27403555, p_Length := p_Length_27403555, p_Precision := p_Precision_27403555, p_Precision_Clear := TRUE, p_Scale := p_Scale_27403555, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_27403555, p_DefaultValue := p_DefaultValue_27403555, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_27403555, p_IsUniqueKey := p_IsUniqueKey_27403555, p_IsReadOnly := p_IsReadOnly_27403555, p_IsRequired := p_IsRequired_27403555, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_27403555, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_27403555, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_27403555, p_Configuration := p_Configuration_27403555, p_Configuration_Clear := TRUE, p_Status := p_Status_27403555, p_IsCustom := p_IsCustom_27403555, p_MetadataSource := p_MetadataSource_27403555);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3949,16 +3949,16 @@ BEGIN
   p_DisplayName_eb79329b := 'Start Date';
   p_Description_eb79329b := 'Fuzzy start date (year + optional month/day). (common-3.0.xsd start-date, fuzzy-date)';
   p_Type_eb79329b := 'json';
-  p_AllowsNull_eb79329b := 1;
-  p_IsPrimaryKey_eb79329b := 0;
-  p_IsUniqueKey_eb79329b := 0;
-  p_IsReadOnly_eb79329b := 1;
-  p_IsRequired_eb79329b := 0;
+  p_AllowsNull_eb79329b := TRUE;
+  p_IsPrimaryKey_eb79329b := FALSE;
+  p_IsUniqueKey_eb79329b := FALSE;
+  p_IsReadOnly_eb79329b := TRUE;
+  p_IsRequired_eb79329b := FALSE;
   p_Sequence_eb79329b := 10;
   p_Status_eb79329b := 'Active';
-  p_IsCustom_eb79329b := 0;
+  p_IsCustom_eb79329b := FALSE;
   p_MetadataSource_eb79329b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_eb79329b, p_IntegrationObjectID := p_IntegrationObjectID_eb79329b, p_Name := p_Name_eb79329b, p_DisplayName := p_DisplayName_eb79329b, p_Description := p_Description_eb79329b, p_Category := p_Category_eb79329b, p_Category_Clear := 1, p_Type := p_Type_eb79329b, p_Length := p_Length_eb79329b, p_Length_Clear := 1, p_Precision := p_Precision_eb79329b, p_Precision_Clear := 1, p_Scale := p_Scale_eb79329b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_eb79329b, p_DefaultValue := p_DefaultValue_eb79329b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_eb79329b, p_IsUniqueKey := p_IsUniqueKey_eb79329b, p_IsReadOnly := p_IsReadOnly_eb79329b, p_IsRequired := p_IsRequired_eb79329b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_eb79329b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_eb79329b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_eb79329b, p_Configuration := p_Configuration_eb79329b, p_Configuration_Clear := 1, p_Status := p_Status_eb79329b, p_IsCustom := p_IsCustom_eb79329b, p_MetadataSource := p_MetadataSource_eb79329b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_eb79329b, p_IntegrationObjectID := p_IntegrationObjectID_eb79329b, p_Name := p_Name_eb79329b, p_DisplayName := p_DisplayName_eb79329b, p_Description := p_Description_eb79329b, p_Category := p_Category_eb79329b, p_Category_Clear := TRUE, p_Type := p_Type_eb79329b, p_Length := p_Length_eb79329b, p_Length_Clear := TRUE, p_Precision := p_Precision_eb79329b, p_Precision_Clear := TRUE, p_Scale := p_Scale_eb79329b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_eb79329b, p_DefaultValue := p_DefaultValue_eb79329b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_eb79329b, p_IsUniqueKey := p_IsUniqueKey_eb79329b, p_IsReadOnly := p_IsReadOnly_eb79329b, p_IsRequired := p_IsRequired_eb79329b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_eb79329b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_eb79329b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_eb79329b, p_Configuration := p_Configuration_eb79329b, p_Configuration_Clear := TRUE, p_Status := p_Status_eb79329b, p_IsCustom := p_IsCustom_eb79329b, p_MetadataSource := p_MetadataSource_eb79329b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -3994,16 +3994,16 @@ BEGIN
   p_DisplayName_981b73f6 := 'End Date';
   p_Description_981b73f6 := 'Fuzzy end date (year + optional month/day). (common-3.0.xsd end-date, fuzzy-date)';
   p_Type_981b73f6 := 'json';
-  p_AllowsNull_981b73f6 := 1;
-  p_IsPrimaryKey_981b73f6 := 0;
-  p_IsUniqueKey_981b73f6 := 0;
-  p_IsReadOnly_981b73f6 := 1;
-  p_IsRequired_981b73f6 := 0;
+  p_AllowsNull_981b73f6 := TRUE;
+  p_IsPrimaryKey_981b73f6 := FALSE;
+  p_IsUniqueKey_981b73f6 := FALSE;
+  p_IsReadOnly_981b73f6 := TRUE;
+  p_IsRequired_981b73f6 := FALSE;
   p_Sequence_981b73f6 := 11;
   p_Status_981b73f6 := 'Active';
-  p_IsCustom_981b73f6 := 0;
+  p_IsCustom_981b73f6 := FALSE;
   p_MetadataSource_981b73f6 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_981b73f6, p_IntegrationObjectID := p_IntegrationObjectID_981b73f6, p_Name := p_Name_981b73f6, p_DisplayName := p_DisplayName_981b73f6, p_Description := p_Description_981b73f6, p_Category := p_Category_981b73f6, p_Category_Clear := 1, p_Type := p_Type_981b73f6, p_Length := p_Length_981b73f6, p_Length_Clear := 1, p_Precision := p_Precision_981b73f6, p_Precision_Clear := 1, p_Scale := p_Scale_981b73f6, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_981b73f6, p_DefaultValue := p_DefaultValue_981b73f6, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_981b73f6, p_IsUniqueKey := p_IsUniqueKey_981b73f6, p_IsReadOnly := p_IsReadOnly_981b73f6, p_IsRequired := p_IsRequired_981b73f6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_981b73f6, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_981b73f6, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_981b73f6, p_Configuration := p_Configuration_981b73f6, p_Configuration_Clear := 1, p_Status := p_Status_981b73f6, p_IsCustom := p_IsCustom_981b73f6, p_MetadataSource := p_MetadataSource_981b73f6);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_981b73f6, p_IntegrationObjectID := p_IntegrationObjectID_981b73f6, p_Name := p_Name_981b73f6, p_DisplayName := p_DisplayName_981b73f6, p_Description := p_Description_981b73f6, p_Category := p_Category_981b73f6, p_Category_Clear := TRUE, p_Type := p_Type_981b73f6, p_Length := p_Length_981b73f6, p_Length_Clear := TRUE, p_Precision := p_Precision_981b73f6, p_Precision_Clear := TRUE, p_Scale := p_Scale_981b73f6, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_981b73f6, p_DefaultValue := p_DefaultValue_981b73f6, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_981b73f6, p_IsUniqueKey := p_IsUniqueKey_981b73f6, p_IsReadOnly := p_IsReadOnly_981b73f6, p_IsRequired := p_IsRequired_981b73f6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_981b73f6, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_981b73f6, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_981b73f6, p_Configuration := p_Configuration_981b73f6, p_Configuration_Clear := TRUE, p_Status := p_Status_981b73f6, p_IsCustom := p_IsCustom_981b73f6, p_MetadataSource := p_MetadataSource_981b73f6);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4039,16 +4039,16 @@ BEGIN
   p_DisplayName_a9e1f6d4 := 'Organization';
   p_Description_a9e1f6d4 := 'Organization reference: name, address, disambiguated-org-id (ROR/GRID/Ringgold). Required. (common-3.0.xsd organization, minOccurs=1)';
   p_Type_a9e1f6d4 := 'json';
-  p_AllowsNull_a9e1f6d4 := 1;
-  p_IsPrimaryKey_a9e1f6d4 := 0;
-  p_IsUniqueKey_a9e1f6d4 := 0;
-  p_IsReadOnly_a9e1f6d4 := 1;
-  p_IsRequired_a9e1f6d4 := 1;
+  p_AllowsNull_a9e1f6d4 := TRUE;
+  p_IsPrimaryKey_a9e1f6d4 := FALSE;
+  p_IsUniqueKey_a9e1f6d4 := FALSE;
+  p_IsReadOnly_a9e1f6d4 := TRUE;
+  p_IsRequired_a9e1f6d4 := TRUE;
   p_Sequence_a9e1f6d4 := 12;
   p_Status_a9e1f6d4 := 'Active';
-  p_IsCustom_a9e1f6d4 := 0;
+  p_IsCustom_a9e1f6d4 := FALSE;
   p_MetadataSource_a9e1f6d4 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a9e1f6d4, p_IntegrationObjectID := p_IntegrationObjectID_a9e1f6d4, p_Name := p_Name_a9e1f6d4, p_DisplayName := p_DisplayName_a9e1f6d4, p_Description := p_Description_a9e1f6d4, p_Category := p_Category_a9e1f6d4, p_Category_Clear := 1, p_Type := p_Type_a9e1f6d4, p_Length := p_Length_a9e1f6d4, p_Length_Clear := 1, p_Precision := p_Precision_a9e1f6d4, p_Precision_Clear := 1, p_Scale := p_Scale_a9e1f6d4, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_a9e1f6d4, p_DefaultValue := p_DefaultValue_a9e1f6d4, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_a9e1f6d4, p_IsUniqueKey := p_IsUniqueKey_a9e1f6d4, p_IsReadOnly := p_IsReadOnly_a9e1f6d4, p_IsRequired := p_IsRequired_a9e1f6d4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a9e1f6d4, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a9e1f6d4, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_a9e1f6d4, p_Configuration := p_Configuration_a9e1f6d4, p_Configuration_Clear := 1, p_Status := p_Status_a9e1f6d4, p_IsCustom := p_IsCustom_a9e1f6d4, p_MetadataSource := p_MetadataSource_a9e1f6d4);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a9e1f6d4, p_IntegrationObjectID := p_IntegrationObjectID_a9e1f6d4, p_Name := p_Name_a9e1f6d4, p_DisplayName := p_DisplayName_a9e1f6d4, p_Description := p_Description_a9e1f6d4, p_Category := p_Category_a9e1f6d4, p_Category_Clear := TRUE, p_Type := p_Type_a9e1f6d4, p_Length := p_Length_a9e1f6d4, p_Length_Clear := TRUE, p_Precision := p_Precision_a9e1f6d4, p_Precision_Clear := TRUE, p_Scale := p_Scale_a9e1f6d4, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_a9e1f6d4, p_DefaultValue := p_DefaultValue_a9e1f6d4, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_a9e1f6d4, p_IsUniqueKey := p_IsUniqueKey_a9e1f6d4, p_IsReadOnly := p_IsReadOnly_a9e1f6d4, p_IsRequired := p_IsRequired_a9e1f6d4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a9e1f6d4, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a9e1f6d4, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_a9e1f6d4, p_Configuration := p_Configuration_a9e1f6d4, p_Configuration_Clear := TRUE, p_Status := p_Status_a9e1f6d4, p_IsCustom := p_IsCustom_a9e1f6d4, p_MetadataSource := p_MetadataSource_a9e1f6d4);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4084,16 +4084,16 @@ BEGIN
   p_DisplayName_8b8e77d3 := 'Url';
   p_Description_8b8e77d3 := 'A URL associated with the affiliation. (common-3.0.xsd affiliation url)';
   p_Type_8b8e77d3 := 'String';
-  p_AllowsNull_8b8e77d3 := 1;
-  p_IsPrimaryKey_8b8e77d3 := 0;
-  p_IsUniqueKey_8b8e77d3 := 0;
-  p_IsReadOnly_8b8e77d3 := 1;
-  p_IsRequired_8b8e77d3 := 0;
+  p_AllowsNull_8b8e77d3 := TRUE;
+  p_IsPrimaryKey_8b8e77d3 := FALSE;
+  p_IsUniqueKey_8b8e77d3 := FALSE;
+  p_IsReadOnly_8b8e77d3 := TRUE;
+  p_IsRequired_8b8e77d3 := FALSE;
   p_Sequence_8b8e77d3 := 13;
   p_Status_8b8e77d3 := 'Active';
-  p_IsCustom_8b8e77d3 := 0;
+  p_IsCustom_8b8e77d3 := FALSE;
   p_MetadataSource_8b8e77d3 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8b8e77d3, p_IntegrationObjectID := p_IntegrationObjectID_8b8e77d3, p_Name := p_Name_8b8e77d3, p_DisplayName := p_DisplayName_8b8e77d3, p_Description := p_Description_8b8e77d3, p_Category := p_Category_8b8e77d3, p_Category_Clear := 1, p_Type := p_Type_8b8e77d3, p_Length := p_Length_8b8e77d3, p_Length_Clear := 1, p_Precision := p_Precision_8b8e77d3, p_Precision_Clear := 1, p_Scale := p_Scale_8b8e77d3, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_8b8e77d3, p_DefaultValue := p_DefaultValue_8b8e77d3, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_8b8e77d3, p_IsUniqueKey := p_IsUniqueKey_8b8e77d3, p_IsReadOnly := p_IsReadOnly_8b8e77d3, p_IsRequired := p_IsRequired_8b8e77d3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8b8e77d3, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8b8e77d3, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_8b8e77d3, p_Configuration := p_Configuration_8b8e77d3, p_Configuration_Clear := 1, p_Status := p_Status_8b8e77d3, p_IsCustom := p_IsCustom_8b8e77d3, p_MetadataSource := p_MetadataSource_8b8e77d3);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8b8e77d3, p_IntegrationObjectID := p_IntegrationObjectID_8b8e77d3, p_Name := p_Name_8b8e77d3, p_DisplayName := p_DisplayName_8b8e77d3, p_Description := p_Description_8b8e77d3, p_Category := p_Category_8b8e77d3, p_Category_Clear := TRUE, p_Type := p_Type_8b8e77d3, p_Length := p_Length_8b8e77d3, p_Length_Clear := TRUE, p_Precision := p_Precision_8b8e77d3, p_Precision_Clear := TRUE, p_Scale := p_Scale_8b8e77d3, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_8b8e77d3, p_DefaultValue := p_DefaultValue_8b8e77d3, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_8b8e77d3, p_IsUniqueKey := p_IsUniqueKey_8b8e77d3, p_IsReadOnly := p_IsReadOnly_8b8e77d3, p_IsRequired := p_IsRequired_8b8e77d3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8b8e77d3, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8b8e77d3, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_8b8e77d3, p_Configuration := p_Configuration_8b8e77d3, p_Configuration_Clear := TRUE, p_Status := p_Status_8b8e77d3, p_IsCustom := p_IsCustom_8b8e77d3, p_MetadataSource := p_MetadataSource_8b8e77d3);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4129,16 +4129,16 @@ BEGIN
   p_DisplayName_45bf02cc := 'External Ids';
   p_Description_45bf02cc := 'External identifiers for the affiliation (type+value+relationship). (common-3.0.xsd external-ids)';
   p_Type_45bf02cc := 'json';
-  p_AllowsNull_45bf02cc := 1;
-  p_IsPrimaryKey_45bf02cc := 0;
-  p_IsUniqueKey_45bf02cc := 0;
-  p_IsReadOnly_45bf02cc := 1;
-  p_IsRequired_45bf02cc := 0;
+  p_AllowsNull_45bf02cc := TRUE;
+  p_IsPrimaryKey_45bf02cc := FALSE;
+  p_IsUniqueKey_45bf02cc := FALSE;
+  p_IsReadOnly_45bf02cc := TRUE;
+  p_IsRequired_45bf02cc := FALSE;
   p_Sequence_45bf02cc := 14;
   p_Status_45bf02cc := 'Active';
-  p_IsCustom_45bf02cc := 0;
+  p_IsCustom_45bf02cc := FALSE;
   p_MetadataSource_45bf02cc := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_45bf02cc, p_IntegrationObjectID := p_IntegrationObjectID_45bf02cc, p_Name := p_Name_45bf02cc, p_DisplayName := p_DisplayName_45bf02cc, p_Description := p_Description_45bf02cc, p_Category := p_Category_45bf02cc, p_Category_Clear := 1, p_Type := p_Type_45bf02cc, p_Length := p_Length_45bf02cc, p_Length_Clear := 1, p_Precision := p_Precision_45bf02cc, p_Precision_Clear := 1, p_Scale := p_Scale_45bf02cc, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_45bf02cc, p_DefaultValue := p_DefaultValue_45bf02cc, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_45bf02cc, p_IsUniqueKey := p_IsUniqueKey_45bf02cc, p_IsReadOnly := p_IsReadOnly_45bf02cc, p_IsRequired := p_IsRequired_45bf02cc, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_45bf02cc, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_45bf02cc, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_45bf02cc, p_Configuration := p_Configuration_45bf02cc, p_Configuration_Clear := 1, p_Status := p_Status_45bf02cc, p_IsCustom := p_IsCustom_45bf02cc, p_MetadataSource := p_MetadataSource_45bf02cc);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_45bf02cc, p_IntegrationObjectID := p_IntegrationObjectID_45bf02cc, p_Name := p_Name_45bf02cc, p_DisplayName := p_DisplayName_45bf02cc, p_Description := p_Description_45bf02cc, p_Category := p_Category_45bf02cc, p_Category_Clear := TRUE, p_Type := p_Type_45bf02cc, p_Length := p_Length_45bf02cc, p_Length_Clear := TRUE, p_Precision := p_Precision_45bf02cc, p_Precision_Clear := TRUE, p_Scale := p_Scale_45bf02cc, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_45bf02cc, p_DefaultValue := p_DefaultValue_45bf02cc, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_45bf02cc, p_IsUniqueKey := p_IsUniqueKey_45bf02cc, p_IsReadOnly := p_IsReadOnly_45bf02cc, p_IsRequired := p_IsRequired_45bf02cc, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_45bf02cc, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_45bf02cc, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_45bf02cc, p_Configuration := p_Configuration_45bf02cc, p_Configuration_Clear := TRUE, p_Status := p_Status_45bf02cc, p_IsCustom := p_IsCustom_45bf02cc, p_MetadataSource := p_MetadataSource_45bf02cc);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4175,18 +4175,18 @@ BEGIN
   p_Description_5a6e2009 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_5a6e2009 := 'String';
   p_Length_5a6e2009 := 19;
-  p_AllowsNull_5a6e2009 := 1;
-  p_IsPrimaryKey_5a6e2009 := 0;
-  p_IsUniqueKey_5a6e2009 := 0;
-  p_IsReadOnly_5a6e2009 := 1;
-  p_IsRequired_5a6e2009 := 1;
+  p_AllowsNull_5a6e2009 := TRUE;
+  p_IsPrimaryKey_5a6e2009 := FALSE;
+  p_IsUniqueKey_5a6e2009 := FALSE;
+  p_IsReadOnly_5a6e2009 := TRUE;
+  p_IsRequired_5a6e2009 := TRUE;
   p_RelatedIntegrationObjectID_5a6e2009 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_5a6e2009 := 'orcid-id';
   p_Sequence_5a6e2009 := 0;
   p_Status_5a6e2009 := 'Active';
-  p_IsCustom_5a6e2009 := 0;
+  p_IsCustom_5a6e2009 := FALSE;
   p_MetadataSource_5a6e2009 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5a6e2009, p_IntegrationObjectID := p_IntegrationObjectID_5a6e2009, p_Name := p_Name_5a6e2009, p_DisplayName := p_DisplayName_5a6e2009, p_Description := p_Description_5a6e2009, p_Category := p_Category_5a6e2009, p_Category_Clear := 1, p_Type := p_Type_5a6e2009, p_Length := p_Length_5a6e2009, p_Precision := p_Precision_5a6e2009, p_Precision_Clear := 1, p_Scale := p_Scale_5a6e2009, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5a6e2009, p_DefaultValue := p_DefaultValue_5a6e2009, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5a6e2009, p_IsUniqueKey := p_IsUniqueKey_5a6e2009, p_IsReadOnly := p_IsReadOnly_5a6e2009, p_IsRequired := p_IsRequired_5a6e2009, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5a6e2009, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5a6e2009, p_Sequence := p_Sequence_5a6e2009, p_Configuration := p_Configuration_5a6e2009, p_Configuration_Clear := 1, p_Status := p_Status_5a6e2009, p_IsCustom := p_IsCustom_5a6e2009, p_MetadataSource := p_MetadataSource_5a6e2009);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5a6e2009, p_IntegrationObjectID := p_IntegrationObjectID_5a6e2009, p_Name := p_Name_5a6e2009, p_DisplayName := p_DisplayName_5a6e2009, p_Description := p_Description_5a6e2009, p_Category := p_Category_5a6e2009, p_Category_Clear := TRUE, p_Type := p_Type_5a6e2009, p_Length := p_Length_5a6e2009, p_Precision := p_Precision_5a6e2009, p_Precision_Clear := TRUE, p_Scale := p_Scale_5a6e2009, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5a6e2009, p_DefaultValue := p_DefaultValue_5a6e2009, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5a6e2009, p_IsUniqueKey := p_IsUniqueKey_5a6e2009, p_IsReadOnly := p_IsReadOnly_5a6e2009, p_IsRequired := p_IsRequired_5a6e2009, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5a6e2009, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5a6e2009, p_Sequence := p_Sequence_5a6e2009, p_Configuration := p_Configuration_5a6e2009, p_Configuration_Clear := TRUE, p_Status := p_Status_5a6e2009, p_IsCustom := p_IsCustom_5a6e2009, p_MetadataSource := p_MetadataSource_5a6e2009);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4222,16 +4222,16 @@ BEGIN
   p_DisplayName_8253494b := 'Put Code';
   p_Description_8253494b := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_8253494b := 'Integer';
-  p_AllowsNull_8253494b := 0;
-  p_IsPrimaryKey_8253494b := 1;
-  p_IsUniqueKey_8253494b := 1;
-  p_IsReadOnly_8253494b := 1;
-  p_IsRequired_8253494b := 1;
+  p_AllowsNull_8253494b := FALSE;
+  p_IsPrimaryKey_8253494b := TRUE;
+  p_IsUniqueKey_8253494b := TRUE;
+  p_IsReadOnly_8253494b := TRUE;
+  p_IsRequired_8253494b := TRUE;
   p_Sequence_8253494b := 1;
   p_Status_8253494b := 'Active';
-  p_IsCustom_8253494b := 0;
+  p_IsCustom_8253494b := FALSE;
   p_MetadataSource_8253494b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8253494b, p_IntegrationObjectID := p_IntegrationObjectID_8253494b, p_Name := p_Name_8253494b, p_DisplayName := p_DisplayName_8253494b, p_Description := p_Description_8253494b, p_Category := p_Category_8253494b, p_Category_Clear := 1, p_Type := p_Type_8253494b, p_Length := p_Length_8253494b, p_Length_Clear := 1, p_Precision := p_Precision_8253494b, p_Precision_Clear := 1, p_Scale := p_Scale_8253494b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_8253494b, p_DefaultValue := p_DefaultValue_8253494b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_8253494b, p_IsUniqueKey := p_IsUniqueKey_8253494b, p_IsReadOnly := p_IsReadOnly_8253494b, p_IsRequired := p_IsRequired_8253494b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8253494b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8253494b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_8253494b, p_Configuration := p_Configuration_8253494b, p_Configuration_Clear := 1, p_Status := p_Status_8253494b, p_IsCustom := p_IsCustom_8253494b, p_MetadataSource := p_MetadataSource_8253494b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8253494b, p_IntegrationObjectID := p_IntegrationObjectID_8253494b, p_Name := p_Name_8253494b, p_DisplayName := p_DisplayName_8253494b, p_Description := p_Description_8253494b, p_Category := p_Category_8253494b, p_Category_Clear := TRUE, p_Type := p_Type_8253494b, p_Length := p_Length_8253494b, p_Length_Clear := TRUE, p_Precision := p_Precision_8253494b, p_Precision_Clear := TRUE, p_Scale := p_Scale_8253494b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_8253494b, p_DefaultValue := p_DefaultValue_8253494b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_8253494b, p_IsUniqueKey := p_IsUniqueKey_8253494b, p_IsReadOnly := p_IsReadOnly_8253494b, p_IsRequired := p_IsRequired_8253494b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8253494b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8253494b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_8253494b, p_Configuration := p_Configuration_8253494b, p_Configuration_Clear := TRUE, p_Status := p_Status_8253494b, p_IsCustom := p_IsCustom_8253494b, p_MetadataSource := p_MetadataSource_8253494b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4268,16 +4268,16 @@ BEGIN
   p_Description_5faae273 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_5faae273 := 'String';
   p_Length_5faae273 := 500;
-  p_AllowsNull_5faae273 := 1;
-  p_IsPrimaryKey_5faae273 := 0;
-  p_IsUniqueKey_5faae273 := 0;
-  p_IsReadOnly_5faae273 := 1;
-  p_IsRequired_5faae273 := 0;
+  p_AllowsNull_5faae273 := TRUE;
+  p_IsPrimaryKey_5faae273 := FALSE;
+  p_IsUniqueKey_5faae273 := FALSE;
+  p_IsReadOnly_5faae273 := TRUE;
+  p_IsRequired_5faae273 := FALSE;
   p_Sequence_5faae273 := 2;
   p_Status_5faae273 := 'Active';
-  p_IsCustom_5faae273 := 0;
+  p_IsCustom_5faae273 := FALSE;
   p_MetadataSource_5faae273 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5faae273, p_IntegrationObjectID := p_IntegrationObjectID_5faae273, p_Name := p_Name_5faae273, p_DisplayName := p_DisplayName_5faae273, p_Description := p_Description_5faae273, p_Category := p_Category_5faae273, p_Category_Clear := 1, p_Type := p_Type_5faae273, p_Length := p_Length_5faae273, p_Precision := p_Precision_5faae273, p_Precision_Clear := 1, p_Scale := p_Scale_5faae273, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5faae273, p_DefaultValue := p_DefaultValue_5faae273, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5faae273, p_IsUniqueKey := p_IsUniqueKey_5faae273, p_IsReadOnly := p_IsReadOnly_5faae273, p_IsRequired := p_IsRequired_5faae273, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5faae273, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5faae273, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_5faae273, p_Configuration := p_Configuration_5faae273, p_Configuration_Clear := 1, p_Status := p_Status_5faae273, p_IsCustom := p_IsCustom_5faae273, p_MetadataSource := p_MetadataSource_5faae273);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5faae273, p_IntegrationObjectID := p_IntegrationObjectID_5faae273, p_Name := p_Name_5faae273, p_DisplayName := p_DisplayName_5faae273, p_Description := p_Description_5faae273, p_Category := p_Category_5faae273, p_Category_Clear := TRUE, p_Type := p_Type_5faae273, p_Length := p_Length_5faae273, p_Precision := p_Precision_5faae273, p_Precision_Clear := TRUE, p_Scale := p_Scale_5faae273, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5faae273, p_DefaultValue := p_DefaultValue_5faae273, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5faae273, p_IsUniqueKey := p_IsUniqueKey_5faae273, p_IsReadOnly := p_IsReadOnly_5faae273, p_IsRequired := p_IsRequired_5faae273, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5faae273, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5faae273, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_5faae273, p_Configuration := p_Configuration_5faae273, p_Configuration_Clear := TRUE, p_Status := p_Status_5faae273, p_IsCustom := p_IsCustom_5faae273, p_MetadataSource := p_MetadataSource_5faae273);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4313,16 +4313,16 @@ BEGIN
   p_DisplayName_be5ed2bd := 'Visibility';
   p_Description_be5ed2bd := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_be5ed2bd := 'String';
-  p_AllowsNull_be5ed2bd := 1;
-  p_IsPrimaryKey_be5ed2bd := 0;
-  p_IsUniqueKey_be5ed2bd := 0;
-  p_IsReadOnly_be5ed2bd := 1;
-  p_IsRequired_be5ed2bd := 0;
+  p_AllowsNull_be5ed2bd := TRUE;
+  p_IsPrimaryKey_be5ed2bd := FALSE;
+  p_IsUniqueKey_be5ed2bd := FALSE;
+  p_IsReadOnly_be5ed2bd := TRUE;
+  p_IsRequired_be5ed2bd := FALSE;
   p_Sequence_be5ed2bd := 3;
   p_Status_be5ed2bd := 'Active';
-  p_IsCustom_be5ed2bd := 0;
+  p_IsCustom_be5ed2bd := FALSE;
   p_MetadataSource_be5ed2bd := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_be5ed2bd, p_IntegrationObjectID := p_IntegrationObjectID_be5ed2bd, p_Name := p_Name_be5ed2bd, p_DisplayName := p_DisplayName_be5ed2bd, p_Description := p_Description_be5ed2bd, p_Category := p_Category_be5ed2bd, p_Category_Clear := 1, p_Type := p_Type_be5ed2bd, p_Length := p_Length_be5ed2bd, p_Length_Clear := 1, p_Precision := p_Precision_be5ed2bd, p_Precision_Clear := 1, p_Scale := p_Scale_be5ed2bd, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_be5ed2bd, p_DefaultValue := p_DefaultValue_be5ed2bd, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_be5ed2bd, p_IsUniqueKey := p_IsUniqueKey_be5ed2bd, p_IsReadOnly := p_IsReadOnly_be5ed2bd, p_IsRequired := p_IsRequired_be5ed2bd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_be5ed2bd, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_be5ed2bd, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_be5ed2bd, p_Configuration := p_Configuration_be5ed2bd, p_Configuration_Clear := 1, p_Status := p_Status_be5ed2bd, p_IsCustom := p_IsCustom_be5ed2bd, p_MetadataSource := p_MetadataSource_be5ed2bd);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_be5ed2bd, p_IntegrationObjectID := p_IntegrationObjectID_be5ed2bd, p_Name := p_Name_be5ed2bd, p_DisplayName := p_DisplayName_be5ed2bd, p_Description := p_Description_be5ed2bd, p_Category := p_Category_be5ed2bd, p_Category_Clear := TRUE, p_Type := p_Type_be5ed2bd, p_Length := p_Length_be5ed2bd, p_Length_Clear := TRUE, p_Precision := p_Precision_be5ed2bd, p_Precision_Clear := TRUE, p_Scale := p_Scale_be5ed2bd, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_be5ed2bd, p_DefaultValue := p_DefaultValue_be5ed2bd, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_be5ed2bd, p_IsUniqueKey := p_IsUniqueKey_be5ed2bd, p_IsReadOnly := p_IsReadOnly_be5ed2bd, p_IsRequired := p_IsRequired_be5ed2bd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_be5ed2bd, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_be5ed2bd, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_be5ed2bd, p_Configuration := p_Configuration_be5ed2bd, p_Configuration_Clear := TRUE, p_Status := p_Status_be5ed2bd, p_IsCustom := p_IsCustom_be5ed2bd, p_MetadataSource := p_MetadataSource_be5ed2bd);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4358,16 +4358,16 @@ BEGIN
   p_DisplayName_170af8ff := 'Display Index';
   p_Description_170af8ff := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_170af8ff := 'String';
-  p_AllowsNull_170af8ff := 1;
-  p_IsPrimaryKey_170af8ff := 0;
-  p_IsUniqueKey_170af8ff := 0;
-  p_IsReadOnly_170af8ff := 1;
-  p_IsRequired_170af8ff := 0;
+  p_AllowsNull_170af8ff := TRUE;
+  p_IsPrimaryKey_170af8ff := FALSE;
+  p_IsUniqueKey_170af8ff := FALSE;
+  p_IsReadOnly_170af8ff := TRUE;
+  p_IsRequired_170af8ff := FALSE;
   p_Sequence_170af8ff := 4;
   p_Status_170af8ff := 'Active';
-  p_IsCustom_170af8ff := 0;
+  p_IsCustom_170af8ff := FALSE;
   p_MetadataSource_170af8ff := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_170af8ff, p_IntegrationObjectID := p_IntegrationObjectID_170af8ff, p_Name := p_Name_170af8ff, p_DisplayName := p_DisplayName_170af8ff, p_Description := p_Description_170af8ff, p_Category := p_Category_170af8ff, p_Category_Clear := 1, p_Type := p_Type_170af8ff, p_Length := p_Length_170af8ff, p_Length_Clear := 1, p_Precision := p_Precision_170af8ff, p_Precision_Clear := 1, p_Scale := p_Scale_170af8ff, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_170af8ff, p_DefaultValue := p_DefaultValue_170af8ff, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_170af8ff, p_IsUniqueKey := p_IsUniqueKey_170af8ff, p_IsReadOnly := p_IsReadOnly_170af8ff, p_IsRequired := p_IsRequired_170af8ff, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_170af8ff, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_170af8ff, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_170af8ff, p_Configuration := p_Configuration_170af8ff, p_Configuration_Clear := 1, p_Status := p_Status_170af8ff, p_IsCustom := p_IsCustom_170af8ff, p_MetadataSource := p_MetadataSource_170af8ff);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_170af8ff, p_IntegrationObjectID := p_IntegrationObjectID_170af8ff, p_Name := p_Name_170af8ff, p_DisplayName := p_DisplayName_170af8ff, p_Description := p_Description_170af8ff, p_Category := p_Category_170af8ff, p_Category_Clear := TRUE, p_Type := p_Type_170af8ff, p_Length := p_Length_170af8ff, p_Length_Clear := TRUE, p_Precision := p_Precision_170af8ff, p_Precision_Clear := TRUE, p_Scale := p_Scale_170af8ff, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_170af8ff, p_DefaultValue := p_DefaultValue_170af8ff, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_170af8ff, p_IsUniqueKey := p_IsUniqueKey_170af8ff, p_IsReadOnly := p_IsReadOnly_170af8ff, p_IsRequired := p_IsRequired_170af8ff, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_170af8ff, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_170af8ff, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_170af8ff, p_Configuration := p_Configuration_170af8ff, p_Configuration_Clear := TRUE, p_Status := p_Status_170af8ff, p_IsCustom := p_IsCustom_170af8ff, p_MetadataSource := p_MetadataSource_170af8ff);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4403,16 +4403,16 @@ BEGIN
   p_DisplayName_eac46805 := 'Created Date';
   p_Description_eac46805 := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_eac46805 := 'DateTime';
-  p_AllowsNull_eac46805 := 1;
-  p_IsPrimaryKey_eac46805 := 0;
-  p_IsUniqueKey_eac46805 := 0;
-  p_IsReadOnly_eac46805 := 1;
-  p_IsRequired_eac46805 := 0;
+  p_AllowsNull_eac46805 := TRUE;
+  p_IsPrimaryKey_eac46805 := FALSE;
+  p_IsUniqueKey_eac46805 := FALSE;
+  p_IsReadOnly_eac46805 := TRUE;
+  p_IsRequired_eac46805 := FALSE;
   p_Sequence_eac46805 := 5;
   p_Status_eac46805 := 'Active';
-  p_IsCustom_eac46805 := 0;
+  p_IsCustom_eac46805 := FALSE;
   p_MetadataSource_eac46805 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_eac46805, p_IntegrationObjectID := p_IntegrationObjectID_eac46805, p_Name := p_Name_eac46805, p_DisplayName := p_DisplayName_eac46805, p_Description := p_Description_eac46805, p_Category := p_Category_eac46805, p_Category_Clear := 1, p_Type := p_Type_eac46805, p_Length := p_Length_eac46805, p_Length_Clear := 1, p_Precision := p_Precision_eac46805, p_Precision_Clear := 1, p_Scale := p_Scale_eac46805, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_eac46805, p_DefaultValue := p_DefaultValue_eac46805, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_eac46805, p_IsUniqueKey := p_IsUniqueKey_eac46805, p_IsReadOnly := p_IsReadOnly_eac46805, p_IsRequired := p_IsRequired_eac46805, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_eac46805, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_eac46805, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_eac46805, p_Configuration := p_Configuration_eac46805, p_Configuration_Clear := 1, p_Status := p_Status_eac46805, p_IsCustom := p_IsCustom_eac46805, p_MetadataSource := p_MetadataSource_eac46805);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_eac46805, p_IntegrationObjectID := p_IntegrationObjectID_eac46805, p_Name := p_Name_eac46805, p_DisplayName := p_DisplayName_eac46805, p_Description := p_Description_eac46805, p_Category := p_Category_eac46805, p_Category_Clear := TRUE, p_Type := p_Type_eac46805, p_Length := p_Length_eac46805, p_Length_Clear := TRUE, p_Precision := p_Precision_eac46805, p_Precision_Clear := TRUE, p_Scale := p_Scale_eac46805, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_eac46805, p_DefaultValue := p_DefaultValue_eac46805, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_eac46805, p_IsUniqueKey := p_IsUniqueKey_eac46805, p_IsReadOnly := p_IsReadOnly_eac46805, p_IsRequired := p_IsRequired_eac46805, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_eac46805, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_eac46805, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_eac46805, p_Configuration := p_Configuration_eac46805, p_Configuration_Clear := TRUE, p_Status := p_Status_eac46805, p_IsCustom := p_IsCustom_eac46805, p_MetadataSource := p_MetadataSource_eac46805);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4448,16 +4448,16 @@ BEGIN
   p_DisplayName_fe33bff0 := 'Last Modified Date';
   p_Description_fe33bff0 := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_fe33bff0 := 'DateTime';
-  p_AllowsNull_fe33bff0 := 1;
-  p_IsPrimaryKey_fe33bff0 := 0;
-  p_IsUniqueKey_fe33bff0 := 0;
-  p_IsReadOnly_fe33bff0 := 1;
-  p_IsRequired_fe33bff0 := 0;
+  p_AllowsNull_fe33bff0 := TRUE;
+  p_IsPrimaryKey_fe33bff0 := FALSE;
+  p_IsUniqueKey_fe33bff0 := FALSE;
+  p_IsReadOnly_fe33bff0 := TRUE;
+  p_IsRequired_fe33bff0 := FALSE;
   p_Sequence_fe33bff0 := 6;
   p_Status_fe33bff0 := 'Active';
-  p_IsCustom_fe33bff0 := 0;
+  p_IsCustom_fe33bff0 := FALSE;
   p_MetadataSource_fe33bff0 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_fe33bff0, p_IntegrationObjectID := p_IntegrationObjectID_fe33bff0, p_Name := p_Name_fe33bff0, p_DisplayName := p_DisplayName_fe33bff0, p_Description := p_Description_fe33bff0, p_Category := p_Category_fe33bff0, p_Category_Clear := 1, p_Type := p_Type_fe33bff0, p_Length := p_Length_fe33bff0, p_Length_Clear := 1, p_Precision := p_Precision_fe33bff0, p_Precision_Clear := 1, p_Scale := p_Scale_fe33bff0, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_fe33bff0, p_DefaultValue := p_DefaultValue_fe33bff0, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_fe33bff0, p_IsUniqueKey := p_IsUniqueKey_fe33bff0, p_IsReadOnly := p_IsReadOnly_fe33bff0, p_IsRequired := p_IsRequired_fe33bff0, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_fe33bff0, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_fe33bff0, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_fe33bff0, p_Configuration := p_Configuration_fe33bff0, p_Configuration_Clear := 1, p_Status := p_Status_fe33bff0, p_IsCustom := p_IsCustom_fe33bff0, p_MetadataSource := p_MetadataSource_fe33bff0);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_fe33bff0, p_IntegrationObjectID := p_IntegrationObjectID_fe33bff0, p_Name := p_Name_fe33bff0, p_DisplayName := p_DisplayName_fe33bff0, p_Description := p_Description_fe33bff0, p_Category := p_Category_fe33bff0, p_Category_Clear := TRUE, p_Type := p_Type_fe33bff0, p_Length := p_Length_fe33bff0, p_Length_Clear := TRUE, p_Precision := p_Precision_fe33bff0, p_Precision_Clear := TRUE, p_Scale := p_Scale_fe33bff0, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_fe33bff0, p_DefaultValue := p_DefaultValue_fe33bff0, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_fe33bff0, p_IsUniqueKey := p_IsUniqueKey_fe33bff0, p_IsReadOnly := p_IsReadOnly_fe33bff0, p_IsRequired := p_IsRequired_fe33bff0, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_fe33bff0, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_fe33bff0, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_fe33bff0, p_Configuration := p_Configuration_fe33bff0, p_Configuration_Clear := TRUE, p_Status := p_Status_fe33bff0, p_IsCustom := p_IsCustom_fe33bff0, p_MetadataSource := p_MetadataSource_fe33bff0);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4493,16 +4493,16 @@ BEGIN
   p_DisplayName_caf8b428 := 'Source';
   p_Description_caf8b428 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_caf8b428 := 'json';
-  p_AllowsNull_caf8b428 := 1;
-  p_IsPrimaryKey_caf8b428 := 0;
-  p_IsUniqueKey_caf8b428 := 0;
-  p_IsReadOnly_caf8b428 := 1;
-  p_IsRequired_caf8b428 := 0;
+  p_AllowsNull_caf8b428 := TRUE;
+  p_IsPrimaryKey_caf8b428 := FALSE;
+  p_IsUniqueKey_caf8b428 := FALSE;
+  p_IsReadOnly_caf8b428 := TRUE;
+  p_IsRequired_caf8b428 := FALSE;
   p_Sequence_caf8b428 := 7;
   p_Status_caf8b428 := 'Active';
-  p_IsCustom_caf8b428 := 0;
+  p_IsCustom_caf8b428 := FALSE;
   p_MetadataSource_caf8b428 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_caf8b428, p_IntegrationObjectID := p_IntegrationObjectID_caf8b428, p_Name := p_Name_caf8b428, p_DisplayName := p_DisplayName_caf8b428, p_Description := p_Description_caf8b428, p_Category := p_Category_caf8b428, p_Category_Clear := 1, p_Type := p_Type_caf8b428, p_Length := p_Length_caf8b428, p_Length_Clear := 1, p_Precision := p_Precision_caf8b428, p_Precision_Clear := 1, p_Scale := p_Scale_caf8b428, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_caf8b428, p_DefaultValue := p_DefaultValue_caf8b428, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_caf8b428, p_IsUniqueKey := p_IsUniqueKey_caf8b428, p_IsReadOnly := p_IsReadOnly_caf8b428, p_IsRequired := p_IsRequired_caf8b428, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_caf8b428, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_caf8b428, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_caf8b428, p_Configuration := p_Configuration_caf8b428, p_Configuration_Clear := 1, p_Status := p_Status_caf8b428, p_IsCustom := p_IsCustom_caf8b428, p_MetadataSource := p_MetadataSource_caf8b428);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_caf8b428, p_IntegrationObjectID := p_IntegrationObjectID_caf8b428, p_Name := p_Name_caf8b428, p_DisplayName := p_DisplayName_caf8b428, p_Description := p_Description_caf8b428, p_Category := p_Category_caf8b428, p_Category_Clear := TRUE, p_Type := p_Type_caf8b428, p_Length := p_Length_caf8b428, p_Length_Clear := TRUE, p_Precision := p_Precision_caf8b428, p_Precision_Clear := TRUE, p_Scale := p_Scale_caf8b428, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_caf8b428, p_DefaultValue := p_DefaultValue_caf8b428, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_caf8b428, p_IsUniqueKey := p_IsUniqueKey_caf8b428, p_IsReadOnly := p_IsReadOnly_caf8b428, p_IsRequired := p_IsRequired_caf8b428, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_caf8b428, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_caf8b428, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_caf8b428, p_Configuration := p_Configuration_caf8b428, p_Configuration_Clear := TRUE, p_Status := p_Status_caf8b428, p_IsCustom := p_IsCustom_caf8b428, p_MetadataSource := p_MetadataSource_caf8b428);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4539,16 +4539,16 @@ BEGIN
   p_Description_ceb1e772 := 'Department within the organization. (common-3.0.xsd affiliation department-name, long-text)';
   p_Type_ceb1e772 := 'String';
   p_Length_ceb1e772 := 4000;
-  p_AllowsNull_ceb1e772 := 1;
-  p_IsPrimaryKey_ceb1e772 := 0;
-  p_IsUniqueKey_ceb1e772 := 0;
-  p_IsReadOnly_ceb1e772 := 1;
-  p_IsRequired_ceb1e772 := 0;
+  p_AllowsNull_ceb1e772 := TRUE;
+  p_IsPrimaryKey_ceb1e772 := FALSE;
+  p_IsUniqueKey_ceb1e772 := FALSE;
+  p_IsReadOnly_ceb1e772 := TRUE;
+  p_IsRequired_ceb1e772 := FALSE;
   p_Sequence_ceb1e772 := 8;
   p_Status_ceb1e772 := 'Active';
-  p_IsCustom_ceb1e772 := 0;
+  p_IsCustom_ceb1e772 := FALSE;
   p_MetadataSource_ceb1e772 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ceb1e772, p_IntegrationObjectID := p_IntegrationObjectID_ceb1e772, p_Name := p_Name_ceb1e772, p_DisplayName := p_DisplayName_ceb1e772, p_Description := p_Description_ceb1e772, p_Category := p_Category_ceb1e772, p_Category_Clear := 1, p_Type := p_Type_ceb1e772, p_Length := p_Length_ceb1e772, p_Precision := p_Precision_ceb1e772, p_Precision_Clear := 1, p_Scale := p_Scale_ceb1e772, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ceb1e772, p_DefaultValue := p_DefaultValue_ceb1e772, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ceb1e772, p_IsUniqueKey := p_IsUniqueKey_ceb1e772, p_IsReadOnly := p_IsReadOnly_ceb1e772, p_IsRequired := p_IsRequired_ceb1e772, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ceb1e772, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ceb1e772, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ceb1e772, p_Configuration := p_Configuration_ceb1e772, p_Configuration_Clear := 1, p_Status := p_Status_ceb1e772, p_IsCustom := p_IsCustom_ceb1e772, p_MetadataSource := p_MetadataSource_ceb1e772);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ceb1e772, p_IntegrationObjectID := p_IntegrationObjectID_ceb1e772, p_Name := p_Name_ceb1e772, p_DisplayName := p_DisplayName_ceb1e772, p_Description := p_Description_ceb1e772, p_Category := p_Category_ceb1e772, p_Category_Clear := TRUE, p_Type := p_Type_ceb1e772, p_Length := p_Length_ceb1e772, p_Precision := p_Precision_ceb1e772, p_Precision_Clear := TRUE, p_Scale := p_Scale_ceb1e772, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ceb1e772, p_DefaultValue := p_DefaultValue_ceb1e772, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ceb1e772, p_IsUniqueKey := p_IsUniqueKey_ceb1e772, p_IsReadOnly := p_IsReadOnly_ceb1e772, p_IsRequired := p_IsRequired_ceb1e772, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ceb1e772, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ceb1e772, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ceb1e772, p_Configuration := p_Configuration_ceb1e772, p_Configuration_Clear := TRUE, p_Status := p_Status_ceb1e772, p_IsCustom := p_IsCustom_ceb1e772, p_MetadataSource := p_MetadataSource_ceb1e772);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4585,16 +4585,16 @@ BEGIN
   p_Description_3da0fcc2 := 'Role or title held at the organization. (common-3.0.xsd affiliation role-title, long-text)';
   p_Type_3da0fcc2 := 'String';
   p_Length_3da0fcc2 := 4000;
-  p_AllowsNull_3da0fcc2 := 1;
-  p_IsPrimaryKey_3da0fcc2 := 0;
-  p_IsUniqueKey_3da0fcc2 := 0;
-  p_IsReadOnly_3da0fcc2 := 1;
-  p_IsRequired_3da0fcc2 := 0;
+  p_AllowsNull_3da0fcc2 := TRUE;
+  p_IsPrimaryKey_3da0fcc2 := FALSE;
+  p_IsUniqueKey_3da0fcc2 := FALSE;
+  p_IsReadOnly_3da0fcc2 := TRUE;
+  p_IsRequired_3da0fcc2 := FALSE;
   p_Sequence_3da0fcc2 := 9;
   p_Status_3da0fcc2 := 'Active';
-  p_IsCustom_3da0fcc2 := 0;
+  p_IsCustom_3da0fcc2 := FALSE;
   p_MetadataSource_3da0fcc2 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3da0fcc2, p_IntegrationObjectID := p_IntegrationObjectID_3da0fcc2, p_Name := p_Name_3da0fcc2, p_DisplayName := p_DisplayName_3da0fcc2, p_Description := p_Description_3da0fcc2, p_Category := p_Category_3da0fcc2, p_Category_Clear := 1, p_Type := p_Type_3da0fcc2, p_Length := p_Length_3da0fcc2, p_Precision := p_Precision_3da0fcc2, p_Precision_Clear := 1, p_Scale := p_Scale_3da0fcc2, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_3da0fcc2, p_DefaultValue := p_DefaultValue_3da0fcc2, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_3da0fcc2, p_IsUniqueKey := p_IsUniqueKey_3da0fcc2, p_IsReadOnly := p_IsReadOnly_3da0fcc2, p_IsRequired := p_IsRequired_3da0fcc2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3da0fcc2, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3da0fcc2, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_3da0fcc2, p_Configuration := p_Configuration_3da0fcc2, p_Configuration_Clear := 1, p_Status := p_Status_3da0fcc2, p_IsCustom := p_IsCustom_3da0fcc2, p_MetadataSource := p_MetadataSource_3da0fcc2);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3da0fcc2, p_IntegrationObjectID := p_IntegrationObjectID_3da0fcc2, p_Name := p_Name_3da0fcc2, p_DisplayName := p_DisplayName_3da0fcc2, p_Description := p_Description_3da0fcc2, p_Category := p_Category_3da0fcc2, p_Category_Clear := TRUE, p_Type := p_Type_3da0fcc2, p_Length := p_Length_3da0fcc2, p_Precision := p_Precision_3da0fcc2, p_Precision_Clear := TRUE, p_Scale := p_Scale_3da0fcc2, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_3da0fcc2, p_DefaultValue := p_DefaultValue_3da0fcc2, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_3da0fcc2, p_IsUniqueKey := p_IsUniqueKey_3da0fcc2, p_IsReadOnly := p_IsReadOnly_3da0fcc2, p_IsRequired := p_IsRequired_3da0fcc2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3da0fcc2, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3da0fcc2, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_3da0fcc2, p_Configuration := p_Configuration_3da0fcc2, p_Configuration_Clear := TRUE, p_Status := p_Status_3da0fcc2, p_IsCustom := p_IsCustom_3da0fcc2, p_MetadataSource := p_MetadataSource_3da0fcc2);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4630,16 +4630,16 @@ BEGIN
   p_DisplayName_742cca03 := 'Start Date';
   p_Description_742cca03 := 'Fuzzy start date (year + optional month/day). (common-3.0.xsd start-date, fuzzy-date)';
   p_Type_742cca03 := 'json';
-  p_AllowsNull_742cca03 := 1;
-  p_IsPrimaryKey_742cca03 := 0;
-  p_IsUniqueKey_742cca03 := 0;
-  p_IsReadOnly_742cca03 := 1;
-  p_IsRequired_742cca03 := 0;
+  p_AllowsNull_742cca03 := TRUE;
+  p_IsPrimaryKey_742cca03 := FALSE;
+  p_IsUniqueKey_742cca03 := FALSE;
+  p_IsReadOnly_742cca03 := TRUE;
+  p_IsRequired_742cca03 := FALSE;
   p_Sequence_742cca03 := 10;
   p_Status_742cca03 := 'Active';
-  p_IsCustom_742cca03 := 0;
+  p_IsCustom_742cca03 := FALSE;
   p_MetadataSource_742cca03 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_742cca03, p_IntegrationObjectID := p_IntegrationObjectID_742cca03, p_Name := p_Name_742cca03, p_DisplayName := p_DisplayName_742cca03, p_Description := p_Description_742cca03, p_Category := p_Category_742cca03, p_Category_Clear := 1, p_Type := p_Type_742cca03, p_Length := p_Length_742cca03, p_Length_Clear := 1, p_Precision := p_Precision_742cca03, p_Precision_Clear := 1, p_Scale := p_Scale_742cca03, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_742cca03, p_DefaultValue := p_DefaultValue_742cca03, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_742cca03, p_IsUniqueKey := p_IsUniqueKey_742cca03, p_IsReadOnly := p_IsReadOnly_742cca03, p_IsRequired := p_IsRequired_742cca03, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_742cca03, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_742cca03, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_742cca03, p_Configuration := p_Configuration_742cca03, p_Configuration_Clear := 1, p_Status := p_Status_742cca03, p_IsCustom := p_IsCustom_742cca03, p_MetadataSource := p_MetadataSource_742cca03);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_742cca03, p_IntegrationObjectID := p_IntegrationObjectID_742cca03, p_Name := p_Name_742cca03, p_DisplayName := p_DisplayName_742cca03, p_Description := p_Description_742cca03, p_Category := p_Category_742cca03, p_Category_Clear := TRUE, p_Type := p_Type_742cca03, p_Length := p_Length_742cca03, p_Length_Clear := TRUE, p_Precision := p_Precision_742cca03, p_Precision_Clear := TRUE, p_Scale := p_Scale_742cca03, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_742cca03, p_DefaultValue := p_DefaultValue_742cca03, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_742cca03, p_IsUniqueKey := p_IsUniqueKey_742cca03, p_IsReadOnly := p_IsReadOnly_742cca03, p_IsRequired := p_IsRequired_742cca03, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_742cca03, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_742cca03, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_742cca03, p_Configuration := p_Configuration_742cca03, p_Configuration_Clear := TRUE, p_Status := p_Status_742cca03, p_IsCustom := p_IsCustom_742cca03, p_MetadataSource := p_MetadataSource_742cca03);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4675,16 +4675,16 @@ BEGIN
   p_DisplayName_0598ecbe := 'End Date';
   p_Description_0598ecbe := 'Fuzzy end date (year + optional month/day). (common-3.0.xsd end-date, fuzzy-date)';
   p_Type_0598ecbe := 'json';
-  p_AllowsNull_0598ecbe := 1;
-  p_IsPrimaryKey_0598ecbe := 0;
-  p_IsUniqueKey_0598ecbe := 0;
-  p_IsReadOnly_0598ecbe := 1;
-  p_IsRequired_0598ecbe := 0;
+  p_AllowsNull_0598ecbe := TRUE;
+  p_IsPrimaryKey_0598ecbe := FALSE;
+  p_IsUniqueKey_0598ecbe := FALSE;
+  p_IsReadOnly_0598ecbe := TRUE;
+  p_IsRequired_0598ecbe := FALSE;
   p_Sequence_0598ecbe := 11;
   p_Status_0598ecbe := 'Active';
-  p_IsCustom_0598ecbe := 0;
+  p_IsCustom_0598ecbe := FALSE;
   p_MetadataSource_0598ecbe := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0598ecbe, p_IntegrationObjectID := p_IntegrationObjectID_0598ecbe, p_Name := p_Name_0598ecbe, p_DisplayName := p_DisplayName_0598ecbe, p_Description := p_Description_0598ecbe, p_Category := p_Category_0598ecbe, p_Category_Clear := 1, p_Type := p_Type_0598ecbe, p_Length := p_Length_0598ecbe, p_Length_Clear := 1, p_Precision := p_Precision_0598ecbe, p_Precision_Clear := 1, p_Scale := p_Scale_0598ecbe, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_0598ecbe, p_DefaultValue := p_DefaultValue_0598ecbe, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_0598ecbe, p_IsUniqueKey := p_IsUniqueKey_0598ecbe, p_IsReadOnly := p_IsReadOnly_0598ecbe, p_IsRequired := p_IsRequired_0598ecbe, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0598ecbe, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0598ecbe, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_0598ecbe, p_Configuration := p_Configuration_0598ecbe, p_Configuration_Clear := 1, p_Status := p_Status_0598ecbe, p_IsCustom := p_IsCustom_0598ecbe, p_MetadataSource := p_MetadataSource_0598ecbe);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0598ecbe, p_IntegrationObjectID := p_IntegrationObjectID_0598ecbe, p_Name := p_Name_0598ecbe, p_DisplayName := p_DisplayName_0598ecbe, p_Description := p_Description_0598ecbe, p_Category := p_Category_0598ecbe, p_Category_Clear := TRUE, p_Type := p_Type_0598ecbe, p_Length := p_Length_0598ecbe, p_Length_Clear := TRUE, p_Precision := p_Precision_0598ecbe, p_Precision_Clear := TRUE, p_Scale := p_Scale_0598ecbe, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_0598ecbe, p_DefaultValue := p_DefaultValue_0598ecbe, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_0598ecbe, p_IsUniqueKey := p_IsUniqueKey_0598ecbe, p_IsReadOnly := p_IsReadOnly_0598ecbe, p_IsRequired := p_IsRequired_0598ecbe, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0598ecbe, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0598ecbe, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_0598ecbe, p_Configuration := p_Configuration_0598ecbe, p_Configuration_Clear := TRUE, p_Status := p_Status_0598ecbe, p_IsCustom := p_IsCustom_0598ecbe, p_MetadataSource := p_MetadataSource_0598ecbe);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4720,16 +4720,16 @@ BEGIN
   p_DisplayName_9dedb85b := 'Organization';
   p_Description_9dedb85b := 'Organization reference: name, address, disambiguated-org-id (ROR/GRID/Ringgold). Required. (common-3.0.xsd organization, minOccurs=1)';
   p_Type_9dedb85b := 'json';
-  p_AllowsNull_9dedb85b := 1;
-  p_IsPrimaryKey_9dedb85b := 0;
-  p_IsUniqueKey_9dedb85b := 0;
-  p_IsReadOnly_9dedb85b := 1;
-  p_IsRequired_9dedb85b := 1;
+  p_AllowsNull_9dedb85b := TRUE;
+  p_IsPrimaryKey_9dedb85b := FALSE;
+  p_IsUniqueKey_9dedb85b := FALSE;
+  p_IsReadOnly_9dedb85b := TRUE;
+  p_IsRequired_9dedb85b := TRUE;
   p_Sequence_9dedb85b := 12;
   p_Status_9dedb85b := 'Active';
-  p_IsCustom_9dedb85b := 0;
+  p_IsCustom_9dedb85b := FALSE;
   p_MetadataSource_9dedb85b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9dedb85b, p_IntegrationObjectID := p_IntegrationObjectID_9dedb85b, p_Name := p_Name_9dedb85b, p_DisplayName := p_DisplayName_9dedb85b, p_Description := p_Description_9dedb85b, p_Category := p_Category_9dedb85b, p_Category_Clear := 1, p_Type := p_Type_9dedb85b, p_Length := p_Length_9dedb85b, p_Length_Clear := 1, p_Precision := p_Precision_9dedb85b, p_Precision_Clear := 1, p_Scale := p_Scale_9dedb85b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_9dedb85b, p_DefaultValue := p_DefaultValue_9dedb85b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_9dedb85b, p_IsUniqueKey := p_IsUniqueKey_9dedb85b, p_IsReadOnly := p_IsReadOnly_9dedb85b, p_IsRequired := p_IsRequired_9dedb85b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9dedb85b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9dedb85b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_9dedb85b, p_Configuration := p_Configuration_9dedb85b, p_Configuration_Clear := 1, p_Status := p_Status_9dedb85b, p_IsCustom := p_IsCustom_9dedb85b, p_MetadataSource := p_MetadataSource_9dedb85b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9dedb85b, p_IntegrationObjectID := p_IntegrationObjectID_9dedb85b, p_Name := p_Name_9dedb85b, p_DisplayName := p_DisplayName_9dedb85b, p_Description := p_Description_9dedb85b, p_Category := p_Category_9dedb85b, p_Category_Clear := TRUE, p_Type := p_Type_9dedb85b, p_Length := p_Length_9dedb85b, p_Length_Clear := TRUE, p_Precision := p_Precision_9dedb85b, p_Precision_Clear := TRUE, p_Scale := p_Scale_9dedb85b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_9dedb85b, p_DefaultValue := p_DefaultValue_9dedb85b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_9dedb85b, p_IsUniqueKey := p_IsUniqueKey_9dedb85b, p_IsReadOnly := p_IsReadOnly_9dedb85b, p_IsRequired := p_IsRequired_9dedb85b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9dedb85b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9dedb85b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_9dedb85b, p_Configuration := p_Configuration_9dedb85b, p_Configuration_Clear := TRUE, p_Status := p_Status_9dedb85b, p_IsCustom := p_IsCustom_9dedb85b, p_MetadataSource := p_MetadataSource_9dedb85b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4765,16 +4765,16 @@ BEGIN
   p_DisplayName_fa23f50b := 'Url';
   p_Description_fa23f50b := 'A URL associated with the affiliation. (common-3.0.xsd affiliation url)';
   p_Type_fa23f50b := 'String';
-  p_AllowsNull_fa23f50b := 1;
-  p_IsPrimaryKey_fa23f50b := 0;
-  p_IsUniqueKey_fa23f50b := 0;
-  p_IsReadOnly_fa23f50b := 1;
-  p_IsRequired_fa23f50b := 0;
+  p_AllowsNull_fa23f50b := TRUE;
+  p_IsPrimaryKey_fa23f50b := FALSE;
+  p_IsUniqueKey_fa23f50b := FALSE;
+  p_IsReadOnly_fa23f50b := TRUE;
+  p_IsRequired_fa23f50b := FALSE;
   p_Sequence_fa23f50b := 13;
   p_Status_fa23f50b := 'Active';
-  p_IsCustom_fa23f50b := 0;
+  p_IsCustom_fa23f50b := FALSE;
   p_MetadataSource_fa23f50b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_fa23f50b, p_IntegrationObjectID := p_IntegrationObjectID_fa23f50b, p_Name := p_Name_fa23f50b, p_DisplayName := p_DisplayName_fa23f50b, p_Description := p_Description_fa23f50b, p_Category := p_Category_fa23f50b, p_Category_Clear := 1, p_Type := p_Type_fa23f50b, p_Length := p_Length_fa23f50b, p_Length_Clear := 1, p_Precision := p_Precision_fa23f50b, p_Precision_Clear := 1, p_Scale := p_Scale_fa23f50b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_fa23f50b, p_DefaultValue := p_DefaultValue_fa23f50b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_fa23f50b, p_IsUniqueKey := p_IsUniqueKey_fa23f50b, p_IsReadOnly := p_IsReadOnly_fa23f50b, p_IsRequired := p_IsRequired_fa23f50b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_fa23f50b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_fa23f50b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_fa23f50b, p_Configuration := p_Configuration_fa23f50b, p_Configuration_Clear := 1, p_Status := p_Status_fa23f50b, p_IsCustom := p_IsCustom_fa23f50b, p_MetadataSource := p_MetadataSource_fa23f50b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_fa23f50b, p_IntegrationObjectID := p_IntegrationObjectID_fa23f50b, p_Name := p_Name_fa23f50b, p_DisplayName := p_DisplayName_fa23f50b, p_Description := p_Description_fa23f50b, p_Category := p_Category_fa23f50b, p_Category_Clear := TRUE, p_Type := p_Type_fa23f50b, p_Length := p_Length_fa23f50b, p_Length_Clear := TRUE, p_Precision := p_Precision_fa23f50b, p_Precision_Clear := TRUE, p_Scale := p_Scale_fa23f50b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_fa23f50b, p_DefaultValue := p_DefaultValue_fa23f50b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_fa23f50b, p_IsUniqueKey := p_IsUniqueKey_fa23f50b, p_IsReadOnly := p_IsReadOnly_fa23f50b, p_IsRequired := p_IsRequired_fa23f50b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_fa23f50b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_fa23f50b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_fa23f50b, p_Configuration := p_Configuration_fa23f50b, p_Configuration_Clear := TRUE, p_Status := p_Status_fa23f50b, p_IsCustom := p_IsCustom_fa23f50b, p_MetadataSource := p_MetadataSource_fa23f50b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4810,16 +4810,16 @@ BEGIN
   p_DisplayName_dc7f3ad5 := 'External Ids';
   p_Description_dc7f3ad5 := 'External identifiers for the affiliation (type+value+relationship). (common-3.0.xsd external-ids)';
   p_Type_dc7f3ad5 := 'json';
-  p_AllowsNull_dc7f3ad5 := 1;
-  p_IsPrimaryKey_dc7f3ad5 := 0;
-  p_IsUniqueKey_dc7f3ad5 := 0;
-  p_IsReadOnly_dc7f3ad5 := 1;
-  p_IsRequired_dc7f3ad5 := 0;
+  p_AllowsNull_dc7f3ad5 := TRUE;
+  p_IsPrimaryKey_dc7f3ad5 := FALSE;
+  p_IsUniqueKey_dc7f3ad5 := FALSE;
+  p_IsReadOnly_dc7f3ad5 := TRUE;
+  p_IsRequired_dc7f3ad5 := FALSE;
   p_Sequence_dc7f3ad5 := 14;
   p_Status_dc7f3ad5 := 'Active';
-  p_IsCustom_dc7f3ad5 := 0;
+  p_IsCustom_dc7f3ad5 := FALSE;
   p_MetadataSource_dc7f3ad5 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_dc7f3ad5, p_IntegrationObjectID := p_IntegrationObjectID_dc7f3ad5, p_Name := p_Name_dc7f3ad5, p_DisplayName := p_DisplayName_dc7f3ad5, p_Description := p_Description_dc7f3ad5, p_Category := p_Category_dc7f3ad5, p_Category_Clear := 1, p_Type := p_Type_dc7f3ad5, p_Length := p_Length_dc7f3ad5, p_Length_Clear := 1, p_Precision := p_Precision_dc7f3ad5, p_Precision_Clear := 1, p_Scale := p_Scale_dc7f3ad5, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_dc7f3ad5, p_DefaultValue := p_DefaultValue_dc7f3ad5, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_dc7f3ad5, p_IsUniqueKey := p_IsUniqueKey_dc7f3ad5, p_IsReadOnly := p_IsReadOnly_dc7f3ad5, p_IsRequired := p_IsRequired_dc7f3ad5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_dc7f3ad5, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_dc7f3ad5, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_dc7f3ad5, p_Configuration := p_Configuration_dc7f3ad5, p_Configuration_Clear := 1, p_Status := p_Status_dc7f3ad5, p_IsCustom := p_IsCustom_dc7f3ad5, p_MetadataSource := p_MetadataSource_dc7f3ad5);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_dc7f3ad5, p_IntegrationObjectID := p_IntegrationObjectID_dc7f3ad5, p_Name := p_Name_dc7f3ad5, p_DisplayName := p_DisplayName_dc7f3ad5, p_Description := p_Description_dc7f3ad5, p_Category := p_Category_dc7f3ad5, p_Category_Clear := TRUE, p_Type := p_Type_dc7f3ad5, p_Length := p_Length_dc7f3ad5, p_Length_Clear := TRUE, p_Precision := p_Precision_dc7f3ad5, p_Precision_Clear := TRUE, p_Scale := p_Scale_dc7f3ad5, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_dc7f3ad5, p_DefaultValue := p_DefaultValue_dc7f3ad5, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_dc7f3ad5, p_IsUniqueKey := p_IsUniqueKey_dc7f3ad5, p_IsReadOnly := p_IsReadOnly_dc7f3ad5, p_IsRequired := p_IsRequired_dc7f3ad5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_dc7f3ad5, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_dc7f3ad5, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_dc7f3ad5, p_Configuration := p_Configuration_dc7f3ad5, p_Configuration_Clear := TRUE, p_Status := p_Status_dc7f3ad5, p_IsCustom := p_IsCustom_dc7f3ad5, p_MetadataSource := p_MetadataSource_dc7f3ad5);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4856,18 +4856,18 @@ BEGIN
   p_Description_814ad4b9 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_814ad4b9 := 'String';
   p_Length_814ad4b9 := 19;
-  p_AllowsNull_814ad4b9 := 1;
-  p_IsPrimaryKey_814ad4b9 := 0;
-  p_IsUniqueKey_814ad4b9 := 0;
-  p_IsReadOnly_814ad4b9 := 1;
-  p_IsRequired_814ad4b9 := 1;
+  p_AllowsNull_814ad4b9 := TRUE;
+  p_IsPrimaryKey_814ad4b9 := FALSE;
+  p_IsUniqueKey_814ad4b9 := FALSE;
+  p_IsReadOnly_814ad4b9 := TRUE;
+  p_IsRequired_814ad4b9 := TRUE;
   p_RelatedIntegrationObjectID_814ad4b9 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_814ad4b9 := 'orcid-id';
   p_Sequence_814ad4b9 := 0;
   p_Status_814ad4b9 := 'Active';
-  p_IsCustom_814ad4b9 := 0;
+  p_IsCustom_814ad4b9 := FALSE;
   p_MetadataSource_814ad4b9 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_814ad4b9, p_IntegrationObjectID := p_IntegrationObjectID_814ad4b9, p_Name := p_Name_814ad4b9, p_DisplayName := p_DisplayName_814ad4b9, p_Description := p_Description_814ad4b9, p_Category := p_Category_814ad4b9, p_Category_Clear := 1, p_Type := p_Type_814ad4b9, p_Length := p_Length_814ad4b9, p_Precision := p_Precision_814ad4b9, p_Precision_Clear := 1, p_Scale := p_Scale_814ad4b9, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_814ad4b9, p_DefaultValue := p_DefaultValue_814ad4b9, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_814ad4b9, p_IsUniqueKey := p_IsUniqueKey_814ad4b9, p_IsReadOnly := p_IsReadOnly_814ad4b9, p_IsRequired := p_IsRequired_814ad4b9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_814ad4b9, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_814ad4b9, p_Sequence := p_Sequence_814ad4b9, p_Configuration := p_Configuration_814ad4b9, p_Configuration_Clear := 1, p_Status := p_Status_814ad4b9, p_IsCustom := p_IsCustom_814ad4b9, p_MetadataSource := p_MetadataSource_814ad4b9);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_814ad4b9, p_IntegrationObjectID := p_IntegrationObjectID_814ad4b9, p_Name := p_Name_814ad4b9, p_DisplayName := p_DisplayName_814ad4b9, p_Description := p_Description_814ad4b9, p_Category := p_Category_814ad4b9, p_Category_Clear := TRUE, p_Type := p_Type_814ad4b9, p_Length := p_Length_814ad4b9, p_Precision := p_Precision_814ad4b9, p_Precision_Clear := TRUE, p_Scale := p_Scale_814ad4b9, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_814ad4b9, p_DefaultValue := p_DefaultValue_814ad4b9, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_814ad4b9, p_IsUniqueKey := p_IsUniqueKey_814ad4b9, p_IsReadOnly := p_IsReadOnly_814ad4b9, p_IsRequired := p_IsRequired_814ad4b9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_814ad4b9, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_814ad4b9, p_Sequence := p_Sequence_814ad4b9, p_Configuration := p_Configuration_814ad4b9, p_Configuration_Clear := TRUE, p_Status := p_Status_814ad4b9, p_IsCustom := p_IsCustom_814ad4b9, p_MetadataSource := p_MetadataSource_814ad4b9);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4903,16 +4903,16 @@ BEGIN
   p_DisplayName_7dc07b1f := 'Put Code';
   p_Description_7dc07b1f := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_7dc07b1f := 'Integer';
-  p_AllowsNull_7dc07b1f := 0;
-  p_IsPrimaryKey_7dc07b1f := 1;
-  p_IsUniqueKey_7dc07b1f := 1;
-  p_IsReadOnly_7dc07b1f := 1;
-  p_IsRequired_7dc07b1f := 1;
+  p_AllowsNull_7dc07b1f := FALSE;
+  p_IsPrimaryKey_7dc07b1f := TRUE;
+  p_IsUniqueKey_7dc07b1f := TRUE;
+  p_IsReadOnly_7dc07b1f := TRUE;
+  p_IsRequired_7dc07b1f := TRUE;
   p_Sequence_7dc07b1f := 1;
   p_Status_7dc07b1f := 'Active';
-  p_IsCustom_7dc07b1f := 0;
+  p_IsCustom_7dc07b1f := FALSE;
   p_MetadataSource_7dc07b1f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7dc07b1f, p_IntegrationObjectID := p_IntegrationObjectID_7dc07b1f, p_Name := p_Name_7dc07b1f, p_DisplayName := p_DisplayName_7dc07b1f, p_Description := p_Description_7dc07b1f, p_Category := p_Category_7dc07b1f, p_Category_Clear := 1, p_Type := p_Type_7dc07b1f, p_Length := p_Length_7dc07b1f, p_Length_Clear := 1, p_Precision := p_Precision_7dc07b1f, p_Precision_Clear := 1, p_Scale := p_Scale_7dc07b1f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_7dc07b1f, p_DefaultValue := p_DefaultValue_7dc07b1f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_7dc07b1f, p_IsUniqueKey := p_IsUniqueKey_7dc07b1f, p_IsReadOnly := p_IsReadOnly_7dc07b1f, p_IsRequired := p_IsRequired_7dc07b1f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7dc07b1f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7dc07b1f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_7dc07b1f, p_Configuration := p_Configuration_7dc07b1f, p_Configuration_Clear := 1, p_Status := p_Status_7dc07b1f, p_IsCustom := p_IsCustom_7dc07b1f, p_MetadataSource := p_MetadataSource_7dc07b1f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7dc07b1f, p_IntegrationObjectID := p_IntegrationObjectID_7dc07b1f, p_Name := p_Name_7dc07b1f, p_DisplayName := p_DisplayName_7dc07b1f, p_Description := p_Description_7dc07b1f, p_Category := p_Category_7dc07b1f, p_Category_Clear := TRUE, p_Type := p_Type_7dc07b1f, p_Length := p_Length_7dc07b1f, p_Length_Clear := TRUE, p_Precision := p_Precision_7dc07b1f, p_Precision_Clear := TRUE, p_Scale := p_Scale_7dc07b1f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_7dc07b1f, p_DefaultValue := p_DefaultValue_7dc07b1f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_7dc07b1f, p_IsUniqueKey := p_IsUniqueKey_7dc07b1f, p_IsReadOnly := p_IsReadOnly_7dc07b1f, p_IsRequired := p_IsRequired_7dc07b1f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7dc07b1f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7dc07b1f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_7dc07b1f, p_Configuration := p_Configuration_7dc07b1f, p_Configuration_Clear := TRUE, p_Status := p_Status_7dc07b1f, p_IsCustom := p_IsCustom_7dc07b1f, p_MetadataSource := p_MetadataSource_7dc07b1f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4949,16 +4949,16 @@ BEGIN
   p_Description_7522e4ed := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_7522e4ed := 'String';
   p_Length_7522e4ed := 500;
-  p_AllowsNull_7522e4ed := 1;
-  p_IsPrimaryKey_7522e4ed := 0;
-  p_IsUniqueKey_7522e4ed := 0;
-  p_IsReadOnly_7522e4ed := 1;
-  p_IsRequired_7522e4ed := 0;
+  p_AllowsNull_7522e4ed := TRUE;
+  p_IsPrimaryKey_7522e4ed := FALSE;
+  p_IsUniqueKey_7522e4ed := FALSE;
+  p_IsReadOnly_7522e4ed := TRUE;
+  p_IsRequired_7522e4ed := FALSE;
   p_Sequence_7522e4ed := 2;
   p_Status_7522e4ed := 'Active';
-  p_IsCustom_7522e4ed := 0;
+  p_IsCustom_7522e4ed := FALSE;
   p_MetadataSource_7522e4ed := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7522e4ed, p_IntegrationObjectID := p_IntegrationObjectID_7522e4ed, p_Name := p_Name_7522e4ed, p_DisplayName := p_DisplayName_7522e4ed, p_Description := p_Description_7522e4ed, p_Category := p_Category_7522e4ed, p_Category_Clear := 1, p_Type := p_Type_7522e4ed, p_Length := p_Length_7522e4ed, p_Precision := p_Precision_7522e4ed, p_Precision_Clear := 1, p_Scale := p_Scale_7522e4ed, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_7522e4ed, p_DefaultValue := p_DefaultValue_7522e4ed, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_7522e4ed, p_IsUniqueKey := p_IsUniqueKey_7522e4ed, p_IsReadOnly := p_IsReadOnly_7522e4ed, p_IsRequired := p_IsRequired_7522e4ed, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7522e4ed, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7522e4ed, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_7522e4ed, p_Configuration := p_Configuration_7522e4ed, p_Configuration_Clear := 1, p_Status := p_Status_7522e4ed, p_IsCustom := p_IsCustom_7522e4ed, p_MetadataSource := p_MetadataSource_7522e4ed);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7522e4ed, p_IntegrationObjectID := p_IntegrationObjectID_7522e4ed, p_Name := p_Name_7522e4ed, p_DisplayName := p_DisplayName_7522e4ed, p_Description := p_Description_7522e4ed, p_Category := p_Category_7522e4ed, p_Category_Clear := TRUE, p_Type := p_Type_7522e4ed, p_Length := p_Length_7522e4ed, p_Precision := p_Precision_7522e4ed, p_Precision_Clear := TRUE, p_Scale := p_Scale_7522e4ed, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_7522e4ed, p_DefaultValue := p_DefaultValue_7522e4ed, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_7522e4ed, p_IsUniqueKey := p_IsUniqueKey_7522e4ed, p_IsReadOnly := p_IsReadOnly_7522e4ed, p_IsRequired := p_IsRequired_7522e4ed, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7522e4ed, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7522e4ed, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_7522e4ed, p_Configuration := p_Configuration_7522e4ed, p_Configuration_Clear := TRUE, p_Status := p_Status_7522e4ed, p_IsCustom := p_IsCustom_7522e4ed, p_MetadataSource := p_MetadataSource_7522e4ed);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -4994,16 +4994,16 @@ BEGIN
   p_DisplayName_f204495c := 'Visibility';
   p_Description_f204495c := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_f204495c := 'String';
-  p_AllowsNull_f204495c := 1;
-  p_IsPrimaryKey_f204495c := 0;
-  p_IsUniqueKey_f204495c := 0;
-  p_IsReadOnly_f204495c := 1;
-  p_IsRequired_f204495c := 0;
+  p_AllowsNull_f204495c := TRUE;
+  p_IsPrimaryKey_f204495c := FALSE;
+  p_IsUniqueKey_f204495c := FALSE;
+  p_IsReadOnly_f204495c := TRUE;
+  p_IsRequired_f204495c := FALSE;
   p_Sequence_f204495c := 3;
   p_Status_f204495c := 'Active';
-  p_IsCustom_f204495c := 0;
+  p_IsCustom_f204495c := FALSE;
   p_MetadataSource_f204495c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f204495c, p_IntegrationObjectID := p_IntegrationObjectID_f204495c, p_Name := p_Name_f204495c, p_DisplayName := p_DisplayName_f204495c, p_Description := p_Description_f204495c, p_Category := p_Category_f204495c, p_Category_Clear := 1, p_Type := p_Type_f204495c, p_Length := p_Length_f204495c, p_Length_Clear := 1, p_Precision := p_Precision_f204495c, p_Precision_Clear := 1, p_Scale := p_Scale_f204495c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f204495c, p_DefaultValue := p_DefaultValue_f204495c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f204495c, p_IsUniqueKey := p_IsUniqueKey_f204495c, p_IsReadOnly := p_IsReadOnly_f204495c, p_IsRequired := p_IsRequired_f204495c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f204495c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f204495c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f204495c, p_Configuration := p_Configuration_f204495c, p_Configuration_Clear := 1, p_Status := p_Status_f204495c, p_IsCustom := p_IsCustom_f204495c, p_MetadataSource := p_MetadataSource_f204495c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f204495c, p_IntegrationObjectID := p_IntegrationObjectID_f204495c, p_Name := p_Name_f204495c, p_DisplayName := p_DisplayName_f204495c, p_Description := p_Description_f204495c, p_Category := p_Category_f204495c, p_Category_Clear := TRUE, p_Type := p_Type_f204495c, p_Length := p_Length_f204495c, p_Length_Clear := TRUE, p_Precision := p_Precision_f204495c, p_Precision_Clear := TRUE, p_Scale := p_Scale_f204495c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f204495c, p_DefaultValue := p_DefaultValue_f204495c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f204495c, p_IsUniqueKey := p_IsUniqueKey_f204495c, p_IsReadOnly := p_IsReadOnly_f204495c, p_IsRequired := p_IsRequired_f204495c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f204495c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f204495c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f204495c, p_Configuration := p_Configuration_f204495c, p_Configuration_Clear := TRUE, p_Status := p_Status_f204495c, p_IsCustom := p_IsCustom_f204495c, p_MetadataSource := p_MetadataSource_f204495c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5039,16 +5039,16 @@ BEGIN
   p_DisplayName_addf84b1 := 'Display Index';
   p_Description_addf84b1 := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_addf84b1 := 'String';
-  p_AllowsNull_addf84b1 := 1;
-  p_IsPrimaryKey_addf84b1 := 0;
-  p_IsUniqueKey_addf84b1 := 0;
-  p_IsReadOnly_addf84b1 := 1;
-  p_IsRequired_addf84b1 := 0;
+  p_AllowsNull_addf84b1 := TRUE;
+  p_IsPrimaryKey_addf84b1 := FALSE;
+  p_IsUniqueKey_addf84b1 := FALSE;
+  p_IsReadOnly_addf84b1 := TRUE;
+  p_IsRequired_addf84b1 := FALSE;
   p_Sequence_addf84b1 := 4;
   p_Status_addf84b1 := 'Active';
-  p_IsCustom_addf84b1 := 0;
+  p_IsCustom_addf84b1 := FALSE;
   p_MetadataSource_addf84b1 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_addf84b1, p_IntegrationObjectID := p_IntegrationObjectID_addf84b1, p_Name := p_Name_addf84b1, p_DisplayName := p_DisplayName_addf84b1, p_Description := p_Description_addf84b1, p_Category := p_Category_addf84b1, p_Category_Clear := 1, p_Type := p_Type_addf84b1, p_Length := p_Length_addf84b1, p_Length_Clear := 1, p_Precision := p_Precision_addf84b1, p_Precision_Clear := 1, p_Scale := p_Scale_addf84b1, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_addf84b1, p_DefaultValue := p_DefaultValue_addf84b1, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_addf84b1, p_IsUniqueKey := p_IsUniqueKey_addf84b1, p_IsReadOnly := p_IsReadOnly_addf84b1, p_IsRequired := p_IsRequired_addf84b1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_addf84b1, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_addf84b1, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_addf84b1, p_Configuration := p_Configuration_addf84b1, p_Configuration_Clear := 1, p_Status := p_Status_addf84b1, p_IsCustom := p_IsCustom_addf84b1, p_MetadataSource := p_MetadataSource_addf84b1);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_addf84b1, p_IntegrationObjectID := p_IntegrationObjectID_addf84b1, p_Name := p_Name_addf84b1, p_DisplayName := p_DisplayName_addf84b1, p_Description := p_Description_addf84b1, p_Category := p_Category_addf84b1, p_Category_Clear := TRUE, p_Type := p_Type_addf84b1, p_Length := p_Length_addf84b1, p_Length_Clear := TRUE, p_Precision := p_Precision_addf84b1, p_Precision_Clear := TRUE, p_Scale := p_Scale_addf84b1, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_addf84b1, p_DefaultValue := p_DefaultValue_addf84b1, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_addf84b1, p_IsUniqueKey := p_IsUniqueKey_addf84b1, p_IsReadOnly := p_IsReadOnly_addf84b1, p_IsRequired := p_IsRequired_addf84b1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_addf84b1, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_addf84b1, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_addf84b1, p_Configuration := p_Configuration_addf84b1, p_Configuration_Clear := TRUE, p_Status := p_Status_addf84b1, p_IsCustom := p_IsCustom_addf84b1, p_MetadataSource := p_MetadataSource_addf84b1);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5084,16 +5084,16 @@ BEGIN
   p_DisplayName_ffc15fc6 := 'Created Date';
   p_Description_ffc15fc6 := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_ffc15fc6 := 'DateTime';
-  p_AllowsNull_ffc15fc6 := 1;
-  p_IsPrimaryKey_ffc15fc6 := 0;
-  p_IsUniqueKey_ffc15fc6 := 0;
-  p_IsReadOnly_ffc15fc6 := 1;
-  p_IsRequired_ffc15fc6 := 0;
+  p_AllowsNull_ffc15fc6 := TRUE;
+  p_IsPrimaryKey_ffc15fc6 := FALSE;
+  p_IsUniqueKey_ffc15fc6 := FALSE;
+  p_IsReadOnly_ffc15fc6 := TRUE;
+  p_IsRequired_ffc15fc6 := FALSE;
   p_Sequence_ffc15fc6 := 5;
   p_Status_ffc15fc6 := 'Active';
-  p_IsCustom_ffc15fc6 := 0;
+  p_IsCustom_ffc15fc6 := FALSE;
   p_MetadataSource_ffc15fc6 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ffc15fc6, p_IntegrationObjectID := p_IntegrationObjectID_ffc15fc6, p_Name := p_Name_ffc15fc6, p_DisplayName := p_DisplayName_ffc15fc6, p_Description := p_Description_ffc15fc6, p_Category := p_Category_ffc15fc6, p_Category_Clear := 1, p_Type := p_Type_ffc15fc6, p_Length := p_Length_ffc15fc6, p_Length_Clear := 1, p_Precision := p_Precision_ffc15fc6, p_Precision_Clear := 1, p_Scale := p_Scale_ffc15fc6, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ffc15fc6, p_DefaultValue := p_DefaultValue_ffc15fc6, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ffc15fc6, p_IsUniqueKey := p_IsUniqueKey_ffc15fc6, p_IsReadOnly := p_IsReadOnly_ffc15fc6, p_IsRequired := p_IsRequired_ffc15fc6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ffc15fc6, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ffc15fc6, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ffc15fc6, p_Configuration := p_Configuration_ffc15fc6, p_Configuration_Clear := 1, p_Status := p_Status_ffc15fc6, p_IsCustom := p_IsCustom_ffc15fc6, p_MetadataSource := p_MetadataSource_ffc15fc6);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ffc15fc6, p_IntegrationObjectID := p_IntegrationObjectID_ffc15fc6, p_Name := p_Name_ffc15fc6, p_DisplayName := p_DisplayName_ffc15fc6, p_Description := p_Description_ffc15fc6, p_Category := p_Category_ffc15fc6, p_Category_Clear := TRUE, p_Type := p_Type_ffc15fc6, p_Length := p_Length_ffc15fc6, p_Length_Clear := TRUE, p_Precision := p_Precision_ffc15fc6, p_Precision_Clear := TRUE, p_Scale := p_Scale_ffc15fc6, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ffc15fc6, p_DefaultValue := p_DefaultValue_ffc15fc6, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ffc15fc6, p_IsUniqueKey := p_IsUniqueKey_ffc15fc6, p_IsReadOnly := p_IsReadOnly_ffc15fc6, p_IsRequired := p_IsRequired_ffc15fc6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ffc15fc6, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ffc15fc6, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ffc15fc6, p_Configuration := p_Configuration_ffc15fc6, p_Configuration_Clear := TRUE, p_Status := p_Status_ffc15fc6, p_IsCustom := p_IsCustom_ffc15fc6, p_MetadataSource := p_MetadataSource_ffc15fc6);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5129,16 +5129,16 @@ BEGIN
   p_DisplayName_24726144 := 'Last Modified Date';
   p_Description_24726144 := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_24726144 := 'DateTime';
-  p_AllowsNull_24726144 := 1;
-  p_IsPrimaryKey_24726144 := 0;
-  p_IsUniqueKey_24726144 := 0;
-  p_IsReadOnly_24726144 := 1;
-  p_IsRequired_24726144 := 0;
+  p_AllowsNull_24726144 := TRUE;
+  p_IsPrimaryKey_24726144 := FALSE;
+  p_IsUniqueKey_24726144 := FALSE;
+  p_IsReadOnly_24726144 := TRUE;
+  p_IsRequired_24726144 := FALSE;
   p_Sequence_24726144 := 6;
   p_Status_24726144 := 'Active';
-  p_IsCustom_24726144 := 0;
+  p_IsCustom_24726144 := FALSE;
   p_MetadataSource_24726144 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_24726144, p_IntegrationObjectID := p_IntegrationObjectID_24726144, p_Name := p_Name_24726144, p_DisplayName := p_DisplayName_24726144, p_Description := p_Description_24726144, p_Category := p_Category_24726144, p_Category_Clear := 1, p_Type := p_Type_24726144, p_Length := p_Length_24726144, p_Length_Clear := 1, p_Precision := p_Precision_24726144, p_Precision_Clear := 1, p_Scale := p_Scale_24726144, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_24726144, p_DefaultValue := p_DefaultValue_24726144, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_24726144, p_IsUniqueKey := p_IsUniqueKey_24726144, p_IsReadOnly := p_IsReadOnly_24726144, p_IsRequired := p_IsRequired_24726144, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_24726144, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_24726144, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_24726144, p_Configuration := p_Configuration_24726144, p_Configuration_Clear := 1, p_Status := p_Status_24726144, p_IsCustom := p_IsCustom_24726144, p_MetadataSource := p_MetadataSource_24726144);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_24726144, p_IntegrationObjectID := p_IntegrationObjectID_24726144, p_Name := p_Name_24726144, p_DisplayName := p_DisplayName_24726144, p_Description := p_Description_24726144, p_Category := p_Category_24726144, p_Category_Clear := TRUE, p_Type := p_Type_24726144, p_Length := p_Length_24726144, p_Length_Clear := TRUE, p_Precision := p_Precision_24726144, p_Precision_Clear := TRUE, p_Scale := p_Scale_24726144, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_24726144, p_DefaultValue := p_DefaultValue_24726144, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_24726144, p_IsUniqueKey := p_IsUniqueKey_24726144, p_IsReadOnly := p_IsReadOnly_24726144, p_IsRequired := p_IsRequired_24726144, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_24726144, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_24726144, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_24726144, p_Configuration := p_Configuration_24726144, p_Configuration_Clear := TRUE, p_Status := p_Status_24726144, p_IsCustom := p_IsCustom_24726144, p_MetadataSource := p_MetadataSource_24726144);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5174,16 +5174,16 @@ BEGIN
   p_DisplayName_d1df0351 := 'Source';
   p_Description_d1df0351 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_d1df0351 := 'json';
-  p_AllowsNull_d1df0351 := 1;
-  p_IsPrimaryKey_d1df0351 := 0;
-  p_IsUniqueKey_d1df0351 := 0;
-  p_IsReadOnly_d1df0351 := 1;
-  p_IsRequired_d1df0351 := 0;
+  p_AllowsNull_d1df0351 := TRUE;
+  p_IsPrimaryKey_d1df0351 := FALSE;
+  p_IsUniqueKey_d1df0351 := FALSE;
+  p_IsReadOnly_d1df0351 := TRUE;
+  p_IsRequired_d1df0351 := FALSE;
   p_Sequence_d1df0351 := 7;
   p_Status_d1df0351 := 'Active';
-  p_IsCustom_d1df0351 := 0;
+  p_IsCustom_d1df0351 := FALSE;
   p_MetadataSource_d1df0351 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d1df0351, p_IntegrationObjectID := p_IntegrationObjectID_d1df0351, p_Name := p_Name_d1df0351, p_DisplayName := p_DisplayName_d1df0351, p_Description := p_Description_d1df0351, p_Category := p_Category_d1df0351, p_Category_Clear := 1, p_Type := p_Type_d1df0351, p_Length := p_Length_d1df0351, p_Length_Clear := 1, p_Precision := p_Precision_d1df0351, p_Precision_Clear := 1, p_Scale := p_Scale_d1df0351, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d1df0351, p_DefaultValue := p_DefaultValue_d1df0351, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d1df0351, p_IsUniqueKey := p_IsUniqueKey_d1df0351, p_IsReadOnly := p_IsReadOnly_d1df0351, p_IsRequired := p_IsRequired_d1df0351, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d1df0351, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d1df0351, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d1df0351, p_Configuration := p_Configuration_d1df0351, p_Configuration_Clear := 1, p_Status := p_Status_d1df0351, p_IsCustom := p_IsCustom_d1df0351, p_MetadataSource := p_MetadataSource_d1df0351);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d1df0351, p_IntegrationObjectID := p_IntegrationObjectID_d1df0351, p_Name := p_Name_d1df0351, p_DisplayName := p_DisplayName_d1df0351, p_Description := p_Description_d1df0351, p_Category := p_Category_d1df0351, p_Category_Clear := TRUE, p_Type := p_Type_d1df0351, p_Length := p_Length_d1df0351, p_Length_Clear := TRUE, p_Precision := p_Precision_d1df0351, p_Precision_Clear := TRUE, p_Scale := p_Scale_d1df0351, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d1df0351, p_DefaultValue := p_DefaultValue_d1df0351, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d1df0351, p_IsUniqueKey := p_IsUniqueKey_d1df0351, p_IsReadOnly := p_IsReadOnly_d1df0351, p_IsRequired := p_IsRequired_d1df0351, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d1df0351, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d1df0351, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d1df0351, p_Configuration := p_Configuration_d1df0351, p_Configuration_Clear := TRUE, p_Status := p_Status_d1df0351, p_IsCustom := p_IsCustom_d1df0351, p_MetadataSource := p_MetadataSource_d1df0351);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5220,16 +5220,16 @@ BEGIN
   p_Description_072683f7 := 'Department within the organization. (common-3.0.xsd affiliation department-name, long-text)';
   p_Type_072683f7 := 'String';
   p_Length_072683f7 := 4000;
-  p_AllowsNull_072683f7 := 1;
-  p_IsPrimaryKey_072683f7 := 0;
-  p_IsUniqueKey_072683f7 := 0;
-  p_IsReadOnly_072683f7 := 1;
-  p_IsRequired_072683f7 := 0;
+  p_AllowsNull_072683f7 := TRUE;
+  p_IsPrimaryKey_072683f7 := FALSE;
+  p_IsUniqueKey_072683f7 := FALSE;
+  p_IsReadOnly_072683f7 := TRUE;
+  p_IsRequired_072683f7 := FALSE;
   p_Sequence_072683f7 := 8;
   p_Status_072683f7 := 'Active';
-  p_IsCustom_072683f7 := 0;
+  p_IsCustom_072683f7 := FALSE;
   p_MetadataSource_072683f7 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_072683f7, p_IntegrationObjectID := p_IntegrationObjectID_072683f7, p_Name := p_Name_072683f7, p_DisplayName := p_DisplayName_072683f7, p_Description := p_Description_072683f7, p_Category := p_Category_072683f7, p_Category_Clear := 1, p_Type := p_Type_072683f7, p_Length := p_Length_072683f7, p_Precision := p_Precision_072683f7, p_Precision_Clear := 1, p_Scale := p_Scale_072683f7, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_072683f7, p_DefaultValue := p_DefaultValue_072683f7, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_072683f7, p_IsUniqueKey := p_IsUniqueKey_072683f7, p_IsReadOnly := p_IsReadOnly_072683f7, p_IsRequired := p_IsRequired_072683f7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_072683f7, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_072683f7, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_072683f7, p_Configuration := p_Configuration_072683f7, p_Configuration_Clear := 1, p_Status := p_Status_072683f7, p_IsCustom := p_IsCustom_072683f7, p_MetadataSource := p_MetadataSource_072683f7);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_072683f7, p_IntegrationObjectID := p_IntegrationObjectID_072683f7, p_Name := p_Name_072683f7, p_DisplayName := p_DisplayName_072683f7, p_Description := p_Description_072683f7, p_Category := p_Category_072683f7, p_Category_Clear := TRUE, p_Type := p_Type_072683f7, p_Length := p_Length_072683f7, p_Precision := p_Precision_072683f7, p_Precision_Clear := TRUE, p_Scale := p_Scale_072683f7, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_072683f7, p_DefaultValue := p_DefaultValue_072683f7, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_072683f7, p_IsUniqueKey := p_IsUniqueKey_072683f7, p_IsReadOnly := p_IsReadOnly_072683f7, p_IsRequired := p_IsRequired_072683f7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_072683f7, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_072683f7, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_072683f7, p_Configuration := p_Configuration_072683f7, p_Configuration_Clear := TRUE, p_Status := p_Status_072683f7, p_IsCustom := p_IsCustom_072683f7, p_MetadataSource := p_MetadataSource_072683f7);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5266,16 +5266,16 @@ BEGIN
   p_Description_ec76fca6 := 'Role or title held at the organization. (common-3.0.xsd affiliation role-title, long-text)';
   p_Type_ec76fca6 := 'String';
   p_Length_ec76fca6 := 4000;
-  p_AllowsNull_ec76fca6 := 1;
-  p_IsPrimaryKey_ec76fca6 := 0;
-  p_IsUniqueKey_ec76fca6 := 0;
-  p_IsReadOnly_ec76fca6 := 1;
-  p_IsRequired_ec76fca6 := 0;
+  p_AllowsNull_ec76fca6 := TRUE;
+  p_IsPrimaryKey_ec76fca6 := FALSE;
+  p_IsUniqueKey_ec76fca6 := FALSE;
+  p_IsReadOnly_ec76fca6 := TRUE;
+  p_IsRequired_ec76fca6 := FALSE;
   p_Sequence_ec76fca6 := 9;
   p_Status_ec76fca6 := 'Active';
-  p_IsCustom_ec76fca6 := 0;
+  p_IsCustom_ec76fca6 := FALSE;
   p_MetadataSource_ec76fca6 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ec76fca6, p_IntegrationObjectID := p_IntegrationObjectID_ec76fca6, p_Name := p_Name_ec76fca6, p_DisplayName := p_DisplayName_ec76fca6, p_Description := p_Description_ec76fca6, p_Category := p_Category_ec76fca6, p_Category_Clear := 1, p_Type := p_Type_ec76fca6, p_Length := p_Length_ec76fca6, p_Precision := p_Precision_ec76fca6, p_Precision_Clear := 1, p_Scale := p_Scale_ec76fca6, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ec76fca6, p_DefaultValue := p_DefaultValue_ec76fca6, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ec76fca6, p_IsUniqueKey := p_IsUniqueKey_ec76fca6, p_IsReadOnly := p_IsReadOnly_ec76fca6, p_IsRequired := p_IsRequired_ec76fca6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ec76fca6, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ec76fca6, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ec76fca6, p_Configuration := p_Configuration_ec76fca6, p_Configuration_Clear := 1, p_Status := p_Status_ec76fca6, p_IsCustom := p_IsCustom_ec76fca6, p_MetadataSource := p_MetadataSource_ec76fca6);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ec76fca6, p_IntegrationObjectID := p_IntegrationObjectID_ec76fca6, p_Name := p_Name_ec76fca6, p_DisplayName := p_DisplayName_ec76fca6, p_Description := p_Description_ec76fca6, p_Category := p_Category_ec76fca6, p_Category_Clear := TRUE, p_Type := p_Type_ec76fca6, p_Length := p_Length_ec76fca6, p_Precision := p_Precision_ec76fca6, p_Precision_Clear := TRUE, p_Scale := p_Scale_ec76fca6, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ec76fca6, p_DefaultValue := p_DefaultValue_ec76fca6, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ec76fca6, p_IsUniqueKey := p_IsUniqueKey_ec76fca6, p_IsReadOnly := p_IsReadOnly_ec76fca6, p_IsRequired := p_IsRequired_ec76fca6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ec76fca6, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ec76fca6, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ec76fca6, p_Configuration := p_Configuration_ec76fca6, p_Configuration_Clear := TRUE, p_Status := p_Status_ec76fca6, p_IsCustom := p_IsCustom_ec76fca6, p_MetadataSource := p_MetadataSource_ec76fca6);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5311,16 +5311,16 @@ BEGIN
   p_DisplayName_59a63953 := 'Start Date';
   p_Description_59a63953 := 'Fuzzy start date (year + optional month/day). (common-3.0.xsd start-date, fuzzy-date)';
   p_Type_59a63953 := 'json';
-  p_AllowsNull_59a63953 := 1;
-  p_IsPrimaryKey_59a63953 := 0;
-  p_IsUniqueKey_59a63953 := 0;
-  p_IsReadOnly_59a63953 := 1;
-  p_IsRequired_59a63953 := 0;
+  p_AllowsNull_59a63953 := TRUE;
+  p_IsPrimaryKey_59a63953 := FALSE;
+  p_IsUniqueKey_59a63953 := FALSE;
+  p_IsReadOnly_59a63953 := TRUE;
+  p_IsRequired_59a63953 := FALSE;
   p_Sequence_59a63953 := 10;
   p_Status_59a63953 := 'Active';
-  p_IsCustom_59a63953 := 0;
+  p_IsCustom_59a63953 := FALSE;
   p_MetadataSource_59a63953 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_59a63953, p_IntegrationObjectID := p_IntegrationObjectID_59a63953, p_Name := p_Name_59a63953, p_DisplayName := p_DisplayName_59a63953, p_Description := p_Description_59a63953, p_Category := p_Category_59a63953, p_Category_Clear := 1, p_Type := p_Type_59a63953, p_Length := p_Length_59a63953, p_Length_Clear := 1, p_Precision := p_Precision_59a63953, p_Precision_Clear := 1, p_Scale := p_Scale_59a63953, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_59a63953, p_DefaultValue := p_DefaultValue_59a63953, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_59a63953, p_IsUniqueKey := p_IsUniqueKey_59a63953, p_IsReadOnly := p_IsReadOnly_59a63953, p_IsRequired := p_IsRequired_59a63953, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_59a63953, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_59a63953, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_59a63953, p_Configuration := p_Configuration_59a63953, p_Configuration_Clear := 1, p_Status := p_Status_59a63953, p_IsCustom := p_IsCustom_59a63953, p_MetadataSource := p_MetadataSource_59a63953);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_59a63953, p_IntegrationObjectID := p_IntegrationObjectID_59a63953, p_Name := p_Name_59a63953, p_DisplayName := p_DisplayName_59a63953, p_Description := p_Description_59a63953, p_Category := p_Category_59a63953, p_Category_Clear := TRUE, p_Type := p_Type_59a63953, p_Length := p_Length_59a63953, p_Length_Clear := TRUE, p_Precision := p_Precision_59a63953, p_Precision_Clear := TRUE, p_Scale := p_Scale_59a63953, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_59a63953, p_DefaultValue := p_DefaultValue_59a63953, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_59a63953, p_IsUniqueKey := p_IsUniqueKey_59a63953, p_IsReadOnly := p_IsReadOnly_59a63953, p_IsRequired := p_IsRequired_59a63953, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_59a63953, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_59a63953, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_59a63953, p_Configuration := p_Configuration_59a63953, p_Configuration_Clear := TRUE, p_Status := p_Status_59a63953, p_IsCustom := p_IsCustom_59a63953, p_MetadataSource := p_MetadataSource_59a63953);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5356,16 +5356,16 @@ BEGIN
   p_DisplayName_67370ce1 := 'End Date';
   p_Description_67370ce1 := 'Fuzzy end date (year + optional month/day). (common-3.0.xsd end-date, fuzzy-date)';
   p_Type_67370ce1 := 'json';
-  p_AllowsNull_67370ce1 := 1;
-  p_IsPrimaryKey_67370ce1 := 0;
-  p_IsUniqueKey_67370ce1 := 0;
-  p_IsReadOnly_67370ce1 := 1;
-  p_IsRequired_67370ce1 := 0;
+  p_AllowsNull_67370ce1 := TRUE;
+  p_IsPrimaryKey_67370ce1 := FALSE;
+  p_IsUniqueKey_67370ce1 := FALSE;
+  p_IsReadOnly_67370ce1 := TRUE;
+  p_IsRequired_67370ce1 := FALSE;
   p_Sequence_67370ce1 := 11;
   p_Status_67370ce1 := 'Active';
-  p_IsCustom_67370ce1 := 0;
+  p_IsCustom_67370ce1 := FALSE;
   p_MetadataSource_67370ce1 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_67370ce1, p_IntegrationObjectID := p_IntegrationObjectID_67370ce1, p_Name := p_Name_67370ce1, p_DisplayName := p_DisplayName_67370ce1, p_Description := p_Description_67370ce1, p_Category := p_Category_67370ce1, p_Category_Clear := 1, p_Type := p_Type_67370ce1, p_Length := p_Length_67370ce1, p_Length_Clear := 1, p_Precision := p_Precision_67370ce1, p_Precision_Clear := 1, p_Scale := p_Scale_67370ce1, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_67370ce1, p_DefaultValue := p_DefaultValue_67370ce1, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_67370ce1, p_IsUniqueKey := p_IsUniqueKey_67370ce1, p_IsReadOnly := p_IsReadOnly_67370ce1, p_IsRequired := p_IsRequired_67370ce1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_67370ce1, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_67370ce1, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_67370ce1, p_Configuration := p_Configuration_67370ce1, p_Configuration_Clear := 1, p_Status := p_Status_67370ce1, p_IsCustom := p_IsCustom_67370ce1, p_MetadataSource := p_MetadataSource_67370ce1);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_67370ce1, p_IntegrationObjectID := p_IntegrationObjectID_67370ce1, p_Name := p_Name_67370ce1, p_DisplayName := p_DisplayName_67370ce1, p_Description := p_Description_67370ce1, p_Category := p_Category_67370ce1, p_Category_Clear := TRUE, p_Type := p_Type_67370ce1, p_Length := p_Length_67370ce1, p_Length_Clear := TRUE, p_Precision := p_Precision_67370ce1, p_Precision_Clear := TRUE, p_Scale := p_Scale_67370ce1, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_67370ce1, p_DefaultValue := p_DefaultValue_67370ce1, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_67370ce1, p_IsUniqueKey := p_IsUniqueKey_67370ce1, p_IsReadOnly := p_IsReadOnly_67370ce1, p_IsRequired := p_IsRequired_67370ce1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_67370ce1, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_67370ce1, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_67370ce1, p_Configuration := p_Configuration_67370ce1, p_Configuration_Clear := TRUE, p_Status := p_Status_67370ce1, p_IsCustom := p_IsCustom_67370ce1, p_MetadataSource := p_MetadataSource_67370ce1);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5401,16 +5401,16 @@ BEGIN
   p_DisplayName_5e834e21 := 'Organization';
   p_Description_5e834e21 := 'Organization reference: name, address, disambiguated-org-id (ROR/GRID/Ringgold). Required. (common-3.0.xsd organization, minOccurs=1)';
   p_Type_5e834e21 := 'json';
-  p_AllowsNull_5e834e21 := 1;
-  p_IsPrimaryKey_5e834e21 := 0;
-  p_IsUniqueKey_5e834e21 := 0;
-  p_IsReadOnly_5e834e21 := 1;
-  p_IsRequired_5e834e21 := 1;
+  p_AllowsNull_5e834e21 := TRUE;
+  p_IsPrimaryKey_5e834e21 := FALSE;
+  p_IsUniqueKey_5e834e21 := FALSE;
+  p_IsReadOnly_5e834e21 := TRUE;
+  p_IsRequired_5e834e21 := TRUE;
   p_Sequence_5e834e21 := 12;
   p_Status_5e834e21 := 'Active';
-  p_IsCustom_5e834e21 := 0;
+  p_IsCustom_5e834e21 := FALSE;
   p_MetadataSource_5e834e21 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5e834e21, p_IntegrationObjectID := p_IntegrationObjectID_5e834e21, p_Name := p_Name_5e834e21, p_DisplayName := p_DisplayName_5e834e21, p_Description := p_Description_5e834e21, p_Category := p_Category_5e834e21, p_Category_Clear := 1, p_Type := p_Type_5e834e21, p_Length := p_Length_5e834e21, p_Length_Clear := 1, p_Precision := p_Precision_5e834e21, p_Precision_Clear := 1, p_Scale := p_Scale_5e834e21, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5e834e21, p_DefaultValue := p_DefaultValue_5e834e21, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5e834e21, p_IsUniqueKey := p_IsUniqueKey_5e834e21, p_IsReadOnly := p_IsReadOnly_5e834e21, p_IsRequired := p_IsRequired_5e834e21, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5e834e21, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5e834e21, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_5e834e21, p_Configuration := p_Configuration_5e834e21, p_Configuration_Clear := 1, p_Status := p_Status_5e834e21, p_IsCustom := p_IsCustom_5e834e21, p_MetadataSource := p_MetadataSource_5e834e21);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5e834e21, p_IntegrationObjectID := p_IntegrationObjectID_5e834e21, p_Name := p_Name_5e834e21, p_DisplayName := p_DisplayName_5e834e21, p_Description := p_Description_5e834e21, p_Category := p_Category_5e834e21, p_Category_Clear := TRUE, p_Type := p_Type_5e834e21, p_Length := p_Length_5e834e21, p_Length_Clear := TRUE, p_Precision := p_Precision_5e834e21, p_Precision_Clear := TRUE, p_Scale := p_Scale_5e834e21, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5e834e21, p_DefaultValue := p_DefaultValue_5e834e21, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5e834e21, p_IsUniqueKey := p_IsUniqueKey_5e834e21, p_IsReadOnly := p_IsReadOnly_5e834e21, p_IsRequired := p_IsRequired_5e834e21, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5e834e21, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5e834e21, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_5e834e21, p_Configuration := p_Configuration_5e834e21, p_Configuration_Clear := TRUE, p_Status := p_Status_5e834e21, p_IsCustom := p_IsCustom_5e834e21, p_MetadataSource := p_MetadataSource_5e834e21);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5446,16 +5446,16 @@ BEGIN
   p_DisplayName_db3fbc19 := 'Url';
   p_Description_db3fbc19 := 'A URL associated with the affiliation. (common-3.0.xsd affiliation url)';
   p_Type_db3fbc19 := 'String';
-  p_AllowsNull_db3fbc19 := 1;
-  p_IsPrimaryKey_db3fbc19 := 0;
-  p_IsUniqueKey_db3fbc19 := 0;
-  p_IsReadOnly_db3fbc19 := 1;
-  p_IsRequired_db3fbc19 := 0;
+  p_AllowsNull_db3fbc19 := TRUE;
+  p_IsPrimaryKey_db3fbc19 := FALSE;
+  p_IsUniqueKey_db3fbc19 := FALSE;
+  p_IsReadOnly_db3fbc19 := TRUE;
+  p_IsRequired_db3fbc19 := FALSE;
   p_Sequence_db3fbc19 := 13;
   p_Status_db3fbc19 := 'Active';
-  p_IsCustom_db3fbc19 := 0;
+  p_IsCustom_db3fbc19 := FALSE;
   p_MetadataSource_db3fbc19 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_db3fbc19, p_IntegrationObjectID := p_IntegrationObjectID_db3fbc19, p_Name := p_Name_db3fbc19, p_DisplayName := p_DisplayName_db3fbc19, p_Description := p_Description_db3fbc19, p_Category := p_Category_db3fbc19, p_Category_Clear := 1, p_Type := p_Type_db3fbc19, p_Length := p_Length_db3fbc19, p_Length_Clear := 1, p_Precision := p_Precision_db3fbc19, p_Precision_Clear := 1, p_Scale := p_Scale_db3fbc19, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_db3fbc19, p_DefaultValue := p_DefaultValue_db3fbc19, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_db3fbc19, p_IsUniqueKey := p_IsUniqueKey_db3fbc19, p_IsReadOnly := p_IsReadOnly_db3fbc19, p_IsRequired := p_IsRequired_db3fbc19, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_db3fbc19, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_db3fbc19, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_db3fbc19, p_Configuration := p_Configuration_db3fbc19, p_Configuration_Clear := 1, p_Status := p_Status_db3fbc19, p_IsCustom := p_IsCustom_db3fbc19, p_MetadataSource := p_MetadataSource_db3fbc19);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_db3fbc19, p_IntegrationObjectID := p_IntegrationObjectID_db3fbc19, p_Name := p_Name_db3fbc19, p_DisplayName := p_DisplayName_db3fbc19, p_Description := p_Description_db3fbc19, p_Category := p_Category_db3fbc19, p_Category_Clear := TRUE, p_Type := p_Type_db3fbc19, p_Length := p_Length_db3fbc19, p_Length_Clear := TRUE, p_Precision := p_Precision_db3fbc19, p_Precision_Clear := TRUE, p_Scale := p_Scale_db3fbc19, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_db3fbc19, p_DefaultValue := p_DefaultValue_db3fbc19, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_db3fbc19, p_IsUniqueKey := p_IsUniqueKey_db3fbc19, p_IsReadOnly := p_IsReadOnly_db3fbc19, p_IsRequired := p_IsRequired_db3fbc19, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_db3fbc19, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_db3fbc19, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_db3fbc19, p_Configuration := p_Configuration_db3fbc19, p_Configuration_Clear := TRUE, p_Status := p_Status_db3fbc19, p_IsCustom := p_IsCustom_db3fbc19, p_MetadataSource := p_MetadataSource_db3fbc19);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5491,16 +5491,16 @@ BEGIN
   p_DisplayName_d4317020 := 'External Ids';
   p_Description_d4317020 := 'External identifiers for the affiliation (type+value+relationship). (common-3.0.xsd external-ids)';
   p_Type_d4317020 := 'json';
-  p_AllowsNull_d4317020 := 1;
-  p_IsPrimaryKey_d4317020 := 0;
-  p_IsUniqueKey_d4317020 := 0;
-  p_IsReadOnly_d4317020 := 1;
-  p_IsRequired_d4317020 := 0;
+  p_AllowsNull_d4317020 := TRUE;
+  p_IsPrimaryKey_d4317020 := FALSE;
+  p_IsUniqueKey_d4317020 := FALSE;
+  p_IsReadOnly_d4317020 := TRUE;
+  p_IsRequired_d4317020 := FALSE;
   p_Sequence_d4317020 := 14;
   p_Status_d4317020 := 'Active';
-  p_IsCustom_d4317020 := 0;
+  p_IsCustom_d4317020 := FALSE;
   p_MetadataSource_d4317020 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d4317020, p_IntegrationObjectID := p_IntegrationObjectID_d4317020, p_Name := p_Name_d4317020, p_DisplayName := p_DisplayName_d4317020, p_Description := p_Description_d4317020, p_Category := p_Category_d4317020, p_Category_Clear := 1, p_Type := p_Type_d4317020, p_Length := p_Length_d4317020, p_Length_Clear := 1, p_Precision := p_Precision_d4317020, p_Precision_Clear := 1, p_Scale := p_Scale_d4317020, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d4317020, p_DefaultValue := p_DefaultValue_d4317020, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d4317020, p_IsUniqueKey := p_IsUniqueKey_d4317020, p_IsReadOnly := p_IsReadOnly_d4317020, p_IsRequired := p_IsRequired_d4317020, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d4317020, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d4317020, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d4317020, p_Configuration := p_Configuration_d4317020, p_Configuration_Clear := 1, p_Status := p_Status_d4317020, p_IsCustom := p_IsCustom_d4317020, p_MetadataSource := p_MetadataSource_d4317020);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d4317020, p_IntegrationObjectID := p_IntegrationObjectID_d4317020, p_Name := p_Name_d4317020, p_DisplayName := p_DisplayName_d4317020, p_Description := p_Description_d4317020, p_Category := p_Category_d4317020, p_Category_Clear := TRUE, p_Type := p_Type_d4317020, p_Length := p_Length_d4317020, p_Length_Clear := TRUE, p_Precision := p_Precision_d4317020, p_Precision_Clear := TRUE, p_Scale := p_Scale_d4317020, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d4317020, p_DefaultValue := p_DefaultValue_d4317020, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d4317020, p_IsUniqueKey := p_IsUniqueKey_d4317020, p_IsReadOnly := p_IsReadOnly_d4317020, p_IsRequired := p_IsRequired_d4317020, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d4317020, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d4317020, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d4317020, p_Configuration := p_Configuration_d4317020, p_Configuration_Clear := TRUE, p_Status := p_Status_d4317020, p_IsCustom := p_IsCustom_d4317020, p_MetadataSource := p_MetadataSource_d4317020);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5537,18 +5537,18 @@ BEGIN
   p_Description_99d68c39 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_99d68c39 := 'String';
   p_Length_99d68c39 := 19;
-  p_AllowsNull_99d68c39 := 1;
-  p_IsPrimaryKey_99d68c39 := 0;
-  p_IsUniqueKey_99d68c39 := 0;
-  p_IsReadOnly_99d68c39 := 1;
-  p_IsRequired_99d68c39 := 1;
+  p_AllowsNull_99d68c39 := TRUE;
+  p_IsPrimaryKey_99d68c39 := FALSE;
+  p_IsUniqueKey_99d68c39 := FALSE;
+  p_IsReadOnly_99d68c39 := TRUE;
+  p_IsRequired_99d68c39 := TRUE;
   p_RelatedIntegrationObjectID_99d68c39 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_99d68c39 := 'orcid-id';
   p_Sequence_99d68c39 := 0;
   p_Status_99d68c39 := 'Active';
-  p_IsCustom_99d68c39 := 0;
+  p_IsCustom_99d68c39 := FALSE;
   p_MetadataSource_99d68c39 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_99d68c39, p_IntegrationObjectID := p_IntegrationObjectID_99d68c39, p_Name := p_Name_99d68c39, p_DisplayName := p_DisplayName_99d68c39, p_Description := p_Description_99d68c39, p_Category := p_Category_99d68c39, p_Category_Clear := 1, p_Type := p_Type_99d68c39, p_Length := p_Length_99d68c39, p_Precision := p_Precision_99d68c39, p_Precision_Clear := 1, p_Scale := p_Scale_99d68c39, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_99d68c39, p_DefaultValue := p_DefaultValue_99d68c39, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_99d68c39, p_IsUniqueKey := p_IsUniqueKey_99d68c39, p_IsReadOnly := p_IsReadOnly_99d68c39, p_IsRequired := p_IsRequired_99d68c39, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_99d68c39, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_99d68c39, p_Sequence := p_Sequence_99d68c39, p_Configuration := p_Configuration_99d68c39, p_Configuration_Clear := 1, p_Status := p_Status_99d68c39, p_IsCustom := p_IsCustom_99d68c39, p_MetadataSource := p_MetadataSource_99d68c39);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_99d68c39, p_IntegrationObjectID := p_IntegrationObjectID_99d68c39, p_Name := p_Name_99d68c39, p_DisplayName := p_DisplayName_99d68c39, p_Description := p_Description_99d68c39, p_Category := p_Category_99d68c39, p_Category_Clear := TRUE, p_Type := p_Type_99d68c39, p_Length := p_Length_99d68c39, p_Precision := p_Precision_99d68c39, p_Precision_Clear := TRUE, p_Scale := p_Scale_99d68c39, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_99d68c39, p_DefaultValue := p_DefaultValue_99d68c39, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_99d68c39, p_IsUniqueKey := p_IsUniqueKey_99d68c39, p_IsReadOnly := p_IsReadOnly_99d68c39, p_IsRequired := p_IsRequired_99d68c39, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_99d68c39, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_99d68c39, p_Sequence := p_Sequence_99d68c39, p_Configuration := p_Configuration_99d68c39, p_Configuration_Clear := TRUE, p_Status := p_Status_99d68c39, p_IsCustom := p_IsCustom_99d68c39, p_MetadataSource := p_MetadataSource_99d68c39);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5584,16 +5584,16 @@ BEGIN
   p_DisplayName_7174c78a := 'Put Code';
   p_Description_7174c78a := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_7174c78a := 'Integer';
-  p_AllowsNull_7174c78a := 0;
-  p_IsPrimaryKey_7174c78a := 1;
-  p_IsUniqueKey_7174c78a := 1;
-  p_IsReadOnly_7174c78a := 1;
-  p_IsRequired_7174c78a := 1;
+  p_AllowsNull_7174c78a := FALSE;
+  p_IsPrimaryKey_7174c78a := TRUE;
+  p_IsUniqueKey_7174c78a := TRUE;
+  p_IsReadOnly_7174c78a := TRUE;
+  p_IsRequired_7174c78a := TRUE;
   p_Sequence_7174c78a := 1;
   p_Status_7174c78a := 'Active';
-  p_IsCustom_7174c78a := 0;
+  p_IsCustom_7174c78a := FALSE;
   p_MetadataSource_7174c78a := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7174c78a, p_IntegrationObjectID := p_IntegrationObjectID_7174c78a, p_Name := p_Name_7174c78a, p_DisplayName := p_DisplayName_7174c78a, p_Description := p_Description_7174c78a, p_Category := p_Category_7174c78a, p_Category_Clear := 1, p_Type := p_Type_7174c78a, p_Length := p_Length_7174c78a, p_Length_Clear := 1, p_Precision := p_Precision_7174c78a, p_Precision_Clear := 1, p_Scale := p_Scale_7174c78a, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_7174c78a, p_DefaultValue := p_DefaultValue_7174c78a, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_7174c78a, p_IsUniqueKey := p_IsUniqueKey_7174c78a, p_IsReadOnly := p_IsReadOnly_7174c78a, p_IsRequired := p_IsRequired_7174c78a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7174c78a, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7174c78a, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_7174c78a, p_Configuration := p_Configuration_7174c78a, p_Configuration_Clear := 1, p_Status := p_Status_7174c78a, p_IsCustom := p_IsCustom_7174c78a, p_MetadataSource := p_MetadataSource_7174c78a);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7174c78a, p_IntegrationObjectID := p_IntegrationObjectID_7174c78a, p_Name := p_Name_7174c78a, p_DisplayName := p_DisplayName_7174c78a, p_Description := p_Description_7174c78a, p_Category := p_Category_7174c78a, p_Category_Clear := TRUE, p_Type := p_Type_7174c78a, p_Length := p_Length_7174c78a, p_Length_Clear := TRUE, p_Precision := p_Precision_7174c78a, p_Precision_Clear := TRUE, p_Scale := p_Scale_7174c78a, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_7174c78a, p_DefaultValue := p_DefaultValue_7174c78a, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_7174c78a, p_IsUniqueKey := p_IsUniqueKey_7174c78a, p_IsReadOnly := p_IsReadOnly_7174c78a, p_IsRequired := p_IsRequired_7174c78a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7174c78a, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7174c78a, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_7174c78a, p_Configuration := p_Configuration_7174c78a, p_Configuration_Clear := TRUE, p_Status := p_Status_7174c78a, p_IsCustom := p_IsCustom_7174c78a, p_MetadataSource := p_MetadataSource_7174c78a);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5630,16 +5630,16 @@ BEGIN
   p_Description_bee6b879 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_bee6b879 := 'String';
   p_Length_bee6b879 := 500;
-  p_AllowsNull_bee6b879 := 1;
-  p_IsPrimaryKey_bee6b879 := 0;
-  p_IsUniqueKey_bee6b879 := 0;
-  p_IsReadOnly_bee6b879 := 1;
-  p_IsRequired_bee6b879 := 0;
+  p_AllowsNull_bee6b879 := TRUE;
+  p_IsPrimaryKey_bee6b879 := FALSE;
+  p_IsUniqueKey_bee6b879 := FALSE;
+  p_IsReadOnly_bee6b879 := TRUE;
+  p_IsRequired_bee6b879 := FALSE;
   p_Sequence_bee6b879 := 2;
   p_Status_bee6b879 := 'Active';
-  p_IsCustom_bee6b879 := 0;
+  p_IsCustom_bee6b879 := FALSE;
   p_MetadataSource_bee6b879 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bee6b879, p_IntegrationObjectID := p_IntegrationObjectID_bee6b879, p_Name := p_Name_bee6b879, p_DisplayName := p_DisplayName_bee6b879, p_Description := p_Description_bee6b879, p_Category := p_Category_bee6b879, p_Category_Clear := 1, p_Type := p_Type_bee6b879, p_Length := p_Length_bee6b879, p_Precision := p_Precision_bee6b879, p_Precision_Clear := 1, p_Scale := p_Scale_bee6b879, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_bee6b879, p_DefaultValue := p_DefaultValue_bee6b879, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_bee6b879, p_IsUniqueKey := p_IsUniqueKey_bee6b879, p_IsReadOnly := p_IsReadOnly_bee6b879, p_IsRequired := p_IsRequired_bee6b879, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bee6b879, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bee6b879, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_bee6b879, p_Configuration := p_Configuration_bee6b879, p_Configuration_Clear := 1, p_Status := p_Status_bee6b879, p_IsCustom := p_IsCustom_bee6b879, p_MetadataSource := p_MetadataSource_bee6b879);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bee6b879, p_IntegrationObjectID := p_IntegrationObjectID_bee6b879, p_Name := p_Name_bee6b879, p_DisplayName := p_DisplayName_bee6b879, p_Description := p_Description_bee6b879, p_Category := p_Category_bee6b879, p_Category_Clear := TRUE, p_Type := p_Type_bee6b879, p_Length := p_Length_bee6b879, p_Precision := p_Precision_bee6b879, p_Precision_Clear := TRUE, p_Scale := p_Scale_bee6b879, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_bee6b879, p_DefaultValue := p_DefaultValue_bee6b879, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_bee6b879, p_IsUniqueKey := p_IsUniqueKey_bee6b879, p_IsReadOnly := p_IsReadOnly_bee6b879, p_IsRequired := p_IsRequired_bee6b879, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bee6b879, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bee6b879, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_bee6b879, p_Configuration := p_Configuration_bee6b879, p_Configuration_Clear := TRUE, p_Status := p_Status_bee6b879, p_IsCustom := p_IsCustom_bee6b879, p_MetadataSource := p_MetadataSource_bee6b879);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5675,16 +5675,16 @@ BEGIN
   p_DisplayName_a53b2ba0 := 'Visibility';
   p_Description_a53b2ba0 := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_a53b2ba0 := 'String';
-  p_AllowsNull_a53b2ba0 := 1;
-  p_IsPrimaryKey_a53b2ba0 := 0;
-  p_IsUniqueKey_a53b2ba0 := 0;
-  p_IsReadOnly_a53b2ba0 := 1;
-  p_IsRequired_a53b2ba0 := 0;
+  p_AllowsNull_a53b2ba0 := TRUE;
+  p_IsPrimaryKey_a53b2ba0 := FALSE;
+  p_IsUniqueKey_a53b2ba0 := FALSE;
+  p_IsReadOnly_a53b2ba0 := TRUE;
+  p_IsRequired_a53b2ba0 := FALSE;
   p_Sequence_a53b2ba0 := 3;
   p_Status_a53b2ba0 := 'Active';
-  p_IsCustom_a53b2ba0 := 0;
+  p_IsCustom_a53b2ba0 := FALSE;
   p_MetadataSource_a53b2ba0 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a53b2ba0, p_IntegrationObjectID := p_IntegrationObjectID_a53b2ba0, p_Name := p_Name_a53b2ba0, p_DisplayName := p_DisplayName_a53b2ba0, p_Description := p_Description_a53b2ba0, p_Category := p_Category_a53b2ba0, p_Category_Clear := 1, p_Type := p_Type_a53b2ba0, p_Length := p_Length_a53b2ba0, p_Length_Clear := 1, p_Precision := p_Precision_a53b2ba0, p_Precision_Clear := 1, p_Scale := p_Scale_a53b2ba0, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_a53b2ba0, p_DefaultValue := p_DefaultValue_a53b2ba0, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_a53b2ba0, p_IsUniqueKey := p_IsUniqueKey_a53b2ba0, p_IsReadOnly := p_IsReadOnly_a53b2ba0, p_IsRequired := p_IsRequired_a53b2ba0, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a53b2ba0, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a53b2ba0, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_a53b2ba0, p_Configuration := p_Configuration_a53b2ba0, p_Configuration_Clear := 1, p_Status := p_Status_a53b2ba0, p_IsCustom := p_IsCustom_a53b2ba0, p_MetadataSource := p_MetadataSource_a53b2ba0);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a53b2ba0, p_IntegrationObjectID := p_IntegrationObjectID_a53b2ba0, p_Name := p_Name_a53b2ba0, p_DisplayName := p_DisplayName_a53b2ba0, p_Description := p_Description_a53b2ba0, p_Category := p_Category_a53b2ba0, p_Category_Clear := TRUE, p_Type := p_Type_a53b2ba0, p_Length := p_Length_a53b2ba0, p_Length_Clear := TRUE, p_Precision := p_Precision_a53b2ba0, p_Precision_Clear := TRUE, p_Scale := p_Scale_a53b2ba0, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_a53b2ba0, p_DefaultValue := p_DefaultValue_a53b2ba0, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_a53b2ba0, p_IsUniqueKey := p_IsUniqueKey_a53b2ba0, p_IsReadOnly := p_IsReadOnly_a53b2ba0, p_IsRequired := p_IsRequired_a53b2ba0, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a53b2ba0, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a53b2ba0, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_a53b2ba0, p_Configuration := p_Configuration_a53b2ba0, p_Configuration_Clear := TRUE, p_Status := p_Status_a53b2ba0, p_IsCustom := p_IsCustom_a53b2ba0, p_MetadataSource := p_MetadataSource_a53b2ba0);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5720,16 +5720,16 @@ BEGIN
   p_DisplayName_5f691688 := 'Display Index';
   p_Description_5f691688 := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_5f691688 := 'String';
-  p_AllowsNull_5f691688 := 1;
-  p_IsPrimaryKey_5f691688 := 0;
-  p_IsUniqueKey_5f691688 := 0;
-  p_IsReadOnly_5f691688 := 1;
-  p_IsRequired_5f691688 := 0;
+  p_AllowsNull_5f691688 := TRUE;
+  p_IsPrimaryKey_5f691688 := FALSE;
+  p_IsUniqueKey_5f691688 := FALSE;
+  p_IsReadOnly_5f691688 := TRUE;
+  p_IsRequired_5f691688 := FALSE;
   p_Sequence_5f691688 := 4;
   p_Status_5f691688 := 'Active';
-  p_IsCustom_5f691688 := 0;
+  p_IsCustom_5f691688 := FALSE;
   p_MetadataSource_5f691688 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5f691688, p_IntegrationObjectID := p_IntegrationObjectID_5f691688, p_Name := p_Name_5f691688, p_DisplayName := p_DisplayName_5f691688, p_Description := p_Description_5f691688, p_Category := p_Category_5f691688, p_Category_Clear := 1, p_Type := p_Type_5f691688, p_Length := p_Length_5f691688, p_Length_Clear := 1, p_Precision := p_Precision_5f691688, p_Precision_Clear := 1, p_Scale := p_Scale_5f691688, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5f691688, p_DefaultValue := p_DefaultValue_5f691688, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5f691688, p_IsUniqueKey := p_IsUniqueKey_5f691688, p_IsReadOnly := p_IsReadOnly_5f691688, p_IsRequired := p_IsRequired_5f691688, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5f691688, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5f691688, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_5f691688, p_Configuration := p_Configuration_5f691688, p_Configuration_Clear := 1, p_Status := p_Status_5f691688, p_IsCustom := p_IsCustom_5f691688, p_MetadataSource := p_MetadataSource_5f691688);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5f691688, p_IntegrationObjectID := p_IntegrationObjectID_5f691688, p_Name := p_Name_5f691688, p_DisplayName := p_DisplayName_5f691688, p_Description := p_Description_5f691688, p_Category := p_Category_5f691688, p_Category_Clear := TRUE, p_Type := p_Type_5f691688, p_Length := p_Length_5f691688, p_Length_Clear := TRUE, p_Precision := p_Precision_5f691688, p_Precision_Clear := TRUE, p_Scale := p_Scale_5f691688, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5f691688, p_DefaultValue := p_DefaultValue_5f691688, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5f691688, p_IsUniqueKey := p_IsUniqueKey_5f691688, p_IsReadOnly := p_IsReadOnly_5f691688, p_IsRequired := p_IsRequired_5f691688, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5f691688, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5f691688, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_5f691688, p_Configuration := p_Configuration_5f691688, p_Configuration_Clear := TRUE, p_Status := p_Status_5f691688, p_IsCustom := p_IsCustom_5f691688, p_MetadataSource := p_MetadataSource_5f691688);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5765,16 +5765,16 @@ BEGIN
   p_DisplayName_b3701292 := 'Created Date';
   p_Description_b3701292 := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_b3701292 := 'DateTime';
-  p_AllowsNull_b3701292 := 1;
-  p_IsPrimaryKey_b3701292 := 0;
-  p_IsUniqueKey_b3701292 := 0;
-  p_IsReadOnly_b3701292 := 1;
-  p_IsRequired_b3701292 := 0;
+  p_AllowsNull_b3701292 := TRUE;
+  p_IsPrimaryKey_b3701292 := FALSE;
+  p_IsUniqueKey_b3701292 := FALSE;
+  p_IsReadOnly_b3701292 := TRUE;
+  p_IsRequired_b3701292 := FALSE;
   p_Sequence_b3701292 := 5;
   p_Status_b3701292 := 'Active';
-  p_IsCustom_b3701292 := 0;
+  p_IsCustom_b3701292 := FALSE;
   p_MetadataSource_b3701292 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b3701292, p_IntegrationObjectID := p_IntegrationObjectID_b3701292, p_Name := p_Name_b3701292, p_DisplayName := p_DisplayName_b3701292, p_Description := p_Description_b3701292, p_Category := p_Category_b3701292, p_Category_Clear := 1, p_Type := p_Type_b3701292, p_Length := p_Length_b3701292, p_Length_Clear := 1, p_Precision := p_Precision_b3701292, p_Precision_Clear := 1, p_Scale := p_Scale_b3701292, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b3701292, p_DefaultValue := p_DefaultValue_b3701292, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b3701292, p_IsUniqueKey := p_IsUniqueKey_b3701292, p_IsReadOnly := p_IsReadOnly_b3701292, p_IsRequired := p_IsRequired_b3701292, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b3701292, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b3701292, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b3701292, p_Configuration := p_Configuration_b3701292, p_Configuration_Clear := 1, p_Status := p_Status_b3701292, p_IsCustom := p_IsCustom_b3701292, p_MetadataSource := p_MetadataSource_b3701292);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b3701292, p_IntegrationObjectID := p_IntegrationObjectID_b3701292, p_Name := p_Name_b3701292, p_DisplayName := p_DisplayName_b3701292, p_Description := p_Description_b3701292, p_Category := p_Category_b3701292, p_Category_Clear := TRUE, p_Type := p_Type_b3701292, p_Length := p_Length_b3701292, p_Length_Clear := TRUE, p_Precision := p_Precision_b3701292, p_Precision_Clear := TRUE, p_Scale := p_Scale_b3701292, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b3701292, p_DefaultValue := p_DefaultValue_b3701292, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b3701292, p_IsUniqueKey := p_IsUniqueKey_b3701292, p_IsReadOnly := p_IsReadOnly_b3701292, p_IsRequired := p_IsRequired_b3701292, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b3701292, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b3701292, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b3701292, p_Configuration := p_Configuration_b3701292, p_Configuration_Clear := TRUE, p_Status := p_Status_b3701292, p_IsCustom := p_IsCustom_b3701292, p_MetadataSource := p_MetadataSource_b3701292);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5810,16 +5810,16 @@ BEGIN
   p_DisplayName_16240471 := 'Last Modified Date';
   p_Description_16240471 := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_16240471 := 'DateTime';
-  p_AllowsNull_16240471 := 1;
-  p_IsPrimaryKey_16240471 := 0;
-  p_IsUniqueKey_16240471 := 0;
-  p_IsReadOnly_16240471 := 1;
-  p_IsRequired_16240471 := 0;
+  p_AllowsNull_16240471 := TRUE;
+  p_IsPrimaryKey_16240471 := FALSE;
+  p_IsUniqueKey_16240471 := FALSE;
+  p_IsReadOnly_16240471 := TRUE;
+  p_IsRequired_16240471 := FALSE;
   p_Sequence_16240471 := 6;
   p_Status_16240471 := 'Active';
-  p_IsCustom_16240471 := 0;
+  p_IsCustom_16240471 := FALSE;
   p_MetadataSource_16240471 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_16240471, p_IntegrationObjectID := p_IntegrationObjectID_16240471, p_Name := p_Name_16240471, p_DisplayName := p_DisplayName_16240471, p_Description := p_Description_16240471, p_Category := p_Category_16240471, p_Category_Clear := 1, p_Type := p_Type_16240471, p_Length := p_Length_16240471, p_Length_Clear := 1, p_Precision := p_Precision_16240471, p_Precision_Clear := 1, p_Scale := p_Scale_16240471, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_16240471, p_DefaultValue := p_DefaultValue_16240471, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_16240471, p_IsUniqueKey := p_IsUniqueKey_16240471, p_IsReadOnly := p_IsReadOnly_16240471, p_IsRequired := p_IsRequired_16240471, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_16240471, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_16240471, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_16240471, p_Configuration := p_Configuration_16240471, p_Configuration_Clear := 1, p_Status := p_Status_16240471, p_IsCustom := p_IsCustom_16240471, p_MetadataSource := p_MetadataSource_16240471);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_16240471, p_IntegrationObjectID := p_IntegrationObjectID_16240471, p_Name := p_Name_16240471, p_DisplayName := p_DisplayName_16240471, p_Description := p_Description_16240471, p_Category := p_Category_16240471, p_Category_Clear := TRUE, p_Type := p_Type_16240471, p_Length := p_Length_16240471, p_Length_Clear := TRUE, p_Precision := p_Precision_16240471, p_Precision_Clear := TRUE, p_Scale := p_Scale_16240471, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_16240471, p_DefaultValue := p_DefaultValue_16240471, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_16240471, p_IsUniqueKey := p_IsUniqueKey_16240471, p_IsReadOnly := p_IsReadOnly_16240471, p_IsRequired := p_IsRequired_16240471, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_16240471, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_16240471, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_16240471, p_Configuration := p_Configuration_16240471, p_Configuration_Clear := TRUE, p_Status := p_Status_16240471, p_IsCustom := p_IsCustom_16240471, p_MetadataSource := p_MetadataSource_16240471);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5855,16 +5855,16 @@ BEGIN
   p_DisplayName_bb46f275 := 'Source';
   p_Description_bb46f275 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_bb46f275 := 'json';
-  p_AllowsNull_bb46f275 := 1;
-  p_IsPrimaryKey_bb46f275 := 0;
-  p_IsUniqueKey_bb46f275 := 0;
-  p_IsReadOnly_bb46f275 := 1;
-  p_IsRequired_bb46f275 := 0;
+  p_AllowsNull_bb46f275 := TRUE;
+  p_IsPrimaryKey_bb46f275 := FALSE;
+  p_IsUniqueKey_bb46f275 := FALSE;
+  p_IsReadOnly_bb46f275 := TRUE;
+  p_IsRequired_bb46f275 := FALSE;
   p_Sequence_bb46f275 := 7;
   p_Status_bb46f275 := 'Active';
-  p_IsCustom_bb46f275 := 0;
+  p_IsCustom_bb46f275 := FALSE;
   p_MetadataSource_bb46f275 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bb46f275, p_IntegrationObjectID := p_IntegrationObjectID_bb46f275, p_Name := p_Name_bb46f275, p_DisplayName := p_DisplayName_bb46f275, p_Description := p_Description_bb46f275, p_Category := p_Category_bb46f275, p_Category_Clear := 1, p_Type := p_Type_bb46f275, p_Length := p_Length_bb46f275, p_Length_Clear := 1, p_Precision := p_Precision_bb46f275, p_Precision_Clear := 1, p_Scale := p_Scale_bb46f275, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_bb46f275, p_DefaultValue := p_DefaultValue_bb46f275, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_bb46f275, p_IsUniqueKey := p_IsUniqueKey_bb46f275, p_IsReadOnly := p_IsReadOnly_bb46f275, p_IsRequired := p_IsRequired_bb46f275, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bb46f275, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bb46f275, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_bb46f275, p_Configuration := p_Configuration_bb46f275, p_Configuration_Clear := 1, p_Status := p_Status_bb46f275, p_IsCustom := p_IsCustom_bb46f275, p_MetadataSource := p_MetadataSource_bb46f275);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bb46f275, p_IntegrationObjectID := p_IntegrationObjectID_bb46f275, p_Name := p_Name_bb46f275, p_DisplayName := p_DisplayName_bb46f275, p_Description := p_Description_bb46f275, p_Category := p_Category_bb46f275, p_Category_Clear := TRUE, p_Type := p_Type_bb46f275, p_Length := p_Length_bb46f275, p_Length_Clear := TRUE, p_Precision := p_Precision_bb46f275, p_Precision_Clear := TRUE, p_Scale := p_Scale_bb46f275, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_bb46f275, p_DefaultValue := p_DefaultValue_bb46f275, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_bb46f275, p_IsUniqueKey := p_IsUniqueKey_bb46f275, p_IsReadOnly := p_IsReadOnly_bb46f275, p_IsRequired := p_IsRequired_bb46f275, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bb46f275, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bb46f275, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_bb46f275, p_Configuration := p_Configuration_bb46f275, p_Configuration_Clear := TRUE, p_Status := p_Status_bb46f275, p_IsCustom := p_IsCustom_bb46f275, p_MetadataSource := p_MetadataSource_bb46f275);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5901,16 +5901,16 @@ BEGIN
   p_Description_f4202ff5 := 'Department within the organization. (common-3.0.xsd affiliation department-name, long-text)';
   p_Type_f4202ff5 := 'String';
   p_Length_f4202ff5 := 4000;
-  p_AllowsNull_f4202ff5 := 1;
-  p_IsPrimaryKey_f4202ff5 := 0;
-  p_IsUniqueKey_f4202ff5 := 0;
-  p_IsReadOnly_f4202ff5 := 1;
-  p_IsRequired_f4202ff5 := 0;
+  p_AllowsNull_f4202ff5 := TRUE;
+  p_IsPrimaryKey_f4202ff5 := FALSE;
+  p_IsUniqueKey_f4202ff5 := FALSE;
+  p_IsReadOnly_f4202ff5 := TRUE;
+  p_IsRequired_f4202ff5 := FALSE;
   p_Sequence_f4202ff5 := 8;
   p_Status_f4202ff5 := 'Active';
-  p_IsCustom_f4202ff5 := 0;
+  p_IsCustom_f4202ff5 := FALSE;
   p_MetadataSource_f4202ff5 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f4202ff5, p_IntegrationObjectID := p_IntegrationObjectID_f4202ff5, p_Name := p_Name_f4202ff5, p_DisplayName := p_DisplayName_f4202ff5, p_Description := p_Description_f4202ff5, p_Category := p_Category_f4202ff5, p_Category_Clear := 1, p_Type := p_Type_f4202ff5, p_Length := p_Length_f4202ff5, p_Precision := p_Precision_f4202ff5, p_Precision_Clear := 1, p_Scale := p_Scale_f4202ff5, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f4202ff5, p_DefaultValue := p_DefaultValue_f4202ff5, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f4202ff5, p_IsUniqueKey := p_IsUniqueKey_f4202ff5, p_IsReadOnly := p_IsReadOnly_f4202ff5, p_IsRequired := p_IsRequired_f4202ff5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f4202ff5, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f4202ff5, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f4202ff5, p_Configuration := p_Configuration_f4202ff5, p_Configuration_Clear := 1, p_Status := p_Status_f4202ff5, p_IsCustom := p_IsCustom_f4202ff5, p_MetadataSource := p_MetadataSource_f4202ff5);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f4202ff5, p_IntegrationObjectID := p_IntegrationObjectID_f4202ff5, p_Name := p_Name_f4202ff5, p_DisplayName := p_DisplayName_f4202ff5, p_Description := p_Description_f4202ff5, p_Category := p_Category_f4202ff5, p_Category_Clear := TRUE, p_Type := p_Type_f4202ff5, p_Length := p_Length_f4202ff5, p_Precision := p_Precision_f4202ff5, p_Precision_Clear := TRUE, p_Scale := p_Scale_f4202ff5, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f4202ff5, p_DefaultValue := p_DefaultValue_f4202ff5, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f4202ff5, p_IsUniqueKey := p_IsUniqueKey_f4202ff5, p_IsReadOnly := p_IsReadOnly_f4202ff5, p_IsRequired := p_IsRequired_f4202ff5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f4202ff5, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f4202ff5, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f4202ff5, p_Configuration := p_Configuration_f4202ff5, p_Configuration_Clear := TRUE, p_Status := p_Status_f4202ff5, p_IsCustom := p_IsCustom_f4202ff5, p_MetadataSource := p_MetadataSource_f4202ff5);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5947,16 +5947,16 @@ BEGIN
   p_Description_239ef62c := 'Role or title held at the organization. (common-3.0.xsd affiliation role-title, long-text)';
   p_Type_239ef62c := 'String';
   p_Length_239ef62c := 4000;
-  p_AllowsNull_239ef62c := 1;
-  p_IsPrimaryKey_239ef62c := 0;
-  p_IsUniqueKey_239ef62c := 0;
-  p_IsReadOnly_239ef62c := 1;
-  p_IsRequired_239ef62c := 0;
+  p_AllowsNull_239ef62c := TRUE;
+  p_IsPrimaryKey_239ef62c := FALSE;
+  p_IsUniqueKey_239ef62c := FALSE;
+  p_IsReadOnly_239ef62c := TRUE;
+  p_IsRequired_239ef62c := FALSE;
   p_Sequence_239ef62c := 9;
   p_Status_239ef62c := 'Active';
-  p_IsCustom_239ef62c := 0;
+  p_IsCustom_239ef62c := FALSE;
   p_MetadataSource_239ef62c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_239ef62c, p_IntegrationObjectID := p_IntegrationObjectID_239ef62c, p_Name := p_Name_239ef62c, p_DisplayName := p_DisplayName_239ef62c, p_Description := p_Description_239ef62c, p_Category := p_Category_239ef62c, p_Category_Clear := 1, p_Type := p_Type_239ef62c, p_Length := p_Length_239ef62c, p_Precision := p_Precision_239ef62c, p_Precision_Clear := 1, p_Scale := p_Scale_239ef62c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_239ef62c, p_DefaultValue := p_DefaultValue_239ef62c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_239ef62c, p_IsUniqueKey := p_IsUniqueKey_239ef62c, p_IsReadOnly := p_IsReadOnly_239ef62c, p_IsRequired := p_IsRequired_239ef62c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_239ef62c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_239ef62c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_239ef62c, p_Configuration := p_Configuration_239ef62c, p_Configuration_Clear := 1, p_Status := p_Status_239ef62c, p_IsCustom := p_IsCustom_239ef62c, p_MetadataSource := p_MetadataSource_239ef62c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_239ef62c, p_IntegrationObjectID := p_IntegrationObjectID_239ef62c, p_Name := p_Name_239ef62c, p_DisplayName := p_DisplayName_239ef62c, p_Description := p_Description_239ef62c, p_Category := p_Category_239ef62c, p_Category_Clear := TRUE, p_Type := p_Type_239ef62c, p_Length := p_Length_239ef62c, p_Precision := p_Precision_239ef62c, p_Precision_Clear := TRUE, p_Scale := p_Scale_239ef62c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_239ef62c, p_DefaultValue := p_DefaultValue_239ef62c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_239ef62c, p_IsUniqueKey := p_IsUniqueKey_239ef62c, p_IsReadOnly := p_IsReadOnly_239ef62c, p_IsRequired := p_IsRequired_239ef62c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_239ef62c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_239ef62c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_239ef62c, p_Configuration := p_Configuration_239ef62c, p_Configuration_Clear := TRUE, p_Status := p_Status_239ef62c, p_IsCustom := p_IsCustom_239ef62c, p_MetadataSource := p_MetadataSource_239ef62c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -5992,16 +5992,16 @@ BEGIN
   p_DisplayName_cb83a3f4 := 'Start Date';
   p_Description_cb83a3f4 := 'Fuzzy start date (year + optional month/day). (common-3.0.xsd start-date, fuzzy-date)';
   p_Type_cb83a3f4 := 'json';
-  p_AllowsNull_cb83a3f4 := 1;
-  p_IsPrimaryKey_cb83a3f4 := 0;
-  p_IsUniqueKey_cb83a3f4 := 0;
-  p_IsReadOnly_cb83a3f4 := 1;
-  p_IsRequired_cb83a3f4 := 0;
+  p_AllowsNull_cb83a3f4 := TRUE;
+  p_IsPrimaryKey_cb83a3f4 := FALSE;
+  p_IsUniqueKey_cb83a3f4 := FALSE;
+  p_IsReadOnly_cb83a3f4 := TRUE;
+  p_IsRequired_cb83a3f4 := FALSE;
   p_Sequence_cb83a3f4 := 10;
   p_Status_cb83a3f4 := 'Active';
-  p_IsCustom_cb83a3f4 := 0;
+  p_IsCustom_cb83a3f4 := FALSE;
   p_MetadataSource_cb83a3f4 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_cb83a3f4, p_IntegrationObjectID := p_IntegrationObjectID_cb83a3f4, p_Name := p_Name_cb83a3f4, p_DisplayName := p_DisplayName_cb83a3f4, p_Description := p_Description_cb83a3f4, p_Category := p_Category_cb83a3f4, p_Category_Clear := 1, p_Type := p_Type_cb83a3f4, p_Length := p_Length_cb83a3f4, p_Length_Clear := 1, p_Precision := p_Precision_cb83a3f4, p_Precision_Clear := 1, p_Scale := p_Scale_cb83a3f4, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_cb83a3f4, p_DefaultValue := p_DefaultValue_cb83a3f4, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_cb83a3f4, p_IsUniqueKey := p_IsUniqueKey_cb83a3f4, p_IsReadOnly := p_IsReadOnly_cb83a3f4, p_IsRequired := p_IsRequired_cb83a3f4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_cb83a3f4, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_cb83a3f4, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_cb83a3f4, p_Configuration := p_Configuration_cb83a3f4, p_Configuration_Clear := 1, p_Status := p_Status_cb83a3f4, p_IsCustom := p_IsCustom_cb83a3f4, p_MetadataSource := p_MetadataSource_cb83a3f4);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_cb83a3f4, p_IntegrationObjectID := p_IntegrationObjectID_cb83a3f4, p_Name := p_Name_cb83a3f4, p_DisplayName := p_DisplayName_cb83a3f4, p_Description := p_Description_cb83a3f4, p_Category := p_Category_cb83a3f4, p_Category_Clear := TRUE, p_Type := p_Type_cb83a3f4, p_Length := p_Length_cb83a3f4, p_Length_Clear := TRUE, p_Precision := p_Precision_cb83a3f4, p_Precision_Clear := TRUE, p_Scale := p_Scale_cb83a3f4, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_cb83a3f4, p_DefaultValue := p_DefaultValue_cb83a3f4, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_cb83a3f4, p_IsUniqueKey := p_IsUniqueKey_cb83a3f4, p_IsReadOnly := p_IsReadOnly_cb83a3f4, p_IsRequired := p_IsRequired_cb83a3f4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_cb83a3f4, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_cb83a3f4, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_cb83a3f4, p_Configuration := p_Configuration_cb83a3f4, p_Configuration_Clear := TRUE, p_Status := p_Status_cb83a3f4, p_IsCustom := p_IsCustom_cb83a3f4, p_MetadataSource := p_MetadataSource_cb83a3f4);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6037,16 +6037,16 @@ BEGIN
   p_DisplayName_aa22a3f1 := 'End Date';
   p_Description_aa22a3f1 := 'Fuzzy end date (year + optional month/day). (common-3.0.xsd end-date, fuzzy-date)';
   p_Type_aa22a3f1 := 'json';
-  p_AllowsNull_aa22a3f1 := 1;
-  p_IsPrimaryKey_aa22a3f1 := 0;
-  p_IsUniqueKey_aa22a3f1 := 0;
-  p_IsReadOnly_aa22a3f1 := 1;
-  p_IsRequired_aa22a3f1 := 0;
+  p_AllowsNull_aa22a3f1 := TRUE;
+  p_IsPrimaryKey_aa22a3f1 := FALSE;
+  p_IsUniqueKey_aa22a3f1 := FALSE;
+  p_IsReadOnly_aa22a3f1 := TRUE;
+  p_IsRequired_aa22a3f1 := FALSE;
   p_Sequence_aa22a3f1 := 11;
   p_Status_aa22a3f1 := 'Active';
-  p_IsCustom_aa22a3f1 := 0;
+  p_IsCustom_aa22a3f1 := FALSE;
   p_MetadataSource_aa22a3f1 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_aa22a3f1, p_IntegrationObjectID := p_IntegrationObjectID_aa22a3f1, p_Name := p_Name_aa22a3f1, p_DisplayName := p_DisplayName_aa22a3f1, p_Description := p_Description_aa22a3f1, p_Category := p_Category_aa22a3f1, p_Category_Clear := 1, p_Type := p_Type_aa22a3f1, p_Length := p_Length_aa22a3f1, p_Length_Clear := 1, p_Precision := p_Precision_aa22a3f1, p_Precision_Clear := 1, p_Scale := p_Scale_aa22a3f1, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_aa22a3f1, p_DefaultValue := p_DefaultValue_aa22a3f1, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_aa22a3f1, p_IsUniqueKey := p_IsUniqueKey_aa22a3f1, p_IsReadOnly := p_IsReadOnly_aa22a3f1, p_IsRequired := p_IsRequired_aa22a3f1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_aa22a3f1, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_aa22a3f1, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_aa22a3f1, p_Configuration := p_Configuration_aa22a3f1, p_Configuration_Clear := 1, p_Status := p_Status_aa22a3f1, p_IsCustom := p_IsCustom_aa22a3f1, p_MetadataSource := p_MetadataSource_aa22a3f1);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_aa22a3f1, p_IntegrationObjectID := p_IntegrationObjectID_aa22a3f1, p_Name := p_Name_aa22a3f1, p_DisplayName := p_DisplayName_aa22a3f1, p_Description := p_Description_aa22a3f1, p_Category := p_Category_aa22a3f1, p_Category_Clear := TRUE, p_Type := p_Type_aa22a3f1, p_Length := p_Length_aa22a3f1, p_Length_Clear := TRUE, p_Precision := p_Precision_aa22a3f1, p_Precision_Clear := TRUE, p_Scale := p_Scale_aa22a3f1, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_aa22a3f1, p_DefaultValue := p_DefaultValue_aa22a3f1, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_aa22a3f1, p_IsUniqueKey := p_IsUniqueKey_aa22a3f1, p_IsReadOnly := p_IsReadOnly_aa22a3f1, p_IsRequired := p_IsRequired_aa22a3f1, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_aa22a3f1, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_aa22a3f1, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_aa22a3f1, p_Configuration := p_Configuration_aa22a3f1, p_Configuration_Clear := TRUE, p_Status := p_Status_aa22a3f1, p_IsCustom := p_IsCustom_aa22a3f1, p_MetadataSource := p_MetadataSource_aa22a3f1);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6082,16 +6082,16 @@ BEGIN
   p_DisplayName_75c1d34e := 'Organization';
   p_Description_75c1d34e := 'Organization reference: name, address, disambiguated-org-id (ROR/GRID/Ringgold). Required. (common-3.0.xsd organization, minOccurs=1)';
   p_Type_75c1d34e := 'json';
-  p_AllowsNull_75c1d34e := 1;
-  p_IsPrimaryKey_75c1d34e := 0;
-  p_IsUniqueKey_75c1d34e := 0;
-  p_IsReadOnly_75c1d34e := 1;
-  p_IsRequired_75c1d34e := 1;
+  p_AllowsNull_75c1d34e := TRUE;
+  p_IsPrimaryKey_75c1d34e := FALSE;
+  p_IsUniqueKey_75c1d34e := FALSE;
+  p_IsReadOnly_75c1d34e := TRUE;
+  p_IsRequired_75c1d34e := TRUE;
   p_Sequence_75c1d34e := 12;
   p_Status_75c1d34e := 'Active';
-  p_IsCustom_75c1d34e := 0;
+  p_IsCustom_75c1d34e := FALSE;
   p_MetadataSource_75c1d34e := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_75c1d34e, p_IntegrationObjectID := p_IntegrationObjectID_75c1d34e, p_Name := p_Name_75c1d34e, p_DisplayName := p_DisplayName_75c1d34e, p_Description := p_Description_75c1d34e, p_Category := p_Category_75c1d34e, p_Category_Clear := 1, p_Type := p_Type_75c1d34e, p_Length := p_Length_75c1d34e, p_Length_Clear := 1, p_Precision := p_Precision_75c1d34e, p_Precision_Clear := 1, p_Scale := p_Scale_75c1d34e, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_75c1d34e, p_DefaultValue := p_DefaultValue_75c1d34e, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_75c1d34e, p_IsUniqueKey := p_IsUniqueKey_75c1d34e, p_IsReadOnly := p_IsReadOnly_75c1d34e, p_IsRequired := p_IsRequired_75c1d34e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_75c1d34e, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_75c1d34e, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_75c1d34e, p_Configuration := p_Configuration_75c1d34e, p_Configuration_Clear := 1, p_Status := p_Status_75c1d34e, p_IsCustom := p_IsCustom_75c1d34e, p_MetadataSource := p_MetadataSource_75c1d34e);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_75c1d34e, p_IntegrationObjectID := p_IntegrationObjectID_75c1d34e, p_Name := p_Name_75c1d34e, p_DisplayName := p_DisplayName_75c1d34e, p_Description := p_Description_75c1d34e, p_Category := p_Category_75c1d34e, p_Category_Clear := TRUE, p_Type := p_Type_75c1d34e, p_Length := p_Length_75c1d34e, p_Length_Clear := TRUE, p_Precision := p_Precision_75c1d34e, p_Precision_Clear := TRUE, p_Scale := p_Scale_75c1d34e, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_75c1d34e, p_DefaultValue := p_DefaultValue_75c1d34e, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_75c1d34e, p_IsUniqueKey := p_IsUniqueKey_75c1d34e, p_IsReadOnly := p_IsReadOnly_75c1d34e, p_IsRequired := p_IsRequired_75c1d34e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_75c1d34e, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_75c1d34e, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_75c1d34e, p_Configuration := p_Configuration_75c1d34e, p_Configuration_Clear := TRUE, p_Status := p_Status_75c1d34e, p_IsCustom := p_IsCustom_75c1d34e, p_MetadataSource := p_MetadataSource_75c1d34e);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6127,16 +6127,16 @@ BEGIN
   p_DisplayName_bc33d268 := 'Url';
   p_Description_bc33d268 := 'A URL associated with the affiliation. (common-3.0.xsd affiliation url)';
   p_Type_bc33d268 := 'String';
-  p_AllowsNull_bc33d268 := 1;
-  p_IsPrimaryKey_bc33d268 := 0;
-  p_IsUniqueKey_bc33d268 := 0;
-  p_IsReadOnly_bc33d268 := 1;
-  p_IsRequired_bc33d268 := 0;
+  p_AllowsNull_bc33d268 := TRUE;
+  p_IsPrimaryKey_bc33d268 := FALSE;
+  p_IsUniqueKey_bc33d268 := FALSE;
+  p_IsReadOnly_bc33d268 := TRUE;
+  p_IsRequired_bc33d268 := FALSE;
   p_Sequence_bc33d268 := 13;
   p_Status_bc33d268 := 'Active';
-  p_IsCustom_bc33d268 := 0;
+  p_IsCustom_bc33d268 := FALSE;
   p_MetadataSource_bc33d268 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bc33d268, p_IntegrationObjectID := p_IntegrationObjectID_bc33d268, p_Name := p_Name_bc33d268, p_DisplayName := p_DisplayName_bc33d268, p_Description := p_Description_bc33d268, p_Category := p_Category_bc33d268, p_Category_Clear := 1, p_Type := p_Type_bc33d268, p_Length := p_Length_bc33d268, p_Length_Clear := 1, p_Precision := p_Precision_bc33d268, p_Precision_Clear := 1, p_Scale := p_Scale_bc33d268, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_bc33d268, p_DefaultValue := p_DefaultValue_bc33d268, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_bc33d268, p_IsUniqueKey := p_IsUniqueKey_bc33d268, p_IsReadOnly := p_IsReadOnly_bc33d268, p_IsRequired := p_IsRequired_bc33d268, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bc33d268, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bc33d268, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_bc33d268, p_Configuration := p_Configuration_bc33d268, p_Configuration_Clear := 1, p_Status := p_Status_bc33d268, p_IsCustom := p_IsCustom_bc33d268, p_MetadataSource := p_MetadataSource_bc33d268);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_bc33d268, p_IntegrationObjectID := p_IntegrationObjectID_bc33d268, p_Name := p_Name_bc33d268, p_DisplayName := p_DisplayName_bc33d268, p_Description := p_Description_bc33d268, p_Category := p_Category_bc33d268, p_Category_Clear := TRUE, p_Type := p_Type_bc33d268, p_Length := p_Length_bc33d268, p_Length_Clear := TRUE, p_Precision := p_Precision_bc33d268, p_Precision_Clear := TRUE, p_Scale := p_Scale_bc33d268, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_bc33d268, p_DefaultValue := p_DefaultValue_bc33d268, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_bc33d268, p_IsUniqueKey := p_IsUniqueKey_bc33d268, p_IsReadOnly := p_IsReadOnly_bc33d268, p_IsRequired := p_IsRequired_bc33d268, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_bc33d268, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_bc33d268, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_bc33d268, p_Configuration := p_Configuration_bc33d268, p_Configuration_Clear := TRUE, p_Status := p_Status_bc33d268, p_IsCustom := p_IsCustom_bc33d268, p_MetadataSource := p_MetadataSource_bc33d268);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6172,16 +6172,16 @@ BEGIN
   p_DisplayName_b5587bf7 := 'External Ids';
   p_Description_b5587bf7 := 'External identifiers for the affiliation (type+value+relationship). (common-3.0.xsd external-ids)';
   p_Type_b5587bf7 := 'json';
-  p_AllowsNull_b5587bf7 := 1;
-  p_IsPrimaryKey_b5587bf7 := 0;
-  p_IsUniqueKey_b5587bf7 := 0;
-  p_IsReadOnly_b5587bf7 := 1;
-  p_IsRequired_b5587bf7 := 0;
+  p_AllowsNull_b5587bf7 := TRUE;
+  p_IsPrimaryKey_b5587bf7 := FALSE;
+  p_IsUniqueKey_b5587bf7 := FALSE;
+  p_IsReadOnly_b5587bf7 := TRUE;
+  p_IsRequired_b5587bf7 := FALSE;
   p_Sequence_b5587bf7 := 14;
   p_Status_b5587bf7 := 'Active';
-  p_IsCustom_b5587bf7 := 0;
+  p_IsCustom_b5587bf7 := FALSE;
   p_MetadataSource_b5587bf7 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b5587bf7, p_IntegrationObjectID := p_IntegrationObjectID_b5587bf7, p_Name := p_Name_b5587bf7, p_DisplayName := p_DisplayName_b5587bf7, p_Description := p_Description_b5587bf7, p_Category := p_Category_b5587bf7, p_Category_Clear := 1, p_Type := p_Type_b5587bf7, p_Length := p_Length_b5587bf7, p_Length_Clear := 1, p_Precision := p_Precision_b5587bf7, p_Precision_Clear := 1, p_Scale := p_Scale_b5587bf7, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b5587bf7, p_DefaultValue := p_DefaultValue_b5587bf7, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b5587bf7, p_IsUniqueKey := p_IsUniqueKey_b5587bf7, p_IsReadOnly := p_IsReadOnly_b5587bf7, p_IsRequired := p_IsRequired_b5587bf7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b5587bf7, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b5587bf7, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b5587bf7, p_Configuration := p_Configuration_b5587bf7, p_Configuration_Clear := 1, p_Status := p_Status_b5587bf7, p_IsCustom := p_IsCustom_b5587bf7, p_MetadataSource := p_MetadataSource_b5587bf7);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b5587bf7, p_IntegrationObjectID := p_IntegrationObjectID_b5587bf7, p_Name := p_Name_b5587bf7, p_DisplayName := p_DisplayName_b5587bf7, p_Description := p_Description_b5587bf7, p_Category := p_Category_b5587bf7, p_Category_Clear := TRUE, p_Type := p_Type_b5587bf7, p_Length := p_Length_b5587bf7, p_Length_Clear := TRUE, p_Precision := p_Precision_b5587bf7, p_Precision_Clear := TRUE, p_Scale := p_Scale_b5587bf7, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b5587bf7, p_DefaultValue := p_DefaultValue_b5587bf7, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b5587bf7, p_IsUniqueKey := p_IsUniqueKey_b5587bf7, p_IsReadOnly := p_IsReadOnly_b5587bf7, p_IsRequired := p_IsRequired_b5587bf7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b5587bf7, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b5587bf7, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b5587bf7, p_Configuration := p_Configuration_b5587bf7, p_Configuration_Clear := TRUE, p_Status := p_Status_b5587bf7, p_IsCustom := p_IsCustom_b5587bf7, p_MetadataSource := p_MetadataSource_b5587bf7);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6218,18 +6218,18 @@ BEGIN
   p_Description_8b27da67 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_8b27da67 := 'String';
   p_Length_8b27da67 := 19;
-  p_AllowsNull_8b27da67 := 1;
-  p_IsPrimaryKey_8b27da67 := 0;
-  p_IsUniqueKey_8b27da67 := 0;
-  p_IsReadOnly_8b27da67 := 1;
-  p_IsRequired_8b27da67 := 1;
+  p_AllowsNull_8b27da67 := TRUE;
+  p_IsPrimaryKey_8b27da67 := FALSE;
+  p_IsUniqueKey_8b27da67 := FALSE;
+  p_IsReadOnly_8b27da67 := TRUE;
+  p_IsRequired_8b27da67 := TRUE;
   p_RelatedIntegrationObjectID_8b27da67 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_8b27da67 := 'orcid-id';
   p_Sequence_8b27da67 := 0;
   p_Status_8b27da67 := 'Active';
-  p_IsCustom_8b27da67 := 0;
+  p_IsCustom_8b27da67 := FALSE;
   p_MetadataSource_8b27da67 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8b27da67, p_IntegrationObjectID := p_IntegrationObjectID_8b27da67, p_Name := p_Name_8b27da67, p_DisplayName := p_DisplayName_8b27da67, p_Description := p_Description_8b27da67, p_Category := p_Category_8b27da67, p_Category_Clear := 1, p_Type := p_Type_8b27da67, p_Length := p_Length_8b27da67, p_Precision := p_Precision_8b27da67, p_Precision_Clear := 1, p_Scale := p_Scale_8b27da67, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_8b27da67, p_DefaultValue := p_DefaultValue_8b27da67, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_8b27da67, p_IsUniqueKey := p_IsUniqueKey_8b27da67, p_IsReadOnly := p_IsReadOnly_8b27da67, p_IsRequired := p_IsRequired_8b27da67, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8b27da67, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8b27da67, p_Sequence := p_Sequence_8b27da67, p_Configuration := p_Configuration_8b27da67, p_Configuration_Clear := 1, p_Status := p_Status_8b27da67, p_IsCustom := p_IsCustom_8b27da67, p_MetadataSource := p_MetadataSource_8b27da67);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8b27da67, p_IntegrationObjectID := p_IntegrationObjectID_8b27da67, p_Name := p_Name_8b27da67, p_DisplayName := p_DisplayName_8b27da67, p_Description := p_Description_8b27da67, p_Category := p_Category_8b27da67, p_Category_Clear := TRUE, p_Type := p_Type_8b27da67, p_Length := p_Length_8b27da67, p_Precision := p_Precision_8b27da67, p_Precision_Clear := TRUE, p_Scale := p_Scale_8b27da67, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_8b27da67, p_DefaultValue := p_DefaultValue_8b27da67, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_8b27da67, p_IsUniqueKey := p_IsUniqueKey_8b27da67, p_IsReadOnly := p_IsReadOnly_8b27da67, p_IsRequired := p_IsRequired_8b27da67, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8b27da67, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8b27da67, p_Sequence := p_Sequence_8b27da67, p_Configuration := p_Configuration_8b27da67, p_Configuration_Clear := TRUE, p_Status := p_Status_8b27da67, p_IsCustom := p_IsCustom_8b27da67, p_MetadataSource := p_MetadataSource_8b27da67);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6265,16 +6265,16 @@ BEGIN
   p_DisplayName_2fa2b913 := 'Put Code';
   p_Description_2fa2b913 := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_2fa2b913 := 'Integer';
-  p_AllowsNull_2fa2b913 := 0;
-  p_IsPrimaryKey_2fa2b913 := 1;
-  p_IsUniqueKey_2fa2b913 := 1;
-  p_IsReadOnly_2fa2b913 := 1;
-  p_IsRequired_2fa2b913 := 1;
+  p_AllowsNull_2fa2b913 := FALSE;
+  p_IsPrimaryKey_2fa2b913 := TRUE;
+  p_IsUniqueKey_2fa2b913 := TRUE;
+  p_IsReadOnly_2fa2b913 := TRUE;
+  p_IsRequired_2fa2b913 := TRUE;
   p_Sequence_2fa2b913 := 1;
   p_Status_2fa2b913 := 'Active';
-  p_IsCustom_2fa2b913 := 0;
+  p_IsCustom_2fa2b913 := FALSE;
   p_MetadataSource_2fa2b913 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2fa2b913, p_IntegrationObjectID := p_IntegrationObjectID_2fa2b913, p_Name := p_Name_2fa2b913, p_DisplayName := p_DisplayName_2fa2b913, p_Description := p_Description_2fa2b913, p_Category := p_Category_2fa2b913, p_Category_Clear := 1, p_Type := p_Type_2fa2b913, p_Length := p_Length_2fa2b913, p_Length_Clear := 1, p_Precision := p_Precision_2fa2b913, p_Precision_Clear := 1, p_Scale := p_Scale_2fa2b913, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_2fa2b913, p_DefaultValue := p_DefaultValue_2fa2b913, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_2fa2b913, p_IsUniqueKey := p_IsUniqueKey_2fa2b913, p_IsReadOnly := p_IsReadOnly_2fa2b913, p_IsRequired := p_IsRequired_2fa2b913, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2fa2b913, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2fa2b913, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_2fa2b913, p_Configuration := p_Configuration_2fa2b913, p_Configuration_Clear := 1, p_Status := p_Status_2fa2b913, p_IsCustom := p_IsCustom_2fa2b913, p_MetadataSource := p_MetadataSource_2fa2b913);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2fa2b913, p_IntegrationObjectID := p_IntegrationObjectID_2fa2b913, p_Name := p_Name_2fa2b913, p_DisplayName := p_DisplayName_2fa2b913, p_Description := p_Description_2fa2b913, p_Category := p_Category_2fa2b913, p_Category_Clear := TRUE, p_Type := p_Type_2fa2b913, p_Length := p_Length_2fa2b913, p_Length_Clear := TRUE, p_Precision := p_Precision_2fa2b913, p_Precision_Clear := TRUE, p_Scale := p_Scale_2fa2b913, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_2fa2b913, p_DefaultValue := p_DefaultValue_2fa2b913, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_2fa2b913, p_IsUniqueKey := p_IsUniqueKey_2fa2b913, p_IsReadOnly := p_IsReadOnly_2fa2b913, p_IsRequired := p_IsRequired_2fa2b913, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2fa2b913, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2fa2b913, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_2fa2b913, p_Configuration := p_Configuration_2fa2b913, p_Configuration_Clear := TRUE, p_Status := p_Status_2fa2b913, p_IsCustom := p_IsCustom_2fa2b913, p_MetadataSource := p_MetadataSource_2fa2b913);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6311,16 +6311,16 @@ BEGIN
   p_Description_78e30ef4 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_78e30ef4 := 'String';
   p_Length_78e30ef4 := 500;
-  p_AllowsNull_78e30ef4 := 1;
-  p_IsPrimaryKey_78e30ef4 := 0;
-  p_IsUniqueKey_78e30ef4 := 0;
-  p_IsReadOnly_78e30ef4 := 1;
-  p_IsRequired_78e30ef4 := 0;
+  p_AllowsNull_78e30ef4 := TRUE;
+  p_IsPrimaryKey_78e30ef4 := FALSE;
+  p_IsUniqueKey_78e30ef4 := FALSE;
+  p_IsReadOnly_78e30ef4 := TRUE;
+  p_IsRequired_78e30ef4 := FALSE;
   p_Sequence_78e30ef4 := 2;
   p_Status_78e30ef4 := 'Active';
-  p_IsCustom_78e30ef4 := 0;
+  p_IsCustom_78e30ef4 := FALSE;
   p_MetadataSource_78e30ef4 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_78e30ef4, p_IntegrationObjectID := p_IntegrationObjectID_78e30ef4, p_Name := p_Name_78e30ef4, p_DisplayName := p_DisplayName_78e30ef4, p_Description := p_Description_78e30ef4, p_Category := p_Category_78e30ef4, p_Category_Clear := 1, p_Type := p_Type_78e30ef4, p_Length := p_Length_78e30ef4, p_Precision := p_Precision_78e30ef4, p_Precision_Clear := 1, p_Scale := p_Scale_78e30ef4, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_78e30ef4, p_DefaultValue := p_DefaultValue_78e30ef4, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_78e30ef4, p_IsUniqueKey := p_IsUniqueKey_78e30ef4, p_IsReadOnly := p_IsReadOnly_78e30ef4, p_IsRequired := p_IsRequired_78e30ef4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_78e30ef4, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_78e30ef4, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_78e30ef4, p_Configuration := p_Configuration_78e30ef4, p_Configuration_Clear := 1, p_Status := p_Status_78e30ef4, p_IsCustom := p_IsCustom_78e30ef4, p_MetadataSource := p_MetadataSource_78e30ef4);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_78e30ef4, p_IntegrationObjectID := p_IntegrationObjectID_78e30ef4, p_Name := p_Name_78e30ef4, p_DisplayName := p_DisplayName_78e30ef4, p_Description := p_Description_78e30ef4, p_Category := p_Category_78e30ef4, p_Category_Clear := TRUE, p_Type := p_Type_78e30ef4, p_Length := p_Length_78e30ef4, p_Precision := p_Precision_78e30ef4, p_Precision_Clear := TRUE, p_Scale := p_Scale_78e30ef4, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_78e30ef4, p_DefaultValue := p_DefaultValue_78e30ef4, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_78e30ef4, p_IsUniqueKey := p_IsUniqueKey_78e30ef4, p_IsReadOnly := p_IsReadOnly_78e30ef4, p_IsRequired := p_IsRequired_78e30ef4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_78e30ef4, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_78e30ef4, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_78e30ef4, p_Configuration := p_Configuration_78e30ef4, p_Configuration_Clear := TRUE, p_Status := p_Status_78e30ef4, p_IsCustom := p_IsCustom_78e30ef4, p_MetadataSource := p_MetadataSource_78e30ef4);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6356,16 +6356,16 @@ BEGIN
   p_DisplayName_fbcbe23e := 'Visibility';
   p_Description_fbcbe23e := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_fbcbe23e := 'String';
-  p_AllowsNull_fbcbe23e := 1;
-  p_IsPrimaryKey_fbcbe23e := 0;
-  p_IsUniqueKey_fbcbe23e := 0;
-  p_IsReadOnly_fbcbe23e := 1;
-  p_IsRequired_fbcbe23e := 0;
+  p_AllowsNull_fbcbe23e := TRUE;
+  p_IsPrimaryKey_fbcbe23e := FALSE;
+  p_IsUniqueKey_fbcbe23e := FALSE;
+  p_IsReadOnly_fbcbe23e := TRUE;
+  p_IsRequired_fbcbe23e := FALSE;
   p_Sequence_fbcbe23e := 3;
   p_Status_fbcbe23e := 'Active';
-  p_IsCustom_fbcbe23e := 0;
+  p_IsCustom_fbcbe23e := FALSE;
   p_MetadataSource_fbcbe23e := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_fbcbe23e, p_IntegrationObjectID := p_IntegrationObjectID_fbcbe23e, p_Name := p_Name_fbcbe23e, p_DisplayName := p_DisplayName_fbcbe23e, p_Description := p_Description_fbcbe23e, p_Category := p_Category_fbcbe23e, p_Category_Clear := 1, p_Type := p_Type_fbcbe23e, p_Length := p_Length_fbcbe23e, p_Length_Clear := 1, p_Precision := p_Precision_fbcbe23e, p_Precision_Clear := 1, p_Scale := p_Scale_fbcbe23e, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_fbcbe23e, p_DefaultValue := p_DefaultValue_fbcbe23e, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_fbcbe23e, p_IsUniqueKey := p_IsUniqueKey_fbcbe23e, p_IsReadOnly := p_IsReadOnly_fbcbe23e, p_IsRequired := p_IsRequired_fbcbe23e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_fbcbe23e, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_fbcbe23e, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_fbcbe23e, p_Configuration := p_Configuration_fbcbe23e, p_Configuration_Clear := 1, p_Status := p_Status_fbcbe23e, p_IsCustom := p_IsCustom_fbcbe23e, p_MetadataSource := p_MetadataSource_fbcbe23e);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_fbcbe23e, p_IntegrationObjectID := p_IntegrationObjectID_fbcbe23e, p_Name := p_Name_fbcbe23e, p_DisplayName := p_DisplayName_fbcbe23e, p_Description := p_Description_fbcbe23e, p_Category := p_Category_fbcbe23e, p_Category_Clear := TRUE, p_Type := p_Type_fbcbe23e, p_Length := p_Length_fbcbe23e, p_Length_Clear := TRUE, p_Precision := p_Precision_fbcbe23e, p_Precision_Clear := TRUE, p_Scale := p_Scale_fbcbe23e, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_fbcbe23e, p_DefaultValue := p_DefaultValue_fbcbe23e, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_fbcbe23e, p_IsUniqueKey := p_IsUniqueKey_fbcbe23e, p_IsReadOnly := p_IsReadOnly_fbcbe23e, p_IsRequired := p_IsRequired_fbcbe23e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_fbcbe23e, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_fbcbe23e, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_fbcbe23e, p_Configuration := p_Configuration_fbcbe23e, p_Configuration_Clear := TRUE, p_Status := p_Status_fbcbe23e, p_IsCustom := p_IsCustom_fbcbe23e, p_MetadataSource := p_MetadataSource_fbcbe23e);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6401,16 +6401,16 @@ BEGIN
   p_DisplayName_64bc4591 := 'Display Index';
   p_Description_64bc4591 := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_64bc4591 := 'String';
-  p_AllowsNull_64bc4591 := 1;
-  p_IsPrimaryKey_64bc4591 := 0;
-  p_IsUniqueKey_64bc4591 := 0;
-  p_IsReadOnly_64bc4591 := 1;
-  p_IsRequired_64bc4591 := 0;
+  p_AllowsNull_64bc4591 := TRUE;
+  p_IsPrimaryKey_64bc4591 := FALSE;
+  p_IsUniqueKey_64bc4591 := FALSE;
+  p_IsReadOnly_64bc4591 := TRUE;
+  p_IsRequired_64bc4591 := FALSE;
   p_Sequence_64bc4591 := 4;
   p_Status_64bc4591 := 'Active';
-  p_IsCustom_64bc4591 := 0;
+  p_IsCustom_64bc4591 := FALSE;
   p_MetadataSource_64bc4591 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_64bc4591, p_IntegrationObjectID := p_IntegrationObjectID_64bc4591, p_Name := p_Name_64bc4591, p_DisplayName := p_DisplayName_64bc4591, p_Description := p_Description_64bc4591, p_Category := p_Category_64bc4591, p_Category_Clear := 1, p_Type := p_Type_64bc4591, p_Length := p_Length_64bc4591, p_Length_Clear := 1, p_Precision := p_Precision_64bc4591, p_Precision_Clear := 1, p_Scale := p_Scale_64bc4591, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_64bc4591, p_DefaultValue := p_DefaultValue_64bc4591, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_64bc4591, p_IsUniqueKey := p_IsUniqueKey_64bc4591, p_IsReadOnly := p_IsReadOnly_64bc4591, p_IsRequired := p_IsRequired_64bc4591, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_64bc4591, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_64bc4591, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_64bc4591, p_Configuration := p_Configuration_64bc4591, p_Configuration_Clear := 1, p_Status := p_Status_64bc4591, p_IsCustom := p_IsCustom_64bc4591, p_MetadataSource := p_MetadataSource_64bc4591);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_64bc4591, p_IntegrationObjectID := p_IntegrationObjectID_64bc4591, p_Name := p_Name_64bc4591, p_DisplayName := p_DisplayName_64bc4591, p_Description := p_Description_64bc4591, p_Category := p_Category_64bc4591, p_Category_Clear := TRUE, p_Type := p_Type_64bc4591, p_Length := p_Length_64bc4591, p_Length_Clear := TRUE, p_Precision := p_Precision_64bc4591, p_Precision_Clear := TRUE, p_Scale := p_Scale_64bc4591, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_64bc4591, p_DefaultValue := p_DefaultValue_64bc4591, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_64bc4591, p_IsUniqueKey := p_IsUniqueKey_64bc4591, p_IsReadOnly := p_IsReadOnly_64bc4591, p_IsRequired := p_IsRequired_64bc4591, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_64bc4591, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_64bc4591, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_64bc4591, p_Configuration := p_Configuration_64bc4591, p_Configuration_Clear := TRUE, p_Status := p_Status_64bc4591, p_IsCustom := p_IsCustom_64bc4591, p_MetadataSource := p_MetadataSource_64bc4591);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6446,16 +6446,16 @@ BEGIN
   p_DisplayName_d2ecff95 := 'Created Date';
   p_Description_d2ecff95 := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_d2ecff95 := 'DateTime';
-  p_AllowsNull_d2ecff95 := 1;
-  p_IsPrimaryKey_d2ecff95 := 0;
-  p_IsUniqueKey_d2ecff95 := 0;
-  p_IsReadOnly_d2ecff95 := 1;
-  p_IsRequired_d2ecff95 := 0;
+  p_AllowsNull_d2ecff95 := TRUE;
+  p_IsPrimaryKey_d2ecff95 := FALSE;
+  p_IsUniqueKey_d2ecff95 := FALSE;
+  p_IsReadOnly_d2ecff95 := TRUE;
+  p_IsRequired_d2ecff95 := FALSE;
   p_Sequence_d2ecff95 := 5;
   p_Status_d2ecff95 := 'Active';
-  p_IsCustom_d2ecff95 := 0;
+  p_IsCustom_d2ecff95 := FALSE;
   p_MetadataSource_d2ecff95 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d2ecff95, p_IntegrationObjectID := p_IntegrationObjectID_d2ecff95, p_Name := p_Name_d2ecff95, p_DisplayName := p_DisplayName_d2ecff95, p_Description := p_Description_d2ecff95, p_Category := p_Category_d2ecff95, p_Category_Clear := 1, p_Type := p_Type_d2ecff95, p_Length := p_Length_d2ecff95, p_Length_Clear := 1, p_Precision := p_Precision_d2ecff95, p_Precision_Clear := 1, p_Scale := p_Scale_d2ecff95, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d2ecff95, p_DefaultValue := p_DefaultValue_d2ecff95, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d2ecff95, p_IsUniqueKey := p_IsUniqueKey_d2ecff95, p_IsReadOnly := p_IsReadOnly_d2ecff95, p_IsRequired := p_IsRequired_d2ecff95, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d2ecff95, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d2ecff95, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d2ecff95, p_Configuration := p_Configuration_d2ecff95, p_Configuration_Clear := 1, p_Status := p_Status_d2ecff95, p_IsCustom := p_IsCustom_d2ecff95, p_MetadataSource := p_MetadataSource_d2ecff95);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d2ecff95, p_IntegrationObjectID := p_IntegrationObjectID_d2ecff95, p_Name := p_Name_d2ecff95, p_DisplayName := p_DisplayName_d2ecff95, p_Description := p_Description_d2ecff95, p_Category := p_Category_d2ecff95, p_Category_Clear := TRUE, p_Type := p_Type_d2ecff95, p_Length := p_Length_d2ecff95, p_Length_Clear := TRUE, p_Precision := p_Precision_d2ecff95, p_Precision_Clear := TRUE, p_Scale := p_Scale_d2ecff95, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d2ecff95, p_DefaultValue := p_DefaultValue_d2ecff95, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d2ecff95, p_IsUniqueKey := p_IsUniqueKey_d2ecff95, p_IsReadOnly := p_IsReadOnly_d2ecff95, p_IsRequired := p_IsRequired_d2ecff95, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d2ecff95, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d2ecff95, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d2ecff95, p_Configuration := p_Configuration_d2ecff95, p_Configuration_Clear := TRUE, p_Status := p_Status_d2ecff95, p_IsCustom := p_IsCustom_d2ecff95, p_MetadataSource := p_MetadataSource_d2ecff95);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6491,16 +6491,16 @@ BEGIN
   p_DisplayName_96e03681 := 'Last Modified Date';
   p_Description_96e03681 := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_96e03681 := 'DateTime';
-  p_AllowsNull_96e03681 := 1;
-  p_IsPrimaryKey_96e03681 := 0;
-  p_IsUniqueKey_96e03681 := 0;
-  p_IsReadOnly_96e03681 := 1;
-  p_IsRequired_96e03681 := 0;
+  p_AllowsNull_96e03681 := TRUE;
+  p_IsPrimaryKey_96e03681 := FALSE;
+  p_IsUniqueKey_96e03681 := FALSE;
+  p_IsReadOnly_96e03681 := TRUE;
+  p_IsRequired_96e03681 := FALSE;
   p_Sequence_96e03681 := 6;
   p_Status_96e03681 := 'Active';
-  p_IsCustom_96e03681 := 0;
+  p_IsCustom_96e03681 := FALSE;
   p_MetadataSource_96e03681 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_96e03681, p_IntegrationObjectID := p_IntegrationObjectID_96e03681, p_Name := p_Name_96e03681, p_DisplayName := p_DisplayName_96e03681, p_Description := p_Description_96e03681, p_Category := p_Category_96e03681, p_Category_Clear := 1, p_Type := p_Type_96e03681, p_Length := p_Length_96e03681, p_Length_Clear := 1, p_Precision := p_Precision_96e03681, p_Precision_Clear := 1, p_Scale := p_Scale_96e03681, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_96e03681, p_DefaultValue := p_DefaultValue_96e03681, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_96e03681, p_IsUniqueKey := p_IsUniqueKey_96e03681, p_IsReadOnly := p_IsReadOnly_96e03681, p_IsRequired := p_IsRequired_96e03681, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_96e03681, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_96e03681, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_96e03681, p_Configuration := p_Configuration_96e03681, p_Configuration_Clear := 1, p_Status := p_Status_96e03681, p_IsCustom := p_IsCustom_96e03681, p_MetadataSource := p_MetadataSource_96e03681);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_96e03681, p_IntegrationObjectID := p_IntegrationObjectID_96e03681, p_Name := p_Name_96e03681, p_DisplayName := p_DisplayName_96e03681, p_Description := p_Description_96e03681, p_Category := p_Category_96e03681, p_Category_Clear := TRUE, p_Type := p_Type_96e03681, p_Length := p_Length_96e03681, p_Length_Clear := TRUE, p_Precision := p_Precision_96e03681, p_Precision_Clear := TRUE, p_Scale := p_Scale_96e03681, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_96e03681, p_DefaultValue := p_DefaultValue_96e03681, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_96e03681, p_IsUniqueKey := p_IsUniqueKey_96e03681, p_IsReadOnly := p_IsReadOnly_96e03681, p_IsRequired := p_IsRequired_96e03681, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_96e03681, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_96e03681, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_96e03681, p_Configuration := p_Configuration_96e03681, p_Configuration_Clear := TRUE, p_Status := p_Status_96e03681, p_IsCustom := p_IsCustom_96e03681, p_MetadataSource := p_MetadataSource_96e03681);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6536,16 +6536,16 @@ BEGIN
   p_DisplayName_379dda70 := 'Source';
   p_Description_379dda70 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_379dda70 := 'json';
-  p_AllowsNull_379dda70 := 1;
-  p_IsPrimaryKey_379dda70 := 0;
-  p_IsUniqueKey_379dda70 := 0;
-  p_IsReadOnly_379dda70 := 1;
-  p_IsRequired_379dda70 := 0;
+  p_AllowsNull_379dda70 := TRUE;
+  p_IsPrimaryKey_379dda70 := FALSE;
+  p_IsUniqueKey_379dda70 := FALSE;
+  p_IsReadOnly_379dda70 := TRUE;
+  p_IsRequired_379dda70 := FALSE;
   p_Sequence_379dda70 := 7;
   p_Status_379dda70 := 'Active';
-  p_IsCustom_379dda70 := 0;
+  p_IsCustom_379dda70 := FALSE;
   p_MetadataSource_379dda70 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_379dda70, p_IntegrationObjectID := p_IntegrationObjectID_379dda70, p_Name := p_Name_379dda70, p_DisplayName := p_DisplayName_379dda70, p_Description := p_Description_379dda70, p_Category := p_Category_379dda70, p_Category_Clear := 1, p_Type := p_Type_379dda70, p_Length := p_Length_379dda70, p_Length_Clear := 1, p_Precision := p_Precision_379dda70, p_Precision_Clear := 1, p_Scale := p_Scale_379dda70, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_379dda70, p_DefaultValue := p_DefaultValue_379dda70, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_379dda70, p_IsUniqueKey := p_IsUniqueKey_379dda70, p_IsReadOnly := p_IsReadOnly_379dda70, p_IsRequired := p_IsRequired_379dda70, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_379dda70, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_379dda70, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_379dda70, p_Configuration := p_Configuration_379dda70, p_Configuration_Clear := 1, p_Status := p_Status_379dda70, p_IsCustom := p_IsCustom_379dda70, p_MetadataSource := p_MetadataSource_379dda70);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_379dda70, p_IntegrationObjectID := p_IntegrationObjectID_379dda70, p_Name := p_Name_379dda70, p_DisplayName := p_DisplayName_379dda70, p_Description := p_Description_379dda70, p_Category := p_Category_379dda70, p_Category_Clear := TRUE, p_Type := p_Type_379dda70, p_Length := p_Length_379dda70, p_Length_Clear := TRUE, p_Precision := p_Precision_379dda70, p_Precision_Clear := TRUE, p_Scale := p_Scale_379dda70, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_379dda70, p_DefaultValue := p_DefaultValue_379dda70, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_379dda70, p_IsUniqueKey := p_IsUniqueKey_379dda70, p_IsReadOnly := p_IsReadOnly_379dda70, p_IsRequired := p_IsRequired_379dda70, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_379dda70, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_379dda70, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_379dda70, p_Configuration := p_Configuration_379dda70, p_Configuration_Clear := TRUE, p_Status := p_Status_379dda70, p_IsCustom := p_IsCustom_379dda70, p_MetadataSource := p_MetadataSource_379dda70);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6582,16 +6582,16 @@ BEGIN
   p_Description_23663cf9 := 'Department within the organization. (common-3.0.xsd affiliation department-name, long-text)';
   p_Type_23663cf9 := 'String';
   p_Length_23663cf9 := 4000;
-  p_AllowsNull_23663cf9 := 1;
-  p_IsPrimaryKey_23663cf9 := 0;
-  p_IsUniqueKey_23663cf9 := 0;
-  p_IsReadOnly_23663cf9 := 1;
-  p_IsRequired_23663cf9 := 0;
+  p_AllowsNull_23663cf9 := TRUE;
+  p_IsPrimaryKey_23663cf9 := FALSE;
+  p_IsUniqueKey_23663cf9 := FALSE;
+  p_IsReadOnly_23663cf9 := TRUE;
+  p_IsRequired_23663cf9 := FALSE;
   p_Sequence_23663cf9 := 8;
   p_Status_23663cf9 := 'Active';
-  p_IsCustom_23663cf9 := 0;
+  p_IsCustom_23663cf9 := FALSE;
   p_MetadataSource_23663cf9 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_23663cf9, p_IntegrationObjectID := p_IntegrationObjectID_23663cf9, p_Name := p_Name_23663cf9, p_DisplayName := p_DisplayName_23663cf9, p_Description := p_Description_23663cf9, p_Category := p_Category_23663cf9, p_Category_Clear := 1, p_Type := p_Type_23663cf9, p_Length := p_Length_23663cf9, p_Precision := p_Precision_23663cf9, p_Precision_Clear := 1, p_Scale := p_Scale_23663cf9, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_23663cf9, p_DefaultValue := p_DefaultValue_23663cf9, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_23663cf9, p_IsUniqueKey := p_IsUniqueKey_23663cf9, p_IsReadOnly := p_IsReadOnly_23663cf9, p_IsRequired := p_IsRequired_23663cf9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_23663cf9, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_23663cf9, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_23663cf9, p_Configuration := p_Configuration_23663cf9, p_Configuration_Clear := 1, p_Status := p_Status_23663cf9, p_IsCustom := p_IsCustom_23663cf9, p_MetadataSource := p_MetadataSource_23663cf9);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_23663cf9, p_IntegrationObjectID := p_IntegrationObjectID_23663cf9, p_Name := p_Name_23663cf9, p_DisplayName := p_DisplayName_23663cf9, p_Description := p_Description_23663cf9, p_Category := p_Category_23663cf9, p_Category_Clear := TRUE, p_Type := p_Type_23663cf9, p_Length := p_Length_23663cf9, p_Precision := p_Precision_23663cf9, p_Precision_Clear := TRUE, p_Scale := p_Scale_23663cf9, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_23663cf9, p_DefaultValue := p_DefaultValue_23663cf9, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_23663cf9, p_IsUniqueKey := p_IsUniqueKey_23663cf9, p_IsReadOnly := p_IsReadOnly_23663cf9, p_IsRequired := p_IsRequired_23663cf9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_23663cf9, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_23663cf9, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_23663cf9, p_Configuration := p_Configuration_23663cf9, p_Configuration_Clear := TRUE, p_Status := p_Status_23663cf9, p_IsCustom := p_IsCustom_23663cf9, p_MetadataSource := p_MetadataSource_23663cf9);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6628,16 +6628,16 @@ BEGIN
   p_Description_c8968321 := 'Role or title held at the organization. (common-3.0.xsd affiliation role-title, long-text)';
   p_Type_c8968321 := 'String';
   p_Length_c8968321 := 4000;
-  p_AllowsNull_c8968321 := 1;
-  p_IsPrimaryKey_c8968321 := 0;
-  p_IsUniqueKey_c8968321 := 0;
-  p_IsReadOnly_c8968321 := 1;
-  p_IsRequired_c8968321 := 0;
+  p_AllowsNull_c8968321 := TRUE;
+  p_IsPrimaryKey_c8968321 := FALSE;
+  p_IsUniqueKey_c8968321 := FALSE;
+  p_IsReadOnly_c8968321 := TRUE;
+  p_IsRequired_c8968321 := FALSE;
   p_Sequence_c8968321 := 9;
   p_Status_c8968321 := 'Active';
-  p_IsCustom_c8968321 := 0;
+  p_IsCustom_c8968321 := FALSE;
   p_MetadataSource_c8968321 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c8968321, p_IntegrationObjectID := p_IntegrationObjectID_c8968321, p_Name := p_Name_c8968321, p_DisplayName := p_DisplayName_c8968321, p_Description := p_Description_c8968321, p_Category := p_Category_c8968321, p_Category_Clear := 1, p_Type := p_Type_c8968321, p_Length := p_Length_c8968321, p_Precision := p_Precision_c8968321, p_Precision_Clear := 1, p_Scale := p_Scale_c8968321, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c8968321, p_DefaultValue := p_DefaultValue_c8968321, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c8968321, p_IsUniqueKey := p_IsUniqueKey_c8968321, p_IsReadOnly := p_IsReadOnly_c8968321, p_IsRequired := p_IsRequired_c8968321, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c8968321, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c8968321, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c8968321, p_Configuration := p_Configuration_c8968321, p_Configuration_Clear := 1, p_Status := p_Status_c8968321, p_IsCustom := p_IsCustom_c8968321, p_MetadataSource := p_MetadataSource_c8968321);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c8968321, p_IntegrationObjectID := p_IntegrationObjectID_c8968321, p_Name := p_Name_c8968321, p_DisplayName := p_DisplayName_c8968321, p_Description := p_Description_c8968321, p_Category := p_Category_c8968321, p_Category_Clear := TRUE, p_Type := p_Type_c8968321, p_Length := p_Length_c8968321, p_Precision := p_Precision_c8968321, p_Precision_Clear := TRUE, p_Scale := p_Scale_c8968321, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c8968321, p_DefaultValue := p_DefaultValue_c8968321, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c8968321, p_IsUniqueKey := p_IsUniqueKey_c8968321, p_IsReadOnly := p_IsReadOnly_c8968321, p_IsRequired := p_IsRequired_c8968321, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c8968321, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c8968321, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c8968321, p_Configuration := p_Configuration_c8968321, p_Configuration_Clear := TRUE, p_Status := p_Status_c8968321, p_IsCustom := p_IsCustom_c8968321, p_MetadataSource := p_MetadataSource_c8968321);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6673,16 +6673,16 @@ BEGIN
   p_DisplayName_8dc52d6e := 'Start Date';
   p_Description_8dc52d6e := 'Fuzzy start date (year + optional month/day). (common-3.0.xsd start-date, fuzzy-date)';
   p_Type_8dc52d6e := 'json';
-  p_AllowsNull_8dc52d6e := 1;
-  p_IsPrimaryKey_8dc52d6e := 0;
-  p_IsUniqueKey_8dc52d6e := 0;
-  p_IsReadOnly_8dc52d6e := 1;
-  p_IsRequired_8dc52d6e := 0;
+  p_AllowsNull_8dc52d6e := TRUE;
+  p_IsPrimaryKey_8dc52d6e := FALSE;
+  p_IsUniqueKey_8dc52d6e := FALSE;
+  p_IsReadOnly_8dc52d6e := TRUE;
+  p_IsRequired_8dc52d6e := FALSE;
   p_Sequence_8dc52d6e := 10;
   p_Status_8dc52d6e := 'Active';
-  p_IsCustom_8dc52d6e := 0;
+  p_IsCustom_8dc52d6e := FALSE;
   p_MetadataSource_8dc52d6e := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8dc52d6e, p_IntegrationObjectID := p_IntegrationObjectID_8dc52d6e, p_Name := p_Name_8dc52d6e, p_DisplayName := p_DisplayName_8dc52d6e, p_Description := p_Description_8dc52d6e, p_Category := p_Category_8dc52d6e, p_Category_Clear := 1, p_Type := p_Type_8dc52d6e, p_Length := p_Length_8dc52d6e, p_Length_Clear := 1, p_Precision := p_Precision_8dc52d6e, p_Precision_Clear := 1, p_Scale := p_Scale_8dc52d6e, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_8dc52d6e, p_DefaultValue := p_DefaultValue_8dc52d6e, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_8dc52d6e, p_IsUniqueKey := p_IsUniqueKey_8dc52d6e, p_IsReadOnly := p_IsReadOnly_8dc52d6e, p_IsRequired := p_IsRequired_8dc52d6e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8dc52d6e, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8dc52d6e, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_8dc52d6e, p_Configuration := p_Configuration_8dc52d6e, p_Configuration_Clear := 1, p_Status := p_Status_8dc52d6e, p_IsCustom := p_IsCustom_8dc52d6e, p_MetadataSource := p_MetadataSource_8dc52d6e);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8dc52d6e, p_IntegrationObjectID := p_IntegrationObjectID_8dc52d6e, p_Name := p_Name_8dc52d6e, p_DisplayName := p_DisplayName_8dc52d6e, p_Description := p_Description_8dc52d6e, p_Category := p_Category_8dc52d6e, p_Category_Clear := TRUE, p_Type := p_Type_8dc52d6e, p_Length := p_Length_8dc52d6e, p_Length_Clear := TRUE, p_Precision := p_Precision_8dc52d6e, p_Precision_Clear := TRUE, p_Scale := p_Scale_8dc52d6e, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_8dc52d6e, p_DefaultValue := p_DefaultValue_8dc52d6e, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_8dc52d6e, p_IsUniqueKey := p_IsUniqueKey_8dc52d6e, p_IsReadOnly := p_IsReadOnly_8dc52d6e, p_IsRequired := p_IsRequired_8dc52d6e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8dc52d6e, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8dc52d6e, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_8dc52d6e, p_Configuration := p_Configuration_8dc52d6e, p_Configuration_Clear := TRUE, p_Status := p_Status_8dc52d6e, p_IsCustom := p_IsCustom_8dc52d6e, p_MetadataSource := p_MetadataSource_8dc52d6e);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6718,16 +6718,16 @@ BEGIN
   p_DisplayName_51a38bf8 := 'End Date';
   p_Description_51a38bf8 := 'Fuzzy end date (year + optional month/day). (common-3.0.xsd end-date, fuzzy-date)';
   p_Type_51a38bf8 := 'json';
-  p_AllowsNull_51a38bf8 := 1;
-  p_IsPrimaryKey_51a38bf8 := 0;
-  p_IsUniqueKey_51a38bf8 := 0;
-  p_IsReadOnly_51a38bf8 := 1;
-  p_IsRequired_51a38bf8 := 0;
+  p_AllowsNull_51a38bf8 := TRUE;
+  p_IsPrimaryKey_51a38bf8 := FALSE;
+  p_IsUniqueKey_51a38bf8 := FALSE;
+  p_IsReadOnly_51a38bf8 := TRUE;
+  p_IsRequired_51a38bf8 := FALSE;
   p_Sequence_51a38bf8 := 11;
   p_Status_51a38bf8 := 'Active';
-  p_IsCustom_51a38bf8 := 0;
+  p_IsCustom_51a38bf8 := FALSE;
   p_MetadataSource_51a38bf8 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_51a38bf8, p_IntegrationObjectID := p_IntegrationObjectID_51a38bf8, p_Name := p_Name_51a38bf8, p_DisplayName := p_DisplayName_51a38bf8, p_Description := p_Description_51a38bf8, p_Category := p_Category_51a38bf8, p_Category_Clear := 1, p_Type := p_Type_51a38bf8, p_Length := p_Length_51a38bf8, p_Length_Clear := 1, p_Precision := p_Precision_51a38bf8, p_Precision_Clear := 1, p_Scale := p_Scale_51a38bf8, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_51a38bf8, p_DefaultValue := p_DefaultValue_51a38bf8, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_51a38bf8, p_IsUniqueKey := p_IsUniqueKey_51a38bf8, p_IsReadOnly := p_IsReadOnly_51a38bf8, p_IsRequired := p_IsRequired_51a38bf8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_51a38bf8, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_51a38bf8, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_51a38bf8, p_Configuration := p_Configuration_51a38bf8, p_Configuration_Clear := 1, p_Status := p_Status_51a38bf8, p_IsCustom := p_IsCustom_51a38bf8, p_MetadataSource := p_MetadataSource_51a38bf8);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_51a38bf8, p_IntegrationObjectID := p_IntegrationObjectID_51a38bf8, p_Name := p_Name_51a38bf8, p_DisplayName := p_DisplayName_51a38bf8, p_Description := p_Description_51a38bf8, p_Category := p_Category_51a38bf8, p_Category_Clear := TRUE, p_Type := p_Type_51a38bf8, p_Length := p_Length_51a38bf8, p_Length_Clear := TRUE, p_Precision := p_Precision_51a38bf8, p_Precision_Clear := TRUE, p_Scale := p_Scale_51a38bf8, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_51a38bf8, p_DefaultValue := p_DefaultValue_51a38bf8, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_51a38bf8, p_IsUniqueKey := p_IsUniqueKey_51a38bf8, p_IsReadOnly := p_IsReadOnly_51a38bf8, p_IsRequired := p_IsRequired_51a38bf8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_51a38bf8, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_51a38bf8, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_51a38bf8, p_Configuration := p_Configuration_51a38bf8, p_Configuration_Clear := TRUE, p_Status := p_Status_51a38bf8, p_IsCustom := p_IsCustom_51a38bf8, p_MetadataSource := p_MetadataSource_51a38bf8);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6763,16 +6763,16 @@ BEGIN
   p_DisplayName_42a7cbc5 := 'Organization';
   p_Description_42a7cbc5 := 'Organization reference: name, address, disambiguated-org-id (ROR/GRID/Ringgold). Required. (common-3.0.xsd organization, minOccurs=1)';
   p_Type_42a7cbc5 := 'json';
-  p_AllowsNull_42a7cbc5 := 1;
-  p_IsPrimaryKey_42a7cbc5 := 0;
-  p_IsUniqueKey_42a7cbc5 := 0;
-  p_IsReadOnly_42a7cbc5 := 1;
-  p_IsRequired_42a7cbc5 := 1;
+  p_AllowsNull_42a7cbc5 := TRUE;
+  p_IsPrimaryKey_42a7cbc5 := FALSE;
+  p_IsUniqueKey_42a7cbc5 := FALSE;
+  p_IsReadOnly_42a7cbc5 := TRUE;
+  p_IsRequired_42a7cbc5 := TRUE;
   p_Sequence_42a7cbc5 := 12;
   p_Status_42a7cbc5 := 'Active';
-  p_IsCustom_42a7cbc5 := 0;
+  p_IsCustom_42a7cbc5 := FALSE;
   p_MetadataSource_42a7cbc5 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_42a7cbc5, p_IntegrationObjectID := p_IntegrationObjectID_42a7cbc5, p_Name := p_Name_42a7cbc5, p_DisplayName := p_DisplayName_42a7cbc5, p_Description := p_Description_42a7cbc5, p_Category := p_Category_42a7cbc5, p_Category_Clear := 1, p_Type := p_Type_42a7cbc5, p_Length := p_Length_42a7cbc5, p_Length_Clear := 1, p_Precision := p_Precision_42a7cbc5, p_Precision_Clear := 1, p_Scale := p_Scale_42a7cbc5, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_42a7cbc5, p_DefaultValue := p_DefaultValue_42a7cbc5, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_42a7cbc5, p_IsUniqueKey := p_IsUniqueKey_42a7cbc5, p_IsReadOnly := p_IsReadOnly_42a7cbc5, p_IsRequired := p_IsRequired_42a7cbc5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_42a7cbc5, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_42a7cbc5, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_42a7cbc5, p_Configuration := p_Configuration_42a7cbc5, p_Configuration_Clear := 1, p_Status := p_Status_42a7cbc5, p_IsCustom := p_IsCustom_42a7cbc5, p_MetadataSource := p_MetadataSource_42a7cbc5);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_42a7cbc5, p_IntegrationObjectID := p_IntegrationObjectID_42a7cbc5, p_Name := p_Name_42a7cbc5, p_DisplayName := p_DisplayName_42a7cbc5, p_Description := p_Description_42a7cbc5, p_Category := p_Category_42a7cbc5, p_Category_Clear := TRUE, p_Type := p_Type_42a7cbc5, p_Length := p_Length_42a7cbc5, p_Length_Clear := TRUE, p_Precision := p_Precision_42a7cbc5, p_Precision_Clear := TRUE, p_Scale := p_Scale_42a7cbc5, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_42a7cbc5, p_DefaultValue := p_DefaultValue_42a7cbc5, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_42a7cbc5, p_IsUniqueKey := p_IsUniqueKey_42a7cbc5, p_IsReadOnly := p_IsReadOnly_42a7cbc5, p_IsRequired := p_IsRequired_42a7cbc5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_42a7cbc5, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_42a7cbc5, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_42a7cbc5, p_Configuration := p_Configuration_42a7cbc5, p_Configuration_Clear := TRUE, p_Status := p_Status_42a7cbc5, p_IsCustom := p_IsCustom_42a7cbc5, p_MetadataSource := p_MetadataSource_42a7cbc5);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6808,16 +6808,16 @@ BEGIN
   p_DisplayName_af310d93 := 'Url';
   p_Description_af310d93 := 'A URL associated with the affiliation. (common-3.0.xsd affiliation url)';
   p_Type_af310d93 := 'String';
-  p_AllowsNull_af310d93 := 1;
-  p_IsPrimaryKey_af310d93 := 0;
-  p_IsUniqueKey_af310d93 := 0;
-  p_IsReadOnly_af310d93 := 1;
-  p_IsRequired_af310d93 := 0;
+  p_AllowsNull_af310d93 := TRUE;
+  p_IsPrimaryKey_af310d93 := FALSE;
+  p_IsUniqueKey_af310d93 := FALSE;
+  p_IsReadOnly_af310d93 := TRUE;
+  p_IsRequired_af310d93 := FALSE;
   p_Sequence_af310d93 := 13;
   p_Status_af310d93 := 'Active';
-  p_IsCustom_af310d93 := 0;
+  p_IsCustom_af310d93 := FALSE;
   p_MetadataSource_af310d93 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_af310d93, p_IntegrationObjectID := p_IntegrationObjectID_af310d93, p_Name := p_Name_af310d93, p_DisplayName := p_DisplayName_af310d93, p_Description := p_Description_af310d93, p_Category := p_Category_af310d93, p_Category_Clear := 1, p_Type := p_Type_af310d93, p_Length := p_Length_af310d93, p_Length_Clear := 1, p_Precision := p_Precision_af310d93, p_Precision_Clear := 1, p_Scale := p_Scale_af310d93, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_af310d93, p_DefaultValue := p_DefaultValue_af310d93, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_af310d93, p_IsUniqueKey := p_IsUniqueKey_af310d93, p_IsReadOnly := p_IsReadOnly_af310d93, p_IsRequired := p_IsRequired_af310d93, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_af310d93, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_af310d93, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_af310d93, p_Configuration := p_Configuration_af310d93, p_Configuration_Clear := 1, p_Status := p_Status_af310d93, p_IsCustom := p_IsCustom_af310d93, p_MetadataSource := p_MetadataSource_af310d93);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_af310d93, p_IntegrationObjectID := p_IntegrationObjectID_af310d93, p_Name := p_Name_af310d93, p_DisplayName := p_DisplayName_af310d93, p_Description := p_Description_af310d93, p_Category := p_Category_af310d93, p_Category_Clear := TRUE, p_Type := p_Type_af310d93, p_Length := p_Length_af310d93, p_Length_Clear := TRUE, p_Precision := p_Precision_af310d93, p_Precision_Clear := TRUE, p_Scale := p_Scale_af310d93, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_af310d93, p_DefaultValue := p_DefaultValue_af310d93, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_af310d93, p_IsUniqueKey := p_IsUniqueKey_af310d93, p_IsReadOnly := p_IsReadOnly_af310d93, p_IsRequired := p_IsRequired_af310d93, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_af310d93, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_af310d93, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_af310d93, p_Configuration := p_Configuration_af310d93, p_Configuration_Clear := TRUE, p_Status := p_Status_af310d93, p_IsCustom := p_IsCustom_af310d93, p_MetadataSource := p_MetadataSource_af310d93);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6853,16 +6853,16 @@ BEGIN
   p_DisplayName_3d15b740 := 'External Ids';
   p_Description_3d15b740 := 'External identifiers for the affiliation (type+value+relationship). (common-3.0.xsd external-ids)';
   p_Type_3d15b740 := 'json';
-  p_AllowsNull_3d15b740 := 1;
-  p_IsPrimaryKey_3d15b740 := 0;
-  p_IsUniqueKey_3d15b740 := 0;
-  p_IsReadOnly_3d15b740 := 1;
-  p_IsRequired_3d15b740 := 0;
+  p_AllowsNull_3d15b740 := TRUE;
+  p_IsPrimaryKey_3d15b740 := FALSE;
+  p_IsUniqueKey_3d15b740 := FALSE;
+  p_IsReadOnly_3d15b740 := TRUE;
+  p_IsRequired_3d15b740 := FALSE;
   p_Sequence_3d15b740 := 14;
   p_Status_3d15b740 := 'Active';
-  p_IsCustom_3d15b740 := 0;
+  p_IsCustom_3d15b740 := FALSE;
   p_MetadataSource_3d15b740 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3d15b740, p_IntegrationObjectID := p_IntegrationObjectID_3d15b740, p_Name := p_Name_3d15b740, p_DisplayName := p_DisplayName_3d15b740, p_Description := p_Description_3d15b740, p_Category := p_Category_3d15b740, p_Category_Clear := 1, p_Type := p_Type_3d15b740, p_Length := p_Length_3d15b740, p_Length_Clear := 1, p_Precision := p_Precision_3d15b740, p_Precision_Clear := 1, p_Scale := p_Scale_3d15b740, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_3d15b740, p_DefaultValue := p_DefaultValue_3d15b740, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_3d15b740, p_IsUniqueKey := p_IsUniqueKey_3d15b740, p_IsReadOnly := p_IsReadOnly_3d15b740, p_IsRequired := p_IsRequired_3d15b740, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3d15b740, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3d15b740, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_3d15b740, p_Configuration := p_Configuration_3d15b740, p_Configuration_Clear := 1, p_Status := p_Status_3d15b740, p_IsCustom := p_IsCustom_3d15b740, p_MetadataSource := p_MetadataSource_3d15b740);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3d15b740, p_IntegrationObjectID := p_IntegrationObjectID_3d15b740, p_Name := p_Name_3d15b740, p_DisplayName := p_DisplayName_3d15b740, p_Description := p_Description_3d15b740, p_Category := p_Category_3d15b740, p_Category_Clear := TRUE, p_Type := p_Type_3d15b740, p_Length := p_Length_3d15b740, p_Length_Clear := TRUE, p_Precision := p_Precision_3d15b740, p_Precision_Clear := TRUE, p_Scale := p_Scale_3d15b740, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_3d15b740, p_DefaultValue := p_DefaultValue_3d15b740, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_3d15b740, p_IsUniqueKey := p_IsUniqueKey_3d15b740, p_IsReadOnly := p_IsReadOnly_3d15b740, p_IsRequired := p_IsRequired_3d15b740, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3d15b740, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3d15b740, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_3d15b740, p_Configuration := p_Configuration_3d15b740, p_Configuration_Clear := TRUE, p_Status := p_Status_3d15b740, p_IsCustom := p_IsCustom_3d15b740, p_MetadataSource := p_MetadataSource_3d15b740);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6899,18 +6899,18 @@ BEGIN
   p_Description_d9547954 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_d9547954 := 'String';
   p_Length_d9547954 := 19;
-  p_AllowsNull_d9547954 := 1;
-  p_IsPrimaryKey_d9547954 := 0;
-  p_IsUniqueKey_d9547954 := 0;
-  p_IsReadOnly_d9547954 := 1;
-  p_IsRequired_d9547954 := 1;
+  p_AllowsNull_d9547954 := TRUE;
+  p_IsPrimaryKey_d9547954 := FALSE;
+  p_IsUniqueKey_d9547954 := FALSE;
+  p_IsReadOnly_d9547954 := TRUE;
+  p_IsRequired_d9547954 := TRUE;
   p_RelatedIntegrationObjectID_d9547954 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_d9547954 := 'orcid-id';
   p_Sequence_d9547954 := 0;
   p_Status_d9547954 := 'Active';
-  p_IsCustom_d9547954 := 0;
+  p_IsCustom_d9547954 := FALSE;
   p_MetadataSource_d9547954 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d9547954, p_IntegrationObjectID := p_IntegrationObjectID_d9547954, p_Name := p_Name_d9547954, p_DisplayName := p_DisplayName_d9547954, p_Description := p_Description_d9547954, p_Category := p_Category_d9547954, p_Category_Clear := 1, p_Type := p_Type_d9547954, p_Length := p_Length_d9547954, p_Precision := p_Precision_d9547954, p_Precision_Clear := 1, p_Scale := p_Scale_d9547954, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d9547954, p_DefaultValue := p_DefaultValue_d9547954, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d9547954, p_IsUniqueKey := p_IsUniqueKey_d9547954, p_IsReadOnly := p_IsReadOnly_d9547954, p_IsRequired := p_IsRequired_d9547954, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d9547954, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d9547954, p_Sequence := p_Sequence_d9547954, p_Configuration := p_Configuration_d9547954, p_Configuration_Clear := 1, p_Status := p_Status_d9547954, p_IsCustom := p_IsCustom_d9547954, p_MetadataSource := p_MetadataSource_d9547954);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d9547954, p_IntegrationObjectID := p_IntegrationObjectID_d9547954, p_Name := p_Name_d9547954, p_DisplayName := p_DisplayName_d9547954, p_Description := p_Description_d9547954, p_Category := p_Category_d9547954, p_Category_Clear := TRUE, p_Type := p_Type_d9547954, p_Length := p_Length_d9547954, p_Precision := p_Precision_d9547954, p_Precision_Clear := TRUE, p_Scale := p_Scale_d9547954, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d9547954, p_DefaultValue := p_DefaultValue_d9547954, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d9547954, p_IsUniqueKey := p_IsUniqueKey_d9547954, p_IsReadOnly := p_IsReadOnly_d9547954, p_IsRequired := p_IsRequired_d9547954, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d9547954, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d9547954, p_Sequence := p_Sequence_d9547954, p_Configuration := p_Configuration_d9547954, p_Configuration_Clear := TRUE, p_Status := p_Status_d9547954, p_IsCustom := p_IsCustom_d9547954, p_MetadataSource := p_MetadataSource_d9547954);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6946,16 +6946,16 @@ BEGIN
   p_DisplayName_497d189a := 'Put Code';
   p_Description_497d189a := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_497d189a := 'Integer';
-  p_AllowsNull_497d189a := 0;
-  p_IsPrimaryKey_497d189a := 1;
-  p_IsUniqueKey_497d189a := 1;
-  p_IsReadOnly_497d189a := 1;
-  p_IsRequired_497d189a := 1;
+  p_AllowsNull_497d189a := FALSE;
+  p_IsPrimaryKey_497d189a := TRUE;
+  p_IsUniqueKey_497d189a := TRUE;
+  p_IsReadOnly_497d189a := TRUE;
+  p_IsRequired_497d189a := TRUE;
   p_Sequence_497d189a := 1;
   p_Status_497d189a := 'Active';
-  p_IsCustom_497d189a := 0;
+  p_IsCustom_497d189a := FALSE;
   p_MetadataSource_497d189a := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_497d189a, p_IntegrationObjectID := p_IntegrationObjectID_497d189a, p_Name := p_Name_497d189a, p_DisplayName := p_DisplayName_497d189a, p_Description := p_Description_497d189a, p_Category := p_Category_497d189a, p_Category_Clear := 1, p_Type := p_Type_497d189a, p_Length := p_Length_497d189a, p_Length_Clear := 1, p_Precision := p_Precision_497d189a, p_Precision_Clear := 1, p_Scale := p_Scale_497d189a, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_497d189a, p_DefaultValue := p_DefaultValue_497d189a, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_497d189a, p_IsUniqueKey := p_IsUniqueKey_497d189a, p_IsReadOnly := p_IsReadOnly_497d189a, p_IsRequired := p_IsRequired_497d189a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_497d189a, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_497d189a, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_497d189a, p_Configuration := p_Configuration_497d189a, p_Configuration_Clear := 1, p_Status := p_Status_497d189a, p_IsCustom := p_IsCustom_497d189a, p_MetadataSource := p_MetadataSource_497d189a);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_497d189a, p_IntegrationObjectID := p_IntegrationObjectID_497d189a, p_Name := p_Name_497d189a, p_DisplayName := p_DisplayName_497d189a, p_Description := p_Description_497d189a, p_Category := p_Category_497d189a, p_Category_Clear := TRUE, p_Type := p_Type_497d189a, p_Length := p_Length_497d189a, p_Length_Clear := TRUE, p_Precision := p_Precision_497d189a, p_Precision_Clear := TRUE, p_Scale := p_Scale_497d189a, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_497d189a, p_DefaultValue := p_DefaultValue_497d189a, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_497d189a, p_IsUniqueKey := p_IsUniqueKey_497d189a, p_IsReadOnly := p_IsReadOnly_497d189a, p_IsRequired := p_IsRequired_497d189a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_497d189a, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_497d189a, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_497d189a, p_Configuration := p_Configuration_497d189a, p_Configuration_Clear := TRUE, p_Status := p_Status_497d189a, p_IsCustom := p_IsCustom_497d189a, p_MetadataSource := p_MetadataSource_497d189a);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -6992,16 +6992,16 @@ BEGIN
   p_Description_5c812a86 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_5c812a86 := 'String';
   p_Length_5c812a86 := 500;
-  p_AllowsNull_5c812a86 := 1;
-  p_IsPrimaryKey_5c812a86 := 0;
-  p_IsUniqueKey_5c812a86 := 0;
-  p_IsReadOnly_5c812a86 := 1;
-  p_IsRequired_5c812a86 := 0;
+  p_AllowsNull_5c812a86 := TRUE;
+  p_IsPrimaryKey_5c812a86 := FALSE;
+  p_IsUniqueKey_5c812a86 := FALSE;
+  p_IsReadOnly_5c812a86 := TRUE;
+  p_IsRequired_5c812a86 := FALSE;
   p_Sequence_5c812a86 := 2;
   p_Status_5c812a86 := 'Active';
-  p_IsCustom_5c812a86 := 0;
+  p_IsCustom_5c812a86 := FALSE;
   p_MetadataSource_5c812a86 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5c812a86, p_IntegrationObjectID := p_IntegrationObjectID_5c812a86, p_Name := p_Name_5c812a86, p_DisplayName := p_DisplayName_5c812a86, p_Description := p_Description_5c812a86, p_Category := p_Category_5c812a86, p_Category_Clear := 1, p_Type := p_Type_5c812a86, p_Length := p_Length_5c812a86, p_Precision := p_Precision_5c812a86, p_Precision_Clear := 1, p_Scale := p_Scale_5c812a86, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5c812a86, p_DefaultValue := p_DefaultValue_5c812a86, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5c812a86, p_IsUniqueKey := p_IsUniqueKey_5c812a86, p_IsReadOnly := p_IsReadOnly_5c812a86, p_IsRequired := p_IsRequired_5c812a86, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5c812a86, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5c812a86, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_5c812a86, p_Configuration := p_Configuration_5c812a86, p_Configuration_Clear := 1, p_Status := p_Status_5c812a86, p_IsCustom := p_IsCustom_5c812a86, p_MetadataSource := p_MetadataSource_5c812a86);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5c812a86, p_IntegrationObjectID := p_IntegrationObjectID_5c812a86, p_Name := p_Name_5c812a86, p_DisplayName := p_DisplayName_5c812a86, p_Description := p_Description_5c812a86, p_Category := p_Category_5c812a86, p_Category_Clear := TRUE, p_Type := p_Type_5c812a86, p_Length := p_Length_5c812a86, p_Precision := p_Precision_5c812a86, p_Precision_Clear := TRUE, p_Scale := p_Scale_5c812a86, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5c812a86, p_DefaultValue := p_DefaultValue_5c812a86, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5c812a86, p_IsUniqueKey := p_IsUniqueKey_5c812a86, p_IsReadOnly := p_IsReadOnly_5c812a86, p_IsRequired := p_IsRequired_5c812a86, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5c812a86, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5c812a86, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_5c812a86, p_Configuration := p_Configuration_5c812a86, p_Configuration_Clear := TRUE, p_Status := p_Status_5c812a86, p_IsCustom := p_IsCustom_5c812a86, p_MetadataSource := p_MetadataSource_5c812a86);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7037,16 +7037,16 @@ BEGIN
   p_DisplayName_d3f77db8 := 'Visibility';
   p_Description_d3f77db8 := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_d3f77db8 := 'String';
-  p_AllowsNull_d3f77db8 := 1;
-  p_IsPrimaryKey_d3f77db8 := 0;
-  p_IsUniqueKey_d3f77db8 := 0;
-  p_IsReadOnly_d3f77db8 := 1;
-  p_IsRequired_d3f77db8 := 0;
+  p_AllowsNull_d3f77db8 := TRUE;
+  p_IsPrimaryKey_d3f77db8 := FALSE;
+  p_IsUniqueKey_d3f77db8 := FALSE;
+  p_IsReadOnly_d3f77db8 := TRUE;
+  p_IsRequired_d3f77db8 := FALSE;
   p_Sequence_d3f77db8 := 3;
   p_Status_d3f77db8 := 'Active';
-  p_IsCustom_d3f77db8 := 0;
+  p_IsCustom_d3f77db8 := FALSE;
   p_MetadataSource_d3f77db8 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d3f77db8, p_IntegrationObjectID := p_IntegrationObjectID_d3f77db8, p_Name := p_Name_d3f77db8, p_DisplayName := p_DisplayName_d3f77db8, p_Description := p_Description_d3f77db8, p_Category := p_Category_d3f77db8, p_Category_Clear := 1, p_Type := p_Type_d3f77db8, p_Length := p_Length_d3f77db8, p_Length_Clear := 1, p_Precision := p_Precision_d3f77db8, p_Precision_Clear := 1, p_Scale := p_Scale_d3f77db8, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d3f77db8, p_DefaultValue := p_DefaultValue_d3f77db8, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d3f77db8, p_IsUniqueKey := p_IsUniqueKey_d3f77db8, p_IsReadOnly := p_IsReadOnly_d3f77db8, p_IsRequired := p_IsRequired_d3f77db8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d3f77db8, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d3f77db8, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d3f77db8, p_Configuration := p_Configuration_d3f77db8, p_Configuration_Clear := 1, p_Status := p_Status_d3f77db8, p_IsCustom := p_IsCustom_d3f77db8, p_MetadataSource := p_MetadataSource_d3f77db8);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d3f77db8, p_IntegrationObjectID := p_IntegrationObjectID_d3f77db8, p_Name := p_Name_d3f77db8, p_DisplayName := p_DisplayName_d3f77db8, p_Description := p_Description_d3f77db8, p_Category := p_Category_d3f77db8, p_Category_Clear := TRUE, p_Type := p_Type_d3f77db8, p_Length := p_Length_d3f77db8, p_Length_Clear := TRUE, p_Precision := p_Precision_d3f77db8, p_Precision_Clear := TRUE, p_Scale := p_Scale_d3f77db8, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d3f77db8, p_DefaultValue := p_DefaultValue_d3f77db8, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d3f77db8, p_IsUniqueKey := p_IsUniqueKey_d3f77db8, p_IsReadOnly := p_IsReadOnly_d3f77db8, p_IsRequired := p_IsRequired_d3f77db8, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d3f77db8, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d3f77db8, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d3f77db8, p_Configuration := p_Configuration_d3f77db8, p_Configuration_Clear := TRUE, p_Status := p_Status_d3f77db8, p_IsCustom := p_IsCustom_d3f77db8, p_MetadataSource := p_MetadataSource_d3f77db8);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7082,16 +7082,16 @@ BEGIN
   p_DisplayName_c4b1977e := 'Display Index';
   p_Description_c4b1977e := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_c4b1977e := 'String';
-  p_AllowsNull_c4b1977e := 1;
-  p_IsPrimaryKey_c4b1977e := 0;
-  p_IsUniqueKey_c4b1977e := 0;
-  p_IsReadOnly_c4b1977e := 1;
-  p_IsRequired_c4b1977e := 0;
+  p_AllowsNull_c4b1977e := TRUE;
+  p_IsPrimaryKey_c4b1977e := FALSE;
+  p_IsUniqueKey_c4b1977e := FALSE;
+  p_IsReadOnly_c4b1977e := TRUE;
+  p_IsRequired_c4b1977e := FALSE;
   p_Sequence_c4b1977e := 4;
   p_Status_c4b1977e := 'Active';
-  p_IsCustom_c4b1977e := 0;
+  p_IsCustom_c4b1977e := FALSE;
   p_MetadataSource_c4b1977e := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c4b1977e, p_IntegrationObjectID := p_IntegrationObjectID_c4b1977e, p_Name := p_Name_c4b1977e, p_DisplayName := p_DisplayName_c4b1977e, p_Description := p_Description_c4b1977e, p_Category := p_Category_c4b1977e, p_Category_Clear := 1, p_Type := p_Type_c4b1977e, p_Length := p_Length_c4b1977e, p_Length_Clear := 1, p_Precision := p_Precision_c4b1977e, p_Precision_Clear := 1, p_Scale := p_Scale_c4b1977e, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c4b1977e, p_DefaultValue := p_DefaultValue_c4b1977e, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c4b1977e, p_IsUniqueKey := p_IsUniqueKey_c4b1977e, p_IsReadOnly := p_IsReadOnly_c4b1977e, p_IsRequired := p_IsRequired_c4b1977e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c4b1977e, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c4b1977e, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c4b1977e, p_Configuration := p_Configuration_c4b1977e, p_Configuration_Clear := 1, p_Status := p_Status_c4b1977e, p_IsCustom := p_IsCustom_c4b1977e, p_MetadataSource := p_MetadataSource_c4b1977e);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c4b1977e, p_IntegrationObjectID := p_IntegrationObjectID_c4b1977e, p_Name := p_Name_c4b1977e, p_DisplayName := p_DisplayName_c4b1977e, p_Description := p_Description_c4b1977e, p_Category := p_Category_c4b1977e, p_Category_Clear := TRUE, p_Type := p_Type_c4b1977e, p_Length := p_Length_c4b1977e, p_Length_Clear := TRUE, p_Precision := p_Precision_c4b1977e, p_Precision_Clear := TRUE, p_Scale := p_Scale_c4b1977e, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c4b1977e, p_DefaultValue := p_DefaultValue_c4b1977e, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c4b1977e, p_IsUniqueKey := p_IsUniqueKey_c4b1977e, p_IsReadOnly := p_IsReadOnly_c4b1977e, p_IsRequired := p_IsRequired_c4b1977e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c4b1977e, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c4b1977e, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c4b1977e, p_Configuration := p_Configuration_c4b1977e, p_Configuration_Clear := TRUE, p_Status := p_Status_c4b1977e, p_IsCustom := p_IsCustom_c4b1977e, p_MetadataSource := p_MetadataSource_c4b1977e);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7127,16 +7127,16 @@ BEGIN
   p_DisplayName_ad58dedd := 'Created Date';
   p_Description_ad58dedd := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_ad58dedd := 'DateTime';
-  p_AllowsNull_ad58dedd := 1;
-  p_IsPrimaryKey_ad58dedd := 0;
-  p_IsUniqueKey_ad58dedd := 0;
-  p_IsReadOnly_ad58dedd := 1;
-  p_IsRequired_ad58dedd := 0;
+  p_AllowsNull_ad58dedd := TRUE;
+  p_IsPrimaryKey_ad58dedd := FALSE;
+  p_IsUniqueKey_ad58dedd := FALSE;
+  p_IsReadOnly_ad58dedd := TRUE;
+  p_IsRequired_ad58dedd := FALSE;
   p_Sequence_ad58dedd := 5;
   p_Status_ad58dedd := 'Active';
-  p_IsCustom_ad58dedd := 0;
+  p_IsCustom_ad58dedd := FALSE;
   p_MetadataSource_ad58dedd := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ad58dedd, p_IntegrationObjectID := p_IntegrationObjectID_ad58dedd, p_Name := p_Name_ad58dedd, p_DisplayName := p_DisplayName_ad58dedd, p_Description := p_Description_ad58dedd, p_Category := p_Category_ad58dedd, p_Category_Clear := 1, p_Type := p_Type_ad58dedd, p_Length := p_Length_ad58dedd, p_Length_Clear := 1, p_Precision := p_Precision_ad58dedd, p_Precision_Clear := 1, p_Scale := p_Scale_ad58dedd, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ad58dedd, p_DefaultValue := p_DefaultValue_ad58dedd, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ad58dedd, p_IsUniqueKey := p_IsUniqueKey_ad58dedd, p_IsReadOnly := p_IsReadOnly_ad58dedd, p_IsRequired := p_IsRequired_ad58dedd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ad58dedd, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ad58dedd, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ad58dedd, p_Configuration := p_Configuration_ad58dedd, p_Configuration_Clear := 1, p_Status := p_Status_ad58dedd, p_IsCustom := p_IsCustom_ad58dedd, p_MetadataSource := p_MetadataSource_ad58dedd);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ad58dedd, p_IntegrationObjectID := p_IntegrationObjectID_ad58dedd, p_Name := p_Name_ad58dedd, p_DisplayName := p_DisplayName_ad58dedd, p_Description := p_Description_ad58dedd, p_Category := p_Category_ad58dedd, p_Category_Clear := TRUE, p_Type := p_Type_ad58dedd, p_Length := p_Length_ad58dedd, p_Length_Clear := TRUE, p_Precision := p_Precision_ad58dedd, p_Precision_Clear := TRUE, p_Scale := p_Scale_ad58dedd, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ad58dedd, p_DefaultValue := p_DefaultValue_ad58dedd, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ad58dedd, p_IsUniqueKey := p_IsUniqueKey_ad58dedd, p_IsReadOnly := p_IsReadOnly_ad58dedd, p_IsRequired := p_IsRequired_ad58dedd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ad58dedd, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ad58dedd, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ad58dedd, p_Configuration := p_Configuration_ad58dedd, p_Configuration_Clear := TRUE, p_Status := p_Status_ad58dedd, p_IsCustom := p_IsCustom_ad58dedd, p_MetadataSource := p_MetadataSource_ad58dedd);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7172,16 +7172,16 @@ BEGIN
   p_DisplayName_71738b50 := 'Last Modified Date';
   p_Description_71738b50 := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_71738b50 := 'DateTime';
-  p_AllowsNull_71738b50 := 1;
-  p_IsPrimaryKey_71738b50 := 0;
-  p_IsUniqueKey_71738b50 := 0;
-  p_IsReadOnly_71738b50 := 1;
-  p_IsRequired_71738b50 := 0;
+  p_AllowsNull_71738b50 := TRUE;
+  p_IsPrimaryKey_71738b50 := FALSE;
+  p_IsUniqueKey_71738b50 := FALSE;
+  p_IsReadOnly_71738b50 := TRUE;
+  p_IsRequired_71738b50 := FALSE;
   p_Sequence_71738b50 := 6;
   p_Status_71738b50 := 'Active';
-  p_IsCustom_71738b50 := 0;
+  p_IsCustom_71738b50 := FALSE;
   p_MetadataSource_71738b50 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_71738b50, p_IntegrationObjectID := p_IntegrationObjectID_71738b50, p_Name := p_Name_71738b50, p_DisplayName := p_DisplayName_71738b50, p_Description := p_Description_71738b50, p_Category := p_Category_71738b50, p_Category_Clear := 1, p_Type := p_Type_71738b50, p_Length := p_Length_71738b50, p_Length_Clear := 1, p_Precision := p_Precision_71738b50, p_Precision_Clear := 1, p_Scale := p_Scale_71738b50, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_71738b50, p_DefaultValue := p_DefaultValue_71738b50, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_71738b50, p_IsUniqueKey := p_IsUniqueKey_71738b50, p_IsReadOnly := p_IsReadOnly_71738b50, p_IsRequired := p_IsRequired_71738b50, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_71738b50, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_71738b50, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_71738b50, p_Configuration := p_Configuration_71738b50, p_Configuration_Clear := 1, p_Status := p_Status_71738b50, p_IsCustom := p_IsCustom_71738b50, p_MetadataSource := p_MetadataSource_71738b50);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_71738b50, p_IntegrationObjectID := p_IntegrationObjectID_71738b50, p_Name := p_Name_71738b50, p_DisplayName := p_DisplayName_71738b50, p_Description := p_Description_71738b50, p_Category := p_Category_71738b50, p_Category_Clear := TRUE, p_Type := p_Type_71738b50, p_Length := p_Length_71738b50, p_Length_Clear := TRUE, p_Precision := p_Precision_71738b50, p_Precision_Clear := TRUE, p_Scale := p_Scale_71738b50, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_71738b50, p_DefaultValue := p_DefaultValue_71738b50, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_71738b50, p_IsUniqueKey := p_IsUniqueKey_71738b50, p_IsReadOnly := p_IsReadOnly_71738b50, p_IsRequired := p_IsRequired_71738b50, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_71738b50, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_71738b50, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_71738b50, p_Configuration := p_Configuration_71738b50, p_Configuration_Clear := TRUE, p_Status := p_Status_71738b50, p_IsCustom := p_IsCustom_71738b50, p_MetadataSource := p_MetadataSource_71738b50);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7217,16 +7217,16 @@ BEGIN
   p_DisplayName_55876d38 := 'Source';
   p_Description_55876d38 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_55876d38 := 'json';
-  p_AllowsNull_55876d38 := 1;
-  p_IsPrimaryKey_55876d38 := 0;
-  p_IsUniqueKey_55876d38 := 0;
-  p_IsReadOnly_55876d38 := 1;
-  p_IsRequired_55876d38 := 0;
+  p_AllowsNull_55876d38 := TRUE;
+  p_IsPrimaryKey_55876d38 := FALSE;
+  p_IsUniqueKey_55876d38 := FALSE;
+  p_IsReadOnly_55876d38 := TRUE;
+  p_IsRequired_55876d38 := FALSE;
   p_Sequence_55876d38 := 7;
   p_Status_55876d38 := 'Active';
-  p_IsCustom_55876d38 := 0;
+  p_IsCustom_55876d38 := FALSE;
   p_MetadataSource_55876d38 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_55876d38, p_IntegrationObjectID := p_IntegrationObjectID_55876d38, p_Name := p_Name_55876d38, p_DisplayName := p_DisplayName_55876d38, p_Description := p_Description_55876d38, p_Category := p_Category_55876d38, p_Category_Clear := 1, p_Type := p_Type_55876d38, p_Length := p_Length_55876d38, p_Length_Clear := 1, p_Precision := p_Precision_55876d38, p_Precision_Clear := 1, p_Scale := p_Scale_55876d38, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_55876d38, p_DefaultValue := p_DefaultValue_55876d38, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_55876d38, p_IsUniqueKey := p_IsUniqueKey_55876d38, p_IsReadOnly := p_IsReadOnly_55876d38, p_IsRequired := p_IsRequired_55876d38, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_55876d38, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_55876d38, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_55876d38, p_Configuration := p_Configuration_55876d38, p_Configuration_Clear := 1, p_Status := p_Status_55876d38, p_IsCustom := p_IsCustom_55876d38, p_MetadataSource := p_MetadataSource_55876d38);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_55876d38, p_IntegrationObjectID := p_IntegrationObjectID_55876d38, p_Name := p_Name_55876d38, p_DisplayName := p_DisplayName_55876d38, p_Description := p_Description_55876d38, p_Category := p_Category_55876d38, p_Category_Clear := TRUE, p_Type := p_Type_55876d38, p_Length := p_Length_55876d38, p_Length_Clear := TRUE, p_Precision := p_Precision_55876d38, p_Precision_Clear := TRUE, p_Scale := p_Scale_55876d38, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_55876d38, p_DefaultValue := p_DefaultValue_55876d38, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_55876d38, p_IsUniqueKey := p_IsUniqueKey_55876d38, p_IsReadOnly := p_IsReadOnly_55876d38, p_IsRequired := p_IsRequired_55876d38, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_55876d38, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_55876d38, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_55876d38, p_Configuration := p_Configuration_55876d38, p_Configuration_Clear := TRUE, p_Status := p_Status_55876d38, p_IsCustom := p_IsCustom_55876d38, p_MetadataSource := p_MetadataSource_55876d38);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7263,16 +7263,16 @@ BEGIN
   p_Description_633431cb := 'Department within the organization. (common-3.0.xsd affiliation department-name, long-text)';
   p_Type_633431cb := 'String';
   p_Length_633431cb := 4000;
-  p_AllowsNull_633431cb := 1;
-  p_IsPrimaryKey_633431cb := 0;
-  p_IsUniqueKey_633431cb := 0;
-  p_IsReadOnly_633431cb := 1;
-  p_IsRequired_633431cb := 0;
+  p_AllowsNull_633431cb := TRUE;
+  p_IsPrimaryKey_633431cb := FALSE;
+  p_IsUniqueKey_633431cb := FALSE;
+  p_IsReadOnly_633431cb := TRUE;
+  p_IsRequired_633431cb := FALSE;
   p_Sequence_633431cb := 8;
   p_Status_633431cb := 'Active';
-  p_IsCustom_633431cb := 0;
+  p_IsCustom_633431cb := FALSE;
   p_MetadataSource_633431cb := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_633431cb, p_IntegrationObjectID := p_IntegrationObjectID_633431cb, p_Name := p_Name_633431cb, p_DisplayName := p_DisplayName_633431cb, p_Description := p_Description_633431cb, p_Category := p_Category_633431cb, p_Category_Clear := 1, p_Type := p_Type_633431cb, p_Length := p_Length_633431cb, p_Precision := p_Precision_633431cb, p_Precision_Clear := 1, p_Scale := p_Scale_633431cb, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_633431cb, p_DefaultValue := p_DefaultValue_633431cb, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_633431cb, p_IsUniqueKey := p_IsUniqueKey_633431cb, p_IsReadOnly := p_IsReadOnly_633431cb, p_IsRequired := p_IsRequired_633431cb, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_633431cb, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_633431cb, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_633431cb, p_Configuration := p_Configuration_633431cb, p_Configuration_Clear := 1, p_Status := p_Status_633431cb, p_IsCustom := p_IsCustom_633431cb, p_MetadataSource := p_MetadataSource_633431cb);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_633431cb, p_IntegrationObjectID := p_IntegrationObjectID_633431cb, p_Name := p_Name_633431cb, p_DisplayName := p_DisplayName_633431cb, p_Description := p_Description_633431cb, p_Category := p_Category_633431cb, p_Category_Clear := TRUE, p_Type := p_Type_633431cb, p_Length := p_Length_633431cb, p_Precision := p_Precision_633431cb, p_Precision_Clear := TRUE, p_Scale := p_Scale_633431cb, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_633431cb, p_DefaultValue := p_DefaultValue_633431cb, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_633431cb, p_IsUniqueKey := p_IsUniqueKey_633431cb, p_IsReadOnly := p_IsReadOnly_633431cb, p_IsRequired := p_IsRequired_633431cb, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_633431cb, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_633431cb, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_633431cb, p_Configuration := p_Configuration_633431cb, p_Configuration_Clear := TRUE, p_Status := p_Status_633431cb, p_IsCustom := p_IsCustom_633431cb, p_MetadataSource := p_MetadataSource_633431cb);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7309,16 +7309,16 @@ BEGIN
   p_Description_0e4c4d42 := 'Role or title held at the organization. (common-3.0.xsd affiliation role-title, long-text)';
   p_Type_0e4c4d42 := 'String';
   p_Length_0e4c4d42 := 4000;
-  p_AllowsNull_0e4c4d42 := 1;
-  p_IsPrimaryKey_0e4c4d42 := 0;
-  p_IsUniqueKey_0e4c4d42 := 0;
-  p_IsReadOnly_0e4c4d42 := 1;
-  p_IsRequired_0e4c4d42 := 0;
+  p_AllowsNull_0e4c4d42 := TRUE;
+  p_IsPrimaryKey_0e4c4d42 := FALSE;
+  p_IsUniqueKey_0e4c4d42 := FALSE;
+  p_IsReadOnly_0e4c4d42 := TRUE;
+  p_IsRequired_0e4c4d42 := FALSE;
   p_Sequence_0e4c4d42 := 9;
   p_Status_0e4c4d42 := 'Active';
-  p_IsCustom_0e4c4d42 := 0;
+  p_IsCustom_0e4c4d42 := FALSE;
   p_MetadataSource_0e4c4d42 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0e4c4d42, p_IntegrationObjectID := p_IntegrationObjectID_0e4c4d42, p_Name := p_Name_0e4c4d42, p_DisplayName := p_DisplayName_0e4c4d42, p_Description := p_Description_0e4c4d42, p_Category := p_Category_0e4c4d42, p_Category_Clear := 1, p_Type := p_Type_0e4c4d42, p_Length := p_Length_0e4c4d42, p_Precision := p_Precision_0e4c4d42, p_Precision_Clear := 1, p_Scale := p_Scale_0e4c4d42, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_0e4c4d42, p_DefaultValue := p_DefaultValue_0e4c4d42, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_0e4c4d42, p_IsUniqueKey := p_IsUniqueKey_0e4c4d42, p_IsReadOnly := p_IsReadOnly_0e4c4d42, p_IsRequired := p_IsRequired_0e4c4d42, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0e4c4d42, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0e4c4d42, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_0e4c4d42, p_Configuration := p_Configuration_0e4c4d42, p_Configuration_Clear := 1, p_Status := p_Status_0e4c4d42, p_IsCustom := p_IsCustom_0e4c4d42, p_MetadataSource := p_MetadataSource_0e4c4d42);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0e4c4d42, p_IntegrationObjectID := p_IntegrationObjectID_0e4c4d42, p_Name := p_Name_0e4c4d42, p_DisplayName := p_DisplayName_0e4c4d42, p_Description := p_Description_0e4c4d42, p_Category := p_Category_0e4c4d42, p_Category_Clear := TRUE, p_Type := p_Type_0e4c4d42, p_Length := p_Length_0e4c4d42, p_Precision := p_Precision_0e4c4d42, p_Precision_Clear := TRUE, p_Scale := p_Scale_0e4c4d42, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_0e4c4d42, p_DefaultValue := p_DefaultValue_0e4c4d42, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_0e4c4d42, p_IsUniqueKey := p_IsUniqueKey_0e4c4d42, p_IsReadOnly := p_IsReadOnly_0e4c4d42, p_IsRequired := p_IsRequired_0e4c4d42, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0e4c4d42, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0e4c4d42, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_0e4c4d42, p_Configuration := p_Configuration_0e4c4d42, p_Configuration_Clear := TRUE, p_Status := p_Status_0e4c4d42, p_IsCustom := p_IsCustom_0e4c4d42, p_MetadataSource := p_MetadataSource_0e4c4d42);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7354,16 +7354,16 @@ BEGIN
   p_DisplayName_8f910ddc := 'Start Date';
   p_Description_8f910ddc := 'Fuzzy start date (year + optional month/day). (common-3.0.xsd start-date, fuzzy-date)';
   p_Type_8f910ddc := 'json';
-  p_AllowsNull_8f910ddc := 1;
-  p_IsPrimaryKey_8f910ddc := 0;
-  p_IsUniqueKey_8f910ddc := 0;
-  p_IsReadOnly_8f910ddc := 1;
-  p_IsRequired_8f910ddc := 0;
+  p_AllowsNull_8f910ddc := TRUE;
+  p_IsPrimaryKey_8f910ddc := FALSE;
+  p_IsUniqueKey_8f910ddc := FALSE;
+  p_IsReadOnly_8f910ddc := TRUE;
+  p_IsRequired_8f910ddc := FALSE;
   p_Sequence_8f910ddc := 10;
   p_Status_8f910ddc := 'Active';
-  p_IsCustom_8f910ddc := 0;
+  p_IsCustom_8f910ddc := FALSE;
   p_MetadataSource_8f910ddc := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8f910ddc, p_IntegrationObjectID := p_IntegrationObjectID_8f910ddc, p_Name := p_Name_8f910ddc, p_DisplayName := p_DisplayName_8f910ddc, p_Description := p_Description_8f910ddc, p_Category := p_Category_8f910ddc, p_Category_Clear := 1, p_Type := p_Type_8f910ddc, p_Length := p_Length_8f910ddc, p_Length_Clear := 1, p_Precision := p_Precision_8f910ddc, p_Precision_Clear := 1, p_Scale := p_Scale_8f910ddc, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_8f910ddc, p_DefaultValue := p_DefaultValue_8f910ddc, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_8f910ddc, p_IsUniqueKey := p_IsUniqueKey_8f910ddc, p_IsReadOnly := p_IsReadOnly_8f910ddc, p_IsRequired := p_IsRequired_8f910ddc, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8f910ddc, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8f910ddc, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_8f910ddc, p_Configuration := p_Configuration_8f910ddc, p_Configuration_Clear := 1, p_Status := p_Status_8f910ddc, p_IsCustom := p_IsCustom_8f910ddc, p_MetadataSource := p_MetadataSource_8f910ddc);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_8f910ddc, p_IntegrationObjectID := p_IntegrationObjectID_8f910ddc, p_Name := p_Name_8f910ddc, p_DisplayName := p_DisplayName_8f910ddc, p_Description := p_Description_8f910ddc, p_Category := p_Category_8f910ddc, p_Category_Clear := TRUE, p_Type := p_Type_8f910ddc, p_Length := p_Length_8f910ddc, p_Length_Clear := TRUE, p_Precision := p_Precision_8f910ddc, p_Precision_Clear := TRUE, p_Scale := p_Scale_8f910ddc, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_8f910ddc, p_DefaultValue := p_DefaultValue_8f910ddc, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_8f910ddc, p_IsUniqueKey := p_IsUniqueKey_8f910ddc, p_IsReadOnly := p_IsReadOnly_8f910ddc, p_IsRequired := p_IsRequired_8f910ddc, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_8f910ddc, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_8f910ddc, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_8f910ddc, p_Configuration := p_Configuration_8f910ddc, p_Configuration_Clear := TRUE, p_Status := p_Status_8f910ddc, p_IsCustom := p_IsCustom_8f910ddc, p_MetadataSource := p_MetadataSource_8f910ddc);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7399,16 +7399,16 @@ BEGIN
   p_DisplayName_62b78502 := 'End Date';
   p_Description_62b78502 := 'Fuzzy end date (year + optional month/day). (common-3.0.xsd end-date, fuzzy-date)';
   p_Type_62b78502 := 'json';
-  p_AllowsNull_62b78502 := 1;
-  p_IsPrimaryKey_62b78502 := 0;
-  p_IsUniqueKey_62b78502 := 0;
-  p_IsReadOnly_62b78502 := 1;
-  p_IsRequired_62b78502 := 0;
+  p_AllowsNull_62b78502 := TRUE;
+  p_IsPrimaryKey_62b78502 := FALSE;
+  p_IsUniqueKey_62b78502 := FALSE;
+  p_IsReadOnly_62b78502 := TRUE;
+  p_IsRequired_62b78502 := FALSE;
   p_Sequence_62b78502 := 11;
   p_Status_62b78502 := 'Active';
-  p_IsCustom_62b78502 := 0;
+  p_IsCustom_62b78502 := FALSE;
   p_MetadataSource_62b78502 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_62b78502, p_IntegrationObjectID := p_IntegrationObjectID_62b78502, p_Name := p_Name_62b78502, p_DisplayName := p_DisplayName_62b78502, p_Description := p_Description_62b78502, p_Category := p_Category_62b78502, p_Category_Clear := 1, p_Type := p_Type_62b78502, p_Length := p_Length_62b78502, p_Length_Clear := 1, p_Precision := p_Precision_62b78502, p_Precision_Clear := 1, p_Scale := p_Scale_62b78502, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_62b78502, p_DefaultValue := p_DefaultValue_62b78502, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_62b78502, p_IsUniqueKey := p_IsUniqueKey_62b78502, p_IsReadOnly := p_IsReadOnly_62b78502, p_IsRequired := p_IsRequired_62b78502, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_62b78502, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_62b78502, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_62b78502, p_Configuration := p_Configuration_62b78502, p_Configuration_Clear := 1, p_Status := p_Status_62b78502, p_IsCustom := p_IsCustom_62b78502, p_MetadataSource := p_MetadataSource_62b78502);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_62b78502, p_IntegrationObjectID := p_IntegrationObjectID_62b78502, p_Name := p_Name_62b78502, p_DisplayName := p_DisplayName_62b78502, p_Description := p_Description_62b78502, p_Category := p_Category_62b78502, p_Category_Clear := TRUE, p_Type := p_Type_62b78502, p_Length := p_Length_62b78502, p_Length_Clear := TRUE, p_Precision := p_Precision_62b78502, p_Precision_Clear := TRUE, p_Scale := p_Scale_62b78502, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_62b78502, p_DefaultValue := p_DefaultValue_62b78502, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_62b78502, p_IsUniqueKey := p_IsUniqueKey_62b78502, p_IsReadOnly := p_IsReadOnly_62b78502, p_IsRequired := p_IsRequired_62b78502, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_62b78502, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_62b78502, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_62b78502, p_Configuration := p_Configuration_62b78502, p_Configuration_Clear := TRUE, p_Status := p_Status_62b78502, p_IsCustom := p_IsCustom_62b78502, p_MetadataSource := p_MetadataSource_62b78502);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7444,16 +7444,16 @@ BEGIN
   p_DisplayName_9f9ac1c3 := 'Organization';
   p_Description_9f9ac1c3 := 'Organization reference: name, address, disambiguated-org-id (ROR/GRID/Ringgold). Required. (common-3.0.xsd organization, minOccurs=1)';
   p_Type_9f9ac1c3 := 'json';
-  p_AllowsNull_9f9ac1c3 := 1;
-  p_IsPrimaryKey_9f9ac1c3 := 0;
-  p_IsUniqueKey_9f9ac1c3 := 0;
-  p_IsReadOnly_9f9ac1c3 := 1;
-  p_IsRequired_9f9ac1c3 := 1;
+  p_AllowsNull_9f9ac1c3 := TRUE;
+  p_IsPrimaryKey_9f9ac1c3 := FALSE;
+  p_IsUniqueKey_9f9ac1c3 := FALSE;
+  p_IsReadOnly_9f9ac1c3 := TRUE;
+  p_IsRequired_9f9ac1c3 := TRUE;
   p_Sequence_9f9ac1c3 := 12;
   p_Status_9f9ac1c3 := 'Active';
-  p_IsCustom_9f9ac1c3 := 0;
+  p_IsCustom_9f9ac1c3 := FALSE;
   p_MetadataSource_9f9ac1c3 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9f9ac1c3, p_IntegrationObjectID := p_IntegrationObjectID_9f9ac1c3, p_Name := p_Name_9f9ac1c3, p_DisplayName := p_DisplayName_9f9ac1c3, p_Description := p_Description_9f9ac1c3, p_Category := p_Category_9f9ac1c3, p_Category_Clear := 1, p_Type := p_Type_9f9ac1c3, p_Length := p_Length_9f9ac1c3, p_Length_Clear := 1, p_Precision := p_Precision_9f9ac1c3, p_Precision_Clear := 1, p_Scale := p_Scale_9f9ac1c3, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_9f9ac1c3, p_DefaultValue := p_DefaultValue_9f9ac1c3, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_9f9ac1c3, p_IsUniqueKey := p_IsUniqueKey_9f9ac1c3, p_IsReadOnly := p_IsReadOnly_9f9ac1c3, p_IsRequired := p_IsRequired_9f9ac1c3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9f9ac1c3, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9f9ac1c3, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_9f9ac1c3, p_Configuration := p_Configuration_9f9ac1c3, p_Configuration_Clear := 1, p_Status := p_Status_9f9ac1c3, p_IsCustom := p_IsCustom_9f9ac1c3, p_MetadataSource := p_MetadataSource_9f9ac1c3);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9f9ac1c3, p_IntegrationObjectID := p_IntegrationObjectID_9f9ac1c3, p_Name := p_Name_9f9ac1c3, p_DisplayName := p_DisplayName_9f9ac1c3, p_Description := p_Description_9f9ac1c3, p_Category := p_Category_9f9ac1c3, p_Category_Clear := TRUE, p_Type := p_Type_9f9ac1c3, p_Length := p_Length_9f9ac1c3, p_Length_Clear := TRUE, p_Precision := p_Precision_9f9ac1c3, p_Precision_Clear := TRUE, p_Scale := p_Scale_9f9ac1c3, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_9f9ac1c3, p_DefaultValue := p_DefaultValue_9f9ac1c3, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_9f9ac1c3, p_IsUniqueKey := p_IsUniqueKey_9f9ac1c3, p_IsReadOnly := p_IsReadOnly_9f9ac1c3, p_IsRequired := p_IsRequired_9f9ac1c3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9f9ac1c3, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9f9ac1c3, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_9f9ac1c3, p_Configuration := p_Configuration_9f9ac1c3, p_Configuration_Clear := TRUE, p_Status := p_Status_9f9ac1c3, p_IsCustom := p_IsCustom_9f9ac1c3, p_MetadataSource := p_MetadataSource_9f9ac1c3);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7489,16 +7489,16 @@ BEGIN
   p_DisplayName_f2dc8b34 := 'Url';
   p_Description_f2dc8b34 := 'A URL associated with the affiliation. (common-3.0.xsd affiliation url)';
   p_Type_f2dc8b34 := 'String';
-  p_AllowsNull_f2dc8b34 := 1;
-  p_IsPrimaryKey_f2dc8b34 := 0;
-  p_IsUniqueKey_f2dc8b34 := 0;
-  p_IsReadOnly_f2dc8b34 := 1;
-  p_IsRequired_f2dc8b34 := 0;
+  p_AllowsNull_f2dc8b34 := TRUE;
+  p_IsPrimaryKey_f2dc8b34 := FALSE;
+  p_IsUniqueKey_f2dc8b34 := FALSE;
+  p_IsReadOnly_f2dc8b34 := TRUE;
+  p_IsRequired_f2dc8b34 := FALSE;
   p_Sequence_f2dc8b34 := 13;
   p_Status_f2dc8b34 := 'Active';
-  p_IsCustom_f2dc8b34 := 0;
+  p_IsCustom_f2dc8b34 := FALSE;
   p_MetadataSource_f2dc8b34 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f2dc8b34, p_IntegrationObjectID := p_IntegrationObjectID_f2dc8b34, p_Name := p_Name_f2dc8b34, p_DisplayName := p_DisplayName_f2dc8b34, p_Description := p_Description_f2dc8b34, p_Category := p_Category_f2dc8b34, p_Category_Clear := 1, p_Type := p_Type_f2dc8b34, p_Length := p_Length_f2dc8b34, p_Length_Clear := 1, p_Precision := p_Precision_f2dc8b34, p_Precision_Clear := 1, p_Scale := p_Scale_f2dc8b34, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f2dc8b34, p_DefaultValue := p_DefaultValue_f2dc8b34, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f2dc8b34, p_IsUniqueKey := p_IsUniqueKey_f2dc8b34, p_IsReadOnly := p_IsReadOnly_f2dc8b34, p_IsRequired := p_IsRequired_f2dc8b34, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f2dc8b34, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f2dc8b34, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f2dc8b34, p_Configuration := p_Configuration_f2dc8b34, p_Configuration_Clear := 1, p_Status := p_Status_f2dc8b34, p_IsCustom := p_IsCustom_f2dc8b34, p_MetadataSource := p_MetadataSource_f2dc8b34);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f2dc8b34, p_IntegrationObjectID := p_IntegrationObjectID_f2dc8b34, p_Name := p_Name_f2dc8b34, p_DisplayName := p_DisplayName_f2dc8b34, p_Description := p_Description_f2dc8b34, p_Category := p_Category_f2dc8b34, p_Category_Clear := TRUE, p_Type := p_Type_f2dc8b34, p_Length := p_Length_f2dc8b34, p_Length_Clear := TRUE, p_Precision := p_Precision_f2dc8b34, p_Precision_Clear := TRUE, p_Scale := p_Scale_f2dc8b34, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f2dc8b34, p_DefaultValue := p_DefaultValue_f2dc8b34, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f2dc8b34, p_IsUniqueKey := p_IsUniqueKey_f2dc8b34, p_IsReadOnly := p_IsReadOnly_f2dc8b34, p_IsRequired := p_IsRequired_f2dc8b34, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f2dc8b34, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f2dc8b34, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f2dc8b34, p_Configuration := p_Configuration_f2dc8b34, p_Configuration_Clear := TRUE, p_Status := p_Status_f2dc8b34, p_IsCustom := p_IsCustom_f2dc8b34, p_MetadataSource := p_MetadataSource_f2dc8b34);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7534,16 +7534,16 @@ BEGIN
   p_DisplayName_57d74eeb := 'External Ids';
   p_Description_57d74eeb := 'External identifiers for the affiliation (type+value+relationship). (common-3.0.xsd external-ids)';
   p_Type_57d74eeb := 'json';
-  p_AllowsNull_57d74eeb := 1;
-  p_IsPrimaryKey_57d74eeb := 0;
-  p_IsUniqueKey_57d74eeb := 0;
-  p_IsReadOnly_57d74eeb := 1;
-  p_IsRequired_57d74eeb := 0;
+  p_AllowsNull_57d74eeb := TRUE;
+  p_IsPrimaryKey_57d74eeb := FALSE;
+  p_IsUniqueKey_57d74eeb := FALSE;
+  p_IsReadOnly_57d74eeb := TRUE;
+  p_IsRequired_57d74eeb := FALSE;
   p_Sequence_57d74eeb := 14;
   p_Status_57d74eeb := 'Active';
-  p_IsCustom_57d74eeb := 0;
+  p_IsCustom_57d74eeb := FALSE;
   p_MetadataSource_57d74eeb := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_57d74eeb, p_IntegrationObjectID := p_IntegrationObjectID_57d74eeb, p_Name := p_Name_57d74eeb, p_DisplayName := p_DisplayName_57d74eeb, p_Description := p_Description_57d74eeb, p_Category := p_Category_57d74eeb, p_Category_Clear := 1, p_Type := p_Type_57d74eeb, p_Length := p_Length_57d74eeb, p_Length_Clear := 1, p_Precision := p_Precision_57d74eeb, p_Precision_Clear := 1, p_Scale := p_Scale_57d74eeb, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_57d74eeb, p_DefaultValue := p_DefaultValue_57d74eeb, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_57d74eeb, p_IsUniqueKey := p_IsUniqueKey_57d74eeb, p_IsReadOnly := p_IsReadOnly_57d74eeb, p_IsRequired := p_IsRequired_57d74eeb, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_57d74eeb, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_57d74eeb, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_57d74eeb, p_Configuration := p_Configuration_57d74eeb, p_Configuration_Clear := 1, p_Status := p_Status_57d74eeb, p_IsCustom := p_IsCustom_57d74eeb, p_MetadataSource := p_MetadataSource_57d74eeb);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_57d74eeb, p_IntegrationObjectID := p_IntegrationObjectID_57d74eeb, p_Name := p_Name_57d74eeb, p_DisplayName := p_DisplayName_57d74eeb, p_Description := p_Description_57d74eeb, p_Category := p_Category_57d74eeb, p_Category_Clear := TRUE, p_Type := p_Type_57d74eeb, p_Length := p_Length_57d74eeb, p_Length_Clear := TRUE, p_Precision := p_Precision_57d74eeb, p_Precision_Clear := TRUE, p_Scale := p_Scale_57d74eeb, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_57d74eeb, p_DefaultValue := p_DefaultValue_57d74eeb, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_57d74eeb, p_IsUniqueKey := p_IsUniqueKey_57d74eeb, p_IsReadOnly := p_IsReadOnly_57d74eeb, p_IsRequired := p_IsRequired_57d74eeb, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_57d74eeb, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_57d74eeb, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_57d74eeb, p_Configuration := p_Configuration_57d74eeb, p_Configuration_Clear := TRUE, p_Status := p_Status_57d74eeb, p_IsCustom := p_IsCustom_57d74eeb, p_MetadataSource := p_MetadataSource_57d74eeb);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7580,18 +7580,18 @@ BEGIN
   p_Description_cd1b91fe := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_cd1b91fe := 'String';
   p_Length_cd1b91fe := 19;
-  p_AllowsNull_cd1b91fe := 1;
-  p_IsPrimaryKey_cd1b91fe := 0;
-  p_IsUniqueKey_cd1b91fe := 0;
-  p_IsReadOnly_cd1b91fe := 1;
-  p_IsRequired_cd1b91fe := 1;
+  p_AllowsNull_cd1b91fe := TRUE;
+  p_IsPrimaryKey_cd1b91fe := FALSE;
+  p_IsUniqueKey_cd1b91fe := FALSE;
+  p_IsReadOnly_cd1b91fe := TRUE;
+  p_IsRequired_cd1b91fe := TRUE;
   p_RelatedIntegrationObjectID_cd1b91fe := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_cd1b91fe := 'orcid-id';
   p_Sequence_cd1b91fe := 0;
   p_Status_cd1b91fe := 'Active';
-  p_IsCustom_cd1b91fe := 0;
+  p_IsCustom_cd1b91fe := FALSE;
   p_MetadataSource_cd1b91fe := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_cd1b91fe, p_IntegrationObjectID := p_IntegrationObjectID_cd1b91fe, p_Name := p_Name_cd1b91fe, p_DisplayName := p_DisplayName_cd1b91fe, p_Description := p_Description_cd1b91fe, p_Category := p_Category_cd1b91fe, p_Category_Clear := 1, p_Type := p_Type_cd1b91fe, p_Length := p_Length_cd1b91fe, p_Precision := p_Precision_cd1b91fe, p_Precision_Clear := 1, p_Scale := p_Scale_cd1b91fe, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_cd1b91fe, p_DefaultValue := p_DefaultValue_cd1b91fe, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_cd1b91fe, p_IsUniqueKey := p_IsUniqueKey_cd1b91fe, p_IsReadOnly := p_IsReadOnly_cd1b91fe, p_IsRequired := p_IsRequired_cd1b91fe, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_cd1b91fe, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_cd1b91fe, p_Sequence := p_Sequence_cd1b91fe, p_Configuration := p_Configuration_cd1b91fe, p_Configuration_Clear := 1, p_Status := p_Status_cd1b91fe, p_IsCustom := p_IsCustom_cd1b91fe, p_MetadataSource := p_MetadataSource_cd1b91fe);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_cd1b91fe, p_IntegrationObjectID := p_IntegrationObjectID_cd1b91fe, p_Name := p_Name_cd1b91fe, p_DisplayName := p_DisplayName_cd1b91fe, p_Description := p_Description_cd1b91fe, p_Category := p_Category_cd1b91fe, p_Category_Clear := TRUE, p_Type := p_Type_cd1b91fe, p_Length := p_Length_cd1b91fe, p_Precision := p_Precision_cd1b91fe, p_Precision_Clear := TRUE, p_Scale := p_Scale_cd1b91fe, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_cd1b91fe, p_DefaultValue := p_DefaultValue_cd1b91fe, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_cd1b91fe, p_IsUniqueKey := p_IsUniqueKey_cd1b91fe, p_IsReadOnly := p_IsReadOnly_cd1b91fe, p_IsRequired := p_IsRequired_cd1b91fe, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_cd1b91fe, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_cd1b91fe, p_Sequence := p_Sequence_cd1b91fe, p_Configuration := p_Configuration_cd1b91fe, p_Configuration_Clear := TRUE, p_Status := p_Status_cd1b91fe, p_IsCustom := p_IsCustom_cd1b91fe, p_MetadataSource := p_MetadataSource_cd1b91fe);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7627,16 +7627,16 @@ BEGIN
   p_DisplayName_7b651c84 := 'Put Code';
   p_Description_7b651c84 := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_7b651c84 := 'Integer';
-  p_AllowsNull_7b651c84 := 0;
-  p_IsPrimaryKey_7b651c84 := 1;
-  p_IsUniqueKey_7b651c84 := 1;
-  p_IsReadOnly_7b651c84 := 1;
-  p_IsRequired_7b651c84 := 1;
+  p_AllowsNull_7b651c84 := FALSE;
+  p_IsPrimaryKey_7b651c84 := TRUE;
+  p_IsUniqueKey_7b651c84 := TRUE;
+  p_IsReadOnly_7b651c84 := TRUE;
+  p_IsRequired_7b651c84 := TRUE;
   p_Sequence_7b651c84 := 1;
   p_Status_7b651c84 := 'Active';
-  p_IsCustom_7b651c84 := 0;
+  p_IsCustom_7b651c84 := FALSE;
   p_MetadataSource_7b651c84 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7b651c84, p_IntegrationObjectID := p_IntegrationObjectID_7b651c84, p_Name := p_Name_7b651c84, p_DisplayName := p_DisplayName_7b651c84, p_Description := p_Description_7b651c84, p_Category := p_Category_7b651c84, p_Category_Clear := 1, p_Type := p_Type_7b651c84, p_Length := p_Length_7b651c84, p_Length_Clear := 1, p_Precision := p_Precision_7b651c84, p_Precision_Clear := 1, p_Scale := p_Scale_7b651c84, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_7b651c84, p_DefaultValue := p_DefaultValue_7b651c84, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_7b651c84, p_IsUniqueKey := p_IsUniqueKey_7b651c84, p_IsReadOnly := p_IsReadOnly_7b651c84, p_IsRequired := p_IsRequired_7b651c84, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7b651c84, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7b651c84, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_7b651c84, p_Configuration := p_Configuration_7b651c84, p_Configuration_Clear := 1, p_Status := p_Status_7b651c84, p_IsCustom := p_IsCustom_7b651c84, p_MetadataSource := p_MetadataSource_7b651c84);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7b651c84, p_IntegrationObjectID := p_IntegrationObjectID_7b651c84, p_Name := p_Name_7b651c84, p_DisplayName := p_DisplayName_7b651c84, p_Description := p_Description_7b651c84, p_Category := p_Category_7b651c84, p_Category_Clear := TRUE, p_Type := p_Type_7b651c84, p_Length := p_Length_7b651c84, p_Length_Clear := TRUE, p_Precision := p_Precision_7b651c84, p_Precision_Clear := TRUE, p_Scale := p_Scale_7b651c84, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_7b651c84, p_DefaultValue := p_DefaultValue_7b651c84, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_7b651c84, p_IsUniqueKey := p_IsUniqueKey_7b651c84, p_IsReadOnly := p_IsReadOnly_7b651c84, p_IsRequired := p_IsRequired_7b651c84, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7b651c84, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7b651c84, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_7b651c84, p_Configuration := p_Configuration_7b651c84, p_Configuration_Clear := TRUE, p_Status := p_Status_7b651c84, p_IsCustom := p_IsCustom_7b651c84, p_MetadataSource := p_MetadataSource_7b651c84);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7673,16 +7673,16 @@ BEGIN
   p_Description_f40a16c3 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_f40a16c3 := 'String';
   p_Length_f40a16c3 := 500;
-  p_AllowsNull_f40a16c3 := 1;
-  p_IsPrimaryKey_f40a16c3 := 0;
-  p_IsUniqueKey_f40a16c3 := 0;
-  p_IsReadOnly_f40a16c3 := 1;
-  p_IsRequired_f40a16c3 := 0;
+  p_AllowsNull_f40a16c3 := TRUE;
+  p_IsPrimaryKey_f40a16c3 := FALSE;
+  p_IsUniqueKey_f40a16c3 := FALSE;
+  p_IsReadOnly_f40a16c3 := TRUE;
+  p_IsRequired_f40a16c3 := FALSE;
   p_Sequence_f40a16c3 := 2;
   p_Status_f40a16c3 := 'Active';
-  p_IsCustom_f40a16c3 := 0;
+  p_IsCustom_f40a16c3 := FALSE;
   p_MetadataSource_f40a16c3 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f40a16c3, p_IntegrationObjectID := p_IntegrationObjectID_f40a16c3, p_Name := p_Name_f40a16c3, p_DisplayName := p_DisplayName_f40a16c3, p_Description := p_Description_f40a16c3, p_Category := p_Category_f40a16c3, p_Category_Clear := 1, p_Type := p_Type_f40a16c3, p_Length := p_Length_f40a16c3, p_Precision := p_Precision_f40a16c3, p_Precision_Clear := 1, p_Scale := p_Scale_f40a16c3, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f40a16c3, p_DefaultValue := p_DefaultValue_f40a16c3, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f40a16c3, p_IsUniqueKey := p_IsUniqueKey_f40a16c3, p_IsReadOnly := p_IsReadOnly_f40a16c3, p_IsRequired := p_IsRequired_f40a16c3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f40a16c3, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f40a16c3, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f40a16c3, p_Configuration := p_Configuration_f40a16c3, p_Configuration_Clear := 1, p_Status := p_Status_f40a16c3, p_IsCustom := p_IsCustom_f40a16c3, p_MetadataSource := p_MetadataSource_f40a16c3);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f40a16c3, p_IntegrationObjectID := p_IntegrationObjectID_f40a16c3, p_Name := p_Name_f40a16c3, p_DisplayName := p_DisplayName_f40a16c3, p_Description := p_Description_f40a16c3, p_Category := p_Category_f40a16c3, p_Category_Clear := TRUE, p_Type := p_Type_f40a16c3, p_Length := p_Length_f40a16c3, p_Precision := p_Precision_f40a16c3, p_Precision_Clear := TRUE, p_Scale := p_Scale_f40a16c3, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f40a16c3, p_DefaultValue := p_DefaultValue_f40a16c3, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f40a16c3, p_IsUniqueKey := p_IsUniqueKey_f40a16c3, p_IsReadOnly := p_IsReadOnly_f40a16c3, p_IsRequired := p_IsRequired_f40a16c3, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f40a16c3, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f40a16c3, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f40a16c3, p_Configuration := p_Configuration_f40a16c3, p_Configuration_Clear := TRUE, p_Status := p_Status_f40a16c3, p_IsCustom := p_IsCustom_f40a16c3, p_MetadataSource := p_MetadataSource_f40a16c3);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7718,16 +7718,16 @@ BEGIN
   p_DisplayName_3370e9d7 := 'Visibility';
   p_Description_3370e9d7 := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_3370e9d7 := 'String';
-  p_AllowsNull_3370e9d7 := 1;
-  p_IsPrimaryKey_3370e9d7 := 0;
-  p_IsUniqueKey_3370e9d7 := 0;
-  p_IsReadOnly_3370e9d7 := 1;
-  p_IsRequired_3370e9d7 := 0;
+  p_AllowsNull_3370e9d7 := TRUE;
+  p_IsPrimaryKey_3370e9d7 := FALSE;
+  p_IsUniqueKey_3370e9d7 := FALSE;
+  p_IsReadOnly_3370e9d7 := TRUE;
+  p_IsRequired_3370e9d7 := FALSE;
   p_Sequence_3370e9d7 := 3;
   p_Status_3370e9d7 := 'Active';
-  p_IsCustom_3370e9d7 := 0;
+  p_IsCustom_3370e9d7 := FALSE;
   p_MetadataSource_3370e9d7 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3370e9d7, p_IntegrationObjectID := p_IntegrationObjectID_3370e9d7, p_Name := p_Name_3370e9d7, p_DisplayName := p_DisplayName_3370e9d7, p_Description := p_Description_3370e9d7, p_Category := p_Category_3370e9d7, p_Category_Clear := 1, p_Type := p_Type_3370e9d7, p_Length := p_Length_3370e9d7, p_Length_Clear := 1, p_Precision := p_Precision_3370e9d7, p_Precision_Clear := 1, p_Scale := p_Scale_3370e9d7, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_3370e9d7, p_DefaultValue := p_DefaultValue_3370e9d7, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_3370e9d7, p_IsUniqueKey := p_IsUniqueKey_3370e9d7, p_IsReadOnly := p_IsReadOnly_3370e9d7, p_IsRequired := p_IsRequired_3370e9d7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3370e9d7, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3370e9d7, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_3370e9d7, p_Configuration := p_Configuration_3370e9d7, p_Configuration_Clear := 1, p_Status := p_Status_3370e9d7, p_IsCustom := p_IsCustom_3370e9d7, p_MetadataSource := p_MetadataSource_3370e9d7);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3370e9d7, p_IntegrationObjectID := p_IntegrationObjectID_3370e9d7, p_Name := p_Name_3370e9d7, p_DisplayName := p_DisplayName_3370e9d7, p_Description := p_Description_3370e9d7, p_Category := p_Category_3370e9d7, p_Category_Clear := TRUE, p_Type := p_Type_3370e9d7, p_Length := p_Length_3370e9d7, p_Length_Clear := TRUE, p_Precision := p_Precision_3370e9d7, p_Precision_Clear := TRUE, p_Scale := p_Scale_3370e9d7, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_3370e9d7, p_DefaultValue := p_DefaultValue_3370e9d7, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_3370e9d7, p_IsUniqueKey := p_IsUniqueKey_3370e9d7, p_IsReadOnly := p_IsReadOnly_3370e9d7, p_IsRequired := p_IsRequired_3370e9d7, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3370e9d7, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3370e9d7, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_3370e9d7, p_Configuration := p_Configuration_3370e9d7, p_Configuration_Clear := TRUE, p_Status := p_Status_3370e9d7, p_IsCustom := p_IsCustom_3370e9d7, p_MetadataSource := p_MetadataSource_3370e9d7);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7763,16 +7763,16 @@ BEGIN
   p_DisplayName_f1d7c783 := 'Display Index';
   p_Description_f1d7c783 := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_f1d7c783 := 'String';
-  p_AllowsNull_f1d7c783 := 1;
-  p_IsPrimaryKey_f1d7c783 := 0;
-  p_IsUniqueKey_f1d7c783 := 0;
-  p_IsReadOnly_f1d7c783 := 1;
-  p_IsRequired_f1d7c783 := 0;
+  p_AllowsNull_f1d7c783 := TRUE;
+  p_IsPrimaryKey_f1d7c783 := FALSE;
+  p_IsUniqueKey_f1d7c783 := FALSE;
+  p_IsReadOnly_f1d7c783 := TRUE;
+  p_IsRequired_f1d7c783 := FALSE;
   p_Sequence_f1d7c783 := 4;
   p_Status_f1d7c783 := 'Active';
-  p_IsCustom_f1d7c783 := 0;
+  p_IsCustom_f1d7c783 := FALSE;
   p_MetadataSource_f1d7c783 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f1d7c783, p_IntegrationObjectID := p_IntegrationObjectID_f1d7c783, p_Name := p_Name_f1d7c783, p_DisplayName := p_DisplayName_f1d7c783, p_Description := p_Description_f1d7c783, p_Category := p_Category_f1d7c783, p_Category_Clear := 1, p_Type := p_Type_f1d7c783, p_Length := p_Length_f1d7c783, p_Length_Clear := 1, p_Precision := p_Precision_f1d7c783, p_Precision_Clear := 1, p_Scale := p_Scale_f1d7c783, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f1d7c783, p_DefaultValue := p_DefaultValue_f1d7c783, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f1d7c783, p_IsUniqueKey := p_IsUniqueKey_f1d7c783, p_IsReadOnly := p_IsReadOnly_f1d7c783, p_IsRequired := p_IsRequired_f1d7c783, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f1d7c783, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f1d7c783, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f1d7c783, p_Configuration := p_Configuration_f1d7c783, p_Configuration_Clear := 1, p_Status := p_Status_f1d7c783, p_IsCustom := p_IsCustom_f1d7c783, p_MetadataSource := p_MetadataSource_f1d7c783);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f1d7c783, p_IntegrationObjectID := p_IntegrationObjectID_f1d7c783, p_Name := p_Name_f1d7c783, p_DisplayName := p_DisplayName_f1d7c783, p_Description := p_Description_f1d7c783, p_Category := p_Category_f1d7c783, p_Category_Clear := TRUE, p_Type := p_Type_f1d7c783, p_Length := p_Length_f1d7c783, p_Length_Clear := TRUE, p_Precision := p_Precision_f1d7c783, p_Precision_Clear := TRUE, p_Scale := p_Scale_f1d7c783, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f1d7c783, p_DefaultValue := p_DefaultValue_f1d7c783, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f1d7c783, p_IsUniqueKey := p_IsUniqueKey_f1d7c783, p_IsReadOnly := p_IsReadOnly_f1d7c783, p_IsRequired := p_IsRequired_f1d7c783, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f1d7c783, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f1d7c783, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f1d7c783, p_Configuration := p_Configuration_f1d7c783, p_Configuration_Clear := TRUE, p_Status := p_Status_f1d7c783, p_IsCustom := p_IsCustom_f1d7c783, p_MetadataSource := p_MetadataSource_f1d7c783);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7808,16 +7808,16 @@ BEGIN
   p_DisplayName_e2eb729a := 'Created Date';
   p_Description_e2eb729a := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_e2eb729a := 'DateTime';
-  p_AllowsNull_e2eb729a := 1;
-  p_IsPrimaryKey_e2eb729a := 0;
-  p_IsUniqueKey_e2eb729a := 0;
-  p_IsReadOnly_e2eb729a := 1;
-  p_IsRequired_e2eb729a := 0;
+  p_AllowsNull_e2eb729a := TRUE;
+  p_IsPrimaryKey_e2eb729a := FALSE;
+  p_IsUniqueKey_e2eb729a := FALSE;
+  p_IsReadOnly_e2eb729a := TRUE;
+  p_IsRequired_e2eb729a := FALSE;
   p_Sequence_e2eb729a := 5;
   p_Status_e2eb729a := 'Active';
-  p_IsCustom_e2eb729a := 0;
+  p_IsCustom_e2eb729a := FALSE;
   p_MetadataSource_e2eb729a := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e2eb729a, p_IntegrationObjectID := p_IntegrationObjectID_e2eb729a, p_Name := p_Name_e2eb729a, p_DisplayName := p_DisplayName_e2eb729a, p_Description := p_Description_e2eb729a, p_Category := p_Category_e2eb729a, p_Category_Clear := 1, p_Type := p_Type_e2eb729a, p_Length := p_Length_e2eb729a, p_Length_Clear := 1, p_Precision := p_Precision_e2eb729a, p_Precision_Clear := 1, p_Scale := p_Scale_e2eb729a, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e2eb729a, p_DefaultValue := p_DefaultValue_e2eb729a, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e2eb729a, p_IsUniqueKey := p_IsUniqueKey_e2eb729a, p_IsReadOnly := p_IsReadOnly_e2eb729a, p_IsRequired := p_IsRequired_e2eb729a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e2eb729a, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e2eb729a, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e2eb729a, p_Configuration := p_Configuration_e2eb729a, p_Configuration_Clear := 1, p_Status := p_Status_e2eb729a, p_IsCustom := p_IsCustom_e2eb729a, p_MetadataSource := p_MetadataSource_e2eb729a);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e2eb729a, p_IntegrationObjectID := p_IntegrationObjectID_e2eb729a, p_Name := p_Name_e2eb729a, p_DisplayName := p_DisplayName_e2eb729a, p_Description := p_Description_e2eb729a, p_Category := p_Category_e2eb729a, p_Category_Clear := TRUE, p_Type := p_Type_e2eb729a, p_Length := p_Length_e2eb729a, p_Length_Clear := TRUE, p_Precision := p_Precision_e2eb729a, p_Precision_Clear := TRUE, p_Scale := p_Scale_e2eb729a, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e2eb729a, p_DefaultValue := p_DefaultValue_e2eb729a, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e2eb729a, p_IsUniqueKey := p_IsUniqueKey_e2eb729a, p_IsReadOnly := p_IsReadOnly_e2eb729a, p_IsRequired := p_IsRequired_e2eb729a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e2eb729a, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e2eb729a, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e2eb729a, p_Configuration := p_Configuration_e2eb729a, p_Configuration_Clear := TRUE, p_Status := p_Status_e2eb729a, p_IsCustom := p_IsCustom_e2eb729a, p_MetadataSource := p_MetadataSource_e2eb729a);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7853,16 +7853,16 @@ BEGIN
   p_DisplayName_f5c1867f := 'Last Modified Date';
   p_Description_f5c1867f := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_f5c1867f := 'DateTime';
-  p_AllowsNull_f5c1867f := 1;
-  p_IsPrimaryKey_f5c1867f := 0;
-  p_IsUniqueKey_f5c1867f := 0;
-  p_IsReadOnly_f5c1867f := 1;
-  p_IsRequired_f5c1867f := 0;
+  p_AllowsNull_f5c1867f := TRUE;
+  p_IsPrimaryKey_f5c1867f := FALSE;
+  p_IsUniqueKey_f5c1867f := FALSE;
+  p_IsReadOnly_f5c1867f := TRUE;
+  p_IsRequired_f5c1867f := FALSE;
   p_Sequence_f5c1867f := 6;
   p_Status_f5c1867f := 'Active';
-  p_IsCustom_f5c1867f := 0;
+  p_IsCustom_f5c1867f := FALSE;
   p_MetadataSource_f5c1867f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f5c1867f, p_IntegrationObjectID := p_IntegrationObjectID_f5c1867f, p_Name := p_Name_f5c1867f, p_DisplayName := p_DisplayName_f5c1867f, p_Description := p_Description_f5c1867f, p_Category := p_Category_f5c1867f, p_Category_Clear := 1, p_Type := p_Type_f5c1867f, p_Length := p_Length_f5c1867f, p_Length_Clear := 1, p_Precision := p_Precision_f5c1867f, p_Precision_Clear := 1, p_Scale := p_Scale_f5c1867f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f5c1867f, p_DefaultValue := p_DefaultValue_f5c1867f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f5c1867f, p_IsUniqueKey := p_IsUniqueKey_f5c1867f, p_IsReadOnly := p_IsReadOnly_f5c1867f, p_IsRequired := p_IsRequired_f5c1867f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f5c1867f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f5c1867f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f5c1867f, p_Configuration := p_Configuration_f5c1867f, p_Configuration_Clear := 1, p_Status := p_Status_f5c1867f, p_IsCustom := p_IsCustom_f5c1867f, p_MetadataSource := p_MetadataSource_f5c1867f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f5c1867f, p_IntegrationObjectID := p_IntegrationObjectID_f5c1867f, p_Name := p_Name_f5c1867f, p_DisplayName := p_DisplayName_f5c1867f, p_Description := p_Description_f5c1867f, p_Category := p_Category_f5c1867f, p_Category_Clear := TRUE, p_Type := p_Type_f5c1867f, p_Length := p_Length_f5c1867f, p_Length_Clear := TRUE, p_Precision := p_Precision_f5c1867f, p_Precision_Clear := TRUE, p_Scale := p_Scale_f5c1867f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f5c1867f, p_DefaultValue := p_DefaultValue_f5c1867f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f5c1867f, p_IsUniqueKey := p_IsUniqueKey_f5c1867f, p_IsReadOnly := p_IsReadOnly_f5c1867f, p_IsRequired := p_IsRequired_f5c1867f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f5c1867f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f5c1867f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f5c1867f, p_Configuration := p_Configuration_f5c1867f, p_Configuration_Clear := TRUE, p_Status := p_Status_f5c1867f, p_IsCustom := p_IsCustom_f5c1867f, p_MetadataSource := p_MetadataSource_f5c1867f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7898,16 +7898,16 @@ BEGIN
   p_DisplayName_e507c14a := 'Source';
   p_Description_e507c14a := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_e507c14a := 'json';
-  p_AllowsNull_e507c14a := 1;
-  p_IsPrimaryKey_e507c14a := 0;
-  p_IsUniqueKey_e507c14a := 0;
-  p_IsReadOnly_e507c14a := 1;
-  p_IsRequired_e507c14a := 0;
+  p_AllowsNull_e507c14a := TRUE;
+  p_IsPrimaryKey_e507c14a := FALSE;
+  p_IsUniqueKey_e507c14a := FALSE;
+  p_IsReadOnly_e507c14a := TRUE;
+  p_IsRequired_e507c14a := FALSE;
   p_Sequence_e507c14a := 7;
   p_Status_e507c14a := 'Active';
-  p_IsCustom_e507c14a := 0;
+  p_IsCustom_e507c14a := FALSE;
   p_MetadataSource_e507c14a := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e507c14a, p_IntegrationObjectID := p_IntegrationObjectID_e507c14a, p_Name := p_Name_e507c14a, p_DisplayName := p_DisplayName_e507c14a, p_Description := p_Description_e507c14a, p_Category := p_Category_e507c14a, p_Category_Clear := 1, p_Type := p_Type_e507c14a, p_Length := p_Length_e507c14a, p_Length_Clear := 1, p_Precision := p_Precision_e507c14a, p_Precision_Clear := 1, p_Scale := p_Scale_e507c14a, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e507c14a, p_DefaultValue := p_DefaultValue_e507c14a, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e507c14a, p_IsUniqueKey := p_IsUniqueKey_e507c14a, p_IsReadOnly := p_IsReadOnly_e507c14a, p_IsRequired := p_IsRequired_e507c14a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e507c14a, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e507c14a, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e507c14a, p_Configuration := p_Configuration_e507c14a, p_Configuration_Clear := 1, p_Status := p_Status_e507c14a, p_IsCustom := p_IsCustom_e507c14a, p_MetadataSource := p_MetadataSource_e507c14a);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e507c14a, p_IntegrationObjectID := p_IntegrationObjectID_e507c14a, p_Name := p_Name_e507c14a, p_DisplayName := p_DisplayName_e507c14a, p_Description := p_Description_e507c14a, p_Category := p_Category_e507c14a, p_Category_Clear := TRUE, p_Type := p_Type_e507c14a, p_Length := p_Length_e507c14a, p_Length_Clear := TRUE, p_Precision := p_Precision_e507c14a, p_Precision_Clear := TRUE, p_Scale := p_Scale_e507c14a, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e507c14a, p_DefaultValue := p_DefaultValue_e507c14a, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e507c14a, p_IsUniqueKey := p_IsUniqueKey_e507c14a, p_IsReadOnly := p_IsReadOnly_e507c14a, p_IsRequired := p_IsRequired_e507c14a, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e507c14a, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e507c14a, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e507c14a, p_Configuration := p_Configuration_e507c14a, p_Configuration_Clear := TRUE, p_Status := p_Status_e507c14a, p_IsCustom := p_IsCustom_e507c14a, p_MetadataSource := p_MetadataSource_e507c14a);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7943,16 +7943,16 @@ BEGIN
   p_DisplayName_583de279 := 'Type';
   p_Description_583de279 := 'funding field ''type'' (type funding:funding-type, minOccurs=1). Source: funding-3.0.xsd.';
   p_Type_583de279 := 'String';
-  p_AllowsNull_583de279 := 1;
-  p_IsPrimaryKey_583de279 := 0;
-  p_IsUniqueKey_583de279 := 0;
-  p_IsReadOnly_583de279 := 1;
-  p_IsRequired_583de279 := 1;
+  p_AllowsNull_583de279 := TRUE;
+  p_IsPrimaryKey_583de279 := FALSE;
+  p_IsUniqueKey_583de279 := FALSE;
+  p_IsReadOnly_583de279 := TRUE;
+  p_IsRequired_583de279 := TRUE;
   p_Sequence_583de279 := 8;
   p_Status_583de279 := 'Active';
-  p_IsCustom_583de279 := 0;
+  p_IsCustom_583de279 := FALSE;
   p_MetadataSource_583de279 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_583de279, p_IntegrationObjectID := p_IntegrationObjectID_583de279, p_Name := p_Name_583de279, p_DisplayName := p_DisplayName_583de279, p_Description := p_Description_583de279, p_Category := p_Category_583de279, p_Category_Clear := 1, p_Type := p_Type_583de279, p_Length := p_Length_583de279, p_Length_Clear := 1, p_Precision := p_Precision_583de279, p_Precision_Clear := 1, p_Scale := p_Scale_583de279, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_583de279, p_DefaultValue := p_DefaultValue_583de279, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_583de279, p_IsUniqueKey := p_IsUniqueKey_583de279, p_IsReadOnly := p_IsReadOnly_583de279, p_IsRequired := p_IsRequired_583de279, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_583de279, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_583de279, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_583de279, p_Configuration := p_Configuration_583de279, p_Configuration_Clear := 1, p_Status := p_Status_583de279, p_IsCustom := p_IsCustom_583de279, p_MetadataSource := p_MetadataSource_583de279);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_583de279, p_IntegrationObjectID := p_IntegrationObjectID_583de279, p_Name := p_Name_583de279, p_DisplayName := p_DisplayName_583de279, p_Description := p_Description_583de279, p_Category := p_Category_583de279, p_Category_Clear := TRUE, p_Type := p_Type_583de279, p_Length := p_Length_583de279, p_Length_Clear := TRUE, p_Precision := p_Precision_583de279, p_Precision_Clear := TRUE, p_Scale := p_Scale_583de279, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_583de279, p_DefaultValue := p_DefaultValue_583de279, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_583de279, p_IsUniqueKey := p_IsUniqueKey_583de279, p_IsReadOnly := p_IsReadOnly_583de279, p_IsRequired := p_IsRequired_583de279, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_583de279, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_583de279, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_583de279, p_Configuration := p_Configuration_583de279, p_Configuration_Clear := TRUE, p_Status := p_Status_583de279, p_IsCustom := p_IsCustom_583de279, p_MetadataSource := p_MetadataSource_583de279);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -7988,16 +7988,16 @@ BEGIN
   p_DisplayName_f6a51622 := 'Organization Defined Type';
   p_Description_f6a51622 := 'funding field ''organization-defined-type'' (type common:organization-defined-type, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_f6a51622 := 'String';
-  p_AllowsNull_f6a51622 := 1;
-  p_IsPrimaryKey_f6a51622 := 0;
-  p_IsUniqueKey_f6a51622 := 0;
-  p_IsReadOnly_f6a51622 := 1;
-  p_IsRequired_f6a51622 := 0;
+  p_AllowsNull_f6a51622 := TRUE;
+  p_IsPrimaryKey_f6a51622 := FALSE;
+  p_IsUniqueKey_f6a51622 := FALSE;
+  p_IsReadOnly_f6a51622 := TRUE;
+  p_IsRequired_f6a51622 := FALSE;
   p_Sequence_f6a51622 := 9;
   p_Status_f6a51622 := 'Active';
-  p_IsCustom_f6a51622 := 0;
+  p_IsCustom_f6a51622 := FALSE;
   p_MetadataSource_f6a51622 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f6a51622, p_IntegrationObjectID := p_IntegrationObjectID_f6a51622, p_Name := p_Name_f6a51622, p_DisplayName := p_DisplayName_f6a51622, p_Description := p_Description_f6a51622, p_Category := p_Category_f6a51622, p_Category_Clear := 1, p_Type := p_Type_f6a51622, p_Length := p_Length_f6a51622, p_Length_Clear := 1, p_Precision := p_Precision_f6a51622, p_Precision_Clear := 1, p_Scale := p_Scale_f6a51622, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f6a51622, p_DefaultValue := p_DefaultValue_f6a51622, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f6a51622, p_IsUniqueKey := p_IsUniqueKey_f6a51622, p_IsReadOnly := p_IsReadOnly_f6a51622, p_IsRequired := p_IsRequired_f6a51622, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f6a51622, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f6a51622, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f6a51622, p_Configuration := p_Configuration_f6a51622, p_Configuration_Clear := 1, p_Status := p_Status_f6a51622, p_IsCustom := p_IsCustom_f6a51622, p_MetadataSource := p_MetadataSource_f6a51622);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f6a51622, p_IntegrationObjectID := p_IntegrationObjectID_f6a51622, p_Name := p_Name_f6a51622, p_DisplayName := p_DisplayName_f6a51622, p_Description := p_Description_f6a51622, p_Category := p_Category_f6a51622, p_Category_Clear := TRUE, p_Type := p_Type_f6a51622, p_Length := p_Length_f6a51622, p_Length_Clear := TRUE, p_Precision := p_Precision_f6a51622, p_Precision_Clear := TRUE, p_Scale := p_Scale_f6a51622, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f6a51622, p_DefaultValue := p_DefaultValue_f6a51622, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f6a51622, p_IsUniqueKey := p_IsUniqueKey_f6a51622, p_IsReadOnly := p_IsReadOnly_f6a51622, p_IsRequired := p_IsRequired_f6a51622, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f6a51622, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f6a51622, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f6a51622, p_Configuration := p_Configuration_f6a51622, p_Configuration_Clear := TRUE, p_Status := p_Status_f6a51622, p_IsCustom := p_IsCustom_f6a51622, p_MetadataSource := p_MetadataSource_f6a51622);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8033,16 +8033,16 @@ BEGIN
   p_DisplayName_30e0f1d0 := 'Title';
   p_Description_30e0f1d0 := 'funding field ''title'' (type funding:funding-title, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_30e0f1d0 := 'json';
-  p_AllowsNull_30e0f1d0 := 1;
-  p_IsPrimaryKey_30e0f1d0 := 0;
-  p_IsUniqueKey_30e0f1d0 := 0;
-  p_IsReadOnly_30e0f1d0 := 1;
-  p_IsRequired_30e0f1d0 := 0;
+  p_AllowsNull_30e0f1d0 := TRUE;
+  p_IsPrimaryKey_30e0f1d0 := FALSE;
+  p_IsUniqueKey_30e0f1d0 := FALSE;
+  p_IsReadOnly_30e0f1d0 := TRUE;
+  p_IsRequired_30e0f1d0 := FALSE;
   p_Sequence_30e0f1d0 := 10;
   p_Status_30e0f1d0 := 'Active';
-  p_IsCustom_30e0f1d0 := 0;
+  p_IsCustom_30e0f1d0 := FALSE;
   p_MetadataSource_30e0f1d0 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_30e0f1d0, p_IntegrationObjectID := p_IntegrationObjectID_30e0f1d0, p_Name := p_Name_30e0f1d0, p_DisplayName := p_DisplayName_30e0f1d0, p_Description := p_Description_30e0f1d0, p_Category := p_Category_30e0f1d0, p_Category_Clear := 1, p_Type := p_Type_30e0f1d0, p_Length := p_Length_30e0f1d0, p_Length_Clear := 1, p_Precision := p_Precision_30e0f1d0, p_Precision_Clear := 1, p_Scale := p_Scale_30e0f1d0, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_30e0f1d0, p_DefaultValue := p_DefaultValue_30e0f1d0, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_30e0f1d0, p_IsUniqueKey := p_IsUniqueKey_30e0f1d0, p_IsReadOnly := p_IsReadOnly_30e0f1d0, p_IsRequired := p_IsRequired_30e0f1d0, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_30e0f1d0, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_30e0f1d0, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_30e0f1d0, p_Configuration := p_Configuration_30e0f1d0, p_Configuration_Clear := 1, p_Status := p_Status_30e0f1d0, p_IsCustom := p_IsCustom_30e0f1d0, p_MetadataSource := p_MetadataSource_30e0f1d0);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_30e0f1d0, p_IntegrationObjectID := p_IntegrationObjectID_30e0f1d0, p_Name := p_Name_30e0f1d0, p_DisplayName := p_DisplayName_30e0f1d0, p_Description := p_Description_30e0f1d0, p_Category := p_Category_30e0f1d0, p_Category_Clear := TRUE, p_Type := p_Type_30e0f1d0, p_Length := p_Length_30e0f1d0, p_Length_Clear := TRUE, p_Precision := p_Precision_30e0f1d0, p_Precision_Clear := TRUE, p_Scale := p_Scale_30e0f1d0, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_30e0f1d0, p_DefaultValue := p_DefaultValue_30e0f1d0, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_30e0f1d0, p_IsUniqueKey := p_IsUniqueKey_30e0f1d0, p_IsReadOnly := p_IsReadOnly_30e0f1d0, p_IsRequired := p_IsRequired_30e0f1d0, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_30e0f1d0, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_30e0f1d0, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_30e0f1d0, p_Configuration := p_Configuration_30e0f1d0, p_Configuration_Clear := TRUE, p_Status := p_Status_30e0f1d0, p_IsCustom := p_IsCustom_30e0f1d0, p_MetadataSource := p_MetadataSource_30e0f1d0);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8079,16 +8079,16 @@ BEGIN
   p_Description_e6489496 := 'funding field ''short-description'' (type common:short-description, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_e6489496 := 'String';
   p_Length_e6489496 := 5000;
-  p_AllowsNull_e6489496 := 1;
-  p_IsPrimaryKey_e6489496 := 0;
-  p_IsUniqueKey_e6489496 := 0;
-  p_IsReadOnly_e6489496 := 1;
-  p_IsRequired_e6489496 := 0;
+  p_AllowsNull_e6489496 := TRUE;
+  p_IsPrimaryKey_e6489496 := FALSE;
+  p_IsUniqueKey_e6489496 := FALSE;
+  p_IsReadOnly_e6489496 := TRUE;
+  p_IsRequired_e6489496 := FALSE;
   p_Sequence_e6489496 := 11;
   p_Status_e6489496 := 'Active';
-  p_IsCustom_e6489496 := 0;
+  p_IsCustom_e6489496 := FALSE;
   p_MetadataSource_e6489496 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e6489496, p_IntegrationObjectID := p_IntegrationObjectID_e6489496, p_Name := p_Name_e6489496, p_DisplayName := p_DisplayName_e6489496, p_Description := p_Description_e6489496, p_Category := p_Category_e6489496, p_Category_Clear := 1, p_Type := p_Type_e6489496, p_Length := p_Length_e6489496, p_Precision := p_Precision_e6489496, p_Precision_Clear := 1, p_Scale := p_Scale_e6489496, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e6489496, p_DefaultValue := p_DefaultValue_e6489496, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e6489496, p_IsUniqueKey := p_IsUniqueKey_e6489496, p_IsReadOnly := p_IsReadOnly_e6489496, p_IsRequired := p_IsRequired_e6489496, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e6489496, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e6489496, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e6489496, p_Configuration := p_Configuration_e6489496, p_Configuration_Clear := 1, p_Status := p_Status_e6489496, p_IsCustom := p_IsCustom_e6489496, p_MetadataSource := p_MetadataSource_e6489496);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e6489496, p_IntegrationObjectID := p_IntegrationObjectID_e6489496, p_Name := p_Name_e6489496, p_DisplayName := p_DisplayName_e6489496, p_Description := p_Description_e6489496, p_Category := p_Category_e6489496, p_Category_Clear := TRUE, p_Type := p_Type_e6489496, p_Length := p_Length_e6489496, p_Precision := p_Precision_e6489496, p_Precision_Clear := TRUE, p_Scale := p_Scale_e6489496, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e6489496, p_DefaultValue := p_DefaultValue_e6489496, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e6489496, p_IsUniqueKey := p_IsUniqueKey_e6489496, p_IsReadOnly := p_IsReadOnly_e6489496, p_IsRequired := p_IsRequired_e6489496, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e6489496, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e6489496, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e6489496, p_Configuration := p_Configuration_e6489496, p_Configuration_Clear := TRUE, p_Status := p_Status_e6489496, p_IsCustom := p_IsCustom_e6489496, p_MetadataSource := p_MetadataSource_e6489496);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8124,16 +8124,16 @@ BEGIN
   p_DisplayName_6ea0c874 := 'Amount';
   p_Description_6ea0c874 := 'funding field ''amount'' (type common:amount, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_6ea0c874 := 'json';
-  p_AllowsNull_6ea0c874 := 1;
-  p_IsPrimaryKey_6ea0c874 := 0;
-  p_IsUniqueKey_6ea0c874 := 0;
-  p_IsReadOnly_6ea0c874 := 1;
-  p_IsRequired_6ea0c874 := 0;
+  p_AllowsNull_6ea0c874 := TRUE;
+  p_IsPrimaryKey_6ea0c874 := FALSE;
+  p_IsUniqueKey_6ea0c874 := FALSE;
+  p_IsReadOnly_6ea0c874 := TRUE;
+  p_IsRequired_6ea0c874 := FALSE;
   p_Sequence_6ea0c874 := 12;
   p_Status_6ea0c874 := 'Active';
-  p_IsCustom_6ea0c874 := 0;
+  p_IsCustom_6ea0c874 := FALSE;
   p_MetadataSource_6ea0c874 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6ea0c874, p_IntegrationObjectID := p_IntegrationObjectID_6ea0c874, p_Name := p_Name_6ea0c874, p_DisplayName := p_DisplayName_6ea0c874, p_Description := p_Description_6ea0c874, p_Category := p_Category_6ea0c874, p_Category_Clear := 1, p_Type := p_Type_6ea0c874, p_Length := p_Length_6ea0c874, p_Length_Clear := 1, p_Precision := p_Precision_6ea0c874, p_Precision_Clear := 1, p_Scale := p_Scale_6ea0c874, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_6ea0c874, p_DefaultValue := p_DefaultValue_6ea0c874, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_6ea0c874, p_IsUniqueKey := p_IsUniqueKey_6ea0c874, p_IsReadOnly := p_IsReadOnly_6ea0c874, p_IsRequired := p_IsRequired_6ea0c874, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6ea0c874, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6ea0c874, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_6ea0c874, p_Configuration := p_Configuration_6ea0c874, p_Configuration_Clear := 1, p_Status := p_Status_6ea0c874, p_IsCustom := p_IsCustom_6ea0c874, p_MetadataSource := p_MetadataSource_6ea0c874);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6ea0c874, p_IntegrationObjectID := p_IntegrationObjectID_6ea0c874, p_Name := p_Name_6ea0c874, p_DisplayName := p_DisplayName_6ea0c874, p_Description := p_Description_6ea0c874, p_Category := p_Category_6ea0c874, p_Category_Clear := TRUE, p_Type := p_Type_6ea0c874, p_Length := p_Length_6ea0c874, p_Length_Clear := TRUE, p_Precision := p_Precision_6ea0c874, p_Precision_Clear := TRUE, p_Scale := p_Scale_6ea0c874, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_6ea0c874, p_DefaultValue := p_DefaultValue_6ea0c874, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_6ea0c874, p_IsUniqueKey := p_IsUniqueKey_6ea0c874, p_IsReadOnly := p_IsReadOnly_6ea0c874, p_IsRequired := p_IsRequired_6ea0c874, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6ea0c874, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6ea0c874, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_6ea0c874, p_Configuration := p_Configuration_6ea0c874, p_Configuration_Clear := TRUE, p_Status := p_Status_6ea0c874, p_IsCustom := p_IsCustom_6ea0c874, p_MetadataSource := p_MetadataSource_6ea0c874);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8169,16 +8169,16 @@ BEGIN
   p_DisplayName_c9567884 := 'Url';
   p_Description_c9567884 := 'funding field ''url'' (type common:url, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_c9567884 := 'String';
-  p_AllowsNull_c9567884 := 1;
-  p_IsPrimaryKey_c9567884 := 0;
-  p_IsUniqueKey_c9567884 := 0;
-  p_IsReadOnly_c9567884 := 1;
-  p_IsRequired_c9567884 := 0;
+  p_AllowsNull_c9567884 := TRUE;
+  p_IsPrimaryKey_c9567884 := FALSE;
+  p_IsUniqueKey_c9567884 := FALSE;
+  p_IsReadOnly_c9567884 := TRUE;
+  p_IsRequired_c9567884 := FALSE;
   p_Sequence_c9567884 := 13;
   p_Status_c9567884 := 'Active';
-  p_IsCustom_c9567884 := 0;
+  p_IsCustom_c9567884 := FALSE;
   p_MetadataSource_c9567884 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c9567884, p_IntegrationObjectID := p_IntegrationObjectID_c9567884, p_Name := p_Name_c9567884, p_DisplayName := p_DisplayName_c9567884, p_Description := p_Description_c9567884, p_Category := p_Category_c9567884, p_Category_Clear := 1, p_Type := p_Type_c9567884, p_Length := p_Length_c9567884, p_Length_Clear := 1, p_Precision := p_Precision_c9567884, p_Precision_Clear := 1, p_Scale := p_Scale_c9567884, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c9567884, p_DefaultValue := p_DefaultValue_c9567884, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c9567884, p_IsUniqueKey := p_IsUniqueKey_c9567884, p_IsReadOnly := p_IsReadOnly_c9567884, p_IsRequired := p_IsRequired_c9567884, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c9567884, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c9567884, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c9567884, p_Configuration := p_Configuration_c9567884, p_Configuration_Clear := 1, p_Status := p_Status_c9567884, p_IsCustom := p_IsCustom_c9567884, p_MetadataSource := p_MetadataSource_c9567884);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c9567884, p_IntegrationObjectID := p_IntegrationObjectID_c9567884, p_Name := p_Name_c9567884, p_DisplayName := p_DisplayName_c9567884, p_Description := p_Description_c9567884, p_Category := p_Category_c9567884, p_Category_Clear := TRUE, p_Type := p_Type_c9567884, p_Length := p_Length_c9567884, p_Length_Clear := TRUE, p_Precision := p_Precision_c9567884, p_Precision_Clear := TRUE, p_Scale := p_Scale_c9567884, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c9567884, p_DefaultValue := p_DefaultValue_c9567884, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c9567884, p_IsUniqueKey := p_IsUniqueKey_c9567884, p_IsReadOnly := p_IsReadOnly_c9567884, p_IsRequired := p_IsRequired_c9567884, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c9567884, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c9567884, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c9567884, p_Configuration := p_Configuration_c9567884, p_Configuration_Clear := TRUE, p_Status := p_Status_c9567884, p_IsCustom := p_IsCustom_c9567884, p_MetadataSource := p_MetadataSource_c9567884);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8214,16 +8214,16 @@ BEGIN
   p_DisplayName_29d40f49 := 'Start Date';
   p_Description_29d40f49 := 'funding field ''start-date'' (type common:start-date, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_29d40f49 := 'json';
-  p_AllowsNull_29d40f49 := 1;
-  p_IsPrimaryKey_29d40f49 := 0;
-  p_IsUniqueKey_29d40f49 := 0;
-  p_IsReadOnly_29d40f49 := 1;
-  p_IsRequired_29d40f49 := 0;
+  p_AllowsNull_29d40f49 := TRUE;
+  p_IsPrimaryKey_29d40f49 := FALSE;
+  p_IsUniqueKey_29d40f49 := FALSE;
+  p_IsReadOnly_29d40f49 := TRUE;
+  p_IsRequired_29d40f49 := FALSE;
   p_Sequence_29d40f49 := 14;
   p_Status_29d40f49 := 'Active';
-  p_IsCustom_29d40f49 := 0;
+  p_IsCustom_29d40f49 := FALSE;
   p_MetadataSource_29d40f49 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_29d40f49, p_IntegrationObjectID := p_IntegrationObjectID_29d40f49, p_Name := p_Name_29d40f49, p_DisplayName := p_DisplayName_29d40f49, p_Description := p_Description_29d40f49, p_Category := p_Category_29d40f49, p_Category_Clear := 1, p_Type := p_Type_29d40f49, p_Length := p_Length_29d40f49, p_Length_Clear := 1, p_Precision := p_Precision_29d40f49, p_Precision_Clear := 1, p_Scale := p_Scale_29d40f49, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_29d40f49, p_DefaultValue := p_DefaultValue_29d40f49, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_29d40f49, p_IsUniqueKey := p_IsUniqueKey_29d40f49, p_IsReadOnly := p_IsReadOnly_29d40f49, p_IsRequired := p_IsRequired_29d40f49, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_29d40f49, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_29d40f49, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_29d40f49, p_Configuration := p_Configuration_29d40f49, p_Configuration_Clear := 1, p_Status := p_Status_29d40f49, p_IsCustom := p_IsCustom_29d40f49, p_MetadataSource := p_MetadataSource_29d40f49);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_29d40f49, p_IntegrationObjectID := p_IntegrationObjectID_29d40f49, p_Name := p_Name_29d40f49, p_DisplayName := p_DisplayName_29d40f49, p_Description := p_Description_29d40f49, p_Category := p_Category_29d40f49, p_Category_Clear := TRUE, p_Type := p_Type_29d40f49, p_Length := p_Length_29d40f49, p_Length_Clear := TRUE, p_Precision := p_Precision_29d40f49, p_Precision_Clear := TRUE, p_Scale := p_Scale_29d40f49, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_29d40f49, p_DefaultValue := p_DefaultValue_29d40f49, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_29d40f49, p_IsUniqueKey := p_IsUniqueKey_29d40f49, p_IsReadOnly := p_IsReadOnly_29d40f49, p_IsRequired := p_IsRequired_29d40f49, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_29d40f49, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_29d40f49, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_29d40f49, p_Configuration := p_Configuration_29d40f49, p_Configuration_Clear := TRUE, p_Status := p_Status_29d40f49, p_IsCustom := p_IsCustom_29d40f49, p_MetadataSource := p_MetadataSource_29d40f49);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8259,16 +8259,16 @@ BEGIN
   p_DisplayName_9f379d75 := 'End Date';
   p_Description_9f379d75 := 'funding field ''end-date'' (type common:end-date, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_9f379d75 := 'json';
-  p_AllowsNull_9f379d75 := 1;
-  p_IsPrimaryKey_9f379d75 := 0;
-  p_IsUniqueKey_9f379d75 := 0;
-  p_IsReadOnly_9f379d75 := 1;
-  p_IsRequired_9f379d75 := 0;
+  p_AllowsNull_9f379d75 := TRUE;
+  p_IsPrimaryKey_9f379d75 := FALSE;
+  p_IsUniqueKey_9f379d75 := FALSE;
+  p_IsReadOnly_9f379d75 := TRUE;
+  p_IsRequired_9f379d75 := FALSE;
   p_Sequence_9f379d75 := 15;
   p_Status_9f379d75 := 'Active';
-  p_IsCustom_9f379d75 := 0;
+  p_IsCustom_9f379d75 := FALSE;
   p_MetadataSource_9f379d75 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9f379d75, p_IntegrationObjectID := p_IntegrationObjectID_9f379d75, p_Name := p_Name_9f379d75, p_DisplayName := p_DisplayName_9f379d75, p_Description := p_Description_9f379d75, p_Category := p_Category_9f379d75, p_Category_Clear := 1, p_Type := p_Type_9f379d75, p_Length := p_Length_9f379d75, p_Length_Clear := 1, p_Precision := p_Precision_9f379d75, p_Precision_Clear := 1, p_Scale := p_Scale_9f379d75, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_9f379d75, p_DefaultValue := p_DefaultValue_9f379d75, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_9f379d75, p_IsUniqueKey := p_IsUniqueKey_9f379d75, p_IsReadOnly := p_IsReadOnly_9f379d75, p_IsRequired := p_IsRequired_9f379d75, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9f379d75, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9f379d75, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_9f379d75, p_Configuration := p_Configuration_9f379d75, p_Configuration_Clear := 1, p_Status := p_Status_9f379d75, p_IsCustom := p_IsCustom_9f379d75, p_MetadataSource := p_MetadataSource_9f379d75);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_9f379d75, p_IntegrationObjectID := p_IntegrationObjectID_9f379d75, p_Name := p_Name_9f379d75, p_DisplayName := p_DisplayName_9f379d75, p_Description := p_Description_9f379d75, p_Category := p_Category_9f379d75, p_Category_Clear := TRUE, p_Type := p_Type_9f379d75, p_Length := p_Length_9f379d75, p_Length_Clear := TRUE, p_Precision := p_Precision_9f379d75, p_Precision_Clear := TRUE, p_Scale := p_Scale_9f379d75, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_9f379d75, p_DefaultValue := p_DefaultValue_9f379d75, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_9f379d75, p_IsUniqueKey := p_IsUniqueKey_9f379d75, p_IsReadOnly := p_IsReadOnly_9f379d75, p_IsRequired := p_IsRequired_9f379d75, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_9f379d75, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_9f379d75, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_9f379d75, p_Configuration := p_Configuration_9f379d75, p_Configuration_Clear := TRUE, p_Status := p_Status_9f379d75, p_IsCustom := p_IsCustom_9f379d75, p_MetadataSource := p_MetadataSource_9f379d75);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8304,16 +8304,16 @@ BEGIN
   p_DisplayName_007b36d4 := 'External Ids';
   p_Description_007b36d4 := 'funding field ''external-ids'' (type common:external-ids, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_007b36d4 := 'json';
-  p_AllowsNull_007b36d4 := 1;
-  p_IsPrimaryKey_007b36d4 := 0;
-  p_IsUniqueKey_007b36d4 := 0;
-  p_IsReadOnly_007b36d4 := 1;
-  p_IsRequired_007b36d4 := 0;
+  p_AllowsNull_007b36d4 := TRUE;
+  p_IsPrimaryKey_007b36d4 := FALSE;
+  p_IsUniqueKey_007b36d4 := FALSE;
+  p_IsReadOnly_007b36d4 := TRUE;
+  p_IsRequired_007b36d4 := FALSE;
   p_Sequence_007b36d4 := 16;
   p_Status_007b36d4 := 'Active';
-  p_IsCustom_007b36d4 := 0;
+  p_IsCustom_007b36d4 := FALSE;
   p_MetadataSource_007b36d4 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_007b36d4, p_IntegrationObjectID := p_IntegrationObjectID_007b36d4, p_Name := p_Name_007b36d4, p_DisplayName := p_DisplayName_007b36d4, p_Description := p_Description_007b36d4, p_Category := p_Category_007b36d4, p_Category_Clear := 1, p_Type := p_Type_007b36d4, p_Length := p_Length_007b36d4, p_Length_Clear := 1, p_Precision := p_Precision_007b36d4, p_Precision_Clear := 1, p_Scale := p_Scale_007b36d4, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_007b36d4, p_DefaultValue := p_DefaultValue_007b36d4, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_007b36d4, p_IsUniqueKey := p_IsUniqueKey_007b36d4, p_IsReadOnly := p_IsReadOnly_007b36d4, p_IsRequired := p_IsRequired_007b36d4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_007b36d4, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_007b36d4, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_007b36d4, p_Configuration := p_Configuration_007b36d4, p_Configuration_Clear := 1, p_Status := p_Status_007b36d4, p_IsCustom := p_IsCustom_007b36d4, p_MetadataSource := p_MetadataSource_007b36d4);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_007b36d4, p_IntegrationObjectID := p_IntegrationObjectID_007b36d4, p_Name := p_Name_007b36d4, p_DisplayName := p_DisplayName_007b36d4, p_Description := p_Description_007b36d4, p_Category := p_Category_007b36d4, p_Category_Clear := TRUE, p_Type := p_Type_007b36d4, p_Length := p_Length_007b36d4, p_Length_Clear := TRUE, p_Precision := p_Precision_007b36d4, p_Precision_Clear := TRUE, p_Scale := p_Scale_007b36d4, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_007b36d4, p_DefaultValue := p_DefaultValue_007b36d4, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_007b36d4, p_IsUniqueKey := p_IsUniqueKey_007b36d4, p_IsReadOnly := p_IsReadOnly_007b36d4, p_IsRequired := p_IsRequired_007b36d4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_007b36d4, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_007b36d4, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_007b36d4, p_Configuration := p_Configuration_007b36d4, p_Configuration_Clear := TRUE, p_Status := p_Status_007b36d4, p_IsCustom := p_IsCustom_007b36d4, p_MetadataSource := p_MetadataSource_007b36d4);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8349,16 +8349,16 @@ BEGIN
   p_DisplayName_abfeddb2 := 'Contributors';
   p_Description_abfeddb2 := 'funding field ''contributors'' (type funding:contributors, minOccurs=0). Source: funding-3.0.xsd.';
   p_Type_abfeddb2 := 'json';
-  p_AllowsNull_abfeddb2 := 1;
-  p_IsPrimaryKey_abfeddb2 := 0;
-  p_IsUniqueKey_abfeddb2 := 0;
-  p_IsReadOnly_abfeddb2 := 1;
-  p_IsRequired_abfeddb2 := 0;
+  p_AllowsNull_abfeddb2 := TRUE;
+  p_IsPrimaryKey_abfeddb2 := FALSE;
+  p_IsUniqueKey_abfeddb2 := FALSE;
+  p_IsReadOnly_abfeddb2 := TRUE;
+  p_IsRequired_abfeddb2 := FALSE;
   p_Sequence_abfeddb2 := 17;
   p_Status_abfeddb2 := 'Active';
-  p_IsCustom_abfeddb2 := 0;
+  p_IsCustom_abfeddb2 := FALSE;
   p_MetadataSource_abfeddb2 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_abfeddb2, p_IntegrationObjectID := p_IntegrationObjectID_abfeddb2, p_Name := p_Name_abfeddb2, p_DisplayName := p_DisplayName_abfeddb2, p_Description := p_Description_abfeddb2, p_Category := p_Category_abfeddb2, p_Category_Clear := 1, p_Type := p_Type_abfeddb2, p_Length := p_Length_abfeddb2, p_Length_Clear := 1, p_Precision := p_Precision_abfeddb2, p_Precision_Clear := 1, p_Scale := p_Scale_abfeddb2, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_abfeddb2, p_DefaultValue := p_DefaultValue_abfeddb2, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_abfeddb2, p_IsUniqueKey := p_IsUniqueKey_abfeddb2, p_IsReadOnly := p_IsReadOnly_abfeddb2, p_IsRequired := p_IsRequired_abfeddb2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_abfeddb2, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_abfeddb2, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_abfeddb2, p_Configuration := p_Configuration_abfeddb2, p_Configuration_Clear := 1, p_Status := p_Status_abfeddb2, p_IsCustom := p_IsCustom_abfeddb2, p_MetadataSource := p_MetadataSource_abfeddb2);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_abfeddb2, p_IntegrationObjectID := p_IntegrationObjectID_abfeddb2, p_Name := p_Name_abfeddb2, p_DisplayName := p_DisplayName_abfeddb2, p_Description := p_Description_abfeddb2, p_Category := p_Category_abfeddb2, p_Category_Clear := TRUE, p_Type := p_Type_abfeddb2, p_Length := p_Length_abfeddb2, p_Length_Clear := TRUE, p_Precision := p_Precision_abfeddb2, p_Precision_Clear := TRUE, p_Scale := p_Scale_abfeddb2, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_abfeddb2, p_DefaultValue := p_DefaultValue_abfeddb2, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_abfeddb2, p_IsUniqueKey := p_IsUniqueKey_abfeddb2, p_IsReadOnly := p_IsReadOnly_abfeddb2, p_IsRequired := p_IsRequired_abfeddb2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_abfeddb2, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_abfeddb2, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_abfeddb2, p_Configuration := p_Configuration_abfeddb2, p_Configuration_Clear := TRUE, p_Status := p_Status_abfeddb2, p_IsCustom := p_IsCustom_abfeddb2, p_MetadataSource := p_MetadataSource_abfeddb2);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8394,16 +8394,16 @@ BEGIN
   p_DisplayName_b9d8f9f2 := 'Organization';
   p_Description_b9d8f9f2 := 'funding field ''organization'' (type common:organization, minOccurs=1). Source: funding-3.0.xsd.';
   p_Type_b9d8f9f2 := 'json';
-  p_AllowsNull_b9d8f9f2 := 1;
-  p_IsPrimaryKey_b9d8f9f2 := 0;
-  p_IsUniqueKey_b9d8f9f2 := 0;
-  p_IsReadOnly_b9d8f9f2 := 1;
-  p_IsRequired_b9d8f9f2 := 1;
+  p_AllowsNull_b9d8f9f2 := TRUE;
+  p_IsPrimaryKey_b9d8f9f2 := FALSE;
+  p_IsUniqueKey_b9d8f9f2 := FALSE;
+  p_IsReadOnly_b9d8f9f2 := TRUE;
+  p_IsRequired_b9d8f9f2 := TRUE;
   p_Sequence_b9d8f9f2 := 18;
   p_Status_b9d8f9f2 := 'Active';
-  p_IsCustom_b9d8f9f2 := 0;
+  p_IsCustom_b9d8f9f2 := FALSE;
   p_MetadataSource_b9d8f9f2 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b9d8f9f2, p_IntegrationObjectID := p_IntegrationObjectID_b9d8f9f2, p_Name := p_Name_b9d8f9f2, p_DisplayName := p_DisplayName_b9d8f9f2, p_Description := p_Description_b9d8f9f2, p_Category := p_Category_b9d8f9f2, p_Category_Clear := 1, p_Type := p_Type_b9d8f9f2, p_Length := p_Length_b9d8f9f2, p_Length_Clear := 1, p_Precision := p_Precision_b9d8f9f2, p_Precision_Clear := 1, p_Scale := p_Scale_b9d8f9f2, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_b9d8f9f2, p_DefaultValue := p_DefaultValue_b9d8f9f2, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_b9d8f9f2, p_IsUniqueKey := p_IsUniqueKey_b9d8f9f2, p_IsReadOnly := p_IsReadOnly_b9d8f9f2, p_IsRequired := p_IsRequired_b9d8f9f2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b9d8f9f2, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b9d8f9f2, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_b9d8f9f2, p_Configuration := p_Configuration_b9d8f9f2, p_Configuration_Clear := 1, p_Status := p_Status_b9d8f9f2, p_IsCustom := p_IsCustom_b9d8f9f2, p_MetadataSource := p_MetadataSource_b9d8f9f2);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_b9d8f9f2, p_IntegrationObjectID := p_IntegrationObjectID_b9d8f9f2, p_Name := p_Name_b9d8f9f2, p_DisplayName := p_DisplayName_b9d8f9f2, p_Description := p_Description_b9d8f9f2, p_Category := p_Category_b9d8f9f2, p_Category_Clear := TRUE, p_Type := p_Type_b9d8f9f2, p_Length := p_Length_b9d8f9f2, p_Length_Clear := TRUE, p_Precision := p_Precision_b9d8f9f2, p_Precision_Clear := TRUE, p_Scale := p_Scale_b9d8f9f2, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_b9d8f9f2, p_DefaultValue := p_DefaultValue_b9d8f9f2, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_b9d8f9f2, p_IsUniqueKey := p_IsUniqueKey_b9d8f9f2, p_IsReadOnly := p_IsReadOnly_b9d8f9f2, p_IsRequired := p_IsRequired_b9d8f9f2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_b9d8f9f2, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_b9d8f9f2, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_b9d8f9f2, p_Configuration := p_Configuration_b9d8f9f2, p_Configuration_Clear := TRUE, p_Status := p_Status_b9d8f9f2, p_IsCustom := p_IsCustom_b9d8f9f2, p_MetadataSource := p_MetadataSource_b9d8f9f2);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8440,18 +8440,18 @@ BEGIN
   p_Description_ab0950a4 := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_ab0950a4 := 'String';
   p_Length_ab0950a4 := 19;
-  p_AllowsNull_ab0950a4 := 1;
-  p_IsPrimaryKey_ab0950a4 := 0;
-  p_IsUniqueKey_ab0950a4 := 0;
-  p_IsReadOnly_ab0950a4 := 1;
-  p_IsRequired_ab0950a4 := 1;
+  p_AllowsNull_ab0950a4 := TRUE;
+  p_IsPrimaryKey_ab0950a4 := FALSE;
+  p_IsUniqueKey_ab0950a4 := FALSE;
+  p_IsReadOnly_ab0950a4 := TRUE;
+  p_IsRequired_ab0950a4 := TRUE;
   p_RelatedIntegrationObjectID_ab0950a4 := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_ab0950a4 := 'orcid-id';
   p_Sequence_ab0950a4 := 0;
   p_Status_ab0950a4 := 'Active';
-  p_IsCustom_ab0950a4 := 0;
+  p_IsCustom_ab0950a4 := FALSE;
   p_MetadataSource_ab0950a4 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ab0950a4, p_IntegrationObjectID := p_IntegrationObjectID_ab0950a4, p_Name := p_Name_ab0950a4, p_DisplayName := p_DisplayName_ab0950a4, p_Description := p_Description_ab0950a4, p_Category := p_Category_ab0950a4, p_Category_Clear := 1, p_Type := p_Type_ab0950a4, p_Length := p_Length_ab0950a4, p_Precision := p_Precision_ab0950a4, p_Precision_Clear := 1, p_Scale := p_Scale_ab0950a4, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ab0950a4, p_DefaultValue := p_DefaultValue_ab0950a4, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ab0950a4, p_IsUniqueKey := p_IsUniqueKey_ab0950a4, p_IsReadOnly := p_IsReadOnly_ab0950a4, p_IsRequired := p_IsRequired_ab0950a4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ab0950a4, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ab0950a4, p_Sequence := p_Sequence_ab0950a4, p_Configuration := p_Configuration_ab0950a4, p_Configuration_Clear := 1, p_Status := p_Status_ab0950a4, p_IsCustom := p_IsCustom_ab0950a4, p_MetadataSource := p_MetadataSource_ab0950a4);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ab0950a4, p_IntegrationObjectID := p_IntegrationObjectID_ab0950a4, p_Name := p_Name_ab0950a4, p_DisplayName := p_DisplayName_ab0950a4, p_Description := p_Description_ab0950a4, p_Category := p_Category_ab0950a4, p_Category_Clear := TRUE, p_Type := p_Type_ab0950a4, p_Length := p_Length_ab0950a4, p_Precision := p_Precision_ab0950a4, p_Precision_Clear := TRUE, p_Scale := p_Scale_ab0950a4, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ab0950a4, p_DefaultValue := p_DefaultValue_ab0950a4, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ab0950a4, p_IsUniqueKey := p_IsUniqueKey_ab0950a4, p_IsReadOnly := p_IsReadOnly_ab0950a4, p_IsRequired := p_IsRequired_ab0950a4, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ab0950a4, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ab0950a4, p_Sequence := p_Sequence_ab0950a4, p_Configuration := p_Configuration_ab0950a4, p_Configuration_Clear := TRUE, p_Status := p_Status_ab0950a4, p_IsCustom := p_IsCustom_ab0950a4, p_MetadataSource := p_MetadataSource_ab0950a4);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8487,16 +8487,16 @@ BEGIN
   p_DisplayName_ec393930 := 'Put Code';
   p_Description_ec393930 := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_ec393930 := 'Integer';
-  p_AllowsNull_ec393930 := 0;
-  p_IsPrimaryKey_ec393930 := 1;
-  p_IsUniqueKey_ec393930 := 1;
-  p_IsReadOnly_ec393930 := 1;
-  p_IsRequired_ec393930 := 1;
+  p_AllowsNull_ec393930 := FALSE;
+  p_IsPrimaryKey_ec393930 := TRUE;
+  p_IsUniqueKey_ec393930 := TRUE;
+  p_IsReadOnly_ec393930 := TRUE;
+  p_IsRequired_ec393930 := TRUE;
   p_Sequence_ec393930 := 1;
   p_Status_ec393930 := 'Active';
-  p_IsCustom_ec393930 := 0;
+  p_IsCustom_ec393930 := FALSE;
   p_MetadataSource_ec393930 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ec393930, p_IntegrationObjectID := p_IntegrationObjectID_ec393930, p_Name := p_Name_ec393930, p_DisplayName := p_DisplayName_ec393930, p_Description := p_Description_ec393930, p_Category := p_Category_ec393930, p_Category_Clear := 1, p_Type := p_Type_ec393930, p_Length := p_Length_ec393930, p_Length_Clear := 1, p_Precision := p_Precision_ec393930, p_Precision_Clear := 1, p_Scale := p_Scale_ec393930, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_ec393930, p_DefaultValue := p_DefaultValue_ec393930, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_ec393930, p_IsUniqueKey := p_IsUniqueKey_ec393930, p_IsReadOnly := p_IsReadOnly_ec393930, p_IsRequired := p_IsRequired_ec393930, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ec393930, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ec393930, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_ec393930, p_Configuration := p_Configuration_ec393930, p_Configuration_Clear := 1, p_Status := p_Status_ec393930, p_IsCustom := p_IsCustom_ec393930, p_MetadataSource := p_MetadataSource_ec393930);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_ec393930, p_IntegrationObjectID := p_IntegrationObjectID_ec393930, p_Name := p_Name_ec393930, p_DisplayName := p_DisplayName_ec393930, p_Description := p_Description_ec393930, p_Category := p_Category_ec393930, p_Category_Clear := TRUE, p_Type := p_Type_ec393930, p_Length := p_Length_ec393930, p_Length_Clear := TRUE, p_Precision := p_Precision_ec393930, p_Precision_Clear := TRUE, p_Scale := p_Scale_ec393930, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_ec393930, p_DefaultValue := p_DefaultValue_ec393930, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_ec393930, p_IsUniqueKey := p_IsUniqueKey_ec393930, p_IsReadOnly := p_IsReadOnly_ec393930, p_IsRequired := p_IsRequired_ec393930, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_ec393930, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_ec393930, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_ec393930, p_Configuration := p_Configuration_ec393930, p_Configuration_Clear := TRUE, p_Status := p_Status_ec393930, p_IsCustom := p_IsCustom_ec393930, p_MetadataSource := p_MetadataSource_ec393930);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8533,16 +8533,16 @@ BEGIN
   p_Description_61ecf734 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_61ecf734 := 'String';
   p_Length_61ecf734 := 500;
-  p_AllowsNull_61ecf734 := 1;
-  p_IsPrimaryKey_61ecf734 := 0;
-  p_IsUniqueKey_61ecf734 := 0;
-  p_IsReadOnly_61ecf734 := 1;
-  p_IsRequired_61ecf734 := 0;
+  p_AllowsNull_61ecf734 := TRUE;
+  p_IsPrimaryKey_61ecf734 := FALSE;
+  p_IsUniqueKey_61ecf734 := FALSE;
+  p_IsReadOnly_61ecf734 := TRUE;
+  p_IsRequired_61ecf734 := FALSE;
   p_Sequence_61ecf734 := 2;
   p_Status_61ecf734 := 'Active';
-  p_IsCustom_61ecf734 := 0;
+  p_IsCustom_61ecf734 := FALSE;
   p_MetadataSource_61ecf734 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_61ecf734, p_IntegrationObjectID := p_IntegrationObjectID_61ecf734, p_Name := p_Name_61ecf734, p_DisplayName := p_DisplayName_61ecf734, p_Description := p_Description_61ecf734, p_Category := p_Category_61ecf734, p_Category_Clear := 1, p_Type := p_Type_61ecf734, p_Length := p_Length_61ecf734, p_Precision := p_Precision_61ecf734, p_Precision_Clear := 1, p_Scale := p_Scale_61ecf734, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_61ecf734, p_DefaultValue := p_DefaultValue_61ecf734, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_61ecf734, p_IsUniqueKey := p_IsUniqueKey_61ecf734, p_IsReadOnly := p_IsReadOnly_61ecf734, p_IsRequired := p_IsRequired_61ecf734, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_61ecf734, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_61ecf734, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_61ecf734, p_Configuration := p_Configuration_61ecf734, p_Configuration_Clear := 1, p_Status := p_Status_61ecf734, p_IsCustom := p_IsCustom_61ecf734, p_MetadataSource := p_MetadataSource_61ecf734);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_61ecf734, p_IntegrationObjectID := p_IntegrationObjectID_61ecf734, p_Name := p_Name_61ecf734, p_DisplayName := p_DisplayName_61ecf734, p_Description := p_Description_61ecf734, p_Category := p_Category_61ecf734, p_Category_Clear := TRUE, p_Type := p_Type_61ecf734, p_Length := p_Length_61ecf734, p_Precision := p_Precision_61ecf734, p_Precision_Clear := TRUE, p_Scale := p_Scale_61ecf734, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_61ecf734, p_DefaultValue := p_DefaultValue_61ecf734, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_61ecf734, p_IsUniqueKey := p_IsUniqueKey_61ecf734, p_IsReadOnly := p_IsReadOnly_61ecf734, p_IsRequired := p_IsRequired_61ecf734, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_61ecf734, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_61ecf734, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_61ecf734, p_Configuration := p_Configuration_61ecf734, p_Configuration_Clear := TRUE, p_Status := p_Status_61ecf734, p_IsCustom := p_IsCustom_61ecf734, p_MetadataSource := p_MetadataSource_61ecf734);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8578,16 +8578,16 @@ BEGIN
   p_DisplayName_be7db9e9 := 'Visibility';
   p_Description_be7db9e9 := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_be7db9e9 := 'String';
-  p_AllowsNull_be7db9e9 := 1;
-  p_IsPrimaryKey_be7db9e9 := 0;
-  p_IsUniqueKey_be7db9e9 := 0;
-  p_IsReadOnly_be7db9e9 := 1;
-  p_IsRequired_be7db9e9 := 0;
+  p_AllowsNull_be7db9e9 := TRUE;
+  p_IsPrimaryKey_be7db9e9 := FALSE;
+  p_IsUniqueKey_be7db9e9 := FALSE;
+  p_IsReadOnly_be7db9e9 := TRUE;
+  p_IsRequired_be7db9e9 := FALSE;
   p_Sequence_be7db9e9 := 3;
   p_Status_be7db9e9 := 'Active';
-  p_IsCustom_be7db9e9 := 0;
+  p_IsCustom_be7db9e9 := FALSE;
   p_MetadataSource_be7db9e9 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_be7db9e9, p_IntegrationObjectID := p_IntegrationObjectID_be7db9e9, p_Name := p_Name_be7db9e9, p_DisplayName := p_DisplayName_be7db9e9, p_Description := p_Description_be7db9e9, p_Category := p_Category_be7db9e9, p_Category_Clear := 1, p_Type := p_Type_be7db9e9, p_Length := p_Length_be7db9e9, p_Length_Clear := 1, p_Precision := p_Precision_be7db9e9, p_Precision_Clear := 1, p_Scale := p_Scale_be7db9e9, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_be7db9e9, p_DefaultValue := p_DefaultValue_be7db9e9, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_be7db9e9, p_IsUniqueKey := p_IsUniqueKey_be7db9e9, p_IsReadOnly := p_IsReadOnly_be7db9e9, p_IsRequired := p_IsRequired_be7db9e9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_be7db9e9, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_be7db9e9, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_be7db9e9, p_Configuration := p_Configuration_be7db9e9, p_Configuration_Clear := 1, p_Status := p_Status_be7db9e9, p_IsCustom := p_IsCustom_be7db9e9, p_MetadataSource := p_MetadataSource_be7db9e9);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_be7db9e9, p_IntegrationObjectID := p_IntegrationObjectID_be7db9e9, p_Name := p_Name_be7db9e9, p_DisplayName := p_DisplayName_be7db9e9, p_Description := p_Description_be7db9e9, p_Category := p_Category_be7db9e9, p_Category_Clear := TRUE, p_Type := p_Type_be7db9e9, p_Length := p_Length_be7db9e9, p_Length_Clear := TRUE, p_Precision := p_Precision_be7db9e9, p_Precision_Clear := TRUE, p_Scale := p_Scale_be7db9e9, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_be7db9e9, p_DefaultValue := p_DefaultValue_be7db9e9, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_be7db9e9, p_IsUniqueKey := p_IsUniqueKey_be7db9e9, p_IsReadOnly := p_IsReadOnly_be7db9e9, p_IsRequired := p_IsRequired_be7db9e9, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_be7db9e9, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_be7db9e9, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_be7db9e9, p_Configuration := p_Configuration_be7db9e9, p_Configuration_Clear := TRUE, p_Status := p_Status_be7db9e9, p_IsCustom := p_IsCustom_be7db9e9, p_MetadataSource := p_MetadataSource_be7db9e9);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8623,16 +8623,16 @@ BEGIN
   p_DisplayName_0e708b09 := 'Display Index';
   p_Description_0e708b09 := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_0e708b09 := 'String';
-  p_AllowsNull_0e708b09 := 1;
-  p_IsPrimaryKey_0e708b09 := 0;
-  p_IsUniqueKey_0e708b09 := 0;
-  p_IsReadOnly_0e708b09 := 1;
-  p_IsRequired_0e708b09 := 0;
+  p_AllowsNull_0e708b09 := TRUE;
+  p_IsPrimaryKey_0e708b09 := FALSE;
+  p_IsUniqueKey_0e708b09 := FALSE;
+  p_IsReadOnly_0e708b09 := TRUE;
+  p_IsRequired_0e708b09 := FALSE;
   p_Sequence_0e708b09 := 4;
   p_Status_0e708b09 := 'Active';
-  p_IsCustom_0e708b09 := 0;
+  p_IsCustom_0e708b09 := FALSE;
   p_MetadataSource_0e708b09 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0e708b09, p_IntegrationObjectID := p_IntegrationObjectID_0e708b09, p_Name := p_Name_0e708b09, p_DisplayName := p_DisplayName_0e708b09, p_Description := p_Description_0e708b09, p_Category := p_Category_0e708b09, p_Category_Clear := 1, p_Type := p_Type_0e708b09, p_Length := p_Length_0e708b09, p_Length_Clear := 1, p_Precision := p_Precision_0e708b09, p_Precision_Clear := 1, p_Scale := p_Scale_0e708b09, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_0e708b09, p_DefaultValue := p_DefaultValue_0e708b09, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_0e708b09, p_IsUniqueKey := p_IsUniqueKey_0e708b09, p_IsReadOnly := p_IsReadOnly_0e708b09, p_IsRequired := p_IsRequired_0e708b09, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0e708b09, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0e708b09, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_0e708b09, p_Configuration := p_Configuration_0e708b09, p_Configuration_Clear := 1, p_Status := p_Status_0e708b09, p_IsCustom := p_IsCustom_0e708b09, p_MetadataSource := p_MetadataSource_0e708b09);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0e708b09, p_IntegrationObjectID := p_IntegrationObjectID_0e708b09, p_Name := p_Name_0e708b09, p_DisplayName := p_DisplayName_0e708b09, p_Description := p_Description_0e708b09, p_Category := p_Category_0e708b09, p_Category_Clear := TRUE, p_Type := p_Type_0e708b09, p_Length := p_Length_0e708b09, p_Length_Clear := TRUE, p_Precision := p_Precision_0e708b09, p_Precision_Clear := TRUE, p_Scale := p_Scale_0e708b09, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_0e708b09, p_DefaultValue := p_DefaultValue_0e708b09, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_0e708b09, p_IsUniqueKey := p_IsUniqueKey_0e708b09, p_IsReadOnly := p_IsReadOnly_0e708b09, p_IsRequired := p_IsRequired_0e708b09, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0e708b09, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0e708b09, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_0e708b09, p_Configuration := p_Configuration_0e708b09, p_Configuration_Clear := TRUE, p_Status := p_Status_0e708b09, p_IsCustom := p_IsCustom_0e708b09, p_MetadataSource := p_MetadataSource_0e708b09);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8668,16 +8668,16 @@ BEGIN
   p_DisplayName_54314082 := 'Created Date';
   p_Description_54314082 := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_54314082 := 'DateTime';
-  p_AllowsNull_54314082 := 1;
-  p_IsPrimaryKey_54314082 := 0;
-  p_IsUniqueKey_54314082 := 0;
-  p_IsReadOnly_54314082 := 1;
-  p_IsRequired_54314082 := 0;
+  p_AllowsNull_54314082 := TRUE;
+  p_IsPrimaryKey_54314082 := FALSE;
+  p_IsUniqueKey_54314082 := FALSE;
+  p_IsReadOnly_54314082 := TRUE;
+  p_IsRequired_54314082 := FALSE;
   p_Sequence_54314082 := 5;
   p_Status_54314082 := 'Active';
-  p_IsCustom_54314082 := 0;
+  p_IsCustom_54314082 := FALSE;
   p_MetadataSource_54314082 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_54314082, p_IntegrationObjectID := p_IntegrationObjectID_54314082, p_Name := p_Name_54314082, p_DisplayName := p_DisplayName_54314082, p_Description := p_Description_54314082, p_Category := p_Category_54314082, p_Category_Clear := 1, p_Type := p_Type_54314082, p_Length := p_Length_54314082, p_Length_Clear := 1, p_Precision := p_Precision_54314082, p_Precision_Clear := 1, p_Scale := p_Scale_54314082, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_54314082, p_DefaultValue := p_DefaultValue_54314082, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_54314082, p_IsUniqueKey := p_IsUniqueKey_54314082, p_IsReadOnly := p_IsReadOnly_54314082, p_IsRequired := p_IsRequired_54314082, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_54314082, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_54314082, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_54314082, p_Configuration := p_Configuration_54314082, p_Configuration_Clear := 1, p_Status := p_Status_54314082, p_IsCustom := p_IsCustom_54314082, p_MetadataSource := p_MetadataSource_54314082);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_54314082, p_IntegrationObjectID := p_IntegrationObjectID_54314082, p_Name := p_Name_54314082, p_DisplayName := p_DisplayName_54314082, p_Description := p_Description_54314082, p_Category := p_Category_54314082, p_Category_Clear := TRUE, p_Type := p_Type_54314082, p_Length := p_Length_54314082, p_Length_Clear := TRUE, p_Precision := p_Precision_54314082, p_Precision_Clear := TRUE, p_Scale := p_Scale_54314082, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_54314082, p_DefaultValue := p_DefaultValue_54314082, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_54314082, p_IsUniqueKey := p_IsUniqueKey_54314082, p_IsReadOnly := p_IsReadOnly_54314082, p_IsRequired := p_IsRequired_54314082, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_54314082, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_54314082, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_54314082, p_Configuration := p_Configuration_54314082, p_Configuration_Clear := TRUE, p_Status := p_Status_54314082, p_IsCustom := p_IsCustom_54314082, p_MetadataSource := p_MetadataSource_54314082);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8713,16 +8713,16 @@ BEGIN
   p_DisplayName_0d6bf899 := 'Last Modified Date';
   p_Description_0d6bf899 := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_0d6bf899 := 'DateTime';
-  p_AllowsNull_0d6bf899 := 1;
-  p_IsPrimaryKey_0d6bf899 := 0;
-  p_IsUniqueKey_0d6bf899 := 0;
-  p_IsReadOnly_0d6bf899 := 1;
-  p_IsRequired_0d6bf899 := 0;
+  p_AllowsNull_0d6bf899 := TRUE;
+  p_IsPrimaryKey_0d6bf899 := FALSE;
+  p_IsUniqueKey_0d6bf899 := FALSE;
+  p_IsReadOnly_0d6bf899 := TRUE;
+  p_IsRequired_0d6bf899 := FALSE;
   p_Sequence_0d6bf899 := 6;
   p_Status_0d6bf899 := 'Active';
-  p_IsCustom_0d6bf899 := 0;
+  p_IsCustom_0d6bf899 := FALSE;
   p_MetadataSource_0d6bf899 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0d6bf899, p_IntegrationObjectID := p_IntegrationObjectID_0d6bf899, p_Name := p_Name_0d6bf899, p_DisplayName := p_DisplayName_0d6bf899, p_Description := p_Description_0d6bf899, p_Category := p_Category_0d6bf899, p_Category_Clear := 1, p_Type := p_Type_0d6bf899, p_Length := p_Length_0d6bf899, p_Length_Clear := 1, p_Precision := p_Precision_0d6bf899, p_Precision_Clear := 1, p_Scale := p_Scale_0d6bf899, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_0d6bf899, p_DefaultValue := p_DefaultValue_0d6bf899, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_0d6bf899, p_IsUniqueKey := p_IsUniqueKey_0d6bf899, p_IsReadOnly := p_IsReadOnly_0d6bf899, p_IsRequired := p_IsRequired_0d6bf899, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0d6bf899, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0d6bf899, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_0d6bf899, p_Configuration := p_Configuration_0d6bf899, p_Configuration_Clear := 1, p_Status := p_Status_0d6bf899, p_IsCustom := p_IsCustom_0d6bf899, p_MetadataSource := p_MetadataSource_0d6bf899);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_0d6bf899, p_IntegrationObjectID := p_IntegrationObjectID_0d6bf899, p_Name := p_Name_0d6bf899, p_DisplayName := p_DisplayName_0d6bf899, p_Description := p_Description_0d6bf899, p_Category := p_Category_0d6bf899, p_Category_Clear := TRUE, p_Type := p_Type_0d6bf899, p_Length := p_Length_0d6bf899, p_Length_Clear := TRUE, p_Precision := p_Precision_0d6bf899, p_Precision_Clear := TRUE, p_Scale := p_Scale_0d6bf899, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_0d6bf899, p_DefaultValue := p_DefaultValue_0d6bf899, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_0d6bf899, p_IsUniqueKey := p_IsUniqueKey_0d6bf899, p_IsReadOnly := p_IsReadOnly_0d6bf899, p_IsRequired := p_IsRequired_0d6bf899, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_0d6bf899, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_0d6bf899, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_0d6bf899, p_Configuration := p_Configuration_0d6bf899, p_Configuration_Clear := TRUE, p_Status := p_Status_0d6bf899, p_IsCustom := p_IsCustom_0d6bf899, p_MetadataSource := p_MetadataSource_0d6bf899);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8758,16 +8758,16 @@ BEGIN
   p_DisplayName_c02e7bf2 := 'Source';
   p_Description_c02e7bf2 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_c02e7bf2 := 'json';
-  p_AllowsNull_c02e7bf2 := 1;
-  p_IsPrimaryKey_c02e7bf2 := 0;
-  p_IsUniqueKey_c02e7bf2 := 0;
-  p_IsReadOnly_c02e7bf2 := 1;
-  p_IsRequired_c02e7bf2 := 0;
+  p_AllowsNull_c02e7bf2 := TRUE;
+  p_IsPrimaryKey_c02e7bf2 := FALSE;
+  p_IsUniqueKey_c02e7bf2 := FALSE;
+  p_IsReadOnly_c02e7bf2 := TRUE;
+  p_IsRequired_c02e7bf2 := FALSE;
   p_Sequence_c02e7bf2 := 7;
   p_Status_c02e7bf2 := 'Active';
-  p_IsCustom_c02e7bf2 := 0;
+  p_IsCustom_c02e7bf2 := FALSE;
   p_MetadataSource_c02e7bf2 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c02e7bf2, p_IntegrationObjectID := p_IntegrationObjectID_c02e7bf2, p_Name := p_Name_c02e7bf2, p_DisplayName := p_DisplayName_c02e7bf2, p_Description := p_Description_c02e7bf2, p_Category := p_Category_c02e7bf2, p_Category_Clear := 1, p_Type := p_Type_c02e7bf2, p_Length := p_Length_c02e7bf2, p_Length_Clear := 1, p_Precision := p_Precision_c02e7bf2, p_Precision_Clear := 1, p_Scale := p_Scale_c02e7bf2, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c02e7bf2, p_DefaultValue := p_DefaultValue_c02e7bf2, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c02e7bf2, p_IsUniqueKey := p_IsUniqueKey_c02e7bf2, p_IsReadOnly := p_IsReadOnly_c02e7bf2, p_IsRequired := p_IsRequired_c02e7bf2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c02e7bf2, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c02e7bf2, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c02e7bf2, p_Configuration := p_Configuration_c02e7bf2, p_Configuration_Clear := 1, p_Status := p_Status_c02e7bf2, p_IsCustom := p_IsCustom_c02e7bf2, p_MetadataSource := p_MetadataSource_c02e7bf2);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c02e7bf2, p_IntegrationObjectID := p_IntegrationObjectID_c02e7bf2, p_Name := p_Name_c02e7bf2, p_DisplayName := p_DisplayName_c02e7bf2, p_Description := p_Description_c02e7bf2, p_Category := p_Category_c02e7bf2, p_Category_Clear := TRUE, p_Type := p_Type_c02e7bf2, p_Length := p_Length_c02e7bf2, p_Length_Clear := TRUE, p_Precision := p_Precision_c02e7bf2, p_Precision_Clear := TRUE, p_Scale := p_Scale_c02e7bf2, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c02e7bf2, p_DefaultValue := p_DefaultValue_c02e7bf2, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c02e7bf2, p_IsUniqueKey := p_IsUniqueKey_c02e7bf2, p_IsReadOnly := p_IsReadOnly_c02e7bf2, p_IsRequired := p_IsRequired_c02e7bf2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c02e7bf2, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c02e7bf2, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c02e7bf2, p_Configuration := p_Configuration_c02e7bf2, p_Configuration_Clear := TRUE, p_Status := p_Status_c02e7bf2, p_IsCustom := p_IsCustom_c02e7bf2, p_MetadataSource := p_MetadataSource_c02e7bf2);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8803,16 +8803,16 @@ BEGIN
   p_DisplayName_c3cb6250 := 'Reviewer Role';
   p_Description_c3cb6250 := 'peer-review field ''reviewer-role'' (type peer-review:role, minOccurs=1). Source: peer-review-3.0.xsd.';
   p_Type_c3cb6250 := 'String';
-  p_AllowsNull_c3cb6250 := 1;
-  p_IsPrimaryKey_c3cb6250 := 0;
-  p_IsUniqueKey_c3cb6250 := 0;
-  p_IsReadOnly_c3cb6250 := 1;
-  p_IsRequired_c3cb6250 := 1;
+  p_AllowsNull_c3cb6250 := TRUE;
+  p_IsPrimaryKey_c3cb6250 := FALSE;
+  p_IsUniqueKey_c3cb6250 := FALSE;
+  p_IsReadOnly_c3cb6250 := TRUE;
+  p_IsRequired_c3cb6250 := TRUE;
   p_Sequence_c3cb6250 := 8;
   p_Status_c3cb6250 := 'Active';
-  p_IsCustom_c3cb6250 := 0;
+  p_IsCustom_c3cb6250 := FALSE;
   p_MetadataSource_c3cb6250 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c3cb6250, p_IntegrationObjectID := p_IntegrationObjectID_c3cb6250, p_Name := p_Name_c3cb6250, p_DisplayName := p_DisplayName_c3cb6250, p_Description := p_Description_c3cb6250, p_Category := p_Category_c3cb6250, p_Category_Clear := 1, p_Type := p_Type_c3cb6250, p_Length := p_Length_c3cb6250, p_Length_Clear := 1, p_Precision := p_Precision_c3cb6250, p_Precision_Clear := 1, p_Scale := p_Scale_c3cb6250, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_c3cb6250, p_DefaultValue := p_DefaultValue_c3cb6250, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_c3cb6250, p_IsUniqueKey := p_IsUniqueKey_c3cb6250, p_IsReadOnly := p_IsReadOnly_c3cb6250, p_IsRequired := p_IsRequired_c3cb6250, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c3cb6250, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c3cb6250, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_c3cb6250, p_Configuration := p_Configuration_c3cb6250, p_Configuration_Clear := 1, p_Status := p_Status_c3cb6250, p_IsCustom := p_IsCustom_c3cb6250, p_MetadataSource := p_MetadataSource_c3cb6250);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_c3cb6250, p_IntegrationObjectID := p_IntegrationObjectID_c3cb6250, p_Name := p_Name_c3cb6250, p_DisplayName := p_DisplayName_c3cb6250, p_Description := p_Description_c3cb6250, p_Category := p_Category_c3cb6250, p_Category_Clear := TRUE, p_Type := p_Type_c3cb6250, p_Length := p_Length_c3cb6250, p_Length_Clear := TRUE, p_Precision := p_Precision_c3cb6250, p_Precision_Clear := TRUE, p_Scale := p_Scale_c3cb6250, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_c3cb6250, p_DefaultValue := p_DefaultValue_c3cb6250, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_c3cb6250, p_IsUniqueKey := p_IsUniqueKey_c3cb6250, p_IsReadOnly := p_IsReadOnly_c3cb6250, p_IsRequired := p_IsRequired_c3cb6250, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_c3cb6250, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_c3cb6250, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_c3cb6250, p_Configuration := p_Configuration_c3cb6250, p_Configuration_Clear := TRUE, p_Status := p_Status_c3cb6250, p_IsCustom := p_IsCustom_c3cb6250, p_MetadataSource := p_MetadataSource_c3cb6250);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8848,16 +8848,16 @@ BEGIN
   p_DisplayName_412f82b2 := 'Review Identifiers';
   p_Description_412f82b2 := 'peer-review field ''review-identifiers'' (type common:external-ids, minOccurs=1). Source: peer-review-3.0.xsd.';
   p_Type_412f82b2 := 'json';
-  p_AllowsNull_412f82b2 := 1;
-  p_IsPrimaryKey_412f82b2 := 0;
-  p_IsUniqueKey_412f82b2 := 0;
-  p_IsReadOnly_412f82b2 := 1;
-  p_IsRequired_412f82b2 := 1;
+  p_AllowsNull_412f82b2 := TRUE;
+  p_IsPrimaryKey_412f82b2 := FALSE;
+  p_IsUniqueKey_412f82b2 := FALSE;
+  p_IsReadOnly_412f82b2 := TRUE;
+  p_IsRequired_412f82b2 := TRUE;
   p_Sequence_412f82b2 := 9;
   p_Status_412f82b2 := 'Active';
-  p_IsCustom_412f82b2 := 0;
+  p_IsCustom_412f82b2 := FALSE;
   p_MetadataSource_412f82b2 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_412f82b2, p_IntegrationObjectID := p_IntegrationObjectID_412f82b2, p_Name := p_Name_412f82b2, p_DisplayName := p_DisplayName_412f82b2, p_Description := p_Description_412f82b2, p_Category := p_Category_412f82b2, p_Category_Clear := 1, p_Type := p_Type_412f82b2, p_Length := p_Length_412f82b2, p_Length_Clear := 1, p_Precision := p_Precision_412f82b2, p_Precision_Clear := 1, p_Scale := p_Scale_412f82b2, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_412f82b2, p_DefaultValue := p_DefaultValue_412f82b2, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_412f82b2, p_IsUniqueKey := p_IsUniqueKey_412f82b2, p_IsReadOnly := p_IsReadOnly_412f82b2, p_IsRequired := p_IsRequired_412f82b2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_412f82b2, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_412f82b2, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_412f82b2, p_Configuration := p_Configuration_412f82b2, p_Configuration_Clear := 1, p_Status := p_Status_412f82b2, p_IsCustom := p_IsCustom_412f82b2, p_MetadataSource := p_MetadataSource_412f82b2);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_412f82b2, p_IntegrationObjectID := p_IntegrationObjectID_412f82b2, p_Name := p_Name_412f82b2, p_DisplayName := p_DisplayName_412f82b2, p_Description := p_Description_412f82b2, p_Category := p_Category_412f82b2, p_Category_Clear := TRUE, p_Type := p_Type_412f82b2, p_Length := p_Length_412f82b2, p_Length_Clear := TRUE, p_Precision := p_Precision_412f82b2, p_Precision_Clear := TRUE, p_Scale := p_Scale_412f82b2, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_412f82b2, p_DefaultValue := p_DefaultValue_412f82b2, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_412f82b2, p_IsUniqueKey := p_IsUniqueKey_412f82b2, p_IsReadOnly := p_IsReadOnly_412f82b2, p_IsRequired := p_IsRequired_412f82b2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_412f82b2, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_412f82b2, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_412f82b2, p_Configuration := p_Configuration_412f82b2, p_Configuration_Clear := TRUE, p_Status := p_Status_412f82b2, p_IsCustom := p_IsCustom_412f82b2, p_MetadataSource := p_MetadataSource_412f82b2);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8893,16 +8893,16 @@ BEGIN
   p_DisplayName_25f655a2 := 'Review Url';
   p_Description_25f655a2 := 'peer-review field ''review-url'' (type common:url, minOccurs=0). Source: peer-review-3.0.xsd.';
   p_Type_25f655a2 := 'String';
-  p_AllowsNull_25f655a2 := 1;
-  p_IsPrimaryKey_25f655a2 := 0;
-  p_IsUniqueKey_25f655a2 := 0;
-  p_IsReadOnly_25f655a2 := 1;
-  p_IsRequired_25f655a2 := 0;
+  p_AllowsNull_25f655a2 := TRUE;
+  p_IsPrimaryKey_25f655a2 := FALSE;
+  p_IsUniqueKey_25f655a2 := FALSE;
+  p_IsReadOnly_25f655a2 := TRUE;
+  p_IsRequired_25f655a2 := FALSE;
   p_Sequence_25f655a2 := 10;
   p_Status_25f655a2 := 'Active';
-  p_IsCustom_25f655a2 := 0;
+  p_IsCustom_25f655a2 := FALSE;
   p_MetadataSource_25f655a2 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_25f655a2, p_IntegrationObjectID := p_IntegrationObjectID_25f655a2, p_Name := p_Name_25f655a2, p_DisplayName := p_DisplayName_25f655a2, p_Description := p_Description_25f655a2, p_Category := p_Category_25f655a2, p_Category_Clear := 1, p_Type := p_Type_25f655a2, p_Length := p_Length_25f655a2, p_Length_Clear := 1, p_Precision := p_Precision_25f655a2, p_Precision_Clear := 1, p_Scale := p_Scale_25f655a2, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_25f655a2, p_DefaultValue := p_DefaultValue_25f655a2, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_25f655a2, p_IsUniqueKey := p_IsUniqueKey_25f655a2, p_IsReadOnly := p_IsReadOnly_25f655a2, p_IsRequired := p_IsRequired_25f655a2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_25f655a2, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_25f655a2, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_25f655a2, p_Configuration := p_Configuration_25f655a2, p_Configuration_Clear := 1, p_Status := p_Status_25f655a2, p_IsCustom := p_IsCustom_25f655a2, p_MetadataSource := p_MetadataSource_25f655a2);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_25f655a2, p_IntegrationObjectID := p_IntegrationObjectID_25f655a2, p_Name := p_Name_25f655a2, p_DisplayName := p_DisplayName_25f655a2, p_Description := p_Description_25f655a2, p_Category := p_Category_25f655a2, p_Category_Clear := TRUE, p_Type := p_Type_25f655a2, p_Length := p_Length_25f655a2, p_Length_Clear := TRUE, p_Precision := p_Precision_25f655a2, p_Precision_Clear := TRUE, p_Scale := p_Scale_25f655a2, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_25f655a2, p_DefaultValue := p_DefaultValue_25f655a2, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_25f655a2, p_IsUniqueKey := p_IsUniqueKey_25f655a2, p_IsReadOnly := p_IsReadOnly_25f655a2, p_IsRequired := p_IsRequired_25f655a2, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_25f655a2, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_25f655a2, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_25f655a2, p_Configuration := p_Configuration_25f655a2, p_Configuration_Clear := TRUE, p_Status := p_Status_25f655a2, p_IsCustom := p_IsCustom_25f655a2, p_MetadataSource := p_MetadataSource_25f655a2);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8938,16 +8938,16 @@ BEGIN
   p_DisplayName_1a0e98aa := 'Review Type';
   p_Description_1a0e98aa := 'peer-review field ''review-type'' (type peer-review:type, minOccurs=1). Source: peer-review-3.0.xsd.';
   p_Type_1a0e98aa := 'String';
-  p_AllowsNull_1a0e98aa := 1;
-  p_IsPrimaryKey_1a0e98aa := 0;
-  p_IsUniqueKey_1a0e98aa := 0;
-  p_IsReadOnly_1a0e98aa := 1;
-  p_IsRequired_1a0e98aa := 1;
+  p_AllowsNull_1a0e98aa := TRUE;
+  p_IsPrimaryKey_1a0e98aa := FALSE;
+  p_IsUniqueKey_1a0e98aa := FALSE;
+  p_IsReadOnly_1a0e98aa := TRUE;
+  p_IsRequired_1a0e98aa := TRUE;
   p_Sequence_1a0e98aa := 11;
   p_Status_1a0e98aa := 'Active';
-  p_IsCustom_1a0e98aa := 0;
+  p_IsCustom_1a0e98aa := FALSE;
   p_MetadataSource_1a0e98aa := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1a0e98aa, p_IntegrationObjectID := p_IntegrationObjectID_1a0e98aa, p_Name := p_Name_1a0e98aa, p_DisplayName := p_DisplayName_1a0e98aa, p_Description := p_Description_1a0e98aa, p_Category := p_Category_1a0e98aa, p_Category_Clear := 1, p_Type := p_Type_1a0e98aa, p_Length := p_Length_1a0e98aa, p_Length_Clear := 1, p_Precision := p_Precision_1a0e98aa, p_Precision_Clear := 1, p_Scale := p_Scale_1a0e98aa, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_1a0e98aa, p_DefaultValue := p_DefaultValue_1a0e98aa, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_1a0e98aa, p_IsUniqueKey := p_IsUniqueKey_1a0e98aa, p_IsReadOnly := p_IsReadOnly_1a0e98aa, p_IsRequired := p_IsRequired_1a0e98aa, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1a0e98aa, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1a0e98aa, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_1a0e98aa, p_Configuration := p_Configuration_1a0e98aa, p_Configuration_Clear := 1, p_Status := p_Status_1a0e98aa, p_IsCustom := p_IsCustom_1a0e98aa, p_MetadataSource := p_MetadataSource_1a0e98aa);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_1a0e98aa, p_IntegrationObjectID := p_IntegrationObjectID_1a0e98aa, p_Name := p_Name_1a0e98aa, p_DisplayName := p_DisplayName_1a0e98aa, p_Description := p_Description_1a0e98aa, p_Category := p_Category_1a0e98aa, p_Category_Clear := TRUE, p_Type := p_Type_1a0e98aa, p_Length := p_Length_1a0e98aa, p_Length_Clear := TRUE, p_Precision := p_Precision_1a0e98aa, p_Precision_Clear := TRUE, p_Scale := p_Scale_1a0e98aa, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_1a0e98aa, p_DefaultValue := p_DefaultValue_1a0e98aa, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_1a0e98aa, p_IsUniqueKey := p_IsUniqueKey_1a0e98aa, p_IsReadOnly := p_IsReadOnly_1a0e98aa, p_IsRequired := p_IsRequired_1a0e98aa, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_1a0e98aa, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_1a0e98aa, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_1a0e98aa, p_Configuration := p_Configuration_1a0e98aa, p_Configuration_Clear := TRUE, p_Status := p_Status_1a0e98aa, p_IsCustom := p_IsCustom_1a0e98aa, p_MetadataSource := p_MetadataSource_1a0e98aa);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -8983,16 +8983,16 @@ BEGIN
   p_DisplayName_d285fd0c := 'Review Completion Date';
   p_Description_d285fd0c := 'peer-review field ''review-completion-date'' (type common:fuzzy-date, minOccurs=1). Source: peer-review-3.0.xsd.';
   p_Type_d285fd0c := 'json';
-  p_AllowsNull_d285fd0c := 1;
-  p_IsPrimaryKey_d285fd0c := 0;
-  p_IsUniqueKey_d285fd0c := 0;
-  p_IsReadOnly_d285fd0c := 1;
-  p_IsRequired_d285fd0c := 1;
+  p_AllowsNull_d285fd0c := TRUE;
+  p_IsPrimaryKey_d285fd0c := FALSE;
+  p_IsUniqueKey_d285fd0c := FALSE;
+  p_IsReadOnly_d285fd0c := TRUE;
+  p_IsRequired_d285fd0c := TRUE;
   p_Sequence_d285fd0c := 12;
   p_Status_d285fd0c := 'Active';
-  p_IsCustom_d285fd0c := 0;
+  p_IsCustom_d285fd0c := FALSE;
   p_MetadataSource_d285fd0c := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d285fd0c, p_IntegrationObjectID := p_IntegrationObjectID_d285fd0c, p_Name := p_Name_d285fd0c, p_DisplayName := p_DisplayName_d285fd0c, p_Description := p_Description_d285fd0c, p_Category := p_Category_d285fd0c, p_Category_Clear := 1, p_Type := p_Type_d285fd0c, p_Length := p_Length_d285fd0c, p_Length_Clear := 1, p_Precision := p_Precision_d285fd0c, p_Precision_Clear := 1, p_Scale := p_Scale_d285fd0c, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d285fd0c, p_DefaultValue := p_DefaultValue_d285fd0c, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d285fd0c, p_IsUniqueKey := p_IsUniqueKey_d285fd0c, p_IsReadOnly := p_IsReadOnly_d285fd0c, p_IsRequired := p_IsRequired_d285fd0c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d285fd0c, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d285fd0c, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d285fd0c, p_Configuration := p_Configuration_d285fd0c, p_Configuration_Clear := 1, p_Status := p_Status_d285fd0c, p_IsCustom := p_IsCustom_d285fd0c, p_MetadataSource := p_MetadataSource_d285fd0c);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d285fd0c, p_IntegrationObjectID := p_IntegrationObjectID_d285fd0c, p_Name := p_Name_d285fd0c, p_DisplayName := p_DisplayName_d285fd0c, p_Description := p_Description_d285fd0c, p_Category := p_Category_d285fd0c, p_Category_Clear := TRUE, p_Type := p_Type_d285fd0c, p_Length := p_Length_d285fd0c, p_Length_Clear := TRUE, p_Precision := p_Precision_d285fd0c, p_Precision_Clear := TRUE, p_Scale := p_Scale_d285fd0c, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d285fd0c, p_DefaultValue := p_DefaultValue_d285fd0c, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d285fd0c, p_IsUniqueKey := p_IsUniqueKey_d285fd0c, p_IsReadOnly := p_IsReadOnly_d285fd0c, p_IsRequired := p_IsRequired_d285fd0c, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d285fd0c, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d285fd0c, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d285fd0c, p_Configuration := p_Configuration_d285fd0c, p_Configuration_Clear := TRUE, p_Status := p_Status_d285fd0c, p_IsCustom := p_IsCustom_d285fd0c, p_MetadataSource := p_MetadataSource_d285fd0c);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9028,16 +9028,16 @@ BEGIN
   p_DisplayName_09bd131f := 'Review Group Id';
   p_Description_09bd131f := 'peer-review field ''review-group-id'' (type common:group-id, minOccurs=1). Source: peer-review-3.0.xsd.';
   p_Type_09bd131f := 'String';
-  p_AllowsNull_09bd131f := 1;
-  p_IsPrimaryKey_09bd131f := 0;
-  p_IsUniqueKey_09bd131f := 0;
-  p_IsReadOnly_09bd131f := 1;
-  p_IsRequired_09bd131f := 1;
+  p_AllowsNull_09bd131f := TRUE;
+  p_IsPrimaryKey_09bd131f := FALSE;
+  p_IsUniqueKey_09bd131f := FALSE;
+  p_IsReadOnly_09bd131f := TRUE;
+  p_IsRequired_09bd131f := TRUE;
   p_Sequence_09bd131f := 13;
   p_Status_09bd131f := 'Active';
-  p_IsCustom_09bd131f := 0;
+  p_IsCustom_09bd131f := FALSE;
   p_MetadataSource_09bd131f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_09bd131f, p_IntegrationObjectID := p_IntegrationObjectID_09bd131f, p_Name := p_Name_09bd131f, p_DisplayName := p_DisplayName_09bd131f, p_Description := p_Description_09bd131f, p_Category := p_Category_09bd131f, p_Category_Clear := 1, p_Type := p_Type_09bd131f, p_Length := p_Length_09bd131f, p_Length_Clear := 1, p_Precision := p_Precision_09bd131f, p_Precision_Clear := 1, p_Scale := p_Scale_09bd131f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_09bd131f, p_DefaultValue := p_DefaultValue_09bd131f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_09bd131f, p_IsUniqueKey := p_IsUniqueKey_09bd131f, p_IsReadOnly := p_IsReadOnly_09bd131f, p_IsRequired := p_IsRequired_09bd131f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_09bd131f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_09bd131f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_09bd131f, p_Configuration := p_Configuration_09bd131f, p_Configuration_Clear := 1, p_Status := p_Status_09bd131f, p_IsCustom := p_IsCustom_09bd131f, p_MetadataSource := p_MetadataSource_09bd131f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_09bd131f, p_IntegrationObjectID := p_IntegrationObjectID_09bd131f, p_Name := p_Name_09bd131f, p_DisplayName := p_DisplayName_09bd131f, p_Description := p_Description_09bd131f, p_Category := p_Category_09bd131f, p_Category_Clear := TRUE, p_Type := p_Type_09bd131f, p_Length := p_Length_09bd131f, p_Length_Clear := TRUE, p_Precision := p_Precision_09bd131f, p_Precision_Clear := TRUE, p_Scale := p_Scale_09bd131f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_09bd131f, p_DefaultValue := p_DefaultValue_09bd131f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_09bd131f, p_IsUniqueKey := p_IsUniqueKey_09bd131f, p_IsReadOnly := p_IsReadOnly_09bd131f, p_IsRequired := p_IsRequired_09bd131f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_09bd131f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_09bd131f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_09bd131f, p_Configuration := p_Configuration_09bd131f, p_Configuration_Clear := TRUE, p_Status := p_Status_09bd131f, p_IsCustom := p_IsCustom_09bd131f, p_MetadataSource := p_MetadataSource_09bd131f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9073,16 +9073,16 @@ BEGIN
   p_DisplayName_28898238 := 'Subject External Identifier';
   p_Description_28898238 := 'peer-review field ''subject-external-identifier'' (type common:external-id, minOccurs=0). Source: peer-review-3.0.xsd.';
   p_Type_28898238 := 'json';
-  p_AllowsNull_28898238 := 1;
-  p_IsPrimaryKey_28898238 := 0;
-  p_IsUniqueKey_28898238 := 0;
-  p_IsReadOnly_28898238 := 1;
-  p_IsRequired_28898238 := 0;
+  p_AllowsNull_28898238 := TRUE;
+  p_IsPrimaryKey_28898238 := FALSE;
+  p_IsUniqueKey_28898238 := FALSE;
+  p_IsReadOnly_28898238 := TRUE;
+  p_IsRequired_28898238 := FALSE;
   p_Sequence_28898238 := 14;
   p_Status_28898238 := 'Active';
-  p_IsCustom_28898238 := 0;
+  p_IsCustom_28898238 := FALSE;
   p_MetadataSource_28898238 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_28898238, p_IntegrationObjectID := p_IntegrationObjectID_28898238, p_Name := p_Name_28898238, p_DisplayName := p_DisplayName_28898238, p_Description := p_Description_28898238, p_Category := p_Category_28898238, p_Category_Clear := 1, p_Type := p_Type_28898238, p_Length := p_Length_28898238, p_Length_Clear := 1, p_Precision := p_Precision_28898238, p_Precision_Clear := 1, p_Scale := p_Scale_28898238, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_28898238, p_DefaultValue := p_DefaultValue_28898238, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_28898238, p_IsUniqueKey := p_IsUniqueKey_28898238, p_IsReadOnly := p_IsReadOnly_28898238, p_IsRequired := p_IsRequired_28898238, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_28898238, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_28898238, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_28898238, p_Configuration := p_Configuration_28898238, p_Configuration_Clear := 1, p_Status := p_Status_28898238, p_IsCustom := p_IsCustom_28898238, p_MetadataSource := p_MetadataSource_28898238);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_28898238, p_IntegrationObjectID := p_IntegrationObjectID_28898238, p_Name := p_Name_28898238, p_DisplayName := p_DisplayName_28898238, p_Description := p_Description_28898238, p_Category := p_Category_28898238, p_Category_Clear := TRUE, p_Type := p_Type_28898238, p_Length := p_Length_28898238, p_Length_Clear := TRUE, p_Precision := p_Precision_28898238, p_Precision_Clear := TRUE, p_Scale := p_Scale_28898238, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_28898238, p_DefaultValue := p_DefaultValue_28898238, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_28898238, p_IsUniqueKey := p_IsUniqueKey_28898238, p_IsReadOnly := p_IsReadOnly_28898238, p_IsRequired := p_IsRequired_28898238, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_28898238, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_28898238, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_28898238, p_Configuration := p_Configuration_28898238, p_Configuration_Clear := TRUE, p_Status := p_Status_28898238, p_IsCustom := p_IsCustom_28898238, p_MetadataSource := p_MetadataSource_28898238);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9119,16 +9119,16 @@ BEGIN
   p_Description_7d834267 := 'peer-review field ''subject-container-name'' (type common:string-1000, minOccurs=0). Source: peer-review-3.0.xsd.';
   p_Type_7d834267 := 'String';
   p_Length_7d834267 := 1000;
-  p_AllowsNull_7d834267 := 1;
-  p_IsPrimaryKey_7d834267 := 0;
-  p_IsUniqueKey_7d834267 := 0;
-  p_IsReadOnly_7d834267 := 1;
-  p_IsRequired_7d834267 := 0;
+  p_AllowsNull_7d834267 := TRUE;
+  p_IsPrimaryKey_7d834267 := FALSE;
+  p_IsUniqueKey_7d834267 := FALSE;
+  p_IsReadOnly_7d834267 := TRUE;
+  p_IsRequired_7d834267 := FALSE;
   p_Sequence_7d834267 := 15;
   p_Status_7d834267 := 'Active';
-  p_IsCustom_7d834267 := 0;
+  p_IsCustom_7d834267 := FALSE;
   p_MetadataSource_7d834267 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7d834267, p_IntegrationObjectID := p_IntegrationObjectID_7d834267, p_Name := p_Name_7d834267, p_DisplayName := p_DisplayName_7d834267, p_Description := p_Description_7d834267, p_Category := p_Category_7d834267, p_Category_Clear := 1, p_Type := p_Type_7d834267, p_Length := p_Length_7d834267, p_Precision := p_Precision_7d834267, p_Precision_Clear := 1, p_Scale := p_Scale_7d834267, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_7d834267, p_DefaultValue := p_DefaultValue_7d834267, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_7d834267, p_IsUniqueKey := p_IsUniqueKey_7d834267, p_IsReadOnly := p_IsReadOnly_7d834267, p_IsRequired := p_IsRequired_7d834267, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7d834267, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7d834267, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_7d834267, p_Configuration := p_Configuration_7d834267, p_Configuration_Clear := 1, p_Status := p_Status_7d834267, p_IsCustom := p_IsCustom_7d834267, p_MetadataSource := p_MetadataSource_7d834267);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_7d834267, p_IntegrationObjectID := p_IntegrationObjectID_7d834267, p_Name := p_Name_7d834267, p_DisplayName := p_DisplayName_7d834267, p_Description := p_Description_7d834267, p_Category := p_Category_7d834267, p_Category_Clear := TRUE, p_Type := p_Type_7d834267, p_Length := p_Length_7d834267, p_Precision := p_Precision_7d834267, p_Precision_Clear := TRUE, p_Scale := p_Scale_7d834267, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_7d834267, p_DefaultValue := p_DefaultValue_7d834267, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_7d834267, p_IsUniqueKey := p_IsUniqueKey_7d834267, p_IsReadOnly := p_IsReadOnly_7d834267, p_IsRequired := p_IsRequired_7d834267, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_7d834267, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_7d834267, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_7d834267, p_Configuration := p_Configuration_7d834267, p_Configuration_Clear := TRUE, p_Status := p_Status_7d834267, p_IsCustom := p_IsCustom_7d834267, p_MetadataSource := p_MetadataSource_7d834267);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9164,16 +9164,16 @@ BEGIN
   p_DisplayName_334dc2dd := 'Subject Type';
   p_Description_334dc2dd := 'peer-review field ''subject-type'' (type peer-review:subject-type, minOccurs=0). Source: peer-review-3.0.xsd.';
   p_Type_334dc2dd := 'String';
-  p_AllowsNull_334dc2dd := 1;
-  p_IsPrimaryKey_334dc2dd := 0;
-  p_IsUniqueKey_334dc2dd := 0;
-  p_IsReadOnly_334dc2dd := 1;
-  p_IsRequired_334dc2dd := 0;
+  p_AllowsNull_334dc2dd := TRUE;
+  p_IsPrimaryKey_334dc2dd := FALSE;
+  p_IsUniqueKey_334dc2dd := FALSE;
+  p_IsReadOnly_334dc2dd := TRUE;
+  p_IsRequired_334dc2dd := FALSE;
   p_Sequence_334dc2dd := 16;
   p_Status_334dc2dd := 'Active';
-  p_IsCustom_334dc2dd := 0;
+  p_IsCustom_334dc2dd := FALSE;
   p_MetadataSource_334dc2dd := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_334dc2dd, p_IntegrationObjectID := p_IntegrationObjectID_334dc2dd, p_Name := p_Name_334dc2dd, p_DisplayName := p_DisplayName_334dc2dd, p_Description := p_Description_334dc2dd, p_Category := p_Category_334dc2dd, p_Category_Clear := 1, p_Type := p_Type_334dc2dd, p_Length := p_Length_334dc2dd, p_Length_Clear := 1, p_Precision := p_Precision_334dc2dd, p_Precision_Clear := 1, p_Scale := p_Scale_334dc2dd, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_334dc2dd, p_DefaultValue := p_DefaultValue_334dc2dd, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_334dc2dd, p_IsUniqueKey := p_IsUniqueKey_334dc2dd, p_IsReadOnly := p_IsReadOnly_334dc2dd, p_IsRequired := p_IsRequired_334dc2dd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_334dc2dd, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_334dc2dd, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_334dc2dd, p_Configuration := p_Configuration_334dc2dd, p_Configuration_Clear := 1, p_Status := p_Status_334dc2dd, p_IsCustom := p_IsCustom_334dc2dd, p_MetadataSource := p_MetadataSource_334dc2dd);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_334dc2dd, p_IntegrationObjectID := p_IntegrationObjectID_334dc2dd, p_Name := p_Name_334dc2dd, p_DisplayName := p_DisplayName_334dc2dd, p_Description := p_Description_334dc2dd, p_Category := p_Category_334dc2dd, p_Category_Clear := TRUE, p_Type := p_Type_334dc2dd, p_Length := p_Length_334dc2dd, p_Length_Clear := TRUE, p_Precision := p_Precision_334dc2dd, p_Precision_Clear := TRUE, p_Scale := p_Scale_334dc2dd, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_334dc2dd, p_DefaultValue := p_DefaultValue_334dc2dd, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_334dc2dd, p_IsUniqueKey := p_IsUniqueKey_334dc2dd, p_IsReadOnly := p_IsReadOnly_334dc2dd, p_IsRequired := p_IsRequired_334dc2dd, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_334dc2dd, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_334dc2dd, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_334dc2dd, p_Configuration := p_Configuration_334dc2dd, p_Configuration_Clear := TRUE, p_Status := p_Status_334dc2dd, p_IsCustom := p_IsCustom_334dc2dd, p_MetadataSource := p_MetadataSource_334dc2dd);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9209,16 +9209,16 @@ BEGIN
   p_DisplayName_a0a61d3b := 'Subject Name';
   p_Description_a0a61d3b := 'peer-review field ''subject-name'' (type peer-review:subject-name, minOccurs=0). Source: peer-review-3.0.xsd.';
   p_Type_a0a61d3b := 'json';
-  p_AllowsNull_a0a61d3b := 1;
-  p_IsPrimaryKey_a0a61d3b := 0;
-  p_IsUniqueKey_a0a61d3b := 0;
-  p_IsReadOnly_a0a61d3b := 1;
-  p_IsRequired_a0a61d3b := 0;
+  p_AllowsNull_a0a61d3b := TRUE;
+  p_IsPrimaryKey_a0a61d3b := FALSE;
+  p_IsUniqueKey_a0a61d3b := FALSE;
+  p_IsReadOnly_a0a61d3b := TRUE;
+  p_IsRequired_a0a61d3b := FALSE;
   p_Sequence_a0a61d3b := 17;
   p_Status_a0a61d3b := 'Active';
-  p_IsCustom_a0a61d3b := 0;
+  p_IsCustom_a0a61d3b := FALSE;
   p_MetadataSource_a0a61d3b := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a0a61d3b, p_IntegrationObjectID := p_IntegrationObjectID_a0a61d3b, p_Name := p_Name_a0a61d3b, p_DisplayName := p_DisplayName_a0a61d3b, p_Description := p_Description_a0a61d3b, p_Category := p_Category_a0a61d3b, p_Category_Clear := 1, p_Type := p_Type_a0a61d3b, p_Length := p_Length_a0a61d3b, p_Length_Clear := 1, p_Precision := p_Precision_a0a61d3b, p_Precision_Clear := 1, p_Scale := p_Scale_a0a61d3b, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_a0a61d3b, p_DefaultValue := p_DefaultValue_a0a61d3b, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_a0a61d3b, p_IsUniqueKey := p_IsUniqueKey_a0a61d3b, p_IsReadOnly := p_IsReadOnly_a0a61d3b, p_IsRequired := p_IsRequired_a0a61d3b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a0a61d3b, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a0a61d3b, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_a0a61d3b, p_Configuration := p_Configuration_a0a61d3b, p_Configuration_Clear := 1, p_Status := p_Status_a0a61d3b, p_IsCustom := p_IsCustom_a0a61d3b, p_MetadataSource := p_MetadataSource_a0a61d3b);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_a0a61d3b, p_IntegrationObjectID := p_IntegrationObjectID_a0a61d3b, p_Name := p_Name_a0a61d3b, p_DisplayName := p_DisplayName_a0a61d3b, p_Description := p_Description_a0a61d3b, p_Category := p_Category_a0a61d3b, p_Category_Clear := TRUE, p_Type := p_Type_a0a61d3b, p_Length := p_Length_a0a61d3b, p_Length_Clear := TRUE, p_Precision := p_Precision_a0a61d3b, p_Precision_Clear := TRUE, p_Scale := p_Scale_a0a61d3b, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_a0a61d3b, p_DefaultValue := p_DefaultValue_a0a61d3b, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_a0a61d3b, p_IsUniqueKey := p_IsUniqueKey_a0a61d3b, p_IsReadOnly := p_IsReadOnly_a0a61d3b, p_IsRequired := p_IsRequired_a0a61d3b, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_a0a61d3b, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_a0a61d3b, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_a0a61d3b, p_Configuration := p_Configuration_a0a61d3b, p_Configuration_Clear := TRUE, p_Status := p_Status_a0a61d3b, p_IsCustom := p_IsCustom_a0a61d3b, p_MetadataSource := p_MetadataSource_a0a61d3b);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9254,16 +9254,16 @@ BEGIN
   p_DisplayName_e2e06253 := 'Subject Url';
   p_Description_e2e06253 := 'peer-review field ''subject-url'' (type common:url, minOccurs=0). Source: peer-review-3.0.xsd.';
   p_Type_e2e06253 := 'String';
-  p_AllowsNull_e2e06253 := 1;
-  p_IsPrimaryKey_e2e06253 := 0;
-  p_IsUniqueKey_e2e06253 := 0;
-  p_IsReadOnly_e2e06253 := 1;
-  p_IsRequired_e2e06253 := 0;
+  p_AllowsNull_e2e06253 := TRUE;
+  p_IsPrimaryKey_e2e06253 := FALSE;
+  p_IsUniqueKey_e2e06253 := FALSE;
+  p_IsReadOnly_e2e06253 := TRUE;
+  p_IsRequired_e2e06253 := FALSE;
   p_Sequence_e2e06253 := 18;
   p_Status_e2e06253 := 'Active';
-  p_IsCustom_e2e06253 := 0;
+  p_IsCustom_e2e06253 := FALSE;
   p_MetadataSource_e2e06253 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e2e06253, p_IntegrationObjectID := p_IntegrationObjectID_e2e06253, p_Name := p_Name_e2e06253, p_DisplayName := p_DisplayName_e2e06253, p_Description := p_Description_e2e06253, p_Category := p_Category_e2e06253, p_Category_Clear := 1, p_Type := p_Type_e2e06253, p_Length := p_Length_e2e06253, p_Length_Clear := 1, p_Precision := p_Precision_e2e06253, p_Precision_Clear := 1, p_Scale := p_Scale_e2e06253, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_e2e06253, p_DefaultValue := p_DefaultValue_e2e06253, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_e2e06253, p_IsUniqueKey := p_IsUniqueKey_e2e06253, p_IsReadOnly := p_IsReadOnly_e2e06253, p_IsRequired := p_IsRequired_e2e06253, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e2e06253, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e2e06253, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_e2e06253, p_Configuration := p_Configuration_e2e06253, p_Configuration_Clear := 1, p_Status := p_Status_e2e06253, p_IsCustom := p_IsCustom_e2e06253, p_MetadataSource := p_MetadataSource_e2e06253);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_e2e06253, p_IntegrationObjectID := p_IntegrationObjectID_e2e06253, p_Name := p_Name_e2e06253, p_DisplayName := p_DisplayName_e2e06253, p_Description := p_Description_e2e06253, p_Category := p_Category_e2e06253, p_Category_Clear := TRUE, p_Type := p_Type_e2e06253, p_Length := p_Length_e2e06253, p_Length_Clear := TRUE, p_Precision := p_Precision_e2e06253, p_Precision_Clear := TRUE, p_Scale := p_Scale_e2e06253, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_e2e06253, p_DefaultValue := p_DefaultValue_e2e06253, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_e2e06253, p_IsUniqueKey := p_IsUniqueKey_e2e06253, p_IsReadOnly := p_IsReadOnly_e2e06253, p_IsRequired := p_IsRequired_e2e06253, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_e2e06253, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_e2e06253, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_e2e06253, p_Configuration := p_Configuration_e2e06253, p_Configuration_Clear := TRUE, p_Status := p_Status_e2e06253, p_IsCustom := p_IsCustom_e2e06253, p_MetadataSource := p_MetadataSource_e2e06253);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9299,16 +9299,16 @@ BEGIN
   p_DisplayName_04cb8a5f := 'Convening Organization';
   p_Description_04cb8a5f := 'peer-review field ''convening-organization'' (type common:organization, minOccurs=1). Source: peer-review-3.0.xsd.';
   p_Type_04cb8a5f := 'json';
-  p_AllowsNull_04cb8a5f := 1;
-  p_IsPrimaryKey_04cb8a5f := 0;
-  p_IsUniqueKey_04cb8a5f := 0;
-  p_IsReadOnly_04cb8a5f := 1;
-  p_IsRequired_04cb8a5f := 1;
+  p_AllowsNull_04cb8a5f := TRUE;
+  p_IsPrimaryKey_04cb8a5f := FALSE;
+  p_IsUniqueKey_04cb8a5f := FALSE;
+  p_IsReadOnly_04cb8a5f := TRUE;
+  p_IsRequired_04cb8a5f := TRUE;
   p_Sequence_04cb8a5f := 19;
   p_Status_04cb8a5f := 'Active';
-  p_IsCustom_04cb8a5f := 0;
+  p_IsCustom_04cb8a5f := FALSE;
   p_MetadataSource_04cb8a5f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_04cb8a5f, p_IntegrationObjectID := p_IntegrationObjectID_04cb8a5f, p_Name := p_Name_04cb8a5f, p_DisplayName := p_DisplayName_04cb8a5f, p_Description := p_Description_04cb8a5f, p_Category := p_Category_04cb8a5f, p_Category_Clear := 1, p_Type := p_Type_04cb8a5f, p_Length := p_Length_04cb8a5f, p_Length_Clear := 1, p_Precision := p_Precision_04cb8a5f, p_Precision_Clear := 1, p_Scale := p_Scale_04cb8a5f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_04cb8a5f, p_DefaultValue := p_DefaultValue_04cb8a5f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_04cb8a5f, p_IsUniqueKey := p_IsUniqueKey_04cb8a5f, p_IsReadOnly := p_IsReadOnly_04cb8a5f, p_IsRequired := p_IsRequired_04cb8a5f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_04cb8a5f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_04cb8a5f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_04cb8a5f, p_Configuration := p_Configuration_04cb8a5f, p_Configuration_Clear := 1, p_Status := p_Status_04cb8a5f, p_IsCustom := p_IsCustom_04cb8a5f, p_MetadataSource := p_MetadataSource_04cb8a5f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_04cb8a5f, p_IntegrationObjectID := p_IntegrationObjectID_04cb8a5f, p_Name := p_Name_04cb8a5f, p_DisplayName := p_DisplayName_04cb8a5f, p_Description := p_Description_04cb8a5f, p_Category := p_Category_04cb8a5f, p_Category_Clear := TRUE, p_Type := p_Type_04cb8a5f, p_Length := p_Length_04cb8a5f, p_Length_Clear := TRUE, p_Precision := p_Precision_04cb8a5f, p_Precision_Clear := TRUE, p_Scale := p_Scale_04cb8a5f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_04cb8a5f, p_DefaultValue := p_DefaultValue_04cb8a5f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_04cb8a5f, p_IsUniqueKey := p_IsUniqueKey_04cb8a5f, p_IsReadOnly := p_IsReadOnly_04cb8a5f, p_IsRequired := p_IsRequired_04cb8a5f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_04cb8a5f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_04cb8a5f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_04cb8a5f, p_Configuration := p_Configuration_04cb8a5f, p_Configuration_Clear := TRUE, p_Status := p_Status_04cb8a5f, p_IsCustom := p_IsCustom_04cb8a5f, p_MetadataSource := p_MetadataSource_04cb8a5f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9345,18 +9345,18 @@ BEGIN
   p_Description_2ee3860d := 'The ORCID iD of the researcher whose record this item belongs to. Foreign key to the record IO. Proven by the parametric child path GET /{ORCID-iD}/<section> (read-data tutorial) — the {ORCID-iD} segment IS the FK.';
   p_Type_2ee3860d := 'String';
   p_Length_2ee3860d := 19;
-  p_AllowsNull_2ee3860d := 1;
-  p_IsPrimaryKey_2ee3860d := 0;
-  p_IsUniqueKey_2ee3860d := 0;
-  p_IsReadOnly_2ee3860d := 1;
-  p_IsRequired_2ee3860d := 1;
+  p_AllowsNull_2ee3860d := TRUE;
+  p_IsPrimaryKey_2ee3860d := FALSE;
+  p_IsUniqueKey_2ee3860d := FALSE;
+  p_IsReadOnly_2ee3860d := TRUE;
+  p_IsRequired_2ee3860d := TRUE;
   p_RelatedIntegrationObjectID_2ee3860d := '73AED6B8-468D-403B-B994-F3C786C98BC0';
   p_RelatedIntegrationObjectFieldName_2ee3860d := 'orcid-id';
   p_Sequence_2ee3860d := 0;
   p_Status_2ee3860d := 'Active';
-  p_IsCustom_2ee3860d := 0;
+  p_IsCustom_2ee3860d := FALSE;
   p_MetadataSource_2ee3860d := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2ee3860d, p_IntegrationObjectID := p_IntegrationObjectID_2ee3860d, p_Name := p_Name_2ee3860d, p_DisplayName := p_DisplayName_2ee3860d, p_Description := p_Description_2ee3860d, p_Category := p_Category_2ee3860d, p_Category_Clear := 1, p_Type := p_Type_2ee3860d, p_Length := p_Length_2ee3860d, p_Precision := p_Precision_2ee3860d, p_Precision_Clear := 1, p_Scale := p_Scale_2ee3860d, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_2ee3860d, p_DefaultValue := p_DefaultValue_2ee3860d, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_2ee3860d, p_IsUniqueKey := p_IsUniqueKey_2ee3860d, p_IsReadOnly := p_IsReadOnly_2ee3860d, p_IsRequired := p_IsRequired_2ee3860d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2ee3860d, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2ee3860d, p_Sequence := p_Sequence_2ee3860d, p_Configuration := p_Configuration_2ee3860d, p_Configuration_Clear := 1, p_Status := p_Status_2ee3860d, p_IsCustom := p_IsCustom_2ee3860d, p_MetadataSource := p_MetadataSource_2ee3860d);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_2ee3860d, p_IntegrationObjectID := p_IntegrationObjectID_2ee3860d, p_Name := p_Name_2ee3860d, p_DisplayName := p_DisplayName_2ee3860d, p_Description := p_Description_2ee3860d, p_Category := p_Category_2ee3860d, p_Category_Clear := TRUE, p_Type := p_Type_2ee3860d, p_Length := p_Length_2ee3860d, p_Precision := p_Precision_2ee3860d, p_Precision_Clear := TRUE, p_Scale := p_Scale_2ee3860d, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_2ee3860d, p_DefaultValue := p_DefaultValue_2ee3860d, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_2ee3860d, p_IsUniqueKey := p_IsUniqueKey_2ee3860d, p_IsReadOnly := p_IsReadOnly_2ee3860d, p_IsRequired := p_IsRequired_2ee3860d, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_2ee3860d, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_2ee3860d, p_Sequence := p_Sequence_2ee3860d, p_Configuration := p_Configuration_2ee3860d, p_Configuration_Clear := TRUE, p_Status := p_Status_2ee3860d, p_IsCustom := p_IsCustom_2ee3860d, p_MetadataSource := p_MetadataSource_2ee3860d);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9392,16 +9392,16 @@ BEGIN
   p_DisplayName_63d59e6e := 'Put Code';
   p_Description_63d59e6e := 'The put-code is the integer primary key for the activity item. Present when reading; used to address a single item via GET /{iD}/<section>/{put-code}. (common-3.0.xsd: element-summary @put-code; put-code simpleType base xs:integer)';
   p_Type_63d59e6e := 'Integer';
-  p_AllowsNull_63d59e6e := 0;
-  p_IsPrimaryKey_63d59e6e := 1;
-  p_IsUniqueKey_63d59e6e := 1;
-  p_IsReadOnly_63d59e6e := 1;
-  p_IsRequired_63d59e6e := 1;
+  p_AllowsNull_63d59e6e := FALSE;
+  p_IsPrimaryKey_63d59e6e := TRUE;
+  p_IsUniqueKey_63d59e6e := TRUE;
+  p_IsReadOnly_63d59e6e := TRUE;
+  p_IsRequired_63d59e6e := TRUE;
   p_Sequence_63d59e6e := 1;
   p_Status_63d59e6e := 'Active';
-  p_IsCustom_63d59e6e := 0;
+  p_IsCustom_63d59e6e := FALSE;
   p_MetadataSource_63d59e6e := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_63d59e6e, p_IntegrationObjectID := p_IntegrationObjectID_63d59e6e, p_Name := p_Name_63d59e6e, p_DisplayName := p_DisplayName_63d59e6e, p_Description := p_Description_63d59e6e, p_Category := p_Category_63d59e6e, p_Category_Clear := 1, p_Type := p_Type_63d59e6e, p_Length := p_Length_63d59e6e, p_Length_Clear := 1, p_Precision := p_Precision_63d59e6e, p_Precision_Clear := 1, p_Scale := p_Scale_63d59e6e, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_63d59e6e, p_DefaultValue := p_DefaultValue_63d59e6e, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_63d59e6e, p_IsUniqueKey := p_IsUniqueKey_63d59e6e, p_IsReadOnly := p_IsReadOnly_63d59e6e, p_IsRequired := p_IsRequired_63d59e6e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_63d59e6e, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_63d59e6e, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_63d59e6e, p_Configuration := p_Configuration_63d59e6e, p_Configuration_Clear := 1, p_Status := p_Status_63d59e6e, p_IsCustom := p_IsCustom_63d59e6e, p_MetadataSource := p_MetadataSource_63d59e6e);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_63d59e6e, p_IntegrationObjectID := p_IntegrationObjectID_63d59e6e, p_Name := p_Name_63d59e6e, p_DisplayName := p_DisplayName_63d59e6e, p_Description := p_Description_63d59e6e, p_Category := p_Category_63d59e6e, p_Category_Clear := TRUE, p_Type := p_Type_63d59e6e, p_Length := p_Length_63d59e6e, p_Length_Clear := TRUE, p_Precision := p_Precision_63d59e6e, p_Precision_Clear := TRUE, p_Scale := p_Scale_63d59e6e, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_63d59e6e, p_DefaultValue := p_DefaultValue_63d59e6e, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_63d59e6e, p_IsUniqueKey := p_IsUniqueKey_63d59e6e, p_IsReadOnly := p_IsReadOnly_63d59e6e, p_IsRequired := p_IsRequired_63d59e6e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_63d59e6e, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_63d59e6e, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_63d59e6e, p_Configuration := p_Configuration_63d59e6e, p_Configuration_Clear := TRUE, p_Status := p_Status_63d59e6e, p_IsCustom := p_IsCustom_63d59e6e, p_MetadataSource := p_MetadataSource_63d59e6e);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9438,16 +9438,16 @@ BEGIN
   p_Description_5420cc53 := 'Element path /{orcid}/{activity-name}/{put-code}, present only when reading. (common-3.0.xsd element-summary @path, element-path simpleType)';
   p_Type_5420cc53 := 'String';
   p_Length_5420cc53 := 500;
-  p_AllowsNull_5420cc53 := 1;
-  p_IsPrimaryKey_5420cc53 := 0;
-  p_IsUniqueKey_5420cc53 := 0;
-  p_IsReadOnly_5420cc53 := 1;
-  p_IsRequired_5420cc53 := 0;
+  p_AllowsNull_5420cc53 := TRUE;
+  p_IsPrimaryKey_5420cc53 := FALSE;
+  p_IsUniqueKey_5420cc53 := FALSE;
+  p_IsReadOnly_5420cc53 := TRUE;
+  p_IsRequired_5420cc53 := FALSE;
   p_Sequence_5420cc53 := 2;
   p_Status_5420cc53 := 'Active';
-  p_IsCustom_5420cc53 := 0;
+  p_IsCustom_5420cc53 := FALSE;
   p_MetadataSource_5420cc53 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5420cc53, p_IntegrationObjectID := p_IntegrationObjectID_5420cc53, p_Name := p_Name_5420cc53, p_DisplayName := p_DisplayName_5420cc53, p_Description := p_Description_5420cc53, p_Category := p_Category_5420cc53, p_Category_Clear := 1, p_Type := p_Type_5420cc53, p_Length := p_Length_5420cc53, p_Precision := p_Precision_5420cc53, p_Precision_Clear := 1, p_Scale := p_Scale_5420cc53, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_5420cc53, p_DefaultValue := p_DefaultValue_5420cc53, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_5420cc53, p_IsUniqueKey := p_IsUniqueKey_5420cc53, p_IsReadOnly := p_IsReadOnly_5420cc53, p_IsRequired := p_IsRequired_5420cc53, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5420cc53, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5420cc53, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_5420cc53, p_Configuration := p_Configuration_5420cc53, p_Configuration_Clear := 1, p_Status := p_Status_5420cc53, p_IsCustom := p_IsCustom_5420cc53, p_MetadataSource := p_MetadataSource_5420cc53);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_5420cc53, p_IntegrationObjectID := p_IntegrationObjectID_5420cc53, p_Name := p_Name_5420cc53, p_DisplayName := p_DisplayName_5420cc53, p_Description := p_Description_5420cc53, p_Category := p_Category_5420cc53, p_Category_Clear := TRUE, p_Type := p_Type_5420cc53, p_Length := p_Length_5420cc53, p_Precision := p_Precision_5420cc53, p_Precision_Clear := TRUE, p_Scale := p_Scale_5420cc53, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_5420cc53, p_DefaultValue := p_DefaultValue_5420cc53, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_5420cc53, p_IsUniqueKey := p_IsUniqueKey_5420cc53, p_IsReadOnly := p_IsReadOnly_5420cc53, p_IsRequired := p_IsRequired_5420cc53, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_5420cc53, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_5420cc53, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_5420cc53, p_Configuration := p_Configuration_5420cc53, p_Configuration_Clear := TRUE, p_Status := p_Status_5420cc53, p_IsCustom := p_IsCustom_5420cc53, p_MetadataSource := p_MetadataSource_5420cc53);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9483,16 +9483,16 @@ BEGIN
   p_DisplayName_4e1678ea := 'Visibility';
   p_Description_4e1678ea := 'Visibility level: private | limited | public | registered-only. Public API returns only public items. (common-3.0.xsd element-summary @visibility, visibility simpleType enumeration)';
   p_Type_4e1678ea := 'String';
-  p_AllowsNull_4e1678ea := 1;
-  p_IsPrimaryKey_4e1678ea := 0;
-  p_IsUniqueKey_4e1678ea := 0;
-  p_IsReadOnly_4e1678ea := 1;
-  p_IsRequired_4e1678ea := 0;
+  p_AllowsNull_4e1678ea := TRUE;
+  p_IsPrimaryKey_4e1678ea := FALSE;
+  p_IsUniqueKey_4e1678ea := FALSE;
+  p_IsReadOnly_4e1678ea := TRUE;
+  p_IsRequired_4e1678ea := FALSE;
   p_Sequence_4e1678ea := 3;
   p_Status_4e1678ea := 'Active';
-  p_IsCustom_4e1678ea := 0;
+  p_IsCustom_4e1678ea := FALSE;
   p_MetadataSource_4e1678ea := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_4e1678ea, p_IntegrationObjectID := p_IntegrationObjectID_4e1678ea, p_Name := p_Name_4e1678ea, p_DisplayName := p_DisplayName_4e1678ea, p_Description := p_Description_4e1678ea, p_Category := p_Category_4e1678ea, p_Category_Clear := 1, p_Type := p_Type_4e1678ea, p_Length := p_Length_4e1678ea, p_Length_Clear := 1, p_Precision := p_Precision_4e1678ea, p_Precision_Clear := 1, p_Scale := p_Scale_4e1678ea, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_4e1678ea, p_DefaultValue := p_DefaultValue_4e1678ea, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_4e1678ea, p_IsUniqueKey := p_IsUniqueKey_4e1678ea, p_IsReadOnly := p_IsReadOnly_4e1678ea, p_IsRequired := p_IsRequired_4e1678ea, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_4e1678ea, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_4e1678ea, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_4e1678ea, p_Configuration := p_Configuration_4e1678ea, p_Configuration_Clear := 1, p_Status := p_Status_4e1678ea, p_IsCustom := p_IsCustom_4e1678ea, p_MetadataSource := p_MetadataSource_4e1678ea);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_4e1678ea, p_IntegrationObjectID := p_IntegrationObjectID_4e1678ea, p_Name := p_Name_4e1678ea, p_DisplayName := p_DisplayName_4e1678ea, p_Description := p_Description_4e1678ea, p_Category := p_Category_4e1678ea, p_Category_Clear := TRUE, p_Type := p_Type_4e1678ea, p_Length := p_Length_4e1678ea, p_Length_Clear := TRUE, p_Precision := p_Precision_4e1678ea, p_Precision_Clear := TRUE, p_Scale := p_Scale_4e1678ea, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_4e1678ea, p_DefaultValue := p_DefaultValue_4e1678ea, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_4e1678ea, p_IsUniqueKey := p_IsUniqueKey_4e1678ea, p_IsReadOnly := p_IsReadOnly_4e1678ea, p_IsRequired := p_IsRequired_4e1678ea, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_4e1678ea, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_4e1678ea, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_4e1678ea, p_Configuration := p_Configuration_4e1678ea, p_Configuration_Clear := TRUE, p_Status := p_Status_4e1678ea, p_IsCustom := p_IsCustom_4e1678ea, p_MetadataSource := p_MetadataSource_4e1678ea);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9528,16 +9528,16 @@ BEGIN
   p_DisplayName_6b0dba44 := 'Display Index';
   p_Description_6b0dba44 := 'Display ordering index for the item. (common-3.0.xsd element-summary @display-index)';
   p_Type_6b0dba44 := 'String';
-  p_AllowsNull_6b0dba44 := 1;
-  p_IsPrimaryKey_6b0dba44 := 0;
-  p_IsUniqueKey_6b0dba44 := 0;
-  p_IsReadOnly_6b0dba44 := 1;
-  p_IsRequired_6b0dba44 := 0;
+  p_AllowsNull_6b0dba44 := TRUE;
+  p_IsPrimaryKey_6b0dba44 := FALSE;
+  p_IsUniqueKey_6b0dba44 := FALSE;
+  p_IsReadOnly_6b0dba44 := TRUE;
+  p_IsRequired_6b0dba44 := FALSE;
   p_Sequence_6b0dba44 := 4;
   p_Status_6b0dba44 := 'Active';
-  p_IsCustom_6b0dba44 := 0;
+  p_IsCustom_6b0dba44 := FALSE;
   p_MetadataSource_6b0dba44 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6b0dba44, p_IntegrationObjectID := p_IntegrationObjectID_6b0dba44, p_Name := p_Name_6b0dba44, p_DisplayName := p_DisplayName_6b0dba44, p_Description := p_Description_6b0dba44, p_Category := p_Category_6b0dba44, p_Category_Clear := 1, p_Type := p_Type_6b0dba44, p_Length := p_Length_6b0dba44, p_Length_Clear := 1, p_Precision := p_Precision_6b0dba44, p_Precision_Clear := 1, p_Scale := p_Scale_6b0dba44, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_6b0dba44, p_DefaultValue := p_DefaultValue_6b0dba44, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_6b0dba44, p_IsUniqueKey := p_IsUniqueKey_6b0dba44, p_IsReadOnly := p_IsReadOnly_6b0dba44, p_IsRequired := p_IsRequired_6b0dba44, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6b0dba44, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6b0dba44, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_6b0dba44, p_Configuration := p_Configuration_6b0dba44, p_Configuration_Clear := 1, p_Status := p_Status_6b0dba44, p_IsCustom := p_IsCustom_6b0dba44, p_MetadataSource := p_MetadataSource_6b0dba44);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_6b0dba44, p_IntegrationObjectID := p_IntegrationObjectID_6b0dba44, p_Name := p_Name_6b0dba44, p_DisplayName := p_DisplayName_6b0dba44, p_Description := p_Description_6b0dba44, p_Category := p_Category_6b0dba44, p_Category_Clear := TRUE, p_Type := p_Type_6b0dba44, p_Length := p_Length_6b0dba44, p_Length_Clear := TRUE, p_Precision := p_Precision_6b0dba44, p_Precision_Clear := TRUE, p_Scale := p_Scale_6b0dba44, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_6b0dba44, p_DefaultValue := p_DefaultValue_6b0dba44, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_6b0dba44, p_IsUniqueKey := p_IsUniqueKey_6b0dba44, p_IsReadOnly := p_IsReadOnly_6b0dba44, p_IsRequired := p_IsRequired_6b0dba44, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_6b0dba44, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_6b0dba44, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_6b0dba44, p_Configuration := p_Configuration_6b0dba44, p_Configuration_Clear := TRUE, p_Status := p_Status_6b0dba44, p_IsCustom := p_IsCustom_6b0dba44, p_MetadataSource := p_MetadataSource_6b0dba44);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9573,16 +9573,16 @@ BEGIN
   p_DisplayName_f774262f := 'Created Date';
   p_Description_f774262f := 'The date-time when the item was created. (common-3.0.xsd created-date element, xs:dateTime)';
   p_Type_f774262f := 'DateTime';
-  p_AllowsNull_f774262f := 1;
-  p_IsPrimaryKey_f774262f := 0;
-  p_IsUniqueKey_f774262f := 0;
-  p_IsReadOnly_f774262f := 1;
-  p_IsRequired_f774262f := 0;
+  p_AllowsNull_f774262f := TRUE;
+  p_IsPrimaryKey_f774262f := FALSE;
+  p_IsUniqueKey_f774262f := FALSE;
+  p_IsReadOnly_f774262f := TRUE;
+  p_IsRequired_f774262f := FALSE;
   p_Sequence_f774262f := 5;
   p_Status_f774262f := 'Active';
-  p_IsCustom_f774262f := 0;
+  p_IsCustom_f774262f := FALSE;
   p_MetadataSource_f774262f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f774262f, p_IntegrationObjectID := p_IntegrationObjectID_f774262f, p_Name := p_Name_f774262f, p_DisplayName := p_DisplayName_f774262f, p_Description := p_Description_f774262f, p_Category := p_Category_f774262f, p_Category_Clear := 1, p_Type := p_Type_f774262f, p_Length := p_Length_f774262f, p_Length_Clear := 1, p_Precision := p_Precision_f774262f, p_Precision_Clear := 1, p_Scale := p_Scale_f774262f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_f774262f, p_DefaultValue := p_DefaultValue_f774262f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_f774262f, p_IsUniqueKey := p_IsUniqueKey_f774262f, p_IsReadOnly := p_IsReadOnly_f774262f, p_IsRequired := p_IsRequired_f774262f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f774262f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f774262f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_f774262f, p_Configuration := p_Configuration_f774262f, p_Configuration_Clear := 1, p_Status := p_Status_f774262f, p_IsCustom := p_IsCustom_f774262f, p_MetadataSource := p_MetadataSource_f774262f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_f774262f, p_IntegrationObjectID := p_IntegrationObjectID_f774262f, p_Name := p_Name_f774262f, p_DisplayName := p_DisplayName_f774262f, p_Description := p_Description_f774262f, p_Category := p_Category_f774262f, p_Category_Clear := TRUE, p_Type := p_Type_f774262f, p_Length := p_Length_f774262f, p_Length_Clear := TRUE, p_Precision := p_Precision_f774262f, p_Precision_Clear := TRUE, p_Scale := p_Scale_f774262f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_f774262f, p_DefaultValue := p_DefaultValue_f774262f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_f774262f, p_IsUniqueKey := p_IsUniqueKey_f774262f, p_IsReadOnly := p_IsReadOnly_f774262f, p_IsRequired := p_IsRequired_f774262f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_f774262f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_f774262f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_f774262f, p_Configuration := p_Configuration_f774262f, p_Configuration_Clear := TRUE, p_Status := p_Status_f774262f, p_IsCustom := p_IsCustom_f774262f, p_MetadataSource := p_MetadataSource_f774262f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9618,16 +9618,16 @@ BEGIN
   p_DisplayName_817b22d5 := 'Last Modified Date';
   p_Description_817b22d5 := 'The date-time when the item was last modified. Used as the incremental sync watermark field. (common-3.0.xsd last-modified-date element, xs:dateTime)';
   p_Type_817b22d5 := 'DateTime';
-  p_AllowsNull_817b22d5 := 1;
-  p_IsPrimaryKey_817b22d5 := 0;
-  p_IsUniqueKey_817b22d5 := 0;
-  p_IsReadOnly_817b22d5 := 1;
-  p_IsRequired_817b22d5 := 0;
+  p_AllowsNull_817b22d5 := TRUE;
+  p_IsPrimaryKey_817b22d5 := FALSE;
+  p_IsUniqueKey_817b22d5 := FALSE;
+  p_IsReadOnly_817b22d5 := TRUE;
+  p_IsRequired_817b22d5 := FALSE;
   p_Sequence_817b22d5 := 6;
   p_Status_817b22d5 := 'Active';
-  p_IsCustom_817b22d5 := 0;
+  p_IsCustom_817b22d5 := FALSE;
   p_MetadataSource_817b22d5 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_817b22d5, p_IntegrationObjectID := p_IntegrationObjectID_817b22d5, p_Name := p_Name_817b22d5, p_DisplayName := p_DisplayName_817b22d5, p_Description := p_Description_817b22d5, p_Category := p_Category_817b22d5, p_Category_Clear := 1, p_Type := p_Type_817b22d5, p_Length := p_Length_817b22d5, p_Length_Clear := 1, p_Precision := p_Precision_817b22d5, p_Precision_Clear := 1, p_Scale := p_Scale_817b22d5, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_817b22d5, p_DefaultValue := p_DefaultValue_817b22d5, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_817b22d5, p_IsUniqueKey := p_IsUniqueKey_817b22d5, p_IsReadOnly := p_IsReadOnly_817b22d5, p_IsRequired := p_IsRequired_817b22d5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_817b22d5, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_817b22d5, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_817b22d5, p_Configuration := p_Configuration_817b22d5, p_Configuration_Clear := 1, p_Status := p_Status_817b22d5, p_IsCustom := p_IsCustom_817b22d5, p_MetadataSource := p_MetadataSource_817b22d5);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_817b22d5, p_IntegrationObjectID := p_IntegrationObjectID_817b22d5, p_Name := p_Name_817b22d5, p_DisplayName := p_DisplayName_817b22d5, p_Description := p_Description_817b22d5, p_Category := p_Category_817b22d5, p_Category_Clear := TRUE, p_Type := p_Type_817b22d5, p_Length := p_Length_817b22d5, p_Length_Clear := TRUE, p_Precision := p_Precision_817b22d5, p_Precision_Clear := TRUE, p_Scale := p_Scale_817b22d5, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_817b22d5, p_DefaultValue := p_DefaultValue_817b22d5, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_817b22d5, p_IsUniqueKey := p_IsUniqueKey_817b22d5, p_IsReadOnly := p_IsReadOnly_817b22d5, p_IsRequired := p_IsRequired_817b22d5, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_817b22d5, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_817b22d5, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_817b22d5, p_Configuration := p_Configuration_817b22d5, p_Configuration_Clear := TRUE, p_Status := p_Status_817b22d5, p_IsCustom := p_IsCustom_817b22d5, p_MetadataSource := p_MetadataSource_817b22d5);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9663,16 +9663,16 @@ BEGIN
   p_DisplayName_249b06c6 := 'Source';
   p_Description_249b06c6 := 'Attribution: the client application or ORCID user that created the item (source-client-id or source-orcid). Nested object. (common-3.0.xsd source-type)';
   p_Type_249b06c6 := 'json';
-  p_AllowsNull_249b06c6 := 1;
-  p_IsPrimaryKey_249b06c6 := 0;
-  p_IsUniqueKey_249b06c6 := 0;
-  p_IsReadOnly_249b06c6 := 1;
-  p_IsRequired_249b06c6 := 0;
+  p_AllowsNull_249b06c6 := TRUE;
+  p_IsPrimaryKey_249b06c6 := FALSE;
+  p_IsUniqueKey_249b06c6 := FALSE;
+  p_IsReadOnly_249b06c6 := TRUE;
+  p_IsRequired_249b06c6 := FALSE;
   p_Sequence_249b06c6 := 7;
   p_Status_249b06c6 := 'Active';
-  p_IsCustom_249b06c6 := 0;
+  p_IsCustom_249b06c6 := FALSE;
   p_MetadataSource_249b06c6 := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_249b06c6, p_IntegrationObjectID := p_IntegrationObjectID_249b06c6, p_Name := p_Name_249b06c6, p_DisplayName := p_DisplayName_249b06c6, p_Description := p_Description_249b06c6, p_Category := p_Category_249b06c6, p_Category_Clear := 1, p_Type := p_Type_249b06c6, p_Length := p_Length_249b06c6, p_Length_Clear := 1, p_Precision := p_Precision_249b06c6, p_Precision_Clear := 1, p_Scale := p_Scale_249b06c6, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_249b06c6, p_DefaultValue := p_DefaultValue_249b06c6, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_249b06c6, p_IsUniqueKey := p_IsUniqueKey_249b06c6, p_IsReadOnly := p_IsReadOnly_249b06c6, p_IsRequired := p_IsRequired_249b06c6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_249b06c6, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_249b06c6, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_249b06c6, p_Configuration := p_Configuration_249b06c6, p_Configuration_Clear := 1, p_Status := p_Status_249b06c6, p_IsCustom := p_IsCustom_249b06c6, p_MetadataSource := p_MetadataSource_249b06c6);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_249b06c6, p_IntegrationObjectID := p_IntegrationObjectID_249b06c6, p_Name := p_Name_249b06c6, p_DisplayName := p_DisplayName_249b06c6, p_Description := p_Description_249b06c6, p_Category := p_Category_249b06c6, p_Category_Clear := TRUE, p_Type := p_Type_249b06c6, p_Length := p_Length_249b06c6, p_Length_Clear := TRUE, p_Precision := p_Precision_249b06c6, p_Precision_Clear := TRUE, p_Scale := p_Scale_249b06c6, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_249b06c6, p_DefaultValue := p_DefaultValue_249b06c6, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_249b06c6, p_IsUniqueKey := p_IsUniqueKey_249b06c6, p_IsReadOnly := p_IsReadOnly_249b06c6, p_IsRequired := p_IsRequired_249b06c6, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_249b06c6, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_249b06c6, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_249b06c6, p_Configuration := p_Configuration_249b06c6, p_Configuration_Clear := TRUE, p_Status := p_Status_249b06c6, p_IsCustom := p_IsCustom_249b06c6, p_MetadataSource := p_MetadataSource_249b06c6);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9708,16 +9708,16 @@ BEGIN
   p_DisplayName_3d8e0c9f := 'Proposal';
   p_Description_3d8e0c9f := 'research-resource field ''proposal'' (type research-resource:proposal, minOccurs=1). Source: research-resource-3.0.xsd.';
   p_Type_3d8e0c9f := 'json';
-  p_AllowsNull_3d8e0c9f := 1;
-  p_IsPrimaryKey_3d8e0c9f := 0;
-  p_IsUniqueKey_3d8e0c9f := 0;
-  p_IsReadOnly_3d8e0c9f := 1;
-  p_IsRequired_3d8e0c9f := 1;
+  p_AllowsNull_3d8e0c9f := TRUE;
+  p_IsPrimaryKey_3d8e0c9f := FALSE;
+  p_IsUniqueKey_3d8e0c9f := FALSE;
+  p_IsReadOnly_3d8e0c9f := TRUE;
+  p_IsRequired_3d8e0c9f := TRUE;
   p_Sequence_3d8e0c9f := 8;
   p_Status_3d8e0c9f := 'Active';
-  p_IsCustom_3d8e0c9f := 0;
+  p_IsCustom_3d8e0c9f := FALSE;
   p_MetadataSource_3d8e0c9f := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3d8e0c9f, p_IntegrationObjectID := p_IntegrationObjectID_3d8e0c9f, p_Name := p_Name_3d8e0c9f, p_DisplayName := p_DisplayName_3d8e0c9f, p_Description := p_Description_3d8e0c9f, p_Category := p_Category_3d8e0c9f, p_Category_Clear := 1, p_Type := p_Type_3d8e0c9f, p_Length := p_Length_3d8e0c9f, p_Length_Clear := 1, p_Precision := p_Precision_3d8e0c9f, p_Precision_Clear := 1, p_Scale := p_Scale_3d8e0c9f, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_3d8e0c9f, p_DefaultValue := p_DefaultValue_3d8e0c9f, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_3d8e0c9f, p_IsUniqueKey := p_IsUniqueKey_3d8e0c9f, p_IsReadOnly := p_IsReadOnly_3d8e0c9f, p_IsRequired := p_IsRequired_3d8e0c9f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3d8e0c9f, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3d8e0c9f, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_3d8e0c9f, p_Configuration := p_Configuration_3d8e0c9f, p_Configuration_Clear := 1, p_Status := p_Status_3d8e0c9f, p_IsCustom := p_IsCustom_3d8e0c9f, p_MetadataSource := p_MetadataSource_3d8e0c9f);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_3d8e0c9f, p_IntegrationObjectID := p_IntegrationObjectID_3d8e0c9f, p_Name := p_Name_3d8e0c9f, p_DisplayName := p_DisplayName_3d8e0c9f, p_Description := p_Description_3d8e0c9f, p_Category := p_Category_3d8e0c9f, p_Category_Clear := TRUE, p_Type := p_Type_3d8e0c9f, p_Length := p_Length_3d8e0c9f, p_Length_Clear := TRUE, p_Precision := p_Precision_3d8e0c9f, p_Precision_Clear := TRUE, p_Scale := p_Scale_3d8e0c9f, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_3d8e0c9f, p_DefaultValue := p_DefaultValue_3d8e0c9f, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_3d8e0c9f, p_IsUniqueKey := p_IsUniqueKey_3d8e0c9f, p_IsReadOnly := p_IsReadOnly_3d8e0c9f, p_IsRequired := p_IsRequired_3d8e0c9f, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_3d8e0c9f, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_3d8e0c9f, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_3d8e0c9f, p_Configuration := p_Configuration_3d8e0c9f, p_Configuration_Clear := TRUE, p_Status := p_Status_3d8e0c9f, p_IsCustom := p_IsCustom_3d8e0c9f, p_MetadataSource := p_MetadataSource_3d8e0c9f);
 END $mj$;
 
 -- Save MJ: Integration Object Fields (core SP call only)
@@ -9753,16 +9753,16 @@ BEGIN
   p_DisplayName_d1c2f15e := 'Resource Items';
   p_Description_d1c2f15e := 'research-resource field ''resource-items'' (type research-resource:resource-items, minOccurs=1). Source: research-resource-3.0.xsd.';
   p_Type_d1c2f15e := 'json';
-  p_AllowsNull_d1c2f15e := 1;
-  p_IsPrimaryKey_d1c2f15e := 0;
-  p_IsUniqueKey_d1c2f15e := 0;
-  p_IsReadOnly_d1c2f15e := 1;
-  p_IsRequired_d1c2f15e := 1;
+  p_AllowsNull_d1c2f15e := TRUE;
+  p_IsPrimaryKey_d1c2f15e := FALSE;
+  p_IsUniqueKey_d1c2f15e := FALSE;
+  p_IsReadOnly_d1c2f15e := TRUE;
+  p_IsRequired_d1c2f15e := TRUE;
   p_Sequence_d1c2f15e := 9;
   p_Status_d1c2f15e := 'Active';
-  p_IsCustom_d1c2f15e := 0;
+  p_IsCustom_d1c2f15e := FALSE;
   p_MetadataSource_d1c2f15e := 'Declared';
-  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d1c2f15e, p_IntegrationObjectID := p_IntegrationObjectID_d1c2f15e, p_Name := p_Name_d1c2f15e, p_DisplayName := p_DisplayName_d1c2f15e, p_Description := p_Description_d1c2f15e, p_Category := p_Category_d1c2f15e, p_Category_Clear := 1, p_Type := p_Type_d1c2f15e, p_Length := p_Length_d1c2f15e, p_Length_Clear := 1, p_Precision := p_Precision_d1c2f15e, p_Precision_Clear := 1, p_Scale := p_Scale_d1c2f15e, p_Scale_Clear := 1, p_AllowsNull := p_AllowsNull_d1c2f15e, p_DefaultValue := p_DefaultValue_d1c2f15e, p_DefaultValue_Clear := 1, p_IsPrimaryKey := p_IsPrimaryKey_d1c2f15e, p_IsUniqueKey := p_IsUniqueKey_d1c2f15e, p_IsReadOnly := p_IsReadOnly_d1c2f15e, p_IsRequired := p_IsRequired_d1c2f15e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d1c2f15e, p_RelatedIntegrationObjectID_Clear := 1, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d1c2f15e, p_RelatedIntegrationObjectFieldName_Clear := 1, p_Sequence := p_Sequence_d1c2f15e, p_Configuration := p_Configuration_d1c2f15e, p_Configuration_Clear := 1, p_Status := p_Status_d1c2f15e, p_IsCustom := p_IsCustom_d1c2f15e, p_MetadataSource := p_MetadataSource_d1c2f15e);
+  PERFORM __mj."spCreateIntegrationObjectField"(p_ID := p_ID_d1c2f15e, p_IntegrationObjectID := p_IntegrationObjectID_d1c2f15e, p_Name := p_Name_d1c2f15e, p_DisplayName := p_DisplayName_d1c2f15e, p_Description := p_Description_d1c2f15e, p_Category := p_Category_d1c2f15e, p_Category_Clear := TRUE, p_Type := p_Type_d1c2f15e, p_Length := p_Length_d1c2f15e, p_Length_Clear := TRUE, p_Precision := p_Precision_d1c2f15e, p_Precision_Clear := TRUE, p_Scale := p_Scale_d1c2f15e, p_Scale_Clear := TRUE, p_AllowsNull := p_AllowsNull_d1c2f15e, p_DefaultValue := p_DefaultValue_d1c2f15e, p_DefaultValue_Clear := TRUE, p_IsPrimaryKey := p_IsPrimaryKey_d1c2f15e, p_IsUniqueKey := p_IsUniqueKey_d1c2f15e, p_IsReadOnly := p_IsReadOnly_d1c2f15e, p_IsRequired := p_IsRequired_d1c2f15e, p_RelatedIntegrationObjectID := p_RelatedIntegrationObjectID_d1c2f15e, p_RelatedIntegrationObjectID_Clear := TRUE, p_RelatedIntegrationObjectFieldName := p_RelatedIntegrationObjectFieldName_d1c2f15e, p_RelatedIntegrationObjectFieldName_Clear := TRUE, p_Sequence := p_Sequence_d1c2f15e, p_Configuration := p_Configuration_d1c2f15e, p_Configuration_Clear := TRUE, p_Status := p_Status_d1c2f15e, p_IsCustom := p_IsCustom_d1c2f15e, p_MetadataSource := p_MetadataSource_d1c2f15e);
 END $mj$;
 
 
