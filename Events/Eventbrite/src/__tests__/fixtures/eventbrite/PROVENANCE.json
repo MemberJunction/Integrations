@@ -1,0 +1,41 @@
+{
+  "fixtureSet": "eventbrite",
+  "provenance": "spec-derived",
+  "rationale": "Response SHAPES are derived from the Eventbrite Platform REST API v3 (apiary.io spec, last updated 2024-02-16) documented example payloads: every paginated list endpoint returns a per-resource collection array (events/attendees/orders/...) alongside a `pagination` object carrying continuation/has_more_items/page_number/page_count/page_size/object_count; single-record GETs (User, Organizer, Media) return the object directly with no envelope; the error envelope is the documented { error, error_description, status_code } triple. All VALUES are synthetic / PII-scrubbed test data, not captured real responses. No live Eventbrite API was hit to produce these (verdicts.json: achievedCeiling=format-verified-no-creds, mode=unauthenticated).",
+  "piiSafety": {
+    "names": "<scrubbed-name-N> placeholders",
+    "orgNames": "<scrubbed-org-N> placeholders",
+    "emails": "example+N@example.com (RFC 2606 reserved domain) — covers attendee profile.email + order buyer email",
+    "phones": "555-01xx (NANP fictional test range)",
+    "addresses": "123 Test St, Example, XX 00000",
+    "barcodes": "0000000000001 placeholder (real attendee barcodes are PII and access-controlled)",
+    "customAnswers": "<redacted> — attendee/order custom question answers are free-text PII",
+    "freeText": "<redacted> for descriptions",
+    "dates": "synthetic 2026 ISO timestamps",
+    "ids": "well-formed but synthetic numeric-string ids (needed for FK/PK + watermark verification)"
+  },
+  "sources": [
+    {
+      "URL": "https://www.eventbrite.com/platform/api (Eventbrite Platform API v3, apiary.io spec 2024-02-16)",
+      "UsedFor": "per-resource list envelope shape (events/attendees/orders/...), `pagination` continuation-cursor object (has_more_items + continuation + page_number/page_count/page_size/object_count), Bearer auth scheme, changed_since incremental param on Attendee/Order, error envelope { error, error_description, status_code }, per-operation write paths + wrapped create bodies",
+      "SourceTier": 1,
+      "SourceCategory": "OfficialDocs"
+    }
+  ],
+  "edgeCasesCovered": [
+    "list envelope with pagination.has_more_items=false (final page)",
+    "list envelope with pagination.has_more_items=true + continuation cursor (multi-page)",
+    "single-record GET (User/Organizer/Media — object returned directly, no envelope)",
+    "404 NOT_FOUND error envelope",
+    "429 HIT_RATE_LIMIT error envelope (Order/Attendee/Webhook)",
+    "create-response (POST → body.id) for every write-capable family",
+    "delete-response for every family declaring DELETE",
+    "record carrying a `changed` ISO-8601 watermark (Order/Attendee incremental)"
+  ],
+  "objectFamiliesCovered": [
+    "User", "Organization", "OrganizationMember", "Event", "EventSeries", "Venue",
+    "Organizer", "TicketClass", "TicketGroup", "Order", "Attendee", "Answer",
+    "Discount", "Question", "Category", "Subcategory", "Format", "Media",
+    "Webhook", "EventTeam", "InventoryTier"
+  ]
+}

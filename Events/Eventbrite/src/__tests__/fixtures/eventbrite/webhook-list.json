@@ -1,0 +1,32 @@
+{
+  "webhooks": [
+    {
+      "id": "177000000001",
+      "endpoint_url": "https://example.com/eventbrite/hook",
+      "actions": [
+        "order.placed",
+        "event.published"
+      ],
+      "event_id": null,
+      "organization_id": "330000000001"
+    },
+    {
+      "id": "177000000002",
+      "endpoint_url": "https://example.com/eventbrite/hook",
+      "actions": [
+        "order.placed",
+        "event.published"
+      ],
+      "event_id": null,
+      "organization_id": "330000000001"
+    }
+  ],
+  "pagination": {
+    "object_count": 3,
+    "page_number": 1,
+    "page_size": 50,
+    "page_count": 2,
+    "has_more_items": false,
+    "continuation": "cont_final_token"
+  }
+}

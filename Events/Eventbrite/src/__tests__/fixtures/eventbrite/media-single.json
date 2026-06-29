@@ -1,0 +1,10 @@
+{
+  "id": "166000000001",
+  "url": "https://img.evbuc.com/test-image.jpg",
+  "crop_mask": null,
+  "original": {
+    "url": "https://img.evbuc.com/test-image-original.jpg",
+    "width": 1200,
+    "height": 800
+  }
+}

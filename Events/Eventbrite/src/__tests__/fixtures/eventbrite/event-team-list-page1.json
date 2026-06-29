@@ -1,0 +1,26 @@
+{
+  "teams": [
+    {
+      "id": "188000000001",
+      "name": "Door Staff",
+      "date_created": "2026-04-01T12:00:00Z",
+      "event_id": "550000000001",
+      "attendee_count": 4
+    },
+    {
+      "id": "188000000002",
+      "name": "Door Staff",
+      "date_created": "2026-04-01T12:00:00Z",
+      "event_id": "550000000001",
+      "attendee_count": 4
+    }
+  ],
+  "pagination": {
+    "object_count": 3,
+    "page_number": 1,
+    "page_size": 50,
+    "page_count": 2,
+    "has_more_items": true,
+    "continuation": "cont_next_page_token_abc123"
+  }
+}

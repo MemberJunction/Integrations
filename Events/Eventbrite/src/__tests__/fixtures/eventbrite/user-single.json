@@ -1,0 +1,14 @@
+{
+  "id": "210000000001",
+  "name": "<scrubbed-name-1>",
+  "first_name": "<scrubbed",
+  "last_name": "<scrubbed-name-2>",
+  "emails": [
+    {
+      "email": "example+1@example.com",
+      "verified": true,
+      "primary": true
+    }
+  ],
+  "is_public": false
+}

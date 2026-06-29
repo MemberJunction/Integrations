@@ -1,0 +1,28 @@
+{
+  "subcategories": [
+    {
+      "id": "3001",
+      "name": "Alternative",
+      "parent_category": {
+        "id": "103",
+        "name": "Music"
+      }
+    },
+    {
+      "id": "3002",
+      "name": "Alternative",
+      "parent_category": {
+        "id": "103",
+        "name": "Music"
+      }
+    }
+  ],
+  "pagination": {
+    "object_count": 3,
+    "page_number": 1,
+    "page_size": 50,
+    "page_count": 2,
+    "has_more_items": false,
+    "continuation": "cont_final_token"
+  }
+}
