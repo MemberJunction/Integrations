@@ -1,0 +1,29 @@
+{
+  "id": "990000000001",
+  "name": "General Admission",
+  "description": "<redacted>",
+  "cost": {
+    "currency": "USD",
+    "value": 2500,
+    "major_value": "25.00",
+    "display": "$25.00"
+  },
+  "fee": {
+    "currency": "USD",
+    "value": 200,
+    "major_value": "2.00",
+    "display": "$2.00"
+  },
+  "tax": {
+    "currency": "USD",
+    "value": 0,
+    "major_value": "0.00",
+    "display": "$0.00"
+  },
+  "quantity_total": 100,
+  "quantity_sold": 10,
+  "free": false,
+  "donation": false,
+  "hidden": false,
+  "event_id": "550000000001"
+}

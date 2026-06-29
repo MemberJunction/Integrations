@@ -20,12 +20,23 @@
     "AMS/NetForum",
     "Events/OpenWater",
     "AMS/Novi",
-    "CRM/Salesforce"
+    "CRM/Salesforce",
+    "Events/Eventbrite"
   ],
   "hold": [
-    "AMS/Aptify", "AMS/Wicket", "AMS/WildApricot", "AMS/YourMembership",
-    "CRM/Blackbaud", "CRM/HubSpot", "Finance/QuickBooks", "Finance/SageIntacct",
-    "LMS/Reach360", "Marketing/ConstantContact", "Marketing/MagnetMail",
-    "Marketing/Mailchimp", "Marketing/Rasa", "Platform/MJtoMJ"
+    "AMS/Aptify",
+    "AMS/Wicket",
+    "AMS/WildApricot",
+    "AMS/YourMembership",
+    "CRM/Blackbaud",
+    "CRM/HubSpot",
+    "Finance/QuickBooks",
+    "Finance/SageIntacct",
+    "LMS/Reach360",
+    "Marketing/ConstantContact",
+    "Marketing/MagnetMail",
+    "Marketing/Mailchimp",
+    "Marketing/Rasa",
+    "Platform/MJtoMJ"
   ]
 }

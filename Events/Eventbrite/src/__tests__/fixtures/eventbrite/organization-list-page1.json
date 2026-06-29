@@ -1,0 +1,26 @@
+{
+  "organizations": [
+    {
+      "id": "330000000001",
+      "name": "<scrubbed-org-1>",
+      "vertical": "default",
+      "image_id": null,
+      "_type": "organization"
+    },
+    {
+      "id": "330000000002",
+      "name": "<scrubbed-org-1>",
+      "vertical": "default",
+      "image_id": null,
+      "_type": "organization"
+    }
+  ],
+  "pagination": {
+    "object_count": 3,
+    "page_number": 1,
+    "page_size": 50,
+    "page_count": 2,
+    "has_more_items": true,
+    "continuation": "cont_next_page_token_abc123"
+  }
+}
