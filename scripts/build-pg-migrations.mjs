@@ -20,6 +20,19 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const CHECK = process.argv.includes('--check');
 const explicit = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 
+// Pin the converter CLI version. The ambient global `mj` may be stale — e.g. 5.36 predates the
+// `_Clear`/boolean SP-arg coercion fix (added in the SS→PG converter in 5.40.x), which silently
+// emits broken PG (`_Clear := 1` against a BOOLEAN param → `function ... does not exist` on apply).
+// Match the pinned version build-seed-migrations.mjs uses for the SS push; MJ_CLI overrides
+// (e.g. a locally-built binary path) for offline/dev runs.
+const MJ_CLI = process.env.MJ_CLI || null;
+const PINNED_CLI = '@memberjunction/cli@5.43.0';
+function runConvert(appDir) {
+  const argv = ['migrate', 'convert', '--source-dir', 'migrations', '--output-dir', 'migrations-pg', '--schema', '__mj'];
+  if (MJ_CLI) execFileSync(MJ_CLI, argv, { cwd: appDir, stdio: 'inherit' });
+  else execFileSync('npx', ['-y', PINNED_CLI, ...argv], { cwd: appDir, stdio: 'inherit' });
+}
+
 function allConnectorDirs(dir, out = []) {
   for (const e of readdirSync(dir)) {
     if (['node_modules', 'dist', '.git', '.github', '.changeset', 'scripts', 'packages'].includes(e)) continue;
@@ -47,7 +60,7 @@ for (const appDir of targets) {
   if (CHECK) { console.error(`✗ ${rel}: ${missing.length} SS migration(s) missing PG variant: ${missing.join(', ')}`); drift += missing.length; continue; }
 
   try {
-    execFileSync('mj', ['migrate', 'convert', '--source-dir', 'migrations', '--output-dir', 'migrations-pg', '--schema', '__mj'], { cwd: appDir, stdio: 'inherit' });
+    runConvert(appDir);
     converted += missing.length;
     console.log(`✓ ${rel}: converted ${missing.length} migration(s) → migrations-pg/`);
   } catch (e) {

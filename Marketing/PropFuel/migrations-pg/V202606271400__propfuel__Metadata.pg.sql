@@ -166,10 +166,10 @@ BEGIN
   p_Description_bc5e4474 := 'A PropFuel hourly data-export file. Each file is a JSON array of records of one data type (encoded in the filename suffix). Discovered via the list endpoint, retrieved via download/{file}, and removed from the queue via ack/{file}. Per-record field sch...';
   p_APIPath_bc5e4474 := '/dataexport/{AccountID}/list';
   p_DefaultPageSize_bc5e4474 := 100;
-  p_SupportsPagination_bc5e4474 := 1;
+  p_SupportsPagination_bc5e4474 := TRUE;
   p_PaginationType_bc5e4474 := 'None';
-  p_SupportsIncrementalSync_bc5e4474 := 1;
-  p_SupportsWrite_bc5e4474 := 0;
+  p_SupportsIncrementalSync_bc5e4474 := TRUE;
+  p_SupportsWrite_bc5e4474 := FALSE;
   p_Configuration_bc5e4474 := '{
   "downloadEndpoint": "/dataexport/{AccountID}/download/{file}",
   "ackEndpoint": "/dataexport/{AccountID}/ack/{file}",
@@ -185,16 +185,16 @@ BEGIN
   p_Status_bc5e4474 := 'Active';
   p_WriteMethod_bc5e4474 := 'POST';
   p_DeleteMethod_bc5e4474 := 'DELETE';
-  p_IsCustom_bc5e4474 := 0;
+  p_IsCustom_bc5e4474 := FALSE;
   p_IncrementalWatermarkField_bc5e4474 := '__file_microtime';
   p_MetadataSource_bc5e4474 := 'Declared';
-  p_SupportsCreate_bc5e4474 := 0;
-  p_SupportsUpdate_bc5e4474 := 0;
-  p_SupportsDelete_bc5e4474 := 0;
+  p_SupportsCreate_bc5e4474 := FALSE;
+  p_SupportsUpdate_bc5e4474 := FALSE;
+  p_SupportsDelete_bc5e4474 := FALSE;
   p_SyncStrategy_bc5e4474 := 'AppendOnlyCursor';
-  p_ContentHashApplicable_bc5e4474 := 0;
+  p_ContentHashApplicable_bc5e4474 := FALSE;
   p_StableOrderingKey_bc5e4474 := 'microtime';
-  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_bc5e4474, p_IntegrationID := p_IntegrationID_bc5e4474, p_Name := p_Name_bc5e4474, p_DisplayName := p_DisplayName_bc5e4474, p_Description := p_Description_bc5e4474, p_Category := p_Category_bc5e4474, p_Category_Clear := 1, p_APIPath := p_APIPath_bc5e4474, p_ResponseDataKey := p_ResponseDataKey_bc5e4474, p_ResponseDataKey_Clear := 1, p_DefaultPageSize := p_DefaultPageSize_bc5e4474, p_SupportsPagination := p_SupportsPagination_bc5e4474, p_PaginationType := p_PaginationType_bc5e4474, p_SupportsIncrementalSync := p_SupportsIncrementalSync_bc5e4474, p_SupportsWrite := p_SupportsWrite_bc5e4474, p_DefaultQueryParams := p_DefaultQueryParams_bc5e4474, p_DefaultQueryParams_Clear := 1, p_Configuration := p_Configuration_bc5e4474, p_Sequence := p_Sequence_bc5e4474, p_Status := p_Status_bc5e4474, p_WriteAPIPath := p_WriteAPIPath_bc5e4474, p_WriteAPIPath_Clear := 1, p_WriteMethod := p_WriteMethod_bc5e4474, p_DeleteMethod := p_DeleteMethod_bc5e4474, p_IsCustom := p_IsCustom_bc5e4474, p_CreateAPIPath := p_CreateAPIPath_bc5e4474, p_CreateAPIPath_Clear := 1, p_CreateMethod := p_CreateMethod_bc5e4474, p_CreateMethod_Clear := 1, p_CreateBodyShape := p_CreateBodyShape_bc5e4474, p_CreateBodyShape_Clear := 1, p_CreateBodyKey := p_CreateBodyKey_bc5e4474, p_CreateBodyKey_Clear := 1, p_CreateIDLocation := p_CreateIDLocation_bc5e4474, p_CreateIDLocation_Clear := 1, p_UpdateAPIPath := p_UpdateAPIPath_bc5e4474, p_UpdateAPIPath_Clear := 1, p_UpdateMethod := p_UpdateMethod_bc5e4474, p_UpdateMethod_Clear := 1, p_UpdateBodyShape := p_UpdateBodyShape_bc5e4474, p_UpdateBodyShape_Clear := 1, p_UpdateBodyKey := p_UpdateBodyKey_bc5e4474, p_UpdateBodyKey_Clear := 1, p_UpdateIDLocation := p_UpdateIDLocation_bc5e4474, p_UpdateIDLocation_Clear := 1, p_DeleteAPIPath := p_DeleteAPIPath_bc5e4474, p_DeleteAPIPath_Clear := 1, p_DeleteIDLocation := p_DeleteIDLocation_bc5e4474, p_DeleteIDLocation_Clear := 1, p_IncrementalWatermarkField := p_IncrementalWatermarkField_bc5e4474, p_MetadataSource := p_MetadataSource_bc5e4474, p_SupportsCreate := p_SupportsCreate_bc5e4474, p_SupportsUpdate := p_SupportsUpdate_bc5e4474, p_SupportsDelete := p_SupportsDelete_bc5e4474, p_SyncStrategy := p_SyncStrategy_bc5e4474, p_ContentHashApplicable := p_ContentHashApplicable_bc5e4474, p_StableOrderingKey := p_StableOrderingKey_bc5e4474);
+  PERFORM __mj."spCreateIntegrationObject"(p_ID := p_ID_bc5e4474, p_IntegrationID := p_IntegrationID_bc5e4474, p_Name := p_Name_bc5e4474, p_DisplayName := p_DisplayName_bc5e4474, p_Description := p_Description_bc5e4474, p_Category := p_Category_bc5e4474, p_Category_Clear := TRUE, p_APIPath := p_APIPath_bc5e4474, p_ResponseDataKey := p_ResponseDataKey_bc5e4474, p_ResponseDataKey_Clear := TRUE, p_DefaultPageSize := p_DefaultPageSize_bc5e4474, p_SupportsPagination := p_SupportsPagination_bc5e4474, p_PaginationType := p_PaginationType_bc5e4474, p_SupportsIncrementalSync := p_SupportsIncrementalSync_bc5e4474, p_SupportsWrite := p_SupportsWrite_bc5e4474, p_DefaultQueryParams := p_DefaultQueryParams_bc5e4474, p_DefaultQueryParams_Clear := TRUE, p_Configuration := p_Configuration_bc5e4474, p_Sequence := p_Sequence_bc5e4474, p_Status := p_Status_bc5e4474, p_WriteAPIPath := p_WriteAPIPath_bc5e4474, p_WriteAPIPath_Clear := TRUE, p_WriteMethod := p_WriteMethod_bc5e4474, p_DeleteMethod := p_DeleteMethod_bc5e4474, p_IsCustom := p_IsCustom_bc5e4474, p_CreateAPIPath := p_CreateAPIPath_bc5e4474, p_CreateAPIPath_Clear := TRUE, p_CreateMethod := p_CreateMethod_bc5e4474, p_CreateMethod_Clear := TRUE, p_CreateBodyShape := p_CreateBodyShape_bc5e4474, p_CreateBodyShape_Clear := TRUE, p_CreateBodyKey := p_CreateBodyKey_bc5e4474, p_CreateBodyKey_Clear := TRUE, p_CreateIDLocation := p_CreateIDLocation_bc5e4474, p_CreateIDLocation_Clear := TRUE, p_UpdateAPIPath := p_UpdateAPIPath_bc5e4474, p_UpdateAPIPath_Clear := TRUE, p_UpdateMethod := p_UpdateMethod_bc5e4474, p_UpdateMethod_Clear := TRUE, p_UpdateBodyShape := p_UpdateBodyShape_bc5e4474, p_UpdateBodyShape_Clear := TRUE, p_UpdateBodyKey := p_UpdateBodyKey_bc5e4474, p_UpdateBodyKey_Clear := TRUE, p_UpdateIDLocation := p_UpdateIDLocation_bc5e4474, p_UpdateIDLocation_Clear := TRUE, p_DeleteAPIPath := p_DeleteAPIPath_bc5e4474, p_DeleteAPIPath_Clear := TRUE, p_DeleteIDLocation := p_DeleteIDLocation_bc5e4474, p_DeleteIDLocation_Clear := TRUE, p_IncrementalWatermarkField := p_IncrementalWatermarkField_bc5e4474, p_MetadataSource := p_MetadataSource_bc5e4474, p_SupportsCreate := p_SupportsCreate_bc5e4474, p_SupportsUpdate := p_SupportsUpdate_bc5e4474, p_SupportsDelete := p_SupportsDelete_bc5e4474, p_SyncStrategy := p_SyncStrategy_bc5e4474, p_ContentHashApplicable := p_ContentHashApplicable_bc5e4474, p_StableOrderingKey := p_StableOrderingKey_bc5e4474);
 END $mj$;
 
 
