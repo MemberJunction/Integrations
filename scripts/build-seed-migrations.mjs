@@ -64,11 +64,35 @@ function loadDbConfig() {
 // ---- reset the integration catalog (FK-ordered) via docker sqlcmd (no node mssql dep) ----
 // Required because IntegrationObject.Name is globally unique — each connector needs a clean catalog.
 const SQL_CONTAINER = process.env.SQL_CONTAINER || 'sql-claude';
-function resetCatalog(db) {
+
+// A connector's CredentialType IDs, read from its own metadata/credential-type/*.json. The reset must
+// delete THESE so the next `mj sync push` re-EMITS the spCreateCredentialType call into the migration.
+// Without this, the gen DB retains the CredentialType across runs, the push sees it already-present and
+// logs no create, and the shipped migration references CredentialTypeID without creating the row →
+// FK_Integration_CredentialType fails on every fresh `mj app install` (the install runs migrations
+// before metadata sync). Deleting by EXACT ID (not by Category) is required because connector CredTypes
+// are not uniformly 'Integration' (OpenWater/NeonCRM/Rhythm use 'Authentication', which core types share).
+function connectorCredTypeIDs(connectorRel) {
+  const ctDir = join(REPO, connectorRel, 'metadata', 'credential-type');
+  if (!existsSync(ctDir)) return [];
+  const ids = [];
+  for (const f of readdirSync(ctDir).filter((x) => /-credential-type\.json$/.test(x))) {
+    try { const j = JSON.parse(readFileSync(join(ctDir, f), 'utf8')); if (j.primaryKey?.ID) ids.push(j.primaryKey.ID); } catch { /* ignore */ }
+  }
+  return ids;
+}
+
+function resetCatalog(db, connectorRel) {
+  // Delete Integrations (which FK→CredentialType) BEFORE the connector's CredentialType rows, and any
+  // stored Credential rows pointing at them, so the CredentialType delete can't hit a FK violation.
+  const credDeletes = connectorCredTypeIDs(connectorRel).map((id) =>
+    `DELETE FROM [__mj].[Credential] WHERE CredentialTypeID='${id}'; DELETE FROM [__mj].[CredentialType] WHERE ID='${id}';`
+  ).join(' ');
   const reset = `SET NOCOUNT ON; USE [${db.database}]; ` +
     `DELETE FROM [__mj].[IntegrationObjectField]; ` +
     `DELETE FROM [__mj].[IntegrationObject]; ` +
-    `DELETE FROM [__mj].[Integration];`;
+    `DELETE FROM [__mj].[Integration]; ` +
+    credDeletes;
   execFileSync('docker', [
     'exec', SQL_CONTAINER, '/opt/mssql-tools18/bin/sqlcmd',
     '-S', `localhost,1433`, '-U', db.user, '-P', db.password, '-C', '-b', '-Q', reset,
@@ -102,8 +126,8 @@ for (const c of connectors) {
       const migpg = join(REPO, c, 'migrations-pg');
       if (existsSync(migpg)) for (const f of readdirSync(migpg).filter(f => f.endsWith('.sql'))) rmSync(join(migpg, f));
     }
-    console.log('  [1/4] reset integration catalog…');
-    resetCatalog(db);
+    console.log('  [1/4] reset integration catalog (+ this connector’s CredentialType, so it re-emits)…');
+    resetCatalog(db, c);
     console.log('  [2/4] mj sync push (seed + emit SQL, CLI 5.43.0)…');
     // --no-validate: the metadata carries framework "ideal-but-not-deployed" fields (Source→MetadataSource,
     // IsForeignKey, IsMutable, IsAppendOnly, IncludeInActionGeneration, SupportsRead, ParentObjectName) that
