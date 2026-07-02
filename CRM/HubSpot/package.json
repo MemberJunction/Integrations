@@ -1,7 +1,7 @@
 {
   "name": "@memberjunction/connector-hubspot",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "description": "MemberJunction HubSpot connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -19,7 +19,8 @@
     "@memberjunction/core": ">=5.42.0 <6.0.0",
     "@memberjunction/core-entities": ">=5.42.0 <6.0.0",
     "@memberjunction/global": ">=5.42.0 <6.0.0",
-    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
+    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0",
+    "@memberjunction/integration-engine-base": ">=5.42.0 <6.0.0"
   },
   "dependencies": {},
   "devDependencies": {
