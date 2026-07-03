@@ -1308,7 +1308,8 @@
                   "Name": "email",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "38933870-0F68-4719-8C6F-ADD852908A31"
@@ -4692,7 +4693,8 @@
                   "Type": "string",
                   "Source": "Declared",
                   "Description": "Enum: GIVEN, DECLINED, NOT_ASKED",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "18ECED0C-98DF-427C-9612-D4A616F420F9"
@@ -9668,7 +9670,8 @@
                   "Name": "thumbnailUrl",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "2F62E444-358D-4224-9AE3-03447513B259"
@@ -9859,7 +9862,8 @@
                   "Name": "email",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "3DAD5E6E-B60E-45FD-A276-96B98BE82647"
@@ -17060,7 +17064,8 @@
                   "Name": "url",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "FDC9CB0D-1634-4CC8-84DE-EF6D16D96D3E"
@@ -21179,7 +21184,8 @@
                   "Name": "email",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "5C9897A4-627C-4C2C-92B3-5FBD9261F430"
@@ -21561,7 +21567,8 @@
                   "Name": "url",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "6355F68E-0F22-411D-AB70-76ECC9A9F3B3"

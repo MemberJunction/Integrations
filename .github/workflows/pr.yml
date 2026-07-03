@@ -32,6 +32,12 @@ jobs:
       - name: Parent declarations resolvable
         run: node scripts/validate-parent-declarations.mjs
 
+      # Better guessing beats trial-and-error: string sizing is empirical (a live
+      # bio was 2,595 chars vs the 255 default and records SKIP, not truncate).
+      # Prose fields at the raw default fail the build; url/email tiers advise.
+      - name: Field lengths semantically sized
+        run: node scripts/infer-field-lengths.mjs --check
+
       # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
       - name: Validate migrations
         run: node scripts/validate-migrations.mjs
