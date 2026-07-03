@@ -202,7 +202,8 @@
                 "fields": {
                   "Name": "about",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "60733B81-31D0-438C-B55D-01A7CEDEE8AF"
@@ -726,7 +727,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B9EFA2E4-1FC6-4D89-9ED8-8C4D4E0CDDF5"
@@ -1494,7 +1496,8 @@
                 "fields": {
                   "Name": "notes",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "20319A96-979B-4319-B34C-E5462C344F2E"
@@ -2007,7 +2010,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "05A8A9AB-5418-4980-B11E-AF2EF94582C7"
@@ -3474,7 +3478,8 @@
                 "fields": {
                   "Name": "about",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F13417CE-51C8-4C81-85B1-2E3C34A3B111"
@@ -3544,7 +3549,8 @@
                 "fields": {
                   "Name": "instructions",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "378FE9A2-9BB9-4B5B-9F74-1A940FF8ABB5"
@@ -3819,7 +3825,8 @@
                   "Type": "string",
                   "IntegrationObjectID": "@parent:ID",
                   "IsReadOnly": true,
-                  "Description": "Response-only field."
+                  "Description": "Response-only field.",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "1492C3C5-86B9-41DB-9EC4-3B66FA9FCA91"
@@ -4085,7 +4092,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "02BBB68D-C516-4D90-B9D2-A9651F845DC9"
@@ -4730,7 +4738,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "590D8BBA-59AC-4C38-8B00-5AFC26CDDEE6"
@@ -5213,7 +5222,8 @@
                 "fields": {
                   "Name": "about",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "4EAAA47A-A40F-41DF-9AA6-C8973748F1FF"
@@ -5439,7 +5449,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "EF90D75B-32D5-4BBE-BF61-656002FD7BB8"
@@ -5913,7 +5924,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F26F574C-63F4-4130-B82E-A62538C68142"
@@ -6013,7 +6025,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B6281EF3-5BD7-4D1F-88A5-49D302930652"
@@ -6155,7 +6168,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "56F68D18-9A26-4E10-9CFB-91497EE89EDB"
@@ -6291,7 +6305,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "AFE195E1-D67F-4215-8AD8-95CDAAD8F1CC"
@@ -6525,7 +6540,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DD2B41D7-7104-48FD-8DBB-86E9DE99BEDC"
@@ -7171,7 +7187,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B8F95B30-9C7D-4169-AE81-B8DB2CFEF59E"
@@ -7634,7 +7651,8 @@
                 "fields": {
                   "Name": "notes",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "9D947302-3180-4D90-A075-22D02062947E"
@@ -7853,7 +7871,8 @@
                   "Type": "string",
                   "IntegrationObjectID": "@parent:ID",
                   "IsReadOnly": true,
-                  "Description": "Response-only field."
+                  "Description": "Response-only field.",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7C1735E2-355E-45FC-9F85-BF010A4AC247"
@@ -8120,7 +8139,8 @@
                 "fields": {
                   "Name": "notes",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F3C2CF83-2AB1-4D91-9693-BC9C2BD4F8B4"

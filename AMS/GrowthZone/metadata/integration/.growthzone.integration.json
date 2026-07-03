@@ -2558,7 +2558,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F7FA47E9-508F-4878-B395-F24155F9C613"
@@ -3001,7 +3002,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "8AED1AD2-53B9-4F2F-A18F-574633F59AE5"
@@ -3546,7 +3548,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "C1DA9C9E-0F42-4BA6-A364-A39B48ED215B"
@@ -4244,7 +4247,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "C74618B3-510D-48AF-AC15-8649AB1FE619"
@@ -5401,7 +5405,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "70D6A193-64A0-4828-84E2-E2D1DFC109AC"
@@ -6045,7 +6050,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7B2788A0-D7FB-4398-9A4F-B7F251DE94E3"
@@ -6080,7 +6086,8 @@
                   "IsReadOnly": true,
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7F40C958-466D-49B2-BE48-236D4C328E22"
@@ -6927,7 +6934,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "49FB5C13-F937-4EEC-8665-300541B8CABC"
@@ -7428,7 +7436,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "19DDA757-BD88-4362-93D9-BDD40C1B7155"
@@ -9147,7 +9156,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "6D52876C-9C27-410D-BA08-F4829498B517"
@@ -10250,7 +10260,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B0495687-1FB6-49DF-A38A-42373A57E0DD"
@@ -10267,7 +10278,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DB4AB445-9BB2-44C9-A2E4-4A72CB0F42E6"
@@ -10524,7 +10536,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "493DE738-792C-4A0A-A922-A3A30000C56F"
@@ -10835,7 +10848,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "BAA8C85A-D87D-4A74-86B5-7CA4F93AA6F8"
@@ -11242,7 +11256,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B9E0E37D-CB76-4CBA-A629-5B070930CC36"
@@ -11570,7 +11585,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "4406D644-D2C1-4CDB-A597-FE9C4E8910A9"
@@ -12944,7 +12960,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "21B22032-C1A9-426A-8257-8C072AFCB2C1"
@@ -13349,7 +13366,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B4D8F239-D7C2-4C09-856C-DE63C0851D53"
@@ -13569,7 +13587,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "A9A78050-AD24-4841-BD07-8F98BC15290A"

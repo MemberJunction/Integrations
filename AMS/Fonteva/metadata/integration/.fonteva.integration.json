@@ -1898,7 +1898,8 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "Sequence": 19,
-                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}"
+                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "81D7D12B-98A8-4A65-A168-2322D319EF19"
@@ -4484,7 +4485,8 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "Sequence": 6,
-                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}"
+                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "FDDF4D4D-850D-4DFF-A2D0-3C72141AD2E6"
@@ -5739,7 +5741,8 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "Sequence": 8,
-                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}"
+                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F15029DD-69D9-47C4-9D89-79C0BFB05B7E"
@@ -8801,7 +8804,8 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "Sequence": 29,
-                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}"
+                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "3510AEFD-80D8-4308-8603-60CD498A8715"
@@ -16529,7 +16533,8 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "Sequence": 4,
-                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}"
+                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "73492F53-C1BD-4595-928F-05CBE99324BB"
@@ -17540,7 +17545,8 @@
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
                   "Sequence": 3,
-                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}"
+                  "Configuration": "{\"SObjectFieldConvention\":\"{namespace}__{Pascal_Snake}__c\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "969BD09A-8F18-470E-930C-F271A0398AEE"
