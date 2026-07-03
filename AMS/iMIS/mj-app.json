@@ -4,7 +4,7 @@
   "name": "connector-imis",
   "displayName": "iMIS Connector",
   "description": "iMIS EMS (Advanced Solutions International) REST API connector for associations and nonprofits. Supports parties, memberships, events, fundraising, invoicing, and commerce via iMIS REST API with OAuth2 password-grant Bearer token authentication.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "license": "ISC",
   "icon": "fa-solid fa-hands-holding-circle",
   "publisher": {
