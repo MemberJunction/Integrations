@@ -1,5 +1,11 @@
 # @memberjunction/connector-netsuite
 
+## 1.2.1
+
+### Patch Changes
+
+- 59c047c: Declare semantic lengths for url-class string fields (255 default → 2048). Oversize values are skipped, not truncated — silent record loss risk.
+
 ## 1.2.0
 
 ### Minor Changes
