@@ -4522,7 +4522,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "4E534F42-84CA-487F-A9E1-2FFE8C75A552"
@@ -7178,7 +7179,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "80464726-6F1E-404E-879D-AC5564285E65"
@@ -8658,7 +8660,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "239334D8-740D-4E91-8751-9ADFABF6FFAA"
@@ -10124,7 +10127,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "9871C7E5-DAC0-4C9D-B019-0E27D58339E7"
@@ -10175,7 +10179,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "F95F6E91-2C55-4888-B7FB-3D9B0DF6F435"
@@ -12722,7 +12727,8 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "85042D75-6883-46B7-A070-178F7A438128"
