@@ -483,7 +483,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 12,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "3CEA5FF1-A634-4D81-910E-52CBFC916434"

@@ -12886,7 +12886,8 @@
                   "AllowsNull": true,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "Configuration": "{\"GraphQLType\":\"String\"}"
+                  "Configuration": "{\"GraphQLType\":\"String\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "9E35408A-6692-438D-A12C-35E361C5FA01"
@@ -16537,7 +16538,8 @@
                   "AllowsNull": true,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "Configuration": "{\"GraphQLType\":\"String!\"}"
+                  "Configuration": "{\"GraphQLType\":\"String!\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "33DC0BF4-8139-4AF1-B898-46527CD039A5"
@@ -17451,7 +17453,8 @@
                   "AllowsNull": true,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "Configuration": "{\"GraphQLType\":\"String\"}"
+                  "Configuration": "{\"GraphQLType\":\"String\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "E926C963-E169-4345-A9DD-276FABB9CB68"
@@ -18293,7 +18296,8 @@
                   "AllowsNull": true,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "Configuration": "{\"GraphQLType\":\"String!\"}"
+                  "Configuration": "{\"GraphQLType\":\"String!\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "FD47B2B1-8420-4EE3-9C68-B46641BE9188"
@@ -23090,7 +23094,8 @@
                   "AllowsNull": true,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "Configuration": "{\"GraphQLType\":\"String!\"}"
+                  "Configuration": "{\"GraphQLType\":\"String!\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "9D945202-0A13-45EF-9649-B2D54FCE5D04"
@@ -23222,7 +23227,8 @@
                   "AllowsNull": true,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "Configuration": "{\"GraphQLType\":\"String!\"}"
+                  "Configuration": "{\"GraphQLType\":\"String!\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DCB4571A-BC48-42A4-858B-7402218577FF"
@@ -23618,7 +23624,8 @@
                   "AllowsNull": true,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "Configuration": "{\"GraphQLType\":\"String!\"}"
+                  "Configuration": "{\"GraphQLType\":\"String!\"}",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "4EF99084-FB1F-468D-B141-C692229662F8"

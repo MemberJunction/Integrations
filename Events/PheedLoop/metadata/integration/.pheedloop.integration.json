@@ -150,7 +150,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Attendees"
+              "SourceFolder": "Attendees",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -201,7 +202,8 @@
                 "fields": {
                   "Name": "about",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "60733B81-31D0-438C-B55D-01A7CEDEE8AF"
@@ -725,7 +727,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B9EFA2E4-1FC6-4D89-9ED8-8C4D4E0CDDF5"
@@ -1012,7 +1015,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Registrations"
+              "SourceFolder": "Registrations",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -1492,7 +1496,8 @@
                 "fields": {
                   "Name": "notes",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "20319A96-979B-4319-B34C-E5462C344F2E"
@@ -2005,7 +2010,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "05A8A9AB-5418-4980-B11E-AF2EF94582C7"
@@ -2656,7 +2662,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Ticket Transfer Logs"
+              "SourceFolder": "Ticket Transfer Logs",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -2861,7 +2868,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Surcharge"
+              "SourceFolder": "Surcharge",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -3038,7 +3046,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Registration Promotion"
+              "SourceFolder": "Registration Promotion",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -3366,7 +3375,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Sessions"
+              "SourceFolder": "Sessions",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -3468,7 +3478,8 @@
                 "fields": {
                   "Name": "about",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F13417CE-51C8-4C81-85B1-2E3C34A3B111"
@@ -3538,7 +3549,8 @@
                 "fields": {
                   "Name": "instructions",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "378FE9A2-9BB9-4B5B-9F74-1A940FF8ABB5"
@@ -3717,7 +3729,11 @@
               },
               "DetailAPIPath": null,
               "SourceFolder": "Session Registration",
-              "PaginationNote": "'Get Session Registrations' returns a flat object {code,title,attendance:[...]} with NO count/next/previous DRF envelope, so there is no page-number pagination — PaginationType=None."
+              "PaginationNote": "'Get Session Registrations' returns a flat object {code,title,attendance:[...]} with NO count/next/previous DRF envelope, so there is no page-number pagination — PaginationType=None.",
+              "parentObjectNames": {
+                "eventCode": "Events",
+                "sessionCode": "Sessions"
+              }
             },
             "CreateAPIPath": "/events/{eventCode}/sessions/{sessionCode}/attendance/",
             "CreateMethod": "POST",
@@ -3809,7 +3825,8 @@
                   "Type": "string",
                   "IntegrationObjectID": "@parent:ID",
                   "IsReadOnly": true,
-                  "Description": "Response-only field."
+                  "Description": "Response-only field.",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "1492C3C5-86B9-41DB-9EC4-3B66FA9FCA91"
@@ -3867,7 +3884,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Session Formats"
+              "SourceFolder": "Session Formats",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -3985,7 +4003,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Exhibitors"
+              "SourceFolder": "Exhibitors",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -4073,7 +4092,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "02BBB68D-C516-4D90-B9D2-A9651F845DC9"
@@ -4496,7 +4516,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Exhibitors Booths"
+              "SourceFolder": "Exhibitors Booths",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -4628,7 +4649,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Sponsors"
+              "SourceFolder": "Sponsors",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -4716,7 +4738,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "590D8BBA-59AC-4C38-8B00-5AFC26CDDEE6"
@@ -5082,7 +5105,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Speakers"
+              "SourceFolder": "Speakers",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -5198,7 +5222,8 @@
                 "fields": {
                   "Name": "about",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "4EAAA47A-A40F-41DF-9AA6-C8973748F1FF"
@@ -5354,7 +5379,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Announcements"
+              "SourceFolder": "Announcements",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -5423,7 +5449,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "EF90D75B-32D5-4BBE-BF61-656002FD7BB8"
@@ -5822,7 +5849,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Tags"
+              "SourceFolder": "Tags",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -5896,7 +5924,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F26F574C-63F4-4130-B82E-A62538C68142"
@@ -5954,7 +5983,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Speaker Tags"
+              "SourceFolder": "Speaker Tags",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -5995,7 +6025,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B6281EF3-5BD7-4D1F-88A5-49D302930652"
@@ -6081,7 +6112,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Sponsor Tier"
+              "SourceFolder": "Sponsor Tier",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -6136,7 +6168,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "56F68D18-9A26-4E10-9CFB-91497EE89EDB"
@@ -6197,7 +6230,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Exhibitor Promotion"
+              "SourceFolder": "Exhibitor Promotion",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -6271,7 +6305,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "AFE195E1-D67F-4215-8AD8-95CDAAD8F1CC"
@@ -6430,7 +6465,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "Sponsor Promotion"
+              "SourceFolder": "Sponsor Promotion",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -6504,7 +6540,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DD2B41D7-7104-48FD-8DBB-86E9DE99BEDC"
@@ -6766,7 +6803,8 @@
                 "fields": {
                   "Name": "about",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DCBF12AE-7F2C-48FA-8D93-CF9284A96DA4"
@@ -7149,7 +7187,8 @@
                 "fields": {
                   "Name": "description",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B8F95B30-9C7D-4169-AE81-B8DB2CFEF59E"
@@ -7612,7 +7651,8 @@
                 "fields": {
                   "Name": "notes",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "9D947302-3180-4D90-A075-22D02062947E"
@@ -7831,7 +7871,8 @@
                   "Type": "string",
                   "IntegrationObjectID": "@parent:ID",
                   "IsReadOnly": true,
-                  "Description": "Response-only field."
+                  "Description": "Response-only field.",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7C1735E2-355E-45FC-9F85-BF010A4AC247"
@@ -8098,7 +8139,8 @@
                 "fields": {
                   "Name": "notes",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F3C2CF83-2AB1-4D91-9693-BC9C2BD4F8B4"
@@ -8270,7 +8312,8 @@
                 ]
               },
               "DetailAPIPath": null,
-              "SourceFolder": "REST Hooks"
+              "SourceFolder": "REST Hooks",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -8398,7 +8441,8 @@
               "CheckOutPath": "/events/{eventCode}/checkout/",
               "SourceFolder": "Event Attendance",
               "Notes": "Asymmetric CRUD: read=GET /attendance/, create(state)=POST /checkin/, delete(state)=DELETE /checkout/, no PATCH update. checkin/checkout bodies are {\"codes\": [<attendee-code>...]}. attendance state is keyed by attendee code (FK to Attendees).",
-              "CreateNote": "POST /checkin/ is a state mutation returning {attendees,errored_attendees} (arrays of attendee codes), NOT a new record with a retrievable id. CreateIDLocation=n/a so the generic CreateRecord does not scan for an id field. The generic BaseRESTIntegrationConnector path still routes through BuildCreatedResult, which requires a non-empty externalID — a connector-level CreateRecord/ExtractIDFromResponse override (reading attendees[0]) is required for a true Success result. Setting n/a documents the non-standard shape and stops a misleading body-scan for id|ID|externalID."
+              "CreateNote": "POST /checkin/ is a state mutation returning {attendees,errored_attendees} (arrays of attendee codes), NOT a new record with a retrievable id. CreateIDLocation=n/a so the generic CreateRecord does not scan for an id field. The generic BaseRESTIntegrationConnector path still routes through BuildCreatedResult, which requires a non-empty externalID — a connector-level CreateRecord/ExtractIDFromResponse override (reading attendees[0]) is required for a true Success result. Setting n/a documents the non-standard shape and stops a misleading body-scan for id|ID|externalID.",
+              "parentObjectName": "Events"
             }
           },
           "relatedEntities": {
@@ -8490,8 +8534,8 @@
             "SupportsCreate": false,
             "SupportsUpdate": false,
             "SupportsDelete": false,
-            "Status": "Active",
-            "Description": "PheedLoop Reports (org-scoped, read-only). GET /reports/{REPORT-CODE}/ returns a paginated DRF envelope {count,next,previous,results}; the result column set is defined by the dashboard-configured report definition (dynamic schema per report code). Oper...",
+            "Status": "Inactive",
+            "Description": "PheedLoop Reports (org-scoped, read-only). GET /reports/{REPORT-CODE}/ returns a paginated DRF envelope {count,next,previous,results}; the result column set is defined by the dashboard-configured report definition (dynamic schema per report code). Oper... [Inactive: /reports/{reportCode}/ has no parent object that supplies report codes — no list endpoint exists; cannot be list-synced.]",
             "Configuration": {
               "Scope": "org",
               "DynamicSchema": true,
