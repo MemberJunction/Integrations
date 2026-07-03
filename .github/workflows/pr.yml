@@ -26,6 +26,12 @@ jobs:
       - name: Connector Open App invariants
         run: npm run lint:invariants
 
+      # Guardrail for the "silent second layer" class: every templated list door
+      # must resolve to a declared parent (PheedLoop shipped 21 objects that
+      # silently fetched 0 rows — reviews/tests/builds could not see it).
+      - name: Parent declarations resolvable
+        run: node scripts/validate-parent-declarations.mjs
+
       # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
       - name: Validate migrations
         run: node scripts/validate-migrations.mjs
