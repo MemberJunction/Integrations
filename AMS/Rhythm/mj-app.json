@@ -4,7 +4,7 @@
   "name": "connector-rhythm-software",
   "displayName": "Rhythm Software Connector",
   "description": "Rhythm Software AMS connector — syncs contacts, organizations, memberships, committees, events, certifications, finance, commerce, fundraising, awards, accreditation, sponsorship and submissions via the Rhythm REST API (15 per-module OpenAPI specs).",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
