@@ -188,7 +188,8 @@
                 "fields": {
                   "Name": "email",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "FB14E349-04D9-4C2D-9878-335128FD9E2F"
@@ -1104,7 +1105,8 @@
                 "fields": {
                   "Name": "email",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "4468CCF3-5FA8-4E21-B8D3-3D4406F2FFC7"
@@ -4177,7 +4179,8 @@
                 "fields": {
                   "Name": "logo",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "2C5A5A90-7031-44FD-8307-5783C4EC3BA3"
@@ -4191,7 +4194,8 @@
                 "fields": {
                   "Name": "banner",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "ABACD93A-54D6-43CB-B33A-C13D93C1F276"
@@ -4205,7 +4209,8 @@
                 "fields": {
                   "Name": "thumbnail",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "7ABC1A6A-71D1-4002-B7B8-E4F66E03672F"
@@ -4219,7 +4224,8 @@
                 "fields": {
                   "Name": "email",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "110DC903-DCE5-41E7-9105-064809E61996"
@@ -4247,7 +4253,8 @@
                 "fields": {
                   "Name": "website",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "3B39ED38-7E4C-423F-880B-F503F93192EF"
@@ -4795,7 +4802,8 @@
                 "fields": {
                   "Name": "logo",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "655919A2-D3E7-4E2A-B630-9251A93A864E"
@@ -4809,7 +4817,8 @@
                 "fields": {
                   "Name": "banner",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "540AC2CF-6617-4459-804D-DB3C2F6A2915"
@@ -4823,7 +4832,8 @@
                 "fields": {
                   "Name": "thumbnail",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "F26C9DB0-FC20-4F4A-829F-6479AE4A2771"
@@ -4837,7 +4847,8 @@
                 "fields": {
                   "Name": "email",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "6BA56BF8-4531-4161-9EA7-A8A2415BFFF6"
@@ -4851,7 +4862,8 @@
                 "fields": {
                   "Name": "website",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "88218807-1DA9-4D38-8B9F-AB2FB0889F93"
@@ -5180,7 +5192,8 @@
                 "fields": {
                   "Name": "email",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "C52DD214-D0AF-470C-A124-7F079C4E0F99"
@@ -5293,7 +5306,8 @@
                 "fields": {
                   "Name": "picture",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "80630EE5-6572-48F3-9B43-1813BF4760E8"
@@ -6747,7 +6761,8 @@
                 "fields": {
                   "Name": "email",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "9DF7C39E-FCA4-4B0C-A846-A50C36F6EAA0"
@@ -7770,7 +7785,8 @@
                   "IntegrationObjectID": "@parent:ID",
                   "IsRequired": false,
                   "IsReadOnly": false,
-                  "Description": "Email of the member being assigned this membership. Source: Postman Create Membership request body."
+                  "Description": "Email of the member being assigned this membership. Source: Postman Create Membership request body.",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "6D5C161C-E4AB-4D17-91D1-C71FB8717C35"
@@ -8125,7 +8141,8 @@
                 "fields": {
                   "Name": "website",
                   "Type": "string",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "464652AA-79F1-414D-89C5-B75246BF1DC1"
