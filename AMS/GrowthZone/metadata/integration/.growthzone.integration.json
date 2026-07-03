@@ -5639,7 +5639,7 @@
             "Status": "Active",
             "MetadataSource": "Declared",
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"apiPath\":\"/api/memberships/lookup/status/{defaultMembershipStatus}\",\"pathParams\":[\"defaultMembershipStatus\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":true,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false}"
+            "Configuration": "{\"apiPath\":\"/api/memberships/lookup/status/{defaultMembershipStatus}\",\"pathParams\":[\"defaultMembershipStatus\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":false,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false,\"gap\":\"{defaultMembershipStatus} is a configured value, not a parent object — list iteration is structurally impossible; detail-only.\"}"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -5757,7 +5757,7 @@
             "Status": "Active",
             "MetadataSource": "Declared",
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"apiPath\":\"/api/memberships/change/{membershipId}/{changeType}\",\"pathParams\":[\"membershipId\",\"changeType\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":true,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false,\"parentObjectName\":\"Membership\",\"parentObjectIDFieldName\":\"membershipId\"}"
+            "Configuration": "{\"apiPath\":\"/api/memberships/change/{membershipId}/{changeType}\",\"pathParams\":[\"membershipId\",\"changeType\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":false,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false,\"parentObjectName\":\"Membership\",\"parentObjectIDFieldName\":\"membershipId\",\"gap\":\"Path needs {membershipId}+{changeType}; {changeType} is an enum with no parent object — two vars with a single parentObjectName trip the engine PARENT_CYCLE guard (0 rows). Detail-only until an enum-iteration mechanism exists.\"}"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
