@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-neon-crm",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "MemberJunction NeonCRM connector.",
   "type": "module",
   "main": "dist/index.js",
