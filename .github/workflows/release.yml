@@ -42,6 +42,12 @@ jobs:
       - name: Field lengths semantically sized
         run: node scripts/infer-field-lengths.mjs --check
 
+      # Metadata is the AUTHORING layer only — tenants get catalog rows from
+      # migrations (upgrades apply only NEW files). A metadata edit without a
+      # new migration ships a fix that reaches nobody (the wave-1/2 lesson).
+      - name: Metadata changes ship a migration
+        run: node scripts/require-metadata-migration.mjs
+
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 
