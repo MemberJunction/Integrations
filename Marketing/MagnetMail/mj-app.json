@@ -4,7 +4,7 @@
   "name": "connector-magnetmail",
   "displayName": "MagnetMail Connector",
   "description": "Higher Logic MagnetMail (formerly Real Magnet) email-marketing platform. SOAP API (mmapi.asmx) covering recipients, groups, messages, message tracking (opens/clicks/bounces/unsubscribes), upload jobs, saved searches, personalization fields, events, and the Personify subscription bridge. Two-step session auth; incremental message sync; read + write (create/update).",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "license": "ISC",
   "icon": "fa-solid fa-envelope-circle-check",
   "publisher": {
