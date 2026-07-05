@@ -349,7 +349,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 8,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "CE892527-89C7-4A2D-B7F5-2D0CF0BC0284"
@@ -1427,7 +1428,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 3,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "2247329D-D3CC-4B77-8F11-BA7620FE5B17"
@@ -1451,7 +1453,8 @@
                   "IsCustom": false,
                   "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID",
-                  "AllowsNull": true
+                  "AllowsNull": true,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "2FD007D7-B3C3-4906-A01E-860088D69C55"
@@ -1566,7 +1569,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 9,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "81D5D9E2-FAC6-4033-BFE6-47E505F34351"
@@ -2852,7 +2856,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 11,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "F568FDAE-1256-428E-B5EB-4CA6DE2C1086"
@@ -2990,7 +2995,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 17,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "F90D0CB8-718F-45EE-954A-CB1C04844B81"
@@ -3177,7 +3183,8 @@
                   "IsCustom": false,
                   "Sequence": 25,
                   "IntegrationObjectID": "@parent:ID",
-                  "AllowsNull": true
+                  "AllowsNull": true,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "D67195E7-AD6B-49E2-B629-096CA5EFCEB2"
@@ -3342,7 +3349,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 32,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "E861B4AF-3125-49F4-8D55-9AA61F5BE116"
@@ -4411,7 +4419,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 2,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "C4F3100D-122F-4E70-BD0B-C85DCB275AE2"
@@ -4561,7 +4570,8 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID",
-                  "AllowsNull": true
+                  "AllowsNull": true,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F93D2ED9-176B-4858-920A-B4C6F245099B"
@@ -4584,7 +4594,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 4,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "B48C27A8-DEF4-4F4E-8DB3-EBD4AEA6DDBA"
@@ -5285,7 +5296,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 1,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "9FCE62FA-4D7B-4458-8A46-D4B6B538775B"
@@ -5545,7 +5557,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 6,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "9995D621-774C-4BD0-9691-0D0A902E3FF8"
@@ -7051,7 +7064,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 6,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "CD4E180E-52C5-4FE6-A2E4-EFC4FC041337"
@@ -8244,7 +8258,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 7,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "B27110AA-2B27-4151-9517-696A771F8DB0"
@@ -8835,7 +8850,8 @@
                   "IsCustom": false,
                   "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID",
-                  "AllowsNull": true
+                  "AllowsNull": true,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DBE4B9FF-C3C3-459C-AF5D-8D5F96A14EED"
@@ -9366,7 +9382,8 @@
                   "Status": "Active",
                   "IsCustom": false,
                   "Sequence": 7,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "0EA32B48-D003-4230-9157-C3EEA31B6320"

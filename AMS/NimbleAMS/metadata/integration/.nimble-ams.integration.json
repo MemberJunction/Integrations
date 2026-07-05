@@ -383,7 +383,8 @@
                   "IsUniqueKey": false,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "IsForeignKey": false
+                  "IsForeignKey": false,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "D0FDE861-FA97-426E-AAE8-16F38045179A"
@@ -1689,7 +1690,8 @@
                   "IsUniqueKey": false,
                   "IntegrationObjectID": "@parent:ID",
                   "Status": "Active",
-                  "IsForeignKey": false
+                  "IsForeignKey": false,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B6CD98C8-AF90-40AA-B0B1-232BA23DA7CA"

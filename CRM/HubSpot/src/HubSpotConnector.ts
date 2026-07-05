@@ -30,8 +30,10 @@ import {
     type ExternalFieldSchema,
     type SourceSchemaInfo,
     type SourceFieldInfo,
+    type SourceObjectInfo,
     type RateLimitPolicy,
 } from '@memberjunction/integration-engine';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -1705,6 +1707,21 @@ export class HubSpotConnector extends BaseRESTIntegrationConnector {
                 console.warn(`[HubSpot] Skipping "${obj.Name}" — no live or DB fields available`);
             }
         }
+
+        // Sample-union augmentation (connector sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md):
+        // this connector's own IntrospectSchema above builds the Declared/DB catalog with NO measured widths
+        // (MaxLength: null). Wire MJ's EXISTING read-path sampler (`DiscoverFieldsViaFetch`) into that result —
+        // per object, in parallel, best-effort — and let the shared PURE `mergeDeclaredWithSampledFields` union
+        // the two by field name (never-shrink `max()` width; append MJ-discovered custom columns). No merge/PK/
+        // type logic here — MJ owns all of it. Per-object failures keep that object's existing fields.
+        await runBounded(result.Objects, 8, async (obj: SourceObjectInfo) => {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch {
+                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
+            }
+        });
 
         return result;
     }
@@ -3651,4 +3668,19 @@ export class HubSpotConnector extends BaseRESTIntegrationConnector {
     private Sleep(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+}
+
+/**
+ * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
+ * (The sample-union augmentation brings its own tiny pool — local plumbing, NOT a shared framework artifact.)
+ */
+async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+    const queue = [...items];
+    const size = Math.max(1, Math.min(limit, queue.length));
+    const runners = Array.from({ length: size }, async () => {
+        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+            await worker(next);
+        }
+    });
+    await Promise.all(runners);
 }

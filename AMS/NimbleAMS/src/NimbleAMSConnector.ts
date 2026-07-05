@@ -56,7 +56,9 @@ import {
     type ExternalFieldSchema,
     type IntrospectSchemaOptions,
     type SourceSchemaInfo,
+    type SourceObjectInfo,
 } from '@memberjunction/integration-engine';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -191,9 +193,26 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         contextUser: UserInfo,
         options?: IntrospectSchemaOptions
     ): Promise<SourceSchemaInfo> {
-        return BaseIntegrationConnector.prototype.IntrospectSchema.call(
+        const schema = await (BaseIntegrationConnector.prototype.IntrospectSchema.call(
             this, companyIntegration, contextUser, options
-        ) as Promise<SourceSchemaInfo>;
+        ) as Promise<SourceSchemaInfo>);
+
+        // Sample-union augmentation (connector sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md).
+        // The grandparent discover-loop above yields the live SF describe catalog (no measured widths). Wire
+        // MJ's EXISTING read-path sampler (`DiscoverFieldsViaFetch`) into that result — per object, in parallel,
+        // best-effort — and let the shared PURE `mergeDeclaredWithSampledFields` union the two by field name
+        // (never-shrink `max()` width; append MJ-discovered custom columns). No merge/PK/type logic here — MJ
+        // owns all of it. Per-object failures keep that object's declared fields.
+        await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch {
+                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
+            }
+        });
+
+        return schema;
     }
 
     // ── §7 sync-efficiency hooks ─────────────────────────────────────────────
@@ -825,3 +844,18 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
 
 // Tree-shaking prevention — REQUIRED so @RegisterClass survives bundling.
 export function LoadNimbleAMSConnector() { /* intentionally empty */ }
+
+/**
+ * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
+ * (The sample-union augmentation brings its own tiny pool — local plumbing, NOT a shared framework artifact.)
+ */
+async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+    const queue = [...items];
+    const size = Math.max(1, Math.min(limit, queue.length));
+    const runners = Array.from({ length: size }, async () => {
+        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+            await worker(next);
+        }
+    });
+    await Promise.all(runners);
+}

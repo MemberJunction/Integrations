@@ -22,7 +22,8 @@
     "@memberjunction/integration-engine-base": ">=5.42.0 <6.0.0"
   },
   "dependencies": {
-    "jsonwebtoken": "9.0.3"
+    "jsonwebtoken": "9.0.3",
+    "@memberjunction/connector-schema-merge": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "24.10.11",
@@ -34,7 +35,8 @@
     "@memberjunction/core-entities": "^5.42.0",
     "@memberjunction/global": "^5.42.0",
     "@memberjunction/integration-engine": "^5.42.0",
-    "@memberjunction/integration-engine-base": "^5.42.0"
+    "@memberjunction/integration-engine-base": "^5.42.0",
+    "@memberjunction/connector-schema-merge": "^1.0.0"
   },
   "repository": {
     "type": "git",
