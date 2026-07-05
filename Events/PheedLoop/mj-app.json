@@ -4,7 +4,7 @@
   "name": "connector-pheedloop",
   "displayName": "PheedLoop Connector",
   "description": "PheedLoop event-management connector — syncs attendees, events, sessions, speakers, exhibitors, sponsors, registrations, memberships and 20+ objects via PheedLoop REST API v3 (dual API-key + API-secret headers, org-scoped URL paths).",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
