@@ -707,7 +707,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "79FEE515-0F1B-4C50-93BB-819278933E8A"
@@ -1307,7 +1308,8 @@
                   "Name": "email",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "38933870-0F68-4719-8C6F-ADD852908A31"
@@ -1427,7 +1429,8 @@
                   "Name": "note",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "9F50B7FF-1ACD-4A3F-8A5E-ABADB851AAF2"
@@ -2726,7 +2729,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "98ED60CF-C992-412F-B433-AE4328051F87"
@@ -4059,7 +4063,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "0D9DC0FE-323E-4154-977D-2B4B3EB531DB"
@@ -4688,7 +4693,8 @@
                   "Type": "string",
                   "Source": "Declared",
                   "Description": "Enum: GIVEN, DECLINED, NOT_ASKED",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "18ECED0C-98DF-427C-9612-D4A616F420F9"
@@ -5915,7 +5921,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "D5C6CF09-EE8E-407A-B6CD-54EC943BC796"
@@ -7668,7 +7675,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "6E1C29C7-7A02-486C-94E3-43EBDA322628"
@@ -7802,7 +7810,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "90BB7FC1-4817-4134-A3F6-400E8547EC80"
@@ -9429,7 +9438,8 @@
                   "Name": "summary",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "26DDF612-564D-4B2C-AF4F-185E92E05A38"
@@ -9660,7 +9670,8 @@
                   "Name": "thumbnailUrl",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "2F62E444-358D-4224-9AE3-03447513B259"
@@ -9851,7 +9862,8 @@
                   "Name": "email",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "3DAD5E6E-B60E-45FD-A276-96B98BE82647"
@@ -10962,7 +10974,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7C0982B4-C83C-4143-A0E4-BA0EDCC1B60F"
@@ -11516,7 +11529,8 @@
                   "Name": "note",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DFACA2A3-6998-4712-85F9-8D9ECE2DAE1E"
@@ -13971,7 +13985,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "2A7AA14E-A5FA-433B-A072-CBBBAEE124E5"
@@ -14508,7 +14523,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "A8D7E448-40B1-4E88-84B2-ADB66BB77D9F"
@@ -14839,7 +14855,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "023E84B1-C840-4F8E-BD39-AB1657843D79"
@@ -15656,7 +15673,8 @@
                   "Name": "note",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "651E8DCA-1801-479A-B00B-8FEB9398D41B"
@@ -16295,7 +16313,8 @@
                   "Name": "note",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "83FCDC32-42C2-49FF-A50C-E072D98695B3"
@@ -16724,7 +16743,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "34E2065C-8FA9-493C-94CC-FF255EF67864"
@@ -17044,7 +17064,8 @@
                   "Name": "url",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "FDC9CB0D-1634-4CC8-84DE-EF6D16D96D3E"
@@ -21002,7 +21023,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7699FABB-A746-4B0D-8D74-180FD7BE7F02"
@@ -21162,7 +21184,8 @@
                   "Name": "email",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "5C9897A4-627C-4C2C-92B3-5FBD9261F430"
@@ -21396,7 +21419,8 @@
                   "Name": "description",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "D28F4FAC-523E-4288-8502-D6F3D60CEB6B"
@@ -21543,7 +21567,8 @@
                   "Name": "url",
                   "Type": "string",
                   "Source": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "6355F68E-0F22-411D-AB70-76ECC9A9F3B3"

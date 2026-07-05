@@ -38,6 +38,7 @@ import {
     type ActionGeneratorConfig,
     type IntrospectSchemaOptions,
 } from '@memberjunction/integration-engine';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -569,6 +570,23 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
 
         console.log(`[Salesforce] IntrospectSchema complete: ${succeeded}/${total} objects in ${((Date.now() - startMs) / 1000).toFixed(1)}s`);
+
+        // Sample-union augmentation (connector sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md).
+        // The describe above already carries REAL declared widths + custom (__c) fields, so this is chiefly a
+        // safety-net: MJ's read-path sampler (`DiscoverFieldsViaFetch`) is unioned per object, best-effort, and
+        // the shared PURE `mergeDeclaredWithSampledFields` NEVER shrinks a width (`max(declared, measured)`), so
+        // Salesforce's real describe widths are preserved and only ever widened. Runs on the FULL path so
+        // FontevaConnector (which delegates to this via `super.IntrospectSchema`) inherits it. Per-object
+        // failures keep that object's describe fields; MJ owns all measure/PK/type/persist logic.
+        await runBounded(result.Objects, CONCURRENCY, async (obj: SourceObjectInfo) => {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch {
+                // Keep this object's describe fields — sampling is best-effort and never breaks introspection.
+            }
+        });
+
         return result;
     }
 
@@ -2448,5 +2466,20 @@ interface BulkJobInfo {
     numberRecordsProcessed?: number;
     numberRecordsFailed?: number;
     contentType?: string;
+}
+
+/**
+ * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
+ * (The sample-union augmentation brings its own tiny pool — local plumbing, NOT a shared framework artifact.)
+ */
+async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+    const queue = [...items];
+    const size = Math.max(1, Math.min(limit, queue.length));
+    const runners = Array.from({ length: size }, async () => {
+        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+            await worker(next);
+        }
+    });
+    await Promise.all(runners);
 }
 

@@ -30,6 +30,24 @@ jobs:
       - name: Connector Open App invariants
         run: npm run lint:invariants
 
+      # Guardrail for the "silent second layer" class: every templated list door
+      # must resolve to a declared parent (PheedLoop shipped 21 objects that
+      # silently fetched 0 rows — reviews/tests/builds could not see it).
+      - name: Parent declarations resolvable
+        run: node scripts/validate-parent-declarations.mjs
+
+      # Better guessing beats trial-and-error: string sizing is empirical (a live
+      # bio was 2,595 chars vs the 255 default and records SKIP, not truncate).
+      # Prose fields at the raw default fail the build; url/email tiers advise.
+      - name: Field lengths semantically sized
+        run: node scripts/infer-field-lengths.mjs --check
+
+      # Metadata is the AUTHORING layer only — tenants get catalog rows from
+      # migrations (upgrades apply only NEW files). A metadata edit without a
+      # new migration ships a fix that reaches nobody (the wave-1/2 lesson).
+      - name: Metadata changes ship a migration
+        run: node scripts/require-metadata-migration.mjs
+
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 

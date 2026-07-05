@@ -2558,14 +2558,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "F7FA47E9-508F-4878-B395-F24155F9C613"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:22.316Z",
-                  "checksum": "34d3153f30ff76a5c426665d47d6a5c4be1ef9ae3d53b513f785e12eea454c3a"
+                  "lastModified": "2026-07-04T02:06:04.249Z",
+                  "checksum": "48267d2cd4b91dae3948bc83649defa1a1bee02886180b019a865344c1f8f592"
                 }
               },
               {
@@ -3001,14 +3002,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "8AED1AD2-53B9-4F2F-A18F-574633F59AE5"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:22.643Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.270Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -3546,14 +3548,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "C1DA9C9E-0F42-4BA6-A364-A39B48ED215B"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:23.095Z",
-                  "checksum": "e2f15aa8d324d93777d8a67cbe817e308e9861dc1f1e6e75bb5b047e3c5e78ec"
+                  "lastModified": "2026-07-04T02:06:04.292Z",
+                  "checksum": "943c449eae2eccfe8fe7afb6acb0186801ad8a0216e8b58e05c7e4c09e3d69c7"
                 }
               }
             ]
@@ -4244,14 +4247,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "C74618B3-510D-48AF-AC15-8649AB1FE619"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:23.685Z",
-                  "checksum": "e2f15aa8d324d93777d8a67cbe817e308e9861dc1f1e6e75bb5b047e3c5e78ec"
+                  "lastModified": "2026-07-04T02:06:04.318Z",
+                  "checksum": "943c449eae2eccfe8fe7afb6acb0186801ad8a0216e8b58e05c7e4c09e3d69c7"
                 }
               },
               {
@@ -4518,14 +4522,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "4E534F42-84CA-487F-A9E1-2FFE8C75A552"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:23.890Z",
-                  "checksum": "074f38f27a2b06820c609543b9f7e2094cb492eeeb607735d8e1a5b488fcaaae"
+                  "lastModified": "2026-07-04T02:06:04.334Z",
+                  "checksum": "6a8e49093b7f5eaf91b886fe5d2b605439fbd5ebf095131ae0d9fe1aaa2198fc"
                 }
               },
               {
@@ -5401,14 +5406,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "70D6A193-64A0-4828-84E2-E2D1DFC109AC"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:24.601Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.362Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -5639,7 +5645,7 @@
             "Status": "Active",
             "MetadataSource": "Declared",
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"apiPath\":\"/api/memberships/lookup/status/{defaultMembershipStatus}\",\"pathParams\":[\"defaultMembershipStatus\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":true,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false}"
+            "Configuration": "{\"apiPath\":\"/api/memberships/lookup/status/{defaultMembershipStatus}\",\"pathParams\":[\"defaultMembershipStatus\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":false,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false,\"gap\":\"{defaultMembershipStatus} is a configured value, not a parent object — list iteration is structurally impossible; detail-only.\"}"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -5739,8 +5745,8 @@
             "ID": "246947F1-D497-4ECB-ABB4-80AF5E5BC070"
           },
           "sync": {
-            "lastModified": "2026-06-29T03:26:19.704Z",
-            "checksum": "d4c121f911ede1b6ba6a9f7cb9a13c1f4c7b2c07faf100df42cb1c9b81f01976"
+            "lastModified": "2026-07-04T02:06:04.180Z",
+            "checksum": "458f591865710ab2d9f2de477423fad7bcd6081cc0cd477c0690e8be2abf2a1f"
           }
         },
         {
@@ -5757,7 +5763,7 @@
             "Status": "Active",
             "MetadataSource": "Declared",
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"apiPath\":\"/api/memberships/change/{membershipId}/{changeType}\",\"pathParams\":[\"membershipId\",\"changeType\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":true,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false,\"parentObjectName\":\"Membership\",\"parentObjectIDFieldName\":\"membershipId\"}"
+            "Configuration": "{\"apiPath\":\"/api/memberships/change/{membershipId}/{changeType}\",\"pathParams\":[\"membershipId\",\"changeType\"],\"pagination\":{\"style\":\"odata\",\"skipParam\":\"$skip\",\"topParam\":\"$top\",\"orderByParam\":\"$orderby\",\"topMax\":100},\"syncStrategy\":\"FullPullHashDiff\",\"contentHashApplicable\":true,\"listSupported\":false,\"supportsCreate\":false,\"supportsUpdate\":false,\"supportsDelete\":false,\"parentObjectName\":\"Membership\",\"parentObjectIDFieldName\":\"membershipId\",\"gap\":\"Path needs {membershipId}+{changeType}; {changeType} is an enum with no parent object — two vars with a single parentObjectName trip the engine PARENT_CYCLE guard (0 rows). Detail-only until an enum-iteration mechanism exists.\"}"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -6045,14 +6051,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7B2788A0-D7FB-4398-9A4F-B7F251DE94E3"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:25.088Z",
-                  "checksum": "e2f15aa8d324d93777d8a67cbe817e308e9861dc1f1e6e75bb5b047e3c5e78ec"
+                  "lastModified": "2026-07-04T02:06:04.385Z",
+                  "checksum": "943c449eae2eccfe8fe7afb6acb0186801ad8a0216e8b58e05c7e4c09e3d69c7"
                 }
               },
               {
@@ -6080,14 +6087,15 @@
                   "IsReadOnly": true,
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7F40C958-466D-49B2-BE48-236D4C328E22"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:25.114Z",
-                  "checksum": "7736b0f6b62a2f1b28c878f3d95da700c6b42e4c38ae5442a441b2cb2b38c7f8"
+                  "lastModified": "2026-07-04T02:06:04.397Z",
+                  "checksum": "642132cdb4a45bd4777f7b40b3a731a9da4957e2724205b24829e04f3d3090e4"
                 }
               },
               {
@@ -6842,8 +6850,8 @@
             "ID": "3E5B6F3B-D107-455E-9EC5-92C4A99A5D28"
           },
           "sync": {
-            "lastModified": "2026-06-29T03:26:19.722Z",
-            "checksum": "2407f776fb7c0940dc8a21aa49033d57c928ba3a12d975cb1a09858df1b4f175"
+            "lastModified": "2026-07-04T02:06:04.164Z",
+            "checksum": "e1c5f90f829f39f8140161033edec78f2d56fd10d55ba6e814bf5c876c9e6061"
           }
         },
         {
@@ -6927,14 +6935,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "49FB5C13-F937-4EEC-8665-300541B8CABC"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:25.861Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.424Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -7170,14 +7179,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "80464726-6F1E-404E-879D-AC5564285E65"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:26.038Z",
-                  "checksum": "4d5d1db51448c595cae311f3a97493ae1bc809b701367963be7f6db7b145e798"
+                  "lastModified": "2026-07-04T02:06:04.439Z",
+                  "checksum": "1bf9debd67dbba3502d2d5b070df46cd908ef20ecfbc24c2adc8648c136b6002"
                 }
               },
               {
@@ -7428,14 +7438,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "19DDA757-BD88-4362-93D9-BDD40C1B7155"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:26.238Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.458Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               }
             ]
@@ -8649,14 +8660,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "239334D8-740D-4E91-8751-9ADFABF6FFAA"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:27.155Z",
-                  "checksum": "621685eba0a176378d5e0533b8cbfdaaf99a499ba9ea71511d38032d1ad0791a"
+                  "lastModified": "2026-07-04T02:06:04.488Z",
+                  "checksum": "d3780cac3581ee6d15e37a8087e0e2d6f92479de986915562c473293505cbf5e"
                 }
               },
               {
@@ -9147,14 +9159,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "6D52876C-9C27-410D-BA08-F4829498B517"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:27.544Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.510Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -10114,14 +10127,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
                 },
                 "primaryKey": {
                   "ID": "9871C7E5-DAC0-4C9D-B019-0E27D58339E7"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:28.289Z",
-                  "checksum": "947bf871ec36410605a54c35748cd47f2f1b430a1f05f910030b3a7b987a037d"
+                  "lastModified": "2026-07-04T02:06:04.539Z",
+                  "checksum": "2ea11ab342532cac94b1396a1be24103cae109bc672f12fbd50c709bdde0ee4d"
                 }
               },
               {
@@ -10165,14 +10179,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "F95F6E91-2C55-4888-B7FB-3D9B0DF6F435"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:28.328Z",
-                  "checksum": "621685eba0a176378d5e0533b8cbfdaaf99a499ba9ea71511d38032d1ad0791a"
+                  "lastModified": "2026-07-04T02:06:04.551Z",
+                  "checksum": "d3780cac3581ee6d15e37a8087e0e2d6f92479de986915562c473293505cbf5e"
                 }
               },
               {
@@ -10250,14 +10265,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B0495687-1FB6-49DF-A38A-42373A57E0DD"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:28.403Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.562Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -10267,14 +10283,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "DB4AB445-9BB2-44C9-A2E4-4A72CB0F42E6"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:28.428Z",
-                  "checksum": "977869c605be9a77ac59ed47170f7e1f7e988728b09f5e3034713c6f40b65519"
+                  "lastModified": "2026-07-04T02:06:04.577Z",
+                  "checksum": "eb4cc4a0cfd53a618c2381dd3c52aeb4a2da050905bdb0d85942ef3cb47d9769"
                 }
               },
               {
@@ -10524,14 +10541,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "493DE738-792C-4A0A-A922-A3A30000C56F"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:28.619Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.592Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -10835,14 +10853,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "BAA8C85A-D87D-4A74-86B5-7CA4F93AA6F8"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:28.838Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.607Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -11242,14 +11261,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B9E0E37D-CB76-4CBA-A629-5B070930CC36"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:29.161Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.629Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -11570,14 +11590,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "4406D644-D2C1-4CDB-A597-FE9C4E8910A9"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:29.411Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.643Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -12706,14 +12727,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "85042D75-6883-46B7-A070-178F7A438128"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:30.281Z",
-                  "checksum": "621685eba0a176378d5e0533b8cbfdaaf99a499ba9ea71511d38032d1ad0791a"
+                  "lastModified": "2026-07-04T02:06:04.673Z",
+                  "checksum": "d3780cac3581ee6d15e37a8087e0e2d6f92479de986915562c473293505cbf5e"
                 }
               },
               {
@@ -12944,14 +12966,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "21B22032-C1A9-426A-8257-8C072AFCB2C1"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:30.490Z",
-                  "checksum": "e2f15aa8d324d93777d8a67cbe817e308e9861dc1f1e6e75bb5b047e3c5e78ec"
+                  "lastModified": "2026-07-04T02:06:04.691Z",
+                  "checksum": "943c449eae2eccfe8fe7afb6acb0186801ad8a0216e8b58e05c7e4c09e3d69c7"
                 }
               },
               {
@@ -13349,14 +13372,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "B4D8F239-D7C2-4C09-856C-DE63C0851D53"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:30.747Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.709Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {
@@ -13569,14 +13593,15 @@
                   "Type": "String",
                   "Status": "Active",
                   "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "A9A78050-AD24-4841-BD07-8F98BC15290A"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:26:30.894Z",
-                  "checksum": "1b77c0290d47df828ab83236e0452361ad2b9c6b550850d038a61e04d71767d5"
+                  "lastModified": "2026-07-04T02:06:04.723Z",
+                  "checksum": "424c57380f29990768fb01313f97396f97b7e5eb46b35ebaf46e79ce0410e8b9"
                 }
               },
               {

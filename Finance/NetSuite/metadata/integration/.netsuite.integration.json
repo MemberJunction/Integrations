@@ -1443,7 +1443,8 @@
                   "IsUniqueKey": false,
                   "AllowsNull": true,
                   "Status": "Active",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
                 },
                 "primaryKey": {
                   "ID": "8D5ED52C-B18C-4FB3-A137-C985AF9A9A10"
