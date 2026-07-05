@@ -255,9 +255,9 @@
       "installTag": "Events-Cvent@1.1.1"
     },
     {
-      "name": "Eventbrite",
+      "name": "eventbrite",
       "displayName": "Eventbrite Connector",
-      "description": "Eventbrite connector — syncs organizations, events, ticket classes, attendees, orders, questions, discounts, venues, webhooks, categories, and formats via the Eventbrite REST API v3 (OAuth2 / personal-token Bearer auth).",
+      "description": "Events, ticketing, registration, and event-management platform. REST API v3 for managing events, attendees, orders, ticket classes, venues, and related event data with OAuth2 bearer-token authentication.",
       "category": "Events",
       "tags": [
         "eventbrite",
@@ -266,8 +266,8 @@
         "integration"
       ],
       "logo": null,
-      "navigationBaseURL": "https://www.eventbrite.com/",
-      "objectCount": 18,
+      "navigationBaseURL": "https://www.eventbriteapi.com/v3/",
+      "objectCount": 33,
       "className": "EventbriteConnector",
       "npmPackage": "@memberjunction/connector-eventbrite",
       "version": "1.0.0",
@@ -316,27 +316,6 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
       "installTag": "Events-PheedLoop@1.3.0"
-    },
-    {
-      "name": "eventbrite",
-      "displayName": "Eventbrite Connector",
-      "description": "Events, ticketing, registration, and event-management platform. REST API v3 for managing events, attendees, orders, ticket classes, venues, and related event data with OAuth2 bearer-token authentication.",
-      "category": "Events",
-      "tags": [
-        "eventbrite",
-        "events",
-        "connector",
-        "integration"
-      ],
-      "logo": null,
-      "navigationBaseURL": "https://www.eventbriteapi.com/v3/",
-      "objectCount": 33,
-      "className": "EventbriteConnector",
-      "npmPackage": "@memberjunction/connector-eventbrite",
-      "version": "2.0.0",
-      "mjVersionRange": ">=5.42.0 <6.0.0",
-      "repoSubpath": "Events/Eventbrite",
-      "installTag": "Events-Eventbrite@2.0.0"
     },
     {
       "name": "NetSuite",
