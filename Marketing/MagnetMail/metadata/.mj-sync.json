@@ -1,6 +1,5 @@
 {
   "directoryOrder": [
-    "credential-type",
     "integration"
   ],
   "sqlLogging": {
