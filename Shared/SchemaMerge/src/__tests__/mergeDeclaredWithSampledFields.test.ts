@@ -44,9 +44,24 @@ describe('mergeDeclaredWithSampledFields (pure glue — adopts MJ values, no log
             sampled({ Name: 'note', MaxLength: 900 }),
         ];
         const out = mergeDeclaredWithSampledFields(d, s);
-        expect(out.find((f) => f.Name === 'name')!.MaxLength).toBe(4000); // widened up
-        expect(out.find((f) => f.Name === 'code')!.MaxLength).toBe(500);  // never shrank below real declared
-        expect(out.find((f) => f.Name === 'note')!.MaxLength).toBe(900);  // adopted measured
+        expect(out.find((f) => f.Name === 'name')!.MaxLength).toBe(4000); // measured>declared → headroom (4000 tier)
+        expect(out.find((f) => f.Name === 'code')!.MaxLength).toBe(500);  // declared>measured → kept EXACTLY, no headroom
+        expect(out.find((f) => f.Name === 'note')!.MaxLength).toBe(1024); // measured 900 → next tier (headroom vs the tail)
+    });
+
+    it('gives a MEASURED width headroom (buckets up) but keeps a DECLARED width exact', () => {
+        // The regression that skipped 99 PheedLoop members: `about` measured 2348, a real bio was 2595.
+        const d = [
+            declared({ Name: 'about', MaxLength: null }),  // no declared width → sample drives → bucket up
+            declared({ Name: 'sfField', MaxLength: 255 }), // real describe-API width, sample smaller → kept EXACT
+        ];
+        const s = [
+            sampled({ Name: 'about', MaxLength: 2348 }),
+            sampled({ Name: 'sfField', MaxLength: 100 }),
+        ];
+        const out = mergeDeclaredWithSampledFields(d, s);
+        expect(out.find((f) => f.Name === 'about')!.MaxLength).toBe(4000); // 2348 → 4000, so a 2595 value fits
+        expect(out.find((f) => f.Name === 'sfField')!.MaxLength).toBe(255); // declared authoritative, NOT inflated
     });
 
     it('keeps the declared width when MJ measured none, and null when neither side has one', () => {
@@ -73,7 +88,7 @@ describe('mergeDeclaredWithSampledFields (pure glue — adopts MJ values, no log
         expect(id.IsRequired).toBe(true);
         expect(id.IsReadOnly).toBe(true);
         expect(id.IsPrimaryKey).toBe(true);  // declared PK untouched — helper does no PK logic
-        expect(id.MaxLength).toBe(25);        // only the measured width is adopted
+        expect(id.MaxLength).toBe(32);       // measured 25 → next tier (headroom)
     });
 
     it('appends a sample-only field as a custom column, adopting MJ type/width/PK verbatim', () => {
@@ -86,7 +101,7 @@ describe('mergeDeclaredWithSampledFields (pure glue — adopts MJ values, no log
         const custom = out.find((f) => f.Name === 'x_custom')!;
         expect(custom).toBeDefined();
         expect(custom.SourceType).toBe('text');     // MJ's type verbatim
-        expect(custom.MaxLength).toBe(1234);         // MJ's measured width verbatim
+        expect(custom.MaxLength).toBe(2048);        // measured 1234 → next tier (headroom)
         expect(custom.IsPrimaryKey).toBe(true);      // MJ's PK-stat verbatim
         expect(custom.IsReadOnly).toBe(true);
     });
