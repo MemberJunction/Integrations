@@ -37,6 +37,7 @@
     "Marketing/MagnetMail",
     "Marketing/Mailchimp",
     "Marketing/Rasa",
-    "Platform/MJtoMJ"
+    "Platform/MJtoMJ",
+    "Platform/Zendesk"
   ]
 }
