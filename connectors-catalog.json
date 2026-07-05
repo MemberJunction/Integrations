@@ -318,6 +318,27 @@
       "installTag": "Events-PheedLoop@1.3.0"
     },
     {
+      "name": "eventbrite",
+      "displayName": "Eventbrite Connector",
+      "description": "Events, ticketing, registration, and event-management platform. REST API v3 for managing events, attendees, orders, ticket classes, venues, and related event data with OAuth2 bearer-token authentication.",
+      "category": "Events",
+      "tags": [
+        "eventbrite",
+        "events",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://www.eventbriteapi.com/v3/",
+      "objectCount": 33,
+      "className": "EventbriteConnector",
+      "npmPackage": "@memberjunction/connector-eventbrite",
+      "version": "2.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Events/Eventbrite",
+      "installTag": "Events-Eventbrite@2.0.0"
+    },
+    {
       "name": "NetSuite",
       "displayName": "NetSuite Connector",
       "description": "Oracle NetSuite ERP/CRM connector: SuiteTalk REST Record Service (CRUD) + SuiteQL reads across standard and custom record types; incremental via lastModifiedDate; OAuth 1.0a TBA / OAuth 2.0; per-account host; runtime metadata-catalog discovery.",
