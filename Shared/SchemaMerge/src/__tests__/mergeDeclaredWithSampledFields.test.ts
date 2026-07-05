@@ -32,18 +32,35 @@ function sampled(partial: Partial<ExternalFieldSchema> & { Name: string }): Exte
 }
 
 describe('mergeDeclaredWithSampledFields (pure glue — adopts MJ values, no logic)', () => {
-    it("adopts MJ's measured MaxLength for a field in both; keeps declared width when MJ measured none", () => {
+    it('widens MaxLength to the never-shrink max(declared, measured) and never truncates a real declared width', () => {
         const d = [
-            declared({ Name: 'name', MaxLength: 255 }),
-            declared({ Name: 'code', MaxLength: 500 }),
+            declared({ Name: 'name', MaxLength: 255 }),   // sample is wider  -> widen to sample
+            declared({ Name: 'code', MaxLength: 500 }),   // sample is narrower -> NEVER shrink, keep declared
+            declared({ Name: 'note', MaxLength: null }),  // declared has none -> adopt measured
         ];
         const s = [
-            sampled({ Name: 'name', MaxLength: 4000 }),   // MJ measured a width -> adopt it verbatim
-            sampled({ Name: 'code', MaxLength: null }),   // MJ measured nothing -> keep declared width
+            sampled({ Name: 'name', MaxLength: 4000 }),
+            sampled({ Name: 'code', MaxLength: 128 }),
+            sampled({ Name: 'note', MaxLength: 900 }),
         ];
         const out = mergeDeclaredWithSampledFields(d, s);
-        expect(out.find((f) => f.Name === 'name')!.MaxLength).toBe(4000);
+        expect(out.find((f) => f.Name === 'name')!.MaxLength).toBe(4000); // widened up
+        expect(out.find((f) => f.Name === 'code')!.MaxLength).toBe(500);  // never shrank below real declared
+        expect(out.find((f) => f.Name === 'note')!.MaxLength).toBe(900);  // adopted measured
+    });
+
+    it('keeps the declared width when MJ measured none, and null when neither side has one', () => {
+        const d = [
+            declared({ Name: 'code', MaxLength: 500 }),
+            declared({ Name: 'flag', MaxLength: null }),
+        ];
+        const s = [
+            sampled({ Name: 'code', MaxLength: null }),   // MJ measured nothing -> keep declared width
+            sampled({ Name: 'flag', MaxLength: null }),   // neither side -> stays null
+        ];
+        const out = mergeDeclaredWithSampledFields(d, s);
         expect(out.find((f) => f.Name === 'code')!.MaxLength).toBe(500);
+        expect(out.find((f) => f.Name === 'flag')!.MaxLength).toBeNull();
     });
 
     it('leaves a matched declared field otherwise UNCHANGED (no type/semantics/PK logic)', () => {

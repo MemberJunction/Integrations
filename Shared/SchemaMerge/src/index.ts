@@ -7,9 +7,12 @@ import type { SourceFieldInfo, ExternalFieldSchema } from '@memberjunction/integ
  * owns width-shrink protection and PK preservation at persist time. This helper ONLY:
  *
  *   - unions the two arrays BY FIELD NAME;
- *   - for a name in BOTH: keeps the DECLARED field object UNCHANGED except adopting MJ's measured
- *     `MaxLength` when the sample measured one (the declared catalog carries no real width). No width
- *     math, no max(), no shrink rules, no PK logic, no type inference — just adopt MJ's measured value;
+ *   - for a name in BOTH: keeps the DECLARED field object UNCHANGED except widening `MaxLength` to the
+ *     NEVER-SHRINK maximum of the declared and measured widths — `max(declared ?? 0, sampled ?? 0)`,
+ *     falling back to whichever is non-null when that max is 0/nullish. This only ever WIDENS: some
+ *     connectors (Salesforce/Fonteva) carry REAL declared widths from their describe API, so blindly
+ *     adopting the sample could shrink below the real width and truncate — max() is safe on every
+ *     connector. No other width math, no PK logic, no type inference — MJ owns all of it;
  *   - for a name ONLY in the sample: appends it as-is — a custom column MJ discovered, with MJ's own
  *     type / width / PK-stats — mapped onto the `SourceFieldInfo` shape.
  *
@@ -31,11 +34,16 @@ export function mergeDeclaredWithSampledFields(
     }
     const declaredNames = new Set(declaredList.map((f) => f.Name));
 
-    // Declared fields, in declared order — adopt MJ's measured width when it measured one; nothing else changes.
+    // Declared fields, in declared order — widen MaxLength to the never-shrink max(declared, measured);
+    // nothing else changes. max() only ever grows the width, so a real declared width is never truncated.
     const merged: SourceFieldInfo[] = declaredList.map((d) => {
         const s = sampledByName.get(d.Name);
-        if (!s || s.MaxLength == null) return d;
-        return { ...d, MaxLength: s.MaxLength };
+        if (!s) return d;
+        const widened = Math.max(d.MaxLength ?? 0, s.MaxLength ?? 0);
+        // If neither side carried a width the max is 0 — keep whatever was non-null (declared wins the tie).
+        const nextMaxLength = widened > 0 ? widened : (d.MaxLength ?? s.MaxLength ?? null);
+        if (nextMaxLength === d.MaxLength) return d;
+        return { ...d, MaxLength: nextMaxLength };
     });
 
     // Custom columns MJ discovered (sample-only names) — appended as-is, in sample order.

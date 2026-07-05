@@ -46,7 +46,10 @@ import {
     type UpdateRecordContext,
     type DeleteRecordContext,
     type GetRecordContext,
+    type SourceSchemaInfo,
+    type SourceObjectInfo,
 } from '@memberjunction/integration-engine';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -392,6 +395,38 @@ export class MagnetMailConnector extends BaseIntegrationConnector {
             IsUniqueKey: f.IsPrimaryKey,
             IsReadOnly: f.IsReadOnly,
         }));
+    }
+
+    /**
+     * IntrospectSchema — pure WIRING of MJ's existing sampler into the Declared catalog (the connector
+     * sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md). Adds NO discovery/merge/sync logic —
+     * it only wires MJ's `DiscoverFieldsViaFetch` sampler into the Declared catalog.
+     *
+     * `super.IntrospectSchema` yields the Declared catalog (no measured widths). Per object we call MJ's
+     * `DiscoverFieldsViaFetch` (MJ's own read-path sampler — measures real widths, surfaces custom
+     * columns) and the shared PURE `mergeDeclaredWithSampledFields` unions the two by field name
+     * (never-shrink `max()` width; append MJ-discovered custom columns). MJ owns everything else.
+     *
+     * `DiscoverFieldsViaFetch` falls back to the UNCHANGED `DiscoverFields` when the read path can't run —
+     * never back into THIS method — so no infinite recursion. Objects are sampled IN PARALLEL under a
+     * small bounded pool; any per-object failure keeps that object's declared fields (best-effort).
+     */
+    public override async IntrospectSchema(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo
+    ): Promise<SourceSchemaInfo> {
+        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
+
+        await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch {
+                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
+            }
+        });
+
+        return schema;
     }
 
     // ── FetchChanges ─────────────────────────────────────────────────
@@ -1012,3 +1047,18 @@ ${body}
 
 /** Tree-shaking prevention function — import and call from module entry point. */
 export function LoadMagnetMailConnector(): void { /* no-op */ }
+
+/**
+ * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
+ * (The sample-union override brings its own tiny pool — local plumbing, NOT a shared framework artifact.)
+ */
+async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+    const queue = [...items];
+    const size = Math.max(1, Math.min(limit, queue.length));
+    const runners = Array.from({ length: size }, async () => {
+        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+            await worker(next);
+        }
+    });
+    await Promise.all(runners);
+}
