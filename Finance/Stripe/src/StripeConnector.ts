@@ -14,8 +14,11 @@ import {
     type FetchBatchResult,
     type ExternalRecord,
     type RateLimitPolicy,
+    type SourceSchemaInfo,
+    type SourceObjectInfo,
     // NOTE: no auth-helper crypto imported — Stripe uses a static secret-key Bearer (no signing, no OAuth flow).
 } from '@memberjunction/integration-engine';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
 // ─── Design note ────────────────────────────────────────────────────────
 //
@@ -125,6 +128,42 @@ export class StripeConnector extends BaseRESTIntegrationConnector {
      */
     public override get DiscoveryIsAuthoritative(): boolean {
         return false;
+    }
+
+    /**
+     * IntrospectSchema — pure WIRING of MJ's existing sampler into the declared catalog (the connector
+     * sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md). This connector adds NO discovery,
+     * merge, or sync logic — it only wires `DiscoverFieldsViaFetch` (MJ's sampler) into IntrospectSchema.
+     *
+     * `super.IntrospectSchema` yields the cache-driven Declared catalog (no measured widths). For each
+     * object we then call MJ's `DiscoverFieldsViaFetch` — MJ's own read-path sampler that measures real
+     * field widths and surfaces custom columns — and the shared PURE `mergeDeclaredWithSampledFields`
+     * unions the two by field name (adopt MJ's measured width; append MJ-discovered custom columns). MJ
+     * owns everything else (measurement, type/PK inference, persistence, reconcile, sync).
+     *
+     * Recursion note: `DiscoverFieldsViaFetch` falls back to the UNCHANGED `DiscoverFields` (cache-driven)
+     * when the read path can't run — never back into THIS method — so there is no infinite recursion.
+     * This connector does NOT override `DiscoverFields` to call any ViaFetch/ViaStream.
+     *
+     * Robustness: objects are sampled IN PARALLEL under a small bounded pool; any per-object failure
+     * keeps that object's declared fields, so a single bad sample never breaks introspection.
+     */
+    public override async IntrospectSchema(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo
+    ): Promise<SourceSchemaInfo> {
+        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
+
+        await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch {
+                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
+            }
+        });
+
+        return schema;
     }
 
     // ── Sync-efficiency hooks (§7/§10 — populated from frozen-contract Configuration facts) ──
@@ -687,4 +726,20 @@ export class StripeConnector extends BaseRESTIntegrationConnector {
         }
         return undefined;
     }
+}
+
+/**
+ * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
+ * (BaseRESTIntegrationConnector.RunBounded is private, so the sample-union override brings its own
+ * tiny pool — this is local plumbing, NOT a shared framework artifact.)
+ */
+async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+    const queue = [...items];
+    const size = Math.max(1, Math.min(limit, queue.length));
+    const runners = Array.from({ length: size }, async () => {
+        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+            await worker(next);
+        }
+    });
+    await Promise.all(runners);
 }

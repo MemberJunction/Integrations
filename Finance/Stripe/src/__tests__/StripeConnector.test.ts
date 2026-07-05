@@ -3,6 +3,6 @@ import { StripeConnector } from '../StripeConnector.js';
 
 describe('StripeConnector', () => {
   it('exposes the integration name', () => {
-    expect(new StripeConnector().IntegrationName).toBe('Stripe');
+    expect(new StripeConnector().IntegrationName).toBe('stripe');
   });
 });
