@@ -1,0 +1,31 @@
+{
+  "name": "@memberjunction/connector-schema-merge",
+  "version": "1.0.0",
+  "description": "Pure helper that unions a connector's DECLARED field catalog with a data-measured streaming sample. One function, no class, no base — connectors import it; they do NOT extend anything new.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --passWithNoTests"
+  },
+  "author": "MemberJunction.com",
+  "license": "ISC",
+  "peerDependencies": {
+    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "24.10.11",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "@memberjunction/integration-engine": "^5.42.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MemberJunction/Integrations"
+  }
+}
