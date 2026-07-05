@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-hivebrite",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "MemberJunction Hivebrite connector.",
   "type": "module",
   "main": "dist/index.js",

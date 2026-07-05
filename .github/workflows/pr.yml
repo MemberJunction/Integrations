@@ -53,6 +53,13 @@ jobs:
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 
+      # connectors-catalog.json is what `mj app install` reads to resolve versions. It is GENERATED from
+      # each connector's package.json — when it drifts, installs pin a stale version (PheedLoop shipped its
+      # parent-declaration fix but instances kept installing the pre-fix 1.0.0 because the catalog was never
+      # regenerated). Fail the PR if it is out of date so drift can never reach an install again.
+      - name: Connector catalog up to date
+        run: node scripts/build-connectors-catalog.mjs --check
+
       # Build + unit-test only the connectors a PR touches (and their dependents, e.g. Fonteva when Salesforce changes).
       - name: Build & test changed connectors
         run: npx turbo run build test --filter='...[origin/${{ github.base_ref }}]'
