@@ -4,7 +4,7 @@
   "name": "connector-reach360",
   "displayName": "Reach360 Connector",
   "description": "Reach 360 is Articulate's lightweight cloud LMS. This integration syncs users, groups, courses, learning paths, reports (sessions/activity), and supports invitations and completion imports via a Bearer token REST API (https://api.reach360.com).",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-graduation-cap",
   "publisher": {

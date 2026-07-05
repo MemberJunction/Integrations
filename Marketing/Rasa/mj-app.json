@@ -4,7 +4,7 @@
   "name": "connector-rasa-io",
   "displayName": "Rasa.io Connector",
   "description": "Rasa.io newsletter platform integration for syncing persons (subscribers) and posts (content) via the Rasa.io REST API",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-newspaper",
   "publisher": {
