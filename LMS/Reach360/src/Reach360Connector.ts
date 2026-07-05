@@ -28,6 +28,7 @@ import {
     type SourceRelationshipInfo,
     type IntrospectSchemaOptions,
 } from '@memberjunction/integration-engine';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -442,6 +443,23 @@ export class Reach360Connector extends BaseRESTIntegrationConnector {
                 IncrementalWatermarkField: REACH360_WATERMARK_FIELDS[obj.Name.toLowerCase()],
             });
         }
+
+        // Sample-union (the connector discovery standard): after building the DECLARED catalog above,
+        // wire MJ's OWN read-path sampler (`DiscoverFieldsViaFetch`) into it per object and union the
+        // measured fields via the shared PURE `mergeDeclaredWithSampledFields` — adopting MJ's measured
+        // widths and appending MJ-discovered custom columns. No discovery/merge/sync logic is added here;
+        // MJ owns measurement, type/PK inference, persistence and reconcile. `DiscoverFieldsViaFetch`
+        // falls back to the UNCHANGED `DiscoverFields` (never this method) so there is no recursion, and
+        // any per-object failure keeps that object's declared fields.
+        await runBounded(result.Objects, 8, async (obj: SourceObjectInfo) => {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch {
+                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
+            }
+        });
+
         return result;
     }
 
@@ -942,3 +960,19 @@ export class Reach360Connector extends BaseRESTIntegrationConnector {
 
 /** Tree-shaking prevention function — import and call from module entry point. */
 export function LoadReach360Connector(): void { /* no-op */ }
+
+/**
+ * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
+ * (BaseRESTIntegrationConnector.RunBounded is private, so the sample-union override brings its own
+ * tiny pool — this is local plumbing, NOT a shared framework artifact.)
+ */
+async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+    const queue = [...items];
+    const size = Math.max(1, Math.min(limit, queue.length));
+    const runners = Array.from({ length: size }, async () => {
+        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+            await worker(next);
+        }
+    });
+    await Promise.all(runners);
+}

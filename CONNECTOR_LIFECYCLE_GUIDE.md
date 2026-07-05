@@ -1,5 +1,11 @@
 # Connector lifecycle — build → publish (current, 2026-06-27)
 
+> **Discovery standard:** every describe-endpoint connector must union its declared catalog with a
+> bounded data-sample by overriding its own `IntrospectSchema` (pure wiring of MJ's
+> `DiscoverFieldsViaFetch` sampler + the shared pure `mergeDeclaredWithSampledFields` helper — no base
+> class, no re-parenting, never touch `DiscoverFields`). See
+> [docs/CONNECTOR_DISCOVERY_STANDARD.md](docs/CONNECTOR_DISCOVERY_STANDARD.md).
+
 Two phases. **Build** (connector-builder-v2, in the MJ repo) produces the connector's code + metadata + tests.
 **Publish** (this Integrations repo) turns that into an installable 1.0.0 Open App via the seed-migration pipeline
 proven this session. The build half got the 3-mode arc; the publish half is brand new — together they make
