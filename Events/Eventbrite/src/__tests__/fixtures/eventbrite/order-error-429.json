@@ -1,5 +1,0 @@
-{
-  "error": "HIT_RATE_LIMIT",
-  "error_description": "The rate limit has been reached for this token.",
-  "status_code": 429
-}

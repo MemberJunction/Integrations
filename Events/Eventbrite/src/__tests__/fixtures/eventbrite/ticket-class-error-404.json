@@ -1,5 +1,0 @@
-{
-  "error": "NOT_FOUND",
-  "error_description": "The TicketClass you requested does not exist.",
-  "status_code": 404
-}
