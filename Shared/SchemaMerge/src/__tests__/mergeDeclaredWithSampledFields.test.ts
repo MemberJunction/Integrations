@@ -124,4 +124,51 @@ describe('mergeDeclaredWithSampledFields (pure glue — adopts MJ values, no log
         const d = [declared({ Name: 'only' })];
         expect(mergeDeclaredWithSampledFields(d, []).map((f) => f.Name)).toEqual(['only']);
     });
+
+    // ── I1 — carry the sampled statistical PK onto an otherwise-keyless object (the sharpest fix) ──
+    describe('I1 — adopts the sampled PK when the object declares none (else keyless → never syncs)', () => {
+        it('carries a proven sampled PK onto a declared field when NO field declares a PK', () => {
+            const d = [declared({ Name: 'email', MaxLength: 255 }), declared({ Name: 'name', MaxLength: 255 })];
+            const s = [sampled({ Name: 'email', IsPrimaryKey: true }), sampled({ Name: 'name' })];
+            const out = mergeDeclaredWithSampledFields(d, s);
+            expect(out.find((f) => f.Name === 'email')!.IsPrimaryKey).toBe(true);  // proven key adopted → object can sync
+            expect(out.find((f) => f.Name === 'name')!.IsPrimaryKey).toBe(false);
+        });
+
+        it('never overrides or duplicates a real declared PK — declared always wins', () => {
+            const d = [declared({ Name: 'id', IsPrimaryKey: true, MaxLength: 18 }), declared({ Name: 'email', MaxLength: 255 })];
+            // sample thinks email is unique too, but the object already has a declared PK → no adoption.
+            const s = [sampled({ Name: 'id', IsPrimaryKey: true }), sampled({ Name: 'email', IsPrimaryKey: true })];
+            const out = mergeDeclaredWithSampledFields(d, s);
+            expect(out.find((f) => f.Name === 'id')!.IsPrimaryKey).toBe(true);
+            expect(out.find((f) => f.Name === 'email')!.IsPrimaryKey).toBe(false);
+        });
+
+        it('adopts a sampled COMPOSITE PK across multiple declared fields on a keyless object', () => {
+            const d = [declared({ Name: 'org_id' }), declared({ Name: 'user_id' }), declared({ Name: 'role' })];
+            const s = [sampled({ Name: 'org_id', IsPrimaryKey: true }), sampled({ Name: 'user_id', IsPrimaryKey: true }), sampled({ Name: 'role' })];
+            const out = mergeDeclaredWithSampledFields(d, s);
+            expect(out.filter((f) => f.IsPrimaryKey).map((f) => f.Name)).toEqual(['org_id', 'user_id']);
+        });
+    });
+
+    // ── I2 — headroom for a TIGHT declared guess (a declared width below the sample's own headroom tier) ──
+    describe('I2 — bumps a tight declared width guess to the sample headroom tier (roomy declared kept exact)', () => {
+        it('bumps a declared width sitting below the sample headroom tier; keeps a comfortably-roomy one exact', () => {
+            const d = [
+                declared({ Name: 'title', MaxLength: 100 }), // guess 100, sample 90 → headroom(90)=128 > 100 → TIGHT → bump
+                declared({ Name: 'sku', MaxLength: 256 }),   // sample 90 → headroom 128 ≤ 256 → roomy → keep exact
+            ];
+            const s = [sampled({ Name: 'title', MaxLength: 90 }), sampled({ Name: 'sku', MaxLength: 90 })];
+            const out = mergeDeclaredWithSampledFields(d, s);
+            expect(out.find((f) => f.Name === 'title')!.MaxLength).toBe(128);
+            expect(out.find((f) => f.Name === 'sku')!.MaxLength).toBe(256);
+        });
+
+        it('the I2 bump never shrinks — result is always >= the declared width', () => {
+            const d = [declared({ Name: 'c', MaxLength: 60 })];   // sample 50 → headroom(50)=64 > 60 → bump to 64
+            const s = [sampled({ Name: 'c', MaxLength: 50 })];
+            expect(mergeDeclaredWithSampledFields(d, s)[0].MaxLength).toBe(64);
+        });
+    });
 });

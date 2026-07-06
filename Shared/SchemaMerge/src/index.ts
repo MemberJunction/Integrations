@@ -25,11 +25,14 @@ function withHeadroom(measured: number | null | undefined): number {
  * MJ's Persist/reconcile owns width-shrink protection and PK preservation at persist time. This helper:
  *
  *   - unions the two arrays BY FIELD NAME;
- *   - for a name in BOTH: keeps the DECLARED field UNCHANGED except its `MaxLength`, which NEVER shrinks.
- *     When the DECLARED width is the larger (a real describe-API width, e.g. Salesforce/Fonteva) it is
- *     kept EXACTLY — declared widths are authoritative and are never inflated. When the MEASURED width
- *     is larger, the sample is driving the size and may have missed the tail, so it is rounded UP for
- *     headroom (`withHeadroom`) — never below the declared width;
+ *   - for a name in BOTH: keeps the DECLARED field UNCHANGED except its `MaxLength` (which NEVER shrinks)
+ *     and — when the object declares NO primary key — its `IsPrimaryKey`, which adopts the sampled
+ *     statistical PK (I1: otherwise a proven key is dropped and the object is skipped as keyless). Width:
+ *     when the MEASURED width is larger the sample drives the size and is rounded UP for headroom; when
+ *     DECLARED is larger it usually wins exactly (a real describe-API width, e.g. Salesforce/Fonteva),
+ *     UNLESS the declared width sits below the sample's own headroom tier — a tight metadata guess that
+ *     could still overflow — in which case it too is bumped to the sample's headroom tier (I2). Never
+ *     below the declared width; a declared PK, when present, always wins;
  *   - for a name ONLY in the sample: appends it as a custom column MJ discovered, with MJ's own type /
  *     PK-stats and a headroom'd measured width, mapped onto the `SourceFieldInfo` shape.
  *
@@ -51,24 +54,43 @@ export function mergeDeclaredWithSampledFields(
     }
     const declaredNames = new Set(declaredList.map((f) => f.Name));
 
-    // Declared fields, in declared order — widen MaxLength to the never-shrink max(declared, measured);
-    // nothing else changes. max() only ever grows the width, so a real declared width is never truncated.
+    // I1 — does the object declare ANY primary key? If not, a statistically-proven sampled PK is the
+    // only thing standing between this object and being dropped from sync as keyless, so we adopt it
+    // below. If it DOES declare a PK, declared always wins — we never add a second PK or override one.
+    const hasDeclaredPK = declaredList.some((f) => f.IsPrimaryKey === true);
+
+    // Declared fields, in declared order — widen MaxLength to the never-shrink max(declared, measured)
+    // and, when the object is otherwise keyless, adopt the sampled PK. Nothing else changes.
     const merged: SourceFieldInfo[] = declaredList.map((d) => {
         const s = sampledByName.get(d.Name);
         if (!s) return d;
         const declaredW = d.MaxLength ?? 0;
         const sampledW = s.MaxLength ?? 0;
-        // Never shrink. Declared wins when it's the larger (authoritative describe-API width — kept
-        // exactly, no headroom). When the MEASURED width exceeds declared, the sample is driving the
-        // size and may have missed the tail, so round it UP for headroom.
-        const nextMaxLength =
-            sampledW > declaredW
-                ? withHeadroom(sampledW)
-                : declaredW > 0
-                  ? declaredW
-                  : (sampledW > 0 ? sampledW : (d.MaxLength ?? null));
-        if (nextMaxLength === d.MaxLength) return d;
-        return { ...d, MaxLength: nextMaxLength };
+        // Never shrink. When the MEASURED width exceeds declared, the sample is driving the size and may
+        // have missed the tail → round UP for headroom. When declared is the larger, it USUALLY wins
+        // exactly (a real describe-API width). BUT a metadata-GUESSED declared width can sit BELOW the
+        // sample's own headroom tier — a sign the guess is tight and an unsampled longer value could
+        // overflow (I2). In that case bump to the sample's headroom tier (never below declared); if
+        // declared already clears the sample's headroom it is comfortably roomy → keep it exact.
+        let nextMaxLength: number | null;
+        if (sampledW > declaredW) {
+            nextMaxLength = withHeadroom(sampledW);
+        } else if (declaredW > 0) {
+            const sampleHeadroom = withHeadroom(sampledW);
+            nextMaxLength = sampleHeadroom > declaredW ? sampleHeadroom : declaredW;
+        } else {
+            nextMaxLength = sampledW > 0 ? sampledW : (d.MaxLength ?? null);
+        }
+        // I1 — carry the sampled statistical PK onto this declared field only when the object declares no
+        // PK of its own. This is the sharpest fix: without it the sampled PK is lost (declared kept
+        // unchanged except width) and an object with real columns but no declared key stays keyless and
+        // never syncs. Declared PK, when present, always wins (guarded by hasDeclaredPK).
+        const adoptSampledPK = !hasDeclaredPK && s.IsPrimaryKey === true;
+
+        if (nextMaxLength === (d.MaxLength ?? null) && !adoptSampledPK) return d;
+        return adoptSampledPK
+            ? { ...d, MaxLength: nextMaxLength, IsPrimaryKey: true }
+            : { ...d, MaxLength: nextMaxLength };
     });
 
     // Custom columns MJ discovered (sample-only names) — appended as-is, in sample order.
