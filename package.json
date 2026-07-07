@@ -18,7 +18,7 @@
     "migrations:wrap": "node scripts/wrap-migration.mjs",
     "migrations:pg": "node scripts/build-pg-migrations.mjs",
     "changeset": "changeset",
-    "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs",
+    "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs && node scripts/build-connectors-catalog.mjs",
     "release": "turbo run build && changeset publish && node scripts/tag-apps.mjs"
   },
   "devDependencies": {

@@ -4,7 +4,7 @@
   "name": "connector-magnetmail",
   "displayName": "MagnetMail Connector",
   "description": "Higher Logic MagnetMail (formerly Real Magnet) email marketing platform. Legacy SOAP API covering recipients, groups, messages, tracking, upload jobs, saved searches, personalization fields, and the Personify subscription bridge. Auth is two-step (Auth...",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-envelope-circle-check",
   "publisher": {

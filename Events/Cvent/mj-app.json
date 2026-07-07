@@ -4,7 +4,7 @@
   "name": "connector-cvent",
   "displayName": "Cvent Connector",
   "description": "Cvent event management platform connector. Syncs events, contacts, attendees, sessions, speakers, exhibitors, housing, surveys, RFPs, webcasts, and related objects via the Cvent Platform REST API (OAuth 2.0 client credentials).",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",

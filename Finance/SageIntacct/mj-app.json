@@ -4,7 +4,7 @@
   "name": "connector-sage-intacct",
   "displayName": "Sage Intacct Connector",
   "description": "Sage Intacct cloud accounting and ERP integration via the XML Web Services API (POST-only XML gateway). Covers all business objects including AP, AR, GL, Projects, Inventory, Contracts, Order Entry, Purchasing, and more.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-file-invoice-dollar",
   "publisher": {
