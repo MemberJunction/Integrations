@@ -1,6 +1,7 @@
 import { RegisterClass } from '@memberjunction/global';
-import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
+import { Metadata, type UserInfo } from '@memberjunction/core';
 import type { MJCompanyIntegrationEntity, MJCredentialEntity, MJIntegrationObjectEntity } from '@memberjunction/core-entities';
+import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
 import {
     BaseIntegrationConnector,
     BaseRESTIntegrationConnector,
@@ -12,203 +13,140 @@ import {
     type FetchContext,
     type FetchBatchResult,
     type RateLimitPolicy,
+    type CreateRecordContext,
+    type UpdateRecordContext,
+    type DeleteRecordContext,
+    type CRUDResult,
     type SourceSchemaInfo,
     type SourceObjectInfo,
+    // NOTE: no auth-helper crypto/token-exchange imported. Eventbrite auth is a PRE-MINTED, long-lived
+    // Bearer token (the account "Private Token" from the API Keys page, or the access token minted once by
+    // the OAuth2 authorization-code exchange). The frozen contract documents NO refresh_token grant and NO
+    // TTL (Configuration.TokenRefreshStrategy = null), so there is no in-connector token round-trip to run —
+    // OAuth2TokenManager would fabricate an undocumented exchange. Every documented request sends the token
+    // verbatim as `Authorization: Bearer <token>`, exactly like a static Bearer key. No signing, no crypto.
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
-// ─── Connection configuration ─────────────────────────────────────────
+// ─── Design note ────────────────────────────────────────────────────────
+//
+// The connector is PURE MECHANISM. The object/field catalog is NOT baked here — it lives in the Declared
+// metadata (metadata/integrations/eventbrite/.eventbrite.integration.json), seeded from Eventbrite's
+// credential-free API blueprint (case-1 discovery). Discovery is INHERITED from
+// BaseRESTIntegrationConnector: DiscoverObjects / DiscoverFields / IntrospectSchema read the persisted
+// Declared metadata from the IntegrationEngineBase cache. There is NO hardcoded object list, NO field
+// catalog, NO baked PK/FK/required/readonly constants in this file.
+//
+// What this connector implements (the Eventbrite v3 protocol shape over REST/JSON):
+//  - Auth: OAuth2 Bearer token (`Authorization: Bearer <token>`), a pre-minted long-lived token. No crypto.
+//  - Pagination: Eventbrite's continuation-token scheme — read pagination.has_more_items +
+//    pagination.continuation from the response envelope; request the next page via ?continuation=<token>.
+//    NOT a page-number/offset loop.
+//  - Incremental: the `changed_since` datetime query param on Attendee + Order (watermark field `changed`).
+//  - Write: generic per-operation CRUD (metadata-driven) is the intent, but Eventbrite's write paths carry
+//    VENDOR-NAMED template vars (`{organization_id}`, `{event_id}`, `{venue_id}`, `{ticket_class_id}`, …)
+//    and several child-object paths need BOTH a parent id AND the record's own id
+//    (e.g. /events/{event_id}/ticket_classes/{ticket_class_id}/). The base's SubstituteIDInPath only
+//    templates {ID}/{id}/{ExternalID}, so it CANNOT build these URLs. CreateRecord/UpdateRecord/DeleteRecord
+//    are therefore overridden to substitute EVERY path var (record id from ExternalID, parent ids from
+//    Attributes/Relationships) while STILL routing create through BuildCreatedResult (the loud-on-empty-id
+//    invariant). Body shaping (wrapped/{key}), ID extraction, and error handling reuse the base helpers.
 
-/**
- * Per-connection configuration for the Eventbrite Platform REST API v3 connector.
- *
- * Eventbrite has a single shared host (`https://www.eventbriteapi.com/v3`). Auth is
- * a Bearer token — either a long-lived private token (issued from the account API Keys
- * page) or an OAuth2 authorization-code access token. Both are used verbatim as
- * `Authorization: Bearer <token>`; the connector does not perform the token exchange
- * (the resolved token lives in the credential store).
- */
-export interface EventbriteConnectionConfig {
-    /**
-     * The resolved Bearer token (private token OR OAuth2 access token). From the credential
-     * store (keys PrivateToken / Token / AccessToken / apiKey). Secrets never live in code.
-     */
-    Token?: string;
-    /**
-     * Non-secret API host override (e.g. a local mock for replay/contract testing). When set,
-     * it WINS over the production host. Mirrors the ORCID/Novi `ApiBaseUrl` pattern — required
-     * for the mock-floor e2e testability tier.
-     */
-    ApiBaseUrl?: string;
-    /** HTTP request timeout in milliseconds. Default: 30000. */
-    RequestTimeoutMs?: number;
-    /** Maximum retries for rate-limited / transient failures. Default: 4. */
-    MaxRetries?: number;
-    /** Minimum interval between outbound requests (ms). Default: 100. */
-    MinRequestIntervalMs?: number;
+// ─── Types ────────────────────────────────────────────────────────────
+
+/** Parsed Eventbrite credential — a pre-minted OAuth2 Bearer / Private Token. */
+interface EventbriteCredentials {
+    /** Access/Private token, sent verbatim as `Authorization: Bearer <token>`. */
+    AccessToken: string;
 }
 
-/** Authenticated context carried through one request cycle. */
+/** Extended auth context carrying the resolved Eventbrite Bearer token. */
 interface EventbriteAuthContext extends RESTAuthContext {
     Token: string;
-    BaseUrl: string;
-    Config: EventbriteConnectionConfig;
 }
 
-/** Eventbrite's pagination envelope shape returned alongside every list resource array. */
-interface EventbritePagination {
+/**
+ * The Eventbrite paginated-list envelope. Every list endpoint nests records under a plural snake_case
+ * resource key (`events`, `attendees`, `orders`, …) alongside a `pagination` block carrying the
+ * continuation-token state. Records themselves are opaque vendor JSON.
+ * Source: Configuration.PaginationDefaults.note (blueprint ## Paginated Responses, lines 173-230).
+ */
+interface EventbritePaginationBlock {
     object_count?: number;
-    page_number?: number;
-    page_size?: number;
-    page_count?: number;
-    has_more_items?: boolean;
     continuation?: string;
+    page_count?: number;
+    page_size?: number;
+    has_more_items?: boolean;
+    page_number?: number;
+}
+interface EventbriteListEnvelope {
+    pagination?: EventbritePaginationBlock | null;
+    [resourceKey: string]: unknown;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────
 
-const PROD_API_HOST = 'https://www.eventbriteapi.com/v3';
-
-const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
-const DEFAULT_MAX_RETRIES = 4;
-const DEFAULT_MIN_REQUEST_INTERVAL_MS = 100;
-
 /**
- * Eventbrite documents a default rate limit of 2,000 calls per hour per token
- * (≈0.55/s). Run conservatively under that: ~0.27 tokens/s with a small burst so the
- * engine's AIMD bucket throttles + backs off on the 429 HIT_RATE_LIMIT error.
+ * Eventbrite API host with the v3 version segment embedded in the path (Configuration.APIVersioningNote —
+ * HOST directive `https://www.eventbriteapi.com/v3/`). Every IO's APIPath is relative to this v3 host.
  */
-const RATE_LIMIT_TOKENS_PER_SEC = 0.27;
-const RATE_LIMIT_BURST = 10;
+const EVENTBRITE_API_BASE = 'https://www.eventbriteapi.com/v3';
 
-// ─── Connector implementation ─────────────────────────────────────────
+/** Query param carrying the continuation cursor (Configuration.PaginationDefaults.continuationParam). */
+const CONTINUATION_PARAM = 'continuation';
+
+/** Query param carrying the incremental datetime cursor for Attendee + Order. */
+const CHANGED_SINCE_PARAM = 'changed_since';
+
+// ─── EventbriteConnector ───────────────────────────────────────────────
 
 /**
- * Connector for the Eventbrite Platform REST API v3.
+ * Eventbrite events/ticketing connector — extends BaseRESTIntegrationConnector (REST/JSON over HTTP).
  *
- * Authenticates via a Bearer token (private token or OAuth2 access token, resolved
- * upstream and held in the credential store). Reads ride the base
- * {@link BaseRESTIntegrationConnector} pull path; this class overrides only the
- * genuinely Eventbrite-specific bits:
- *  - {@link BuildHeaders}: `Authorization: Bearer <token>` + `Accept: application/json`.
- *  - {@link GetBaseURL}: the shared `https://www.eventbriteapi.com/v3` host (or a
- *    non-secret `ApiBaseUrl` override for mock testing).
- *  - {@link NormalizeResponse}: unwraps the named-key list envelope (the IO's
- *    `ResponseDataKey`, e.g. `events`/`attendees`/`orders`) which sits alongside a
- *    `pagination` object; a bare object is a one-record detail; null → [].
- *  - {@link ExtractPaginationInfo} / {@link BuildPaginatedURL}: Eventbrite continuation-cursor
- *    pagination (`?continuation=<token>` + `pagination.has_more_items`/`.continuation`),
- *    plus the `changed_since=<watermark>` param for incremental objects (Order/Attendee) —
- *    fully metadata-driven (read `obj.IncrementalWatermarkField` + `obj.SupportsIncrementalSync`),
- *    NEVER keyed off a hardcoded object name.
- *  - {@link FetchChanges}: sets the watermark context, delegates to the base, then advances
- *    the watermark from the records' `changed` field on the final batch only (HasMore=false)
- *    so a partial-failure mid-pagination leaves the watermark unchanged.
- *
- * Create/Update/Delete use the generic per-operation column path
- * (CreateAPIPath/Method/BodyShape/BodyKey/IDLocation, Update*, Delete*) driven entirely
- * by the IO metadata — no per-verb override. Eventbrite uses POST for update (its
- * convention) and wrapped bodies for most resources (CreateBodyKey =
- * event|ticket_class|venue|discount|question|webhook|...). Parent template vars
- * ({organization_id}/{event_id}) are resolved by the engine's parent-iteration from each
- * IO's `Configuration.parentObjectName`.
+ * Discovery, template-var parent traversal, and the paginated GET loop are inherited. This class supplies
+ * only the Eventbrite-specific protocol surface: Bearer auth, the continuation-token cursor, the
+ * `changed_since` incremental pull, connection testing, the write path (vendor-named path vars), and the
+ * §7/§10 sync-efficiency hooks the frozen contract evidences.
  */
 @RegisterClass(BaseIntegrationConnector, 'EventbriteConnector')
 export class EventbriteConnector extends BaseRESTIntegrationConnector {
 
-    /** Cached auth context (token + resolved host). */
-    private authState: EventbriteAuthContext | null = null;
-    /** Timestamp of the last outbound request, used for throttling. */
-    private lastRequestTime = 0;
-    /** Watermark for the current FetchChanges cycle, emitted as the IO's incremental param. */
-    private currentWatermark: string | undefined;
+    /** Cached auth for the lifetime of a single sync run (Eventbrite tokens are long-lived, no refresh). */
+    private cachedAuth: EventbriteAuthContext | null = null;
 
-    // ── Identity + capability getters ───────────────────────────────────
+    /**
+     * The active incremental watermark for the object currently being fetched, stashed by the FetchChanges
+     * override so the (ctx-less) BuildPaginatedURL can append `changed_since`. Set at the top of an
+     * incremental FetchChanges, cleared in its finally. Safe because the engine drives one FetchChanges per
+     * object at a time (single-threaded async; no concurrent BuildPaginatedURL for a different watermark).
+     */
+    private activeChangedSince: string | null = null;
 
-    /** Verbatim from the metadata Integration row — part of the three-way name invariant. */
-    public override get IntegrationName(): string { return 'Eventbrite'; }
+    // ── Identity (T1 three-way invariant) ────────────────────────────
 
-    // Eventbrite exposes a documented write API for a subset of objects (Events, Ticket
-    // Classes, Venues, Discounts, Questions, Webhooks, Ticket Groups, Inventory Tiers, Event
-    // Teams, Media). The generic per-operation path enforces null-capability honesty per IO
-    // (an IO with no CreateAPIPath throws on create), so these getters reflect that SOME IOs
-    // are writable; the actual writable set is each IO's per-op columns in the metadata.
+    /** Verbatim `MJ: Integrations.Name`. Load-bearing: the T1 three-way name check compares this === metadata Name. */
+    public override get IntegrationName(): string {
+        return 'eventbrite';
+    }
+
+    // ── Capability getters (kept in lockstep with the per-op metadata columns) ──
+    // Write surface is a MIXED subset (Configuration.WriteCapability): create on 15/33 objects, update on a
+    // subset, delete on a smaller subset. The connector-level getters report the UNION (the connector CAN do
+    // each verb); per-object null-column honesty is enforced by the overrides below (an object with no
+    // Create/Update/Delete path fails loudly rather than sending a broken URL).
+
     public override get SupportsCreate(): boolean { return true; }
     public override get SupportsUpdate(): boolean { return true; }
     public override get SupportsDelete(): boolean { return true; }
 
-    // ── Sync-efficiency hooks ───────────────────────────────────────────
-
     /**
-     * Eventbrite documents a default 2,000 calls/hour per token (HTTP 429 HIT_RATE_LIMIT
-     * over it). Run under that ceiling; the engine's AIMD bucket throttles + backs off.
+     * Discovery is NON-authoritative: DiscoverObjects / IntrospectSchema are cache-driven (they re-read
+     * persisted ACTIVE Declared metadata, NOT a live full-gamut enumeration). Eventbrite publishes no
+     * schema/describe/introspection endpoint enumerating everything a credential can access, so absence in a
+     * refresh proves nothing → never deactivate. Matches Configuration.DiscoveryIsAuthoritative=false.
      */
-    public override get RateLimitPolicy(): RateLimitPolicy | null {
-        return { TokensPerSec: RATE_LIMIT_TOKENS_PER_SEC, Burst: RATE_LIMIT_BURST, ThrottleBackoffFactor: 0.5 };
-    }
-
-    /**
-     * Cap how many EVENT/ORG parents a second-layer object (TicketClass, Attendee, Question,
-     * EventTeam, InventoryTier, …) iterates per FetchChanges call. At Eventbrite's deliberately
-     * conservative 0.27 tok/s (~3.7 s/request once the SHARED burst is spent by earlier objects in
-     * the same sync), the base default of 10 parents costs ~37 s and blows the 30 s FetchChanges
-     * op-timeout — the batch is then abandoned and the object syncs 0 records for any org with that
-     * many events. A batch of 4 costs ~15 s (well under 30 s) and the engine resumes the remaining
-     * parents via HasMore/keyset, so a high-event-count org still syncs completely.
-     */
-    protected override TemplateVarParentBatchSize(): number {
-        return 4;
-    }
-
-    /** Parse Eventbrite's Retry-After header (delta-seconds or HTTP-date) into milliseconds. */
-    public override ExtractRetryAfterMs(error: unknown): number | undefined {
-        const headers = (error as { Headers?: Record<string, string> })?.Headers;
-        if (!headers) return undefined;
-        const retryAfter = headers['retry-after'] ?? headers['Retry-After'];
-        if (typeof retryAfter !== 'string' || retryAfter.length === 0) return undefined;
-        const asSeconds = Number(retryAfter);
-        if (!isNaN(asSeconds) && asSeconds >= 0) return Math.round(asSeconds * 1000);
-        const asDate = Date.parse(retryAfter);
-        if (!isNaN(asDate)) {
-            const delta = asDate - Date.now();
-            if (delta > 0) return delta;
-        }
-        return undefined;
-    }
-
-    // ─── TestConnection ──────────────────────────────────────────────
-
-    /**
-     * Verifies connectivity via `GET /users/me/`. A 2xx confirms the Bearer token is valid;
-     * a 401/403 means the token was rejected (NOT_AUTH / NOT_PERMITTED).
-     */
-    public async TestConnection(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<ConnectionTestResult> {
-        try {
-            const auth = await this.Authenticate(companyIntegration, contextUser) as EventbriteAuthContext;
-            const headers = this.BuildHeaders(auth);
-            const probeUrl = `${auth.BaseUrl}/users/me/`;
-            const resp = await this.MakeHTTPRequest(auth, probeUrl, 'GET', headers);
-            if (resp.Status === 401 || resp.Status === 403) {
-                return { Success: false, Message: `Eventbrite TestConnection failed: HTTP ${resp.Status} (token rejected)` };
-            }
-            if (resp.Status >= 500) {
-                return { Success: false, Message: `Eventbrite TestConnection failed: HTTP ${resp.Status} (server error)` };
-            }
-            if (resp.Status < 200 || resp.Status >= 300) {
-                return { Success: false, Message: `Eventbrite returned HTTP ${resp.Status} from ${probeUrl}` };
-            }
-            return {
-                Success: true,
-                Message: `Connected to Eventbrite Platform API v3 at ${auth.BaseUrl}`,
-                ServerVersion: 'Eventbrite API v3',
-            };
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            return { Success: false, Message: `Connection failed: ${message}` };
-        }
+    public override get DiscoveryIsAuthoritative(): boolean {
+        return false;
     }
 
     /**
@@ -247,403 +185,581 @@ export class EventbriteConnector extends BaseRESTIntegrationConnector {
         return schema;
     }
 
-    // ─── FetchChanges (watermark-aware) ───────────────────────────────
+    // ── Sync-efficiency hooks (§7/§10 — populated from frozen-contract Configuration facts) ──
 
     /**
-     * Sets the watermark context that {@link BuildPaginatedURL} emits as the IO's
-     * incremental `changed_since` param (for Order/Attendee), delegates the actual fetch +
-     * cursor pagination to the base, then advances the watermark from the returned records'
-     * `changed` field on the FINAL batch only (HasMore=false) so a partial-failure
-     * mid-pagination leaves the watermark unchanged.
+     * From Configuration.RateLimitPolicy: 2,000 calls/hour per token (blueprint ## Errors, 429
+     * HIT_RATE_LIMIT). 2000/3600 ≈ 0.556 tokens/sec sustained. Burst kept small (the hourly ceiling is the
+     * real constraint; there is no documented per-second burst allowance).
      */
-    public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
-        this.currentWatermark = ctx.WatermarkValue ?? undefined;
-
-        const result = await super.FetchChanges(ctx);
-
-        const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
-        if (obj.SupportsIncrementalSync && obj.IncrementalWatermarkField && !result.HasMore) {
-            const advanced = this.ExtractLatestWatermark(result.Records, obj.IncrementalWatermarkField);
-            const newWatermark = advanced ?? ctx.WatermarkValue ?? undefined;
-            if (newWatermark != null) return { ...result, NewWatermarkValue: newWatermark };
-        }
-        return result;
+    public override get RateLimitPolicy(): RateLimitPolicy | null {
+        return { TokensPerSec: 0.5556, Burst: 5 };
     }
 
     /**
-     * Scans a batch for the latest watermark value. Eventbrite's incremental objects
-     * (Order, Attendee) carry a `changed` ISO-8601 timestamp per record (the field named by
-     * the IO's `IncrementalWatermarkField`); we take the max so the next run's `changed_since`
-     * resumes from there.
+     * The frozen contract records NO Retry-After header shape for Eventbrite's 429 (HIT_RATE_LIMIT)
+     * (Configuration.RateLimitPolicy.retryAfterHeaderDocumented=false), so there is nothing to parse
+     * reliably. Left as the base default (undefined) rather than guessing a header name — the engine's AIMD
+     * bucket backs off on the 429 regardless. Documented as a soft gap for live-probe confirmation.
      */
-    private ExtractLatestWatermark(
-        records: { Fields: Record<string, unknown> }[],
-        watermarkField: string
-    ): string | null {
-        let latest: Date | null = null;
-        for (const rec of records) {
-            const raw = rec.Fields?.[watermarkField];
-            if (typeof raw !== 'string' || raw.length === 0) continue;
-            const d = new Date(raw);
-            if (!isNaN(d.getTime()) && (latest === null || d > latest)) latest = d;
-        }
-        return latest ? latest.toISOString() : null;
+    // ExtractRetryAfterMs: inherited default (undefined). See note above.
+
+    /** Conservative in-flight cap. The 2,000/hour ceiling is the real limiter; a low cap avoids bursts. */
+    public override get MaxConcurrencyHint(): number | null {
+        return 2;
     }
 
-    // ─── Auth + transport (abstract base requirements) ────────────────
+    /**
+     * No-watermark objects resume by their StableOrderingKey — read from the IO metadata when the extractor
+     * emitted one, else the object's PK (Eventbrite's universal `id`). Returns null when the object has no
+     * stable key or the cache is unavailable (unit-test context).
+     */
+    public override StableOrderingKey(objectName: string): string | null {
+        const obj = this.TryGetActiveObject(objectName);
+        if (!obj) return null;
+        const declared = (obj as unknown as { StableOrderingKey?: string | null }).StableOrderingKey;
+        if (declared && declared.trim().length > 0) return declared.trim();
+        const pk = this.GetCachedFields(obj.ID).find(f => f.IsPrimaryKey);
+        return pk?.Name ?? null;
+    }
 
-    protected async Authenticate(
+    // ── Abstract REST hooks ──────────────────────────────────────────
+
+    /**
+     * Resolves the pre-minted Bearer token from the linked Credential entity (preferred) or the
+     * CompanyIntegration Configuration JSON (fallback). Cached for the run.
+     */
+    protected override async Authenticate(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo
     ): Promise<RESTAuthContext> {
-        if (this.authState) return this.authState;
-        const config = await this.parseConfig(companyIntegration, contextUser);
-        const state: EventbriteAuthContext = {
-            Token: config.Token ?? '',
-            BaseUrl: this.resolveBaseUrl(config),
-            Config: config,
-        };
-        this.authState = state;
-        return state;
+        if (this.cachedAuth) return this.cachedAuth;
+        const creds = await this.LoadCredentials(companyIntegration, contextUser);
+        this.cachedAuth = { Token: creds.AccessToken };
+        return this.cachedAuth;
     }
 
-    /** Builds the Eventbrite auth header: `Authorization: Bearer <token>` + `Accept: application/json`. */
-    protected BuildHeaders(auth: RESTAuthContext): Record<string, string> {
-        const ebAuth = auth as EventbriteAuthContext;
+    /** Eventbrite OAuth2 auth: a pre-minted Bearer token. No signing, no crypto. */
+    protected override BuildHeaders(auth: RESTAuthContext): Record<string, string> {
+        const token = (auth as EventbriteAuthContext).Token;
         return {
-            'Authorization': `Bearer ${ebAuth.Token}`,
-            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
         };
     }
 
-    /**
-     * Unwraps Eventbrite's response shapes:
-     *  - List endpoints: `{ <responseDataKey>: [ ... ], pagination: { ... } }` → the named array.
-     *  - Single-record detail (no responseDataKey): a bare object → a one-element array.
-     *  - null → [].
-     * The IO metadata's `responseDataKey` (e.g. `events`/`attendees`/`orders`) is the
-     * authoritative envelope key; when absent the body is treated as a bare detail object.
-     */
-    protected NormalizeResponse(rawBody: unknown, responseDataKey: string | null): Record<string, unknown>[] {
-        if (rawBody == null) return [];
-        const asObj = this.asObject(rawBody);
-
-        // Explicit metadata-declared envelope key wins (the list case).
-        if (responseDataKey && asObj) {
-            if (responseDataKey in asObj) return this.coerceToArray(asObj[responseDataKey]);
-            // Key declared but absent (e.g. an error or empty envelope) — nothing to emit.
-            return [];
-        }
-        if (asObj) {
-            // Bare single-record detail object (no responseDataKey, e.g. User / Media / Organizer).
-            return [asObj];
-        }
-        // Bare array fallback (defensive — Eventbrite list shapes are always keyed).
-        if (Array.isArray(rawBody)) return rawBody.filter(this.isRecord) as Record<string, unknown>[];
-        return [];
-    }
-
-    private coerceToArray(node: unknown): Record<string, unknown>[] {
-        if (Array.isArray(node)) return node.filter(this.isRecord) as Record<string, unknown>[];
-        if (node && typeof node === 'object') return [node as Record<string, unknown>];
-        return [];
-    }
-
-    private isRecord(node: unknown): node is Record<string, unknown> {
-        return node != null && typeof node === 'object' && !Array.isArray(node);
-    }
-
-    /**
-     * Continuation-cursor pagination: Eventbrite returns a `pagination` envelope carrying
-     * `has_more_items` (boolean) and `continuation` (opaque cursor token). There are more
-     * records while `has_more_items` is true AND a continuation token is present. The
-     * total record count (`object_count`) is surfaced when available.
-     *
-     * The `Cursor` pagination type drives this; non-cursor objects (`None`) report no more.
-     */
-    protected ExtractPaginationInfo(
-        rawBody: unknown,
-        paginationType: PaginationType,
-        currentPage: number,
-        currentOffset: number,
-        _pageSize: number
-    ): PaginationState {
-        if (paginationType !== 'Cursor') {
-            return { HasMore: false, NextPage: currentPage, NextOffset: currentOffset };
-        }
-        const asObj = this.asObject(rawBody);
-        const pagination = asObj ? this.asObject(asObj['pagination']) as EventbritePagination | undefined : undefined;
-
-        const hasMore = pagination?.has_more_items === true
-            && typeof pagination?.continuation === 'string'
-            && pagination.continuation.length > 0;
-        const totalRecords = typeof pagination?.object_count === 'number' ? pagination.object_count : undefined;
-
-        return {
-            HasMore: hasMore,
-            NextPage: currentPage + 1,
-            NextOffset: currentOffset,
-            NextCursor: hasMore ? pagination?.continuation : undefined,
-            TotalRecords: totalRecords,
-        };
-    }
-
-    /**
-     * Builds the paginated request URL. Eventbrite cursor pagination uses `?continuation=<token>`
-     * (the base default emits `?cursor=...&limit=...`), so we override to emit the vendor's
-     * param. Also emits the IO's `IncrementalWatermarkField` as `changed_since=<watermark>`
-     * when this is an incremental object (Order/Attendee) and a watermark is in context —
-     * fully metadata-driven (read `obj.IncrementalWatermarkField` + `obj.SupportsIncrementalSync`),
-     * NEVER keyed off a hardcoded object name.
-     *
-     * Parent template vars ({organization_id}/{event_id}) are NOT substituted here — those are
-     * resolved by the engine's parent-iteration from the IO's `Configuration.parentObjectName`.
-     */
-    protected override BuildPaginatedURL(
-        basePath: string,
-        obj: MJIntegrationObjectEntity,
-        _page: number,
-        _offset: number,
-        cursor?: string,
-        _effectivePageSize?: number
-    ): string {
-        const separator = basePath.includes('?') ? '&' : '?';
-        const params = new URLSearchParams();
-
-        // Incremental param (changed_since) for objects that declare a watermark field.
-        const watermarkParam = this.resolveWatermarkParam(obj);
-        if (obj.SupportsIncrementalSync && watermarkParam && this.currentWatermark) {
-            params.set(watermarkParam, this.currentWatermark);
-        }
-
-        // Continuation cursor for the Cursor pagination type (after the first page).
-        if (obj.PaginationType === 'Cursor' && cursor) {
-            params.set('continuation', cursor);
-        }
-
-        const qs = params.toString();
-        return qs.length > 0 ? `${basePath}${separator}${qs}` : basePath;
-    }
-
-    /**
-     * Resolves the vendor-side query param name for an incremental object. Eventbrite's
-     * incremental filter param is `changed_since` (the IO's `IncrementalWatermarkField` is the
-     * RECORD field `changed`). Metadata-driven: only objects whose `SupportsIncrementalSync` is
-     * true and whose watermark field is set receive the param.
-     */
-    private resolveWatermarkParam(obj: MJIntegrationObjectEntity): string | undefined {
-        if (!obj.SupportsIncrementalSync || !obj.IncrementalWatermarkField) return undefined;
-        return 'changed_since';
-    }
-
-    protected GetBaseURL(
-        _companyIntegration: MJCompanyIntegrationEntity,
-        auth: RESTAuthContext
-    ): string {
-        return (auth as EventbriteAuthContext).BaseUrl;
-    }
-
-    // ─── HTTP transport with retry + throttling ───────────────────────
-
-    protected async MakeHTTPRequest(
-        auth: RESTAuthContext,
+    /** HTTP transport (fetch). Owns the wire boundary; test subclasses override this to capture requests. */
+    protected override async MakeHTTPRequest(
+        _auth: RESTAuthContext,
         url: string,
         method: string,
         headers: Record<string, string>,
         body?: unknown
     ): Promise<RESTResponse> {
-        const ebAuth = auth as EventbriteAuthContext;
-        const cfg = ebAuth.Config;
-        const maxRetries = cfg.MaxRetries ?? DEFAULT_MAX_RETRIES;
-        const timeoutMs = cfg.RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-        const minInterval = cfg.MinRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS;
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            await this.throttle(minInterval);
-            try {
-                const resp = await this.doFetch(url, method, headers, body, timeoutMs);
-                this.lastRequestTime = Date.now();
-
-                if ((resp.Status === 429 || resp.Status === 503) && attempt < maxRetries) {
-                    await this.sleep(this.backoffFromResponse(resp, attempt));
-                    continue;
-                }
-                return resp;
-            } catch (err: unknown) {
-                if (attempt === maxRetries) throw err;
-                if (!this.isRetryableError(err)) throw err;
-                await this.sleep(this.backoffMs(attempt));
-            }
+        const response = await fetch(url, {
+            method,
+            headers,
+            body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+        const respHeaders: Record<string, string> = {};
+        response.headers.forEach((v, k) => { respHeaders[k.toLowerCase()] = v; });
+        const text = await response.text();
+        let parsed: unknown = null;
+        if (text.length > 0) {
+            try { parsed = JSON.parse(text); } catch { parsed = text; }
         }
-        throw new Error(`Eventbrite request to ${url} exhausted ${maxRetries + 1} attempts`);
+        return { Status: response.status, Body: parsed, Headers: respHeaders };
     }
-
-    /** Single fetch() with an AbortController-backed timeout. */
-    private async doFetch(
-        url: string,
-        method: string,
-        headers: Record<string, string>,
-        body: unknown,
-        timeoutMs: number
-    ): Promise<RESTResponse> {
-        const controller = new AbortController();
-        const handle = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            const resp = await fetch(url, {
-                method,
-                headers,
-                body: body !== undefined && method !== 'GET' ? JSON.stringify(body) : undefined,
-                signal: controller.signal,
-            });
-            const respHeaders: Record<string, string> = {};
-            resp.headers.forEach((value, key) => { respHeaders[key.toLowerCase()] = value; });
-            const text = await resp.text();
-            const parsed = text.length > 0 ? this.safeParseJSON(text) : null;
-            return { Status: resp.status, Body: parsed, Headers: respHeaders };
-        } finally {
-            clearTimeout(handle);
-        }
-    }
-
-    private safeParseJSON(text: string): unknown {
-        try { return JSON.parse(text) as unknown; } catch { return text; }
-    }
-
-    private isRetryableError(err: unknown): boolean {
-        const msg = err instanceof Error ? err.message : String(err);
-        return /abort|timeout|ECONNRESET|ENOTFOUND|ETIMEDOUT|ECONNREFUSED|fetch failed|network/i.test(msg);
-    }
-
-    private backoffMs(attempt: number): number {
-        const base = Math.min(1000 * Math.pow(2, attempt), 20000);
-        const jitter = Math.floor(Math.random() * 500);
-        return base + jitter;
-    }
-
-    private backoffFromResponse(resp: RESTResponse, attempt: number): number {
-        const fromHeader = this.ExtractRetryAfterMs({ Headers: resp.Headers });
-        if (fromHeader != null) return Math.min(fromHeader, 30000);
-        return this.backoffMs(attempt);
-    }
-
-    private async throttle(minIntervalMs: number): Promise<void> {
-        const elapsed = Date.now() - this.lastRequestTime;
-        if (elapsed < minIntervalMs) await this.sleep(minIntervalMs - elapsed);
-    }
-
-    private sleep(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    private asObject(node: unknown): Record<string, unknown> | undefined {
-        return node && typeof node === 'object' && !Array.isArray(node) ? node as Record<string, unknown> : undefined;
-    }
-
-    // ─── Config parsing ───────────────────────────────────────────────
 
     /**
-     * Resolves the connection config: the Bearer token from the credential store; the
-     * non-secret host override + transport tunables from CompanyIntegration.Configuration.
-     * Secrets are NEVER baked into code.
+     * Strips the Eventbrite list envelope. Each list endpoint nests records under a plural snake_case
+     * resource key (`events`, `attendees`, `orders`, …), stored per-IO as ResponseDataKey. When
+     * ResponseDataKey is unset (the extractor left it null), the key is DERIVED from the last non-templated
+     * path segment of the APIPath — but NormalizeResponse doesn't have the IO here, so the fallback scans the
+     * envelope for the sole array-valued key alongside `pagination`. A bare-array or single-object body (the
+     * get-one / non-paginated shape) is handled directly.
      */
-    private async parseConfig(
+    protected override NormalizeResponse(rawBody: unknown, responseDataKey: string | null): Record<string, unknown>[] {
+        if (rawBody == null) return [];
+        if (Array.isArray(rawBody)) return rawBody as Record<string, unknown>[];
+        if (typeof rawBody !== 'object') return [];
+
+        const body = rawBody as EventbriteListEnvelope;
+
+        // Preferred: the metadata-declared data key.
+        if (responseDataKey) {
+            const arr = body[responseDataKey];
+            if (Array.isArray(arr)) return arr as Record<string, unknown>[];
+        }
+
+        // Fallback: an Eventbrite list body has exactly one array-valued key besides `pagination`.
+        if (body.pagination !== undefined) {
+            for (const [key, val] of Object.entries(body)) {
+                if (key === 'pagination') continue;
+                if (Array.isArray(val)) return val as Record<string, unknown>[];
+            }
+            return [];
+        }
+
+        // get-one / non-list shape: the body IS the record.
+        return [body as Record<string, unknown>];
+    }
+
+    /**
+     * Eventbrite pagination is the CONTINUATION-TOKEN scheme (NOT page-number/offset). Read
+     * `pagination.has_more_items` and `pagination.continuation` from the envelope. When has_more_items is
+     * true AND a continuation token is present, the next page is requested with that token; otherwise the set
+     * is exhausted. Source: Configuration.PaginationDefaults.advanceProtocol.
+     * currentPage/offset/pageSize are unused for continuation pagination.
+     */
+    protected override ExtractPaginationInfo(
+        rawBody: unknown,
+        _paginationType: PaginationType,
+        _currentPage: number,
+        _currentOffset: number,
+        _pageSize: number
+    ): PaginationState {
+        if (rawBody && typeof rawBody === 'object') {
+            const env = rawBody as EventbriteListEnvelope;
+            const pag = env.pagination;
+            if (pag && pag.has_more_items === true && typeof pag.continuation === 'string' && pag.continuation.length > 0) {
+                return { HasMore: true, NextCursor: pag.continuation, TotalRecords: pag.object_count };
+            }
+            return { HasMore: false, TotalRecords: pag?.object_count };
+        }
+        return { HasMore: false };
+    }
+
+    /**
+     * Eventbrite v3 host. Defaults to the fixed `https://www.eventbriteapi.com/v3` host (the version
+     * segment is part of the base URL; metadata APIPaths are relative). Honors a
+     * `CompanyIntegration.Configuration.BaseURL` override when present — used for region redirects and
+     * for pointing the connector at a mock ORIGIN server in credential-free e2e testing without touching
+     * the vendor's real endpoint. Falls back to the fixed host on absence or malformed Configuration.
+     */
+    protected override GetBaseURL(companyIntegration?: MJCompanyIntegrationEntity): string {
+        const cfgRaw: unknown = companyIntegration?.Configuration;
+        if (cfgRaw) {
+            try {
+                const cfg = (typeof cfgRaw === 'string' ? JSON.parse(cfgRaw) : cfgRaw) as Record<string, unknown>;
+                const override = cfg?.BaseURL ?? cfg?.baseUrl ?? cfg?.apiBaseUrl;
+                if (typeof override === 'string' && override.trim().length > 0) {
+                    return override.replace(/\/+$/, '');
+                }
+            } catch {
+                /* malformed Configuration JSON → fall back to the fixed host */
+            }
+        }
+        return EVENTBRITE_API_BASE;
+    }
+
+    /**
+     * Eventbrite pages via the `continuation` query param (NOT the base default `cursor=`). The first page
+     * sends no continuation token; subsequent pages send `continuation=<token>`. When an incremental
+     * watermark is active (Attendee/Order this run), `changed_since=<watermark>` is appended so the API
+     * returns only records changed after the watermark. Eventbrite has no client-controlled page-size param
+     * on these list endpoints (page_size is server-fixed and reported in the envelope), so no limit is sent.
+     */
+    protected override BuildPaginatedURL(
+        basePath: string,
+        _obj: MJIntegrationObjectEntity,
+        _page: number,
+        _offset: number,
+        cursor?: string,
+        _effectivePageSize?: number
+    ): string {
+        const parts: string[] = [];
+        if (cursor) parts.push(`${CONTINUATION_PARAM}=${encodeURIComponent(cursor)}`);
+        if (this.activeChangedSince) parts.push(`${CHANGED_SINCE_PARAM}=${encodeURIComponent(this.activeChangedSince)}`);
+        if (parts.length === 0) return basePath;
+        const separator = basePath.includes('?') ? '&' : '?';
+        return `${basePath}${separator}${parts.join('&')}`;
+    }
+
+    // ── FetchChanges override (incremental changed_since + new-watermark emission) ──
+
+    /**
+     * OVERRIDDEN to (1) inject the `changed_since` param for the two incremental objects (Attendee, Order —
+     * SupportsIncrementalSync + a watermark this run) and (2) EMIT the new watermark. The base flat/template
+     * fetch path threads no watermark into the URL and returns no NewWatermarkValue, so the connector owns
+     * both. All fetching (continuation pagination, template-var parent traversal) is delegated to the base;
+     * this override only sets activeChangedSince around the super call and computes the watermark on a fully
+     * drained batch.
+     *
+     * Partial-failure safety: NewWatermarkValue is emitted ONLY when the whole object is drained
+     * (HasMore=false). A mid-stream batch (HasMore=true — more parents to iterate) advances no watermark, so a
+     * failure between batches resumes from the unchanged prior watermark. When the final batch's max `changed`
+     * is below an earlier batch's, the watermark under-advances (worst case re-fetches already-seen records
+     * next run — idempotent, safe) rather than skipping records (data loss).
+     */
+    public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
+        const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
+        const incremental = obj.SupportsIncrementalSync && ctx.WatermarkValue != null && ctx.WatermarkValue.length > 0;
+
+        if (!incremental) {
+            return super.FetchChanges(ctx);
+        }
+
+        this.activeChangedSince = this.FormatChangedSince(ctx.WatermarkValue as string);
+        try {
+            const result = await super.FetchChanges(ctx);
+            if (!result.HasMore) {
+                const wmField = obj.IncrementalWatermarkField ?? 'changed';
+                result.NewWatermarkValue = this.MaxWatermark(result, wmField, ctx.WatermarkValue as string);
+            }
+            return result;
+        } finally {
+            this.activeChangedSince = null;
+        }
+    }
+
+    // ── CRUD ──────────────────────────────────────────────────────────
+    //
+    // OVERRIDDEN (all three verbs) because Eventbrite's write paths carry VENDOR-NAMED template vars the
+    // base's single-{id} SubstituteIDInPath cannot build: create paths carry a parent var
+    // (`{organization_id}`/`{event_id}`); update/delete paths carry the record's own id under a vendor name
+    // (`{event_id}`, `{venue_id}`, `{discount_id}`, …) and several also carry a parent var
+    // (`/events/{event_id}/ticket_classes/{ticket_class_id}/`). Body shaping, ID extraction, and error
+    // handling all reuse the base helpers; create STILL routes through BuildCreatedResult (loud-on-empty-id).
+
+    /**
+     * Create: substitutes the create path's parent vars from Attributes/Relationships (create paths carry
+     * only parent vars — the record has no id yet), POSTs the body shaped per CreateBodyShape/CreateBodyKey,
+     * and routes the result through BuildCreatedResult so a 2xx with no usable id FAILS LOUDLY.
+     */
+    public override async CreateRecord(ctx: CreateRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        if (!obj.CreateAPIPath || !obj.CreateMethod) {
+            return { Success: false, StatusCode: 0, ErrorMessage:
+                `[eventbrite] CreateRecord not supported for "${ctx.ObjectName}": CreateAPIPath / CreateMethod not configured.` };
+        }
+        const resolved = this.SubstituteAllPathVars(obj.CreateAPIPath, undefined, ctx.Attributes, ctx.Relationships);
+        if (resolved.unresolved.length > 0) {
+            return this.UnresolvedVarError(ctx.ObjectName, 'create', obj.CreateAPIPath, resolved.unresolved);
+        }
+        const auth = await this.Authenticate(ci, contextUser);
+        const headers = this.BuildHeaders(auth);
+        const url = `${this.GetBaseURL(ci)}${resolved.path}`;
+        const body = this.BuildOperationBody(ctx.Attributes, obj.CreateBodyShape, obj.CreateBodyKey);
+        const response = await this.MakeHTTPRequest(auth, url, obj.CreateMethod, headers, body);
+        if (response.Status >= 200 && response.Status < 300) {
+            const externalID = this.ExtractIDFromResponse(response, obj.CreateIDLocation);
+            return this.BuildCreatedResult(externalID, response.Status, ctx.ObjectName);
+        }
+        return { Success: false, StatusCode: response.Status,
+            ErrorMessage: this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on create` };
+    }
+
+    /**
+     * Update: substitutes the record's own id (ExternalID) into the LAST path var and any parent vars from
+     * Attributes/Relationships, then POSTs the wrapped body (Eventbrite uses POST, not PATCH/PUT, for update).
+     */
+    public override async UpdateRecord(ctx: UpdateRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        if (!obj.UpdateAPIPath || !obj.UpdateMethod) {
+            return { Success: false, StatusCode: 0, ErrorMessage:
+                `[eventbrite] UpdateRecord not supported for "${ctx.ObjectName}": UpdateAPIPath / UpdateMethod not configured.` };
+        }
+        const resolved = this.SubstituteAllPathVars(obj.UpdateAPIPath, ctx.ExternalID, ctx.Attributes, ctx.Relationships);
+        if (resolved.unresolved.length > 0) {
+            return this.UnresolvedVarError(ctx.ObjectName, 'update', obj.UpdateAPIPath, resolved.unresolved);
+        }
+        const auth = await this.Authenticate(ci, contextUser);
+        const headers = this.BuildHeaders(auth);
+        const url = `${this.GetBaseURL(ci)}${resolved.path}`;
+        const body = this.BuildOperationBody(ctx.Attributes, obj.UpdateBodyShape, obj.UpdateBodyKey);
+        const response = await this.MakeHTTPRequest(auth, url, obj.UpdateMethod, headers, body);
+        if (response.Status >= 200 && response.Status < 300) {
+            return { Success: true, StatusCode: response.Status, ExternalID: ctx.ExternalID };
+        }
+        return { Success: false, StatusCode: response.Status,
+            ErrorMessage: this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on update` };
+    }
+
+    /**
+     * Delete: substitutes the record's own id (ExternalID) into the last path var and any parent vars, then
+     * issues DeleteMethod (metadata-driven — Eventbrite uses hard DELETE, but the verb is read from metadata,
+     * not assumed).
+     */
+    public override async DeleteRecord(ctx: DeleteRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        if (!obj.DeleteAPIPath || !obj.DeleteMethod) {
+            return { Success: false, StatusCode: 0, ErrorMessage:
+                `[eventbrite] DeleteRecord not supported for "${ctx.ObjectName}": DeleteAPIPath / DeleteMethod not configured.` };
+        }
+        // Delete carries no Attributes; parent vars (if any) must ride the composite ExternalID as
+        // "parentId|recordId" (mirrors the base composite-PK ExternalID form) or be absent (single-var path).
+        const { parentTags, recordID } = this.SplitCompositeExternalID(ctx.ExternalID, obj.DeleteAPIPath);
+        const resolved = this.SubstituteAllPathVars(obj.DeleteAPIPath, recordID, parentTags, undefined);
+        if (resolved.unresolved.length > 0) {
+            return this.UnresolvedVarError(ctx.ObjectName, 'delete', obj.DeleteAPIPath, resolved.unresolved);
+        }
+        const auth = await this.Authenticate(ci, contextUser);
+        const headers = this.BuildHeaders(auth);
+        const url = `${this.GetBaseURL(ci)}${resolved.path}`;
+        const response = await this.MakeHTTPRequest(auth, url, obj.DeleteMethod, headers);
+        if (response.Status >= 200 && response.Status < 300) {
+            return { Success: true, StatusCode: response.Status, ExternalID: ctx.ExternalID };
+        }
+        return { Success: false, StatusCode: response.Status,
+            ErrorMessage: this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on delete` };
+    }
+
+    // ── Connection test ──────────────────────────────────────────────
+
+    /**
+     * Tests the connection by hitting the current-user endpoint (`/users/me/`). A 2xx confirms the Bearer
+     * token is valid; 401/403 → auth failure; anything else → error.
+     */
+    public override async TestConnection(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo
-    ): Promise<EventbriteConnectionConfig> {
-        const fromCredential = companyIntegration.CredentialID
-            ? await this.loadFromCredential(companyIntegration.CredentialID, contextUser)
-            : null;
-        const fromConfig = this.parseConfigurationJson(companyIntegration.Configuration);
-
-        const merged: EventbriteConnectionConfig = { ...fromConfig, ...fromCredential };
-        // Credential's Token wins; host override + tunables come from Configuration.
-        merged.Token = (fromCredential?.Token ?? fromConfig.Token);
-        merged.ApiBaseUrl = merged.ApiBaseUrl ?? fromConfig.ApiBaseUrl;
-        merged.RequestTimeoutMs = merged.RequestTimeoutMs ?? fromConfig.RequestTimeoutMs;
-        merged.MaxRetries = merged.MaxRetries ?? fromConfig.MaxRetries;
-        merged.MinRequestIntervalMs = merged.MinRequestIntervalMs ?? fromConfig.MinRequestIntervalMs;
-
-        if (!merged.Token) {
-            throw new Error(
-                'EventbriteConnector: a Bearer token (PrivateToken / Token / AccessToken / apiKey) ' +
-                'must be provided via the credential store or CompanyIntegration.Configuration.'
-            );
-        }
-        return merged;
-    }
-
-    /** Resolves the API host: the non-secret override wins over the production host. */
-    private resolveBaseUrl(config: EventbriteConnectionConfig): string {
-        const raw = (config.ApiBaseUrl ?? PROD_API_HOST).trim();
-        return raw.replace(/\/+$/, '');
-    }
-
-    /** Parses the non-secret host/tunables config from CompanyIntegration.Configuration JSON. */
-    private parseConfigurationJson(raw: string | null): EventbriteConnectionConfig {
-        if (!raw || raw.trim().length === 0) return {};
-        let parsed: Record<string, unknown>;
+    ): Promise<ConnectionTestResult> {
         try {
-            parsed = JSON.parse(raw) as Record<string, unknown>;
-        } catch {
-            throw new Error('EventbriteConnector: CompanyIntegration.Configuration is not valid JSON.');
+            const auth = await this.Authenticate(companyIntegration, contextUser);
+            const headers = this.BuildHeaders(auth);
+            const url = `${EVENTBRITE_API_BASE}/users/me/`;
+            const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
+            if (response.Status >= 200 && response.Status < 300) {
+                return { Success: true, Message: 'Eventbrite connection successful.' };
+            }
+            if (response.Status === 401 || response.Status === 403) {
+                return { Success: false, Message: `Eventbrite authentication failed (HTTP ${response.Status}). Check the OAuth2 Bearer / Private Token.` };
+            }
+            return { Success: false, Message: `Eventbrite connection test returned HTTP ${response.Status}.` };
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            return { Success: false, Message: `Eventbrite connection test error: ${msg}` };
         }
-        const str = (...keys: string[]): string | undefined => {
-            for (const k of keys) {
-                const hit = Object.entries(parsed).find(([key]) => key.toLowerCase() === k.toLowerCase());
-                if (hit && typeof hit[1] === 'string' && hit[1].length > 0) return hit[1] as string;
-            }
-            return undefined;
-        };
-        const num = (...keys: string[]): number | undefined => {
-            for (const k of keys) {
-                const hit = Object.entries(parsed).find(([key]) => key.toLowerCase() === k.toLowerCase());
-                if (hit && typeof hit[1] === 'number') return hit[1] as number;
-            }
-            return undefined;
-        };
-        return {
-            // A token MAY be carried in Configuration for credential-free replay harnesses;
-            // the credential store remains preferred (parseConfig gives fromCredential precedence).
-            Token: str('PrivateToken', 'Token', 'AccessToken', 'accessToken', 'apiKey', 'api_key'),
-            ApiBaseUrl: str('apiBaseUrl', 'api_base_url', 'APIBaseURL', 'baseUrl', 'base_url'),
-            RequestTimeoutMs: num('requestTimeoutMs'),
-            MaxRetries: num('maxRetries'),
-            MinRequestIntervalMs: num('minRequestIntervalMs'),
-        };
     }
 
-    /** Loads the Bearer token from the MJ credential store. */
-    private async loadFromCredential(
+    // ── Credential loading ───────────────────────────────────────────
+
+    /** Reads the Bearer token from the linked Credential entity, or the Configuration JSON fallback. */
+    private async LoadCredentials(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo
+    ): Promise<EventbriteCredentials> {
+        const credentialID = companyIntegration.CredentialID;
+        if (credentialID) {
+            const creds = await this.LoadFromCredentialEntity(credentialID, contextUser);
+            if (creds) return creds;
+        }
+        const configJson = companyIntegration.Configuration;
+        if (configJson) {
+            const creds = this.ParseCredentialJson(configJson);
+            if (creds) return creds;
+        }
+        throw new Error(
+            'No Eventbrite credential found. Attach a credential carrying an OAuth2 Bearer / Private Token ' +
+            '(accessToken / apiKey / Token), or set Configuration JSON on the CompanyIntegration.'
+        );
+    }
+
+    /** Loads a credential row and parses its Values JSON. */
+    private async LoadFromCredentialEntity(
         credentialID: string,
-        contextUser: UserInfo,
-        provider?: IMetadataProvider
-    ): Promise<EventbriteConnectionConfig | null> {
-        const md = provider ?? new Metadata();
+        contextUser: UserInfo
+    ): Promise<EventbriteCredentials | null> {
+        const md = new Metadata();
         const credential = await md.GetEntityObject<MJCredentialEntity>('MJ: Credentials', contextUser);
         const loaded = await credential.Load(credentialID);
         if (!loaded || !credential.Values) return null;
-        let raw: Record<string, unknown>;
+        return this.ParseCredentialJson(credential.Values);
+    }
+
+    /** Extracts an Eventbrite token from a credential/config JSON string. Returns null when no token is present. */
+    private ParseCredentialJson(json: string): EventbriteCredentials | null {
         try {
-            raw = JSON.parse(credential.Values) as Record<string, unknown>;
+            const parsed = JSON.parse(json) as Record<string, unknown>;
+            const token = this.FirstString(parsed, ['accessToken', 'AccessToken', 'apiKey', 'ApiKey', 'Token', 'token', 'privateToken', 'PrivateToken']);
+            return token ? { AccessToken: token } : null;
         } catch {
             return null;
         }
-        const get = (...keys: string[]): string | undefined => {
-            for (const k of keys) {
-                const hit = Object.entries(raw).find(([key]) => key.toLowerCase() === k.toLowerCase());
-                if (hit && typeof hit[1] === 'string') return hit[1] as string;
+    }
+
+    // ── Path-var substitution helpers ────────────────────────────────
+
+    /**
+     * Substitutes EVERY `{var}` in a write path. The record's own id (recordID, when provided) fills the
+     * generic `{ID}`/`{id}`/`{ExternalID}` placeholders AND the LAST vendor-named var in the path (the
+     * record's own id segment for update/delete, e.g. `{ticket_class_id}` in
+     * `/events/{event_id}/ticket_classes/{ticket_class_id}/`). Every OTHER var is a parent id resolved from
+     * the resolution map (Attributes ∪ Relationships), matched case-insensitively. Returns the resolved path
+     * plus the list of vars that could NOT be resolved (caller fails loudly on a non-empty list).
+     */
+    private SubstituteAllPathVars(
+        path: string,
+        recordID: string | undefined,
+        attributes?: Record<string, unknown>,
+        relationships?: Record<string, unknown>
+    ): { path: string; unresolved: string[] } {
+        const vars = this.DetectPathVars(path);
+        if (vars.length === 0) return { path, unresolved: [] };
+
+        const genericIDNames = new Set(['id', 'ID', 'ExternalID']);
+        // The record's own id var is the LAST non-generic var, when a recordID is supplied (update/delete).
+        const nonGeneric = vars.filter(v => !genericIDNames.has(v));
+        const ownIDVar = recordID != null && nonGeneric.length > 0 ? nonGeneric[nonGeneric.length - 1] : null;
+
+        const resolutionMap = this.BuildResolutionMap(attributes, relationships);
+        const unresolved: string[] = [];
+        let resolvedPath = path;
+
+        for (const v of vars) {
+            let value: string | undefined;
+            if (genericIDNames.has(v) || v === ownIDVar) {
+                value = recordID;
+            } else {
+                value = resolutionMap.get(v.toLowerCase());
             }
-            return undefined;
+            if (value == null || value.length === 0) {
+                unresolved.push(v);
+                continue;
+            }
+            resolvedPath = resolvedPath.replace(`{${v}}`, encodeURIComponent(value));
+        }
+        return { path: resolvedPath, unresolved };
+    }
+
+    /**
+     * A delete carries no Attributes, so a child-object delete path with a parent var (e.g.
+     * `/events/{event_id}/ticket_classes/{...}`) has no place to source the parent id — EXCEPT the composite
+     * ExternalID. When the path has >1 var, the ExternalID is expected as `parentId|...|recordId` (the base's
+     * composite-PK ExternalID form): the trailing segment is the record id, the leading segments fill the
+     * parent vars in path order. When the path has ≤1 var, the whole ExternalID is the record id.
+     */
+    private SplitCompositeExternalID(
+        externalID: string,
+        path: string
+    ): { parentTags: Record<string, unknown>; recordID: string } {
+        const vars = this.DetectPathVars(path).filter(v => !['id', 'ID', 'ExternalID'].includes(v));
+        if (vars.length <= 1) {
+            return { parentTags: {}, recordID: externalID };
+        }
+        const parts = externalID.split('|');
+        const recordID = parts[parts.length - 1];
+        const parentTags: Record<string, unknown> = {};
+        // Leading parts map to the leading (parent) vars in path order.
+        const parentVars = vars.slice(0, vars.length - 1);
+        for (let i = 0; i < parentVars.length && i < parts.length - 1; i++) {
+            parentTags[parentVars[i]] = parts[i];
+        }
+        return { parentTags, recordID };
+    }
+
+    /** Detects `{var}` placeholders in a path. */
+    private DetectPathVars(path: string): string[] {
+        const matches = path.match(/\{(\w+)\}/g);
+        return matches ? matches.map(m => m.slice(1, -1)) : [];
+    }
+
+    /** Builds a case-insensitive lookup map of parent-id candidates from Attributes ∪ Relationships. */
+    private BuildResolutionMap(
+        attributes?: Record<string, unknown>,
+        relationships?: Record<string, unknown>
+    ): Map<string, string> {
+        const map = new Map<string, string>();
+        const add = (src?: Record<string, unknown>): void => {
+            if (!src) return;
+            for (const [k, v] of Object.entries(src)) {
+                if (v == null) continue;
+                const s = String(v);
+                if (s.length > 0) map.set(k.toLowerCase(), s);
+            }
         };
+        add(relationships);
+        add(attributes); // attributes win over relationships on a key collision
+        return map;
+    }
+
+    /** Builds a consistent unresolved-var CRUD failure result (never a broken URL to the wire). */
+    private UnresolvedVarError(objectName: string, verb: string, path: string, unresolved: string[]): CRUDResult {
         return {
-            Token: get('PrivateToken', 'Token', 'AccessToken', 'accessToken', 'apiKey', 'api_key', 'key'),
+            Success: false,
+            StatusCode: 0,
+            ErrorMessage:
+                `[eventbrite] ${verb} for "${objectName}" could not resolve path variable(s) ` +
+                `[${unresolved.join(', ')}] in "${path}" — supply them in Attributes/Relationships ` +
+                `(parent ids) or as the record ExternalID.`,
         };
     }
-}
 
-/** Tree-shaking prevention function — import and call from the package entry point. */
-export function LoadEventbriteConnector(): void { /* no-op */ }
+    // ── Watermark helpers ────────────────────────────────────────────
+
+    /**
+     * Formats a watermark value into the `changed_since` datetime the API expects (UTC ISO-8601). Accepts an
+     * ISO string (passed through) or an epoch-ms string (converted). Eventbrite documents `changed_since` as
+     * a UTC datetime; passing an unparseable value through unchanged lets the API reject it loudly rather than
+     * silently widening the window.
+     */
+    private FormatChangedSince(watermark: string): string {
+        if (/^\d+$/.test(watermark)) {
+            return new Date(Number(watermark)).toISOString();
+        }
+        return watermark;
+    }
+
+    /**
+     * Computes the new watermark = the max `changed` timestamp across the fetched records, floored at the
+     * incoming watermark so it never regresses. Records that don't carry the field are skipped. Returns the
+     * incoming watermark unchanged when no record advances it (idempotent no-op next run).
+     */
+    private MaxWatermark(result: FetchBatchResult, watermarkField: string, incoming: string): string {
+        let maxMs = this.ToMs(incoming);
+        let maxStr = incoming;
+        for (const rec of result.Records) {
+            const raw = rec.Fields?.[watermarkField];
+            if (raw == null) continue;
+            const s = String(raw);
+            const ms = this.ToMs(s);
+            if (ms > maxMs) { maxMs = ms; maxStr = s; }
+        }
+        return maxStr;
+    }
+
+    /** Parses a watermark (ISO datetime or epoch-ms string) to epoch ms; 0 when unparseable/empty. */
+    private ToMs(value: string): number {
+        if (!value || value.length === 0) return 0;
+        if (/^\d+$/.test(value)) return Number(value);
+        const t = Date.parse(value);
+        return isNaN(t) ? 0 : t;
+    }
+
+    // ── Misc helpers ─────────────────────────────────────────────────
+
+    /** Returns the first present, non-empty string value among the given keys. */
+    private FirstString(obj: Record<string, unknown>, keys: string[]): string | undefined {
+        for (const k of keys) {
+            const v = obj[k];
+            if (typeof v === 'string' && v.length > 0) return v;
+        }
+        return undefined;
+    }
+
+    /**
+     * Resolves an IO by name from the engine cache (via this integration's id) without throwing. Returns null
+     * when the cache is unavailable (unit-test context) or the object isn't found — StableOrderingKey then
+     * degrades to null, a safe default (the engine simply doesn't use keyset resume for that object).
+     */
+    private TryGetActiveObject(objectName: string): MJIntegrationObjectEntity | null {
+        try {
+            const integ = IntegrationEngineBase.Instance.GetIntegrationByName(this.IntegrationName);
+            if (!integ) return null;
+            return IntegrationEngineBase.Instance.GetIntegrationObject(integ.ID, objectName) ?? null;
+        } catch {
+            return null;
+        }
+    }
+}
 
 /**
  * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.

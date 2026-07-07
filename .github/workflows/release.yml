@@ -51,6 +51,12 @@ jobs:
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 
+      # connectors-catalog.json is what `mj app install` reads to resolve versions. `version-packages`
+      # regenerates it after bumping versions, so on a released tree it must be in sync. Guards against the
+      # stale-pin bug (installs kept resolving PheedLoop 1.0.0 after its fix shipped in a later version).
+      - name: Connector catalog up to date
+        run: node scripts/build-connectors-catalog.mjs --check
+
       # Opens/updates the "Version Packages" PR; on merge, `npm run release` builds + publishes ONLY the
       # changed connector packages (changesets non-fixed → per-connector independent versions) and tags each
       # as <pkg>@<version>. `npm run version-packages` bumps versions AND syncs each connector's mj-app.json

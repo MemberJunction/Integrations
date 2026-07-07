@@ -4,7 +4,7 @@
   "name": "connector-blackbaud",
   "displayName": "Blackbaud Connector",
   "description": "Blackbaud integration connector for MemberJunction",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-hand-holding-heart",
   "publisher": {
