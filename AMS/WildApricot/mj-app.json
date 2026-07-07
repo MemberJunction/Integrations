@@ -4,7 +4,7 @@
   "name": "connector-wild-apricot",
   "displayName": "Wild Apricot Connector",
   "description": "Wild Apricot (part of Personify/Momentive Software) is an AMS for small-to-mid-size associations. This integration syncs contacts, membership levels, events, registrations, invoices, payments, donations, and audit log items via the v2.3 Admin REST API ...",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-apple-whole",
   "publisher": {

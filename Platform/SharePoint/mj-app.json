@@ -4,7 +4,7 @@
   "name": "connector-sharepoint",
   "displayName": "SharePoint Connector",
   "description": "Microsoft SharePoint Online connector via Microsoft Graph API v1.0. Syncs Sites, Drives, DriveItems (files/folders), Lists, ListItems, ContentTypes, Columns, Permissions, and Subscriptions. Authenticates via OAuth2 Client Credentials (Azure app registr...",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "license": "ISC",
   "icon": "fa-brands fa-microsoft",
   "publisher": {

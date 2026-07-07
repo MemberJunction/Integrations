@@ -4,7 +4,7 @@
   "name": "connector-growthzone",
   "displayName": "GrowthZone Connector",
   "description": "GrowthZone Association Management System (AMS) connector — syncs contacts, memberships, groups, events, store orders, and certifications via GrowthZone REST API with OAuth2 Bearer token authentication.",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",

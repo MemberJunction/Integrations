@@ -4,7 +4,7 @@
   "name": "connector-constant-contact",
   "displayName": "Constant Contact Connector",
   "description": "Constant Contact V3 REST API connector for email marketing. Supports contacts, contact lists, custom fields, tags, email campaigns/activities, segments, and async bulk activities. Auth: OAuth2 Authorization Code flow (access tokens valid 24h; refresh t...",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "icon": "fa-solid fa-envelope-open-text",
   "publisher": {
