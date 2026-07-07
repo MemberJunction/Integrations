@@ -4,7 +4,7 @@
   "name": "connector-eventbrite",
   "displayName": "Eventbrite Connector",
   "description": "Eventbrite event ticketing & management connector. Syncs organizations, events, event series, venues, ticket classes, ticket groups, orders, attendees, questions, discounts, media, webhooks, and related objects via the Eventbrite Platform REST API v3 (Bearer private-token / OAuth2 access token).",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
