@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { RESTResponse, RESTAuthContext, CreateRecordContext } from '@memberjunction/integration-engine';
+import type { MJIntegrationObjectEntity } from '@memberjunction/core-entities';
 import { WildApricotConnector } from '../WildApricotConnector.js';
 
 // Smoke tests — verifies the connector's basic identity + capability surface.
@@ -69,6 +70,23 @@ class TestWildApricotConnector extends WildApricotConnector {
 
     protected override async MakeHTTPRequest(): Promise<RESTResponse> {
         return this.NextResponse;
+    }
+
+    /**
+     * Seed the IntegrationObject the write path resolves. The base CreateRecord resolves the object
+     * via GetCachedObject(IntegrationID, ObjectName) from the engine cache — which is empty in this
+     * unit env (no DB), so it would throw "IntegrationObject not found" before the create ever runs.
+     * Returning a minimal create-capable object here lets the test genuinely exercise the
+     * BuildCreatedResult response-id validation (the assertion under test), same pattern as GrowthZone.
+     */
+    protected override GetCachedObject(_integrationID: string, objectName: string): MJIntegrationObjectEntity {
+        return {
+            Name: objectName,
+            CreateAPIPath: '/contacts',
+            CreateMethod: 'POST',
+            CreateBodyShape: 'flat',
+            CreateIDLocation: 'body',
+        } as unknown as MJIntegrationObjectEntity;
     }
 }
 

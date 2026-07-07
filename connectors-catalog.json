@@ -171,6 +171,27 @@
       "installTag": "AMS-Rhythm@1.2.0"
     },
     {
+      "name": "Wild Apricot",
+      "displayName": "Wild Apricot Connector",
+      "description": "Wild Apricot membership management platform connector — syncs contacts, events, registrations, finances, and store data via the Admin API v2.3.",
+      "category": "AMS",
+      "tags": [
+        "wild-apricot",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-apple-whole",
+      "navigationBaseURL": null,
+      "objectCount": 25,
+      "className": "@memberjunction/connector-wild-apricot",
+      "npmPackage": "@memberjunction/connector-wild-apricot",
+      "version": "1.1.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "AMS/WildApricot",
+      "installTag": "AMS-WildApricot@1.1.0"
+    },
+    {
       "name": "Microsoft Dynamics 365 (Dataverse)",
       "displayName": "Microsoft Dynamics 365 (Dataverse) Connector",
       "description": "Microsoft Dynamics 365 / Dataverse Web API (OData v4) connector for CE/model-driven app tables. OAuth2 client credentials (Entra ID); per-environment base URL; runtime EntityDefinitions discovery; change-tracking incremental; full CRUD.",
