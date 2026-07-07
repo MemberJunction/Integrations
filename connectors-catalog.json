@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 25,
+  "count": 26,
   "connectors": [
     {
       "name": "Fonteva",
@@ -190,6 +190,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/WildApricot",
       "installTag": "AMS-WildApricot@1.2.0"
+    },
+    {
+      "name": "blackbaud",
+      "displayName": "Blackbaud Connector",
+      "description": "Blackbaud SKY API connector for Raiser's Edge NXT (nonprofit CRM): Constituent, Gift, Fundraising, Prospect/Opportunity. OAuth2 auth-code + subscription-key header. Other SKY API families out of scope -- see Configuration.OutOfScopeObjectFamilies.",
+      "category": "CRM",
+      "tags": [
+        "blackbaud",
+        "crm",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-hand-holding-heart",
+      "navigationBaseURL": "https://api.sky.blackbaud.com",
+      "objectCount": 84,
+      "className": "@memberjunction/connector-blackbaud",
+      "npmPackage": "@memberjunction/connector-blackbaud",
+      "version": "1.2.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "CRM/Blackbaud",
+      "installTag": "CRM-Blackbaud@1.2.0"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
