@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { CreateRecordContext, RESTAuthContext, RESTResponse } from '@memberjunction/integration-engine';
+import type { MJIntegrationObjectEntity } from '@memberjunction/core-entities';
 import { BlackbaudConnector } from '../BlackbaudConnector.js';
 
 /**
@@ -15,6 +16,24 @@ class TestBlackbaudConnector extends BlackbaudConnector {
 
     protected override async MakeHTTPRequest(): Promise<RESTResponse> {
         return this.NextResponse;
+    }
+
+    /**
+     * Seed the IntegrationObject the generic create path resolves. `constituents` (plural) is NOT the
+     * idiosyncratic `constituent` split-virtual case, so CreateRecord delegates to super.CreateRecord,
+     * which resolves the object via GetCachedObject(IntegrationID, ObjectName) from the engine cache —
+     * empty in this unit env (no DB), so it would throw "IntegrationObject not found" before the create
+     * ever ran and the BuildCreatedResult response-id assertion never executed. Returning a minimal
+     * create-capable object here lets that assertion genuinely run (same pattern as GrowthZone's tests).
+     */
+    protected override GetCachedObject(_integrationID: string, objectName: string): MJIntegrationObjectEntity {
+        return {
+            Name: objectName,
+            CreateAPIPath: '/constituents',
+            CreateMethod: 'POST',
+            CreateBodyShape: 'flat',
+            CreateIDLocation: 'body',
+        } as unknown as MJIntegrationObjectEntity;
     }
 }
 
@@ -58,7 +77,9 @@ describe('BlackbaudConnector (smoke)', () => {
         });
 
         it('IntegrationName getter returns the canonical name', () => {
-            expect(connector.IntegrationName).toBe('Blackbaud');
+            // Metadata Name is 'blackbaud' (lowercase); the T1 three-way invariant compares the getter
+            // === MJ: Integrations.Name, so the canonical value is 'blackbaud'.
+            expect(connector.IntegrationName).toBe('blackbaud');
         });
     });
 
@@ -66,7 +87,9 @@ describe('BlackbaudConnector (smoke)', () => {
         it('declared CRUD flags match expected shape', () => {
         expect(connector.SupportsCreate).toBe(true);
         expect(connector.SupportsUpdate).toBe(true);
-        expect(connector.SupportsDelete).toBe(true);
+        // Delete is deliberately NOT surfaced: no IO row carries DeleteAPIPath/DeleteMethod, so the
+        // connector leaves SupportsDelete at the base default false (null-capability honesty).
+        expect(connector.SupportsDelete).toBe(false);
         });
     });
     describe('GetDefaultFieldMappings', () => {

@@ -1,7 +1,7 @@
 {
-  "name": "@memberjunction/connector-magnetmail",
-  "version": "2.0.0",
-  "description": "MemberJunction MagnetMail connector.",
+  "name": "@memberjunction/connector-zendesk",
+  "version": "1.0.0",
+  "description": "MemberJunction Zendesk connector.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,15 +15,14 @@
   "author": "MemberJunction.com",
   "license": "ISC",
   "peerDependencies": {
-    "@memberjunction/core": ">=5.42.0 <6.0.0",
-    "@memberjunction/core-entities": ">=5.42.0 <6.0.0",
-    "@memberjunction/global": ">=5.42.0 <6.0.0",
-    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0",
-    "@memberjunction/integration-engine-base": ">=5.42.0 <6.0.0"
+    "@memberjunction/core": ">=5.45.0 <6.0.0",
+    "@memberjunction/core-entities": ">=5.45.0 <6.0.0",
+    "@memberjunction/global": ">=5.45.0 <6.0.0",
+    "@memberjunction/integration-engine": ">=5.45.0 <6.0.0",
+    "@memberjunction/integration-engine-base": ">=5.45.0 <6.0.0"
   },
   "dependencies": {
-    "@memberjunction/connector-schema-merge": "^1.0.0",
-    "zod": "~3.24.4"
+    "@memberjunction/connector-schema-merge": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "24.10.11",
