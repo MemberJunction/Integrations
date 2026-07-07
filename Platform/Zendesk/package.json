@@ -1,8 +1,7 @@
 {
-  "name": "@memberjunction/connector-wild-apricot",
-  "version": "1.1.0",
-  "private": false,
-  "description": "MemberJunction WildApricot connector.",
+  "name": "@memberjunction/connector-zendesk",
+  "version": "1.0.0",
+  "description": "MemberJunction Zendesk connector.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,10 +15,11 @@
   "author": "MemberJunction.com",
   "license": "ISC",
   "peerDependencies": {
-    "@memberjunction/core": ">=5.42.0 <6.0.0",
-    "@memberjunction/core-entities": ">=5.42.0 <6.0.0",
-    "@memberjunction/global": ">=5.42.0 <6.0.0",
-    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
+    "@memberjunction/core": ">=5.45.0 <6.0.0",
+    "@memberjunction/core-entities": ">=5.45.0 <6.0.0",
+    "@memberjunction/global": ">=5.45.0 <6.0.0",
+    "@memberjunction/integration-engine": ">=5.45.0 <6.0.0",
+    "@memberjunction/integration-engine-base": ">=5.45.0 <6.0.0"
   },
   "dependencies": {
     "@memberjunction/connector-schema-merge": "^1.0.0"
@@ -33,6 +33,7 @@
     "@memberjunction/core-entities": "^5.42.0",
     "@memberjunction/global": "^5.42.0",
     "@memberjunction/integration-engine": "^5.42.0",
+    "@memberjunction/integration-engine-base": "^5.42.0",
     "@memberjunction/connector-schema-merge": "^1.0.0"
   },
   "repository": {
