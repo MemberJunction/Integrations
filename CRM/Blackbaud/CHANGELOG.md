@@ -1,5 +1,11 @@
 # @memberjunction/connector-blackbaud
 
+## 1.2.0
+
+### Minor Changes
+
+- faab5b0: Blackbaud connector published as an Open App.
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @memberjunction/connector-wild-apricot
 
+## 1.2.0
+
+### Minor Changes
+
+- 53d1772: Wild Apricot connector published as an Open App.
+
 ## 1.1.0
 
 ### Minor Changes
