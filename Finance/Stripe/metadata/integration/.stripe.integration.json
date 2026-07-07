@@ -32890,7 +32890,13 @@
                   "Source": "Declared",
                   "Status": "Active",
                   "Sequence": 12,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=source&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Configuration": {
+                    "ReferencedType": "source",
+                    "fkKind": "path-parent"
+                  }
                 },
                 "primaryKey": {
                   "ID": "22A73D77-7174-454B-802C-978C38E184FB"
