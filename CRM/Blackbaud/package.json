@@ -1,7 +1,7 @@
 {
   "name": "@memberjunction/connector-blackbaud",
   "version": "1.2.0",
-  "private": true,
+  "private": false,
   "description": "MemberJunction Blackbaud connector.",
   "type": "module",
   "main": "dist/index.js",
