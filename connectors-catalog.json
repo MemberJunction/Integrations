@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 26,
+  "count": 27,
   "connectors": [
     {
       "name": "Fonteva",
@@ -463,6 +463,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/PropFuel",
       "installTag": "Marketing-PropFuel@1.2.0"
+    },
+    {
+      "name": "higherlogic-vanilla",
+      "displayName": "Higher Logic Vanilla Connector",
+      "description": "Higher Logic Vanilla community/forum platform (ex-Vanilla Forums). REST API v2: users, roles, categories, discussions, comments, reactions, groups, KB articles. Bearer PAT auth, PageNumber+Link pagination, dateUpdated incremental sync.",
+      "category": "Platform",
+      "tags": [
+        "higher-logic-vanilla",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-comments",
+      "navigationBaseURL": "https://success.vanillaforums.com/kb/articles/1842-api-v2-endpoints",
+      "objectCount": 65,
+      "className": "HigherLogicVanillaConnector",
+      "npmPackage": "@memberjunction/connector-higher-logic-vanilla",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Platform/HigherLogicVanilla",
+      "installTag": "Platform-HigherLogicVanilla@0.1.0"
     },
     {
       "name": "Hivebrite",
