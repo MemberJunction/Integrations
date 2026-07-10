@@ -1,0 +1,15 @@
+[
+  {
+    "fields": {
+      "Name": "MongoDB",
+      "Description": "Ingest data from an external MongoDB via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'MongoExternalDriver' driver.",
+      "ClassName": "MongoConnector",
+      "ImportPath": "@memberjunction/connector-mongodb",
+      "Icon": "fa-solid fa-leaf",
+      "Configuration": {
+        "connectionModel": "external-data-source",
+        "note": "Bind this connection to a shared 'MJ: External Data Sources' row by setting Configuration.externalDataSourceID on the CompanyIntegration. Host + credentials live on that EDS row (credentials via CredentialEngine); objects/fields are discovered at connection time. Requires @memberjunction/external-data-sources + @memberjunction/external-data-source-mongodb >= 5.46.0."
+      }
+    }
+  }
+]

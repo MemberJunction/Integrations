@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 27,
+  "count": 34,
   "connectors": [
     {
       "name": "Fonteva",
@@ -211,6 +211,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/Blackbaud",
       "installTag": "CRM-Blackbaud@1.2.0"
+    },
+    {
+      "name": "HubSpot",
+      "displayName": "HubSpot Connector",
+      "description": "HubSpot CRM connector for MemberJunction — sync contacts, companies, deals, and activities, with the full curated object catalog.",
+      "category": "CRM",
+      "tags": [
+        "hubspot",
+        "crm",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-hubspot",
+      "navigationBaseURL": null,
+      "objectCount": 168,
+      "className": "HubSpotConnector",
+      "npmPackage": "@memberjunction/connector-hubspot",
+      "version": "1.1.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "CRM/HubSpot",
+      "installTag": "CRM-HubSpot@1.1.0"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
@@ -507,6 +528,72 @@
       "installTag": "Platform-Hivebrite@1.2.0"
     },
     {
+      "name": "MongoDB",
+      "displayName": "MongoDB Connector",
+      "description": "Ingest data from an external MongoDB via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'MongoExternalDriver' driver.",
+      "category": "Platform",
+      "tags": [
+        "mongodb",
+        "database",
+        "external-data-source",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-leaf",
+      "navigationBaseURL": null,
+      "objectCount": null,
+      "className": "MongoConnector",
+      "npmPackage": "@memberjunction/connector-mongodb",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.46.0 <6.0.0",
+      "repoSubpath": "Platform/MongoDB",
+      "installTag": "Platform-MongoDB@1.0.0"
+    },
+    {
+      "name": "MySQL",
+      "displayName": "MySQL Connector",
+      "description": "Ingest data from an external MySQL, MariaDB, and Aurora-MySQL via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'MySQLExternalDriver' driver.",
+      "category": "Platform",
+      "tags": [
+        "mysql",
+        "database",
+        "external-data-source",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-database",
+      "navigationBaseURL": null,
+      "objectCount": null,
+      "className": "MySQLConnector",
+      "npmPackage": "@memberjunction/connector-mysql",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.46.0 <6.0.0",
+      "repoSubpath": "Platform/MySQL",
+      "installTag": "Platform-MySQL@1.0.0"
+    },
+    {
+      "name": "Oracle Database",
+      "displayName": "Oracle Database Connector",
+      "description": "Ingest data from an external Oracle Database via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'OracleExternalDriver' driver.",
+      "category": "Platform",
+      "tags": [
+        "oracle",
+        "database",
+        "external-data-source",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-database",
+      "navigationBaseURL": null,
+      "objectCount": null,
+      "className": "OracleConnector",
+      "npmPackage": "@memberjunction/connector-oracle",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.46.0 <6.0.0",
+      "repoSubpath": "Platform/Oracle",
+      "installTag": "Platform-Oracle@1.0.0"
+    },
+    {
       "name": "ORCID",
       "displayName": "ORCID Connector",
       "description": "ORCID Public API v3.0 read-only connector. Resolves researcher iD universes via per-connection Lucene search and/or explicit iD lists, then fetches the record and activity sections. Pull-only / read-public; OAuth2 client-credentials.",
@@ -528,6 +615,28 @@
       "installTag": "Platform-ORCID@1.1.2"
     },
     {
+      "name": "PostgreSQL",
+      "displayName": "PostgreSQL Connector",
+      "description": "Ingest data from an external PostgreSQL and wire-compatible engines (Supabase, Neon, Redshift, CockroachDB, Yugabyte, Aurora-PG) via a shared MJ: External Data Sources connection. Schema is discovered at connection time via the PostgresExternalDriver.",
+      "category": "Platform",
+      "tags": [
+        "postgresql",
+        "database",
+        "external-data-source",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-database",
+      "navigationBaseURL": null,
+      "objectCount": null,
+      "className": "PostgresConnector",
+      "npmPackage": "@memberjunction/connector-postgresql",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.46.0 <6.0.0",
+      "repoSubpath": "Platform/PostgreSQL",
+      "installTag": "Platform-PostgreSQL@1.0.0"
+    },
+    {
       "name": "SharePoint",
       "displayName": "SharePoint Connector",
       "description": "Microsoft SharePoint Online connector via Microsoft Graph API v1.0. Syncs Sites, Drives, DriveItems (files/folders), Lists, ListItems, ContentTypes, Columns, Permissions, and Subscriptions. Authenticates via OAuth2 Client Credentials (Azure app registr...",
@@ -547,6 +656,50 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Platform/SharePoint",
       "installTag": "Platform-SharePoint@1.2.0"
+    },
+    {
+      "name": "Snowflake",
+      "displayName": "Snowflake Connector",
+      "description": "Ingest data from an external Snowflake via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'SnowflakeExternalDriver' driver.",
+      "category": "Platform",
+      "tags": [
+        "snowflake",
+        "database",
+        "external-data-source",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-snowflake",
+      "navigationBaseURL": null,
+      "objectCount": null,
+      "className": "SnowflakeConnector",
+      "npmPackage": "@memberjunction/connector-snowflake",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.46.0 <6.0.0",
+      "repoSubpath": "Platform/Snowflake",
+      "installTag": "Platform-Snowflake@1.0.0"
+    },
+    {
+      "name": "SQL Server",
+      "displayName": "SQL Server Connector",
+      "description": "Ingest data from an external Microsoft SQL Server (incl. Azure SQL) via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'SQLServerExternalDriver' driver.",
+      "category": "Platform",
+      "tags": [
+        "sqlserver",
+        "database",
+        "external-data-source",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-database",
+      "navigationBaseURL": null,
+      "objectCount": null,
+      "className": "SQLServerConnector",
+      "npmPackage": "@memberjunction/connector-sqlserver",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.46.0 <6.0.0",
+      "repoSubpath": "Platform/SQLServer",
+      "installTag": "Platform-SQLServer@1.0.0"
     },
     {
       "name": "zendesk",

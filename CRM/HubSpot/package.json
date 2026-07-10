@@ -1,7 +1,7 @@
 {
   "name": "@memberjunction/connector-hubspot",
   "version": "1.1.0",
-  "private": true,
+  "private": false,
   "description": "MemberJunction HubSpot connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -21,19 +21,16 @@
     "@memberjunction/global": ">=5.42.0 <6.0.0",
     "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
   },
-  "dependencies": {
-    "@memberjunction/connector-schema-merge": "^1.0.0"
-  },
   "devDependencies": {
-    "@types/node": "24.10.11",
-    "tsc-alias": "^1.8.16",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18",
+    "@memberjunction/connector-schema-merge": "^1.0.1",
     "@memberjunction/core": "^5.42.0",
     "@memberjunction/core-entities": "^5.42.0",
     "@memberjunction/global": "^5.42.0",
     "@memberjunction/integration-engine": "^5.42.0",
-    "@memberjunction/connector-schema-merge": "^1.0.0"
+    "@types/node": "24.10.11",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "repository": {
     "type": "git",
