@@ -1,0 +1,49 @@
+{
+  "$schema": "https://memberjunction.org/schemas/mj-app.schema.json",
+  "manifestVersion": 1,
+  "name": "connector-mongodb",
+  "displayName": "MongoDB Connector",
+  "description": "MongoDB connector for MemberJunction — ingest data from an external MongoDB via a shared External Data Source. Schema is discovered at connection time; the connector delegates all connectivity to the EDS MongoExternalDriver driver.",
+  "version": "1.0.0",
+  "license": "ISC",
+  "icon": "fa-solid fa-leaf",
+  "color": "#47A248",
+  "publisher": {
+    "name": "MemberJunction",
+    "email": "dev@memberjunction.com",
+    "url": "https://memberjunction.com"
+  },
+  "repository": "https://github.com/MemberJunction/Integrations",
+  "mjVersionRange": ">=5.46.0 <6.0.0",
+  "schema": {
+    "name": "mj_connector_mongodb",
+    "createIfNotExists": true
+  },
+  "migrations": {
+    "directory": "migrations",
+    "engine": "skyway"
+  },
+  "metadata": {
+    "directory": "metadata"
+  },
+  "packages": {
+    "server": [
+      {
+        "name": "@memberjunction/connector-mongodb",
+        "role": "bootstrap",
+        "startupExport": "registerConnector"
+      }
+    ]
+  },
+  "categories": [
+    "platform",
+    "database"
+  ],
+  "tags": [
+    "mongodb",
+    "database",
+    "external-data-source",
+    "connector",
+    "integration"
+  ]
+}
