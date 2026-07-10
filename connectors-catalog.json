@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 26,
+  "count": 27,
   "connectors": [
     {
       "name": "Fonteva",
@@ -211,6 +211,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/Blackbaud",
       "installTag": "CRM-Blackbaud@1.2.0"
+    },
+    {
+      "name": "HubSpot",
+      "displayName": "HubSpot Connector",
+      "description": "HubSpot CRM connector for MemberJunction — sync contacts, companies, deals, and activities, with the full curated object catalog.",
+      "category": "CRM",
+      "tags": [
+        "hubspot",
+        "crm",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-hubspot",
+      "navigationBaseURL": null,
+      "objectCount": 168,
+      "className": "HubSpotConnector",
+      "npmPackage": "@memberjunction/connector-hubspot",
+      "version": "1.1.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "CRM/HubSpot",
+      "installTag": "CRM-HubSpot@1.1.0"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
