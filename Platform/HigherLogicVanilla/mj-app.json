@@ -4,7 +4,7 @@
   "name": "connector-higher-logic-vanilla",
   "displayName": "Higher Logic Vanilla Connector",
   "description": "Higher Logic Vanilla connector for MemberJunction — full curated object catalog.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",

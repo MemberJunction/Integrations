@@ -501,10 +501,10 @@
       "objectCount": 65,
       "className": "HigherLogicVanillaConnector",
       "npmPackage": "@memberjunction/connector-higher-logic-vanilla",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Platform/HigherLogicVanilla",
-      "installTag": "Platform-HigherLogicVanilla@0.1.0"
+      "installTag": "Platform-HigherLogicVanilla@0.2.0"
     },
     {
       "name": "Hivebrite",
