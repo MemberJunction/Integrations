@@ -1,5 +1,11 @@
 # @memberjunction/connector-wild-apricot
 
+## 1.2.1
+
+### Patch Changes
+
+- 6235c0c: Add `push.autoCreateMissingRecords: true` to `.mj-sync.json` so `mj sync push` seeds the connector's metadata cleanly against a DB that doesn't yet hold the Integration/IntegrationObject rows (previously the child-record push failed with "Record not found — set autoCreateMissingRecords=true"). Build-time seed-generation fix only; the published runtime (`dist`) is unchanged.
+
 ## 1.2.0
 
 ### Minor Changes

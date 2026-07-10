@@ -186,10 +186,10 @@
       "objectCount": 25,
       "className": "@memberjunction/connector-wild-apricot",
       "npmPackage": "@memberjunction/connector-wild-apricot",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/WildApricot",
-      "installTag": "AMS-WildApricot@1.2.0"
+      "installTag": "AMS-WildApricot@1.2.1"
     },
     {
       "name": "blackbaud",
@@ -396,10 +396,10 @@
       "objectCount": 63,
       "className": "@memberjunction/connector-stripe",
       "npmPackage": "@memberjunction/connector-stripe",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/Stripe",
-      "installTag": "Finance-Stripe@0.2.1"
+      "installTag": "Finance-Stripe@0.2.2"
     },
     {
       "name": "Path LMS",
@@ -438,10 +438,10 @@
       "objectCount": 47,
       "className": "MagnetMailConnector",
       "npmPackage": "@memberjunction/connector-magnetmail",
-      "version": "3.0.0",
+      "version": "3.0.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/MagnetMail",
-      "installTag": "Marketing-MagnetMail@3.0.0"
+      "installTag": "Marketing-MagnetMail@3.0.1"
     },
     {
       "name": "PropFuel",
@@ -543,10 +543,10 @@
       "objectCount": 99,
       "className": "ZendeskConnector",
       "npmPackage": "@memberjunction/connector-zendesk",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "mjVersionRange": ">=5.45.0 <6.0.0",
       "repoSubpath": "Platform/Zendesk",
-      "installTag": "Platform-Zendesk@1.1.0"
+      "installTag": "Platform-Zendesk@1.1.1"
     }
   ]
 }

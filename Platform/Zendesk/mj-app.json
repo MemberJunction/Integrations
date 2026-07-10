@@ -4,7 +4,7 @@
   "name": "connector-zendesk",
   "displayName": "Zendesk Connector",
   "description": "Zendesk Support customer-service platform. REST/JSON API (api/v2) over per-tenant `https://{subdomain}.zendesk.com` with Basic auth (email/token). Covers 99 objects — tickets, users, organizations, groups, ticket fields/forms/metrics, macros/triggers/automations, help center (articles/sections/categories/comments), custom objects + records/fields, talk/chat/routing, and audit streams. Cursor + offset pagination, Incremental Export watermark sync, full read + write, sample-union discovery.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "ISC",
   "icon": "fa-solid fa-headset",
   "publisher": {
