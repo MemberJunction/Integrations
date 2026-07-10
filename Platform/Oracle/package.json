@@ -1,7 +1,6 @@
 {
   "name": "@memberjunction/connector-oracle",
   "version": "1.0.0",
-  "private": true,
   "description": "MemberJunction Oracle Database connector (External Data Source ingestion).",
   "type": "module",
   "main": "dist/index.js",

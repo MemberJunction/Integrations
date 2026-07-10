@@ -1,7 +1,6 @@
 {
   "name": "@memberjunction/connector-postgresql",
   "version": "1.0.0",
-  "private": true,
   "description": "MemberJunction PostgreSQL connector (External Data Source ingestion).",
   "type": "module",
   "main": "dist/index.js",

@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "PostgreSQL",
-      "Description": "Ingest data from an external PostgreSQL and its wire-compatible engines (Supabase, Neon, Redshift, CockroachDB, Yugabyte, Aurora-PG) via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'PostgresExternalDriver' driver.",
+      "Description": "Ingest data from an external PostgreSQL and wire-compatible engines (Supabase, Neon, Redshift, CockroachDB, Yugabyte, Aurora-PG) via a shared MJ: External Data Sources connection. Schema is discovered at connection time via the PostgresExternalDriver.",
       "ClassName": "PostgresConnector",
       "ImportPath": "@memberjunction/connector-postgresql",
       "Icon": "fa-solid fa-database",

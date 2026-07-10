@@ -1,7 +1,6 @@
 {
   "name": "@memberjunction/connector-mongodb",
   "version": "1.0.0",
-  "private": true,
   "description": "MemberJunction MongoDB connector (External Data Source ingestion).",
   "type": "module",
   "main": "dist/index.js",
