@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-eventbrite",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "MemberJunction Eventbrite connector.",
   "type": "module",
   "main": "dist/index.js",
