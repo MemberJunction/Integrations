@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-mysql",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MemberJunction MySQL connector (External Data Source ingestion).",
   "type": "module",
   "main": "dist/index.js",

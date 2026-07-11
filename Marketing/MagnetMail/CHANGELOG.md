@@ -1,5 +1,11 @@
 # @memberjunction/connector-magnetmail
 
+## 3.0.2
+
+### Patch Changes
+
+- 533fb7a: ClassName follows the catalog convention (== npm package name) so instance discovery matches; legacy 'MagnetMailConnector' key stays registered and a delta migration fixes existing tenants' Integration rows.
+
 ## 3.0.1
 
 ### Patch Changes

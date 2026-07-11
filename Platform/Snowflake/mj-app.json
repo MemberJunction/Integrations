@@ -4,7 +4,7 @@
   "name": "connector-snowflake",
   "displayName": "Snowflake Connector",
   "description": "Snowflake connector for MemberJunction — ingest data from an external Snowflake via a shared External Data Source. Schema is discovered at connection time; the connector delegates all connectivity to the EDS SnowflakeExternalDriver driver.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "ISC",
   "icon": "fa-solid fa-snowflake",
   "color": "#29B5E8",
