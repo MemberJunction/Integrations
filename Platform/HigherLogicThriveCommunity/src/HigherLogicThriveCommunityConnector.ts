@@ -130,7 +130,9 @@ const DEFAULT_OFFSET_WINDOW = 50; // CommunityMembers StartRecord/EndRecord defa
  * POST), the HelpPage response-envelope normalizer, watermark incremental for EventRegistrants, connection
  * testing, and the §7/§10 sync-efficiency hooks the frozen contract evidences.
  */
-@RegisterClass(BaseIntegrationConnector, 'HigherLogicThriveCommunityConnector')
+// Catalog convention: registration key == npm package name (what instance
+// discovery reports and the catalog resolves installed state by).
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-higher-logic-thrive-community')
 export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConnector {
 
     /** Cached auth for the lifetime of a single sync run (the token is presented on every call). */

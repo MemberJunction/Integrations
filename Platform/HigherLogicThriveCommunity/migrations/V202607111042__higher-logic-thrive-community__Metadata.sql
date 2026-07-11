@@ -27,7 +27,7 @@ SET
 SET
   @NavigationBaseURL_37afcc56 = N'https://api.connectedcommunity.org/v2.0/Help'
 SET
-  @ClassName_37afcc56 = N'HigherLogicThriveCommunityConnector'
+  @ClassName_37afcc56 = N'@memberjunction/connector-higher-logic-thrive-community'
 SET
   @ImportPath_37afcc56 = N'@memberjunction/connector-higher-logic-thrive-community'
 SET

@@ -53,7 +53,7 @@ BEGIN
   p_Name_37afcc56 := 'higherlogic-thrive';
   p_Description_37afcc56 := 'Higher Logic Thrive Community is a member engagement and community management platform that enables organizations to connect with members through discussions, events, resource libraries, and external activity tracking via the Community API v2.0.';
   p_NavigationBaseURL_37afcc56 := 'https://api.connectedcommunity.org/v2.0/Help';
-  p_ClassName_37afcc56 := 'HigherLogicThriveCommunityConnector';
+  p_ClassName_37afcc56 := '@memberjunction/connector-higher-logic-thrive-community';
   p_ImportPath_37afcc56 := '@memberjunction/connector-higher-logic-thrive-community';
   p_BatchMaxRequestCount_37afcc56 := -1;
   p_BatchRequestWaitTime_37afcc56 := -1;

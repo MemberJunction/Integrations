@@ -1,6 +1,7 @@
 {
   "name": "@memberjunction/connector-higher-logic-thrive-community",
   "version": "0.1.0",
+  "private": false,
   "description": "MemberJunction HigherLogicThriveCommunity connector.",
   "type": "module",
   "main": "dist/index.js",

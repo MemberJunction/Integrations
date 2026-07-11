@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "higherlogic-thrive",
-      "ClassName": "HigherLogicThriveCommunityConnector",
+      "ClassName": "@memberjunction/connector-higher-logic-thrive-community",
       "NavigationBaseURL": "https://api.connectedcommunity.org/v2.0/Help",
       "BatchMaxRequestCount": -1,
       "BatchRequestWaitTime": -1,
