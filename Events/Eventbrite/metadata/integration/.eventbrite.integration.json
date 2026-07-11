@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "eventbrite",
-      "ClassName": "EventbriteConnector",
+      "ClassName": "@memberjunction/connector-eventbrite",
       "NavigationBaseURL": "https://www.eventbriteapi.com/v3/",
       "BatchMaxRequestCount": 2000,
       "BatchRequestWaitTime": 3600,

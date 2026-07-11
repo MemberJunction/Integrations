@@ -108,6 +108,12 @@ const CHANGED_SINCE_PARAM = 'changed_since';
  * `changed_since` incremental pull, connection testing, the write path (vendor-named path vars), and the
  * §7/§10 sync-efficiency hooks the frozen contract evidences.
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-eventbrite')
 @RegisterClass(BaseIntegrationConnector, 'EventbriteConnector')
 export class EventbriteConnector extends BaseRESTIntegrationConnector {
 

@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "HubSpot",
-      "ClassName": "HubSpotConnector",
+      "ClassName": "@memberjunction/connector-hubspot",
       "BatchMaxRequestCount": 100,
       "BatchRequestWaitTime": 10,
       "Configuration": {

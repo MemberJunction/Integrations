@@ -148,6 +148,12 @@ const WATERMARK_TOKEN = '{watermark}';
  *     by the engine via BatchMaxRequestCount metadata, this connector itself is
  *     single-threaded per `MakeHTTPRequest` call)
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-mailchimp')
 @RegisterClass(BaseIntegrationConnector, 'MailchimpConnector')
 export class MailchimpConnector extends BaseRESTIntegrationConnector {
 

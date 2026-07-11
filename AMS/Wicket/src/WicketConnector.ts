@@ -229,6 +229,12 @@ function generateWicketJWT(credentials: WicketCredentials): string {
  *
  * @see https://wicketapi.docs.apiary.io/
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-wicket')
 @RegisterClass(BaseIntegrationConnector, 'WicketConnector')
 export class WicketConnector extends BaseRESTIntegrationConnector {
 
