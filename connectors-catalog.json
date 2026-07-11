@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 34,
+  "count": 35,
   "connectors": [
     {
       "name": "Fonteva",
@@ -484,6 +484,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/PropFuel",
       "installTag": "Marketing-PropFuel@1.2.0"
+    },
+    {
+      "name": "higherlogic-thrive",
+      "displayName": "Higher Logic Thrive Community Connector",
+      "description": "Higher Logic Thrive Community is a member engagement and community management platform that enables organizations to connect with members through discussions, events, resource libraries, and external activity tracking via the Community API v2.0.",
+      "category": "Platform",
+      "tags": [
+        "higher-logic-thrive-community",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-people-group",
+      "navigationBaseURL": "https://api.connectedcommunity.org/v2.0/Help",
+      "objectCount": 35,
+      "className": "HigherLogicThriveCommunityConnector",
+      "npmPackage": "@memberjunction/connector-higher-logic-thrive-community",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Platform/HigherLogicThriveCommunity",
+      "installTag": "Platform-HigherLogicThriveCommunity@0.1.0"
     },
     {
       "name": "higherlogic-vanilla",
