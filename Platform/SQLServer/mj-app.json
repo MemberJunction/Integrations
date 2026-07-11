@@ -4,7 +4,7 @@
   "name": "connector-sqlserver",
   "displayName": "SQL Server Connector",
   "description": "SQL Server connector for MemberJunction — ingest data from an external Microsoft SQL Server (incl. Azure SQL) via a shared External Data Source. Schema is discovered at connection time; the connector delegates all connectivity to the EDS SQLServerExternalDriver driver.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "ISC",
   "icon": "fa-solid fa-database",
   "color": "#CC2927",
