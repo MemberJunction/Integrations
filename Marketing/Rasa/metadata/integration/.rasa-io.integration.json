@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Rasa.io",
       "Description": "Rasa.io newsletter platform integration for syncing persons (subscribers) and posts (content) via the Rasa.io REST API",
-      "ClassName": "RasaConnector",
+      "ClassName": "@memberjunction/connector-rasa-io",
       "ImportPath": "@memberjunction/connector-rasa-io",
       "NavigationBaseURL": "https://rasa.io",
       "BatchMaxRequestCount": 50,

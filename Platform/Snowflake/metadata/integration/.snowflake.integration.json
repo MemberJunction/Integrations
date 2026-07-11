@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Snowflake",
       "Description": "Ingest data from an external Snowflake via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'SnowflakeExternalDriver' driver.",
-      "ClassName": "SnowflakeConnector",
+      "ClassName": "@memberjunction/connector-snowflake",
       "ImportPath": "@memberjunction/connector-snowflake",
       "Icon": "fa-solid fa-snowflake",
       "Configuration": {

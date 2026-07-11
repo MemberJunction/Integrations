@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Oracle Database",
       "Description": "Ingest data from an external Oracle Database via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'OracleExternalDriver' driver.",
-      "ClassName": "OracleConnector",
+      "ClassName": "@memberjunction/connector-oracle",
       "ImportPath": "@memberjunction/connector-oracle",
       "Icon": "fa-solid fa-database",
       "Configuration": {

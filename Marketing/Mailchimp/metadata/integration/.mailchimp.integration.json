@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Mailchimp",
       "Description": "Mailchimp Marketing API v3.0 integration for syncing audiences, campaigns, automations, templates, reports, and e-commerce data. Uses Basic authentication with an API key whose suffix identifies the data center.",
-      "ClassName": "MailchimpConnector",
+      "ClassName": "@memberjunction/connector-mailchimp",
       "ImportPath": "@memberjunction/connector-mailchimp",
       "NavigationBaseURL": "https://admin.mailchimp.com",
       "BatchMaxRequestCount": 500,

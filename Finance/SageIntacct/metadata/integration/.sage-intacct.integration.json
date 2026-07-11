@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Sage Intacct",
       "Description": "Sage Intacct cloud accounting and ERP integration via the XML Web Services API (POST-only XML gateway). Covers all business objects including AP, AR, GL, Projects, Inventory, Contracts, Order Entry, Purchasing, and more.",
-      "ClassName": "SageIntacctConnector",
+      "ClassName": "@memberjunction/connector-sage-intacct",
       "ImportPath": "@memberjunction/connector-sage-intacct",
       "NavigationBaseURL": "https://www.intacct.com",
       "BatchMaxRequestCount": 30,

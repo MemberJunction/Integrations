@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "zendesk",
-      "ClassName": "ZendeskConnector",
+      "ClassName": "@memberjunction/connector-zendesk",
       "NavigationBaseURL": "https://{subdomain}.zendesk.com/api/v2/",
       "BatchMaxRequestCount": 200,
       "BatchRequestWaitTime": 60,

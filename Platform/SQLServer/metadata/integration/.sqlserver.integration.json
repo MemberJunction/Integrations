@@ -3,7 +3,7 @@
     "fields": {
       "Name": "SQL Server",
       "Description": "Ingest data from an external Microsoft SQL Server (incl. Azure SQL) via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'SQLServerExternalDriver' driver.",
-      "ClassName": "SQLServerConnector",
+      "ClassName": "@memberjunction/connector-sqlserver",
       "ImportPath": "@memberjunction/connector-sqlserver",
       "Icon": "fa-solid fa-database",
       "Configuration": {

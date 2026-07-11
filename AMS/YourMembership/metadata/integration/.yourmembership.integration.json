@@ -3,7 +3,7 @@
     "fields": {
       "Name": "YourMembership",
       "Description": "YourMembership AMS integration for syncing members, membership types, events, and registrations",
-      "ClassName": "YourMembershipConnector",
+      "ClassName": "@memberjunction/connector-yourmembership",
       "ImportPath": "@memberjunction/connector-yourmembership",
       "NavigationBaseURL": null,
       "BatchMaxRequestCount": 100,

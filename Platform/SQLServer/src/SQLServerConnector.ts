@@ -15,6 +15,12 @@ import '@memberjunction/external-data-source-sqlserver';
  *
  * Requires @memberjunction/* >= 5.46.0 (the EDS-consuming connector heart + the SQLServerExternalDriver driver).
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-sqlserver')
 @RegisterClass(BaseIntegrationConnector, 'SQLServerConnector')
 export class SQLServerConnector extends BaseSqlExternalDataSourceConnector {
     public override get IntegrationName(): string {

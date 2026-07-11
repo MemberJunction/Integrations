@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Aptify",
       "Description": "Aptify (Community Brands / Momentive Software) Web Services API connector. Provides full CRUD over the standard association management entities — Persons, Companies, Memberships, Events, Orders, Committees, and supporting reference data — via the Aptif...",
-      "ClassName": "AptifyConnector",
+      "ClassName": "@memberjunction/connector-aptify",
       "ImportPath": "@memberjunction/connector-aptify",
       "NavigationBaseURL": null,
       "BatchMaxRequestCount": 100,

@@ -224,6 +224,12 @@ const REACH360_WATERMARK_FIELDS: Record<string, string> = {
  * filtering on list endpoints. Instead, `/reports/activity` acts as a
  * session-level change stream; callers filter client-side by `completedAt`.
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-reach360')
 @RegisterClass(BaseIntegrationConnector, 'Reach360Connector')
 export class Reach360Connector extends BaseRESTIntegrationConnector {
 

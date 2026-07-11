@@ -15,6 +15,12 @@ import '@memberjunction/external-data-source-mongodb';
  *
  * Requires @memberjunction/* >= 5.46.0 (the EDS-consuming connector heart + the MongoExternalDriver driver).
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-mongodb')
 @RegisterClass(BaseIntegrationConnector, 'MongoConnector')
 export class MongoConnector extends BaseDocumentDataSourceConnector {
     public override get IntegrationName(): string {

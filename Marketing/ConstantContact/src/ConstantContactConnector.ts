@@ -105,6 +105,12 @@ const TOKEN_REFRESH_BUFFER_MS = 60_000;
  * Rate limits: 10,000 calls/day and 4 calls/sec per account.
  * Reference: https://developer.constantcontact.com/api_reference/
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-constant-contact')
 @RegisterClass(BaseIntegrationConnector, 'ConstantContactConnector')
 export class ConstantContactConnector extends BaseRESTIntegrationConnector {
 

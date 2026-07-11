@@ -3,7 +3,7 @@
     "fields": {
       "Name": "Reach360",
       "Description": "Reach 360 is Articulate's lightweight cloud LMS. This integration syncs users, groups, courses, learning paths, reports (sessions/activity), and supports invitations and completion imports via a Bearer token REST API (https://api.reach360.com).",
-      "ClassName": "Reach360Connector",
+      "ClassName": "@memberjunction/connector-reach360",
       "ImportPath": "@memberjunction/connector-reach360",
       "NavigationBaseURL": "https://reach.articulate.com",
       "BatchMaxRequestCount": 60,

@@ -309,6 +309,12 @@ const QUICKBOOKS_FOREIGN_KEYS: Record<string, string> = {
  *   - Query supports STARTPOSITION and MAXRESULTS
  *   - COUNT query to determine total records
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-quickbooks')
 @RegisterClass(BaseIntegrationConnector, 'QuickBooksConnector')
 export class QuickBooksConnector extends BaseIntegrationConnector {
 

@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "higherlogic-vanilla",
-      "ClassName": "HigherLogicVanillaConnector",
+      "ClassName": "@memberjunction/connector-higher-logic-vanilla",
       "NavigationBaseURL": "https://success.vanillaforums.com/kb/articles/1842-api-v2-endpoints",
       "BatchMaxRequestCount": 300,
       "BatchRequestWaitTime": 60,
