@@ -3,7 +3,7 @@
     "fields": {
       "Name": "MongoDB",
       "Description": "Ingest data from an external MongoDB via a shared MJ: External Data Sources connection. Schema is discovered at connection time; the connector delegates connectivity to the EDS 'MongoExternalDriver' driver.",
-      "ClassName": "MongoConnector",
+      "ClassName": "@memberjunction/connector-mongodb",
       "ImportPath": "@memberjunction/connector-mongodb",
       "Icon": "fa-solid fa-leaf",
       "Configuration": {

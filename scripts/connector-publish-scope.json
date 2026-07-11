@@ -1,5 +1,5 @@
 {
-  "_comment": "The 20 connectors published in 1.0.0. The other 14 live on `next` but are NOT published (no changeset → changeset publish skips them). Update this list as connectors graduate.",
+  "_comment": "The 20 connectors published in 1.0.0. The other 14 live on `next` but are NOT published (no changeset \u2192 changeset publish skips them). Update this list as connectors graduate.",
   "publish": [
     "AMS/GrowthZone",
     "Events/PheedLoop",
@@ -22,7 +22,8 @@
     "AMS/Novi",
     "CRM/Salesforce",
     "Events/Eventbrite",
-    "AMS/WildApricot"
+    "AMS/WildApricot",
+    "Platform/HigherLogicThriveCommunity"
   ],
   "hold": [
     "AMS/Aptify",

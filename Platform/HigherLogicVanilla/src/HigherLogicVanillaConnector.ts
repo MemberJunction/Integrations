@@ -96,6 +96,12 @@ interface VanillaAuthContext extends RESTAuthContext {
  * ID extraction, named/composite path-var substitution, and the §7/§10 sync-efficiency hooks the frozen
  * contract evidences.
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-higher-logic-vanilla')
 @RegisterClass(BaseIntegrationConnector, 'HigherLogicVanillaConnector')
 export class HigherLogicVanillaConnector extends BaseRESTIntegrationConnector {
 

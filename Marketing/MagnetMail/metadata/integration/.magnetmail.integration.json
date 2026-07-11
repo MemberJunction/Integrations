@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "magnetmail",
-      "ClassName": "MagnetMailConnector",
+      "ClassName": "@memberjunction/connector-magnetmail",
       "Description": "Higher Logic Marketing Enterprise (formerly Real Magnet/MagnetMail) — legacy SOAP/XML email-marketing platform (mmapi.asmx, 55 ops): recipients, groups, messages, tracking, unsubscribes, bulk-CSV uploads. Two-step session-token auth. No delete op exists.",
       "NavigationBaseURL": "https://hlma-apie1.magnetmail.net/mmapi.asmx",
       "BatchMaxRequestCount": null,

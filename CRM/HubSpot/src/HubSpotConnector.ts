@@ -1035,6 +1035,13 @@ const HUBSPOT_OBJECTS: IntegrationObjectInfo[] = [
  * Supports full CRUD: Get, Create, Update, Delete, Search, and List operations
  * on all HubSpot CRM object types.
  */
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched and the catalog card
+// never flipped to installed. The legacy alias stays registered so existing
+// tenant Integration rows (ClassName='HubSpotConnector') keep resolving until
+// their delta migration runs.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-hubspot')
 @RegisterClass(BaseIntegrationConnector, 'HubSpotConnector')
 export class HubSpotConnector extends BaseRESTIntegrationConnector {
 

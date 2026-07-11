@@ -216,6 +216,12 @@ const ANALYTICS_POST_OBJECTS = new Set([
     'analytics-topics',
 ]);
 
+// Primary key follows the catalog convention (className == npm package name;
+// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
+// package name, so the legacy bare key never matched in the catalog. The
+// legacy alias stays registered so pre-migration tenant Integration rows
+// keep resolving.
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-rasa-io')
 @RegisterClass(BaseIntegrationConnector, 'RasaConnector')
 export class RasaConnector extends BaseRESTIntegrationConnector {
 
