@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 35,
+  "count": 36,
   "connectors": [
     {
       "name": "Fonteva",
@@ -148,6 +148,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/Novi",
       "installTag": "AMS-Novi@1.2.0"
+    },
+    {
+      "name": "re:Members AMS",
+      "displayName": "re:Members AMS Connector",
+      "description": "re:Members AMS (formerly Impexium) — Association Management Software REST API covering Individuals, Organizations, Events, Memberships, Committees, Awards, Exams, Certifications, and related member-lifecycle objects.",
+      "category": "AMS",
+      "tags": [
+        "impexium",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-people-group",
+      "navigationBaseURL": "https://{tenant}.mpxapi.com",
+      "objectCount": 46,
+      "className": "ImpexiumConnector",
+      "npmPackage": "@memberjunction/connector-impexium",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "AMS/Impexium",
+      "installTag": "AMS-Impexium@0.1.0"
     },
     {
       "name": "Rhythm Software",
