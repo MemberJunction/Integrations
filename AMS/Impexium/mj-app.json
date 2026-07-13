@@ -1,0 +1,45 @@
+{
+  "$schema": "https://memberjunction.org/schemas/mj-app.schema.json",
+  "manifestVersion": 1,
+  "name": "connector-impexium",
+  "displayName": "re:Members AMS Connector",
+  "description": "re:Members AMS connector for MemberJunction — full curated object catalog.",
+  "version": "0.1.0",
+  "license": "ISC",
+  "publisher": {
+    "name": "MemberJunction",
+    "email": "dev@memberjunction.com",
+    "url": "https://memberjunction.com"
+  },
+  "repository": "https://github.com/MemberJunction/Integrations",
+  "mjVersionRange": ">=5.43.0 <6.0.0",
+  "schema": {
+    "name": "mj_connector_impexium",
+    "createIfNotExists": true
+  },
+  "migrations": {
+    "directory": "migrations",
+    "engine": "skyway"
+  },
+  "metadata": {
+    "directory": "metadata"
+  },
+  "packages": {
+    "server": [
+      {
+        "name": "@memberjunction/connector-impexium",
+        "role": "bootstrap",
+        "startupExport": "registerConnector"
+      }
+    ]
+  },
+  "categories": [
+    "ams"
+  ],
+  "tags": [
+    "impexium",
+    "ams",
+    "connector",
+    "integration"
+  ]
+}
