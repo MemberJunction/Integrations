@@ -46,6 +46,14 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/require-metadata-migration.mjs
 
+      # Every metadata record fields.* key must map to a REAL entity column (proven by the
+      # spCreate* @Params in generated migrations), a documented framework-ideal field, or a
+      # grandfathered debt entry. Catches inert/typo'd fields that BaseEntity.SetLocal silently
+      # drops on push — so a green check can't confirm a declaration the code never deploys
+      # (concern A11: e.g. Integration.APIBaseURL is not a column; NavigationBaseURL is).
+      - name: Metadata fields on allowlist
+        run: node scripts/lint-metadata-fields.mjs --audit
+
       # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
       - name: Validate migrations
         run: node scripts/validate-migrations.mjs

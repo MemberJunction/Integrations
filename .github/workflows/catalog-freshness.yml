@@ -1,0 +1,43 @@
+name: catalog-freshness
+
+# Branch-vs-tag freshness gate (concern A9).
+#
+# The recurrence this catches: a release is cut + tagged on `main`, but its version-bump
+# is never merged back to `next`, so `next`'s package.json / connectors-catalog.json LAG
+# the newest published tag. That drift does NOT arrive through a `next` PR (it happens in
+# the release/tag flow), so a per-PR gate can't see it — the correct detector is a
+# BRANCH-STATE check that runs on a schedule and compares the whole tree to the tags.
+# The pre-existing `build-connectors-catalog.mjs --check` only compares WITHIN a branch
+# and is blind to this class.
+#
+# This job FAILS while any connector on `next` lags its newest `<Category>-<Connector>@x.y.z`
+# tag. It is expected to be RED until the A9 merge-back sweep reconciles the known laggards —
+# a red run here is the tracked signal for that debt, not a flake. Run it manually anytime
+# via "Run workflow".
+
+on:
+  schedule:
+    - cron: '17 6 * * *' # daily, 06:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags so <Category>-<Connector>@x.y.z tags are visible
+
+      - name: Ensure tags are present
+        run: git fetch --tags --force
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Connector catalog freshness (next vs newest tag)
+        run: node scripts/check-catalog-freshness.mjs
