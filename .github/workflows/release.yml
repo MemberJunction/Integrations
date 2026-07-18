@@ -48,6 +48,12 @@ jobs:
       - name: Metadata changes ship a migration
         run: node scripts/require-metadata-migration.mjs
 
+      # Every metadata record fields.* key must map to a real entity column, a documented
+      # framework-ideal field, or a grandfathered debt entry — no inert/typo'd fields that
+      # SetLocal silently drops on push (concern A11).
+      - name: Metadata fields on allowlist
+        run: node scripts/lint-metadata-fields.mjs
+
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 

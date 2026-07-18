@@ -8,11 +8,15 @@ jobs:
   next-only:
     runs-on: ubuntu-latest
     steps:
-      - name: Only next may merge into main
+      - name: Only next (or the changesets release bot) may merge into main
         run: |
           echo "PR head branch: ${{ github.head_ref }}"
-          if [ "${{ github.head_ref }}" != "next" ]; then
-            echo "::error::main accepts merges ONLY from 'next' (this PR head is '${{ github.head_ref }}'). Promote your change through next, then open a next -> main PR."
+          # 'next' is the sole human promotion path into main. The changesets release
+          # bot opens its "Version Packages" PR from 'changeset-release/main' (branches
+          # off main; only version bumps + changelogs from already-merged changesets) —
+          # exempt it, or the release/publish PR can never go green (it is not 'next').
+          if [ "${{ github.head_ref }}" != "next" ] && [ "${{ github.head_ref }}" != "changeset-release/main" ]; then
+            echo "::error::main accepts merges ONLY from 'next' (or the changesets 'changeset-release/main' release PR). This PR head is '${{ github.head_ref }}'. Promote your change through next, then open a next -> main PR."
             exit 1
           fi
-          echo "source is 'next' — allowed"
+          echo "source '${{ github.head_ref }}' — allowed"
