@@ -52,7 +52,9 @@ const INTEGRATION_OBJECT_COLUMNS = new Set([
   'Status', 'Sequence', 'PaginationType', 'DefaultPageSize', 'DefaultQueryParams', 'ResponseDataKey',
   'SupportsPagination', 'SupportsIncrementalSync', 'IncrementalWatermarkField', 'SyncStrategy',
   'StableOrderingKey', 'ContentHashApplicable', 'IsCustom', 'MetadataSource',
-  'SupportsRead', 'SupportsWrite', 'SupportsCreate', 'SupportsUpdate', 'SupportsDelete',
+  // NB: SupportsRead is NOT a column (no spCreate/spUpdateIntegrationObject migration ever
+  // passes it as a @Param — unlike the four below); it is framework-ideal only. See FRAMEWORK_IDEAL.
+  'SupportsWrite', 'SupportsCreate', 'SupportsUpdate', 'SupportsDelete',
   'CreateAPIPath', 'CreateMethod', 'CreateBodyShape', 'CreateBodyKey', 'CreateIDLocation',
   'UpdateAPIPath', 'UpdateMethod', 'UpdateBodyShape', 'UpdateBodyKey', 'UpdateIDLocation',
   'DeleteAPIPath', 'DeleteMethod', 'DeleteIDLocation', 'WriteAPIPath', 'WriteMethod',
