@@ -480,10 +480,10 @@
       "objectCount": 28,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.1.0"
+      "installTag": "LMS-Totara@0.2.0"
     },
     {
       "name": "magnetmail",
