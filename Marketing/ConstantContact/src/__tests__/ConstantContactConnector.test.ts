@@ -1,24 +1,36 @@
 import { describe, it, expect } from 'vitest';
-import type { CreateRecordContext, RESTAuthContext, RESTResponse } from '@memberjunction/integration-engine';
+import type { CreateRecordContext, RESTResponse } from '@memberjunction/integration-engine';
+import type { MJIntegrationObjectEntity } from '@memberjunction/core-entities';
 import { ConstantContactConnector } from '../ConstantContactConnector.js';
 
 /**
- * Test connector that short-circuits auth (pre-seeded cache) and stubs the HTTP
- * transport boundary so CreateRecord runs for real down to the BuildCreatedResult
- * decision — no credentials or live API.
+ * Test connector that short-circuits auth (pre-seeded cache) and stubs both the HTTP
+ * transport boundary AND the cached-object metadata lookup so CreateRecord runs for
+ * real down to the BuildCreatedResult decision — no credentials, no live API, no
+ * IntegrationEngineBase cache required.
  */
 class TestConstantContactConnector extends ConstantContactConnector {
     public NextResponse: RESTResponse = { Status: 201, Body: {}, Headers: {} };
 
     constructor() {
         super();
-        // Pre-seed the private auth cache with a far-future expiry so GetAuth() returns immediately.
-        (this as unknown as { authState: RESTAuthContext }).authState = {
+        // Pre-seed the private auth cache (v2 field `cachedAuth`) with a far-future expiry
+        // so Authenticate() returns immediately without real credentials.
+        (this as unknown as { cachedAuth: { Token: string; ExpiresAt: Date } }).cachedAuth = {
             Token: 'test-token',
             ExpiresAt: new Date(Date.now() + 3_600_000),
-            BaseUrl: 'https://api.cc.test/v3',
-            Config: {},
-        } as RESTAuthContext;
+        };
+    }
+
+    // Stub the engine-cache metadata lookup: 'Contacts' creates at POST /contacts with the
+    // record ID in the response body (the generic base-create path the test exercises).
+    protected override GetCachedObject(): MJIntegrationObjectEntity {
+        return {
+            CreateAPIPath: '/contacts',
+            CreateMethod: 'POST',
+            CreateIDLocation: 'body',
+            Configuration: null,
+        } as unknown as MJIntegrationObjectEntity;
     }
 
     protected override async MakeHTTPRequest(): Promise<RESTResponse> {
@@ -66,7 +78,9 @@ describe('ConstantContactConnector (smoke)', () => {
         });
 
         it('IntegrationName getter returns the canonical name', () => {
-            expect(connector.IntegrationName).toBe('Constant Contact');
+            // v2 identity: the getter returns the metadata slug so GetIntegrationByName resolves
+            // it against Integration.Name in .constant-contact.integration.json ("constant-contact").
+            expect(connector.IntegrationName).toBe('constant-contact');
         });
     });
 
