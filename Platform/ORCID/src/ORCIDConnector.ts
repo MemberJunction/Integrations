@@ -244,9 +244,9 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         const fields = this.GetCachedFields(obj.ID);
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as ORCIDAuthContext;
 
-        const orcidIds = await this.ResolveOrcidIdUniverse(auth, ctx);
+        const universe = await this.ResolveOrcidIdUniverse(auth);
         const warnings: FetchWarning[] = [];
-        if (orcidIds.length === 0) {
+        if (universe.length === 0) {
             warnings.push({
                 Code: 'ZERO_SCOPE',
                 Message:
@@ -254,6 +254,22 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
                     `Set "searchQuery" (Lucene) and/or "orcidIds" to scope the sync.`,
             });
             return { Records: [], HasMore: false, Warnings: warnings };
+        }
+
+        // Keyset window over the sorted iD universe. BatchSize is interpreted as iDs-per-batch:
+        // one iD expands to an unbounded number of section items, so bounding the iD count is what
+        // actually bounds memory and request volume. Previously the universe was sliced to BatchSize
+        // and the remainder was DISCARDED while still reporting HasMore:false — every iD past the
+        // first BatchSize was silently unsyncable.
+        const remaining = ctx.AfterKeyValue
+            ? universe.filter(id => id > ctx.AfterKeyValue!)
+            : universe;
+        const pageSize = ctx.BatchSize > 0 ? ctx.BatchSize : remaining.length;
+        const orcidIds = remaining.slice(0, pageSize);
+        const hasMore = remaining.length > orcidIds.length;
+
+        if (orcidIds.length === 0) {
+            return { Records: [], HasMore: false, Warnings: warnings.length > 0 ? warnings : undefined };
         }
 
         const section = ctx.ObjectName === ROOT_OBJECT_NAME ? null : ctx.ObjectName;
@@ -274,8 +290,14 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             }
         }
 
-        const result: FetchBatchResult = { Records: out, HasMore: false };
-        if (maxSeen != null && maxSeen !== watermark) {
+        const result: FetchBatchResult = { Records: out, HasMore: hasMore };
+        if (hasMore) result.NextAfterKeyValue = orcidIds[orcidIds.length - 1];
+
+        // Advance the watermark ONLY on the final page. Advancing mid-scan is unsafe: if the run
+        // dies after page 1, page 2's records older than the new watermark would be skipped forever.
+        // Deriving it from the last page alone can UNDER-advance, which is safe — it costs a re-fetch
+        // that content-hash idempotency in ToExternalRecord dedups.
+        if (!hasMore && maxSeen != null && maxSeen !== watermark) {
             result.NewWatermarkValue = String(maxSeen);
         }
         if (warnings.length > 0) result.Warnings = warnings;
@@ -352,9 +374,14 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * Resolves the in-scope ORCID iD universe from CompanyIntegration.Configuration:
      * the explicit `orcidIds` list (always included) plus the result of running the
      * Lucene `searchQuery` against /search (or /expanded-search), bounded by
-     * MaxSearchResults to avoid draining the ~10k cap. Returns a de-duplicated set.
+     * MaxSearchResults to avoid draining the ~10k cap. Returns a de-duplicated set,
+     * sorted lexicographically.
+     *
+     * Returns the COMPLETE universe — batching is the caller's job. ORCID iDs are a
+     * fixed 16-digit dashed format, so a lexicographic sort is a total, stable order
+     * and therefore a valid keyset pagination key for FetchChanges.
      */
-    private async ResolveOrcidIdUniverse(auth: ORCIDAuthContext, ctx: FetchContext): Promise<string[]> {
+    private async ResolveOrcidIdUniverse(auth: ORCIDAuthContext): Promise<string[]> {
         const cfg = auth.Config;
         const ids = new Set<string>();
 
@@ -368,11 +395,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             for (const id of fromSearch) ids.add(id);
         }
 
-        // Honor the engine's per-batch ceiling so a huge universe streams across calls (defensive —
-        // typical scoped universes are well under BatchSize).
-        const all = Array.from(ids);
-        const limit = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : all.length;
-        return all.slice(0, limit);
+        return Array.from(ids).sort();
     }
 
     /**
