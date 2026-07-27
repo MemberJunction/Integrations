@@ -266,7 +266,10 @@ describe('ORCIDConnector — FetchChanges (record)', () => {
 
     it('flattens person scalars and the PK onto Fields while preserving full record', async () => {
         const result = await c.FetchChanges(ctx('record'));
-        const rec = result.Records[0];
+        // Select by iD rather than by index: the iD universe is now sorted lexicographically so it
+        // can serve as a keyset pagination key, which means position is not a stable handle.
+        const rec = result.Records.find(r => r.Fields['orcid-id'] === '0000-0002-1825-0097')!;
+        expect(rec).toBeDefined();
         expect(rec.Fields['given-names']).toBe('Test');
         expect(rec.Fields['family-name']).toBe('Researcher');
         expect(rec.Fields['orcid-id']).toBe('0000-0002-1825-0097');
@@ -289,6 +292,48 @@ describe('ORCIDConnector — FetchChanges (record)', () => {
         const result = await c.FetchChanges(ctx('record'));
         expect(c.Calls.find(x => x.url.includes('/search'))).toBeUndefined();
         expect(result.Records.length).toBe(1);
+    });
+
+    // ── iD-universe pagination ──────────────────────────────────────────
+    // Regression cover for silent data loss: the universe used to be sliced to BatchSize and the
+    // remainder DISCARDED, while still reporting HasMore:false. Any iD past the first BatchSize was
+    // permanently unsyncable — a 500-iD universe at BatchSize 100 lost 400 iDs on every run.
+
+    const paged = (after?: string): FetchContext => ({
+        CompanyIntegration: { IntegrationID: 'int-1' } as MJCompanyIntegrationEntity,
+        ObjectName: 'record',
+        WatermarkValue: null,
+        BatchSize: 1,
+        ContextUser: {} as never,
+        AfterKeyValue: after,
+    });
+
+    it('bounds the batch to BatchSize iDs and signals HasMore with a resume key', async () => {
+        const page1 = await c.FetchChanges(paged());
+        expect(page1.Records).toHaveLength(1);
+        expect(page1.HasMore).toBe(true);
+        // Universe is sorted, so the lexicographically-first iD leads.
+        expect(page1.Records[0].Fields['orcid-id']).toBe('0000-0001-2345-6789');
+        expect(page1.NextAfterKeyValue).toBe('0000-0001-2345-6789');
+    });
+
+    it('resumes strictly after AfterKeyValue and ends the scan on the final page', async () => {
+        const page2 = await c.FetchChanges(paged('0000-0001-2345-6789'));
+        expect(page2.Records).toHaveLength(1);
+        expect(page2.Records[0].Fields['orcid-id']).toBe('0000-0002-1825-0097');
+        expect(page2.HasMore).toBe(false);
+    });
+
+    it('loses no iD across the full paged scan (the bug this replaces)', async () => {
+        const seen: string[] = [];
+        let after: string | undefined;
+        for (let guard = 0; guard < 10; guard++) {
+            const page = await c.FetchChanges(paged(after));
+            for (const r of page.Records) seen.push(String(r.Fields['orcid-id']));
+            if (!page.HasMore) break;
+            after = page.NextAfterKeyValue;
+        }
+        expect(seen.sort()).toEqual(['0000-0001-2345-6789', '0000-0002-1825-0097']);
     });
 
     it('returns a ZERO_SCOPE warning when Configuration scopes nothing', async () => {
