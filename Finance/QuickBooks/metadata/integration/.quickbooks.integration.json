@@ -41534,7 +41534,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.BalanceSheet",
             "DisplayName": "Report: BalanceSheet",
-            "Description": "Balance Sheet report showing assets, liabilities, and equity.",
+            "Description": "Balance Sheet report showing assets, liabilities, and equity. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/BalanceSheet",
             "ResponseDataKey": "Rows",
@@ -41544,7 +41544,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 72,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41586,7 +41586,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.ProfitAndLoss",
             "DisplayName": "Report: ProfitAndLoss",
-            "Description": "Profit and Loss (income statement) report.",
+            "Description": "Profit and Loss (income statement) report. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/ProfitAndLoss",
             "ResponseDataKey": "Rows",
@@ -41596,7 +41596,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 73,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41638,7 +41638,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.ProfitAndLossDetail",
             "DisplayName": "Report: ProfitAndLossDetail",
-            "Description": "Detailed Profit and Loss report with transaction drill-down.",
+            "Description": "Detailed Profit and Loss report with transaction drill-down. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/ProfitAndLossDetail",
             "ResponseDataKey": "Rows",
@@ -41648,7 +41648,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 74,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41690,7 +41690,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.TrialBalance",
             "DisplayName": "Report: TrialBalance",
-            "Description": "Trial Balance listing all account debits and credits.",
+            "Description": "Trial Balance listing all account debits and credits. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/TrialBalance",
             "ResponseDataKey": "Rows",
@@ -41700,7 +41700,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 75,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41742,7 +41742,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.GeneralLedger",
             "DisplayName": "Report: GeneralLedger",
-            "Description": "General Ledger report with full transaction history per account.",
+            "Description": "General Ledger report with full transaction history per account. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/GeneralLedger",
             "ResponseDataKey": "Rows",
@@ -41752,7 +41752,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 76,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41794,7 +41794,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.CashFlow",
             "DisplayName": "Report: CashFlow",
-            "Description": "Cash Flow statement report.",
+            "Description": "Cash Flow statement report. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/CashFlow",
             "ResponseDataKey": "Rows",
@@ -41804,7 +41804,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 77,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41846,7 +41846,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.CustomerBalance",
             "DisplayName": "Report: CustomerBalance",
-            "Description": "Customer open balance summary.",
+            "Description": "Customer open balance summary. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/CustomerBalance",
             "ResponseDataKey": "Rows",
@@ -41856,7 +41856,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 78,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41898,7 +41898,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.CustomerBalanceDetail",
             "DisplayName": "Report: CustomerBalanceDetail",
-            "Description": "Customer open balance with per-transaction detail.",
+            "Description": "Customer open balance with per-transaction detail. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/CustomerBalanceDetail",
             "ResponseDataKey": "Rows",
@@ -41908,7 +41908,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 79,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -41950,7 +41950,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.CustomerSales",
             "DisplayName": "Report: CustomerSales",
-            "Description": "Sales by Customer summary report.",
+            "Description": "Sales by Customer summary report. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/CustomerSales",
             "ResponseDataKey": "Rows",
@@ -41960,7 +41960,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 80,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42002,7 +42002,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.CustomerSalesDetail",
             "DisplayName": "Report: CustomerSalesDetail",
-            "Description": "Sales by Customer with per-transaction detail.",
+            "Description": "Sales by Customer with per-transaction detail. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/CustomerSalesDetail",
             "ResponseDataKey": "Rows",
@@ -42012,7 +42012,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 81,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42054,7 +42054,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.VendorBalance",
             "DisplayName": "Report: VendorBalance",
-            "Description": "Vendor open balance summary.",
+            "Description": "Vendor open balance summary. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/VendorBalance",
             "ResponseDataKey": "Rows",
@@ -42064,7 +42064,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 82,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42106,7 +42106,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.VendorBalanceDetail",
             "DisplayName": "Report: VendorBalanceDetail",
-            "Description": "Vendor open balance with per-transaction detail.",
+            "Description": "Vendor open balance with per-transaction detail. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/VendorBalanceDetail",
             "ResponseDataKey": "Rows",
@@ -42116,7 +42116,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 83,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42158,7 +42158,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.VendorExpenses",
             "DisplayName": "Report: VendorExpenses",
-            "Description": "Expenses by Vendor summary.",
+            "Description": "Expenses by Vendor summary. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/VendorExpenses",
             "ResponseDataKey": "Rows",
@@ -42168,7 +42168,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 84,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42210,7 +42210,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.AgedReceivables",
             "DisplayName": "Report: AgedReceivables",
-            "Description": "Aged Receivables summary (customer aging).",
+            "Description": "Aged Receivables summary (customer aging). Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/AgedReceivables",
             "ResponseDataKey": "Rows",
@@ -42220,7 +42220,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 85,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42262,7 +42262,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.AgedReceivableDetail",
             "DisplayName": "Report: AgedReceivableDetail",
-            "Description": "Aged Receivables with per-invoice detail.",
+            "Description": "Aged Receivables with per-invoice detail. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/AgedReceivableDetail",
             "ResponseDataKey": "Rows",
@@ -42272,7 +42272,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 86,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42314,7 +42314,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.AgedPayables",
             "DisplayName": "Report: AgedPayables",
-            "Description": "Aged Payables summary (vendor aging).",
+            "Description": "Aged Payables summary (vendor aging). Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/AgedPayables",
             "ResponseDataKey": "Rows",
@@ -42324,7 +42324,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 87,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42366,7 +42366,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.AgedPayableDetail",
             "DisplayName": "Report: AgedPayableDetail",
-            "Description": "Aged Payables with per-bill detail.",
+            "Description": "Aged Payables with per-bill detail. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/AgedPayableDetail",
             "ResponseDataKey": "Rows",
@@ -42376,7 +42376,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 88,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42418,7 +42418,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.InventoryValuationSummary",
             "DisplayName": "Report: InventoryValuationSummary",
-            "Description": "Inventory valuation summary.",
+            "Description": "Inventory valuation summary. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/InventoryValuationSummary",
             "ResponseDataKey": "Rows",
@@ -42428,7 +42428,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 89,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42470,7 +42470,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.ItemSales",
             "DisplayName": "Report: ItemSales",
-            "Description": "Sales by Product/Service summary.",
+            "Description": "Sales by Product/Service summary. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/ItemSales",
             "ResponseDataKey": "Rows",
@@ -42480,7 +42480,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 90,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -42522,7 +42522,7 @@
             "IntegrationID": "@parent:ID",
             "Name": "Report.TaxSummary",
             "DisplayName": "Report: TaxSummary",
-            "Description": "Sales tax liability summary.",
+            "Description": "Sales tax liability summary. Deprecated: not a syncable record set. The QBO Reports API returns one report envelope (Header/Columns/Rows) rather than a collection of identified records, so this catalog row carries a single Rows blob and no primary key — MJ therefore builds no entity for it. QuickBooksConnector has no report code path at all: FetchChanges and ListRecords both issue SELECT * FROM <ObjectName> against the /query endpoint (reports are not queryable entities) and key every record on r['Id'], which a report has no equivalent of; the declared reports APIPath is never read. The connector's own QUICKBOOKS_OBJECTS constant — the source for DiscoverObjects — contains no Report.* entry, so rediscovery will not reactivate this row.",
             "Category": "Reports",
             "APIPath": "v3/company/{realmId}/reports/TaxSummary",
             "ResponseDataKey": "Rows",
@@ -42532,7 +42532,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "Sequence": 91,
-            "Status": "Active"
+            "Status": "Deprecated"
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
