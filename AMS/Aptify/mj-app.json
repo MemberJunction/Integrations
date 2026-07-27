@@ -4,7 +4,7 @@
   "name": "connector-aptify",
   "displayName": "Aptify Connector",
   "description": "Aptify (Community Brands / Momentive Software) Web Services API connector. Provides full CRUD over the standard association management entities — Persons, Companies, Memberships, Events, Orders, Committees, and supporting reference data — via the Aptif...",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "ISC",
   "icon": "fa-solid fa-building-columns",
   "publisher": {

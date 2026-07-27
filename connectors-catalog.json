@@ -165,10 +165,10 @@
       "objectCount": 46,
       "className": "ImpexiumConnector",
       "npmPackage": "@memberjunction/connector-impexium",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "AMS/Impexium",
-      "installTag": "AMS-Impexium@0.1.0"
+      "installTag": "AMS-Impexium@1.0.0"
     },
     {
       "name": "Rhythm Software",
@@ -207,10 +207,10 @@
       "objectCount": 25,
       "className": "@memberjunction/connector-wild-apricot",
       "npmPackage": "@memberjunction/connector-wild-apricot",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/WildApricot",
-      "installTag": "AMS-WildApricot@1.2.0"
+      "installTag": "AMS-WildApricot@1.2.1"
     },
     {
       "name": "blackbaud",
@@ -249,10 +249,10 @@
       "objectCount": 168,
       "className": "@memberjunction/connector-hubspot",
       "npmPackage": "@memberjunction/connector-hubspot",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/HubSpot",
-      "installTag": "CRM-HubSpot@1.1.0"
+      "installTag": "CRM-HubSpot@1.1.1"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
@@ -354,10 +354,10 @@
       "objectCount": 33,
       "className": "@memberjunction/connector-eventbrite",
       "npmPackage": "@memberjunction/connector-eventbrite",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/Eventbrite",
-      "installTag": "Events-Eventbrite@2.0.0"
+      "installTag": "Events-Eventbrite@2.0.1"
     },
     {
       "name": "OpenWater",
@@ -438,10 +438,10 @@
       "objectCount": 63,
       "className": "@memberjunction/connector-stripe",
       "npmPackage": "@memberjunction/connector-stripe",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/Stripe",
-      "installTag": "Finance-Stripe@0.2.1"
+      "installTag": "Finance-Stripe@0.2.2"
     },
     {
       "name": "Path LMS",
@@ -480,10 +480,10 @@
       "objectCount": 28,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.1.0"
+      "installTag": "LMS-Totara@0.2.0"
     },
     {
       "name": "magnetmail",
@@ -501,10 +501,10 @@
       "objectCount": 47,
       "className": "@memberjunction/connector-magnetmail",
       "npmPackage": "@memberjunction/connector-magnetmail",
-      "version": "3.0.0",
+      "version": "3.0.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/MagnetMail",
-      "installTag": "Marketing-MagnetMail@3.0.0"
+      "installTag": "Marketing-MagnetMail@3.0.2"
     },
     {
       "name": "PropFuel",
@@ -543,10 +543,10 @@
       "objectCount": 35,
       "className": "@memberjunction/connector-higher-logic-thrive-community",
       "npmPackage": "@memberjunction/connector-higher-logic-thrive-community",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Platform/HigherLogicThriveCommunity",
-      "installTag": "Platform-HigherLogicThriveCommunity@0.1.0"
+      "installTag": "Platform-HigherLogicThriveCommunity@0.2.0"
     },
     {
       "name": "higherlogic-vanilla",
@@ -564,10 +564,10 @@
       "objectCount": 65,
       "className": "@memberjunction/connector-higher-logic-vanilla",
       "npmPackage": "@memberjunction/connector-higher-logic-vanilla",
-      "version": "0.1.0",
+      "version": "0.2.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Platform/HigherLogicVanilla",
-      "installTag": "Platform-HigherLogicVanilla@0.1.0"
+      "installTag": "Platform-HigherLogicVanilla@0.2.1"
     },
     {
       "name": "Hivebrite",
@@ -607,10 +607,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-mongodb",
       "npmPackage": "@memberjunction/connector-mongodb",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/MongoDB",
-      "installTag": "Platform-MongoDB@1.0.0"
+      "installTag": "Platform-MongoDB@1.0.1"
     },
     {
       "name": "MySQL",
@@ -629,10 +629,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-mysql",
       "npmPackage": "@memberjunction/connector-mysql",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/MySQL",
-      "installTag": "Platform-MySQL@1.0.0"
+      "installTag": "Platform-MySQL@1.0.1"
     },
     {
       "name": "Oracle Database",
@@ -651,10 +651,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-oracle",
       "npmPackage": "@memberjunction/connector-oracle",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/Oracle",
-      "installTag": "Platform-Oracle@1.0.0"
+      "installTag": "Platform-Oracle@1.0.1"
     },
     {
       "name": "ORCID",
@@ -694,10 +694,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-postgresql",
       "npmPackage": "@memberjunction/connector-postgresql",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/PostgreSQL",
-      "installTag": "Platform-PostgreSQL@1.0.0"
+      "installTag": "Platform-PostgreSQL@1.0.1"
     },
     {
       "name": "SharePoint",
@@ -737,10 +737,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-snowflake",
       "npmPackage": "@memberjunction/connector-snowflake",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/Snowflake",
-      "installTag": "Platform-Snowflake@1.0.0"
+      "installTag": "Platform-Snowflake@1.0.1"
     },
     {
       "name": "SQL Server",
@@ -759,10 +759,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-sqlserver",
       "npmPackage": "@memberjunction/connector-sqlserver",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/SQLServer",
-      "installTag": "Platform-SQLServer@1.0.0"
+      "installTag": "Platform-SQLServer@1.0.1"
     },
     {
       "name": "zendesk",
@@ -780,10 +780,10 @@
       "objectCount": 99,
       "className": "@memberjunction/connector-zendesk",
       "npmPackage": "@memberjunction/connector-zendesk",
-      "version": "1.1.0",
+      "version": "1.1.2",
       "mjVersionRange": ">=5.45.0 <6.0.0",
       "repoSubpath": "Platform/Zendesk",
-      "installTag": "Platform-Zendesk@1.1.0"
+      "installTag": "Platform-Zendesk@1.1.2"
     }
   ]
 }
