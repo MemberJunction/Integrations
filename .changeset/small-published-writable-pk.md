@@ -22,11 +22,8 @@ Each key is taken from the vendor's own schema, never invented:
   account is implied by the API key. There is nothing to key on, and the object declared no
   create/update/delete operation either — the flag described a capability with no implementation.
   Reads are unaffected.
-- **Totara `Cohort Members`** → `cohortid`, also flipped writable.
-  `core_cohort_get_cohort_members` returns one row per **cohort** (`{cohortid, userids[]}`), so the
-  cohort is the record identity. CodeGen omits read-only fields from the generated create/update
-  sprocs, so a read-only primary key would reproduce the `@courseid is not a parameter for procedure
-  spCreateCourse_Contents` failure fixed in `V202607271200`.
+- **Totara `Cohort Members`** → `cohortid`. `core_cohort_get_cohort_members` returns one row per
+  **cohort** (`{cohortid, userids[]}`), so the cohort is the record identity.
 - **Totara `Group Members`** → `groupid`. `core_group_get_group_members` returns one row per
   **group** (`{groupid, userids[]}`), same shape; the field was already writable.
 - **Eventbrite `Media Upload`** → `upload_token`. Eventbrite's two-step media workflow issues the

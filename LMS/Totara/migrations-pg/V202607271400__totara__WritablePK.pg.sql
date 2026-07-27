@@ -40,18 +40,6 @@ WHERE "Name" = 'cohortid'
   );
 
 UPDATE "__mj"."IntegrationObjectField"
-SET "IsReadOnly" = FALSE
-WHERE "Name" = 'cohortid'
-  AND "IsReadOnly" = TRUE
-  AND "IntegrationObjectID" IN (
-      SELECT o."ID"
-      FROM "__mj"."IntegrationObject" o
-      INNER JOIN "__mj"."Integration" i ON i."ID" = o."IntegrationID"
-      WHERE i."Name" = 'totara'
-        AND o."Name" = 'Cohort Members'
-  );
-
-UPDATE "__mj"."IntegrationObjectField"
 SET "IsPrimaryKey" = TRUE,
     "IsUniqueKey" = TRUE,
     "IsRequired" = TRUE,
@@ -86,12 +74,13 @@ WHERE "Name" = 'groupid'
 --    `core_group_get_group_members` returns one row per GROUP — {groupid, userids[]} — same shape.
 --    The field is already required and writable and already carries the FK to Groups.id.
 --
--- `cohortid` is additionally flipped WRITABLE. CodeGen omits read-only fields from the generated
--- create/update stored procedures, which is exactly the failure V202607271200 fixed for `courseid`
+-- IsReadOnly is deliberately left ALONE on both fields. V202607271200 flipped `courseid` writable
+-- because CodeGen omits read-only fields from the generated create/update stored procedures
 --     (@courseid is not a parameter for procedure spCreateCourse_Contents)
--- and a read-only primary key would reproduce it here. Safe by construction: Totara is a read-only
--- PULL connector, so `cohortid` is written INTO MJ and never sent back to the vendor. `groupid` is
--- already writable and needs no change.
+-- but that applies to ordinary columns, not to the key: HubSpot's V202607271200 stamped
+-- `hs_object_id` as a primary key with IsReadOnly = 1 and was functionally proven on Postgres, so a
+-- read-only primary key persists correctly. Stamping the key is the whole fix here; changing write
+-- scope on top of it would be an unjustified capability change.
 --
 -- Delta migration (not a re-seed): the catalog rows already exist on installed tenants, so this
 -- UPDATEs them in place. No IDs are minted and no rows are created, so nothing can collide with the

@@ -4493,7 +4493,7 @@
                   "Description": "cohort record id",
                   "Type": "integer",
                   "IsRequired": true,
-                  "IsReadOnly": false,
+                  "IsReadOnly": true,
                   "IsPrimaryKey": true,
                   "IsUniqueKey": true,
                   "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Cohorts&IntegrationID=@parent:IntegrationID",
