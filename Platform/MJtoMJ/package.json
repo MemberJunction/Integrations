@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-mj-to-mj",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "MemberJunction MJToMJ connector.",
   "type": "module",

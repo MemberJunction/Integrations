@@ -274,14 +274,16 @@ describe('NetForumConnector — NormalizeResponse (SOAP/XML row parsing)', () =>
 });
 
 describe('NetForumConnector — FetchChanges (GetQuery door + per-facade watermark)', () => {
-    it('builds a GetQuery with @TOP -1 and full-record pass-through; PK extracted from metadata PK field', async () => {
+    it('builds a GetQuery bounded by BatchSize with full-record pass-through; PK extracted from metadata PK field', async () => {
         const c = makeConnector();
         const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
         const res = await c.FetchChanges(ctx);
 
         const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
         expect(req).toBeDefined();
-        expect(req!.body).toContain('<szObjectName>Individual @TOP -1</szObjectName>');
+        // BatchSize bounds the page. Previously this was a hardcoded `@TOP -1`, which pulled the
+        // entire result set into memory in a single SOAP call regardless of BatchSize.
+        expect(req!.body).toContain('<szObjectName>Individual @TOP 100</szObjectName>');
         expect(req!.body).toContain('<szColumnList>*</szColumnList>');
         // no watermark → no szWhereClause
         expect(req!.body).not.toContain('szWhereClause');
@@ -296,6 +298,35 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         expect(res.HasMore).toBe(false);
         // watermark advanced to the max ind_change_date seen
         expect(res.NewWatermarkValue).toBe('2026-05-21T14:05:00');
+    });
+
+    it('reports HasMore + a keyset resume position when the page comes back full', async () => {
+        const c = makeConnector();
+        // BatchSize 2 with a 2-row fixture ⇒ a FULL page ⇒ more may remain.
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 2, ContextUser: CU };
+        const res = await c.FetchChanges(ctx);
+
+        const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(req!.body).toContain('<szObjectName>Individual @TOP 2</szObjectName>');
+        expect(res.HasMore).toBe(true);
+        expect(res.NextAfterKeyValue).toBeDefined();
+        // The watermark must NOT advance mid-scan: a crash before the final page would otherwise
+        // skip every later row older than the new watermark.
+        expect(res.NewWatermarkValue).toBeUndefined();
+    });
+
+    it('seeks past AfterKeyValue with a keyset predicate on the next page', async () => {
+        const c = makeConnector();
+        const ctx: FetchContext = {
+            CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null,
+            BatchSize: 2, ContextUser: CU,
+            AfterKeyValue: '11111111-1111-1111-1111-111111111111',
+        };
+        await c.FetchChanges(ctx);
+
+        const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(req!.body).toContain('szWhereClause');
+        expect(req!.body).toContain('&gt; &apos;11111111-1111-1111-1111-111111111111&apos;');
     });
 
     it('on a subsequent sync applies the per-facade watermark field in szWhereClause (NOT a canonical LastModifiedDate)', async () => {
