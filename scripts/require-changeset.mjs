@@ -62,15 +62,48 @@ function onlyAllowedKeysDiffer(relPath, allowed) {
   return true;
 }
 
-function isReleaseBumpOnly(dirAbs) {
+// ── Non-shipping-file exemption ─────────────────────────────────────────────────
+// A changeset exists to force a version bump so a change can REACH consumers. A file
+// that never enters the published tarball and is never a build input cannot reach
+// anyone, so requiring a bump for it mints a version whose diff is, to npm, empty.
+// The credential-setup guides (55 files of docs/*.html + screenshots) tripped this
+// across 11 already-published connectors.
+//
+// "Never ships" is DERIVED from the connector's own package.json `files`, not assumed:
+// if a connector ever starts publishing docs/, its docs stop being exempt automatically.
+// The allowlist stays deliberately narrow — docs/ and root-level markdown. src/ is NOT
+// on it: it isn't in `files` either, but it BUILDS into dist/, so it does reach consumers.
+const NON_SHIPPING_PATTERNS = [/^docs\//, /^[^/]+\.md$/];
+
+/** True iff `rel` (connector-relative) is covered by a package.json `files` entry. */
+function isPublished(rel, pkgFiles) {
+  return (pkgFiles || []).some((entry) => {
+    const e = String(entry).replace(/^!/, '').replace(/^\//, '').replace(/\/$/, '');
+    if (!e) return false;
+    const head = e.split(/[*{]/)[0].replace(/\/$/, '');       // literal prefix before any glob
+    return head && (rel === head || rel.startsWith(`${head}/`));
+  });
+}
+
+function isNonShipping(rel, pkgFiles) {
+  if (isPublished(rel, pkgFiles)) return false;               // it ships → not exempt
+  return NON_SHIPPING_PATTERNS.some((re) => re.test(rel));
+}
+
+/** Reason this connector needs no changeset, or null if the gate applies. */
+function isExempt(dirAbs) {
   const prefix = relative(ROOT, dirAbs);
   const files = changed.filter((f) => f.startsWith(`${prefix}/`)).map((f) => f.slice(prefix.length + 1));
-  if (files.length === 0) return false;
-  if (!files.every((f) => RELEASE_META_FILES.has(f))) return false;
+  if (files.length === 0) return null;
+  const pkgFiles = JSON.parse(readFileSync(join(dirAbs, 'package.json'), 'utf8')).files;
+
+  if (files.every((f) => isNonShipping(f, pkgFiles))) return 'does not ship (docs / markdown only)';
+
+  if (!files.every((f) => RELEASE_META_FILES.has(f) || isNonShipping(f, pkgFiles))) return null;
   for (const [file, allowed] of Object.entries(RELEASE_META_KEYS)) {
-    if (files.includes(file) && !onlyAllowedKeysDiffer(`${prefix}/${file}`, allowed)) return false;
+    if (files.includes(file) && !onlyAllowedKeysDiffer(`${prefix}/${file}`, allowed)) return null;
   }
-  return true;
+  return 'release metadata only — a back-merge of versions already published';
 }
 
 const connectorDirs = new Set();
@@ -102,8 +135,9 @@ const reconciled = [];
 for (const d of connectorDirs) {
   const pkg = JSON.parse(readFileSync(join(d, 'package.json'), 'utf8'));
   if (pkg.private) continue;                                   // never publishes → no changeset needed
-  if (isReleaseBumpOnly(d)) {                                  // back-merge of an already-shipped release
-    reconciled.push(`${pkg.name}@${pkg.version}`);
+  const exemptReason = isExempt(d);                            // nothing here can reach a consumer
+  if (exemptReason) {
+    reconciled.push(`${pkg.name}@${pkg.version}  — ${exemptReason}`);
     continue;
   }
   if (await onNpm(pkg.name, pkg.version) && !covered.has(pkg.name)) {
@@ -112,7 +146,7 @@ for (const d of connectorDirs) {
 }
 
 if (reconciled.length) {
-  console.log(`  (${reconciled.length} connector(s) exempt: release metadata only — a back-merge of versions already published)`);
+  console.log(`  (${reconciled.length} connector(s) exempt — nothing in their diff can reach a consumer)`);
   for (const n of reconciled) console.log(`    · ${n}`);
 }
 
