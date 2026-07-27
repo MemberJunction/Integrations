@@ -4,7 +4,7 @@
   "name": "connector-mj-to-mj",
   "displayName": "MJ to MJ Connector",
   "description": "Read-only connector that pulls conversational data (Conversations, Conversation Details, optional AI Agent Runs/Steps) from a remote MemberJunction instance via its GraphQL API. Maps to MJ: Conversations and MJ: Conversation Details. Every MJ deploymen...",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "ISC",
   "icon": "fa-solid fa-share-nodes",
   "publisher": {
