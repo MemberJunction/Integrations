@@ -1672,7 +1672,7 @@
             "DefaultPageSize": 10,
             "SupportsIncrementalSync": false,
             "IncrementalWatermarkField": null,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "Source": "Declared",
             "Status": "Active",
             "CreateAPIPath": "/v1/balance_settings",
@@ -2550,12 +2550,13 @@
                   "Length": 5000,
                   "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsUniqueKey": false,
-                  "IsPrimaryKey": false,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
                   "Source": "Declared",
                   "Status": "Active",
                   "Sequence": 2,
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "AllowsNull": false
                 },
                 "primaryKey": {
                   "ID": "45278079-CD41-4C5A-8D4E-A86C9085EF4B"
