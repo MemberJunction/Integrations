@@ -28,8 +28,9 @@ import { z } from 'zod';
  * Wild Apricot membership-management connector (Admin API v2.3).
  *
  * ── AUTH ──────────────────────────────────────────────────────────────────
- * OAuth 2.0 `client_credentials`. The admin API Key is sent as the HTTP-Basic
- * USERNAME (empty password) on `POST https://oauth.wildapricot.org/auth/token`
+ * OAuth 2.0 `client_credentials`. Per Wild Apricot's API-key auth, the HTTP-Basic
+ * credentials are the LITERAL username `APIKEY` and the admin API Key as the PASSWORD,
+ * on `POST https://oauth.wildapricot.org/auth/token`
  * with `grant_type=client_credentials&scope=auto`. Both the Basic token-endpoint
  * header AND the resulting `Authorization: Bearer <access_token>` header are built
  * via the shared auth-helpers ({@link OAuth2TokenManager} with `UseBasicAuth:true`)
@@ -170,10 +171,10 @@ export class WildApricotConnector extends BaseRESTIntegrationConnector {
         const token = await this.tokenManager.GetAccessToken(
             {
                 TokenURL: creds.TokenUrl,
-                ClientId: creds.ApiKey,     // API key is the Basic-auth USERNAME …
-                ClientSecret: '',           // … with an EMPTY password.
+                ClientId: 'APIKEY',         // Wild Apricot API-key auth: the LITERAL string 'APIKEY' is the Basic USERNAME …
+                ClientSecret: creds.ApiKey, // … and the admin API key is the PASSWORD.
                 Scopes: 'auto',
-                UseBasicAuth: true,         // → Authorization: Basic base64(apiKey:) — built by the helper, no inline crypto.
+                UseBasicAuth: true,         // → Authorization: Basic base64('APIKEY:' + apiKey) — built by the helper, no inline crypto.
             },
             'client_credentials'
         );
@@ -352,22 +353,31 @@ export class WildApricotConnector extends BaseRESTIntegrationConnector {
         const effectivePk = pkFieldNames.length > 0 ? pkFieldNames : ['Id'];
 
         const offset = ctx.CurrentOffset ?? 0;
-        const pageSize = Math.min(ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : WILDAPRICOT_MAX_PAGE_SIZE, WILDAPRICOT_MAX_PAGE_SIZE);
         const base = `${this.GetBaseURL(ctx.CompanyIntegration, auth)}${obj.APIPath}`;
 
-        // Build the OData query string with LITERAL $-prefixed param names (not URLSearchParams, which
-        // percent-encodes `$` → `%24`), keeping it consistent with BuildPaginatedURL's $skip/$top.
-        const queryParts = [`$async=true`, `$skip=${offset}`, `$top=${pageSize}`];
+        // Wild Apricot contacts are fetched via a SINGLE async EXPORT per sync — verified against the
+        // live Admin API. `$async=true` produces a STABLE, immutable ResultId snapshot of the whole
+        // (optionally watermark-filtered) contact set; we then page THAT snapshot with
+        // `?resultId=<id>&$skip&$top`, which returns the complete set with no overlap. This is the only
+        // reliable model:
+        //  • plain `$async=false&$skip` paging is order-UNSTABLE across the sync's interleaved requests
+        //    (pages overlap, so only a fraction of contacts dedup through — e.g. 197 of 1,275), and
+        //  • re-issuing `$async=true` per `$skip` page makes WA reject every `$skip>0` job (State=Failed).
+        // Because one export call drains the ENTIRE set, offset>0 is a no-op that terminates the loop.
+        if (offset > 0) {
+            return { Records: [], HasMore: false, NextOffset: offset };
+        }
+        const kickParts = [`$async=true`];
         if (ctx.WatermarkValue && obj.IncrementalWatermarkField) {
             // Documented incremental strategy: $filter on ProfileLastUpdated (ISO8601 comparison).
-            queryParts.push(`$filter=${encodeURIComponent(`${obj.IncrementalWatermarkField} ge ${ctx.WatermarkValue}`)}`);
+            kickParts.push(`$filter=${encodeURIComponent(`${obj.IncrementalWatermarkField} ge ${ctx.WatermarkValue}`)}`);
         }
-        const requestUrl = `${base}?${queryParts.join('&')}`;
+        const kickUrl = `${base}?${kickParts.join('&')}`;
 
-        // Step 1: kick off the async query.
-        const start = await this.MakeHTTPRequest(auth, requestUrl, 'GET', this.BuildHeaders(auth));
-        this.AssertContactsOK(start, 'start async contacts query');
-        const records = await this.ResolveAsyncContacts(auth, base, start.Body);
+        // Kick off the export, then drain the full stable snapshot (poll to Complete + page the ResultId).
+        const kick = await this.MakeHTTPRequest(auth, kickUrl, 'GET', this.BuildHeaders(auth));
+        this.AssertContactsOK(kick, 'start async contacts export');
+        const records = await this.DrainAsyncContacts(auth, base, kick.Body);
 
         // Step 2: emit with FULL-RECORD pass-through (Fields = raw source record).
         const out: ExternalRecord[] = records.map(raw => ({
@@ -376,11 +386,10 @@ export class WildApricotConnector extends BaseRESTIntegrationConnector {
             Fields: raw,
         }));
 
-        const hasMore = records.length >= pageSize;
         const result: FetchBatchResult = {
             Records: out,
-            HasMore: hasMore,
-            NextOffset: offset + records.length,
+            HasMore: false, // one async export drained the ENTIRE contact set — no further pages
+            NextOffset: records.length,
         };
         // Persist the max watermark seen on this (full-page-success) batch.
         if (obj.IncrementalWatermarkField) {
@@ -391,11 +400,12 @@ export class WildApricotConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * Resolves the async Contacts response: if a ResultId is present, polls the same endpoint with
-     * `?resultId=<id>` until State='Complete' (bounded), then returns the Contacts array. If the
-     * initial response already carried the Contacts array synchronously, returns it directly.
+     * Drains the async Contacts export to COMPLETION. If the kick-off body carries a ResultId, polls
+     * `?resultId=<id>` until State='Complete' (bounded), then pages the STABLE result snapshot with
+     * `?resultId=<id>&$skip&$top` until a short page ends it — returning the FULL contact set. If the
+     * kick-off already returned the Contacts array synchronously, returns it directly.
      */
-    private async ResolveAsyncContacts(
+    private async DrainAsyncContacts(
         auth: WildApricotAuthContext,
         baseUrl: string,
         firstBody: unknown
@@ -408,23 +418,39 @@ export class WildApricotConnector extends BaseRESTIntegrationConnector {
             return this.NormalizeResponse(firstBody, 'Contacts');
         }
 
-        const pollUrl = `${baseUrl}?resultId=${encodeURIComponent(resultId)}`;
+        // Poll the ResultId until the export snapshot is Complete (bounded).
+        const statusUrl = `${baseUrl}?resultId=${encodeURIComponent(resultId)}`;
+        let complete = false;
         for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-            const poll = await this.MakeHTTPRequest(auth, pollUrl, 'GET', this.BuildHeaders(auth));
+            const poll = await this.MakeHTTPRequest(auth, statusUrl, 'GET', this.BuildHeaders(auth));
             this.AssertContactsOK(poll, 'poll async contacts result');
             const state = this.ReadState(poll.Body);
-            if (state === 'Complete') {
-                return this.NormalizeResponse(poll.Body, 'Contacts');
-            }
+            if (state === 'Complete') { complete = true; break; }
             if (state === 'Failed') {
-                throw new Error(`Wild Apricot async contacts query failed (ResultId ${resultId}).`);
+                throw new Error(`Wild Apricot async contacts export failed (ResultId ${resultId}).`);
             }
             await delay(POLL_INTERVAL_MS);
         }
-        throw new Error(
-            `Wild Apricot async contacts query did not complete within ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s ` +
-            `(ResultId ${resultId}) — poll timeout.`
-        );
+        if (!complete) {
+            throw new Error(
+                `Wild Apricot async contacts export did not complete within ` +
+                `${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s (ResultId ${resultId}) — poll timeout.`
+            );
+        }
+
+        // Page the stable snapshot fully. The ResultId result is immutable, so `$skip`/`$top` here are
+        // deterministic (no overlap) — unlike a live `$async=false` scan interleaved with other objects.
+        const all: Record<string, unknown>[] = [];
+        for (let skip = 0; ; skip += WILDAPRICOT_MAX_PAGE_SIZE) {
+            const pageUrl = `${baseUrl}?resultId=${encodeURIComponent(resultId)}&$skip=${skip}&$top=${WILDAPRICOT_MAX_PAGE_SIZE}`;
+            const page = await this.MakeHTTPRequest(auth, pageUrl, 'GET', this.BuildHeaders(auth));
+            this.AssertContactsOK(page, 'page async contacts result');
+            const recs = this.NormalizeResponse(page.Body, 'Contacts');
+            if (recs.length === 0) break;
+            all.push(...recs);
+            if (recs.length < WILDAPRICOT_MAX_PAGE_SIZE) break;
+        }
+        return all;
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

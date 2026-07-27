@@ -37,8 +37,8 @@ class MockedNimbleAMSConnector extends NimbleAMSConnector {
     public CallExtractPagination(raw: unknown): { HasMore: boolean; NextCursor?: string } {
         return (this as unknown as { ExtractPaginationInfo(b: unknown, p: PaginationType, a: number, c: number, d: number): { HasMore: boolean; NextCursor?: string } }).ExtractPaginationInfo(raw, 'Cursor', 0, 0, 200);
     }
-    public CallBuildSOQL(obj: string, wmField: string, wm: string | null): string {
-        return (this as unknown as { BuildSOQL(o: string, w: string, v: string | null): string }).BuildSOQL(obj, wmField, wm);
+    public CallBuildSOQL(obj: string, fieldNames: string[], wmField: string, wm: string | null): string {
+        return (this as unknown as { BuildSOQL(o: string, f: string[], w: string, v: string | null): string }).BuildSOQL(obj, fieldNames, wmField, wm);
     }
     public CallFormatSOQLDateTime(v: string): string {
         return (this as unknown as { FormatSOQLDateTime(v: string): string }).FormatSOQLDateTime(v);
@@ -118,15 +118,15 @@ describe('NimbleAMSConnector — SOQL construction', () => {
     const c = new MockedNimbleAMSConnector();
 
     it('builds a watermark-ordered query with NO LIMIT (SF native paging) and >= boundary', () => {
-        const soql = c.CallBuildSOQL('NU__Order__c', 'LastModifiedDate', '2026-01-01T00:00:00Z');
-        expect(soql).toContain('SELECT FIELDS(ALL) FROM NU__Order__c');
+        const soql = c.CallBuildSOQL('NU__Order__c', ['Id', 'LastModifiedDate'], 'LastModifiedDate', '2026-01-01T00:00:00Z');
+        expect(soql).toContain('SELECT Id, LastModifiedDate FROM NU__Order__c');
         expect(soql).toContain('WHERE LastModifiedDate >= 2026-01-01T00:00:00Z');
         expect(soql).toContain('ORDER BY LastModifiedDate ASC');
         expect(soql).not.toMatch(/LIMIT/i);
     });
 
     it('omits the WHERE clause on a first (watermark-less) sync', () => {
-        const soql = c.CallBuildSOQL('Account', 'LastModifiedDate', null);
+        const soql = c.CallBuildSOQL('Account', ['Id', 'LastModifiedDate'], 'LastModifiedDate', null);
         expect(soql).not.toContain('WHERE');
         expect(soql).toContain('ORDER BY LastModifiedDate ASC');
     });
