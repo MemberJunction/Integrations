@@ -15,7 +15,7 @@
  */
 import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { get } from 'node:https';
 
@@ -25,8 +25,53 @@ const sh = (cmd) => execSync(cmd, { cwd: ROOT, encoding: 'utf8' }).trim();
 
 // 1. Changed files vs base → the connector dirs (nearest ancestor with an mj-app.json) that changed.
 let changed = [];
-try { changed = sh(`git diff --name-only ${baseRef}...HEAD`).split('\n').filter(Boolean); }
-catch { changed = sh(`git diff --name-only ${baseRef}`).split('\n').filter(Boolean); }
+let diffBase = baseRef;
+try {
+  changed = sh(`git diff --name-only ${baseRef}...HEAD`).split('\n').filter(Boolean);
+  diffBase = sh(`git merge-base ${baseRef} HEAD`);
+} catch { changed = sh(`git diff --name-only ${baseRef}`).split('\n').filter(Boolean); }
+
+// ── Back-merge exemption ────────────────────────────────────────────────────────
+// A back-merge (main → next) carries the release commits' version bumps for every
+// connector that shipped. Each of those versions is BY DEFINITION already on npm —
+// that's what publishing did — so the npm check below fires on all of them at once
+// and demands a changeset. Satisfying it would bump each connector a SECOND time
+// for a release that already happened, minting phantom versions.
+//
+// So: a connector whose entire diff vs. base is release metadata — package.json
+// differing only in `version`, mj-app.json only in `version`/`mjVersionRange`,
+// plus CHANGELOG.md — is a published release being reconciled, not new work.
+// Anything else in the diff (source, metadata/, migrations/, deps, scripts) means
+// real change, and the gate applies with full force.
+const RELEASE_META_FILES = new Set(['package.json', 'mj-app.json', 'CHANGELOG.md']);
+const RELEASE_META_KEYS = { 'package.json': ['version'], 'mj-app.json': ['version', 'mjVersionRange'] };
+
+const showAtBase = (relPath) => {
+  try { return JSON.parse(sh(`git show ${diffBase}:${relPath}`)); } catch { return null; }
+};
+
+/** True iff only the allowed keys differ between the base and head copies of a JSON file. */
+function onlyAllowedKeysDiffer(relPath, allowed) {
+  const before = showAtBase(relPath);
+  if (!before) return false;                                   // new file → not a pure bump
+  const after = JSON.parse(readFileSync(join(ROOT, relPath), 'utf8'));
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  for (const k of keys) {
+    if (JSON.stringify(before[k]) !== JSON.stringify(after[k]) && !allowed.includes(k)) return false;
+  }
+  return true;
+}
+
+function isReleaseBumpOnly(dirAbs) {
+  const prefix = relative(ROOT, dirAbs);
+  const files = changed.filter((f) => f.startsWith(`${prefix}/`)).map((f) => f.slice(prefix.length + 1));
+  if (files.length === 0) return false;
+  if (!files.every((f) => RELEASE_META_FILES.has(f))) return false;
+  for (const [file, allowed] of Object.entries(RELEASE_META_KEYS)) {
+    if (files.includes(file) && !onlyAllowedKeysDiffer(`${prefix}/${file}`, allowed)) return false;
+  }
+  return true;
+}
 
 const connectorDirs = new Set();
 for (const f of changed) {
@@ -53,12 +98,22 @@ const onNpm = (name, version) => new Promise((resolve) => {
 });
 
 const need = [];
+const reconciled = [];
 for (const d of connectorDirs) {
   const pkg = JSON.parse(readFileSync(join(d, 'package.json'), 'utf8'));
   if (pkg.private) continue;                                   // never publishes → no changeset needed
+  if (isReleaseBumpOnly(d)) {                                  // back-merge of an already-shipped release
+    reconciled.push(`${pkg.name}@${pkg.version}`);
+    continue;
+  }
   if (await onNpm(pkg.name, pkg.version) && !covered.has(pkg.name)) {
     need.push(`${pkg.name}@${pkg.version}`);                   // already on npm + changed + uncovered
   }
+}
+
+if (reconciled.length) {
+  console.log(`  (${reconciled.length} connector(s) exempt: release metadata only — a back-merge of versions already published)`);
+  for (const n of reconciled) console.log(`    · ${n}`);
 }
 
 if (need.length) {
