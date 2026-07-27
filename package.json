@@ -15,6 +15,7 @@
     "lint:invariants": "node scripts/validate-invariants.mjs",
     "lint:migrations": "node scripts/validate-migrations.mjs",
     "lint:metadata": "node scripts/lint-metadata-fields.mjs",
+    "lint:catalog-completeness": "node scripts/lint-catalog-completeness.mjs",
     "check:catalog-freshness": "node scripts/check-catalog-freshness.mjs",
     "new-connector": "node scripts/new-connector.mjs",
     "migrations:wrap": "node scripts/wrap-migration.mjs",

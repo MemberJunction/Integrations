@@ -46,6 +46,16 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/require-metadata-migration.mjs
 
+      # The gate above asks a DELTA question ("did THIS PR touch metadata without
+      # adding a migration"), so it cannot see an absolute gap already sitting on
+      # the branch. This one asks the absolute question, by NAME: does the shipped
+      # migration set actually contain every object the metadata declares?
+      # Constant Contact's v2.0.0 redo grew 8 -> 65 objects AND renamed all of
+      # them with no migration, so tenants would have installed 8 objects the
+      # connector no longer references — green install, green sync, zero overlap.
+      - name: Declared catalog is fully seeded by migrations
+        run: npm run lint:catalog-completeness
+
       # Every metadata record fields.* key must map to a REAL entity column (proven by the
       # spCreate* @Params in generated migrations), a documented framework-ideal field, or a
       # grandfathered debt entry. Catches inert/typo'd fields that BaseEntity.SetLocal silently
