@@ -1,0 +1,14 @@
+{
+  "generatedBy": "scripts/lint-writable-pk.mjs --write",
+  "count": 8,
+  "keys": [
+    "Marketing/ConstantContact::account_physical_address",
+    "Marketing/ConstantContact::email_campaign_activity_abtest",
+    "Marketing/ConstantContact::email_campaign_activity_schedules",
+    "Marketing/ConstantContact::email_campaign_activity_tests",
+    "Marketing/ConstantContact::events_check_in",
+    "Marketing/ConstantContact::events_registrations_payment_status",
+    "Marketing/ConstantContact::events_undo_check_in",
+    "Marketing/Mailchimp::lists.members"
+  ]
+}
