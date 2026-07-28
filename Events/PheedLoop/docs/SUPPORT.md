@@ -4,14 +4,14 @@
 
 ## What this connector supports
 
-**28 objects** declared across **487 fields** (source: `metadata/integration/.pheedloop.integration.json`). 19 declare a write path; 9 are read-only (pull). 4 support incremental sync.
+**28 objects** declared across **487 fields** (source: `metadata/integration/.pheedloop.integration.json`). 18 declare a write path; 10 are read-only (pull). 4 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
 | Attendees | ✓ | `CUD` | — |
 | ContactTags | ✓ | `CUD` | — |
 | EventAnnouncements | ✓ | `CUD` | — |
-| EventAttendance | ✓ | `CD` | — |
+| EventAttendance | ✓ | — (read-only) | — |
 | Events | ✓ | `U` | ✓ |
 | ExhibitorPromotion | ✓ | — (read-only) | — |
 | Exhibitors | ✓ | `CUD` | — |

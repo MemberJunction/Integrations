@@ -4,12 +4,12 @@
 
 ## What this connector supports
 
-**65 objects** declared across **531 fields** (source: `metadata/integration/.constant-contact.integration.json`). 32 declare a write path; 33 are read-only (pull). 2 support incremental sync.
+**65 objects** declared across **533 fields** (source: `metadata/integration/.constant-contact.integration.json`). 27 declare a write path; 38 are read-only (pull). 2 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
 | account_emails | ✓ | `C` | — |
-| account_physical_address | ✓ | `CU` | — |
+| account_physical_address | ✓ | — (read-only) | — |
 | account_summary | ✓ | `U` | — |
 | account_user_privileges | ✓ | — (read-only) | — |
 | activities | ✓ | — (read-only) | — |
