@@ -1,0 +1,59 @@
+-- Totara: the two writable objects that carried no primary key.
+--
+-- A writable IntegrationObject with no IsPrimaryKey field yields a KEYLESS derived entity. On
+-- Postgres, MJ's save audit-wrapper then emits an empty record identifier and every save fails with
+--     syntax error at or near ","
+-- while fetch keeps succeeding — so the object reads green and persists nothing.
+--
+-- Both objects are keyed on the PARENT, because that is the grain the vendor actually returns:
+--
+-- 1. Cohort Members -> key on `cohortid`.
+--    `core_cohort_get_cohort_members` returns one row per COHORT — {cohortid, userids[]} — not one
+--    row per member, so the cohort is the record identity. The field already carries the FK to
+--    Cohorts.id.
+--
+-- 2. Group Members -> key on `groupid`.
+--    `core_group_get_group_members` returns one row per GROUP — {groupid, userids[]} — same shape.
+--    The field is already required and writable and already carries the FK to Groups.id.
+--
+-- IsReadOnly is deliberately left ALONE on both fields. V202607271200 flipped `courseid` writable
+-- because CodeGen omits read-only fields from the generated create/update stored procedures
+--     (@courseid is not a parameter for procedure spCreateCourse_Contents)
+-- but that applies to ordinary columns, not to the key: HubSpot's V202607271200 stamped
+-- `hs_object_id` as a primary key with IsReadOnly = 1 and was functionally proven on Postgres, so a
+-- read-only primary key persists correctly. Stamping the key is the whole fix here; changing write
+-- scope on top of it would be an unjustified capability change.
+--
+-- Delta migration (not a re-seed): the catalog rows already exist on installed tenants, so this
+-- UPDATEs them in place. No IDs are minted and no rows are created, so nothing can collide with the
+-- V202607201219 seed or re-mint an applied UUID. Idempotent by WHERE.
+--
+-- NOTE: the Integration row is named 'totara' (lowercase) — matching the seeded identity exactly.
+
+UPDATE [__mj].IntegrationObjectField
+SET IsPrimaryKey = 1,
+    IsUniqueKey  = 1,
+    IsRequired   = 1,
+    AllowsNull   = 0
+WHERE Name = 'cohortid'
+  AND IntegrationObjectID IN (
+      SELECT o.ID
+      FROM [__mj].IntegrationObject o
+      INNER JOIN [__mj].Integration i ON i.ID = o.IntegrationID
+      WHERE i.Name = 'totara'
+        AND o.Name = 'Cohort Members'
+  );
+
+UPDATE [__mj].IntegrationObjectField
+SET IsPrimaryKey = 1,
+    IsUniqueKey  = 1,
+    IsRequired   = 1,
+    AllowsNull   = 0
+WHERE Name = 'groupid'
+  AND IntegrationObjectID IN (
+      SELECT o.ID
+      FROM [__mj].IntegrationObject o
+      INNER JOIN [__mj].Integration i ON i.ID = o.IntegrationID
+      WHERE i.Name = 'totara'
+        AND o.Name = 'Group Members'
+  );
