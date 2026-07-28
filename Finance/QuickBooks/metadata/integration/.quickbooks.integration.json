@@ -24138,9 +24138,9 @@
             "SupportsPagination": false,
             "SupportsIncrementalSync": true,
             "IncrementalWatermarkField": "MetaData.LastUpdatedTime",
-            "SupportsWrite": true,
-            "SupportsCreate": true,
-            "SupportsUpdate": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
             "SupportsDelete": false,
             "Status": "Active",
             "Configuration": {
@@ -24156,7 +24156,7 @@
               "paginationClass": "single-page",
               "paginationNote": "QBO ExchangeRate is a special entity that does NOT honor STARTPOSITION offset paging — a read-only pagination probe (job qbo-pageprobe-1785182507) confirmed STARTPOSITION 1 and STARTPOSITION 2 return the SAME record. Declared as single-page (PaginationType='None'); the query carries MAXRESULTS 1000 so one fetch returns the full set (observed 100; bounded by ISO-currency count (~180)). Residual: a tenant with >1000 ExchangeRate rows would truncate and need a date/currency-partitioned fetch."
             },
-            "Description": "QuickBooks Online v3 ExchangeRate (namelist).",
+            "Description": "QuickBooks Online v3 ExchangeRate (namelist). Write withdrawn: the reality probe found the declared PK 'Id' absent on 1000/1000 records, so the PK was demoted to content-hash identity and the object derives a KEYLESS entity — on Postgres every save then fails with `syntax error at or near \",\"` while fetch keeps succeeding, so the object would read green and persist nothing. QBO identifies a rate by SourceCurrencyCode + TargetCurrencyCode + AsOfDate rather than a server id, but the probe measured population on 'Id' only, so promoting that triple to a composite key is unevidenced and is not done here. Restoring the write is a probe away: measure those three fields over a page, and if they are populated, stamp them IsPrimaryKey and re-enable. Reads are unaffected (content-hash identity, 1000 records, incremental on MetaData.LastUpdatedTime, both confirmed by probe).",
             "CreateAPIPath": "exchangeRate?minorversion=75",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -37811,9 +37811,9 @@
             "SupportsPagination": false,
             "SupportsIncrementalSync": false,
             "IncrementalWatermarkField": null,
-            "SupportsWrite": true,
-            "SupportsCreate": true,
-            "SupportsUpdate": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
             "SupportsDelete": false,
             "Status": "Active",
             "Configuration": {
@@ -37828,7 +37828,7 @@
               "paginationClass": "single-page",
               "paginationNote": "QBO RecurringTransaction is a special entity that does NOT honor STARTPOSITION offset paging — a read-only pagination probe (job qbo-pageprobe-1785182507) confirmed STARTPOSITION 1 and STARTPOSITION 2 return the SAME record. Declared as single-page (PaginationType='None'); the query carries MAXRESULTS 1000 so one fetch returns the full set (observed 2; recurring templates, typically < 100). Residual: a tenant with >1000 RecurringTransaction rows would truncate and need a date/currency-partitioned fetch."
             },
-            "Description": "QuickBooks Online v3 RecurringTransaction (transaction).",
+            "Description": "QuickBooks Online v3 RecurringTransaction (transaction). Write withdrawn: the reality probe found the declared PK 'Id' absent on 2/2 records, so the PK was demoted to content-hash identity and the object derives a KEYLESS entity — on Postgres every save then fails with `syntax error at or near \",\"` while fetch keeps succeeding. Unlike ExchangeRate there is no key candidate to promote: the object is a WRAPPER whose real key is nested inside the contained transaction (RecurringInfo + the embedded Invoice/Bill/…), it exposes no top-level id, and it declares only two fields (Id, SyncToken) — so MJ has no columns to build a create body from either. Modelling the write properly means flattening the contained transaction into real fields, which is object authoring, not a key stamp. Reads are unaffected (content-hash identity, 2 records).",
             "CreateAPIPath": "recurringTransaction?minorversion=75",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
