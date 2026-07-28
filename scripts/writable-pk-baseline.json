@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/lint-writable-pk.mjs --write",
-  "count": 86,
+  "count": 81,
   "keys": [
     "AMS/Impexium::Activities",
     "AMS/Impexium::EducationCredits",
@@ -70,12 +70,7 @@
     "Events/Cvent::event-feature",
     "Events/Cvent::session-file",
     "Events/Cvent::speaker-file",
-    "Events/Eventbrite::Media Upload",
     "Events/PheedLoop::EventAttendance",
-    "Finance/Stripe::balance_settings",
-    "Finance/Stripe::cash_balance",
-    "LMS/Totara::Cohort Members",
-    "LMS/Totara::Group Members",
     "Marketing/ConstantContact::account_physical_address",
     "Marketing/ConstantContact::email_campaign_activity_abtest",
     "Marketing/ConstantContact::email_campaign_activity_schedules",
