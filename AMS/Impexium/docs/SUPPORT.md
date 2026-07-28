@@ -6,12 +6,12 @@
 
 ## What this connector supports
 
-**46 objects** declared across **433 fields** (source: `metadata/integration/.impexium.integration.json`). 23 declare a write path; 23 are read-only (pull). 4 support incremental sync.
+**46 objects** declared across **433 fields** (source: `metadata/integration/.impexium.integration.json`). 17 declare a write path; 29 are read-only (pull). 4 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
 | AbandonedCheckouts | ✓ | — (read-only) | — |
-| Activities | ✓ | `C` | — |
+| Activities | ✓ | — (read-only) | — |
 | Addresses | ✓ | `C` | — |
 | AwardIndividualRecipients | ✓ | — (read-only) | — |
 | AwardNominations | ✓ | `CU` | — |
@@ -28,9 +28,9 @@
 | CustomerRequests | ✓ | `CU` | — |
 | CustomFieldDefinitions | ✓ | — (read-only) | — |
 | CustomFieldValues | ✓ | `C` | — |
-| EducationCredits | ✓ | `C` | — |
+| EducationCredits | ✓ | — (read-only) | — |
 | Emails | ✓ | `CU` | — |
-| EventAttendance | ✓ | `U` | — |
+| EventAttendance | ✓ | — (read-only) | — |
 | EventCancellations | ✓ | — (read-only) | ✓ |
 | EventRegistrations | ✓ | — (read-only) | ✓ |
 | Events | ✓ | — (read-only) | — |

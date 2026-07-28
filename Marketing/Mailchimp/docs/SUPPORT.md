@@ -4,42 +4,42 @@
 
 ## What this connector supports
 
-**87 objects** declared across **916 fields** (source: `metadata/integration/.mailchimp.integration.json`). 42 declare a write path; 45 are read-only (pull). 9 support incremental sync.
+**76 objects** declared across **770 fields** (source: `metadata/integration/.mailchimp.integration.json`). 39 declare a write path; 37 are read-only (pull). 2 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
-| account-exports | ✓ | `` | — |
-| activity-feed.chimp-chatter | ✓ | — (read-only) | — |
+| account | ✓ | — (read-only) | — |
+| account-exports | ✓ | `C` | — |
+| activity-feed/chimp-chatter | ✓ | — (read-only) | — |
 | audiences | ✓ | — (read-only) | — |
-| audiences.contacts | ✓ | `` | ✓ |
+| audiences/{audience_id}/contacts | ✓ | `CU` | — |
 | authorized-apps | ✓ | — (read-only) | — |
-| automations | ✓ | `` | ✓ |
-| automations.emails | ✓ | `` | — |
-| automations.emails.queue | ✓ | `` | — |
-| automations.removed-subscribers | ✓ | `` | — |
-| batch-webhooks | ✓ | `` | — |
-| batches | ✓ | `` | — |
-| campaign-folders | ✓ | `` | — |
-| campaigns | ✓ | `` | ✓ |
-| campaigns.content | ✓ | `` | — |
-| campaigns.feedback | ✓ | `` | — |
-| campaigns.send-checklist | ✓ | — (read-only) | — |
-| connected-sites | ✓ | `` | — |
-| conversations | ✓ | — (read-only) | — |
-| conversations.messages | ✓ | — (read-only) | — |
-| ecommerce.orders | ✓ | — (read-only) | — |
-| ecommerce.stores | ✓ | `` | — |
-| ecommerce.stores.carts | ✓ | `` | — |
-| ecommerce.stores.carts.lines | ✓ | `` | — |
-| ecommerce.stores.customers | ✓ | `` | — |
-| ecommerce.stores.orders | ✓ | `` | — |
-| ecommerce.stores.orders.lines | ✓ | `` | — |
-| ecommerce.stores.products | ✓ | `` | — |
-| ecommerce.stores.products.images | ✓ | `` | — |
-| ecommerce.stores.products.variants | ✓ | `` | — |
-| ecommerce.stores.promo-rules | ✓ | `` | — |
+| batch-webhooks | ✓ | `CUD` | — |
+| batches | ✓ | `CD` | — |
+| campaign-folders | ✓ | `CUD` | — |
+| campaigns | ✓ | `CUD` | — |
+| campaigns/{campaign_id}/content | ✓ | `U` | — |
+| campaigns/{campaign_id}/feedback | ✓ | `CUD` | — |
+| campaigns/{campaign_id}/send-checklist | ✓ | — (read-only) | — |
+| ecommerce/stores | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/carts | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/carts/{cart_id}/lines | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/customers | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/orders | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/orders/{order_id}/lines | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/products | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/products/{product_id}/images | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/products/{product_id}/variants | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/promo-rules | ✓ | `CUD` | — |
+| ecommerce/stores/{store_id}/promo-rules/{promo_rule_id}/promo-codes | ✓ | `CUD` | — |
+| file-manager/files | ✓ | `CUD` | — |
+| file-manager/folders | ✓ | `CUD` | — |
+| file-manager/folders/{folder_id}/files | ✓ | — (read-only) | — |
+| landing-pages | ✓ | `CUD` | — |
+| landing-pages/{page_id}/content | ✓ | — (read-only) | — |
+| lists | ✓ | `CUD` | — |
 
-_First 30 of 87 objects shown, alphabetically. The full catalog is the metadata file cited above._
+_First 30 of 76 objects shown, alphabetically. The full catalog is the metadata file cited above._
 
 > **"Declares a write path" is a capability declaration, not a proven behaviour.** What has actually
 > been executed against a live system is in the next section, and nothing else should be read as proven.
@@ -81,6 +81,8 @@ _First 30 of 87 objects shown, alphabetically. The full catalog is the metadata 
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
 - **Coverage:** 8 of 76 declared objects have proven rows; the remainder are Not tested / Discovered (many may be empty in the test account).
+
+> ℹ️ **Four proof rows are named as the 1.1.x catalog named them**, because that is how they are recorded in `MJ_CT48` — the row stays checkable by querying that database. The 2.0 rebuild renamed them to the vendor path form: `lists__list_id__members` → `lists/{list_id}/members`, `lists__list_id__segments` → `lists/{list_id}/segments`, `lists__list_id__merge_fields` → `lists/{list_id}/merge-fields`, `lists__list_id__interest_categories` → `lists/{list_id}/interest-categories`. Same objects, same rows — only the catalog name changed, so they are correctly absent from the zero-row list above.
 
 ---
 

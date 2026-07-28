@@ -6,7 +6,7 @@
 
 ## What this connector supports
 
-**84 objects** declared across **774 fields** (source: `metadata/integration/.blackbaud.integration.json`). 45 declare a write path; 39 are read-only (pull). 7 support incremental sync.
+**84 objects** declared across **777 fields** (source: `metadata/integration/.blackbaud.integration.json`). 43 declare a write path; 41 are read-only (pull). 7 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|

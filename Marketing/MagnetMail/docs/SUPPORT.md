@@ -4,7 +4,7 @@
 
 ## What this connector supports
 
-**47 objects** declared across **317 fields** (source: `metadata/integration/.magnetmail.integration.json`). 7 declare a write path; 40 are read-only (pull). 0 support incremental sync.
+**47 objects** declared across **317 fields** (source: `metadata/integration/.magnetmail.integration.json`). 6 declare a write path; 41 are read-only (pull). 0 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|

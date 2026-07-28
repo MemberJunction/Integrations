@@ -6,7 +6,7 @@
 
 ## What this connector supports
 
-**63 objects** declared across **1437 fields** (source: `metadata/integration/.stripe.integration.json`). 47 declare a write path; 16 are read-only (pull). 30 support incremental sync.
+**63 objects** declared across **1437 fields** (source: `metadata/integration/.stripe.integration.json`). 46 declare a write path; 17 are read-only (pull). 30 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
@@ -14,7 +14,7 @@
 | apple_pay_domain | ✓ | `` | — |
 | application_fee | ✓ | — (read-only) | ✓ |
 | balance | ✓ | — (read-only) | — |
-| balance_settings | ✓ | `` | — |
+| balance_settings | ✓ | — (read-only) | — |
 | balance_transaction | ✓ | — (read-only) | ✓ |
 | capability | ✓ | `` | — |
 | cash_balance | ✓ | `` | — |
