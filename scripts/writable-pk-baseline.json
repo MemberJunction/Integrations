@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/lint-writable-pk.mjs --write",
-  "count": 81,
+  "count": 72,
   "keys": [
     "AMS/Impexium::Activities",
     "AMS/Impexium::EducationCredits",
@@ -54,12 +54,6 @@
     "AMS/YourMembership::UnblockCardRequest",
     "AMS/YourMembership::WallPostFirst",
     "AMS/YourMembership::WallPosts",
-    "CRM/Blackbaud::acknowledgement",
-    "CRM/Blackbaud::gift_note",
-    "CRM/Blackbaud::new_tax_declaration",
-    "CRM/Blackbaud::non_constituent_conversion",
-    "CRM/Blackbaud::profile_picture",
-    "CRM/Blackbaud::receipt",
     "CRM/NeonCRM::CustomObjectField",
     "CRM/NeonCRM::CustomObjectFormLayout",
     "CRM/NeonCRM::CustomObjectFormLayoutResponse",
@@ -79,9 +73,6 @@
     "Marketing/ConstantContact::events_registrations_payment_status",
     "Marketing/ConstantContact::events_undo_check_in",
     "Marketing/MagnetMail::RecipientSuppressionList",
-    "Marketing/Mailchimp::lists.members",
-    "Platform/Hivebrite::FundConfigurationEntity",
-    "Platform/Hivebrite::GroupUsers",
-    "Platform/Hivebrite::NotificationSettings"
+    "Marketing/Mailchimp::lists.members"
   ]
 }
