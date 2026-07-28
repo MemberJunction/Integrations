@@ -371342,12 +371342,12 @@
           "fields": {
             "Name": "CustomerAction",
             "DisplayName": "Customer Action",
-            "Description": "netFORUM Enterprise CustomerAction (TaxonomyLeaf, operations-only — no DataObjectType root). Customer activity records via GetActionTypeList/InsertCustomerAction. Read schema runtime-discovered.",
+            "Description": "netFORUM Enterprise CustomerAction (TaxonomyLeaf, operations-only — no DataObjectType root). Customer activity records via GetActionTypeList/InsertCustomerAction. Read schema runtime-discovered. The declared read door does not read this object: InsertCustomerAction(actionCustomerKey, action, actionTypeKey, source, actionDate, actionSubtypeList) returns a new guid, but GetActionTypeList takes no arguments and returns the action TYPE list — not customer actions — so a written record is never read back. Write withdrawn: the object declares no fields, so it derives a keyless (and columnless) entity whose saves cannot carry an identifier; runtime GetQueryDefinition discovery can never supply a primary key, because it sets IsPrimaryKey from the Declared metadata only. Reads are unaffected.",
             "IntegrationID": "@parent:ID",
             "APIPath": "/xweb/secure/netForumXML.asmx",
             "PaginationType": "None",
             "SupportsPagination": false,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Status": "Active",
             "Configuration": {
@@ -371377,7 +371377,7 @@
               },
               "createSoapAction": "http://www.avectra.com/2005/InsertCustomerAction"
             },
-            "SupportsCreate": true,
+            "SupportsCreate": false,
             "CreateAPIPath": "/xweb/secure/netForumXML.asmx",
             "CreateMethod": "POST",
             "CreateBodyShape": "wrapped",
@@ -371399,12 +371399,12 @@
           "fields": {
             "Name": "CommunicationPreference",
             "DisplayName": "Communication Preference",
-            "Description": "netFORUM Enterprise CommunicationPreference (TaxonomyLeaf, operations-only — no DataObjectType root). Customer opt-in/opt-out preferences via Get/SetCustomerCommunicationPreferences. Schema runtime-discovered.",
+            "Description": "netFORUM Enterprise CommunicationPreference (TaxonomyLeaf, operations-only — no DataObjectType root). Customer opt-in/opt-out preferences via Get/SetCustomerCommunicationPreferences. Schema runtime-discovered. Bulk set-for-customer command, not a record: SetCustomerCommunicationPreferences(customerKey, ArrayOfMailingListSetting) returns an EMPTY response. With no declared primary key the connector cannot inject the customerKey — UpdateRecord's PrimaryKeyFieldName reads the declared fields only and returns undefined — so the call would fire without saying which customer it applies to. Write withdrawn: the object declares no fields, so it derives a keyless (and columnless) entity whose saves cannot carry an identifier; runtime GetQueryDefinition discovery can never supply a primary key, because it sets IsPrimaryKey from the Declared metadata only. Reads are unaffected.",
             "IntegrationID": "@parent:ID",
             "APIPath": "/xweb/secure/netForumXML.asmx",
             "PaginationType": "None",
             "SupportsPagination": false,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Status": "Active",
             "Configuration": {
@@ -371434,7 +371434,7 @@
               },
               "updateSoapAction": "http://www.avectra.com/2005/SetCustomerCommunicationPreferences"
             },
-            "SupportsUpdate": true,
+            "SupportsUpdate": false,
             "UpdateAPIPath": "/xweb/secure/netForumXML.asmx",
             "UpdateMethod": "POST",
             "UpdateBodyShape": "wrapped",
@@ -371597,12 +371597,12 @@
           "fields": {
             "Name": "CEUCredit",
             "DisplayName": "CEUCredit",
-            "Description": "netFORUM Enterprise CEUCredit (TaxonomyLeaf, operations-only — no DataObjectType root). Continuing Education Unit records via CeuApplyExternalCredits (write-oriented). Read schema runtime-discovered.",
+            "Description": "netFORUM Enterprise CEUCredit (TaxonomyLeaf, operations-only — no DataObjectType root). Continuing Education Unit records via CeuApplyExternalCredits (write-oriented). Read schema runtime-discovered. Bulk apply-credits command, not a record: CeuApplyExternalCredits(individualKey, CeuCreditList) applies a LIST of credits to one individual and returns ArrayOfCeuCreditResult — a per-credit ceu_key inside an array, not a single created id. Write withdrawn: the object declares no fields, so it derives a keyless (and columnless) entity whose saves cannot carry an identifier; runtime GetQueryDefinition discovery can never supply a primary key, because it sets IsPrimaryKey from the Declared metadata only. Reads are unaffected.",
             "IntegrationID": "@parent:ID",
             "APIPath": "/xweb/secure/netForumXML.asmx",
             "PaginationType": "None",
             "SupportsPagination": false,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Status": "Active",
             "Configuration": {
@@ -371632,7 +371632,7 @@
               },
               "createSoapAction": "http://www.avectra.com/2005/CeuApplyExternalCredits"
             },
-            "SupportsCreate": true,
+            "SupportsCreate": false,
             "CreateAPIPath": "/xweb/secure/netForumXML.asmx",
             "CreateMethod": "POST",
             "CreateBodyShape": "wrapped",
@@ -371654,12 +371654,12 @@
           "fields": {
             "Name": "AdvocacyData",
             "DisplayName": "Advocacy Data",
-            "Description": "netFORUM Enterprise AdvocacyData (TaxonomyLeaf, operations-only — no DataObjectType root). Advocacy data records via CreateAdvocacyData (write-oriented). Read schema runtime-discovered.",
+            "Description": "netFORUM Enterprise AdvocacyData (TaxonomyLeaf, operations-only — no DataObjectType root). Advocacy data records via CreateAdvocacyData (write-oriented). Read schema runtime-discovered. Create returns no identifier at all: CreateAdvocacyData(oNode) has an EMPTY response, so BuildCreatedResult already returns Success:false on every call today. Write withdrawn: the object declares no fields, so it derives a keyless (and columnless) entity whose saves cannot carry an identifier; runtime GetQueryDefinition discovery can never supply a primary key, because it sets IsPrimaryKey from the Declared metadata only. Reads are unaffected.",
             "IntegrationID": "@parent:ID",
             "APIPath": "/xweb/secure/netForumXML.asmx",
             "PaginationType": "None",
             "SupportsPagination": false,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Status": "Active",
             "Configuration": {
@@ -371689,7 +371689,7 @@
               },
               "createSoapAction": "http://www.avectra.com/2005/CreateAdvocacyData"
             },
-            "SupportsCreate": true,
+            "SupportsCreate": false,
             "CreateAPIPath": "/xweb/secure/netForumXML.asmx",
             "CreateMethod": "POST",
             "CreateBodyShape": "wrapped",
@@ -371711,12 +371711,12 @@
           "fields": {
             "Name": "FacadeObject",
             "DisplayName": "Facade Object",
-            "Description": "netFORUM Enterprise FacadeObject (TaxonomyLeaf, operations-only — no DataObjectType root). Generic facade covering entities without dedicated WEB* methods (Get/Insert/UpdateFacadeObject). szObjectName-addressable; schema via GetFacadeXMLSchema at run",
+            "Description": "netFORUM Enterprise FacadeObject (TaxonomyLeaf, operations-only — no DataObjectType root). Generic facade covering entities without dedicated WEB* methods (Get/Insert/UpdateFacadeObject). szObjectName-addressable; schema via GetFacadeXMLSchema at run Generic meta-accessor, not an object: szObjectName is a PARAMETER of Get/Insert/UpdateFacadeObject, so one catalog row would stand for every entity in the tenant at once. UpdateFacadeObject also needs szObjectKey, which the connector cannot supply with no declared primary key. Write withdrawn: the object declares no fields, so it derives a keyless (and columnless) entity whose saves cannot carry an identifier; runtime GetQueryDefinition discovery can never supply a primary key, because it sets IsPrimaryKey from the Declared metadata only. Reads are unaffected.",
             "IntegrationID": "@parent:ID",
             "APIPath": "/xweb/secure/netForumXML.asmx",
             "PaginationType": "None",
             "SupportsPagination": false,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Status": "Active",
             "Configuration": {
@@ -371748,13 +371748,13 @@
               "createSoapAction": "http://www.avectra.com/2005/InsertFacadeObject",
               "updateSoapAction": "http://www.avectra.com/2005/UpdateFacadeObject"
             },
-            "SupportsCreate": true,
+            "SupportsCreate": false,
             "CreateAPIPath": "/xweb/secure/netForumXML.asmx",
             "CreateMethod": "POST",
             "CreateBodyShape": "wrapped",
             "CreateBodyKey": "InsertFacadeObject",
             "CreateIDLocation": "body",
-            "SupportsUpdate": true,
+            "SupportsUpdate": false,
             "UpdateAPIPath": "/xweb/secure/netForumXML.asmx",
             "UpdateMethod": "POST",
             "UpdateBodyShape": "wrapped",
