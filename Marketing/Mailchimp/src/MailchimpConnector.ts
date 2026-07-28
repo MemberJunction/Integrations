@@ -8,6 +8,7 @@ import type {
 import {
     BaseIntegrationConnector,
     BaseRESTIntegrationConnector,
+    buildBasicAuthHeaderValue,
     type RESTAuthContext,
     type RESTResponse,
     type PaginationState,
@@ -15,278 +16,219 @@ import {
     type ConnectionTestResult,
     type FetchContext,
     type FetchBatchResult,
-    type ExternalRecord,
-    type CRUDResult,
     type CreateRecordContext,
     type UpdateRecordContext,
     type DeleteRecordContext,
-    type GetRecordContext,
-    type SearchContext,
-    type SearchResult,
-    type ListContext,
-    type ListResult,
-    type ExternalObjectSchema,
-    type DefaultIntegrationConfig,
+    type CRUDResult,
     type SourceSchemaInfo,
-    type SourceObjectInfo,
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
-import * as crypto from 'node:crypto';
 
-// ─── Types ────────────────────────────────────────────────────────────
+// ─── Design note ────────────────────────────────────────────────────────
+//
+// This connector is PURE MECHANISM. The object/field catalog is NOT baked here — it lives in the Declared
+// metadata (metadata/integrations/mailchimp/.mailchimp.integration.json), seeded from Mailchimp's
+// credential-free OpenAPI spec + published docs (case-1 discovery). Discovery is INHERITED from
+// BaseRESTIntegrationConnector: DiscoverObjects / DiscoverFields / IntrospectSchema read the persisted
+// Declared metadata from the IntegrationEngineBase cache. There is NO hardcoded object list, NO field
+// catalog, NO baked PK/FK/required/readonly constants in this file.
+//
+// What this class supplies (the Mailchimp Marketing API v3 protocol shape over REST/JSON):
+//  - Auth: HTTP Basic where the userid is the literal `anystring` and the password is the API key (or an
+//    OAuth2 access token) — `Authorization: Basic base64("anystring:{key}")`. Built via the auth-helper
+//    (buildBasicAuthHeaderValue); NO inline base64/crypto. A long-lived credential, no refresh step.
+//  - Tenancy: every request targets `https://{dc}.api.mailchimp.com/3.0/…`; the per-account data-center
+//    prefix {dc} (e.g. `us15`) is read from the connection Configuration / credential, or parsed from the
+//    `-<dc>` suffix on the API key — ZERO data center baked into this vendor-wide code.
+//  - Pagination: uniform Offset pagination — `count` (≤1000) + `offset` — on every collection GET, with
+//    continuation gated by the response's `total_items`.
+//  - Envelope: each collection nests its records under a per-object data key (`members` / `campaigns` /
+//    `stores` / …) alongside `total_items` + `_links`; NormalizeResponse strips it. A single-record GET
+//    (no data key) is returned as a one-element array.
+//  - Incremental: per-endpoint `since_<field>` ISO-8601 date filters (only where documented — 2 IOs:
+//    list members `since_last_changed`, list segments `since_updated_at`), appended during a watermarked
+//    fetch. Non-incremental objects fall back to the engine's content-hash idempotency.
+//  - Write: generic per-operation CRUD (metadata-driven) for the write-capable top-level IOs. The one
+//    documented idiosyncrasy — Mailchimp nested resources carry NAMED parent path vars
+//    (`/lists/{list_id}/members/{subscriber_hash}`) the base's `{ID}`-only substitution can't express — is
+//    handled by a named-var SubstituteIDInPath override plus attribute-sourced parent-var filling on the
+//    nested Create/Update/Delete paths. All creates are flat-body with the id at the response root, so the
+//    generic body/id extraction applies unchanged.
 
-/**
- * Connection configuration for Mailchimp Marketing API.
- *
- * Mailchimp uses an API key with an embedded data-center suffix
- * (e.g. `abc123def-us20`). The data-center suffix determines the base URL
- * (`https://us20.api.mailchimp.com/3.0`). The optional `ServerPrefix` field
- * overrides auto-detection for keys without a suffix or when using an
- * OAuth bearer token.
- */
-export interface MailchimpConnectionConfig {
-    /** Mailchimp API key (optionally suffixed with `-<dc>`, e.g. 'abc-us20'). */
-    ApiKey: string;
-    /** Explicit data-center prefix (e.g. 'us20'). Overrides the auto-parsed suffix. */
-    ServerPrefix?: string;
+// ─── Types ──────────────────────────────────────────────────────────────
 
-    // ── Optional performance overrides ──────────────────────────
-    /** Maximum retries for rate-limited or transient failures. Default: 5. */
-    MaxRetries?: number;
-    /** HTTP request timeout in milliseconds. Default: 30000. */
-    RequestTimeoutMs?: number;
-    /** Minimum milliseconds between API requests. Default: 100. */
-    MinRequestIntervalMs?: number;
+/** Parsed Mailchimp credential + tenant data center. */
+interface MailchimpCredentials {
+    /** Mailchimp API key (optionally suffixed `-<dc>`, e.g. `abc123-us15`) or OAuth2 access token. */
+    ApiKey?: string;
+    /** Explicit data-center prefix (e.g. `us15`). Overrides the suffix parsed from the key. */
+    DataCenter?: string;
+    /** Optional full base-URL override (sandbox / test / mock). Wins over the dc-derived host. */
+    BaseURLOverride?: string;
+    /** Auth transport: 'basic' (default) or 'bearer' (OAuth2 access token as a Bearer header). */
+    Scheme?: 'basic' | 'bearer';
 }
 
-/** Extended auth context carrying Mailchimp config. */
+/** Extended auth context carrying the resolved Basic/Bearer header + the per-account data center. */
 interface MailchimpAuthContext extends RESTAuthContext {
-    /** Resolved data-center prefix (e.g. 'us20'). */
+    /** Full `Authorization` header value (Basic or Bearer). */
+    AuthHeader: string;
+    /** Resolved data-center prefix used to build every request host (e.g. `us15`). */
     DataCenter: string;
-    /** Full parsed config. */
-    Config: MailchimpConnectionConfig;
+    /** Optional explicit full base-URL override (sandbox/test/mock); wins over the dc host in GetBaseURL. */
+    BaseURLOverride?: string;
 }
 
-/** Mailchimp error response envelope. */
-interface MailchimpErrorResponse {
-    type?: string;
-    title?: string;
-    status?: number;
-    detail?: string;
-    instance?: string;
-    errors?: Array<{ field?: string; message?: string }>;
+/** Mailchimp collection envelope — records under a per-object key, alongside `total_items`. */
+interface MailchimpCollectionEnvelope {
+    total_items?: number;
+    [key: string]: unknown;
 }
 
-/** List-merge-field response shape (used for runtime custom-field discovery). */
-interface MailchimpMergeField {
-    merge_id: number;
-    tag: string;
-    name: string;
-    type: string;
-    required: boolean;
-    default_value?: string;
-    public?: boolean;
-    display_order?: number;
-    options?: Record<string, unknown>;
-    help_text?: string;
-    list_id?: string;
-}
-
-/** OAuth2 metadata endpoint response. */
+/** OAuth2 metadata endpoint response (used only as a runtime dc-resolution fallback for bearer tokens). */
 interface MailchimpOAuthMetadata {
     dc?: string;
-    role?: string;
-    accountname?: string;
-    user_id?: number;
-    login?: { email?: string; login_name?: string };
     api_endpoint?: string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────
 
+/** OAuth2 metadata endpoint — resolves the data center for an OAuth access token when not otherwise known. */
 const MAILCHIMP_OAUTH_METADATA_URL = 'https://login.mailchimp.com/oauth2/metadata';
 
-/** Default page size for list endpoints (Mailchimp max is 1000). */
+/** Default page size (metadata DefaultPageSize normally supplies this; safe fallback well below the ceiling). */
 const DEFAULT_PAGE_SIZE = 200;
 
-/** Absolute max records per page enforced by the API. */
+/** Absolute per-page ceiling enforced by the Mailchimp API (`count` maxes at 1000). */
 const MAX_PAGE_SIZE = 1000;
 
-/** Default max retries for 429 / 503 / transient errors. */
+/** Basic-auth userid — Mailchimp ignores the userid, so any non-empty string works (`anystring` per docs). */
+const BASIC_AUTH_USERID = 'anystring';
+
+/** Max in-flight backoff retries for a 429 / 503 transient response. */
 const DEFAULT_MAX_RETRIES = 5;
 
-/** Default HTTP timeout (ms). */
-const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
-
-/** Default throttle between requests (ms). */
-const DEFAULT_MIN_REQUEST_INTERVAL_MS = 100;
-
-/** Sentinel token replaced at request time with the active watermark ISO value. */
-const WATERMARK_TOKEN = '{watermark}';
-
-// ─── Connector ───────────────────────────────────────────────────────
+// ─── MailchimpConnector ─────────────────────────────────────────────────
 
 /**
- * Connector for the Mailchimp Marketing API (v3.0).
+ * Mailchimp Marketing API (v3.0) connector — extends BaseRESTIntegrationConnector (REST/JSON over HTTP).
  *
- * Data-center discovery:
- *   - API Key with suffix `-<dc>` (e.g. `abc-us20`) → data center `us20`
- *   - Explicit `ServerPrefix` in credentials overrides parsed suffix
- *   - OAuth access tokens (bearer) → fetched from `/oauth2/metadata`
- *
- * Authentication:
- *   HTTP Basic with username=`anystring`, password=`<api_key>`
- *
- * Features:
- *   - Offset/count pagination on all list endpoints
- *   - Hierarchical per-parent endpoints via APIPath template variables
- *     (e.g. `/lists/{list_id}/members`), driven by IO metadata
- *   - Incremental sync via per-endpoint server-side date filters
- *     (e.g. `since_last_changed` for members)
- *   - Runtime custom field discovery (merge fields per-list)
- *   - 429 / 503 exponential backoff; bounded parallelism (10 concurrent, enforced
- *     by the engine via BatchMaxRequestCount metadata, this connector itself is
- *     single-threaded per `MakeHTTPRequest` call)
+ * Discovery, template-var read traversal (second-layer objects resolve their parent via
+ * Configuration.parentObjectName — e.g. `lists/{list_id}/members` iterates over synced `lists`), and the
+ * paginated GET loop are inherited. This class supplies only the Mailchimp-specific protocol surface:
+ * Basic auth, per-account base URL, offset pagination, per-endpoint incremental date filtering, connection
+ * testing, generic per-operation CRUD with named parent-var path templating, and the §7/§10
+ * sync-efficiency hooks the frozen contract evidences.
  */
-// Primary key follows the catalog convention (className == npm package name;
-// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
-// package name, so the legacy bare key never matched in the catalog. The
-// legacy alias stays registered so pre-migration tenant Integration rows
-// keep resolving.
-@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-mailchimp')
 @RegisterClass(BaseIntegrationConnector, 'MailchimpConnector')
 export class MailchimpConnector extends BaseRESTIntegrationConnector {
 
-    /**
-     * IntrospectSchema — pure WIRING of MJ's existing sampler into the declared catalog (the connector
-     * sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md). This connector adds NO discovery,
-     * merge, or sync logic — it only wires `DiscoverFieldsViaFetch` (MJ's sampler) into IntrospectSchema.
-     *
-     * `super.IntrospectSchema` yields the cache-driven Declared catalog (no measured widths). For each
-     * object we then call MJ's `DiscoverFieldsViaFetch` — MJ's own read-path sampler that measures real
-     * field widths and surfaces custom columns — and the shared PURE `mergeDeclaredWithSampledFields`
-     * unions the two by field name (adopt MJ's measured width; append MJ-discovered custom columns). MJ
-     * owns everything else (measurement, type/PK inference, persistence, reconcile, sync).
-     *
-     * Recursion note: `DiscoverFieldsViaFetch` falls back to the UNCHANGED `DiscoverFields` (cache-driven)
-     * when the read path can't run — never back into THIS method — so there is no infinite recursion.
-     * This connector does NOT override `DiscoverFields` to call any ViaFetch/ViaStream.
-     *
-     * Robustness: objects are sampled IN PARALLEL under a small bounded pool; any per-object failure
-     * keeps that object's declared fields, so a single bad sample never breaks introspection.
-     */
-    public override async IntrospectSchema(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<SourceSchemaInfo> {
-        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
-
-        await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
-            try {
-                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
-                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
-            } catch {
-                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
-            }
-        });
-
-        return schema;
-    }
-
-
-    // ── State ──────────────────────────────────────────────────────
-
-    /** Cached auth context (resolved once per connector instance). */
+    /** Cached auth for the lifetime of a single sync run (Mailchimp API keys don't expire). */
     private cachedAuth: MailchimpAuthContext | null = null;
 
-    /** Timestamp of the last HTTP request — used for client-side throttling. */
-    private lastRequestTime = 0;
-
-    /** Active watermark for the current FetchChanges call (used to template query params). */
+    /** Active watermark for the current FetchChanges call — exposed to AppendDefaultQueryParams. */
     private currentWatermark: string | null = null;
 
-    // ── Capability getters ────────────────────────────────────────
+    // ── Identity (T1 three-way invariant) ────────────────────────────
+
+    /** Verbatim `MJ: Integrations.Name`. Load-bearing: the T1 three-way name check compares this === metadata Name. */
+    public override get IntegrationName(): string {
+        return 'mailchimp';
+    }
+
+    // ── Capability getters (kept in lockstep with the per-op metadata columns) ──
 
     public override get SupportsCreate(): boolean { return true; }
     public override get SupportsUpdate(): boolean { return true; }
     public override get SupportsDelete(): boolean { return true; }
-    public override get SupportsSearch(): boolean { return true; }
-    public override get SupportsListing(): boolean { return true; }
-
-    public override get IntegrationName(): string { return 'Mailchimp'; }
-
-    // ── Default configuration ─────────────────────────────────────
-
-    /** Minimal out-of-box sync proposal — audiences + members. */
-    public override GetDefaultConfiguration(): DefaultIntegrationConfig {
-        return {
-            DefaultSchemaName: 'Mailchimp',
-            DefaultObjects: [
-                {
-                    SourceObjectName: 'lists',
-                    TargetTableName: 'MailchimpList',
-                    TargetEntityName: 'Mailchimp Lists',
-                    SyncEnabled: true,
-                    FieldMappings: [],
-                },
-                {
-                    SourceObjectName: 'lists.members',
-                    TargetTableName: 'MailchimpListMember',
-                    TargetEntityName: 'Mailchimp List Members',
-                    SyncEnabled: true,
-                    FieldMappings: [],
-                },
-                {
-                    SourceObjectName: 'campaigns',
-                    TargetTableName: 'MailchimpCampaign',
-                    TargetEntityName: 'Mailchimp Campaigns',
-                    SyncEnabled: true,
-                    FieldMappings: [],
-                },
-            ],
-        };
-    }
-
-    // ── TestConnection ────────────────────────────────────────────
 
     /**
-     * Pings the Mailchimp API root to verify connectivity and authentication.
+     * Discovery is NON-authoritative: DiscoverObjects / IntrospectSchema are cache-driven (they re-read
+     * persisted ACTIVE Declared metadata, NOT a live full-gamut enumeration). Mailchimp exposes no complete
+     * describe endpoint; per-list custom merge fields flow through the sample-union enrichment below plus the
+     * framework's custom-column capture. Absence in a refresh proves nothing → never deactivate. Matches the
+     * frozen contract (no complete-gamut describe endpoint).
      */
+    public override get DiscoveryIsAuthoritative(): boolean {
+        return false;
+    }
+
+    // ── Sync-efficiency hooks (§7/§10 — populated ONLY from evidenced frozen-contract facts) ──
+
+    /**
+     * Mailchimp's documented limit is a CONCURRENCY cap ("a limit of 10 simultaneous connections"), NOT a
+     * documented requests-per-window token rate — and it emits no `X-RateLimit-*` / `Retry-After` headers.
+     * So the evidenced hook is the concurrency ceiling (below); RateLimitPolicy stays null (no token rate to
+     * fabricate — the engine derives a conservative rate) and ExtractRetryAfterMs stays default (nothing to
+     * parse). The internal transport still honors an opportunistic Retry-After on a 429 as defensive backoff.
+     */
+    public override get MaxConcurrencyHint(): number | null { return 10; }
+
+    // ── Sample-union field enrichment (MJ connector standard) ─────────
+
+    /**
+     * Sample-union enrichment: Declared metadata is spec-derived and misses a tenant's per-list custom merge
+     * fields. After the base cache-driven introspection, we sample each object's live read shape via
+     * `DiscoverFieldsViaFetch` and UNION it into the declared field set with `mergeDeclaredWithSampledFields`
+     * (never-shrink, declared-wins, capacities widened). Best-effort + parallel; a sample failure leaves the
+     * declared set untouched. We override `IntrospectSchema` (NOT `DiscoverFields` — that would recurse into
+     * `DiscoverFieldsViaFetch`'s own fallback). Connector-agnostic: no Mailchimp-specific field logic.
+     */
+    public override async IntrospectSchema(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+    ): Promise<SourceSchemaInfo> {
+        const info = await super.IntrospectSchema(companyIntegration, contextUser);
+        await Promise.all(
+            info.Objects.map(async (obj) => {
+                try {
+                    const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                    obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+                } catch {
+                    /* best-effort — a sample failure leaves the declared fields as-is */
+                }
+            }),
+        );
+        return info;
+    }
+
+    // ── TestConnection ────────────────────────────────────────────────
+
+    /** Pings the Mailchimp API root (`/ping`) to verify connectivity + authentication (read-only). */
     public async TestConnection(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
+        contextUser: UserInfo,
     ): Promise<ConnectionTestResult> {
         try {
             const auth = await this.Authenticate(companyIntegration, contextUser);
             const url = `${this.GetBaseURL(companyIntegration, auth)}/ping`;
             const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
             if (response.Status >= 200 && response.Status < 300) {
-                const body = response.Body as { health_status?: string };
+                const body = response.Body as { health_status?: string } | null;
                 return {
                     Success: true,
-                    Message: `Successfully connected to Mailchimp (${auth.DataCenter}): ${body.health_status ?? 'OK'}`,
+                    Message: `Connected to Mailchimp (${auth.DataCenter}): ${body?.health_status ?? 'OK'}`,
                     ServerVersion: 'Mailchimp Marketing API v3.0',
                 };
             }
-            return {
-                Success: false,
-                Message: `Mailchimp API returned ${response.Status}: ${this.previewBody(response.Body)}`,
-            };
+            if (response.Status === 401 || response.Status === 403) {
+                return { Success: false, Message: `Mailchimp authentication failed (HTTP ${response.Status}).` };
+            }
+            return { Success: false, Message: `Mailchimp /ping returned HTTP ${response.Status}.` };
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            return { Success: false, Message: `Connection failed: ${message}` };
+            return { Success: false, Message: `Connection failed: ${err instanceof Error ? err.message : String(err)}` };
         }
     }
 
-    // ── FetchChanges override (watermark templating) ──────────────
+    // ── FetchChanges override (watermark exposure only) ───────────────
 
     /**
-     * Overrides the base implementation to expose the watermark to
-     * `AppendDefaultQueryParams`, where the `{watermark}` token is replaced
-     * with the active ISO 8601 value.
+     * Overridden ONLY to expose the active watermark to AppendDefaultQueryParams (which appends the
+     * per-endpoint `since_<field>` incremental filter). All read traversal — flat, offset-paginated, and
+     * per-parent template-var — is delegated to the inherited base implementation.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
-        this.currentWatermark = ctx.WatermarkValue;
+        this.currentWatermark = ctx.WatermarkValue ?? null;
         try {
             return await super.FetchChanges(ctx);
         } finally {
@@ -294,752 +236,444 @@ export class MailchimpConnector extends BaseRESTIntegrationConnector {
         }
     }
 
-    /**
-     * Overrides base to substitute the active watermark into query-param templates.
-     * Any DefaultQueryParam value equal to `{watermark}` is replaced with the current
-     * watermark; when there is no watermark, the param is dropped entirely.
-     */
-    protected override AppendDefaultQueryParams(url: string, obj: MJIntegrationObjectEntity): string {
-        if (!obj.DefaultQueryParams) return super.AppendDefaultQueryParams(url, obj);
+    // ── Abstract REST hooks ───────────────────────────────────────────
 
-        let patched = obj.DefaultQueryParams;
-        try {
-            const parsed = JSON.parse(obj.DefaultQueryParams) as Record<string, string>;
-            const resolved: Record<string, string> = {};
-            for (const [k, v] of Object.entries(parsed)) {
-                if (v === WATERMARK_TOKEN) {
-                    if (this.currentWatermark) resolved[k] = this.currentWatermark;
-                    // else: drop — no watermark → skip this filter param
-                } else {
-                    resolved[k] = v;
-                }
-            }
-            patched = JSON.stringify(resolved);
-        } catch {
-            // Leave DefaultQueryParams as-is if unparseable — base will warn.
-        }
-
-        // Temporarily swap DefaultQueryParams so the base class sees resolved values.
-        const originalRaw = obj.DefaultQueryParams;
-        try {
-            (obj as unknown as { DefaultQueryParams: string }).DefaultQueryParams = patched;
-            return super.AppendDefaultQueryParams(url, obj);
-        } finally {
-            (obj as unknown as { DefaultQueryParams: string }).DefaultQueryParams = originalRaw;
-        }
-    }
-
-    // ── Runtime custom-field discovery ────────────────────────────
-
-    /**
-     * Discovers fields for a Mailchimp object. For `lists.members`, this
-     * additionally calls `/lists/{list_id}/merge-fields` on a representative
-     * list (the first active list returned by `/lists?count=1`) to surface
-     * per-list merge fields as IsCustom fields on top of the static metadata.
-     *
-     * Merge-field schema varies per audience, so the returned set is a
-     * best-effort sample. Production sync should call this per-list.
-     */
-    /**
-     * Canonical Mailchimp Marketing API v3 top-level objects.  Merges the
-     * vendor-standard catalog with anything already persisted in
-     * IntegrationObject (via super.DiscoverObjects) so curated rows aren't
-     * lost.  Per-account merge-fields are NOT new tables — they're new
-     * columns on `lists.members` and surface via DiscoverFields when
-     * IntegrationObject.Name='lists.members'.
-     */
-    public override async DiscoverObjects(
+    /** Resolves credentials + data center once per run and pre-builds the Authorization header via the helper. */
+    protected override async Authenticate(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<ExternalObjectSchema[]> {
-        const persisted = await super.DiscoverObjects(companyIntegration, contextUser);
-        const canonical: ExternalObjectSchema[] = [
-            { Name: 'lists', Label: 'Lists / Audiences', Description: 'Audience lists. v3 API /lists.', SupportsIncrementalSync: true, SupportsWrite: true },
-            { Name: 'lists.members', Label: 'List Members', Description: 'Subscribers per list (parent-templated). v3 API /lists/{list_id}/members. Per-list merge fields surface here via DiscoverFields.', SupportsIncrementalSync: true, SupportsWrite: true },
-            { Name: 'lists.merge-fields', Label: 'List Merge Fields', Description: 'Per-audience merge-field schema. v3 API /lists/{list_id}/merge-fields.', SupportsIncrementalSync: false, SupportsWrite: true },
-            { Name: 'lists.segments', Label: 'List Segments', Description: 'Per-audience saved/static segments. v3 API /lists/{list_id}/segments.', SupportsIncrementalSync: true, SupportsWrite: true },
-            { Name: 'lists.interest-categories', Label: 'List Interest Categories', Description: 'Group categories per audience. v3 API /lists/{list_id}/interest-categories.', SupportsIncrementalSync: false, SupportsWrite: true },
-            { Name: 'campaigns', Label: 'Campaigns', Description: 'Email campaigns. v3 API /campaigns.', SupportsIncrementalSync: true, SupportsWrite: true },
-            { Name: 'automations', Label: 'Automations', Description: 'Marketing automations. v3 API /automations.', SupportsIncrementalSync: true, SupportsWrite: false },
-            { Name: 'templates', Label: 'Templates', Description: 'Email templates. v3 API /templates.', SupportsIncrementalSync: false, SupportsWrite: true },
-            { Name: 'reports', Label: 'Reports', Description: 'Per-campaign reporting metrics. v3 API /reports.', SupportsIncrementalSync: true, SupportsWrite: false },
-            { Name: 'conversations', Label: 'Conversations', Description: 'Reply conversations. v3 API /conversations.', SupportsIncrementalSync: true, SupportsWrite: false },
-        ];
-        const byName = new Map<string, ExternalObjectSchema>();
-        for (const o of persisted) byName.set(o.Name.toLowerCase(), o);
-        for (const c of canonical) {
-            if (!byName.has(c.Name.toLowerCase())) byName.set(c.Name.toLowerCase(), c);
-        }
-        return [...byName.values()];
-    }
-
-    public override async DiscoverFields(
-        companyIntegration: MJCompanyIntegrationEntity,
-        objectName: string,
-        contextUser: UserInfo
-    ): Promise<ReturnType<BaseRESTIntegrationConnector['DiscoverFields']> extends Promise<infer R> ? R : never> {
-        const staticFields = await super.DiscoverFields(companyIntegration, objectName, contextUser);
-        if (objectName !== 'lists.members') return staticFields;
-
-        try {
-            const merge = await this.fetchSampleMergeFields(companyIntegration, contextUser);
-            const existingNames = new Set(staticFields.map(f => f.Name));
-            for (const m of merge) {
-                const field = `merge_fields.${m.tag}`;
-                if (existingNames.has(field)) continue;
-                staticFields.push({
-                    Name: field,
-                    Label: m.name,
-                    Description: `Mailchimp merge field [${m.type}]${m.help_text ? ` — ${m.help_text}` : ''}`,
-                    DataType: this.mapMergeTypeToDataType(m.type),
-                    IsRequired: Boolean(m.required),
-                    IsUniqueKey: false,
-                    IsReadOnly: false,
-                    IsForeignKey: false,
-                    ForeignKeyTarget: null,
-                });
-            }
-        } catch (err) {
-            console.warn(`[Mailchimp] Merge-field discovery skipped: ${err instanceof Error ? err.message : String(err)}`);
-        }
-
-        return staticFields;
-    }
-
-    /**
-     * Fetches merge-field definitions from the first active list.
-     * Returns an empty array if no lists exist.
-     */
-    private async fetchSampleMergeFields(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<MailchimpMergeField[]> {
-        const auth = await this.Authenticate(companyIntegration, contextUser);
-        const base = this.GetBaseURL(companyIntegration, auth);
-        const listsURL = `${base}/lists?count=1&fields=lists.id`;
-        const listsResponse = await this.MakeHTTPRequest(auth, listsURL, 'GET', this.BuildHeaders(auth));
-        const listsBody = listsResponse.Body as { lists?: Array<{ id?: string }> };
-        const listId = listsBody.lists?.[0]?.id;
-        if (!listId) return [];
-
-        const mergeURL = `${base}/lists/${encodeURIComponent(listId)}/merge-fields?count=${MAX_PAGE_SIZE}`;
-        const mergeResponse = await this.MakeHTTPRequest(auth, mergeURL, 'GET', this.BuildHeaders(auth));
-        const mergeBody = mergeResponse.Body as { merge_fields?: MailchimpMergeField[] };
-        return mergeBody.merge_fields ?? [];
-    }
-
-    /** Maps a Mailchimp merge-field type string to a generic DataType label. */
-    private mapMergeTypeToDataType(mergeType: string): string {
-        switch (mergeType.toLowerCase()) {
-            case 'number': return 'decimal';
-            case 'date': case 'birthday': return 'date';
-            case 'address': return 'address';
-            case 'phone': return 'phone';
-            case 'url': case 'imageurl': return 'url';
-            case 'zip': return 'string';
-            case 'dropdown': case 'radio': return 'string';
-            default: return 'string';
-        }
-    }
-
-    // ── CRUD ───────────────────────────────────────────────────────
-
-    /**
-     * Creates a new record. For `lists.members`, uses upsert semantics
-     * (PUT with subscriber hash) when an `email_address` is supplied.
-     */
-    public override async CreateRecord(ctx: CreateRecordContext): Promise<CRUDResult> {
-        const companyIntegration = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        const contextUser = ctx.ContextUser as UserInfo;
-        const auth = await this.Authenticate(companyIntegration, contextUser);
-        const base = this.GetBaseURL(companyIntegration, auth);
-        const path = this.resolveObjectPath(ctx.ObjectName, ctx.Attributes);
-        const method = this.isListMembersUpsert(ctx.ObjectName, ctx.Attributes) ? 'PUT' : 'POST';
-        const url = this.buildCrudURL(base, path, method === 'PUT', ctx.Attributes);
-        return this.executeCRUD(auth, url, method, ctx.Attributes, ctx.ObjectName, 'CreateRecord');
-    }
-
-    /**
-     * Updates an existing record via PATCH (partial update).
-     */
-    public override async UpdateRecord(ctx: UpdateRecordContext): Promise<CRUDResult> {
-        const companyIntegration = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        const contextUser = ctx.ContextUser as UserInfo;
-        const auth = await this.Authenticate(companyIntegration, contextUser);
-        const base = this.GetBaseURL(companyIntegration, auth);
-        const path = this.resolveObjectPath(ctx.ObjectName, ctx.Attributes);
-        const url = `${base}/${path}/${encodeURIComponent(ctx.ExternalID)}`;
-        return this.executeCRUD(auth, url, 'PATCH', ctx.Attributes, ctx.ObjectName, 'UpdateRecord');
-    }
-
-    /**
-     * Deletes (or archives) a record via DELETE.
-     */
-    public override async DeleteRecord(ctx: DeleteRecordContext): Promise<CRUDResult> {
-        const companyIntegration = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        const contextUser = ctx.ContextUser as UserInfo;
-        const auth = await this.Authenticate(companyIntegration, contextUser);
-        const base = this.GetBaseURL(companyIntegration, auth);
-        const path = this.resolveObjectPath(ctx.ObjectName, {});
-        const url = `${base}/${path}/${encodeURIComponent(ctx.ExternalID)}`;
-        return this.executeCRUD(auth, url, 'DELETE', null, ctx.ObjectName, 'DeleteRecord');
-    }
-
-    /**
-     * Retrieves a single record by ID.
-     */
-    public override async GetRecord(ctx: GetRecordContext): Promise<ExternalRecord | null> {
-        const companyIntegration = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        const contextUser = ctx.ContextUser as UserInfo;
-        const auth = await this.Authenticate(companyIntegration, contextUser);
-        const base = this.GetBaseURL(companyIntegration, auth);
-        const path = this.resolveObjectPath(ctx.ObjectName, {});
-        const url = `${base}/${path}/${encodeURIComponent(ctx.ExternalID)}`;
-        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
-        if (response.Status === 404) return null;
-        if (response.Status < 200 || response.Status >= 300) return null;
-        const body = response.Body as Record<string, unknown>;
-        return {
-            ExternalID: String(body['id'] ?? ctx.ExternalID),
-            ObjectType: ctx.ObjectName,
-            Fields: body,
-        };
-    }
-
-    /** Searches via Mailchimp's `search-members` / `search-campaigns` helpers when available. */
-    public override async SearchRecords(ctx: SearchContext): Promise<SearchResult> {
-        const companyIntegration = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        const contextUser = ctx.ContextUser as UserInfo;
-        const auth = await this.Authenticate(companyIntegration, contextUser);
-        const base = this.GetBaseURL(companyIntegration, auth);
-        const pageSize = Math.min(ctx.PageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
-        const offset = ctx.Page != null && ctx.Page > 1 ? (ctx.Page - 1) * pageSize : 0;
-
-        const queryParts = Object.entries(ctx.Filters).map(
-            ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`
-        );
-        queryParts.push(`count=${pageSize}`, `offset=${offset}`);
-        const url = `${base}/${ctx.ObjectName}?${queryParts.join('&')}`;
-
-        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
-        if (response.Status < 200 || response.Status >= 300) {
-            return { Records: [], TotalCount: 0, HasMore: false };
-        }
-        const body = response.Body as { total_items?: number } & Record<string, unknown>;
-        const records = this.extractCollection(body, ctx.ObjectName);
-        return {
-            Records: records.map(r => ({
-                ExternalID: String(r['id'] ?? ''),
-                ObjectType: ctx.ObjectName,
-                Fields: r,
-            })),
-            TotalCount: typeof body.total_items === 'number' ? body.total_items : records.length,
-            HasMore: records.length >= pageSize,
-        };
-    }
-
-    /** Cursor-free paginated listing using offset/count. */
-    public override async ListRecords(ctx: ListContext): Promise<ListResult> {
-        const companyIntegration = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        const contextUser = ctx.ContextUser as UserInfo;
-        const auth = await this.Authenticate(companyIntegration, contextUser);
-        const base = this.GetBaseURL(companyIntegration, auth);
-        const pageSize = Math.min(ctx.PageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
-        const cursorOffset = ctx.Cursor ? parseInt(ctx.Cursor, 10) : 0;
-
-        const params: string[] = [`count=${pageSize}`, `offset=${cursorOffset}`];
-        if (ctx.Filter) {
-            for (const [k, v] of Object.entries(ctx.Filter)) {
-                params.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
-            }
-        }
-        const url = `${base}/${ctx.ObjectName}?${params.join('&')}`;
-        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
-        if (response.Status < 200 || response.Status >= 300) {
-            return { Records: [], HasMore: false };
-        }
-        const body = response.Body as Record<string, unknown>;
-        const records = this.extractCollection(body, ctx.ObjectName);
-        const hasMore = records.length >= pageSize;
-        return {
-            Records: records.map(r => ({
-                ExternalID: String(r['id'] ?? ''),
-                ObjectType: ctx.ObjectName,
-                Fields: r,
-            })),
-            HasMore: hasMore,
-            NextCursor: hasMore ? String(cursorOffset + records.length) : undefined,
-        };
-    }
-
-    // ── BaseRESTIntegrationConnector implementations ─────────────
-
-    protected async Authenticate(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
+        contextUser: UserInfo,
     ): Promise<MailchimpAuthContext> {
         if (this.cachedAuth) return this.cachedAuth;
-        const config = await this.parseConfig(companyIntegration, contextUser);
-        const dc = await this.resolveDataCenter(config);
-        const auth: MailchimpAuthContext = {
-            Token: config.ApiKey,
-            DataCenter: dc,
-            Config: config,
+        const creds = await this.loadCredentials(companyIntegration, contextUser);
+        if (!creds.ApiKey) {
+            throw new Error('Mailchimp connector: no API key found on the Credential or CompanyIntegration Configuration.');
+        }
+        const dataCenter = await this.resolveDataCenter(creds);
+        const authHeader = creds.Scheme === 'bearer'
+            ? `Bearer ${creds.ApiKey}`
+            : buildBasicAuthHeaderValue({ Username: BASIC_AUTH_USERID, Password: creds.ApiKey });
+        this.cachedAuth = {
+            AuthHeader: authHeader,
+            DataCenter: dataCenter,
+            BaseURLOverride: creds.BaseURLOverride,
         };
-        this.cachedAuth = auth;
-        return auth;
+        return this.cachedAuth;
     }
 
-    protected BuildHeaders(auth: RESTAuthContext): Record<string, string> {
-        const mc = auth as MailchimpAuthContext;
-        // Mailchimp supports HTTP Basic (username=anystring, password=api_key)
-        // OR Bearer <access_token> for OAuth2 tokens.
-        const isBearer = mc.Config.ApiKey.startsWith('Bearer ');
-        if (isBearer) {
-            return {
-                'Authorization': mc.Config.ApiKey,
-                'Accept': 'application/json',
-            };
-        }
-        const basic = Buffer.from(`mj:${mc.Config.ApiKey}`).toString('base64');
+    /** Static request headers; the Authorization value was built once in Authenticate. */
+    protected override BuildHeaders(auth: RESTAuthContext): Record<string, string> {
         return {
-            'Authorization': `Basic ${basic}`,
+            'Authorization': (auth as MailchimpAuthContext).AuthHeader,
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
         };
     }
 
-    protected async MakeHTTPRequest(
+    /**
+     * HTTP transport (fetch), with bounded 429/503 backoff. Owns the wire boundary; test subclasses override
+     * this to capture the outbound request and return canned responses.
+     */
+    protected override async MakeHTTPRequest(
         auth: RESTAuthContext,
         url: string,
         method: string,
         headers: Record<string, string>,
-        body?: unknown
+        body?: unknown,
     ): Promise<RESTResponse> {
-        const mc = auth as MailchimpAuthContext;
-        const maxRetries = mc.Config.MaxRetries ?? DEFAULT_MAX_RETRIES;
-        const timeoutMs = mc.Config.RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-        const minInterval = mc.Config.MinRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS;
-
-        const finalHeaders = { ...headers };
-        if (body !== undefined && !finalHeaders['Content-Type']) {
-            finalHeaders['Content-Type'] = 'application/json';
-        }
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            await this.throttle(minInterval);
-            const response = await this.fetchWithTimeout(url, method, finalHeaders, body, timeoutMs);
-            this.lastRequestTime = Date.now();
-
-            if (response.status === 429 || response.status === 503) {
-                const delayMs = this.computeBackoff(response, attempt);
-                console.warn(`[Mailchimp] ${response.status} ${method} ${url} — retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`);
-                await this.sleep(delayMs);
+        for (let attempt = 0; attempt <= DEFAULT_MAX_RETRIES; attempt++) {
+            const response = await fetch(url, {
+                method,
+                headers,
+                body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
+            });
+            if ((response.status === 429 || response.status === 503) && attempt < DEFAULT_MAX_RETRIES) {
+                await this.sleep(this.computeBackoffMs(response, attempt));
                 continue;
             }
-
-            const parsed = await this.parseResponseBody(response);
-            return {
-                Status: response.status,
-                Body: parsed,
-                Headers: this.headersToRecord(response.headers),
-            };
+            const respHeaders: Record<string, string> = {};
+            response.headers.forEach((v, k) => { respHeaders[k.toLowerCase()] = v; });
+            const text = await response.text();
+            let parsed: unknown = null;
+            if (text.length > 0) {
+                try { parsed = JSON.parse(text); } catch { parsed = text; }
+            }
+            return { Status: response.status, Body: parsed, Headers: respHeaders };
         }
-
-        throw new Error(`Mailchimp API request failed after ${maxRetries} retries: ${method} ${url}`);
+        throw new Error(`Mailchimp request failed after ${DEFAULT_MAX_RETRIES} retries: ${method} ${url}`);
     }
 
-    protected NormalizeResponse(
-        rawBody: unknown,
-        responseDataKey: string | null
-    ): Record<string, unknown>[] {
-        if (!rawBody) return [];
-
-        // If response is the raw array itself
+    /**
+     * Strips the Mailchimp collection envelope to the per-object record array
+     * (`{ members: [...], total_items }` → ResponseDataKey='members'). A single-record GET (no data key, or
+     * the key absent) is returned as a one-element array. A bare array body passes through unchanged.
+     */
+    protected override NormalizeResponse(rawBody: unknown, responseDataKey: string | null): Record<string, unknown>[] {
+        if (rawBody == null) return [];
         if (Array.isArray(rawBody)) return rawBody as Record<string, unknown>[];
-
-        if (!responseDataKey) return [rawBody as Record<string, unknown>];
-
+        if (typeof rawBody !== 'object') return [];
         const body = rawBody as Record<string, unknown>;
-        const direct = body[responseDataKey];
-        if (Array.isArray(direct)) return direct as Record<string, unknown>[];
-
-        // Common alternates for certain endpoints
-        for (const alt of ['lists', 'members', 'campaigns', 'orders', 'customers',
-                           'products', 'variants', 'templates', 'segments',
-                           'emails', 'folders', 'files', 'reports', 'automations',
-                           'interest_categories', 'interests', 'webhooks',
-                           'merge_fields', 'tags', 'goals', 'notes', 'messages',
-                           'conversations', 'queue', 'feedback', 'activity',
-                           'carts', 'promo_rules', 'promo_codes', 'results']) {
-            const val = body[alt];
-            if (Array.isArray(val)) return val as Record<string, unknown>[];
+        if (responseDataKey) {
+            const arr = body[responseDataKey];
+            if (Array.isArray(arr)) return arr as Record<string, unknown>[];
         }
-
-        // Single-object response
+        // Single-record / already-unwrapped object (or an empty/mismatched data key).
         return [body];
     }
 
-    protected ExtractPaginationInfo(
+    /**
+     * Offset pagination: continue while `offset + fetched < total_items` (when the envelope reports a total),
+     * else while a full page came back. The base loop advances `offset` by the fetched count.
+     *
+     * Mailchimp's collection pagination is UNIFORMLY count/offset with a `total_items` count across every
+     * list endpoint — including the single IO the frozen contract classifies `Cursor`
+     * (`audiences/{audience_id}/contacts`), which returns the identical `{ <key>: [...], total_items }`
+     * envelope over the same `count`/`offset` params. So Offset AND Cursor advance by offset+fetched here;
+     * only `None` (and unknown types) are single-page. Treating the lone Cursor IO via the same mechanism
+     * prevents a silent one-page truncation (the endpoint could otherwise drop everything past page 1).
+     * Flagged RequiresLiveVerification in CODE_REPORT — the reality probe could not fill `{audience_id}`.
+     */
+    protected override ExtractPaginationInfo(
         rawBody: unknown,
         paginationType: PaginationType,
-        currentPage: number,
+        _currentPage: number,
         currentOffset: number,
-        pageSize: number
+        pageSize: number,
     ): PaginationState {
-        if (paginationType === 'None') return { HasMore: false };
-
-        const body = rawBody as { total_items?: number };
-        const total = typeof body?.total_items === 'number' ? body.total_items : undefined;
-        const records = this.NormalizeResponse(rawBody, null);
-        const fetched = records.length;
-
-        if (paginationType === 'Offset') {
-            const nextOffset = currentOffset + fetched;
-            const hasMore = total != null ? nextOffset < total : fetched >= pageSize;
-            return {
-                HasMore: hasMore,
-                NextOffset: hasMore ? nextOffset : undefined,
-                TotalRecords: total,
-            };
-        }
-
-        if (paginationType === 'PageNumber') {
-            const hasMore = fetched >= pageSize;
-            return {
-                HasMore: hasMore,
-                NextPage: hasMore ? currentPage + 1 : undefined,
-                TotalRecords: total,
-            };
-        }
-
-        return { HasMore: false };
+        if (paginationType !== 'Offset' && paginationType !== 'Cursor') return { HasMore: false };
+        const env = (rawBody && typeof rawBody === 'object' ? rawBody : {}) as MailchimpCollectionEnvelope;
+        const total = typeof env.total_items === 'number' ? env.total_items : undefined;
+        const fetched = this.countEnvelopeRecords(env);
+        const nextOffset = currentOffset + fetched;
+        const hasMore = total != null ? nextOffset < total : fetched >= pageSize;
+        return { HasMore: hasMore, NextOffset: hasMore ? nextOffset : undefined, TotalRecords: total };
     }
 
+    /** Mailchimp offset pagination params: `count=<n>` (≤1000) + `offset=<n>` (NOT the base default `limit`/`offset`). */
     protected override BuildPaginatedURL(
         basePath: string,
         obj: MJIntegrationObjectEntity,
         _page: number,
         offset: number,
         _cursor?: string,
-        effectivePageSize?: number
+        effectivePageSize?: number,
     ): string {
         const pageSize = Math.min(effectivePageSize ?? obj.DefaultPageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
         const separator = basePath.includes('?') ? '&' : '?';
         return `${basePath}${separator}count=${pageSize}&offset=${offset}`;
     }
 
-    protected GetBaseURL(
-        _companyIntegration: MJCompanyIntegrationEntity,
-        auth: RESTAuthContext
-    ): string {
-        const mc = auth as MailchimpAuthContext;
-        return `https://${mc.DataCenter}.api.mailchimp.com/3.0`;
-    }
-
-    // ─── Helpers ──────────────────────────────────────────────────
-
-    /** Parses credentials from the attached MJ Credential or the Configuration JSON. */
-    private async parseConfig(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<MailchimpConnectionConfig> {
-        const credentialID = companyIntegration.CredentialID;
-        if (credentialID) {
-            const fromCred = await this.loadFromCredential(credentialID, contextUser);
-            if (fromCred) return fromCred;
+    /**
+     * Appends the per-endpoint incremental filter on a watermarked fetch: `since_<IncrementalWatermarkField>`
+     * (Mailchimp's documented date-filter convention — e.g. `since_last_changed` for list members). Only
+     * fires for objects the metadata marks `SupportsIncrementalSync` with a watermark field AND when a
+     * watermark value is present. Then delegates to the base for any metadata-declared DefaultQueryParams.
+     */
+    protected override AppendDefaultQueryParams(url: string, obj: MJIntegrationObjectEntity): string {
+        let out = super.AppendDefaultQueryParams(url, obj);
+        if (this.currentWatermark && obj.SupportsIncrementalSync && obj.IncrementalWatermarkField) {
+            const param = `since_${obj.IncrementalWatermarkField}`;
+            if (!this.urlHasParam(out, param)) {
+                out += (out.includes('?') ? '&' : '?') + `${param}=${encodeURIComponent(this.currentWatermark)}`;
+            }
         }
-
-        const configJson = companyIntegration.Configuration;
-        if (configJson) return this.parseConfigJson(configJson);
-
-        throw new Error('Mailchimp connector: no credentials or Configuration JSON found on CompanyIntegration.');
+        return out;
     }
 
-    /** Loads the credential entity and parses its Values JSON. */
+    /** Per-account base host. The `/3.0` version segment is included; each object's APIPath is appended by the base. */
+    protected override GetBaseURL(_companyIntegration: MJCompanyIntegrationEntity, auth: RESTAuthContext): string {
+        const ctx = auth as MailchimpAuthContext;
+        if (ctx.BaseURLOverride) return ctx.BaseURLOverride.replace(/\/+$/, '');
+        return `https://${ctx.DataCenter}.api.mailchimp.com/3.0`;
+    }
+
+    // ── Path templating ───────────────────────────────────────────────
+
+    /**
+     * OVERRIDE (idiosyncrasy): Mailchimp single-record paths use NAMED vars (`/campaigns/{campaign_id}`), not
+     * the base's `{ID}` placeholder. Fill each named `{var}` from the ExternalID — left-to-right across the
+     * `|`-split components of a composite ExternalID (mirrors ToExternalRecord's composite-PK join), so a
+     * single-var top-level path takes the whole ExternalID. This makes the INHERITED generic
+     * UpdateRecord / DeleteRecord / GetRecord work for all top-level writable IOs. (Nested paths that carry a
+     * PARENT var not present in the single-key ExternalID are handled by the Create/Update overrides below.)
+     */
+    protected override SubstituteIDInPath(path: string, externalID: string, idLocation: string | null): string {
+        if (idLocation && idLocation !== 'path') return path;
+        const vars = this.detectPathVars(path);
+        if (vars.length === 0) return path;
+        const parts = String(externalID).split('|');
+        let out = path;
+        vars.forEach((v, i) => {
+            const val = parts[i] ?? parts[parts.length - 1] ?? externalID;
+            out = out.replace(`{${v}}`, encodeURIComponent(val));
+        });
+        return out;
+    }
+
+    // ── CRUD ──────────────────────────────────────────────────────────
+    //
+    // Top-level writable IOs (campaigns, templates, lists, stores, …) use the INHERITED generic
+    // CreateRecord / UpdateRecord / DeleteRecord / GetRecord — all creates are flat-body with the new id at
+    // the response root, and single-var single-record paths resolve via the SubstituteIDInPath override
+    // above. The Create/Update/Delete methods here override ONLY the genuinely idiosyncratic case: NESTED
+    // resources whose write path carries a named PARENT var (`{list_id}`, `{store_id}`, …) that is not part
+    // of the child's single-key ExternalID and must be sourced from the record's own attributes.
+
+    /** Create: nested paths fill parent vars from the record attributes; top-level delegates to the generic path. */
+    public override async CreateRecord(ctx: CreateRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        if (!obj.CreateAPIPath || !obj.CreateMethod) return super.CreateRecord(ctx);
+        if (this.detectPathVars(obj.CreateAPIPath).length === 0) return super.CreateRecord(ctx);
+
+        const auth = await this.Authenticate(ci, contextUser);
+        const path = this.fillPathFromAttributes(obj.CreateAPIPath, ctx.Attributes, null);
+        this.assertPathResolved(path, ctx.ObjectName, 'create');
+        const url = `${this.GetBaseURL(ci, auth)}${path.startsWith('/') ? path : `/${path}`}`;
+        const body = this.BuildOperationBody(ctx.Attributes, obj.CreateBodyShape, obj.CreateBodyKey);
+        const response = await this.MakeHTTPRequest(auth, url, obj.CreateMethod, this.BuildHeaders(auth), body);
+        if (response.Status >= 200 && response.Status < 300) {
+            const externalID = this.ExtractIDFromResponse(response, obj.CreateIDLocation);
+            return this.BuildCreatedResult(externalID, response.Status, ctx.ObjectName);
+        }
+        return { Success: false, StatusCode: response.Status, ErrorMessage: this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on create` };
+    }
+
+    /** Update: nested paths fill parent vars from attributes + the innermost var from the ExternalID; top-level delegates. */
+    public override async UpdateRecord(ctx: UpdateRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        if (!obj.UpdateAPIPath || !obj.UpdateMethod) return super.UpdateRecord(ctx);
+        if (this.detectPathVars(obj.UpdateAPIPath).length <= 1) return super.UpdateRecord(ctx);
+
+        const auth = await this.Authenticate(ci, contextUser);
+        const path = this.fillPathFromAttributes(obj.UpdateAPIPath, ctx.Attributes, ctx.ExternalID);
+        this.assertPathResolved(path, ctx.ObjectName, 'update');
+        const url = `${this.GetBaseURL(ci, auth)}${path.startsWith('/') ? path : `/${path}`}`;
+        const body = this.BuildOperationBody(ctx.Attributes, obj.UpdateBodyShape, obj.UpdateBodyKey);
+        const response = await this.MakeHTTPRequest(auth, url, obj.UpdateMethod, this.BuildHeaders(auth), body);
+        if (response.Status >= 200 && response.Status < 300) {
+            return { Success: true, StatusCode: response.Status, ExternalID: ctx.ExternalID };
+        }
+        return { Success: false, StatusCode: response.Status, ErrorMessage: this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on update` };
+    }
+
+    /**
+     * Delete: nested paths resolve every `{var}` from the `|`-split composite ExternalID (right-aligned:
+     * `{list_id}`,`{subscriber_hash}` ← `list1|hashaaa`); top-level delegates. A nested delete whose parent
+     * var still can't be resolved (e.g. a single-component ExternalID that carries only the child key) fails
+     * loudly rather than issuing a request with an unresolved `{parent}` — a live-verification concern flagged
+     * in CODE_REPORT.
+     */
+    public override async DeleteRecord(ctx: DeleteRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        if (!obj.DeleteAPIPath || !obj.DeleteMethod) return super.DeleteRecord(ctx);
+        if (this.detectPathVars(obj.DeleteAPIPath).length <= 1) return super.DeleteRecord(ctx);
+
+        const auth = await this.Authenticate(ci, contextUser);
+        const path = this.fillPathFromAttributes(obj.DeleteAPIPath, {}, ctx.ExternalID);
+        const unresolved = this.detectPathVars(path);
+        if (unresolved.length > 0) {
+            return {
+                Success: false,
+                StatusCode: 0,
+                ErrorMessage: `Delete of nested "${ctx.ObjectName}" could not resolve parent path var(s) {${unresolved.join(', ')}} — a nested delete needs the parent id, which the delete context does not carry (requires live verification / composite key).`,
+            };
+        }
+        const url = `${this.GetBaseURL(ci, auth)}${path.startsWith('/') ? path : `/${path}`}`;
+        const response = await this.MakeHTTPRequest(auth, url, obj.DeleteMethod, this.BuildHeaders(auth));
+        if (response.Status >= 200 && response.Status < 300) {
+            return { Success: true, StatusCode: response.Status, ExternalID: ctx.ExternalID };
+        }
+        return { Success: false, StatusCode: response.Status, ErrorMessage: this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on delete` };
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Counts the records in a Mailchimp collection envelope by finding the per-object data array (the first
+     * array-valued property that isn't the `_links` HATEOAS list). Used for pagination advancement — the
+     * data key isn't passed to ExtractPaginationInfo, so we locate the array structurally. Returns 0 for a
+     * single-record body (no array), which correctly reports "no more pages".
+     */
+    private countEnvelopeRecords(env: MailchimpCollectionEnvelope): number {
+        for (const [key, value] of Object.entries(env)) {
+            if (key === '_links') continue;
+            if (Array.isArray(value)) return value.length;
+        }
+        return 0;
+    }
+
+    /** Extracts `{var}` names from a path template, in left-to-right order. */
+    private detectPathVars(path: string): string[] {
+        const matches = path.match(/\{(\w+)\}/g);
+        return matches ? matches.map(m => m.slice(1, -1)) : [];
+    }
+
+    /**
+     * Fills each `{var}` in a nested write path by resolving, per var, in this order:
+     *   1. a same-named attribute on the record (e.g. the base tags fetched children with their parent FK
+     *      field, so a synced member carries `list_id`);
+     *   2. the RIGHT-ALIGNED component of the `|`-split ExternalID — mirroring ToExternalRecord's composite-PK
+     *      join order (`parent|…|child`): the innermost (last) var is the record's OWN key, preceding vars are
+     *      the parent id(s). So a member's ExternalID `list1|hashaaa` fills `{list_id}`→`list1`,
+     *      `{subscriber_hash}`→`hashaaa`, which is exactly what a nested update/delete needs even with no
+     *      attributes present.
+     * Create paths pass externalID=null and thus fill purely from attributes. Any var that resolves to nothing
+     * is left in place so {@link assertPathResolved} / the delete guard can surface it (fail loudly, never
+     * issue a request with an unresolved `{parent}`).
+     */
+    private fillPathFromAttributes(template: string, attributes: Record<string, unknown>, externalID: string | null): string {
+        const vars = this.detectPathVars(template);
+        const components = externalID != null ? String(externalID).split('|') : [];
+        const offset = vars.length - components.length; // right-align components to the tail of the var list
+        let out = template;
+        vars.forEach((v, i) => {
+            let val: unknown = attributes[v];
+            if (val == null || val === '') {
+                const compIdx = i - offset;
+                if (compIdx >= 0 && compIdx < components.length) val = components[compIdx];
+            }
+            if (val != null && val !== '') out = out.replace(`{${v}}`, encodeURIComponent(String(val)));
+        });
+        return out;
+    }
+
+    /** Throws a clear error if a nested write path still has unresolved `{var}`s (missing parent id). */
+    private assertPathResolved(path: string, objectName: string, op: string): void {
+        const unresolved = this.detectPathVars(path);
+        if (unresolved.length > 0) {
+            throw new Error(
+                `Mailchimp ${op} of "${objectName}": unresolved path var(s) {${unresolved.join(', ')}} — ` +
+                `the record must carry the parent id field(s) (e.g. list_id / store_id) in its attributes.`,
+            );
+        }
+    }
+
+    /** True when a URL already carries a query param with `name` (case-insensitive). */
+    private urlHasParam(url: string, name: string): boolean {
+        const q = url.indexOf('?');
+        if (q < 0) return false;
+        const lname = name.toLowerCase();
+        return url.substring(q + 1).split('&').some(p => {
+            const eq = p.indexOf('=');
+            const k = (eq >= 0 ? p.substring(0, eq) : p).toLowerCase();
+            return k === lname;
+        });
+    }
+
+    /** Loads credentials from the linked Credential entity (preferred) or the CompanyIntegration Configuration JSON. */
+    private async loadCredentials(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+    ): Promise<MailchimpCredentials> {
+        const fromConfig = companyIntegration.Configuration ? this.parseCredentialJson(companyIntegration.Configuration) : null;
+        let fromCred: MailchimpCredentials | null = null;
+        if (companyIntegration.CredentialID) {
+            fromCred = await this.loadFromCredential(companyIntegration.CredentialID, contextUser);
+        }
+        // Credential secret (ApiKey) wins; Configuration supplies non-secret dc / base-URL overrides.
+        return { ...(fromConfig ?? {}), ...(fromCred ?? {}) };
+    }
+
+    /** Loads a credential row and parses its Values JSON. */
     private async loadFromCredential(
         credentialID: string,
         contextUser: UserInfo,
-        provider?: IMetadataProvider
-    ): Promise<MailchimpConnectionConfig | null> {
+        provider?: IMetadataProvider,
+    ): Promise<MailchimpCredentials | null> {
         const md = provider ?? new Metadata();
         const credential = await md.GetEntityObject<MJCredentialEntity>('MJ: Credentials', contextUser);
         const loaded = await credential.Load(credentialID);
         if (!loaded || !credential.Values) return null;
-        try {
-            return this.parseConfigJson(credential.Values);
-        } catch {
-            return null;
-        }
+        return this.parseCredentialJson(credential.Values);
     }
 
-    /** Parses and validates a Mailchimp config JSON string. */
-    private parseConfigJson(json: string): MailchimpConnectionConfig {
-        const parsed = JSON.parse(json) as Record<string, unknown>;
-        const apiKey = (parsed['ApiKey'] ?? parsed['apiKey'] ?? parsed['API_Key']) as string | undefined;
-        if (!apiKey || typeof apiKey !== 'string') {
-            throw new Error('Mailchimp config must include a non-empty ApiKey.');
-        }
-        const parseInt32 = (k: string): number | undefined => {
-            const raw = parsed[k];
-            if (raw == null) return undefined;
-            const n = Number(raw);
-            return Number.isFinite(n) ? Math.floor(n) : undefined;
-        };
+    /** Parses a Mailchimp credential/config JSON blob, tolerant of key casing variants. */
+    private parseCredentialJson(json: string): MailchimpCredentials | null {
+        let parsed: Record<string, unknown>;
+        try { parsed = JSON.parse(json) as Record<string, unknown>; } catch { return null; }
+        const scheme = this.firstString(parsed, ['scheme', 'Scheme', 'authScheme', 'AuthScheme']);
         return {
-            ApiKey: apiKey,
-            ServerPrefix: typeof parsed['ServerPrefix'] === 'string'
-                ? parsed['ServerPrefix'] as string
-                : undefined,
-            MaxRetries: parseInt32('MaxRetries'),
-            RequestTimeoutMs: parseInt32('RequestTimeoutMs'),
-            MinRequestIntervalMs: parseInt32('MinRequestIntervalMs'),
+            ApiKey: this.firstString(parsed, ['ApiKey', 'apiKey', 'API_Key', 'apikey', 'apiToken', 'ApiToken', 'token', 'Token', 'accessToken', 'AccessToken']),
+            DataCenter: this.firstString(parsed, ['DataCenter', 'dataCenter', 'ServerPrefix', 'serverPrefix', 'server', 'dc', 'prefix']),
+            BaseURLOverride: this.firstBaseURL(parsed, ['BaseURL', 'BaseUrl', 'baseURL', 'baseUrl', 'APIBaseURL', 'ApiBaseURL', 'apiBaseUrl']),
+            Scheme: scheme === 'bearer' ? 'bearer' : 'basic',
         };
     }
 
     /**
-     * Resolves the data-center prefix (e.g. 'us20') using:
-     *   1. Explicit `ServerPrefix` config field
-     *   2. Suffix after the last '-' in the API key (e.g. 'abc-us20' → 'us20')
-     *   3. OAuth metadata endpoint lookup (fallback for bearer tokens)
+     * Resolves the data-center prefix (e.g. `us15`):
+     *   1. explicit DataCenter / ServerPrefix from config/credential;
+     *   2. the `-<dc>` suffix parsed off the API key;
+     *   3. (runtime fallback for an OAuth bearer token with no dc) the OAuth2 metadata endpoint.
+     * A BaseURLOverride short-circuits the need for a real dc (used for sandbox/test/mock).
      */
-    private async resolveDataCenter(config: MailchimpConnectionConfig): Promise<string> {
-        if (config.ServerPrefix) return config.ServerPrefix;
-        const parsed = this.parseDataCenterFromKey(config.ApiKey);
-        if (parsed) return parsed;
-        return this.fetchDataCenterFromOAuthMetadata(config.ApiKey);
+    private async resolveDataCenter(creds: MailchimpCredentials): Promise<string> {
+        if (creds.DataCenter && creds.DataCenter.trim().length > 0) return creds.DataCenter.trim().toLowerCase();
+        const fromKey = this.parseDataCenterFromKey(creds.ApiKey ?? '');
+        if (fromKey) return fromKey;
+        if (creds.BaseURLOverride) return 'override'; // dc unused when an explicit base URL is present
+        return this.fetchDataCenterFromOAuthMetadata(creds.ApiKey ?? '', creds.Scheme);
     }
 
-    /** Extracts '<dc>' from a Mailchimp API key of the form '<secret>-<dc>'. */
+    /** Extracts `<dc>` from a Mailchimp API key of the form `<secret>-<dc>` (e.g. `abc123-us15` → `us15`). */
     private parseDataCenterFromKey(apiKey: string): string | null {
         const idx = apiKey.lastIndexOf('-');
         if (idx < 0 || idx >= apiKey.length - 1) return null;
         const suffix = apiKey.slice(idx + 1).toLowerCase();
-        if (!/^[a-z]{2}\d{1,3}$/.test(suffix)) return null;
-        return suffix;
+        return /^[a-z]{2}\d{1,3}$/.test(suffix) ? suffix : null;
     }
 
-    /** Calls `/oauth2/metadata` to discover the data center for a bearer token. */
-    private async fetchDataCenterFromOAuthMetadata(token: string): Promise<string> {
-        const bearer = token.startsWith('Bearer ') ? token : `OAuth ${token}`;
+    /** Runtime fallback: GET /oauth2/metadata to discover the data center for an OAuth access token. */
+    private async fetchDataCenterFromOAuthMetadata(token: string, scheme?: 'basic' | 'bearer'): Promise<string> {
+        const authValue = scheme === 'bearer' ? `Bearer ${token}` : `OAuth ${token}`;
         const response = await fetch(MAILCHIMP_OAUTH_METADATA_URL, {
             method: 'GET',
-            headers: { 'Authorization': bearer, 'Accept': 'application/json' },
+            headers: { 'Authorization': authValue, 'Accept': 'application/json' },
         });
         if (!response.ok) {
-            throw new Error(`Mailchimp /oauth2/metadata returned ${response.status}; cannot resolve data center. Set ServerPrefix explicitly.`);
+            throw new Error(`Mailchimp /oauth2/metadata returned ${response.status}; cannot resolve the data center. Set DataCenter (or ServerPrefix) explicitly.`);
         }
         const body = await response.json() as MailchimpOAuthMetadata;
-        if (!body.dc) {
-            throw new Error('Mailchimp /oauth2/metadata did not include a dc field.');
+        if (!body.dc) throw new Error('Mailchimp /oauth2/metadata response did not include a dc field.');
+        return body.dc.toLowerCase();
+    }
+
+    /** Returns the first non-empty string value among the candidate keys, else undefined. */
+    private firstString(obj: Record<string, unknown>, keys: string[]): string | undefined {
+        for (const k of keys) {
+            const v = obj[k];
+            if (typeof v === 'string' && v.trim().length > 0) return v.trim();
+            if (typeof v === 'number') return String(v);
         }
-        return body.dc;
+        return undefined;
     }
 
-    /**
-     * Resolves the object name to an API path, substituting template vars from the
-     * provided attribute bag (e.g. `lists.members` → `lists/<list_id>/members`).
-     * For objects without template vars, returns the dotted path as a slash path.
-     */
-    private resolveObjectPath(objectName: string, attributes: Record<string, unknown>): string {
-        // Dotted name like `ecommerce.stores.orders` → slash path
-        const pathSegments = objectName.split('.').join('/');
-
-        // Inject template vars from attributes when the segment references a known parent id
-        // Convention: the attribute key matches the path template var name (list_id, store_id, campaign_id, etc.)
-        return pathSegments.replace(/\{([^}]+)\}/g, (_m, varName) => {
-            const val = attributes[varName];
-            if (val == null) return `{${varName}}`;
-            return encodeURIComponent(String(val));
-        });
+    /** Returns the first candidate key whose value is a valid absolute http(s) URL, else undefined. */
+    private firstBaseURL(obj: Record<string, unknown>, keys: string[]): string | undefined {
+        const raw = this.firstString(obj, keys);
+        return raw && /^https?:\/\//i.test(raw) ? raw : undefined;
     }
 
-    /** True when creating a list member with an email and the object is `lists.members`. */
-    private isListMembersUpsert(objectName: string, attributes: Record<string, unknown>): boolean {
-        if (objectName !== 'lists.members') return false;
-        return typeof attributes['email_address'] === 'string' && (attributes['email_address'] as string).length > 0;
-    }
-
-    /**
-     * Builds the CRUD URL. When doing a member upsert, appends the computed
-     * subscriber hash as the trailing path segment.
-     */
-    private buildCrudURL(
-        base: string,
-        path: string,
-        isUpsertByHash: boolean,
-        attributes: Record<string, unknown>
-    ): string {
-        if (!isUpsertByHash) return `${base}/${path}`;
-        const email = String(attributes['email_address']);
-        const hash = this.computeSubscriberHash(email);
-        return `${base}/${path}/${hash}`;
-    }
-
-    /** Mailchimp subscriber hash — MD5 of the lowercased email address. */
-    private computeSubscriberHash(email: string): string {
-        return crypto.createHash('md5').update(email.toLowerCase()).digest('hex');
-    }
-
-    /**
-     * Executes a CRUD HTTP request and maps the response to a CRUDResult.
-     */
-    private async executeCRUD(
-        auth: MailchimpAuthContext,
-        url: string,
-        method: string,
-        body: unknown,
-        objectName: string,
-        operation: string
-    ): Promise<CRUDResult> {
-        try {
-            const response = await this.MakeHTTPRequest(auth, url, method, this.BuildHeaders(auth), body ?? undefined);
-            if (response.Status >= 200 && response.Status < 300) {
-                const created = response.Body as Record<string, unknown>;
-                const externalID = created?.['id'] == null ? undefined : String(created['id']);
-                // CREATE-ONLY: a 2xx create with no record ID is a silent record-loss bug (duplicate
-                // creates on the next sync). Fail loudly via the base helper. Update/Delete keep their
-                // existing semantics — they legitimately may not echo an ID in the body.
-                if (operation === 'CreateRecord') {
-                    return this.BuildCreatedResult(externalID, response.Status, objectName);
-                }
-                return {
-                    Success: true,
-                    ExternalID: externalID ?? '',
-                    StatusCode: response.Status,
-                };
-            }
-            return {
-                Success: false,
-                ErrorMessage: `[Mailchimp] ${operation} ${objectName} failed (HTTP ${response.Status}): ${this.extractErrorMessage(response.Body)}`,
-                StatusCode: response.Status,
-            };
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            return {
-                Success: false,
-                ErrorMessage: `[Mailchimp] ${operation} ${objectName} failed: ${message}`,
-                StatusCode: 500,
-            };
-        }
-    }
-
-    /** Extracts an error message from a Mailchimp error body. */
-    private extractErrorMessage(body: unknown): string {
-        if (body && typeof body === 'object') {
-            const err = body as MailchimpErrorResponse;
-            if (err.title || err.detail) {
-                return [err.title, err.detail].filter(Boolean).join(' — ');
-            }
-        }
-        return this.previewBody(body);
-    }
-
-    /** Best-effort collection extractor for search/list fallbacks. */
-    private extractCollection(body: Record<string, unknown>, objectName: string): Record<string, unknown>[] {
-        // Try the last path segment of the object name first
-        const last = objectName.split('.').pop() ?? objectName;
-        const direct = body[last];
-        if (Array.isArray(direct)) return direct as Record<string, unknown>[];
-        const normalized = this.NormalizeResponse(body, null);
-        return normalized.filter(r => typeof r === 'object');
-    }
-
-    /** Enforces a minimum inter-request interval. */
-    private async throttle(minIntervalMs: number): Promise<void> {
-        const elapsed = Date.now() - this.lastRequestTime;
-        if (elapsed < minIntervalMs) {
-            await this.sleep(minIntervalMs - elapsed);
-        }
-    }
-
-    /** Executes a fetch with an abort-based timeout. */
-    private async fetchWithTimeout(
-        url: string,
-        method: string,
-        headers: Record<string, string>,
-        body: unknown,
-        timeoutMs: number
-    ): Promise<Response> {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            return await fetch(url, {
-                method,
-                headers,
-                body: body === undefined || body === null
-                    ? undefined
-                    : typeof body === 'string' ? body : JSON.stringify(body),
-                signal: controller.signal,
-            });
-        } finally {
-            clearTimeout(timer);
-        }
-    }
-
-    /** Parses the response body as JSON; falls back to text. */
-    private async parseResponseBody(response: Response): Promise<unknown> {
-        const contentType = response.headers.get('content-type') ?? '';
-        if (contentType.includes('application/json') || contentType.includes('application/problem+json')) {
-            try {
-                return await response.json() as unknown;
-            } catch {
-                return null;
-            }
-        }
-        try {
-            return await response.text();
-        } catch {
-            return null;
-        }
-    }
-
-    /** Converts response Headers to a lowercase-keyed record. */
-    private headersToRecord(headers: Headers): Record<string, string> {
-        const out: Record<string, string> = {};
-        headers.forEach((v, k) => { out[k.toLowerCase()] = v; });
-        return out;
-    }
-
-    /** Computes exponential backoff delay, honoring Retry-After when present. */
-    private computeBackoff(response: Response, attempt: number): number {
+    /** Computes a 429/503 backoff delay, honoring an opportunistic Retry-After header when present. */
+    private computeBackoffMs(response: Response, attempt: number): number {
         const retryAfter = response.headers.get('retry-after');
         if (retryAfter) {
-            const seconds = Number(retryAfter);
-            if (Number.isFinite(seconds) && seconds > 0) return Math.min(seconds * 1000, 60_000);
+            const secs = Number(retryAfter);
+            if (Number.isFinite(secs) && secs > 0) return Math.min(secs * 1000, 60_000);
         }
-        const base = 500 * Math.pow(2, attempt);
-        const jitter = Math.floor(Math.random() * 250);
-        return Math.min(base + jitter, 30_000);
+        return Math.min(500 * Math.pow(2, attempt) + Math.floor(Math.random() * 250), 30_000);
     }
 
     /** Sleep helper. */
     private sleep(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
-
-    /** Short preview of a response body for error messages. */
-    private previewBody(body: unknown): string {
-        if (body == null) return '(no body)';
-        if (typeof body === 'string') return body.slice(0, 400);
-        try { return JSON.stringify(body).slice(0, 400); } catch { return String(body).slice(0, 400); }
-    }
 }
 
-/** Tree-shaking prevention — call from module entry point. */
+/** Tree-shaking prevention — call from the package entry point. */
 export function LoadMailchimpConnector(): void { /* no-op */ }
-
-/**
- * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
- * (BaseRESTIntegrationConnector.RunBounded is private, so the sample-union override brings its own
- * tiny pool — this is local plumbing, NOT a shared framework artifact.)
- */
-async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
-    const queue = [...items];
-    const size = Math.max(1, Math.min(limit, queue.length));
-    const runners = Array.from({ length: size }, async () => {
-        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
-            await worker(next);
-        }
-    });
-    await Promise.all(runners);
-}
