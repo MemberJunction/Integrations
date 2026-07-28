@@ -1,978 +1,1111 @@
 import { RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
-import type { MJCompanyIntegrationEntity, MJCredentialEntity } from '@memberjunction/core-entities';
+import type {
+    MJCompanyIntegrationEntity,
+    MJCredentialEntity,
+    MJIntegrationObjectEntity,
+    MJIntegrationObjectFieldEntity,
+} from '@memberjunction/core-entities';
+import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
 import {
     BaseIntegrationConnector,
+    BaseRESTIntegrationConnector,
+    OAuth2TokenManager,
+    ClassifyError,
+    computeContentHash,
+    serializeKeyValue,
+    type RESTAuthContext,
+    type RESTResponse,
+    type PaginationState,
+    type PaginationType,
     type ConnectionTestResult,
-    type ExternalObjectSchema,
-    type ExternalFieldSchema,
     type FetchContext,
     type FetchBatchResult,
-    type DefaultFieldMapping,
-    type DefaultIntegrationConfig,
-    type ExternalRecord,
-    type CRUDResult,
-    type CreateRecordContext,
+    type FetchWarning,
     type UpdateRecordContext,
     type DeleteRecordContext,
     type GetRecordContext,
-    type SearchContext,
-    type SearchResult,
-    type ListContext,
-    type ListResult,
-    type IntegrationObjectInfo,
-    type ActionGeneratorConfig,
+    type CRUDResult,
+    type ExternalRecord,
     type SourceSchemaInfo,
-    type SourceObjectInfo,
+    type RateLimitPolicy,
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
-// ─── Types ────────────────────────────────────────────────────────────
+// ─── Design note ─────────────────────────────────────────────────────────
+//
+// QuickBooks Online Accounting API v3 connector — PURE MECHANISM. The object/field catalog is NOT baked
+// here; it lives in the Declared metadata (metadata/integrations/quickbooks/.quickbooks.integration.json),
+// seeded from QBO's credential-free OpenAPI/XSD + published docs. DiscoverObjects / DiscoverFields are
+// INHERITED from BaseRESTIntegrationConnector (cache-driven over the persisted Declared metadata) — there
+// is NO hardcoded object list, NO field catalog, and NO baked PK/FK/required/readonly/unique constants in
+// this file. Vendor-wide facts (hosts, minorversion, token endpoint, query/pagination mechanism, rate
+// policy) are read at runtime from Integration.Configuration; well-known QBO published values are used only
+// as documented fallbacks when a Configuration key is absent (never client/tenant constants).
+//
+// QBO is genuinely idiosyncratic vs a flat REST vendor, so FetchChanges / GetRecord / UpdateRecord /
+// DeleteRecord are OVERRIDDEN (see each method for why):
+//  - Reads ride a SQL-like /query DOOR: `GET /v3/company/{realmId}/query?query=<SELECT ...>` where the
+//    STARTPOSITION/MAXRESULTS pagination tokens and the `WHERE MetaData.LastUpdatedTime > '<wm>'` watermark
+//    live INSIDE the query text (not URL params). Records come back under `QueryResponse.<Entity>`.
+//  - Incremental DELETIONS are surfaced ONLY by the Change-Data-Capture door (`GET /cdc`), never by /query.
+//  - CompanyInfo / Preferences are singleton read-only resources at `/{entity}/{realmId}` (no query door).
+//  - Writes: create/update are a full-object POST to `/{entity}` (id + SyncToken in the BODY, no id in the
+//    path). Update carries `sparse:true` for partial updates + the current SyncToken (optimistic
+//    concurrency; a stale token is a CONFLICT that is classified, not blind-retried). There is no hard
+//    DELETE verb for name-list entities — those DEACTIVATE via `Active=false`; only transaction entities
+//    hard-delete via `POST /{entity}?operation=delete`.
+//  - Auth: OAuth2 authorization-code refresh (crypto-free, via the shared OAuth2TokenManager). Intuit
+//    ROTATES the refresh token on every exchange, so the newest refresh token is PERSISTED back to its
+//    source (Credential.Values or CompanyIntegration) — a non-persisting connector authenticates once then
+//    dies once Intuit invalidates the superseded token.
 
-/** Connection configuration parsed from CompanyIntegration credentials */
-export interface QuickBooksConnectionConfig {
-    /** OAuth 2.0 Client ID from QuickBooks developer portal */
-    ClientId: string;
-    /** OAuth 2.0 Client Secret */
-    ClientSecret: string;
-    /** OAuth 2.0 Refresh Token (auto-refreshed on each use) */
-    RefreshToken: string;
-    /** QuickBooks Company ID (Realm ID) */
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+/** Resolved OAuth2 + tenant credentials for one QBO connection. */
+interface QuickBooksCredentials {
+    ClientId?: string;
+    ClientSecret?: string;
+    /** The current (rotating) refresh token. */
+    RefreshToken?: string;
+    /** QuickBooks Company/Realm ID — the tenant selector in every API path. */
+    RealmId?: string;
+    /** 'production' | 'sandbox' — selects the API host. */
+    Environment: 'production' | 'sandbox';
+    /** Where the refresh token was loaded from, so a rotated value is written back to the same place. */
+    RefreshTokenSource: 'credential' | 'companyIntegration' | 'none';
+}
+
+/** Auth context threaded through BuildHeaders / MakeHTTPRequest / GetBaseURL for a run. */
+interface QuickBooksAuthContext extends RESTAuthContext {
+    /** Bearer access token. */
+    Token: string;
+    /** Tenant realm id. */
     RealmId: string;
-    /** Environment: 'production' or 'sandbox'. Default: 'production' */
-    Environment?: QuickBooksEnvironment;
-
-    // ── Optional performance overrides ──────────────────────────
-    /** Maximum retries for rate-limited or failed requests. Default: 3 */
-    MaxRetries?: number;
-    /** HTTP request timeout in milliseconds. Default: 30000 */
-    RequestTimeoutMs?: number;
-    /** Minimum milliseconds between API requests. Default: 200 */
-    MinRequestIntervalMs?: number;
+    /** Fully-resolved company base URL, e.g. `https://quickbooks.api.intuit.com/v3/company/{realmId}`. */
+    CompanyBaseURL: string;
 }
 
-type QuickBooksEnvironment = 'production' | 'sandbox';
-
-/** OAuth token state */
-interface QuickBooksAuthState {
-    /** Bearer access token for API calls */
-    AccessToken: string;
-    /** Refresh token (may be rotated) */
-    RefreshToken: string;
-    /** When the access token expires */
-    ExpiresAt: number;
-    /** Base API URL for this environment */
-    BaseUrl: string;
-    /** Realm ID for URL construction */
-    RealmId: string;
-    /** Full config for reference */
-    Config: QuickBooksConnectionConfig;
+/** Vendor-wide config read from Integration.Configuration (published QBO facts; NOT tenant-specific). */
+interface QuickBooksVendorConfig {
+    hosts: { production: string; sandbox: string };
+    companyPathTemplate: string;
+    minorVersion: number;
+    tokenEndpoint: string;
+    scope: string;
+    recordsPath: string;
+    correlationHeader: string;
+    perMinuteLimit: number;
+    concurrentLimit: number;
 }
 
-/** QuickBooks API error response */
-interface QBOErrorResponse {
-    Fault?: {
-        Error?: Array<{
-            Message?: string;
-            Detail?: string;
-            code?: string;
-        }>;
-        type?: string;
-    };
+/** Per-object config read from IntegrationObject.Configuration. */
+interface QuickBooksObjectConfig {
+    /** The QBO entity name for the SQL query / path segment (e.g. `Invoice`). */
+    QueryEntity: string;
+    /** 'transaction' | 'namelist' | 'read-only' — drives delete-vs-deactivate + read shape. */
+    EntityClass: 'transaction' | 'namelist' | 'read-only';
+    /** Whether the CDC door surfaces deletions for this entity. */
+    CdcEligible: boolean;
+    /** 1-based STARTPOSITION base (default 1). */
+    SkipBase: number;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────
+/** QBO's JSON Fault envelope (lowercased keys relative to the XSD PascalCase). */
+interface QuickBooksFaultError {
+    message?: string;
+    detail?: string;
+    code?: string;
+    element?: string;
+}
 
-const QBO_PRODUCTION_BASE = 'https://quickbooks.api.intuit.com';
-const QBO_SANDBOX_BASE = 'https://sandbox-quickbooks.api.intuit.com';
-const QBO_OAUTH_TOKEN_URL = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
+// ─── Constants (published QBO facts used ONLY as Configuration fallbacks; no tenant data) ──
 
-/** Minor version to pin API behavior */
-const QBO_MINOR_VERSION = '73';
+const DEFAULT_HOST_PRODUCTION = 'https://quickbooks.api.intuit.com';
+const DEFAULT_HOST_SANDBOX = 'https://sandbox-quickbooks.api.intuit.com';
+const DEFAULT_COMPANY_PATH_TEMPLATE = 'v3/company/{realmId}';
+/** Current QBO minor-version floor (v1–74 deprecated Aug 2025; the server treats anything lower as 75). */
+const DEFAULT_MINOR_VERSION = 75;
+const DEFAULT_TOKEN_ENDPOINT = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
+const DEFAULT_SCOPE = 'com.intuit.quickbooks.accounting';
+const DEFAULT_RECORDS_PATH = 'QueryResponse';
+const DEFAULT_CORRELATION_HEADER = 'intuit_tid';
+const DEFAULT_PER_MINUTE_LIMIT = 500;
+const DEFAULT_CONCURRENT_LIMIT = 10;
 
-/** Default max retries */
-const DEFAULT_MAX_RETRIES = 3;
-
-/** Default HTTP timeout in ms */
-const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
-
-/** Default min interval between requests in ms */
-const DEFAULT_MIN_REQUEST_INTERVAL_MS = 200;
-
-/** Default page size for queries */
-const DEFAULT_PAGE_SIZE = 100;
-
-/** Max records per query (QBO limit) */
+/** QBO caps a single /query at 1000 rows. */
 const MAX_QUERY_RESULTS = 1000;
+/** Fallback page size when the engine passes no BatchSize. */
+const DEFAULT_PAGE_SIZE = 200;
+/** Transient-status backoff retries inside the transport. */
+const MAX_TRANSIENT_RETRIES = 5;
 
-/** Access token refresh threshold — refresh 5 min before expiry */
-const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
-
-/** QBO data type to generic type mapping */
-const QBO_TYPE_MAP: Record<string, string> = {
-    'String': 'string',
-    'Numeric': 'decimal',
-    'DateTime': 'datetime',
-    'Date': 'date',
-    'Boolean': 'boolean',
-    'EmailAddress': 'string',
-    'PhysicalAddress': 'string',
-    'TelephoneNumber': 'string',
-    'IdType': 'string',
-    'BigDecimal': 'decimal',
-    'Number': 'decimal',
-    'Integer': 'integer',
-};
-
-// ─── QuickBooks Object Metadata for Action Generation ─────────────────
-
-const QUICKBOOKS_OBJECTS: IntegrationObjectInfo[] = [
-    {
-        Name: 'Customer', DisplayName: 'Customer',
-        Description: 'A customer in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'DisplayName', DisplayName: 'Display Name', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Customer display name' },
-            { Name: 'GivenName', DisplayName: 'First Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'First/given name' },
-            { Name: 'FamilyName', DisplayName: 'Last Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Last/family name' },
-            { Name: 'CompanyName', DisplayName: 'Company Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Company name' },
-            { Name: 'PrimaryEmailAddr', DisplayName: 'Email', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Primary email address (value in .Address)' },
-            { Name: 'PrimaryPhone', DisplayName: 'Phone', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Primary phone number (value in .FreeFormNumber)' },
-            { Name: 'BillAddr', DisplayName: 'Billing Address', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Billing address (composite object)' },
-            { Name: 'Balance', DisplayName: 'Balance', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Open balance' },
-            { Name: 'Active', DisplayName: 'Active', Type: 'boolean', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Whether the customer is active' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Vendor', DisplayName: 'Vendor',
-        Description: 'A vendor/supplier in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'DisplayName', DisplayName: 'Display Name', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Vendor display name' },
-            { Name: 'GivenName', DisplayName: 'First Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'First/given name' },
-            { Name: 'FamilyName', DisplayName: 'Last Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Last/family name' },
-            { Name: 'CompanyName', DisplayName: 'Company Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Company name' },
-            { Name: 'PrimaryEmailAddr', DisplayName: 'Email', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Primary email address' },
-            { Name: 'PrimaryPhone', DisplayName: 'Phone', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Primary phone number' },
-            { Name: 'Balance', DisplayName: 'Balance', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Open balance' },
-            { Name: 'Active', DisplayName: 'Active', Type: 'boolean', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Whether the vendor is active' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Account', DisplayName: 'Account',
-        Description: 'A Chart of Accounts entry in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'Name', DisplayName: 'Name', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Account name' },
-            { Name: 'AccountType', DisplayName: 'Account Type', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Account type (Bank, Expense, Income, etc.)' },
-            { Name: 'AccountSubType', DisplayName: 'Sub-Type', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Account sub-type' },
-            { Name: 'CurrentBalance', DisplayName: 'Current Balance', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Current balance' },
-            { Name: 'Active', DisplayName: 'Active', Type: 'boolean', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Whether the account is active' },
-            { Name: 'Classification', DisplayName: 'Classification', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Asset, Equity, Expense, Liability, Revenue' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Invoice', DisplayName: 'Invoice',
-        Description: 'A sales invoice in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'DocNumber', DisplayName: 'Invoice Number', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'User-visible invoice number' },
-            { Name: 'CustomerRef', DisplayName: 'Customer Ref', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Customer reference (value = customer ID)' },
-            { Name: 'TxnDate', DisplayName: 'Transaction Date', Type: 'date', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Invoice date' },
-            { Name: 'DueDate', DisplayName: 'Due Date', Type: 'date', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Payment due date' },
-            { Name: 'TotalAmt', DisplayName: 'Total Amount', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Total invoice amount' },
-            { Name: 'Balance', DisplayName: 'Balance', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Remaining balance' },
-            { Name: 'EmailStatus', DisplayName: 'Email Status', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Email delivery status' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Bill', DisplayName: 'Bill',
-        Description: 'A payable bill in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'DocNumber', DisplayName: 'Bill Number', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'User-visible bill number' },
-            { Name: 'VendorRef', DisplayName: 'Vendor Ref', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Vendor reference (value = vendor ID)' },
-            { Name: 'TxnDate', DisplayName: 'Transaction Date', Type: 'date', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Bill date' },
-            { Name: 'DueDate', DisplayName: 'Due Date', Type: 'date', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Payment due date' },
-            { Name: 'TotalAmt', DisplayName: 'Total Amount', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Total bill amount' },
-            { Name: 'Balance', DisplayName: 'Balance', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Remaining balance' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Item', DisplayName: 'Item',
-        Description: 'A product or service item in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'Name', DisplayName: 'Name', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Item name' },
-            { Name: 'Type', DisplayName: 'Type', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Item type (Inventory, Service, NonInventory)' },
-            { Name: 'UnitPrice', DisplayName: 'Unit Price', Type: 'decimal', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Sales price' },
-            { Name: 'PurchaseCost', DisplayName: 'Purchase Cost', Type: 'decimal', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Purchase cost' },
-            { Name: 'QtyOnHand', DisplayName: 'Quantity On Hand', Type: 'decimal', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Current inventory quantity' },
-            { Name: 'Active', DisplayName: 'Active', Type: 'boolean', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Whether the item is active' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Payment', DisplayName: 'Payment',
-        Description: 'A customer payment in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'CustomerRef', DisplayName: 'Customer Ref', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Customer reference' },
-            { Name: 'TotalAmt', DisplayName: 'Total Amount', Type: 'decimal', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Payment amount' },
-            { Name: 'TxnDate', DisplayName: 'Transaction Date', Type: 'date', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Payment date' },
-            { Name: 'PaymentMethodRef', DisplayName: 'Payment Method', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Payment method reference' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Employee', DisplayName: 'Employee',
-        Description: 'An employee in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'DisplayName', DisplayName: 'Display Name', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Employee display name' },
-            { Name: 'GivenName', DisplayName: 'First Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'First name' },
-            { Name: 'FamilyName', DisplayName: 'Last Name', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Last name' },
-            { Name: 'PrimaryEmailAddr', DisplayName: 'Email', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Primary email' },
-            { Name: 'PrimaryPhone', DisplayName: 'Phone', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Primary phone' },
-            { Name: 'Active', DisplayName: 'Active', Type: 'boolean', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Whether the employee is active' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Department', DisplayName: 'Department',
-        Description: 'A department/location in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'Name', DisplayName: 'Name', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Department name' },
-            { Name: 'ParentRef', DisplayName: 'Parent Ref', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Parent department reference' },
-            { Name: 'Active', DisplayName: 'Active', Type: 'boolean', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Whether the department is active' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-    {
-        Name: 'Class', DisplayName: 'Class',
-        Description: 'A class for categorizing transactions in QuickBooks Online', SupportsWrite: true,
-        Fields: [
-            { Name: 'Id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'QuickBooks internal ID' },
-            { Name: 'Name', DisplayName: 'Name', Type: 'string', IsRequired: true, IsReadOnly: false, IsPrimaryKey: false, Description: 'Class name' },
-            { Name: 'ParentRef', DisplayName: 'Parent Ref', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Parent class reference' },
-            { Name: 'Active', DisplayName: 'Active', Type: 'boolean', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'Whether the class is active' },
-            { Name: 'MetaData', DisplayName: 'Metadata', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Create/update timestamps' },
-        ],
-    },
-];
+// ─── QuickBooksConnector ─────────────────────────────────────────────────
 
 /**
- * Provable foreign keys: <Sibling>Ref fields whose <Sibling> matches another
- * object declared in QUICKBOOKS_OBJECTS above. Keyed by "<ObjectName>.<FieldName>",
- * the value is the external name of the referenced sibling object.
+ * QuickBooks Online Accounting API (v3) connector.
  *
- * Derived purely from this connector's own declared object/field metadata
- * (e.g. Invoice.CustomerRef → Customer is a declared object). Self/ambiguous
- * refs (ParentRef on Department/Class) and refs with no sibling object
- * (PaymentMethodRef) are intentionally excluded.
+ * Extends BaseRESTIntegrationConnector (REST/JSON over HTTP). Discovery (DiscoverObjects/DiscoverFields)
+ * and generic create are inherited; this class supplies the QBO-specific protocol surface: OAuth2 refresh
+ * with rotating-refresh-token persistence, the SQL-like /query read door with in-query pagination +
+ * watermark, CDC-based deletion detection, singleton reads, SyncToken-guarded full-object updates, and
+ * delete-vs-deactivate routing by entity class.
+ *
+ * DUAL registration: the TS class symbol `QuickBooksConnector` keeps the sandbox verification ladder green;
+ * the package-name key `@memberjunction/connector-quickbooks` is what the Integrations repo's
+ * validate-invariants requires as an @RegisterClass key exported by the package's own src.
  */
-const QUICKBOOKS_FOREIGN_KEYS: Record<string, string> = {
-    'Invoice.CustomerRef': 'Customer',
-    'Payment.CustomerRef': 'Customer',
-    'Bill.VendorRef': 'Vendor',
-};
-
-// ─── Connector Implementation ─────────────────────────────────────────
-
-/**
- * Connector for QuickBooks Online REST API v3.
- *
- * Extends BaseIntegrationConnector directly. While QBO is REST/JSON, its
- * query model uses a custom SQL-like query language and its update operations
- * require the full object with SyncToken, making it distinct from the
- * generic BaseRESTIntegrationConnector pagination pattern.
- *
- * Auth flow:
- *   1. Exchange refresh token for access token via OAuth 2.0 token endpoint
- *   2. Access token is Bearer-authenticated on all API calls
- *   3. Refresh tokens are rotated — the connector stores the latest refresh token
- *
- * API operations:
- *   - Query: SQL-like SELECT statements (e.g., "SELECT * FROM Customer WHERE Active = true")
- *   - Read: GET /v3/company/{realmId}/{objectType}/{id}
- *   - Create: POST /v3/company/{realmId}/{objectType}
- *   - Update: POST /v3/company/{realmId}/{objectType} (full object with SyncToken)
- *   - Delete: POST /v3/company/{realmId}/{objectType}?operation=delete
- *
- * Pagination:
- *   - Query supports STARTPOSITION and MAXRESULTS
- *   - COUNT query to determine total records
- */
-// Primary key follows the catalog convention (className == npm package name;
-// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
-// package name, so the legacy bare key never matched in the catalog. The
-// legacy alias stays registered so pre-migration tenant Integration rows
-// keep resolving.
-@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-quickbooks')
 @RegisterClass(BaseIntegrationConnector, 'QuickBooksConnector')
-export class QuickBooksConnector extends BaseIntegrationConnector {
+@RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-quickbooks')
+export class QuickBooksConnector extends BaseRESTIntegrationConnector {
 
-    // ── Auth State ───────────────────────────────────────────────────
+    /** One token manager per connector instance (crypto-free OAuth2 round-trip + in-memory access-token cache). */
+    private readonly tokenManager = new OAuth2TokenManager();
+    /** Cached auth for the lifetime of a single run, keyed by realm so a connection change re-authenticates. */
+    private cachedAuth: QuickBooksAuthContext | null = null;
+    private cachedAuthRealm: string | null = null;
+    /** Last-resolved vendor config, so the credential-free rate/concurrency getters can honor Configuration. */
+    private lastVendorConfig: QuickBooksVendorConfig | null = null;
 
-    private authState: QuickBooksAuthState | null = null;
+    // ── Identity (T1 three-way invariant) ────────────────────────────
 
-    /** Timestamp of the last API request, used for throttling */
-    private lastRequestTime = 0;
+    /** Verbatim `MJ: Integrations.Name`. The T1 three-way name check compares this === metadata display Name. */
+    public override get IntegrationName(): string {
+        return 'QuickBooks';
+    }
 
-    // ── Capability Getters ───────────────────────────────────────────
+    // ── Capability getters (agree with the per-op metadata columns) ──
+    // TRUE because SOME IOs carry the corresponding write columns; the generic/overridden per-op paths
+    // gate each call on the IO's OWN Create/Update/Delete columns + entity class, so an object whose
+    // metadata says "no" is never written blindly.
 
     public override get SupportsCreate(): boolean { return true; }
     public override get SupportsUpdate(): boolean { return true; }
     public override get SupportsDelete(): boolean { return true; }
-    public override get SupportsSearch(): boolean { return true; }
-    public override get SupportsListing(): boolean { return true; }
-
-    public override get IntegrationName(): string { return 'QuickBooks'; }
-
-    // ── Action Generation ────────────────────────────────────────────
-
-    public override GetIntegrationObjects(): IntegrationObjectInfo[] {
-        return QUICKBOOKS_OBJECTS;
-    }
-
-    public override GetActionGeneratorConfig(): ActionGeneratorConfig | null {
-        const objects = this.GetIntegrationObjects();
-        if (objects.length === 0) return null;
-
-        return {
-            IntegrationName: 'QuickBooks',
-            CategoryName: 'QuickBooks',
-            IconClass: 'fa-solid fa-book',
-            Objects: objects,
-            IncludeSearch: true,
-            IncludeList: true,
-            CategoryDescription: 'QuickBooks Online accounting integration actions',
-            ParentCategoryName: 'Business Apps',
-        };
-    }
-
-    // ── Default Configuration ────────────────────────────────────────
-
-    public override GetDefaultConfiguration(): DefaultIntegrationConfig | null {
-        return {
-            DefaultSchemaName: 'QuickBooks',
-            DefaultObjects: [
-                {
-                    SourceObjectName: 'Customer',
-                    TargetTableName: 'QuickBooks_Customer',
-                    TargetEntityName: 'QuickBooks Customers',
-                    SyncEnabled: true,
-                    FieldMappings: this.GetDefaultFieldMappings('Customer', 'Contacts'),
-                },
-                {
-                    SourceObjectName: 'Vendor',
-                    TargetTableName: 'QuickBooks_Vendor',
-                    TargetEntityName: 'QuickBooks Vendors',
-                    SyncEnabled: true,
-                    FieldMappings: this.GetDefaultFieldMappings('Vendor', 'Companies'),
-                },
-                {
-                    SourceObjectName: 'Account',
-                    TargetTableName: 'QuickBooks_Account',
-                    TargetEntityName: 'QuickBooks Accounts',
-                    SyncEnabled: true,
-                    FieldMappings: [],
-                },
-            ],
-        };
-    }
-
-    public override GetDefaultFieldMappings(objectName: string, _entityName: string): DefaultFieldMapping[] {
-        switch (objectName) {
-            case 'Customer':
-                return [
-                    { SourceFieldName: 'Id', DestinationFieldName: 'ExternalID', IsKeyField: true },
-                    { SourceFieldName: 'DisplayName', DestinationFieldName: 'Name' },
-                    { SourceFieldName: 'PrimaryEmailAddr', DestinationFieldName: 'Email' },
-                    { SourceFieldName: 'PrimaryPhone', DestinationFieldName: 'Phone' },
-                    { SourceFieldName: 'Active', DestinationFieldName: 'Status' },
-                ];
-            case 'Vendor':
-                return [
-                    { SourceFieldName: 'Id', DestinationFieldName: 'ExternalID', IsKeyField: true },
-                    { SourceFieldName: 'DisplayName', DestinationFieldName: 'Name' },
-                    { SourceFieldName: 'PrimaryEmailAddr', DestinationFieldName: 'Email' },
-                    { SourceFieldName: 'PrimaryPhone', DestinationFieldName: 'Phone' },
-                    { SourceFieldName: 'Active', DestinationFieldName: 'Status' },
-                ];
-            default:
-                return [];
-        }
-    }
-
-    // ─── TestConnection ──────────────────────────────────────────────
-
-    public async TestConnection(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<ConnectionTestResult> {
-        try {
-            const auth = await this.GetAuth(companyIntegration, contextUser, true);
-            // Hit the CompanyInfo endpoint to verify connectivity
-            const url = `${auth.BaseUrl}/v3/company/${auth.RealmId}/companyinfo/${auth.RealmId}?minorversion=${QBO_MINOR_VERSION}`;
-            const response = await this.MakeRequest(auth, url, 'GET');
-            const body = response.Body as { CompanyInfo?: { CompanyName?: string } };
-            const companyName = body.CompanyInfo?.CompanyName ?? 'Unknown';
-
-            return {
-                Success: true,
-                Message: `Successfully connected to QuickBooks Online (${companyName})`,
-                ServerVersion: `QuickBooks Online API v3 (minor ${QBO_MINOR_VERSION})`,
-            };
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            return { Success: false, Message: `Connection failed: ${message}` };
-        }
-    }
-
-    // ─── Discovery ───────────────────────────────────────────────────
-
-    public async DiscoverObjects(
-        _companyIntegration: MJCompanyIntegrationEntity,
-        _contextUser: UserInfo
-    ): Promise<ExternalObjectSchema[]> {
-        // QBO doesn't have a dynamic discovery API — return known objects
-        return QUICKBOOKS_OBJECTS.map(obj => ({
-            Name: obj.Name,
-            Label: obj.DisplayName,
-            Description: obj.Description,
-            SupportsIncrementalSync: true,
-            SupportsWrite: obj.SupportsWrite,
-        }));
-    }
-
-    public async DiscoverFields(
-        _companyIntegration: MJCompanyIntegrationEntity,
-        objectName: string,
-        _contextUser: UserInfo
-    ): Promise<ExternalFieldSchema[]> {
-        const obj = QUICKBOOKS_OBJECTS.find(o => o.Name === objectName);
-        if (!obj) throw new Error(`Unknown QuickBooks object: ${objectName}`);
-
-        return obj.Fields.map(f => {
-            const fkTarget = QUICKBOOKS_FOREIGN_KEYS[`${obj.Name}.${f.Name}`];
-            return {
-                Name: f.Name,
-                Label: f.DisplayName,
-                Description: f.Description,
-                DataType: f.Type,
-                IsRequired: f.IsRequired,
-                IsUniqueKey: f.IsPrimaryKey,
-                IsReadOnly: f.IsReadOnly,
-                IsForeignKey: fkTarget != null,
-                ForeignKeyTarget: fkTarget ?? null,
-            };
-        });
-    }
 
     /**
-     * IntrospectSchema — pure WIRING of MJ's existing sampler into the Declared catalog (the connector
-     * sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md). Adds NO discovery/merge/sync logic —
-     * it only wires MJ's `DiscoverFieldsViaFetch` sampler into the Declared catalog.
-     *
-     * `super.IntrospectSchema` yields the Declared catalog (no measured widths). Per object we call MJ's
-     * `DiscoverFieldsViaFetch` (MJ's own read-path sampler — measures real widths, surfaces custom
-     * columns) and the shared PURE `mergeDeclaredWithSampledFields` unions the two by field name
-     * (never-shrink `max()` width; append MJ-discovered custom columns). MJ owns everything else.
-     *
-     * `DiscoverFieldsViaFetch` falls back to the UNCHANGED `DiscoverFields` when the read path can't run —
-     * never back into THIS method — so no infinite recursion. Objects are sampled IN PARALLEL under a
-     * small bounded pool; any per-object failure keeps that object's declared fields (best-effort).
+     * Discovery is NON-authoritative: QBO exposes no describe-all/complete-gamut endpoint. DiscoverObjects /
+     * IntrospectSchema are cache-driven (re-read persisted Declared metadata), and per-realm custom fields
+     * flow through the sample-union enrichment below + the framework's runtime custom-column capture. Absence
+     * on a refresh proves nothing → never deactivate.
+     */
+    public override get DiscoveryIsAuthoritative(): boolean {
+        return false;
+    }
+
+    // ── Sync-efficiency hooks (§7/§10 — populated from evidenced Configuration facts) ──
+
+    /** QBO: 500 requests/min/realm → ~8.3 tokens/sec sustained; burst capped by the 10-concurrent limit. */
+    public override get RateLimitPolicy(): RateLimitPolicy | null {
+        const perMin = this.lastVendorConfig?.perMinuteLimit ?? DEFAULT_PER_MINUTE_LIMIT;
+        const concurrent = this.lastVendorConfig?.concurrentLimit ?? DEFAULT_CONCURRENT_LIMIT;
+        return { TokensPerSec: perMin / 60, Burst: concurrent };
+    }
+
+    /** QBO documents a 10-concurrent-request ceiling per realm. */
+    public override get MaxConcurrencyHint(): number | null {
+        return this.lastVendorConfig?.concurrentLimit ?? DEFAULT_CONCURRENT_LIMIT;
+    }
+
+    /** Parse QBO's Retry-After (seconds) off an exhausted-429 error into ms for the engine's precise backoff. */
+    public override ExtractRetryAfterMs(error: unknown): number | undefined {
+        if (error instanceof QuickBooksRateLimitError) return error.RetryAfterMs;
+        return undefined;
+    }
+
+    // ── Sample-union field enrichment (MJ connector standard) ─────────
+
+    /**
+     * Sample-union enrichment: Declared metadata is spec-derived and misses a realm's per-record CustomField
+     * columns. After the base cache-driven introspection (which sets `ExternalName = obj.Name`, i.e. the QBO
+     * entity name), we sample each object's live read shape via `DiscoverFieldsViaFetch` and UNION it into the
+     * declared set with `mergeDeclaredWithSampledFields` (never-shrink, declared-wins). Best-effort + parallel;
+     * a sample failure leaves the declared set untouched. We override IntrospectSchema (NOT DiscoverFields —
+     * that would recurse into DiscoverFieldsViaFetch's own fallback). Connector-agnostic.
      */
     public override async IntrospectSchema(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
+        contextUser: UserInfo,
     ): Promise<SourceSchemaInfo> {
-        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
-
-        await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
-            try {
-                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
-                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
-            } catch {
-                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
-            }
-        });
-
-        return schema;
-    }
-
-    // ─── FetchChanges ────────────────────────────────────────────────
-
-    public async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
-        const auth = await this.GetAuth(ctx.CompanyIntegration, ctx.ContextUser);
-        const pageSize = Math.min(ctx.BatchSize || DEFAULT_PAGE_SIZE, MAX_QUERY_RESULTS);
-        const startPosition = ctx.CurrentOffset ?? 1; // QBO uses 1-based STARTPOSITION
-
-        const whereClause = ctx.WatermarkValue
-            ? ` WHERE MetaData.LastUpdatedTime >= '${ctx.WatermarkValue}'`
-            : '';
-        const orderBy = ' ORDERBY MetaData.LastUpdatedTime ASC';
-
-        const query = `SELECT * FROM ${ctx.ObjectName}${whereClause}${orderBy} STARTPOSITION ${startPosition} MAXRESULTS ${pageSize}`;
-        const result = await this.ExecuteQuery(auth, query);
-        const records = this.ExtractQueryRecords(result, ctx.ObjectName);
-
-        const externalRecords: ExternalRecord[] = records.map(r => ({
-            ExternalID: String(r['Id'] ?? ''),
-            ObjectType: ctx.ObjectName,
-            Fields: r,
-            ModifiedAt: this.ExtractLastUpdatedTime(r),
-        }));
-
-        const newWatermark = this.ComputeWatermark(records);
-        const hasMore = records.length >= pageSize;
-
-        return {
-            Records: externalRecords,
-            HasMore: hasMore,
-            NewWatermarkValue: newWatermark,
-            NextOffset: hasMore ? startPosition + records.length : undefined,
-        };
-    }
-
-    // ─── CRUD Operations ─────────────────────────────────────────────
-
-    public override async CreateRecord(ctx: CreateRecordContext): Promise<CRUDResult> {
-        const auth = await this.GetAuth(
-            ctx.CompanyIntegration as MJCompanyIntegrationEntity,
-            ctx.ContextUser as UserInfo
+        const info = await super.IntrospectSchema(companyIntegration, contextUser);
+        await Promise.all(
+            info.Objects.map(async (obj) => {
+                try {
+                    const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                    obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+                } catch {
+                    /* best-effort — a sample failure leaves the declared fields as-is */
+                }
+            }),
         );
-        const url = `${auth.BaseUrl}/v3/company/${auth.RealmId}/${ctx.ObjectName.toLowerCase()}?minorversion=${QBO_MINOR_VERSION}`;
+        return info;
+    }
 
+    // ── TestConnection ────────────────────────────────────────────────
+
+    /** Reads the singleton CompanyInfo resource to verify connectivity + auth (read-only, non-mutating). */
+    public async TestConnection(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+    ): Promise<ConnectionTestResult> {
         try {
-            const response = await this.MakeRequest(auth, url, 'POST', ctx.Attributes);
-            const body = response.Body as Record<string, Record<string, unknown>>;
-            const created = body[ctx.ObjectName];
-            const id = created ? String(created['Id'] ?? '') : '';
-            return this.BuildCreatedResult(id, response.Status, ctx.ObjectName);
+            const auth = await this.Authenticate(companyIntegration, contextUser);
+            const vendorCfg = this.resolveVendorConfig(companyIntegration.IntegrationID);
+            const url = `${auth.CompanyBaseURL}/companyinfo/${encodeURIComponent(auth.RealmId)}?minorversion=${vendorCfg.minorVersion}`;
+            const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+            if (response.Status >= 200 && response.Status < 300) {
+                const name = this.readCompanyName(response.Body);
+                return {
+                    Success: true,
+                    Message: `Connected to QuickBooks Online (realm ${auth.RealmId})${name ? `: ${name}` : ''}.`,
+                    ServerVersion: `QuickBooks Online Accounting API v3 (minorversion ${vendorCfg.minorVersion})`,
+                };
+            }
+            if (response.Status === 401 || response.Status === 403) {
+                return { Success: false, Message: `QuickBooks authentication failed (HTTP ${response.Status}). ${this.ExtractErrorMessage(response) ?? ''}`.trim() };
+            }
+            return { Success: false, Message: `QuickBooks CompanyInfo probe returned HTTP ${response.Status}. ${this.ExtractErrorMessage(response) ?? ''}`.trim() };
         } catch (err: unknown) {
-            return this.BuildCRUDError(err, 'CreateRecord', ctx.ObjectName);
+            return { Success: false, Message: `Connection failed: ${err instanceof Error ? err.message : String(err)}` };
         }
     }
 
-    public override async UpdateRecord(ctx: UpdateRecordContext): Promise<CRUDResult> {
-        const auth = await this.GetAuth(
-            ctx.CompanyIntegration as MJCompanyIntegrationEntity,
-            ctx.ContextUser as UserInfo
-        );
+    // ── FetchChanges (OVERRIDE — QBO /query door + CDC deletions + singleton reads) ──
 
-        // QBO requires full object with SyncToken for updates — fetch current first
-        try {
-            const current = await this.FetchSingleRecord(auth, ctx.ObjectName, ctx.ExternalID);
-            if (!current) {
-                return { Success: false, ErrorMessage: `Record ${ctx.ExternalID} not found`, StatusCode: 404 };
-            }
+    /**
+     * OVERRIDE (idiosyncratic): QBO reads ride a SQL-like /query door, not a flat REST collection, so the
+     * base's flat/offset URL machinery does not apply. This fetches ONE page (bounded by BatchSize, capped at
+     * QBO's 1000/query) and returns HasMore + NextOffset so the engine loops. On an incremental first page it
+     * also emits CDC deletion tombstones (the only documented QBO deletion source). Singleton read-only
+     * objects (CompanyInfo/Preferences) take the single-GET path.
+     */
+    public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
+        const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
+        const fields = this.GetCachedFields(obj.ID);
+        const objCfg = this.parseObjectConfig(obj);
+        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+        const vendorCfg = this.resolveVendorConfig(ctx.CompanyIntegration.IntegrationID);
 
-            const merged = { ...current, ...ctx.Attributes };
-            const url = `${auth.BaseUrl}/v3/company/${auth.RealmId}/${ctx.ObjectName.toLowerCase()}?minorversion=${QBO_MINOR_VERSION}`;
-            const response = await this.MakeRequest(auth, url, 'POST', merged);
-            const body = response.Body as Record<string, Record<string, unknown>>;
-            const updated = body[ctx.ObjectName];
-            const id = updated ? String(updated['Id'] ?? ctx.ExternalID) : ctx.ExternalID;
-            return { Success: true, ExternalID: id, StatusCode: response.Status };
-        } catch (err: unknown) {
-            return this.BuildCRUDError(err, 'UpdateRecord', ctx.ObjectName);
+        if (objCfg.EntityClass === 'read-only') {
+            return this.fetchSingleton(auth, vendorCfg, obj, fields, objCfg);
         }
+        return this.fetchQueryPage(auth, vendorCfg, obj, fields, objCfg, ctx);
     }
 
-    public override async DeleteRecord(ctx: DeleteRecordContext): Promise<CRUDResult> {
-        const auth = await this.GetAuth(
-            ctx.CompanyIntegration as MJCompanyIntegrationEntity,
-            ctx.ContextUser as UserInfo
-        );
+    // ── GetRecord (OVERRIDE — QBO `/{entity}/{id}` addressing + entity-name-nested unwrap) ──
 
-        try {
-            // QBO delete requires Id and SyncToken
-            const current = await this.FetchSingleRecord(auth, ctx.ObjectName, ctx.ExternalID);
-            if (!current) {
-                return { Success: true, ExternalID: ctx.ExternalID, StatusCode: 200 }; // Already gone
-            }
-
-            const url = `${auth.BaseUrl}/v3/company/${auth.RealmId}/${ctx.ObjectName.toLowerCase()}?operation=delete&minorversion=${QBO_MINOR_VERSION}`;
-            await this.MakeRequest(auth, url, 'POST', {
-                Id: ctx.ExternalID,
-                SyncToken: current['SyncToken'],
-            });
-            return { Success: true, ExternalID: ctx.ExternalID, StatusCode: 200 };
-        } catch (err: unknown) {
-            return this.BuildCRUDError(err, 'DeleteRecord', ctx.ObjectName);
-        }
-    }
-
+    /** OVERRIDE: single-record GET at `/{entity}/{id}?minorversion`; the record is nested under `<Entity>`. */
     public override async GetRecord(ctx: GetRecordContext): Promise<ExternalRecord | null> {
-        const auth = await this.GetAuth(
-            ctx.CompanyIntegration as MJCompanyIntegrationEntity,
-            ctx.ContextUser as UserInfo
-        );
-
-        try {
-            const record = await this.FetchSingleRecord(auth, ctx.ObjectName, ctx.ExternalID);
-            if (!record) return null;
-
-            return {
-                ExternalID: String(record['Id'] ?? ctx.ExternalID),
-                ObjectType: ctx.ObjectName,
-                Fields: record,
-            };
-        } catch {
-            return null;
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        const fields = this.GetCachedFields(obj.ID);
+        const objCfg = this.parseObjectConfig(obj);
+        const auth = await this.Authenticate(ci, contextUser);
+        const vendorCfg = this.resolveVendorConfig(ci.IntegrationID);
+        const url = `${auth.CompanyBaseURL}/${objCfg.QueryEntity.toLowerCase()}/${encodeURIComponent(ctx.ExternalID)}?minorversion=${vendorCfg.minorVersion}`;
+        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+        if (response.Status === 404) return null;
+        if (response.Status < 200 || response.Status >= 300) {
+            throw new Error(`QuickBooks GetRecord "${ctx.ObjectName}"/${ctx.ExternalID} failed: HTTP ${response.Status} ${this.ExtractErrorMessage(response) ?? ''}`.trim());
         }
+        const raw = this.readSingleEntity(response.Body, objCfg.QueryEntity);
+        if (!raw) return null;
+        return this.buildExternalRecord(raw, obj, fields, objCfg);
     }
 
-    public override async SearchRecords(ctx: SearchContext): Promise<SearchResult> {
-        const auth = await this.GetAuth(
-            ctx.CompanyIntegration as MJCompanyIntegrationEntity,
-            ctx.ContextUser as UserInfo
-        );
-        const pageSize = ctx.PageSize ?? DEFAULT_PAGE_SIZE;
-        const startPos = ctx.Page ? ((ctx.Page - 1) * pageSize) + 1 : 1;
+    // ── UpdateRecord (OVERRIDE — full-object POST + SyncToken + sparse) ──
 
-        const whereParts = Object.entries(ctx.Filters).map(
-            ([field, value]) => `${field} = '${value.replace(/'/g, "\\'")}'`
-        );
-        const whereClause = whereParts.length > 0 ? ` WHERE ${whereParts.join(' AND ')}` : '';
-
-        const query = `SELECT * FROM ${ctx.ObjectName}${whereClause} STARTPOSITION ${startPos} MAXRESULTS ${pageSize}`;
-        const result = await this.ExecuteQuery(auth, query);
-        const records = this.ExtractQueryRecords(result, ctx.ObjectName);
-
-        return {
-            Records: records.map(r => ({
-                ExternalID: String(r['Id'] ?? ''),
-                ObjectType: ctx.ObjectName,
-                Fields: r,
-            })),
-            TotalCount: records.length, // QBO doesn't return total in queries
-            HasMore: records.length >= pageSize,
-        };
+    /**
+     * OVERRIDE (idiosyncratic): QBO update is a full-object POST to `/{entity}` (no id in path) carrying the
+     * record's `Id`, current `SyncToken`, and `sparse:true` (so only supplied fields change). SyncToken is
+     * fetch-or-carry: used from the caller's attributes when present, else read live via GetRecord. A stale
+     * SyncToken (optimistic-concurrency conflict) is CLASSIFIED and returned as a failure — never blind-retried.
+     */
+    public override async UpdateRecord(ctx: UpdateRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        if (!obj.SupportsUpdate || !obj.UpdateAPIPath) {
+            return { Success: false, StatusCode: 0, ErrorMessage: `UpdateRecord not supported for "${ctx.ObjectName}" (metadata declares no update path).` };
+        }
+        const objCfg = this.parseObjectConfig(obj);
+        const auth = await this.Authenticate(ci, contextUser);
+        const vendorCfg = this.resolveVendorConfig(ci.IntegrationID);
+        const syncToken = await this.resolveSyncToken(ctx.Attributes, obj, ci, contextUser, ctx.ExternalID);
+        if (syncToken == null) {
+            return { Success: false, StatusCode: 0, ErrorMessage: `QuickBooks update of "${ctx.ObjectName}"/${ctx.ExternalID}: could not resolve current SyncToken (required for optimistic concurrency).` };
+        }
+        const body: Record<string, unknown> = { ...ctx.Attributes, Id: ctx.ExternalID, SyncToken: syncToken, sparse: true };
+        const url = `${auth.CompanyBaseURL}/${objCfg.QueryEntity.toLowerCase()}?minorversion=${vendorCfg.minorVersion}`;
+        const response = await this.MakeHTTPRequest(auth, url, 'POST', this.BuildHeaders(auth), body);
+        return this.buildWriteResult(response, ctx.ExternalID, 'update', ctx.ObjectName);
     }
 
-    public override async ListRecords(ctx: ListContext): Promise<ListResult> {
-        const auth = await this.GetAuth(
-            ctx.CompanyIntegration as MJCompanyIntegrationEntity,
-            ctx.ContextUser as UserInfo
-        );
-        const pageSize = ctx.PageSize ?? DEFAULT_PAGE_SIZE;
-        const startPos = ctx.Cursor ? parseInt(ctx.Cursor, 10) : 1;
+    // ── DeleteRecord (OVERRIDE — hard-delete transactions vs deactivate name-lists) ──
 
-        let whereClause = '';
-        if (ctx.Filter) {
-            const parts = Object.entries(ctx.Filter).map(
-                ([k, v]) => `${k} = '${v.replace(/'/g, "\\'")}'`
-            );
-            whereClause = ` WHERE ${parts.join(' AND ')}`;
+    /**
+     * OVERRIDE (idiosyncratic): QBO has NO uniform delete verb. Transaction entities with SupportsDelete
+     * hard-delete via `POST /{entity}?operation=delete` ({Id, SyncToken}); name-list entities have no hard
+     * delete and instead DEACTIVATE via a sparse update `Active=false` (SyncToken required). Anything else
+     * (read-only, or a transaction with delete intentionally unsupported) fails loudly.
+     */
+    public override async DeleteRecord(ctx: DeleteRecordContext): Promise<CRUDResult> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const contextUser = ctx.ContextUser as UserInfo;
+        const obj = this.GetCachedObject(ci.IntegrationID, ctx.ObjectName);
+        const objCfg = this.parseObjectConfig(obj);
+
+        // Route FIRST — fail loudly for entity classes that support neither hard-delete nor deactivate,
+        // before spending a SyncToken read.
+        const hardDelete = objCfg.EntityClass === 'transaction' && obj.SupportsDelete;
+        const deactivate = objCfg.EntityClass === 'namelist';
+        if (!hardDelete && !deactivate) {
+            return { Success: false, StatusCode: 0, ErrorMessage: `QuickBooks "${ctx.ObjectName}" does not support delete or deactivate (entity class: ${objCfg.EntityClass}${objCfg.EntityClass === 'transaction' ? ', delete not enabled' : ''}).` };
         }
 
-        const query = `SELECT * FROM ${ctx.ObjectName}${whereClause} STARTPOSITION ${startPos} MAXRESULTS ${pageSize}`;
-        const result = await this.ExecuteQuery(auth, query);
-        const records = this.ExtractQueryRecords(result, ctx.ObjectName);
+        const auth = await this.Authenticate(ci, contextUser);
+        const vendorCfg = this.resolveVendorConfig(ci.IntegrationID);
+        const syncToken = await this.resolveSyncToken({}, obj, ci, contextUser, ctx.ExternalID);
+        if (syncToken == null) {
+            return { Success: false, StatusCode: 0, ErrorMessage: `QuickBooks delete of "${ctx.ObjectName}"/${ctx.ExternalID}: could not resolve current SyncToken.` };
+        }
 
-        const hasMore = records.length >= pageSize;
-        const nextCursor = hasMore ? String(startPos + records.length) : undefined;
+        if (hardDelete) {
+            const url = `${auth.CompanyBaseURL}/${objCfg.QueryEntity.toLowerCase()}?operation=delete&minorversion=${vendorCfg.minorVersion}`;
+            const body = { Id: ctx.ExternalID, SyncToken: syncToken };
+            const response = await this.MakeHTTPRequest(auth, url, 'POST', this.BuildHeaders(auth), body);
+            return this.buildWriteResult(response, ctx.ExternalID, 'delete', ctx.ObjectName);
+        }
 
-        return {
-            Records: records.map(r => ({
-                ExternalID: String(r['Id'] ?? ''),
-                ObjectType: ctx.ObjectName,
-                Fields: r,
-            })),
-            HasMore: hasMore,
-            NextCursor: nextCursor,
-        };
+        // Name-list "delete" is a soft deactivate: sparse update Active=false.
+        const url = `${auth.CompanyBaseURL}/${objCfg.QueryEntity.toLowerCase()}?minorversion=${vendorCfg.minorVersion}`;
+        const body = { Id: ctx.ExternalID, SyncToken: syncToken, sparse: true, Active: false };
+        const response = await this.MakeHTTPRequest(auth, url, 'POST', this.BuildHeaders(auth), body);
+        return this.buildWriteResult(response, ctx.ExternalID, 'deactivate', ctx.ObjectName);
     }
 
-    // ─── OAuth 2.0 Authentication ────────────────────────────────────
+    // ── Abstract REST hooks ───────────────────────────────────────────
 
-    private async GetAuth(
+    /** Resolves credentials, mints/refreshes the access token via the shared manager, persists a rotated refresh token. */
+    protected override async Authenticate(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo,
-        forceRefresh = false
-    ): Promise<QuickBooksAuthState> {
-        if (!forceRefresh && this.authState && this.IsTokenValid()) {
-            return this.authState;
+    ): Promise<QuickBooksAuthContext> {
+        const creds = await this.loadCredentials(companyIntegration, contextUser);
+        if (!creds.RealmId) {
+            throw new Error('QuickBooks connector: no realmId (QuickBooks Company ID) on the Credential or CompanyIntegration.');
         }
-
-        const config = await this.ParseConfig(companyIntegration, contextUser);
-        const auth = await this.RefreshAccessToken(config);
-        this.authState = auth;
-        return auth;
-    }
-
-    private IsTokenValid(): boolean {
-        if (!this.authState) return false;
-        return Date.now() < (this.authState.ExpiresAt - TOKEN_REFRESH_BUFFER_MS);
-    }
-
-    private async RefreshAccessToken(config: QuickBooksConnectionConfig): Promise<QuickBooksAuthState> {
-        const basicAuth = Buffer.from(`${config.ClientId}:${config.ClientSecret}`).toString('base64');
-
-        const response = await fetch(QBO_OAUTH_TOKEN_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${basicAuth}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json',
+        if (this.cachedAuth && this.cachedAuthRealm === creds.RealmId) return this.cachedAuth;
+        if (!creds.ClientId || !creds.ClientSecret) {
+            throw new Error('QuickBooks connector: OAuth2 clientId/clientSecret not found on the Credential or CompanyIntegration.');
+        }
+        if (!creds.RefreshToken) {
+            throw new Error('QuickBooks connector: no OAuth2 refresh token found — the authorization-code flow must be completed and its refresh token stored first.');
+        }
+        const vendorCfg = this.resolveVendorConfig(companyIntegration.IntegrationID);
+        const token = await this.tokenManager.GetAccessToken(
+            {
+                TokenURL: vendorCfg.tokenEndpoint,
+                ClientId: creds.ClientId,
+                ClientSecret: creds.ClientSecret,
+                RefreshToken: creds.RefreshToken,
+                Scopes: vendorCfg.scope,
+                UseBasicAuth: true,
             },
-            body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(config.RefreshToken)}`,
-        });
+            'refresh_token',
+        );
+        await this.persistRotatedRefreshToken(companyIntegration, contextUser, creds, token.RefreshToken, token.AccessToken, token.ExpiresAt);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`OAuth token refresh failed (${response.status}): ${errorText.slice(0, 500)}`);
-        }
-
-        const tokenData = await response.json() as {
-            access_token: string;
-            refresh_token: string;
-            expires_in: number;
-            token_type: string;
+        this.cachedAuth = {
+            Token: token.AccessToken,
+            RealmId: creds.RealmId,
+            CompanyBaseURL: this.buildCompanyBaseURL(vendorCfg, creds),
+            ExpiresAt: new Date(token.ExpiresAt),
         };
+        this.cachedAuthRealm = creds.RealmId;
+        return this.cachedAuth;
+    }
 
-        const baseUrl = config.Environment === 'sandbox' ? QBO_SANDBOX_BASE : QBO_PRODUCTION_BASE;
-
+    /** Bearer auth + explicit JSON Accept (QBO defaults to XML when Accept is absent). */
+    protected override BuildHeaders(auth: RESTAuthContext): Record<string, string> {
         return {
-            AccessToken: tokenData.access_token,
-            RefreshToken: tokenData.refresh_token,
-            ExpiresAt: Date.now() + (tokenData.expires_in * 1000),
-            BaseUrl: baseUrl,
-            RealmId: config.RealmId,
-            Config: config,
+            'Authorization': `Bearer ${(auth as QuickBooksAuthContext).Token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
         };
     }
 
-    // ─── Configuration Parsing ───────────────────────────────────────
-
-    private async ParseConfig(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<QuickBooksConnectionConfig> {
-        const credentialID = companyIntegration.Get('CredentialID') as string | null;
-        if (credentialID) {
-            const config = await this.LoadFromCredentialEntity(credentialID, contextUser);
-            if (config) return config;
-        }
-
-        const configJson = companyIntegration.Get('Configuration') as string | null;
-        if (configJson) {
-            const parsed = JSON.parse(configJson) as Partial<QuickBooksConnectionConfig>;
-            return this.ValidateConfig(parsed);
-        }
-
-        throw new Error('QuickBooksConnector: No credentials or configuration found on CompanyIntegration');
-    }
-
-    private async LoadFromCredentialEntity(
-        credentialID: string,
-        contextUser: UserInfo,
-        provider?: IMetadataProvider
-    ): Promise<QuickBooksConnectionConfig | null> {
-        const md = provider ?? new Metadata();
-        const credential = await md.GetEntityObject<MJCredentialEntity>('MJ: Credentials', contextUser);
-        const loaded = await credential.Load(credentialID);
-        if (!loaded || !credential.Values) return null;
-
-        try {
-            const parsed = JSON.parse(credential.Values) as Partial<QuickBooksConnectionConfig>;
-            return this.ValidateConfig(parsed);
-        } catch {
-            return null;
-        }
-    }
-
-    private ValidateConfig(raw: Partial<QuickBooksConnectionConfig>): QuickBooksConnectionConfig {
-        if (!raw.ClientId) throw new Error('QuickBooksConnector: ClientId is required');
-        if (!raw.ClientSecret) throw new Error('QuickBooksConnector: ClientSecret is required');
-        if (!raw.RefreshToken) throw new Error('QuickBooksConnector: RefreshToken is required');
-        if (!raw.RealmId) throw new Error('QuickBooksConnector: RealmId is required');
-
-        return {
-            ClientId: raw.ClientId,
-            ClientSecret: raw.ClientSecret,
-            RefreshToken: raw.RefreshToken,
-            RealmId: raw.RealmId,
-            Environment: raw.Environment ?? 'production',
-            MaxRetries: raw.MaxRetries ?? DEFAULT_MAX_RETRIES,
-            RequestTimeoutMs: raw.RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
-            MinRequestIntervalMs: raw.MinRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS,
-        };
-    }
-
-    // ─── HTTP Transport ──────────────────────────────────────────────
-
-    private async MakeRequest(
-        auth: QuickBooksAuthState,
+    /** HTTP transport (fetch) with bounded 429/503 backoff honoring Retry-After. Test subclasses override this. */
+    protected override async MakeHTTPRequest(
+        _auth: RESTAuthContext,
         url: string,
         method: string,
-        body?: unknown
-    ): Promise<{ Status: number; Body: unknown }> {
-        const config = auth.Config;
-        const maxRetries = config.MaxRetries ?? DEFAULT_MAX_RETRIES;
-        const timeoutMs = config.RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-        const minInterval = config.MinRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS;
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            await this.Throttle(minInterval);
-
-            try {
-                const controller = new AbortController();
-                const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
-
-                const headers: Record<string, string> = {
-                    'Authorization': `Bearer ${auth.AccessToken}`,
-                    'Accept': 'application/json',
-                };
-                if (body) {
-                    headers['Content-Type'] = 'application/json';
-                }
-
-                const response = await fetch(url, {
-                    method,
-                    headers,
-                    body: body ? JSON.stringify(body) : undefined,
-                    signal: controller.signal,
-                });
-
-                clearTimeout(timeoutHandle);
-                this.lastRequestTime = Date.now();
-
-                const responseBody = await response.json() as unknown;
-
-                if (!response.ok) {
-                    const errorMsg = this.ExtractQBOErrorMessage(responseBody);
-                    throw new Error(`QBO API ${response.status}: ${errorMsg}`);
-                }
-
-                return { Status: response.status, Body: responseBody };
-            } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : String(err);
-                const isRetryable = message.includes('abort') || message.includes('timeout')
-                    || message.includes('ECONNRESET') || message.includes('429')
-                    || message.includes('503');
-
-                if (!isRetryable || attempt === maxRetries) {
-                    throw new Error(`QuickBooks API request failed after ${attempt + 1} attempt(s): ${message}`);
-                }
-
-                const delay = Math.pow(2, attempt) * 1000;
-                await this.Sleep(delay);
+        headers: Record<string, string>,
+        body?: unknown,
+    ): Promise<RESTResponse> {
+        let lastTid: string | undefined;
+        for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt++) {
+            const response = await fetch(url, {
+                method,
+                headers,
+                body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
+            });
+            const respHeaders: Record<string, string> = {};
+            response.headers.forEach((v, k) => { respHeaders[k.toLowerCase()] = v; });
+            lastTid = respHeaders[DEFAULT_CORRELATION_HEADER];
+            if ((response.status === 429 || response.status === 503) && attempt < MAX_TRANSIENT_RETRIES) {
+                await this.sleep(this.computeBackoffMs(respHeaders, attempt));
+                continue;
             }
+            if (response.status === 429) {
+                throw new QuickBooksRateLimitError(`QuickBooks rate limit (HTTP 429) after ${MAX_TRANSIENT_RETRIES} retries: ${method} ${url}`, this.parseRetryAfterMs(respHeaders), lastTid);
+            }
+            const text = await response.text();
+            let parsed: unknown = null;
+            if (text.length > 0) {
+                try { parsed = JSON.parse(text); } catch { parsed = text; }
+            }
+            return { Status: response.status, Body: parsed, Headers: respHeaders };
         }
-
-        throw new Error('QuickBooks API request failed: max retries exceeded');
+        throw new QuickBooksRateLimitError(`QuickBooks request exhausted retries: ${method} ${url}`, undefined, lastTid);
     }
 
-    // ─── Query Execution ─────────────────────────────────────────────
-
-    private async ExecuteQuery(auth: QuickBooksAuthState, query: string): Promise<unknown> {
-        const url = `${auth.BaseUrl}/v3/company/${auth.RealmId}/query?query=${encodeURIComponent(query)}&minorversion=${QBO_MINOR_VERSION}`;
-        const response = await this.MakeRequest(auth, url, 'GET');
-        return response.Body;
-    }
-
-    private async FetchSingleRecord(
-        auth: QuickBooksAuthState,
-        objectName: string,
-        id: string
-    ): Promise<Record<string, unknown> | null> {
-        const url = `${auth.BaseUrl}/v3/company/${auth.RealmId}/${objectName.toLowerCase()}/${id}?minorversion=${QBO_MINOR_VERSION}`;
-        try {
-            const response = await this.MakeRequest(auth, url, 'GET');
-            const body = response.Body as Record<string, Record<string, unknown>>;
-            return body[objectName] ?? null;
-        } catch {
-            return null;
+    /**
+     * Strips the QBO envelope to a record array. A /query response nests records under
+     * `QueryResponse.<Entity>`; a single-record response nests one object under `<Entity>`. `responseDataKey`
+     * carries the entity name. Falls back to the first array found under QueryResponse.
+     */
+    protected override NormalizeResponse(rawBody: unknown, responseDataKey: string | null): Record<string, unknown>[] {
+        if (rawBody == null || typeof rawBody !== 'object') return [];
+        const body = rawBody as Record<string, unknown>;
+        const queryResponse = body[DEFAULT_RECORDS_PATH];
+        if (queryResponse && typeof queryResponse === 'object') {
+            const qr = queryResponse as Record<string, unknown>;
+            if (responseDataKey && Array.isArray(qr[responseDataKey])) return qr[responseDataKey] as Record<string, unknown>[];
+            for (const v of Object.values(qr)) {
+                if (Array.isArray(v)) return v as Record<string, unknown>[];
+            }
+            return [];
         }
+        if (responseDataKey) {
+            const v = body[responseDataKey];
+            if (Array.isArray(v)) return v as Record<string, unknown>[];
+            if (v && typeof v === 'object') return [v as Record<string, unknown>];
+        }
+        return [];
     }
 
-    // ─── Response Parsing ────────────────────────────────────────────
-
-    private ExtractQueryRecords(body: unknown, objectName: string): Record<string, unknown>[] {
-        const typedBody = body as { QueryResponse?: Record<string, unknown> };
-        const queryResponse = typedBody?.QueryResponse;
-        if (!queryResponse) return [];
-
-        const records = queryResponse[objectName] as Record<string, unknown>[] | undefined;
-        return records ?? [];
+    /** Offset pagination continuation from the QueryResponse totalCount, else a full-page heuristic. */
+    protected override ExtractPaginationInfo(
+        rawBody: unknown,
+        paginationType: PaginationType,
+        _currentPage: number,
+        currentOffset: number,
+        pageSize: number,
+    ): PaginationState {
+        if (paginationType !== 'Offset') return { HasMore: false };
+        const qr = this.readQueryResponse(rawBody);
+        const totalCount = typeof qr?.totalCount === 'number' ? qr.totalCount : undefined;
+        const fetched = this.countQueryRecords(qr);
+        const nextOffset = currentOffset + fetched;
+        const hasMore = totalCount != null ? nextOffset < totalCount : fetched >= pageSize;
+        return { HasMore: hasMore, NextOffset: hasMore ? nextOffset : undefined, TotalRecords: totalCount };
     }
 
-    private ExtractLastUpdatedTime(record: Record<string, unknown>): Date | undefined {
-        const metaData = record['MetaData'] as { LastUpdatedTime?: string } | undefined;
-        if (metaData?.LastUpdatedTime) {
-            return new Date(metaData.LastUpdatedTime);
+    /** Company-scoped base URL, e.g. `https://quickbooks.api.intuit.com/v3/company/{realmId}`. */
+    protected override GetBaseURL(_companyIntegration: MJCompanyIntegrationEntity, auth: RESTAuthContext): string {
+        return (auth as QuickBooksAuthContext).CompanyBaseURL;
+    }
+
+    /** OVERRIDE: a created record's Id is nested under the entity name in the QBO create response. */
+    protected override ExtractIDFromResponse(response: RESTResponse, _idLocation: string | null): string | undefined {
+        if (!response.Body || typeof response.Body !== 'object') return undefined;
+        const body = response.Body as Record<string, unknown>;
+        for (const v of Object.values(body)) {
+            if (v && typeof v === 'object' && !Array.isArray(v)) {
+                const id = (v as Record<string, unknown>).Id;
+                if (typeof id === 'string' || typeof id === 'number') return String(id);
+            }
         }
         return undefined;
     }
 
-    private ComputeWatermark(records: Record<string, unknown>[]): string | undefined {
-        let latest: string | undefined;
-        for (const record of records) {
-            const metaData = record['MetaData'] as { LastUpdatedTime?: string } | undefined;
-            const ts = metaData?.LastUpdatedTime;
-            if (ts && (!latest || ts > latest)) {
-                latest = ts;
+    /** OVERRIDE: QBO Fault envelope (`{ fault: { error: [{ message, detail, code }] } }`, lowercased JSON keys). */
+    protected override ExtractErrorMessage(response: RESTResponse): string | undefined {
+        const errs = this.readFaultErrors(response.Body);
+        if (errs.length === 0) return undefined;
+        return errs.map(e => `[${e.code ?? '?'}] ${e.message ?? ''}${e.detail ? ` — ${e.detail}` : ''}`.trim()).join('; ');
+    }
+
+    // ── Read helpers ──────────────────────────────────────────────────
+
+    /** Fetches one /query page with in-query STARTPOSITION/MAXRESULTS + optional watermark; emits CDC deletes. */
+    private async fetchQueryPage(
+        auth: QuickBooksAuthContext,
+        vendorCfg: QuickBooksVendorConfig,
+        obj: MJIntegrationObjectEntity,
+        fields: MJIntegrationObjectFieldEntity[],
+        objCfg: QuickBooksObjectConfig,
+        ctx: FetchContext,
+    ): Promise<FetchBatchResult> {
+        const offset = ctx.CurrentOffset ?? 0;
+        const startPosition = offset + objCfg.SkipBase;
+        const maxResults = Math.min(ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : DEFAULT_PAGE_SIZE, MAX_QUERY_RESULTS);
+        const incremental = obj.SupportsIncrementalSync && !!ctx.WatermarkValue && !!obj.IncrementalWatermarkField;
+
+        const queryText = this.buildQueryText(objCfg.QueryEntity, incremental ? ctx.WatermarkValue : null, obj.IncrementalWatermarkField, startPosition, maxResults);
+        const url = `${auth.CompanyBaseURL}/query?query=${encodeURIComponent(queryText)}&minorversion=${vendorCfg.minorVersion}`;
+        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+        if (response.Status < 200 || response.Status >= 300) {
+            throw new Error(`QuickBooks query "${objCfg.QueryEntity}" failed: HTTP ${response.Status} ${this.ExtractErrorMessage(response) ?? ''}`.trim());
+        }
+
+        const raw = this.NormalizeResponse(response.Body, objCfg.QueryEntity);
+        const records = raw.map(r => this.buildExternalRecord(r, obj, fields, objCfg));
+
+        const pagination = this.ExtractPaginationInfo(response.Body, 'Offset', 1, offset, maxResults);
+        const warnings: FetchWarning[] = [];
+
+        // CDC deletions (the only documented QBO deletion source) — once, on the incremental FIRST page.
+        if (incremental && objCfg.CdcEligible && offset === 0) {
+            try {
+                const tombstones = await this.fetchCdcDeletions(auth, vendorCfg, objCfg, ctx.WatermarkValue as string, obj);
+                for (const t of tombstones) records.push(t);
+            } catch (e) {
+                warnings.push({ Code: 'CDC_DELETIONS_UNAVAILABLE', Message: `CDC deletion probe for "${objCfg.QueryEntity}" failed: ${e instanceof Error ? e.message : String(e)}`, Data: { object: obj.Name } });
             }
         }
-        return latest;
+
+        const result: FetchBatchResult = {
+            Records: records,
+            HasMore: pagination.HasMore,
+            NextOffset: pagination.NextOffset,
+        };
+        const newWatermark = this.maxWatermark(raw, obj.IncrementalWatermarkField);
+        if (newWatermark) result.NewWatermarkValue = newWatermark;
+        if (warnings.length > 0) result.Warnings = warnings;
+        return result;
     }
 
-    private ExtractQBOErrorMessage(body: unknown): string {
-        const typed = body as QBOErrorResponse;
-        if (typed?.Fault?.Error && typed.Fault.Error.length > 0) {
-            const err = typed.Fault.Error[0];
-            return err.Detail || err.Message || 'Unknown QBO error';
+    /** Single-GET read for QBO singleton resources (CompanyInfo/Preferences) at `/{entity}/{realmId}`. */
+    private async fetchSingleton(
+        auth: QuickBooksAuthContext,
+        vendorCfg: QuickBooksVendorConfig,
+        obj: MJIntegrationObjectEntity,
+        fields: MJIntegrationObjectFieldEntity[],
+        objCfg: QuickBooksObjectConfig,
+    ): Promise<FetchBatchResult> {
+        const url = `${auth.CompanyBaseURL}/${objCfg.QueryEntity.toLowerCase()}/${encodeURIComponent(auth.RealmId)}?minorversion=${vendorCfg.minorVersion}`;
+        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+        if (response.Status < 200 || response.Status >= 300) {
+            throw new Error(`QuickBooks read "${objCfg.QueryEntity}" failed: HTTP ${response.Status} ${this.ExtractErrorMessage(response) ?? ''}`.trim());
         }
-        return typeof body === 'string' ? body.slice(0, 500) : JSON.stringify(body).slice(0, 500);
+        const raw = this.readSingleEntity(response.Body, objCfg.QueryEntity);
+        const records = raw ? [this.buildExternalRecord(raw, obj, fields, objCfg)] : [];
+        return { Records: records, HasMore: false };
     }
 
-    // ─── Utility Helpers ─────────────────────────────────────────────
+    /** Fetches the CDC door and returns deletion tombstones for the object. */
+    private async fetchCdcDeletions(
+        auth: QuickBooksAuthContext,
+        vendorCfg: QuickBooksVendorConfig,
+        objCfg: QuickBooksObjectConfig,
+        changedSince: string,
+        obj: MJIntegrationObjectEntity,
+    ): Promise<ExternalRecord[]> {
+        const url = `${auth.CompanyBaseURL}/cdc?entities=${encodeURIComponent(objCfg.QueryEntity)}&changedSince=${encodeURIComponent(changedSince)}&minorversion=${vendorCfg.minorVersion}`;
+        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+        if (response.Status < 200 || response.Status >= 300) {
+            throw new Error(`HTTP ${response.Status} ${this.ExtractErrorMessage(response) ?? ''}`.trim());
+        }
+        return this.parseCdcDeletions(response.Body, objCfg.QueryEntity, obj.Name);
+    }
 
-    private async Throttle(minIntervalMs: number): Promise<void> {
-        const elapsed = Date.now() - this.lastRequestTime;
-        if (elapsed < minIntervalMs) {
-            await this.Sleep(minIntervalMs - elapsed);
+    /** Walks the CDCResponse envelope, extracting rows whose `status` is Deleted for the given entity. */
+    private parseCdcDeletions(body: unknown, queryEntity: string, objectType: string): ExternalRecord[] {
+        const out: ExternalRecord[] = [];
+        if (!body || typeof body !== 'object') return out;
+        const cdc = (body as Record<string, unknown>).CDCResponse;
+        if (!Array.isArray(cdc)) return out;
+        for (const block of cdc) {
+            if (!block || typeof block !== 'object') continue;
+            const qrs = (block as Record<string, unknown>).QueryResponse;
+            if (!Array.isArray(qrs)) continue;
+            for (const qr of qrs) {
+                if (!qr || typeof qr !== 'object') continue;
+                const arr = (qr as Record<string, unknown>)[queryEntity];
+                if (!Array.isArray(arr)) continue;
+                for (const item of arr) {
+                    if (!item || typeof item !== 'object') continue;
+                    const row = item as Record<string, unknown>;
+                    const status = typeof row.status === 'string' ? row.status : (typeof row.Status === 'string' ? row.Status : '');
+                    if (status.toLowerCase() !== 'deleted') continue;
+                    const id = row.Id;
+                    if (typeof id !== 'string' && typeof id !== 'number') continue;
+                    out.push({ ExternalID: String(id), ObjectType: objectType, Fields: { ...row }, IsDeleted: true });
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Builds an ExternalRecord with the FULL source record in Fields (custom-column pass-through contract).
+     * Mirrors the base ToExternalRecord identity/content-hash semantics: a fully-present PK → joined key;
+     * a keyless/partial-key record → a deterministic content hash stamped into the single PK field so it is
+     * still syncable + idempotent on re-sync. Never drops a source key.
+     */
+    private buildExternalRecord(
+        raw: Record<string, unknown>,
+        obj: MJIntegrationObjectEntity,
+        fields: MJIntegrationObjectFieldEntity[],
+        objCfg: QuickBooksObjectConfig,
+    ): ExternalRecord {
+        // applyTransformPreservingKeys runs TransformRecord then re-adds any dropped key → Fields stays FULL.
+        const transformed = this.applyTransformPreservingKeys(raw, obj, fields);
+        const declaredPk = this.primaryKeyFieldNames(fields);
+        const pkNames = declaredPk.length > 0 ? declaredPk : ['Id']; // QBO universal PK
+        const allPkPresent = pkNames.every(n => transformed[n] != null && serializeKeyValue(transformed[n]).length > 0);
+        const joined = pkNames.map(n => serializeKeyValue(transformed[n])).join('|');
+        const resolvedID = allPkPresent ? joined : computeContentHash(transformed);
+
+        let fieldsOut = transformed;
+        if (!allPkPresent && pkNames.length === 1 && (transformed[pkNames[0]] == null || serializeKeyValue(transformed[pkNames[0]]).length === 0)) {
+            fieldsOut = { ...transformed, [pkNames[0]]: resolvedID };
+        }
+        const modifiedAt = this.readLastUpdated(raw, obj.IncrementalWatermarkField);
+        void objCfg;
+        return {
+            ExternalID: resolvedID,
+            ObjectType: obj.Name,
+            Fields: fieldsOut,
+            ...(modifiedAt ? { ModifiedAt: modifiedAt } : {}),
+        };
+    }
+
+    // ── Write helpers ─────────────────────────────────────────────────
+
+    /**
+     * Resolves the current SyncToken for an update/delete: from the caller's attributes when present, else a
+     * live GetRecord read. QBO's optimistic-concurrency requires the CURRENT token; a stale one is rejected
+     * by the server (classified as a conflict at write time), so we prefer a freshly-read token when absent.
+     */
+    private async resolveSyncToken(
+        attributes: Record<string, unknown>,
+        obj: MJIntegrationObjectEntity,
+        ci: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+        externalID?: string,
+    ): Promise<string | null> {
+        const carried = attributes.SyncToken;
+        if (typeof carried === 'string' && carried.length > 0) return carried;
+        if (typeof carried === 'number') return String(carried);
+        const id = externalID ?? (typeof attributes.Id === 'string' ? attributes.Id : undefined);
+        if (!id) return null;
+        const current = await this.GetRecord({ CompanyIntegration: ci, ObjectName: obj.Name, ContextUser: contextUser, ExternalID: id });
+        const token = current?.Fields?.SyncToken;
+        if (typeof token === 'string' && token.length > 0) return token;
+        if (typeof token === 'number') return String(token);
+        return null;
+    }
+
+    /** Maps a QBO write response to a CRUDResult, classifying a stale-SyncToken conflict distinctly. */
+    private buildWriteResult(response: RESTResponse, externalID: string, op: string, objectName: string): CRUDResult {
+        if (response.Status >= 200 && response.Status < 300) {
+            const returnedId = this.ExtractIDFromResponse(response, 'body') ?? externalID;
+            return { Success: true, StatusCode: response.Status, ExternalID: returnedId };
+        }
+        const message = this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on ${op}`;
+        if (this.isStaleTokenConflict(response)) {
+            const severity = ClassifyError(new Error(message)).Severity;
+            return {
+                Success: false,
+                StatusCode: response.Status,
+                ErrorMessage: `QuickBooks ${op} of "${objectName}"/${externalID} conflict [${severity}] — stale SyncToken (optimistic concurrency). Re-read the record and retry with its current SyncToken. ${message}`.trim(),
+            };
+        }
+        return { Success: false, StatusCode: response.Status, ErrorMessage: `QuickBooks ${op} of "${objectName}"/${externalID}: ${message}` };
+    }
+
+    /** True when the Fault carries QBO's stale-object-version code (5010) or an explicit stale-token message. */
+    private isStaleTokenConflict(response: RESTResponse): boolean {
+        const errs = this.readFaultErrors(response.Body);
+        return errs.some(e => e.code === '5010' || (typeof e.message === 'string' && /stale|sync token|object version/i.test(e.message)));
+    }
+
+    // ── Credential resolution + rotating-refresh-token persistence ────
+
+    /** Merges credentials from the linked Credential entity (secrets win) and CompanyIntegration fields/Configuration. */
+    private async loadCredentials(companyIntegration: MJCompanyIntegrationEntity, contextUser: UserInfo): Promise<QuickBooksCredentials> {
+        const fromCiConfig = companyIntegration.Configuration ? this.parseCredentialJson(companyIntegration.Configuration) : null;
+        const fromCiColumns: Partial<QuickBooksCredentials> = {
+            ClientId: companyIntegration.ClientID ?? undefined,
+            ClientSecret: companyIntegration.ClientSecret ?? undefined,
+            RefreshToken: companyIntegration.RefreshToken ?? undefined,
+            RealmId: companyIntegration.ExternalSystemID ?? undefined,
+        };
+        let fromCred: Partial<QuickBooksCredentials> | null = null;
+        if (companyIntegration.CredentialID) {
+            fromCred = await this.loadFromCredential(companyIntegration.CredentialID, contextUser);
+        }
+        const merged: QuickBooksCredentials = {
+            Environment: 'production',
+            RefreshTokenSource: 'none',
+            ...(fromCiConfig ?? {}),
+            ...this.stripUndefined(fromCiColumns),
+            ...this.stripUndefined(fromCred ?? {}),
+        };
+        // Determine where the refresh token actually came from (credential wins), so a rotation writes back there.
+        if (fromCred?.RefreshToken) merged.RefreshTokenSource = 'credential';
+        else if (fromCiColumns.RefreshToken || fromCiConfig?.RefreshToken) merged.RefreshTokenSource = 'companyIntegration';
+        merged.Environment = this.normalizeEnvironment(merged.Environment);
+        return merged;
+    }
+
+    /** Loads a Credential row and parses its Values JSON. */
+    private async loadFromCredential(credentialID: string, contextUser: UserInfo, provider?: IMetadataProvider): Promise<Partial<QuickBooksCredentials> | null> {
+        const md = provider ?? new Metadata();
+        const credential = await md.GetEntityObject<MJCredentialEntity>('MJ: Credentials', contextUser);
+        const loaded = await credential.Load(credentialID);
+        if (!loaded || !credential.Values) return null;
+        return this.parseCredentialJson(credential.Values);
+    }
+
+    /** Parses a QBO credential/config JSON blob, tolerant of key-casing variants. */
+    private parseCredentialJson(json: string): Partial<QuickBooksCredentials> | null {
+        let parsed: Record<string, unknown>;
+        try { parsed = JSON.parse(json) as Record<string, unknown>; } catch { return null; }
+        const env = this.firstString(parsed, ['Environment', 'environment', 'env']);
+        return {
+            ClientId: this.firstString(parsed, ['ClientId', 'clientId', 'client_id', 'ClientID']),
+            ClientSecret: this.firstString(parsed, ['ClientSecret', 'clientSecret', 'client_secret']),
+            RefreshToken: this.firstString(parsed, ['RefreshToken', 'refreshToken', 'refresh_token']),
+            RealmId: this.firstString(parsed, ['RealmId', 'realmId', 'realm_id', 'RealmID', 'companyId', 'CompanyId']),
+            ...(env ? { Environment: this.normalizeEnvironment(env) } : {}),
+        };
+    }
+
+    /**
+     * Persists the (rotated) refresh token back to its source ONLY when it changed. Intuit invalidates the
+     * previous refresh token on every exchange, so a connector that fails to persist the new one authenticates
+     * once and then dies on the next process. Also caches the fresh access token + expiry on the connection.
+     */
+    private async persistRotatedRefreshToken(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+        creds: QuickBooksCredentials,
+        newRefreshToken: string | undefined,
+        accessToken: string,
+        expiresAt: number,
+    ): Promise<void> {
+        if (!newRefreshToken || newRefreshToken === creds.RefreshToken) {
+            // No rotation: still refresh the cached access token on the connection (best-effort).
+            await this.saveAccessTokenOnConnection(companyIntegration, accessToken, expiresAt);
+            return;
+        }
+        if (creds.RefreshTokenSource === 'credential' && companyIntegration.CredentialID) {
+            await this.saveRefreshTokenToCredential(companyIntegration.CredentialID, contextUser, newRefreshToken);
+        } else {
+            await this.saveRefreshTokenToConnection(companyIntegration, newRefreshToken);
+        }
+        await this.saveAccessTokenOnConnection(companyIntegration, accessToken, expiresAt);
+    }
+
+    /** Writes the rotated refresh token into the Credential.Values JSON (preserving the other keys). */
+    private async saveRefreshTokenToCredential(credentialID: string, contextUser: UserInfo, newRefreshToken: string): Promise<void> {
+        const md = new Metadata();
+        const credential = await md.GetEntityObject<MJCredentialEntity>('MJ: Credentials', contextUser);
+        if (!(await credential.Load(credentialID))) return;
+        let values: Record<string, unknown> = {};
+        try { values = credential.Values ? JSON.parse(credential.Values) as Record<string, unknown> : {}; } catch { values = {}; }
+        // Update whichever refresh-token key the blob already used, else the canonical camelCase.
+        const key = ['refreshToken', 'RefreshToken', 'refresh_token'].find(k => k in values) ?? 'refreshToken';
+        values[key] = newRefreshToken;
+        credential.Values = JSON.stringify(values);
+        await credential.Save();
+    }
+
+    /** Writes the rotated refresh token to the CompanyIntegration.RefreshToken column. */
+    private async saveRefreshTokenToConnection(companyIntegration: MJCompanyIntegrationEntity, newRefreshToken: string): Promise<void> {
+        companyIntegration.RefreshToken = newRefreshToken;
+        await companyIntegration.Save();
+    }
+
+    /** Caches the fresh access token + expiry on the connection (best-effort; a save failure is non-fatal). */
+    private async saveAccessTokenOnConnection(companyIntegration: MJCompanyIntegrationEntity, accessToken: string, expiresAt: number): Promise<void> {
+        try {
+            companyIntegration.AccessToken = accessToken;
+            companyIntegration.TokenExpirationDate = new Date(expiresAt);
+            await companyIntegration.Save();
+        } catch {
+            /* non-fatal: the in-memory token manager still holds the live access token for this run */
         }
     }
 
-    private Sleep(ms: number): Promise<void> {
+    // ── Config resolution ─────────────────────────────────────────────
+
+    /** Reads Integration.Configuration for vendor-wide facts, with published QBO fallbacks (no tenant data). */
+    private resolveVendorConfig(integrationID: string): QuickBooksVendorConfig {
+        const raw = this.readIntegrationConfig(integrationID);
+        const hosts = (raw?.hosts && typeof raw.hosts === 'object') ? raw.hosts as Record<string, unknown> : {};
+        const minor = (raw?.minorVersion && typeof raw.minorVersion === 'object') ? raw.minorVersion as Record<string, unknown> : {};
+        const auth = (raw?.authFlow && typeof raw.authFlow === 'object') ? raw.authFlow as Record<string, unknown> : {};
+        const rate = (raw?.rateLimitPolicy && typeof raw.rateLimitPolicy === 'object') ? raw.rateLimitPolicy as Record<string, unknown> : {};
+        const cfg: QuickBooksVendorConfig = {
+            hosts: {
+                production: this.asString(hosts.production) ?? DEFAULT_HOST_PRODUCTION,
+                sandbox: this.asString(hosts.sandbox) ?? DEFAULT_HOST_SANDBOX,
+            },
+            companyPathTemplate: this.asString(raw?.companyPathTemplate) ?? DEFAULT_COMPANY_PATH_TEMPLATE,
+            minorVersion: this.asNumber(minor.thisBuildTargets) ?? DEFAULT_MINOR_VERSION,
+            tokenEndpoint: this.asString(auth.tokenEndpoint) ?? DEFAULT_TOKEN_ENDPOINT,
+            scope: this.asString(auth.scope) ?? DEFAULT_SCOPE,
+            recordsPath: this.asString(raw?.recordsPath) ?? DEFAULT_RECORDS_PATH,
+            correlationHeader: this.asString(raw?.correlationHeader) ?? DEFAULT_CORRELATION_HEADER,
+            perMinuteLimit: this.parsePerMinuteLimit(rate.perRealmLimit) ?? DEFAULT_PER_MINUTE_LIMIT,
+            concurrentLimit: this.asNumber(rate.concurrentRequestLimit) ?? DEFAULT_CONCURRENT_LIMIT,
+        };
+        this.lastVendorConfig = cfg;
+        return cfg;
+    }
+
+    /** Reads the raw Integration.Configuration object from the engine cache (null-tolerant for unit tests). */
+    private readIntegrationConfig(integrationID: string): Record<string, unknown> | null {
+        try {
+            const integration = IntegrationEngineBase.Instance.GetIntegrationByID(integrationID);
+            const cfg = integration?.Configuration;
+            if (!cfg || typeof cfg !== 'string') return null;
+            return JSON.parse(cfg) as Record<string, unknown>;
+        } catch {
+            return null;
+        }
+    }
+
+    /** Parses the per-object IntegrationObject.Configuration into a typed shape (QueryEntity/entity class/etc). */
+    private parseObjectConfig(obj: MJIntegrationObjectEntity): QuickBooksObjectConfig {
+        let cfg: Record<string, unknown> = {};
+        const rawCfg = (obj as unknown as { Configuration?: string | null }).Configuration;
+        if (rawCfg && typeof rawCfg === 'string') {
+            try { cfg = JSON.parse(rawCfg) as Record<string, unknown>; } catch { cfg = {}; }
+        }
+        const queryEntity = this.asString(cfg.QueryEntity) ?? obj.Name;
+        const entityClassRaw = this.asString(cfg.entityClass);
+        const entityClass: QuickBooksObjectConfig['EntityClass'] =
+            entityClassRaw === 'namelist' || entityClassRaw === 'read-only' ? entityClassRaw : 'transaction';
+        const pagination = (cfg.pagination && typeof cfg.pagination === 'object') ? cfg.pagination as Record<string, unknown> : {};
+        return {
+            QueryEntity: queryEntity,
+            EntityClass: entityClass,
+            CdcEligible: cfg.cdcEligible === true,
+            SkipBase: this.asNumber(pagination.skipParamBase) ?? 1,
+        };
+    }
+
+    /** Selects the host by environment and applies the company path template with the realm id. */
+    private buildCompanyBaseURL(vendorCfg: QuickBooksVendorConfig, creds: QuickBooksCredentials): string {
+        const host = (creds.Environment === 'sandbox' ? vendorCfg.hosts.sandbox : vendorCfg.hosts.production).replace(/\/+$/, '');
+        const path = vendorCfg.companyPathTemplate.replace('{realmId}', encodeURIComponent(creds.RealmId ?? '')).replace(/^\/+/, '');
+        return `${host}/${path}`;
+    }
+
+    // ── Query-text builder ────────────────────────────────────────────
+
+    /** Builds a QBO SQL-like SELECT with the watermark WHERE + ORDERBY and STARTPOSITION/MAXRESULTS in-text. */
+    private buildQueryText(
+        queryEntity: string,
+        watermark: string | null,
+        watermarkField: string | null,
+        startPosition: number,
+        maxResults: number,
+    ): string {
+        let q = `select * from ${queryEntity}`;
+        if (watermark && watermarkField) {
+            q += ` where ${watermarkField} > '${this.escapeQueryLiteral(watermark)}'`;
+            q += ` orderby ${watermarkField}`;
+        }
+        q += ` startposition ${startPosition} maxresults ${maxResults}`;
+        return q;
+    }
+
+    /** Escapes a QBO SQL string literal (single quotes doubled). */
+    private escapeQueryLiteral(value: string): string {
+        return value.replace(/'/g, "''");
+    }
+
+    // ── Small read helpers ────────────────────────────────────────────
+
+    private readQueryResponse(body: unknown): Record<string, unknown> | null {
+        if (!body || typeof body !== 'object') return null;
+        const qr = (body as Record<string, unknown>)[DEFAULT_RECORDS_PATH];
+        return (qr && typeof qr === 'object') ? qr as Record<string, unknown> : null;
+    }
+
+    private countQueryRecords(qr: Record<string, unknown> | null): number {
+        if (!qr) return 0;
+        for (const v of Object.values(qr)) {
+            if (Array.isArray(v)) return v.length;
+        }
+        return 0;
+    }
+
+    /** Reads a single entity object nested under `<Entity>` in a singleton/get-one response. */
+    private readSingleEntity(body: unknown, queryEntity: string): Record<string, unknown> | null {
+        if (!body || typeof body !== 'object') return null;
+        const b = body as Record<string, unknown>;
+        const direct = b[queryEntity];
+        if (direct && typeof direct === 'object' && !Array.isArray(direct)) return direct as Record<string, unknown>;
+        // Fallback: the first object-valued property that isn't the `time` scalar.
+        for (const [k, v] of Object.entries(b)) {
+            if (k === 'time') continue;
+            if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
+        }
+        return null;
+    }
+
+    private readCompanyName(body: unknown): string | undefined {
+        const ci = this.readSingleEntity(body, 'CompanyInfo');
+        const name = ci?.CompanyName;
+        return typeof name === 'string' ? name : undefined;
+    }
+
+    private readFaultErrors(body: unknown): QuickBooksFaultError[] {
+        if (!body || typeof body !== 'object') return [];
+        const fault = (body as Record<string, unknown>).fault ?? (body as Record<string, unknown>).Fault;
+        if (!fault || typeof fault !== 'object') return [];
+        const arr = (fault as Record<string, unknown>).error ?? (fault as Record<string, unknown>).Error;
+        if (!Array.isArray(arr)) return [];
+        return arr.map(e => {
+            const o = (e && typeof e === 'object') ? e as Record<string, unknown> : {};
+            return {
+                message: this.asString(o.message ?? o.Message),
+                detail: this.asString(o.detail ?? o.Detail),
+                code: this.asString(o.code ?? o.Code),
+                element: this.asString(o.element ?? o.Element),
+            };
+        });
+    }
+
+    /** Reads MetaData.LastUpdatedTime (the incremental watermark) off a raw record. */
+    private readLastUpdated(raw: Record<string, unknown>, watermarkField: string | null): Date | undefined {
+        const iso = this.readWatermarkString(raw, watermarkField);
+        if (!iso) return undefined;
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? undefined : d;
+    }
+
+    /** Resolves a (possibly dotted, e.g. `MetaData.LastUpdatedTime`) watermark path to a string value. */
+    private readWatermarkString(raw: Record<string, unknown>, watermarkField: string | null): string | undefined {
+        if (!watermarkField) return undefined;
+        let cur: unknown = raw;
+        for (const seg of watermarkField.split('.')) {
+            if (!cur || typeof cur !== 'object') return undefined;
+            cur = (cur as Record<string, unknown>)[seg];
+        }
+        return typeof cur === 'string' ? cur : undefined;
+    }
+
+    /** Highest watermark value across a batch (ISO-8601 compares lexically). */
+    private maxWatermark(records: Record<string, unknown>[], watermarkField: string | null): string | undefined {
+        if (!watermarkField) return undefined;
+        let max: string | undefined;
+        for (const r of records) {
+            const v = this.readWatermarkString(r, watermarkField);
+            if (v && (max === undefined || v > max)) max = v;
+        }
+        return max;
+    }
+
+    /** PK field names from the cached fields (universal QBO PK is 'Id'; empty when genuinely keyless). */
+    private primaryKeyFieldNames(fields: MJIntegrationObjectFieldEntity[]): string[] {
+        return fields.filter(f => f.IsPrimaryKey).map(f => f.Name);
+    }
+
+    // ── Rate-limit / backoff helpers ──────────────────────────────────
+
+    private parseRetryAfterMs(headers: Record<string, string>): number | undefined {
+        const raw = headers['retry-after'];
+        if (!raw) return undefined;
+        const seconds = Number(raw);
+        if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+        const when = new Date(raw).getTime();
+        return Number.isFinite(when) ? Math.max(0, when - Date.now()) : undefined;
+    }
+
+    private computeBackoffMs(headers: Record<string, string>, attempt: number): number {
+        const retryAfter = this.parseRetryAfterMs(headers);
+        if (retryAfter != null) return retryAfter;
+        return Math.min(30_000, 500 * Math.pow(2, attempt));
+    }
+
+    private sleep(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    private BuildCRUDError(err: unknown, operation: string, objectName: string): CRUDResult {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-            Success: false,
-            ErrorMessage: `${operation} failed for ${objectName}: ${message}`,
-            StatusCode: 500,
-        };
+    // ── Tiny typed coercion helpers ───────────────────────────────────
+
+    private normalizeEnvironment(value: string | undefined): 'production' | 'sandbox' {
+        return (value ?? '').toLowerCase() === 'sandbox' ? 'sandbox' : 'production';
+    }
+
+    private parsePerMinuteLimit(value: unknown): number | undefined {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+            const m = value.match(/(\d+)/);
+            if (m) return Number(m[1]);
+        }
+        return undefined;
+    }
+
+    private firstString(obj: Record<string, unknown>, keys: string[]): string | undefined {
+        for (const k of keys) {
+            const v = obj[k];
+            if (typeof v === 'string' && v.trim().length > 0) return v.trim();
+            if (typeof v === 'number') return String(v);
+        }
+        return undefined;
+    }
+
+    private asString(value: unknown): string | undefined {
+        if (typeof value === 'string' && value.trim().length > 0) return value.trim();
+        if (typeof value === 'number') return String(value);
+        return undefined;
+    }
+
+    private asNumber(value: unknown): number | undefined {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+            const n = Number(value);
+            if (Number.isFinite(n)) return n;
+        }
+        return undefined;
+    }
+
+    /** Removes undefined-valued keys so a spread merge doesn't clobber a lower-precedence real value. */
+    private stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
+        const out: Partial<T> = {};
+        for (const [k, v] of Object.entries(obj)) {
+            if (v !== undefined) (out as Record<string, unknown>)[k] = v;
+        }
+        return out;
     }
 }
 
-/** Tree-shaking prevention function — import and call from module entry point */
-export function LoadQuickBooksConnector(): void { /* no-op */ }
+// ─── Rate-limit / correlation-aware transport error ────────────────────────
 
-/**
- * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
- * (The sample-union override brings its own tiny pool — local plumbing, NOT a shared framework artifact.)
- */
-async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
-    const queue = [...items];
-    const size = Math.max(1, Math.min(limit, queue.length));
-    const runners = Array.from({ length: size }, async () => {
-        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
-            await worker(next);
-        }
-    });
-    await Promise.all(runners);
+/** Thrown by the transport on an exhausted 429; carries the parsed Retry-After for the engine hook. */
+class QuickBooksRateLimitError extends Error {
+    public readonly RetryAfterMs?: number;
+    public readonly IntuitTid?: string;
+    constructor(message: string, retryAfterMs?: number, intuitTid?: string) {
+        super(message);
+        this.name = 'QuickBooksRateLimitError';
+        this.RetryAfterMs = retryAfterMs;
+        this.IntuitTid = intuitTid;
+    }
+}
+
+/** Tree-shaking prevention: referenced from index to keep the @RegisterClass registration alive under bundling. */
+export function LoadQuickBooksConnector(): void {
+    // no-op — the mere existence of this exported function prevents the class from being tree-shaken.
 }
