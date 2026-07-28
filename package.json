@@ -16,6 +16,7 @@
     "lint:migrations": "node scripts/validate-migrations.mjs",
     "lint:metadata": "node scripts/lint-metadata-fields.mjs",
     "check:catalog-freshness": "node scripts/check-catalog-freshness.mjs",
+    "sync:publish-scope": "node scripts/sync-publish-scope.mjs",
     "new-connector": "node scripts/new-connector.mjs",
     "migrations:wrap": "node scripts/wrap-migration.mjs",
     "migrations:pg": "node scripts/build-pg-migrations.mjs",
