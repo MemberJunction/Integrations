@@ -1,7 +1,5 @@
 {
   "generatedBy": "scripts/lint-writable-pk.mjs --write",
-  "count": 1,
-  "keys": [
-    "Marketing/Mailchimp::lists.members"
-  ]
+  "count": 0,
+  "keys": []
 }
