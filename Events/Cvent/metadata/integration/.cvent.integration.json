@@ -21510,8 +21510,8 @@
                   "Type": "String",
                   "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
                   "Source": "Declared",
                   "IntegrationObjectID": "@parent:ID",
                   "IsForeignKey": false,
@@ -33304,9 +33304,9 @@
           "fields": {
             "Name": "CommunicationConfiguration",
             "DisplayName": "CommunicationConfiguration",
-            "Description": "Communication compliance settings e.g. Configure which communication types will be tracked and logged for this account.",
+            "Description": "Communication compliance settings e.g. Configure which communication types will be tracked and logged for this account. Account-level singleton with no identifier: PUT /logs/communications/configuration addresses the account's one configuration, and there is no collection or item id to key on. Write withdrawn: a writable object with no primary key derives a keyless entity whose saves fail. Reads are unaffected.",
             "APIPath": "/logs/communications/configuration",
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "IntegrationID": "@parent:ID",
             "SupportsPagination": true,
@@ -33316,7 +33316,7 @@
               "SyncStrategy": "FullPullHashDiff",
               "ContentHashApplicable": true
             },
-            "SupportsCreate": true,
+            "SupportsCreate": false,
             "SupportsUpdate": false,
             "SupportsDelete": false,
             "IncrementalWatermarkField": null,
@@ -44945,6 +44945,21 @@
             "MJ: Integration Object Fields": [
               {
                 "fields": {
+                  "Name": "id",
+                  "Description": "Unique ID of the file. Fills the {fileId} path variable on update/delete.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Source": "Declared",
+                  "IntegrationObjectID": "@parent:ID",
+                  "IsForeignKey": false,
+                  "Status": "Active"
+                }
+              },
+              {
+                "fields": {
                   "Name": "file",
                   "Description": "Cvent session-file.file",
                   "Type": "String",
@@ -46220,6 +46235,21 @@
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "Description": "Unique ID of the file. Fills the {fileId} path variable on update/delete.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Source": "Declared",
+                  "IntegrationObjectID": "@parent:ID",
+                  "IsForeignKey": false,
+                  "Status": "Active"
+                }
+              },
               {
                 "fields": {
                   "Name": "file",
