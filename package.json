@@ -15,6 +15,8 @@
     "lint:invariants": "node scripts/validate-invariants.mjs",
     "lint:migrations": "node scripts/validate-migrations.mjs",
     "lint:metadata": "node scripts/lint-metadata-fields.mjs",
+    "lint:writable-pk": "node scripts/lint-writable-pk.mjs",
+    "lint:pagination": "node scripts/lint-pagination-honesty.mjs",
     "check:catalog-freshness": "node scripts/check-catalog-freshness.mjs",
     "sync:publish-scope": "node scripts/sync-publish-scope.mjs",
     "new-connector": "node scripts/new-connector.mjs",
