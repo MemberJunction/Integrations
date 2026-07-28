@@ -240260,3 +240260,26 @@ UPDATE [__mj].[IntegrationObjectField] SET [Status]='Deprecated' WHERE [ID]='195
 UPDATE [__mj].[IntegrationObjectField] SET [Status]='Deprecated' WHERE [ID]='B77924A0-23B1-42B2-9F6D-6DCEBD231007' AND ([Status] IS NULL OR [Status] <> 'Deprecated'); -- VendorCredit.VendorAddr
 
 GO
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- QuickBooks 2.0.0 REDO — prose length-floor correction.
+-- Declares a loss-proof 4000-char floor for the prose fields (description/notes/note)
+-- that were seeded below it. The engine SKIPS (never truncates) any record whose
+-- string value exceeds the column width, so an under-sized prose column silently
+-- drops rows. Only ever WIDENS (never shrinks); idempotent. Keyed by the 2.0.0 field
+-- UUIDs; matches the declared Length=4000 in
+-- metadata/integration/.quickbooks.integration.json (scripts/infer-field-lengths.mjs).
+-- ─────────────────────────────────────────────────────────────────────────────
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='63D1B171-8D46-4684-82F8-C1BFEA041217' AND ([Length] IS NULL OR [Length] < 4000); -- Account.Description
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='D8255D54-93AA-4FAD-B948-4192C40EB6BE' AND ([Length] IS NULL OR [Length] < 4000); -- Attachable.Note
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='5E481DF4-6F03-4CEC-8D77-8C572CF61E72' AND ([Length] IS NULL OR [Length] < 4000); -- Customer.Notes
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='7A08D99D-B609-4D51-B77A-2A89296A422A' AND ([Length] IS NULL OR [Length] < 4000); -- Employee.Notes
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='93447625-365B-4E7A-988B-4D0FC79C468C' AND ([Length] IS NULL OR [Length] < 4000); -- Item.Description
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='372C25DD-422C-4540-AA66-192EB88EA985' AND ([Length] IS NULL OR [Length] < 4000); -- JournalCode.Description
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='53D4E425-1F80-4C33-8DCF-AC50EE0214C3' AND ([Length] IS NULL OR [Length] < 4000); -- TaxAgency.Notes
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='87E2EAA0-D0A7-4145-B143-8856E88EDD24' AND ([Length] IS NULL OR [Length] < 4000); -- TaxCode.Description
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='E5C71DD0-44C4-447F-86B3-40DA65AFC6B2' AND ([Length] IS NULL OR [Length] < 4000); -- TaxRate.Description
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='854C31C7-186E-45F4-B6E0-681DA64BE23E' AND ([Length] IS NULL OR [Length] < 4000); -- TimeActivity.Description
+UPDATE [__mj].[IntegrationObjectField] SET [Length]=4000 WHERE [ID]='E799EB6C-6887-44A7-B9B4-62D3C00363D6' AND ([Length] IS NULL OR [Length] < 4000); -- Vendor.Notes
+
+GO

@@ -669,7 +669,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": "Product: ALL Description: User entered description for the account, which may include user entered information to guide bookkeepers/accountants in deciding what journal entries to post to the account. ValidRange: QBW: Max=200 ValidRange: QBO: Max=100"
+                  "Description": "Product: ALL Description: User entered description for the account, which may include user entered information to guide bookkeepers/accountants in deciding what journal entries to post to the account. ValidRange: QBW: Max=200 ValidRange: QBO: Max=100",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "63D1B171-8D46-4684-82F8-C1BFEA041217"
@@ -1646,7 +1647,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": "Note for the attachment or standalone note"
+                  "Description": "Note for the attachment or standalone note",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "D8255D54-93AA-4FAD-B948-4192C40EB6BE"
@@ -15492,7 +15494,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": null
+                  "Description": null,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "5E481DF4-6F03-4CEC-8D77-8C572CF61E72"
@@ -20949,7 +20952,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": null
+                  "Description": null,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "7A08D99D-B609-4D51-B77A-2A89296A422A"
@@ -29312,7 +29316,8 @@
                   "Description": "User entered description for the item that describes the details of the service or product.[br /]Max. length: 4000 characters. Product: QBO Description: User entered description for the item that describes the details of the service or product.[br…",
                   "Configuration": {
                     "docDescription": "Product: QBW Description: User entered description for the item that describes the details of the service or product.[br /]Max. length: 4000 characters. Product: QBO Description: User entered description for the item that describes the details of the service or product.[br /]Max. length: 4000 charac"
-                  }
+                  },
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "93447625-365B-4E7A-988B-4D0FC79C468C"
@@ -30931,7 +30936,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": "The description of the Journal Code"
+                  "Description": "The description of the Journal Code",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "372C25DD-422C-4540-AA66-192EB88EA985"
@@ -46507,7 +46513,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": null
+                  "Description": null,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "53D4E425-1F80-4C33-8DCF-AC50EE0214C3"
@@ -49032,7 +49039,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": "Product: ALL Description: User entered description for the sales tax code.[br/]Max Length: 31 characters."
+                  "Description": "Product: ALL Description: User entered description for the sales tax code.[br/]Max Length: 31 characters.",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "87E2EAA0-D0A7-4145-B143-8856E88EDD24"
@@ -49489,7 +49497,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": "Product: QBW Description: User entered description for the tax rate.[br /]Max Length: 4000 characters. ValidRange: QBW: Max=4000"
+                  "Description": "Product: QBW Description: User entered description for the tax rate.[br /]Max Length: 4000 characters. ValidRange: QBW: Max=4000",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "E5C71DD0-44C4-447F-86B3-40DA65AFC6B2"
@@ -51219,7 +51228,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": "Description of work completed during time activity."
+                  "Description": "Description of work completed during time activity.",
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "854C31C7-186E-45F4-B6E0-681DA64BE23E"
@@ -53871,7 +53881,8 @@
                   "IsReadOnly": false,
                   "IsUniqueKey": false,
                   "Status": "Active",
-                  "Description": null
+                  "Description": null,
+                  "Length": 4000
                 },
                 "primaryKey": {
                   "ID": "E799EB6C-6887-44A7-B9B4-62D3C00363D6"
