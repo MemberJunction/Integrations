@@ -33,6 +33,13 @@
  * need per-object scoping for little added signal, and a count mismatch already
  * pins the connector for a human to open.
  *
+ * The comparison is DIRECTIONAL: it fails on declared-but-not-seeded only. Seeded
+ * rows the metadata no longer declares (and the higher seeded field total that
+ * comes with them) are what a major REDO correctly looks like — it drops objects
+ * from the catalog and soft-deprecates the seeded rows in a delta migration rather
+ * than pruning them, since installed tenants still have them. A rename, the case
+ * that motivated matching by name, still fails: the new name is not seeded.
+ *
  * Connectors with zero declared objects (the raw database connectors —
  * SQLServer, Postgres, MongoDB, Snowflake, …) discover their schema at runtime
  * and are skipped rather than special-cased: nothing declared, nothing to seed.
@@ -108,7 +115,15 @@ for (const family of FAMILIES) {
     const orphaned = [...seeded.objectNames].filter((n) => !declared.objectNames.has(n)).sort();
     const fieldGap = declared.fieldCount - seeded.fieldCount;
 
-    if (missing.length || orphaned.length || fieldGap !== 0) {
+    // DIRECTIONAL on purpose: fail only when the metadata declares MORE than the migrations
+    // ship. The reverse — seeded rows the metadata no longer declares, and therefore a seeded
+    // field total above the declared one — is what a major REDO correctly looks like: it drops
+    // objects from the catalog and soft-deprecates the seeded rows (Status='Deprecated') in a
+    // delta migration rather than pruning them, because installed tenants still have them.
+    // QuickBooks 2.0.0 is exactly that shape (39 declared / 92 seeded, 53 deprecated), so an
+    // `orphaned.length || fieldGap !== 0` test would have failed every future REDO. A RENAME,
+    // the case that motivated matching by name, still fails here: the new name is missing.
+    if (missing.length || fieldGap > 0) {
       problems.push({ connector: `${family}/${connector}`, missing, orphaned, fieldGap, declared, seeded });
     }
   }
@@ -131,8 +146,9 @@ for (const p of problems) {
     console.error(`    NOT SEEDED (${p.missing.length}): ${shown.join(', ')}${p.missing.length > shown.length ? ', …' : ''}`);
   }
   if (p.orphaned.length) {
+    // Context, not the failure: seeded-but-undeclared is the normal residue of a REDO.
     const shown = p.orphaned.slice(0, 12);
-    console.error(`    SEEDED BUT NOT DECLARED (${p.orphaned.length}): ${shown.join(', ')}${p.orphaned.length > shown.length ? ', …' : ''}`);
+    console.error(`    (also seeded but not declared, not itself a failure — ${p.orphaned.length}): ${shown.join(', ')}${p.orphaned.length > shown.length ? ', …' : ''}`);
   }
 }
 console.error(
