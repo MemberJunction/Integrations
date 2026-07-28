@@ -9024,9 +9024,9 @@
                   "Type": "String",
                   "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "AllowsNull": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
                   "Status": "Active",
                   "IntegrationObjectID": "@parent:ID"
                 },

@@ -8140,14 +8140,14 @@
           "fields": {
             "Name": "non_constituent_conversion",
             "DisplayName": "Non Constituent Conversion",
-            "Description": "The non-constituent conversion object holds constituent codes to apply during the conversion.",
+            "Description": "The non-constituent conversion object holds constituent codes to apply during the conversion. Unkeyed command, not a record: the SKY Constituent API operation ConvertToConstituent (/convert/{contact_id}) converts an existing non-constituent into a constituent. No \"conversion\" resource is stored or returned and there is no GET — the result is a constituent, already modelled and keyed on `id` by this catalog. The object declared only the request body.",
             "Category": "Constituent",
             "APIPath": "/constituent/v1/constituents/convert",
             "PaginationType": "None",
             "SupportsPagination": false,
             "SupportsIncrementalSync": false,
             "IncrementalWatermarkField": null,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "Sequence": 31,
             "Status": "Disabled",
             "Configuration": {
@@ -8167,7 +8167,7 @@
             "CreateBodyShape": "flat",
             "CreateIDLocation": "body",
             "IntegrationID": "@parent:ID",
-            "SupportsCreate": true
+            "SupportsCreate": false
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -9125,11 +9125,11 @@
                   "Length": null,
                   "Precision": null,
                   "Scale": null,
-                  "AllowsNull": true,
-                  "IsRequired": false,
+                  "AllowsNull": false,
+                  "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsUniqueKey": false,
-                  "IsPrimaryKey": false,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
                   "Sequence": 1,
                   "Status": "Active",
                   "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=constituent&IntegrationID=@parent:IntegrationID",
@@ -15284,6 +15284,25 @@
                   "lastModified": "2026-07-05T17:40:28.105Z",
                   "checksum": "ed60c5a3bc6c3817c736d1d9526174c8be0213c80cced9bba5d8f5864e175de4"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "acknowledgement_id",
+                  "DisplayName": "Acknowledgement Id",
+                  "Description": "The gift acknowledgement's identifier. Blackbaud's SKY Gift API addresses the resource as PATCH /giftacknowledgements/{acknowledgement_id} (changelog 2019-01-24, \"Gift Acknowledgement (Edit)\"), so the path variable is the record key. The catalog previously declared only the editable body — date, letter, status — which carries no identifier.",
+                  "Type": "String",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                }
               }
             ]
           },
@@ -19095,6 +19114,25 @@
                   "lastModified": "2026-07-05T17:40:29.606Z",
                   "checksum": "3dac03656089c20925b867e0e3ef711b237285c5f15a764a77cbbda2b733e34d"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "receipt_id",
+                  "DisplayName": "Receipt Id",
+                  "Description": "The gift receipt's identifier. Blackbaud's SKY Gift API addresses the resource as PATCH /giftreceipts/{receipt_id} (changelog 2019-01-16, \"Gift Receipt (Edit)\"), so the path variable is the record key. The catalog previously declared only the editable body — amount, date, number, status — which carries no identifier.",
+                  "Type": "String",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                }
               }
             ]
           },
@@ -20394,6 +20432,25 @@
                   "lastModified": "2026-07-05T17:40:30.106Z",
                   "checksum": "af460e60c41855efd47deee09b18ab972b44e361c5f44fb23eafcce3a83b3022"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "The gift note's identifier. Blackbaud publishes GetGiftNoteById / EditGiftNote / DeleteGiftNote against the item resource, and this connector already addresses it as /nxt-data-integration/v1/re/gifts/notes/{id} — the path variable is the record key. Mirrors the sibling `note` object, which is keyed on `id` with the same collection-POST / item-PATCH shape.",
+                  "Type": "Int",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                }
               }
             ]
           },
@@ -20823,14 +20880,14 @@
           "fields": {
             "Name": "new_tax_declaration",
             "DisplayName": "New Tax Declaration",
-            "Description": "Blackbaud RENXT NXTDataIntegration — NewTaxDeclaration",
+            "Description": "Blackbaud RENXT NXTDataIntegration — NewTaxDeclaration Request-body shape, not a record: this is the POST payload for the vendor's CreateTaxDeclaration operation (v1/re/giftaid/taxdeclarations) and its fields are a strict subset of the tax_declaration resource. It has no identifier and no GET. The create capability now lives on tax_declaration, which is keyed on declaration_id and already owns the edit path.",
             "Category": "NXTDataIntegration",
             "APIPath": "/nxt-data-integration/v1/re/giftaid/constituents/{constituent_id}/taxdeclarations",
             "PaginationType": "None",
             "SupportsPagination": false,
             "SupportsIncrementalSync": false,
             "IncrementalWatermarkField": null,
-            "SupportsWrite": true,
+            "SupportsWrite": false,
             "Sequence": 76,
             "Status": "Disabled",
             "Configuration": {
@@ -20849,7 +20906,7 @@
             "CreateBodyShape": "flat",
             "CreateIDLocation": "body",
             "IntegrationID": "@parent:ID",
-            "SupportsCreate": true
+            "SupportsCreate": false
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
@@ -21288,7 +21345,10 @@
             "UpdateBodyShape": "flat",
             "UpdateIDLocation": "path",
             "IntegrationID": "@parent:ID",
-            "SupportsUpdate": true
+            "SupportsUpdate": true,
+            "CreateAPIPath": "/nxt-data-integration/v1/re/giftaid/taxdeclarations",
+            "CreateMethod": "POST",
+            "SupportsCreate": true
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
