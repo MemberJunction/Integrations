@@ -10,6 +10,12 @@
  *  4. The three-way invariant: packages.server[0].name === the seeded Integration's ImportPath, and
  *     that Integration's ClassName (@RegisterClass driver) is exported by this package's own source.
  *
+ * And repo-wide:
+ *
+ *  5. scripts/connector-publish-scope.json is a faithful projection of the package.json `private`
+ *     flags: `hold` is exactly the private Open Apps, `publish` is exactly the rest, together they
+ *     cover every Open App and nothing else. It was an independent list before, and it drifted.
+ *
  * Run in CI after `npm install` (the schema comes from the @memberjunction/open-app-engine devDep).
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
@@ -46,6 +52,34 @@ function exportedClasses(appDir) {
     for (const m of src.matchAll(/export\s*\{\s*([A-Za-z0-9_]+)/g)) names.add(m[1]);
   }
   return names;
+}
+
+/**
+ * (5) The seed-migration publish scope must be derivable from the `private` flags rather than
+ * maintained by hand. Returns one error line per disagreement, naming the fix.
+ */
+function publishScopeErrors(appDirs) {
+  const scopePath = join(REPO_ROOT, 'scripts', 'connector-publish-scope.json');
+  if (!existsSync(scopePath)) return ['scripts/connector-publish-scope.json: missing'];
+  const scope = JSON.parse(readFileSync(scopePath, 'utf-8'));
+  const publish = new Set(scope.publish ?? []);
+  const hold = new Set(scope.hold ?? []);
+  const out = [];
+  for (const d of [...publish].filter((d) => hold.has(d))) out.push(`connector-publish-scope.json: '${d}' is in both publish and hold`);
+  for (const appDir of appDirs) {
+    const rel = appDir.slice(REPO_ROOT.length + 1);
+    const isPrivate = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8')).private === true;
+    const listed = isPrivate ? hold : publish;
+    const other = isPrivate ? publish : hold;
+    const want = isPrivate ? 'hold' : 'publish';
+    if (other.has(rel)) out.push(`connector-publish-scope.json: '${rel}' is private=${isPrivate} so it belongs in '${want}', not the other list`);
+    else if (!listed.has(rel)) out.push(`connector-publish-scope.json: '${rel}' is missing from '${want}' (private=${isPrivate})`);
+    publish.delete(rel);
+    hold.delete(rel);
+  }
+  for (const d of [...publish, ...hold]) out.push(`connector-publish-scope.json: '${d}' is listed but is not a connector Open App (no mj-app.json)`);
+  if (out.length) out.push('Run `node scripts/sync-publish-scope.mjs` to regenerate the file from the private flags.');
+  return out;
 }
 
 const errors = [];
@@ -90,6 +124,8 @@ for (const manifestPath of manifests) {
   if (integ.ImportPath !== pkgName) errors.push(`${rel}: Integration.ImportPath must be '${pkgName}' (was '${integ.ImportPath}')`);
   if (!classes.has(integ.ClassName)) errors.push(`${rel}: Integration.ClassName '${integ.ClassName}' is not @RegisterClass-exported by this package`);
 }
+
+errors.push(...publishScopeErrors(manifests.map(dirname).filter((d) => existsSync(join(d, 'package.json')))));
 
 if (errors.length) {
   console.error(`✗ ${errors.length} invariant violation(s) across ${manifests.length} connector Open App(s):\n`);
