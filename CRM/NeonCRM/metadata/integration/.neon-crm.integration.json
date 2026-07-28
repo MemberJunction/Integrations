@@ -6070,12 +6070,12 @@
             "PaginationType": "None",
             "SupportsPagination": false,
             "SupportsIncrementalSync": false,
-            "SupportsWrite": true,
-            "SupportsCreate": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
             "SupportsUpdate": false,
             "SupportsDelete": false,
             "Status": "Disabled",
-            "Description": "Neon CRM CustomObjectField record (OpenAPI v2.11 schema CustomObjectField).",
+            "Description": "Neon CRM CustomObjectField record (OpenAPI v2.11 schema CustomObjectField). Request-body shape, not a record: Status=Disabled, no APIPath, NoEnumerableEndpoint, and no identifier — the vendor addresses a field by {fieldAlias}, which this shape does not declare. The readable field record is CustomObjectFieldResponse (keyed on id). Write withdrawn: a writable object with no primary key derives a keyless entity whose saves fail. Reads are unaffected.",
             "CreateAPIPath": "/customObjects/{idOrApiAlias}/fields",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -6651,12 +6651,12 @@
             "PaginationType": "None",
             "SupportsPagination": false,
             "SupportsIncrementalSync": false,
-            "SupportsWrite": true,
-            "SupportsCreate": true,
-            "SupportsUpdate": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
             "SupportsDelete": false,
             "Status": "Disabled",
-            "Description": "Neon CRM CustomObjectFormLayout record (OpenAPI v2.11 schema CustomObjectFormLayout).",
+            "Description": "Neon CRM CustomObjectFormLayout record (OpenAPI v2.11 schema CustomObjectFormLayout). Request-body shape, not a record: Status=Disabled, no APIPath, NoEnumerableEndpoint. The vendor's layout record is CustomObjectFormLayoutResponse (keyed on id, addressed at /customObjects/{apiAlias}/formLayouts/{id}). Write withdrawn: a writable object with no primary key derives a keyless entity whose saves fail. Reads are unaffected.",
             "CreateAPIPath": "/customObjects/{apiAlias}/formLayouts",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -6774,6 +6774,17 @@
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "Type": "bigint",
+                  "Source": "Declared",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "IntegrationObjectID": "@parent:ID"
+                }
+              },
               {
                 "fields": {
                   "Name": "layoutName",
@@ -6985,12 +6996,12 @@
             "PaginationType": "None",
             "SupportsPagination": false,
             "SupportsIncrementalSync": false,
-            "SupportsWrite": true,
-            "SupportsCreate": true,
-            "SupportsUpdate": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
             "SupportsDelete": false,
             "Status": "Disabled",
-            "Description": "Neon CRM CustomObjectListLayout record (OpenAPI v2.11 schema CustomObjectListLayout).",
+            "Description": "Neon CRM CustomObjectListLayout record (OpenAPI v2.11 schema CustomObjectListLayout). Request-body shape, not a record: Status=Disabled, no APIPath, NoEnumerableEndpoint. The vendor's layout record is CustomObjectListLayoutResponse (keyed on id, addressed at /customObjects/{apiAlias}/listLayouts/{id}). Write withdrawn: a writable object with no primary key derives a keyless entity whose saves fail. Reads are unaffected.",
             "CreateAPIPath": "/customObjects/{apiAlias}/listLayouts",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -7108,6 +7119,17 @@
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "Type": "bigint",
+                  "Source": "Declared",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "IntegrationObjectID": "@parent:ID"
+                }
+              },
               {
                 "fields": {
                   "Name": "layoutName",
@@ -7620,12 +7642,12 @@
             "PaginationType": "None",
             "SupportsPagination": false,
             "SupportsIncrementalSync": false,
-            "SupportsWrite": true,
-            "SupportsCreate": true,
-            "SupportsUpdate": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
             "SupportsDelete": false,
             "Status": "Disabled",
-            "Description": "Neon CRM CustomObjectValidatorRule record (OpenAPI v2.11 schema CustomObjectValidatorRule).",
+            "Description": "Neon CRM CustomObjectValidatorRule record (OpenAPI v2.11 schema CustomObjectValidatorRule). Request-body shape, not a record: Status=Disabled, no APIPath, NoEnumerableEndpoint. The vendor's validator record is CustomObjectValidatorRuleResponse (already keyed on id, addressed at /customObjects/{idOrApiAlias}/validators/{id}). Write withdrawn: a writable object with no primary key derives a keyless entity whose saves fail. Reads are unaffected.",
             "CreateAPIPath": "/customObjects/{idOrApiAlias}/validators",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
