@@ -32,6 +32,24 @@ jobs:
       - name: Parent declarations resolvable
         run: node scripts/validate-parent-declarations.mjs
 
+      # Same silent-failure family as the parent-declaration gate, on the WRITE
+      # side: a writable object with no IsPrimaryKey field yields a keyless
+      # derived entity, and on Postgres every save then fails with
+      # `syntax error at or near ","` while fetch keeps succeeding — so the
+      # connector reads as healthy and persists nothing (HubSpot #105 was one
+      # instance). Ratcheted against scripts/writable-pk-baseline.json: the 86
+      # pre-existing offenders are accepted, anything new fails, and a baselined
+      # entry that has since been fixed must be removed from the file.
+      - name: Writable objects declare a primary key
+        run: npm run lint:writable-pk
+
+      # Third member of the silent-truncation family: a connector with no
+      # page-advance mechanism returns `HasMore: false` on page ONE, so every
+      # object caps at a single page with a green run and a plausible row count.
+      # GrowthZone shipped that way across all 17 objects (`skip` vs `$skip`).
+      - name: Connectors reporting HasMore:false can advance a page
+        run: npm run lint:pagination
+
       # Better guessing beats trial-and-error: string sizing is empirical (a live
       # bio was 2,595 chars vs the 255 default and records SKIP, not truncate).
       # Prose fields at the raw default fail the build; url/email tiers advise.
@@ -45,6 +63,16 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/require-metadata-migration.mjs
+
+      # The gate above asks a DELTA question ("did THIS PR touch metadata without
+      # adding a migration"), so it cannot see an absolute gap already sitting on
+      # the branch. This one asks the absolute question, by NAME: does the shipped
+      # migration set actually contain every object the metadata declares?
+      # Constant Contact's v2.0.0 redo grew 8 -> 65 objects AND renamed all of
+      # them with no migration, so tenants would have installed 8 objects the
+      # connector no longer references — green install, green sync, zero overlap.
+      - name: Declared catalog is fully seeded by migrations
+        run: npm run lint:catalog-completeness
 
       # Every metadata record fields.* key must map to a REAL entity column (proven by the
       # spCreate* @Params in generated migrations), a documented framework-ideal field, or a
