@@ -303,6 +303,30 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         });
     }
 
+    /**
+     * Queryable scalar field names for an object's SOQL SELECT — describe-driven, compound fields excluded.
+     * Salesforce mandates `LIMIT <= 200` whenever `FIELDS(ALL)`/`FIELDS(CUSTOM)` is used, which is
+     * incompatible with the connector's native `nextRecordsUrl` pagination (no LIMIT). So instead of
+     * `FIELDS(ALL)` we enumerate the fields explicitly (no LIMIT requirement). Compound `address`/`location`
+     * fields CANNOT be SELECTed directly in SOQL (you query their components, e.g. MailingStreet) — that is
+     * precisely why `FIELDS(ALL)` was reached for — so they are dropped here; every other describe field is
+     * SOQL-selectable. Cached per object (only the first page builds SOQL; cursor pages follow the URL).
+     */
+    private soqlFieldCache = new Map<string, string[]>();
+    private async GetSOQLFieldNames(auth: NimbleAuthContext, objectName: string): Promise<string[]> {
+        const cached = this.soqlFieldCache.get(objectName);
+        if (cached) return cached;
+        const url = `${this.SFDataBase(auth)}/sobjects/${encodeURIComponent(objectName)}/describe`;
+        const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+        if (response.Status < 200 || response.Status >= 300) {
+            throw new Error(`Nimble AMS field-describe failed for "${objectName}": HTTP ${response.Status}`);
+        }
+        const body = response.Body as { fields?: Array<{ name: string; type: string }> };
+        const names = (body.fields ?? []).filter(f => f.type !== 'address' && f.type !== 'location').map(f => f.name);
+        this.soqlFieldCache.set(objectName, names);
+        return names;
+    }
+
     /** A SF API name is in Nimble scope iff it is a managed-package object or a standard AMS object. */
     private IsNimbleScopedObject(name: string): boolean {
         if (NIMBLE_STANDARD_OBJECTS.has(name)) return true;
@@ -346,7 +370,13 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         if (config.AccessToken && config.InstanceURL) {
             return { AccessToken: config.AccessToken, InstanceURL: config.InstanceURL, ExpiresAt: Date.now() + TOKEN_LIFETIME_MS };
         }
-        const tokenURL = `${config.LoginURL.replace(/\/+$/, '')}/services/oauth2/token`;
+        // Salesforce's client_credentials grant is ONLY valid against the org's My Domain host (the
+        // InstanceURL) — the generic login.salesforce.com returns invalid_grant "request not supported
+        // on this domain". The refresh_token grant works on either host, so only client_credentials
+        // needs the My-Domain override; fall back to LoginURL when no InstanceURL was supplied.
+        const isClientCredentials = !config.RefreshToken;
+        const tokenHost = isClientCredentials && config.InstanceURL ? config.InstanceURL : config.LoginURL;
+        const tokenURL = `${tokenHost.replace(/\/+$/, '')}/services/oauth2/token`;
         const params: Record<string, string> = { client_id: config.ClientID };
         if (config.RefreshToken) {
             params['grant_type'] = 'refresh_token';
@@ -512,7 +542,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         // Follow the SF cursor when present; otherwise build the first SOQL page.
         const url = ctx.CurrentCursor
             ? `${this.GetBaseURL(ctx.CompanyIntegration, auth)}${ctx.CurrentCursor}`
-            : `${this.SFDataBase(auth)}/query?q=${encodeURIComponent(this.BuildSOQL(ctx.ObjectName, watermarkField, ctx.WatermarkValue ?? null))}`;
+            : `${this.SFDataBase(auth)}/query?q=${encodeURIComponent(this.BuildSOQL(ctx.ObjectName, await this.GetSOQLFieldNames(auth, ctx.ObjectName), watermarkField, ctx.WatermarkValue ?? null))}`;
 
         const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
         if (response.Status < 200 || response.Status >= 300) {
@@ -553,8 +583,11 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
      * watermark past them next sync. Use `>=` (not `>`) so records at the exact watermark instant
      * aren't lost; engine dedupe absorbs the boundary re-fetch. ORDER BY the watermark for monotonicity.
      */
-    private BuildSOQL(objectName: string, watermarkField: string, watermarkValue: string | null): string {
-        let soql = `SELECT FIELDS(ALL) FROM ${objectName}`;
+    private BuildSOQL(objectName: string, fieldNames: string[], watermarkField: string, watermarkValue: string | null): string {
+        // Explicit field list (NOT FIELDS(ALL)) — see GetSOQLFieldNames: FIELDS(ALL) forces LIMIT<=200,
+        // incompatible with native nextRecordsUrl paging. An explicit SELECT has no LIMIT requirement.
+        const cols = fieldNames.length ? fieldNames.join(', ') : 'Id';
+        let soql = `SELECT ${cols} FROM ${objectName}`;
         if (watermarkValue) soql += ` WHERE ${watermarkField} >= ${this.FormatSOQLDateTime(watermarkValue)}`;
         soql += ` ORDER BY ${watermarkField} ASC`;
         return soql;

@@ -78,6 +78,7 @@ import {
     type ExternalRecord,
     type FetchContext,
     type FetchBatchResult,
+    type FetchWarning,
     type CreateRecordContext,
     type UpdateRecordContext,
     type DeleteRecordContext,
@@ -426,15 +427,32 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const accessPath = cfg.accessPath ?? {};
 
         const queryObject = accessPath.queryObject ?? accessPath.doorArgs?.szObjectName ?? ctx.ObjectName;
-        const topModifier = accessPath.doorArgs?.topModifier ?? '@TOP -1';
+        const orderingKey = cfg.stableOrderingKey ?? this.PrimaryKeyFieldName(obj);
+
+        // Keyset pagination requires a total order to seek on. With one, we page via
+        // `@TOP <BatchSize>` + `WHERE <key> > <AfterKeyValue> ORDER BY <key>`; the metadata
+        // `topModifier` is ignored because its only purpose was bypassing the DataGrid row cap,
+        // which paging supersedes. Without an ordering key we cannot page safely, so we keep the
+        // legacy single unbounded fetch and say so via a warning instead of failing silently.
+        const canPaginate = !!orderingKey;
+        const pageSize = ctx.BatchSize > 0 ? ctx.BatchSize : 0;
+        const topModifier = canPaginate && pageSize > 0
+            ? `@TOP ${pageSize}`
+            : (accessPath.doorArgs?.topModifier ?? '@TOP -1');
         const szObjectName = topModifier ? `${queryObject} ${topModifier}` : queryObject;
 
         const args: Record<string, string> = { szObjectName, szColumnList: '*' };
+
+        const predicates: string[] = [];
         const watermarkField = obj.IncrementalWatermarkField ?? undefined;
         if (ctx.WatermarkValue && watermarkField) {
-            args.szWhereClause = `${watermarkField} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`;
+            predicates.push(`${watermarkField} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
         }
-        const orderingKey = cfg.stableOrderingKey ?? this.PrimaryKeyFieldName(obj);
+        if (canPaginate && ctx.AfterKeyValue) {
+            predicates.push(`${orderingKey} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
+        }
+        if (predicates.length > 0) args.szWhereClause = predicates.join(' AND ');
+
         if (orderingKey) args.szOrderBy = orderingKey;
 
         const url = `${auth.Config.BaseURL}${this.SoapEndpoint(cfg)}`;
@@ -446,9 +464,20 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
         const rows = this.NormalizeResponse(response.Body, null);
         const pkField = this.PrimaryKeyFieldName(obj);
-        const warnings = rows.length === 0
-            ? [{ Code: 'ZERO_ROWS', Message: `GetQuery(${szObjectName}) returned no rows.` }]
-            : undefined;
+        const warnings: FetchWarning[] = [];
+        if (rows.length === 0) {
+            warnings.push({ Code: 'ZERO_ROWS', Message: `GetQuery(${szObjectName}) returned no rows.` });
+        }
+        if (!canPaginate) {
+            warnings.push({
+                Code: 'UNPAGINATED_FETCH',
+                Message:
+                    `NetForum "${ctx.ObjectName}" has no stable ordering key (Configuration.stableOrderingKey ` +
+                    `or a primary-key field), so GetQuery ran unbounded (${topModifier}) and returned the ` +
+                    `entire result set in one call. Declare an ordering key to enable keyset paging.`,
+                Data: { ObjectName: ctx.ObjectName, RowCount: rows.length },
+            });
+        }
 
         // Highest ordering-key value seen → keyset resume position when no watermark exists.
         let maxKey: string | undefined;
@@ -461,10 +490,16 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             return { ExternalID: externalID, ObjectType: ctx.ObjectName, Fields: row };
         });
 
+        // A full page implies another may exist; a short page is the last one. Only meaningful when
+        // paginating — without an ordering key there is no seek position, so the single unbounded
+        // fetch is by definition complete.
+        const hasMore = canPaginate && pageSize > 0 && rows.length >= pageSize && maxKey !== undefined;
+
         // Watermark: when this IO has a watermark field, the engine narrows next sync from the max
-        // seen. GetQuery returns the full result set in one call → HasMore is always false.
+        // seen. Advance ONLY on the final page — advancing mid-scan would let a crash between pages
+        // skip every later row older than the new watermark.
         let newWatermark: string | undefined;
-        if (watermarkField) {
+        if (watermarkField && !hasMore) {
             for (const row of rows) {
                 const v = row[watermarkField];
                 if (v != null) { const s = String(v); if (newWatermark === undefined || s > newWatermark) newWatermark = s; }
@@ -473,8 +508,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
         return {
             Records: records,
-            HasMore: false,
-            Warnings: warnings,
+            HasMore: hasMore,
+            Warnings: warnings.length > 0 ? warnings : undefined,
             NewWatermarkValue: newWatermark,
             NextAfterKeyValue: maxKey,
         };

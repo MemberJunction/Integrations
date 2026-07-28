@@ -9,7 +9,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: write       # create the Version Packages PR + per-connector git tags
       pull-requests: write
@@ -54,6 +54,12 @@ jobs:
       - name: Metadata fields on allowlist
         run: node scripts/lint-metadata-fields.mjs
 
+      # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
+      # pr.yml has always run this; release.yml did not, so a migration-shape defect that entered
+      # `main` by any path other than a PR (back-merge, hotfix, admin push) reached publish unchecked.
+      - name: Validate migrations
+        run: node scripts/validate-migrations.mjs
+
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 
@@ -62,6 +68,15 @@ jobs:
       # stale-pin bug (installs kept resolving PheedLoop 1.0.0 after its fix shipped in a later version).
       - name: Connector catalog up to date
         run: node scripts/build-connectors-catalog.mjs --check
+
+      # THE PUBLISH GATE. `npm run release` is `turbo run build && changeset publish` — it BUILDS but never
+      # TESTS, and unit tests ran only in pr.yml's `validate`, which is not a required check. So a connector
+      # whose tests were red could be merged and published: @memberjunction/connector-hubspot went live on
+      # npm at 1.1.1 importing an undeclared dependency, and connector-constant-contact published 2.0.0
+      # carrying three failing tests. Everything here runs UNFILTERED — `main` is the publish tree, so the
+      # whole fleet must be green, not just what a diff says changed.
+      - name: Build & test all connectors
+        run: npx turbo run build test
 
       # Opens/updates the "Version Packages" PR; on merge, `npm run release` builds + publishes ONLY the
       # changed connector packages (changesets non-fixed → per-connector independent versions) and tags each
