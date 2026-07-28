@@ -102,10 +102,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-netforum-enterprise",
       "npmPackage": "@memberjunction/connector-netforum-enterprise",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NetForum",
-      "installTag": "AMS-NetForum@1.3.0"
+      "installTag": "AMS-NetForum@1.3.1"
     },
     {
       "name": "Nimble AMS",
@@ -123,10 +123,10 @@
       "objectCount": 32,
       "className": "@memberjunction/connector-nimble-ams",
       "npmPackage": "@memberjunction/connector-nimble-ams",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NimbleAMS",
-      "installTag": "AMS-NimbleAMS@1.3.0"
+      "installTag": "AMS-NimbleAMS@1.3.1"
     },
     {
       "name": "Novi AMS",
@@ -165,10 +165,10 @@
       "objectCount": 46,
       "className": "ImpexiumConnector",
       "npmPackage": "@memberjunction/connector-impexium",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "AMS/Impexium",
-      "installTag": "AMS-Impexium@1.0.0"
+      "installTag": "AMS-Impexium@1.0.1"
     },
     {
       "name": "Rhythm Software",
@@ -207,10 +207,10 @@
       "objectCount": 25,
       "className": "@memberjunction/connector-wild-apricot",
       "npmPackage": "@memberjunction/connector-wild-apricot",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/WildApricot",
-      "installTag": "AMS-WildApricot@1.2.1"
+      "installTag": "AMS-WildApricot@1.3.0"
     },
     {
       "name": "blackbaud",
@@ -228,10 +228,10 @@
       "objectCount": 84,
       "className": "@memberjunction/connector-blackbaud",
       "npmPackage": "@memberjunction/connector-blackbaud",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/Blackbaud",
-      "installTag": "CRM-Blackbaud@1.2.0"
+      "installTag": "CRM-Blackbaud@1.2.1"
     },
     {
       "name": "HubSpot",
@@ -249,10 +249,10 @@
       "objectCount": 168,
       "className": "@memberjunction/connector-hubspot",
       "npmPackage": "@memberjunction/connector-hubspot",
-      "version": "1.1.1",
+      "version": "1.1.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/HubSpot",
-      "installTag": "CRM-HubSpot@1.1.1"
+      "installTag": "CRM-HubSpot@1.1.2"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
@@ -270,10 +270,10 @@
       "objectCount": 592,
       "className": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
       "npmPackage": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/DynamicsDataverse",
-      "installTag": "CRM-DynamicsDataverse@1.2.0"
+      "installTag": "CRM-DynamicsDataverse@1.2.1"
     },
     {
       "name": "Neon CRM",
@@ -291,10 +291,10 @@
       "objectCount": 119,
       "className": "@memberjunction/connector-neon-crm",
       "npmPackage": "@memberjunction/connector-neon-crm",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/NeonCRM",
-      "installTag": "CRM-NeonCRM@1.3.0"
+      "installTag": "CRM-NeonCRM@1.3.1"
     },
     {
       "name": "Salesforce",
@@ -333,10 +333,10 @@
       "objectCount": 179,
       "className": "@memberjunction/connector-cvent",
       "npmPackage": "@memberjunction/connector-cvent",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/Cvent",
-      "installTag": "Events-Cvent@1.2.0"
+      "installTag": "Events-Cvent@1.2.1"
     },
     {
       "name": "eventbrite",
@@ -354,10 +354,10 @@
       "objectCount": 33,
       "className": "@memberjunction/connector-eventbrite",
       "npmPackage": "@memberjunction/connector-eventbrite",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/Eventbrite",
-      "installTag": "Events-Eventbrite@2.0.1"
+      "installTag": "Events-Eventbrite@2.0.2"
     },
     {
       "name": "OpenWater",
@@ -396,10 +396,10 @@
       "objectCount": 28,
       "className": "@memberjunction/connector-pheedloop",
       "npmPackage": "@memberjunction/connector-pheedloop",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
-      "installTag": "Events-PheedLoop@1.4.0"
+      "installTag": "Events-PheedLoop@1.4.1"
     },
     {
       "name": "NetSuite",
@@ -438,10 +438,10 @@
       "objectCount": 63,
       "className": "@memberjunction/connector-stripe",
       "npmPackage": "@memberjunction/connector-stripe",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/Stripe",
-      "installTag": "Finance-Stripe@0.2.2"
+      "installTag": "Finance-Stripe@0.2.3"
     },
     {
       "name": "Path LMS",
@@ -480,10 +480,10 @@
       "objectCount": 28,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.2.0"
+      "installTag": "LMS-Totara@0.2.1"
     },
     {
       "name": "magnetmail",
@@ -501,10 +501,10 @@
       "objectCount": 47,
       "className": "@memberjunction/connector-magnetmail",
       "npmPackage": "@memberjunction/connector-magnetmail",
-      "version": "3.0.2",
+      "version": "3.0.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/MagnetMail",
-      "installTag": "Marketing-MagnetMail@3.0.2"
+      "installTag": "Marketing-MagnetMail@3.0.3"
     },
     {
       "name": "PropFuel",
@@ -585,10 +585,10 @@
       "objectCount": 98,
       "className": "@memberjunction/connector-hivebrite",
       "npmPackage": "@memberjunction/connector-hivebrite",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Platform/Hivebrite",
-      "installTag": "Platform-Hivebrite@1.2.0"
+      "installTag": "Platform-Hivebrite@1.2.1"
     },
     {
       "name": "MongoDB",
@@ -672,10 +672,10 @@
       "objectCount": 12,
       "className": "@memberjunction/connector-orcid",
       "npmPackage": "@memberjunction/connector-orcid",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Platform/ORCID",
-      "installTag": "Platform-ORCID@1.1.2"
+      "installTag": "Platform-ORCID@1.1.3"
     },
     {
       "name": "PostgreSQL",
