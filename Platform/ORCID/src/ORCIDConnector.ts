@@ -27,7 +27,10 @@ import {
  * must be provided.
  */
 export interface ORCIDConnectionConfig {
-    /** OAuth2 client_credentials grant — client identifier. From the credential store. */
+    /**
+     * OAuth2 client_credentials grant — client identifier. From the credential store.
+     * Omit BOTH this and ClientSecret to run against the ORCID Public API anonymously.
+     */
     ClientID?: string;
     /** OAuth2 client_credentials grant — client secret. From the credential store. */
     ClientSecret?: string;
@@ -65,10 +68,18 @@ export interface ORCIDConnectionConfig {
     ApiBaseUrl?: string;
 }
 
-/** Authenticated context carried through one FetchChanges cycle. */
+/**
+ * Authenticated context carried through one FetchChanges cycle.
+ *
+ * `Token` is undefined in ANONYMOUS mode — the ORCID Public API serves public records with no
+ * credential at all, so a connection configured with no credential skips the OAuth grant
+ * entirely and sends no Authorization header. See `parseConfig` for how the mode is chosen.
+ */
 interface ORCIDAuthContext extends RESTAuthContext {
-    Token: string;
-    ExpiresAt: Date;
+    /** Bearer token, or undefined in anonymous mode (matches the base RESTAuthContext contract). */
+    Token?: string;
+    /** Token expiry. Undefined in anonymous mode — there is no token to expire or refresh. */
+    ExpiresAt?: Date;
     BaseUrl: string;
     Config: ORCIDConnectionConfig;
 }
@@ -121,7 +132,11 @@ const ROOT_OBJECT_NAME = 'record';
  * Connector for the ORCID Public API v3.0 (read-only).
  *
  * Authenticates via OAuth2 2-legged client_credentials (scope `/read-public`)
- * to obtain a bearer token. ORCID is NOT enumerable — there is no
+ * to obtain a bearer token, OR runs ANONYMOUSLY when no credential is configured:
+ * the ORCID Public API serves public records with no token at all, so a connection
+ * that supplies neither ClientID nor ClientSecret skips the grant and sends no
+ * Authorization header. Supplying only one half of the pair is still an error.
+ * ORCID is NOT enumerable — there is no
  * "list all records" endpoint — so every sync is SCOPED per connection via
  * `CompanyIntegration.Configuration` (`searchQuery` Lucene query and/or an
  * explicit `orcidIds` array). FetchChanges resolves the in-scope iD set, then
@@ -201,8 +216,10 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     // ─── TestConnection ──────────────────────────────────────────────
 
     /**
-     * Verifies connectivity by obtaining a client_credentials token, then issuing a
-     * lightweight authenticated probe against a well-known public iD's /record.
+     * Verifies connectivity by resolving auth (a client_credentials token, or anonymous when no
+     * credential is configured), then issuing a lightweight probe against a well-known public
+     * iD's /record. A 401/403 is a failure in BOTH modes — that probe record is public, so being
+     * turned away means the host or the credential is wrong.
      */
     public async TestConnection(
         companyIntegration: MJCompanyIntegrationEntity,
@@ -221,9 +238,12 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             if (resp.Status >= 500) {
                 return { Success: false, Message: `ORCID TestConnection failed: HTTP ${resp.Status} (server error)` };
             }
+            const host = auth.Config.UseSandbox ? 'sandbox' : 'production';
             return {
                 Success: true,
-                Message: `Successfully authenticated against ORCID Public API (${auth.Config.UseSandbox ? 'sandbox' : 'production'}).`,
+                Message: auth.Token == null
+                    ? `Successfully reached the ORCID Public API anonymously — no credential configured (${host}).`
+                    : `Successfully authenticated against ORCID Public API (${host}).`,
                 ServerVersion: 'ORCID Public API v3.0',
             };
         } catch (err: unknown) {
@@ -612,23 +632,50 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             return this.authState;
         }
         const config = await this.parseConfig(companyIntegration, contextUser);
+        const state = this.IsAnonymousConfig(config)
+            ? await this.buildAnonymousState(config)
+            : await this.buildTokenState(config);
+        this.authState = state;
+        return state;
+    }
+
+    /**
+     * True when the connection carries no client_credentials pair — anonymous Public API mode.
+     * `parseConfig` has already rejected the half-configured case, so "no ClientID" here means
+     * "no credential was supplied at all", never "the secret went missing".
+     */
+    protected IsAnonymousConfig(config: ORCIDConnectionConfig): boolean {
+        return !config.ClientID;
+    }
+
+    /** Anonymous state: no grant, no token, nothing to refresh. */
+    private async buildAnonymousState(config: ORCIDConnectionConfig): Promise<ORCIDAuthContext> {
+        return {
+            Token: undefined,
+            ExpiresAt: undefined,
+            BaseUrl: config.ApiBaseUrl ?? (config.UseSandbox ? SANDBOX_API_HOST : PROD_API_HOST),
+            Config: config,
+        };
+    }
+
+    /** Credentialed state: exchange the client_credentials grant for a bearer token. */
+    private async buildTokenState(config: ORCIDConnectionConfig): Promise<ORCIDAuthContext> {
         const token = await this.obtainAccessToken(config);
-        const state: ORCIDAuthContext = {
+        return {
             Token: token.access_token,
             ExpiresAt: new Date(Date.now() + (token.expires_in * 1000)),
             BaseUrl: config.ApiBaseUrl ?? (config.UseSandbox ? SANDBOX_API_HOST : PROD_API_HOST),
             Config: config,
         };
-        this.authState = state;
-        return state;
     }
 
     protected BuildHeaders(auth: RESTAuthContext): Record<string, string> {
         const orcidAuth = auth as ORCIDAuthContext;
-        return {
-            'Authorization': `Bearer ${orcidAuth.Token}`,
-            'Accept': 'application/json',
-        };
+        // Anonymous mode sends NO Authorization header — ORCID rejects a malformed/empty bearer,
+        // whereas an absent header is the documented public-access path.
+        return orcidAuth.Token == null
+            ? { 'Accept': 'application/json' }
+            : { 'Authorization': `Bearer ${orcidAuth.Token}`, 'Accept': 'application/json' };
     }
 
     /** Not used by the overridden FetchChanges; retained for any base-pipeline callers (GetRecord). */
@@ -667,6 +714,8 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     // ─── Token lifecycle ──────────────────────────────────────────────
 
     private isTokenValid(state: ORCIDAuthContext): boolean {
+        // Anonymous state never expires — there is no token to go stale.
+        if (state.Token == null || state.ExpiresAt == null) return true;
         return state.ExpiresAt.getTime() - Date.now() > TOKEN_REFRESH_BUFFER_MS;
     }
 
@@ -727,8 +776,11 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
                 const resp = await this.doFetch(url, method, currentHeaders, body, timeoutMs);
                 this.lastRequestTime = Date.now();
 
-                if (resp.Status === 401 && attempt < maxRetries) {
+                if (resp.Status === 401 && attempt < maxRetries && !this.IsAnonymousConfig(cfg)) {
                     // Token expired/revoked — drop the cache, refresh against the held credentials, retry.
+                    // Skipped in anonymous mode: there is no grant to re-run, and a 401 there means the
+                    // resource simply isn't public. Retrying would just burn the retry budget on a
+                    // response that will never change.
                     this.authState = null;
                     const refreshed = await this.obtainAccessToken(cfg);
                     const refreshedState: ORCIDAuthContext = {
@@ -837,10 +889,17 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             merged.Scope = merged.Scope ?? fromCredential.Scope;
         }
 
-        if (!merged.ClientID || !merged.ClientSecret) {
+        // Credential mode selection. ORCID's Public API serves public records WITHOUT a token, so a
+        // connection that supplies no credential at all is a legitimate anonymous configuration —
+        // not an error. A PARTIAL credential still is: half a client_credentials pair can only be a
+        // misconfiguration, and silently degrading it to anonymous would hide the real problem
+        // behind a sync that quietly returns only public data.
+        const hasClientID = !!merged.ClientID;
+        const hasClientSecret = !!merged.ClientSecret;
+        if (hasClientID !== hasClientSecret) {
             throw new Error(
-                'ORCIDConnector: ClientID and ClientSecret must be provided via the credential store ' +
-                '(OAuth2 client_credentials).'
+                'ORCIDConnector: ClientID and ClientSecret must BOTH be provided (OAuth2 client_credentials), ' +
+                'or both omitted to use the anonymous Public API.'
             );
         }
         if ((!merged.SearchQuery || merged.SearchQuery.trim().length === 0) && (!merged.OrcidIds || merged.OrcidIds.length === 0)) {

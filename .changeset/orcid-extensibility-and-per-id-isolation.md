@@ -2,9 +2,18 @@
 '@memberjunction/connector-orcid': minor
 ---
 
-ORCID: per-iD failure isolation, extensible internals, and a realistic concurrency ceiling.
+ORCID: anonymous Public API access, per-iD failure isolation, extensible internals, and a realistic
+concurrency ceiling.
 
 Reported from a production consumer that subclasses `ORCIDConnector` over a ~38k-iD universe.
+
+**Anonymous Public API access.** The ORCID Public API serves public records with no token, but the
+connector threw unless a `client_credentials` pair was configured — so it could not be used out of
+the box. A connection that supplies *no* credential now skips the OAuth grant entirely and sends no
+`Authorization` header. Supplying only one half of the pair is still a hard error: half a credential
+can only be a misconfiguration, and silently degrading it to anonymous would hide the real problem
+behind a sync that quietly returns public-only data. `TestConnection` reports which mode ran, and a
+401 in anonymous mode no longer triggers a pointless token refresh + retry cycle.
 
 **Per-iD failure isolation.** `FetchChanges` fanned out over the resolved iD universe with no
 per-iD error handling, so one bad iD (persistent 5xx, malformed record) threw and killed the whole
