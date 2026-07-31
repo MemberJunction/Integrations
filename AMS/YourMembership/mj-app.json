@@ -4,7 +4,7 @@
   "name": "connector-yourmembership",
   "displayName": "YourMembership Connector",
   "description": "YourMembership AMS integration for syncing members, membership types, events, and registrations",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "license": "ISC",
   "icon": "fa-solid fa-id-card",
   "publisher": {

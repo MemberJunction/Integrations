@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-stripe",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MemberJunction Stripe connector.",
   "type": "module",
   "main": "dist/index.js",
