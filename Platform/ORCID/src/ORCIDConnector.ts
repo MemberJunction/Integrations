@@ -166,6 +166,15 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         return { TokensPerSec: RATE_LIMIT_TOKENS_PER_SEC, Burst: 40, ThrottleBackoffFactor: 0.5 };
     }
 
+    /**
+     * ORCID's per-request latency (~1.4s typical) makes the sync LATENCY-bound, not rate-bound, at
+     * the engine's default concurrency of 4: 4 in-flight ≈ 3 req/s against the ~10 req/s the
+     * RateLimitPolicy above already permits. Raising the ceiling lets the engine's adaptive
+     * controller ramp until the token bucket — the real constraint — becomes binding. This is a
+     * CEILING, not a floor: the AIMD controller still cuts on 429/503.
+     */
+    public override get MaxConcurrencyHint(): number | null { return 16; }
+
     /** Parse ORCID's Retry-After (delta-seconds or HTTP-date) into milliseconds. */
     public override ExtractRetryAfterMs(error: unknown): number | undefined {
         const headers = (error as { Headers?: Record<string, string> })?.Headers;
@@ -278,9 +287,28 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
 
         const out: ExternalRecord[] = [];
         let maxSeen = watermark;
+        let skippedIdCount = 0;
 
         for (const iD of orcidIds) {
-            const items = await this.FetchForId(auth, obj, iD, section);
+            // Per-iD isolation: one bad iD (persistent 5xx, malformed record) must not abort the
+            // whole page. This matters more since the switch to keyset paging — the engine can only
+            // step past a failed page for offset/page pagination (`canSkipPage`), so a throw here
+            // would stall the scan at this iD on EVERY subsequent run, permanently. 403/404 are
+            // already handled as empty inside FetchForId; this catches everything else.
+            let items: Record<string, unknown>[];
+            try {
+                items = await this.FetchForId(auth, obj, iD, section);
+            } catch (err) {
+                skippedIdCount++;
+                warnings.push({
+                    Code: 'ID_FETCH_FAILED',
+                    Message:
+                        `ORCID "${ctx.ObjectName}": iD ${iD} failed and was skipped — ` +
+                        `${err instanceof Error ? err.message : String(err)}`,
+                    Data: { orcidId: iD, objectName: ctx.ObjectName },
+                });
+                continue;
+            }
             for (const raw of items) {
                 const lmd = this.extractLastModifiedMs(raw);
                 // Incremental narrowing: skip records not newer than the watermark.
@@ -297,7 +325,12 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         // dies after page 1, page 2's records older than the new watermark would be skipped forever.
         // Deriving it from the last page alone can UNDER-advance, which is safe — it costs a re-fetch
         // that content-hash idempotency in ToExternalRecord dedups.
-        if (!hasMore && maxSeen != null && maxSeen !== watermark) {
+        //
+        // Also HOLD the watermark when any iD was skipped above. Swallowing a per-iD failure means
+        // the engine sees a clean fetch, so it can't hold the watermark for us — advancing here would
+        // permanently strand the skipped iD's updates below the new watermark. Holding costs a
+        // re-fetch next run (content-hash dedups it) and lets the failed iD self-heal.
+        if (!hasMore && skippedIdCount === 0 && maxSeen != null && maxSeen !== watermark) {
             result.NewWatermarkValue = String(maxSeen);
         }
         if (warnings.length > 0) result.Warnings = warnings;
@@ -308,7 +341,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * Fetches the raw item array for a single iD + object. For the root record IO this is
      * a single-element array (the record itself); for a section it is the expanded group items.
      */
-    private async FetchForId(
+    protected async FetchForId(
         auth: ORCIDAuthContext,
         obj: MJIntegrationObjectEntity,
         iD: string,
@@ -348,7 +381,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * leaf item; we flatten all such arrays found anywhere in the envelope. Each
      * item is tagged with the parent `orcid-id` (the FK to record).
      */
-    private expandSection(body: Record<string, unknown>, _section: string, iD: string): Record<string, unknown>[] {
+    protected expandSection(body: Record<string, unknown>, _section: string, iD: string): Record<string, unknown>[] {
         const items: Record<string, unknown>[] = [];
         const visit = (node: unknown): void => {
             if (Array.isArray(node)) {
@@ -381,7 +414,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * fixed 16-digit dashed format, so a lexicographic sort is a total, stable order
      * and therefore a valid keyset pagination key for FetchChanges.
      */
-    private async ResolveOrcidIdUniverse(auth: ORCIDAuthContext): Promise<string[]> {
+    protected async ResolveOrcidIdUniverse(auth: ORCIDAuthContext): Promise<string[]> {
         const cfg = auth.Config;
         const ids = new Set<string>();
 
@@ -452,7 +485,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * (orcid-id for record, put-code for sections) drives the ExternalID; partial keys
      * fall back to the base content-hash identity.
      */
-    private toRecord(
+    protected toRecord(
         raw: Record<string, unknown>,
         obj: MJIntegrationObjectEntity,
         fields: MJIntegrationObjectFieldEntity[],
@@ -540,7 +573,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     }
 
     /** Extracts the last-modified-date millis from a record (for watermark comparison). */
-    private extractLastModifiedMs(raw: Record<string, unknown>): number | null {
+    protected extractLastModifiedMs(raw: Record<string, unknown>): number | null {
         return this.extractMs(raw['last-modified-date']);
     }
 
@@ -563,7 +596,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         return node && typeof node === 'object' && !Array.isArray(node) ? node as Record<string, unknown> : undefined;
     }
 
-    private parseWatermark(value: string | null): number | null {
+    protected parseWatermark(value: string | null): number | null {
         if (value == null) return null;
         const ms = this.extractMs(value);
         return ms;

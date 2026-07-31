@@ -186,6 +186,13 @@ describe('ORCIDConnector — identity & capabilities', () => {
         expect(policy!.Burst).toBe(40);
     });
 
+    it('raises MaxConcurrencyHint above the engine default so the sync is rate-bound, not latency-bound', () => {
+        // At the engine's default of 4 in-flight and ~1.4s/request, throughput caps near 3 req/s —
+        // well under the ~10 req/s the RateLimitPolicy already allows.
+        expect(c.MaxConcurrencyHint).toBeGreaterThan(4);
+        expect(c.MaxConcurrencyHint!).toBeLessThanOrEqual(c.RateLimitPolicy!.Burst!);
+    });
+
     it('StableOrderingKey is null for the search-scoped universe (keyset N/A)', () => {
         expect(c.StableOrderingKey('record')).toBeNull();
         expect(c.StableOrderingKey('works')).toBeNull();
@@ -341,6 +348,65 @@ describe('ORCIDConnector — FetchChanges (record)', () => {
         const result = await c.FetchChanges(ctx('record'));
         expect(result.Records).toEqual([]);
         expect(result.Warnings?.[0]?.Code).toBe('ZERO_SCOPE');
+    });
+});
+
+// ─── Per-iD failure isolation ─────────────────────────────────────────
+
+describe('ORCIDConnector — per-iD failure isolation', () => {
+    let c: TestORCIDConnector;
+    const GOOD = '0000-0002-1825-0097';
+    const BAD = '0000-0001-2345-6789';
+
+    /** Serves the normal fixtures except for BAD's /record, which hard-fails with a 500. */
+    function respondWithOneBadId(url: string): RESTResponse {
+        if (url.includes(BAD) && url.includes('/record')) return { Status: 500, Body: null, Headers: {} };
+        return respond(url);
+    }
+
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respondWithOneBadId;
+        c.Config = { OrcidIds: [GOOD, BAD] };
+    });
+
+    it('skips a failing iD and still returns the healthy ones', async () => {
+        const result = await c.FetchChanges(ctx('record'));
+        expect(result.Records.length).toBe(1);
+        expect(result.Records[0].Fields['orcid-id']).toBe(GOOD);
+    });
+
+    it('surfaces the skip as an ID_FETCH_FAILED warning naming the iD', async () => {
+        const result = await c.FetchChanges(ctx('record'));
+        const warning = result.Warnings?.find(w => w.Code === 'ID_FETCH_FAILED');
+        expect(warning).toBeDefined();
+        expect(warning!.Message).toContain(BAD);
+        expect(warning!.Data?.['orcidId']).toBe(BAD);
+    });
+
+    it('HOLDS the watermark when an iD was skipped, so the skipped record is not stranded', async () => {
+        const result = await c.FetchChanges(ctx('record'));
+        // A clean run advances the watermark; a run with a skip must not, or the skipped iD's
+        // updates fall permanently below the new watermark and are never re-fetched.
+        expect(result.NewWatermarkValue).toBeUndefined();
+    });
+
+    it('still advances the watermark when every iD succeeds', async () => {
+        c.Responder = respond;
+        const result = await c.FetchChanges(ctx('record'));
+        expect(result.Records.length).toBe(2);
+        expect(result.Warnings?.some(w => w.Code === 'ID_FETCH_FAILED')).toBeFalsy();
+        expect(result.NewWatermarkValue).toBeDefined();
+    });
+
+    it('a 404 iD is a normal empty, not a skip-warning', async () => {
+        c.Responder = (url: string) =>
+            url.includes(BAD) && url.includes('/record')
+                ? { Status: 404, Body: null, Headers: {} }
+                : respond(url);
+        const result = await c.FetchChanges(ctx('record'));
+        expect(result.Records.length).toBe(1);
+        expect(result.Warnings?.some(w => w.Code === 'ID_FETCH_FAILED')).toBeFalsy();
     });
 });
 
