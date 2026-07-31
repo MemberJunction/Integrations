@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type {
     RESTResponse,
     RESTAuthContext,
@@ -186,6 +186,13 @@ describe('ORCIDConnector — identity & capabilities', () => {
         expect(policy!.Burst).toBe(40);
     });
 
+    it('raises MaxConcurrencyHint above the engine default so the sync is rate-bound, not latency-bound', () => {
+        // At the engine's default of 4 in-flight and ~1.4s/request, throughput caps near 3 req/s —
+        // well under the ~10 req/s the RateLimitPolicy already allows.
+        expect(c.MaxConcurrencyHint).toBeGreaterThan(4);
+        expect(c.MaxConcurrencyHint!).toBeLessThanOrEqual(c.RateLimitPolicy!.Burst!);
+    });
+
     it('StableOrderingKey is null for the search-scoped universe (keyset N/A)', () => {
         expect(c.StableOrderingKey('record')).toBeNull();
         expect(c.StableOrderingKey('works')).toBeNull();
@@ -344,6 +351,65 @@ describe('ORCIDConnector — FetchChanges (record)', () => {
     });
 });
 
+// ─── Per-iD failure isolation ─────────────────────────────────────────
+
+describe('ORCIDConnector — per-iD failure isolation', () => {
+    let c: TestORCIDConnector;
+    const GOOD = '0000-0002-1825-0097';
+    const BAD = '0000-0001-2345-6789';
+
+    /** Serves the normal fixtures except for BAD's /record, which hard-fails with a 500. */
+    function respondWithOneBadId(url: string): RESTResponse {
+        if (url.includes(BAD) && url.includes('/record')) return { Status: 500, Body: null, Headers: {} };
+        return respond(url);
+    }
+
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respondWithOneBadId;
+        c.Config = { OrcidIds: [GOOD, BAD] };
+    });
+
+    it('skips a failing iD and still returns the healthy ones', async () => {
+        const result = await c.FetchChanges(ctx('record'));
+        expect(result.Records.length).toBe(1);
+        expect(result.Records[0].Fields['orcid-id']).toBe(GOOD);
+    });
+
+    it('surfaces the skip as an ID_FETCH_FAILED warning naming the iD', async () => {
+        const result = await c.FetchChanges(ctx('record'));
+        const warning = result.Warnings?.find(w => w.Code === 'ID_FETCH_FAILED');
+        expect(warning).toBeDefined();
+        expect(warning!.Message).toContain(BAD);
+        expect(warning!.Data?.['orcidId']).toBe(BAD);
+    });
+
+    it('HOLDS the watermark when an iD was skipped, so the skipped record is not stranded', async () => {
+        const result = await c.FetchChanges(ctx('record'));
+        // A clean run advances the watermark; a run with a skip must not, or the skipped iD's
+        // updates fall permanently below the new watermark and are never re-fetched.
+        expect(result.NewWatermarkValue).toBeUndefined();
+    });
+
+    it('still advances the watermark when every iD succeeds', async () => {
+        c.Responder = respond;
+        const result = await c.FetchChanges(ctx('record'));
+        expect(result.Records.length).toBe(2);
+        expect(result.Warnings?.some(w => w.Code === 'ID_FETCH_FAILED')).toBeFalsy();
+        expect(result.NewWatermarkValue).toBeDefined();
+    });
+
+    it('a 404 iD is a normal empty, not a skip-warning', async () => {
+        c.Responder = (url: string) =>
+            url.includes(BAD) && url.includes('/record')
+                ? { Status: 404, Body: null, Headers: {} }
+                : respond(url);
+        const result = await c.FetchChanges(ctx('record'));
+        expect(result.Records.length).toBe(1);
+        expect(result.Warnings?.some(w => w.Code === 'ID_FETCH_FAILED')).toBeFalsy();
+    });
+});
+
 describe('ORCIDConnector — FetchChanges (works section fan-out)', () => {
     let c: TestORCIDConnector;
     beforeEach(() => { c = new TestORCIDConnector(); c.Responder = respond; c.Config = { OrcidIds: ['0000-0002-1825-0097'] }; });
@@ -441,5 +507,129 @@ describe('ORCIDConnector — ExtractRetryAfterMs', () => {
     it('returns undefined when no Retry-After present', () => {
         expect(c.ExtractRetryAfterMs({ Headers: {} })).toBeUndefined();
         expect(c.ExtractRetryAfterMs(new Error('boom'))).toBeUndefined();
+    });
+});
+
+// ─── Anonymous Public API mode ────────────────────────────────────────
+
+/**
+ * Drives the REAL auth path (parseConfig → Authenticate → obtainAccessToken →
+ * MakeHTTPRequest → doFetch) by stubbing global fetch, so these tests observe what
+ * actually goes on the wire: whether the OAuth token endpoint is hit at all, and
+ * whether an Authorization header is attached. Only the cached-metadata accessors
+ * are overridden (they'd otherwise need a live provider).
+ */
+class WireORCIDConnector extends ORCIDConnector {
+    protected override GetCachedObject(_integrationID: string, objectName: string): MJIntegrationObjectEntity {
+        return OBJECTS[objectName].obj;
+    }
+    protected override GetCachedFields(objectID: string): MJIntegrationObjectFieldEntity[] {
+        return OBJECTS[objectID.replace(/^io-/, '')].fields;
+    }
+}
+
+/** A CompanyIntegration with NO CredentialID, so parseConfig reads Configuration only. */
+function ciWithConfig(config: Record<string, unknown>): MJCompanyIntegrationEntity {
+    return {
+        IntegrationID: 'int-1',
+        CredentialID: null,
+        Configuration: JSON.stringify(config),
+    } as unknown as MJCompanyIntegrationEntity;
+}
+
+interface WireCall { url: string; headers: Record<string, string> }
+
+/**
+ * Stubs global fetch. Records every outbound call, answers the ORCID token endpoint
+ * with a bearer token, and answers API calls with `apiStatus` + the record fixture.
+ */
+function stubWire(apiStatus = 200): WireCall[] {
+    const calls: WireCall[] = [];
+    vi.stubGlobal('fetch', async (url: string, init?: { headers?: Record<string, string> }) => {
+        calls.push({ url: String(url), headers: (init?.headers ?? {}) as Record<string, string> });
+        const isToken = String(url).includes('/oauth/token');
+        const payload = isToken
+            ? { access_token: 'wire-token', token_type: 'bearer', expires_in: 3600 }
+            : RECORD_FIXTURE;
+        const status = isToken ? 200 : apiStatus;
+        // obtainAccessToken reads .ok/.json() directly off fetch; doFetch reads .status/.text().
+        return {
+            ok: status >= 200 && status < 300,
+            status,
+            headers: { forEach: (fn: (v: string, k: string) => void) => { fn('application/json', 'content-type'); } },
+            text: async () => JSON.stringify(payload),
+            json: async () => payload,
+        };
+    });
+    return calls;
+}
+
+describe('ORCIDConnector — anonymous Public API mode', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('with NO credential: skips the OAuth grant entirely and sends no Authorization header', async () => {
+        const calls = stubWire();
+        const c = new WireORCIDConnector();
+
+        const res = await c.TestConnection(ciWithConfig({ orcidIds: ['0000-0002-1825-0097'] }), {} as never);
+
+        expect(res.Success).toBe(true);
+        // Not one request to the token endpoint — the grant is skipped, not merely ignored.
+        expect(calls.filter(x => x.url.includes('/oauth/token'))).toHaveLength(0);
+        // And the API call carries no Authorization header at all (absent, not empty).
+        const apiCalls = calls.filter(x => x.url.includes('/record'));
+        expect(apiCalls.length).toBeGreaterThan(0);
+        for (const call of apiCalls) {
+            expect(Object.keys(call.headers).map(k => k.toLowerCase())).not.toContain('authorization');
+            expect(call.headers['Accept']).toBe('application/json');
+        }
+    });
+
+    it('reports anonymous mode in the TestConnection message so the operator sees which mode ran', async () => {
+        stubWire();
+        const c = new WireORCIDConnector();
+        const res = await c.TestConnection(ciWithConfig({ orcidIds: ['0000-0002-1825-0097'] }), {} as never);
+        expect(res.Success).toBe(true);
+        expect(res.Message.toLowerCase()).toContain('anonymous');
+    });
+
+    it('with BOTH credentials: still runs the client_credentials grant and sends the bearer', async () => {
+        const calls = stubWire();
+        const c = new WireORCIDConnector();
+
+        const res = await c.TestConnection(
+            ciWithConfig({ clientId: 'cid', clientSecret: 'sec', orcidIds: ['0000-0002-1825-0097'] }),
+            {} as never
+        );
+
+        expect(res.Success).toBe(true);
+        expect(calls.filter(x => x.url.includes('/oauth/token'))).toHaveLength(1);
+        const apiCall = calls.find(x => x.url.includes('/record'));
+        expect(apiCall!.headers['Authorization']).toBe('Bearer wire-token');
+        expect(res.Message.toLowerCase()).not.toContain('anonymous');
+    });
+
+    it('with only HALF a credential: fails loudly rather than silently degrading to anonymous', async () => {
+        stubWire();
+        const c = new WireORCIDConnector();
+
+        // A missing secret is a misconfiguration; quietly syncing public-only data would hide it.
+        const res = await c.TestConnection(ciWithConfig({ clientId: 'cid' }), {} as never);
+
+        expect(res.Success).toBe(false);
+        expect(res.Message).toMatch(/both/i);
+    });
+
+    it('a 401 in anonymous mode does NOT trigger a token grant or a retry storm', async () => {
+        // There is no grant to re-run, and the resource simply is not public — retrying would
+        // burn the retry budget on a response that can never change.
+        const calls = stubWire(401);
+        const c = new WireORCIDConnector();
+
+        const res = await c.TestConnection(ciWithConfig({ orcidIds: ['0000-0002-1825-0097'] }), {} as never);
+
+        expect(res.Success).toBe(false);
+        expect(calls.filter(x => x.url.includes('/oauth/token'))).toHaveLength(0);
+        expect(calls.filter(x => x.url.includes('/record'))).toHaveLength(1);
     });
 });
