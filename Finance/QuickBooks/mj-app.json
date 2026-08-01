@@ -4,7 +4,7 @@
   "name": "connector-quickbooks",
   "displayName": "QuickBooks Connector",
   "description": "QuickBooks Online REST API v3 integration for syncing accounting data (customers, vendors, invoices, bills, items, payments, reports) using OAuth 2.0 authentication scoped by realmId.",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "license": "ISC",
   "icon": "fa-solid fa-calculator",
   "color": "#2ca01c",

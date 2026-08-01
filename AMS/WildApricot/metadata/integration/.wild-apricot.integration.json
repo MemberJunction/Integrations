@@ -397,7 +397,7 @@
             "PaginationType": "Offset",
             "SupportsPagination": true,
             "SupportsWrite": false,
-            "Status": "Active",
+            "Status": "Disabled",
             "SupportsIncrementalSync": false,
             "SyncStrategy": "FullPullHashDiff",
             "ContentHashApplicable": true,
@@ -497,8 +497,8 @@
             "ID": "576DA3B2-E4E4-401C-8C07-600650E38EEA"
           },
           "sync": {
-            "lastModified": "2026-07-05T17:43:37.165Z",
-            "checksum": "d80b54b68163d6fe39e058b6da46956cc782384c602f676b555482f55e75f783"
+            "lastModified": "2026-07-19T02:44:02.880Z",
+            "checksum": "0366c69ba07f5e11f2c8043c96bd3dcecf16ff387bad034188c24ded98791a8e"
           }
         },
         {

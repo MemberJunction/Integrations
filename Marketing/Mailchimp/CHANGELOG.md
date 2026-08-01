@@ -1,5 +1,19 @@
 # @memberjunction/connector-mailchimp
 
+## 2.0.0
+
+### Major Changes
+
+- b6016a8: Rebuild the Mailchimp connector to the pure-mechanism convention. The object/field catalog now lives entirely in Declared metadata (76 objects / 767 fields) with discovery inherited from `BaseRESTIntegrationConnector` — no baked catalog, PK/FK, required/readonly, or field constants in code. Behavior is unchanged: HTTP Basic auth with the API key, data-center prefix derived from the key suffix, uniform `count`/`offset` pagination, per-object envelope unwrapping, and named-parent-var nested CRUD. Seed migrations (SQL + PG) regenerated from the refreshed metadata.
+
+  Full-depth nested sync — e.g. a list's complete member set rather than only its first page — depends on the engine fix in MemberJunction/MJ#3246.
+
+## 1.1.1
+
+### Patch Changes
+
+- 533fb7a: ClassName follows the catalog convention (== npm package name) so instance discovery matches; legacy 'MailchimpConnector' key stays registered and a delta migration fixes existing tenants' Integration rows.
+
 ## 1.1.0
 
 ### Minor Changes

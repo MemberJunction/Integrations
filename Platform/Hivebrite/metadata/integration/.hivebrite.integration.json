@@ -16451,9 +16451,9 @@
                   "DisplayName": "campaign_id",
                   "Description": "Donation Campaign associated to this Configuration",
                   "Type": "Int",
-                  "IsRequired": false,
+                  "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsPrimaryKey": false,
+                  "IsPrimaryKey": true,
                   "IsUniqueKey": false,
                   "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=CampaignEntity&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "id",
@@ -16463,7 +16463,8 @@
                   "Status": "Active",
                   "Configuration": {
                     "ReferencedType": "CampaignEntity"
-                  }
+                  },
+                  "AllowsNull": false
                 },
                 "primaryKey": {
                   "ID": "CA7B44D7-5347-4AE6-A4A9-ECD3E1B2AB99"
@@ -16479,9 +16480,9 @@
                   "DisplayName": "fund_id",
                   "Description": "Donation Fund associated to this Configuration",
                   "Type": "Int",
-                  "IsRequired": false,
+                  "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsPrimaryKey": false,
+                  "IsPrimaryKey": true,
                   "IsUniqueKey": false,
                   "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=FundEntity&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "id",
@@ -16491,7 +16492,8 @@
                   "Status": "Active",
                   "Configuration": {
                     "ReferencedType": "FundEntity"
-                  }
+                  },
+                  "AllowsNull": false
                 },
                 "primaryKey": {
                   "ID": "768DBA2F-8210-481A-9B48-ADB0DFBA9868"
@@ -17726,7 +17728,7 @@
                   "Type": "String",
                   "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsPrimaryKey": false,
+                  "IsPrimaryKey": true,
                   "IsUniqueKey": false,
                   "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Group&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "id",
@@ -17736,7 +17738,8 @@
                   "Status": "Active",
                   "Configuration": {
                     "ReferencedType": "Group"
-                  }
+                  },
+                  "AllowsNull": false
                 },
                 "primaryKey": {
                   "ID": "0FFED652-42BE-4258-A147-EA9AC1D30BEC"
@@ -17754,7 +17757,7 @@
                   "Type": "String",
                   "IsRequired": true,
                   "IsReadOnly": false,
-                  "IsPrimaryKey": false,
+                  "IsPrimaryKey": true,
                   "IsUniqueKey": false,
                   "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "id",
@@ -17764,7 +17767,8 @@
                   "Status": "Active",
                   "Configuration": {
                     "ReferencedType": "User"
-                  }
+                  },
+                  "AllowsNull": false
                 },
                 "primaryKey": {
                   "ID": "1A7DA260-A81A-4B50-B416-EE0621B0EF3C"
@@ -19705,6 +19709,28 @@
                 "sync": {
                   "lastModified": "2026-06-27T19:15:41.362Z",
                   "checksum": "a910100bb54b3aa859a10e431a9b8a1ef015aa4ed3b1cd785f785e4585e062e1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_id",
+                  "DisplayName": "user_id",
+                  "Description": "The user whose notification settings these are. Hivebrite exposes the settings as a SINGLETON per user — PUT /admin/v1/users/{user_id}/notification_settings, with no collection and no item id — so the user is the record identity. The 15 declared fields are preference toggles and carry no identifier of their own.",
+                  "Type": "Int",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Source": "Declared",
+                  "IntegrationObjectID": "@parent:ID",
+                  "IsForeignKey": true,
+                  "Status": "Active",
+                  "Configuration": {
+                    "ReferencedType": "User"
+                  },
+                  "AllowsNull": false
                 }
               }
             ]
