@@ -2,9 +2,9 @@
   "$schema": "https://memberjunction.org/schemas/mj-app.schema.json",
   "manifestVersion": 1,
   "name": "connector-rasa-io",
-  "displayName": "Rasa.io Connector",
-  "description": "Rasa.io newsletter platform integration for syncing persons (subscribers) and posts (content) via the Rasa.io REST API",
-  "version": "1.1.0",
+  "displayName": "rasa.io Connector",
+  "description": "rasa.io newsletter and audience-engagement platform. Syncs subscribers (persons and their actions, topics, sends and attributes), newsletter content (posts, content pool, communities) and the v2 messaging/list surface via the rasa.io REST API.",
+  "version": "2.0.0",
   "license": "ISC",
   "icon": "fa-solid fa-newspaper",
   "publisher": {

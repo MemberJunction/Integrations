@@ -1,537 +1,516 @@
 import { RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
-import type { MJCompanyIntegrationEntity, MJCredentialEntity } from '@memberjunction/core-entities';
+import type {
+    MJCompanyIntegrationEntity,
+    MJCredentialEntity,
+    MJIntegrationObjectEntity,
+} from '@memberjunction/core-entities';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
+import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
 import {
     BaseIntegrationConnector,
     BaseRESTIntegrationConnector,
-    type RESTAuthContext,
-    type RESTResponse,
+    type ConnectionTestResult,
+    type ExternalFieldSchema,
+    type ExternalObjectSchema,
+    type ExternalRecord,
+    type FetchBatchResult,
+    type FetchContext,
+    type FetchWarning,
+    type GetRecordContext,
     type PaginationState,
     type PaginationType,
-    type ConnectionTestResult,
-    type ExternalObjectSchema,
-    type FetchContext,
-    type FetchBatchResult,
-    type DefaultFieldMapping,
-    type DefaultIntegrationConfig,
-    type IntegrationObjectInfo,
+    type RESTAuthContext,
+    type RESTResponse,
     type SourceSchemaInfo,
-    type SourceObjectInfo,
 } from '@memberjunction/integration-engine';
-import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
-import type { MJIntegrationObjectEntity } from '@memberjunction/core-entities';
+import { z } from 'zod';
 
-// ─── Configuration & Auth Types ──────────────────────────────────────
+// ─── Vendor constants (mechanism, NOT catalog) ───────────────────────
+//
+// These are transport facts about the rasa.io SERVICE, not a schema: the host root, the
+// credential-free schema-of-record URLs, and timing. No object list, no field list, no
+// constraint, and nothing tenant-specific lives in this file — the object/field universe is
+// DISCOVERED at runtime (public OpenAPI walk + persisted Declared metadata + live sampling).
 
-/** Connection configuration parsed from CompanyIntegration credentials */
-export interface RasaConnectionConfig {
-    /** Rasa.io API key (UUID format) used for Basic auth to obtain JWT */
-    APIKey: string;
-    /** Basic auth username (email) for the Rasa.io account */
-    Username: string;
-    /** Basic auth password for the Rasa.io account */
-    Password: string;
-    /** Community identifier — scopes API calls to a specific newsletter community */
-    CommunityIdentifier?: string;
-}
+/**
+ * Host ROOT (no version segment). The frozen contract's `apiBaseURLNote` records that each
+ * IntegrationObject's `APIPath` already carries its own `/v1` or `/v2` prefix, so a version-scoped
+ * base double-prefixes (`…/v1` + `/v2/lists` → `/v1/v2/lists` → HTTP 404). Both generations hang
+ * off the host root. Overridable per connection via `BaseURL`.
+ */
+const RASA_API_HOST = 'https://api.rasa.io';
 
-/** Extended auth context with Rasa-specific JWT token */
+/**
+ * Credential-free schema-of-record. rasa.io publishes both API generations as public Swagger 2.0
+ * documents (SOURCES.json, Tier 1 / OpenAPISpec, both HTTP 200 unauthenticated). Discovery reads
+ * THESE — a live credential is purely ADDITIVE (it only contributes tenant-observed customs), so
+ * `DiscoverObjects`/`DiscoverFields` re-yield the full standard universe with no token.
+ */
+const RASA_PUBLIC_SPEC_URLS: readonly string[] = [
+    'https://api-docs.rasa.io/v1/swagger.json',
+    'https://api-docs.rasa.io/swagger.json',
+];
+
+/** Token lifetime guard — refresh well inside the JWT `exp` the vendor issues. */
+const TOKEN_TTL_MS = 45 * 60 * 1000;
+
+/** Per-request timeout. */
+const REQUEST_TIMEOUT_MS = 60_000;
+
+/** Timeout for the credential-free public-spec fetch used by discovery. */
+const SPEC_FETCH_TIMEOUT_MS = 20_000;
+
+/** Transport retry budget (network blips, 401 token refresh, 429 back-off). */
+const MAX_RETRIES = 3;
+
+/**
+ * Page-size fallback when an IntegrationObject declares no `DefaultPageSize`. The v1 spec caps
+ * `limit` at 50 (`maximum: 50` on GET /persons); v2 defaults to 50. Never used to OVERRIDE a
+ * metadata-declared page size — only as the floor when metadata is silent.
+ */
+const RASA_FALLBACK_PAGE_SIZE = 50;
+
+// ─── Config / envelope typing (Zod — no `any`) ───────────────────────
+
+const RasaConnectionConfigSchema = z.object({
+    /** rasa.io API key presented in the token-exchange body. */
+    APIKey: z.string().min(1),
+    /** Account username (email) for the token-exchange HTTP Basic header. */
+    Username: z.string().min(1),
+    /** Account password for the token-exchange HTTP Basic header. */
+    Password: z.string().min(1),
+    /** Optional host override (self-hosted / proxy / test double). Defaults to the vendor host root. */
+    BaseURL: z.string().url().optional(),
+});
+
+/** Connection configuration parsed from the MJ Credential (or CompanyIntegration.Configuration). */
+export type RasaConnectionConfig = z.infer<typeof RasaConnectionConfigSchema>;
+
+/** Auth context carried through the REST pipeline. */
 interface RasaAuthContext extends RESTAuthContext {
     Config: RasaConnectionConfig;
 }
 
-// ─── Constants ───────────────────────────────────────────────────────
+/**
+ * Per-object vendor specifics the canonical IntegrationObject columns have no home for. Emitted by
+ * the extractor into `IntegrationObject.Configuration`; read here, never invented.
+ */
+const RasaObjectConfigSchema = z.object({
+    apiVersion: z.string().optional(),
+    /** Swagger definition name(s) backing this object — the bridge into the public spec. */
+    recordSchemas: z.array(z.string()).optional(),
+    /** Query-param name carrying the incremental watermark (`updated_since` / `created_since` / …). */
+    watermarkParam: z.string().optional(),
+    /**
+     * RealityProbe `recordEnvelopeShape` verdict, materialized by the extractor: the per-record path to
+     * unwrap BEFORE field mapping (e.g. `data` → `results[].data`). ABSENT means the verdict is
+     * `flat`-or-unverified for this object and the connector MUST NOT unwrap (see NormalizeResponse).
+     */
+    recordUnwrapPath: z.string().optional(),
+    /** Nested-graph access path: the door, the descent, and the owning parent object. */
+    accessPath: z
+        .object({
+            door: z.string().optional(),
+            nesting: z.array(z.string()).optional(),
+            parentObject: z.string().nullable().optional(),
+            parentKeyField: z.string().nullable().optional(),
+        })
+        .optional(),
+}).passthrough();
 
-/** Rasa.io API base URL */
-const RASA_API_BASE = 'https://api.rasa.io/v1';
+type RasaObjectConfig = z.infer<typeof RasaObjectConfigSchema>;
 
-/** JWT tokens are refreshed every 50 minutes (tokens last ~60 min) */
-const TOKEN_TTL_MS = 50 * 60 * 1000;
+/** Minimal Swagger 2.0 shape this connector reads. Opaque elsewhere. */
+interface SwaggerSchema {
+    $ref?: string;
+    type?: string;
+    format?: string;
+    description?: string;
+    items?: SwaggerSchema;
+    properties?: Record<string, SwaggerSchema>;
+    required?: string[];
+    maxLength?: number;
+}
+interface SwaggerOperation {
+    summary?: string;
+    description?: string;
+    responses?: Record<string, { schema?: SwaggerSchema }>;
+}
+interface SwaggerDoc {
+    definitions?: Record<string, SwaggerSchema>;
+    paths?: Record<string, Record<string, SwaggerOperation>>;
+}
 
-/** Maximum retries for rate-limited or failed requests */
-const MAX_RETRIES = 3;
+/** A record type discovered from the public spec. */
+interface SpecRecordType {
+    /** Swagger definition name, e.g. `PersonsApiGetResponseItem`. */
+    DefinitionName: string;
+    /** The readable path it was reached through, for the description. */
+    Door: string;
+    /** Operation summary from the spec, when present. */
+    Summary?: string;
+}
 
-/** HTTP request timeout in milliseconds */
-const REQUEST_TIMEOUT_MS = 60000;
+/** Response context for the current fetch — the base's NormalizeResponse signature carries no object. */
+interface RasaResponseContext {
+    ObjectName: string;
+    /** Fully-resolved extraction path (ResponseDataKey composed with the verdicted unwrap path). */
+    DataPath: string | null;
+    /** Whether an envelope-unwrap verdict was DECLARED for this object. */
+    UnwrapDeclared: boolean;
+}
 
-/** Minimum milliseconds between API requests */
-const MIN_REQUEST_INTERVAL_MS = 200;
-
-/** Default page size for Rasa.io API calls */
-const DEFAULT_PAGE_SIZE = 50;
-
-// ─── Connector Implementation ────────────────────────────────────────
+// ─── Connector ───────────────────────────────────────────────────────
 
 /**
- * Connector for the Rasa.io newsletter platform REST API.
+ * rasa.io connector (v1 + v2 REST, single host).
  *
- * Extends BaseRESTIntegrationConnector to leverage metadata-driven object/field
- * discovery from IntegrationEngineBase cache and generic pagination handling.
+ * Everything routine rides `BaseRESTIntegrationConnector`'s metadata-driven machinery — generic
+ * per-operation CRUD, pagination loop, template-var/parent iteration, record→ExternalRecord
+ * conversion. Four things are genuinely idiosyncratic and are the ONLY behavioural overrides:
  *
- * Auth flow:
- *   1. POST /v1/tokens with Basic auth header + { "key": "<API-key>" } body
- *   2. Receive JWT token in response
- *   3. Pass JWT as rasa-token header on all data requests
- *
- * Pagination:
- *   - persons/posts: offset-based (skip/limit), supports updated_since watermark
- *   - insights/actions: cursor-based (base64 skip token from next_link), supports created_since watermark
- *   - insights/topics: no pagination, full replace on each sync
- *
- * Response envelope: { code, metadata: { next_link, record_count }, results: [...] }
+ *  1. **Two-step auth** — `POST /v1/tokens` (HTTP Basic + `{key}` body) mints a JWT that every
+ *     subsequent request presents in a CUSTOM `rasa-token` header, not `Authorization: Bearer`.
+ *  2. **`skip`/`limit` + response-metadata paging** — the base emits `offset`/`limit`; rasa.io uses
+ *     `skip`/`limit` (RealityProbe: "'skip' advanced past page 1 via offset") and drives the loop from
+ *     `metadata.next_link`, whose own `skip` value is numeric for offset endpoints and an opaque token
+ *     for others.
+ *  3. **`*_since` watermarks** — the incremental filter is a per-object query param
+ *     (`updated_since` / `created_since` / `archived_since`) read from the frozen contract.
+ *  4. **Conditional per-record envelope unwrapping** — rasa.io wraps each record JSON:API-style as
+ *     `{data, links}` on SOME objects. Driven strictly by the per-object `recordUnwrapPath` verdict;
+ *     never guessed (see {@link NormalizeResponse}).
  */
-// ─── Action Metadata Objects ──────────────────────────────────────────
-
-const RASA_ACTION_OBJECTS: IntegrationObjectInfo[] = [
-    {
-        Name: 'persons', DisplayName: 'Person',
-        Description: 'A newsletter subscriber/contact in Rasa.io', SupportsWrite: false,
-        Fields: [
-            { Name: 'email', DisplayName: 'Email', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Subscriber email address' },
-            { Name: 'first_name', DisplayName: 'First Name', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Subscriber first name' },
-            { Name: 'last_name', DisplayName: 'Last Name', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Subscriber last name' },
-            { Name: 'external_id', DisplayName: 'Source External ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'External ID from source system' },
-            { Name: 'is_active', DisplayName: 'Is Active', Type: 'boolean', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Whether the subscriber is active' },
-            { Name: 'is_subscribed', DisplayName: 'Is Subscribed', Type: 'boolean', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Whether the subscriber is subscribed' },
-            { Name: 'id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'Rasa.io internal person ID' },
-            { Name: 'created', DisplayName: 'Created Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When the person was created' },
-            { Name: 'updated', DisplayName: 'Updated Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When last updated' },
-        ],
-    },
-    {
-        Name: 'posts', DisplayName: 'Post',
-        Description: 'A newsletter content article/post in Rasa.io', SupportsWrite: false,
-        Fields: [
-            { Name: 'title', DisplayName: 'Title', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Post title' },
-            { Name: 'description', DisplayName: 'Description', Type: 'text', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Post description/summary' },
-            { Name: 'url', DisplayName: 'URL', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Post URL' },
-            { Name: 'source_url', DisplayName: 'Source URL', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Original source URL' },
-            { Name: 'image_url', DisplayName: 'Image URL', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Post image URL' },
-            { Name: 'quality_score', DisplayName: 'Quality Score', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Content quality score' },
-            { Name: 'is_active', DisplayName: 'Is Active', Type: 'boolean', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Whether the post is active' },
-            { Name: 'id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'Rasa.io internal post ID' },
-            { Name: 'created', DisplayName: 'Created Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When the post was created' },
-            { Name: 'updated', DisplayName: 'Updated Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When last updated' },
-        ],
-    },
-    {
-        Name: 'insights-actions', DisplayName: 'Insight Action',
-        Description: 'User action/engagement events from Rasa.io analytics', SupportsWrite: false,
-        Fields: [
-            { Name: 'person_id', DisplayName: 'Person ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Associated person ID' },
-            { Name: 'email', DisplayName: 'Email', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Person email' },
-            { Name: 'action_type', DisplayName: 'Action Type', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Type of action (click, open, etc.)' },
-            { Name: 'created', DisplayName: 'Created Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When the action occurred' },
-            { Name: 'id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'Action event ID' },
-        ],
-    },
-    {
-        Name: 'insights-topics', DisplayName: 'Insight Topic',
-        Description: 'User topic interest data from Rasa.io analytics', SupportsWrite: false,
-        Fields: [
-            { Name: 'person_id', DisplayName: 'Person ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Associated person ID' },
-            { Name: 'email', DisplayName: 'Email', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Person email' },
-            { Name: 'topic', DisplayName: 'Topic', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Topic name' },
-            { Name: 'weight', DisplayName: 'Weight', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Interest weight/score' },
-            { Name: 'first_click', DisplayName: 'First Click', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'First interaction with this topic' },
-            { Name: 'last_click', DisplayName: 'Last Click', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Most recent interaction' },
-            { Name: 'id', DisplayName: 'ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'Topic interest ID' },
-        ],
-    },
-    {
-        Name: 'person-attributes', DisplayName: 'Person Attribute',
-        Description: 'Flattened custom attribute key-value pairs per person from GET /v1/persons/{id}/attributes. Custom attributes are free-form — any key the client has populated.',
-        SupportsWrite: false,
-        Fields: [
-            { Name: 'person_id', DisplayName: 'Person ID', Type: 'string', IsRequired: true, IsReadOnly: true, IsPrimaryKey: true, Description: 'Rasa.io person identifier (composite key)' },
-            { Name: 'external_id', DisplayName: 'External ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'External system identifier' },
-            { Name: 'email', DisplayName: 'Email', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Subscriber email' },
-            { Name: 'attribute_name', DisplayName: 'Attribute Name', Type: 'string', IsRequired: true, IsReadOnly: true, IsPrimaryKey: true, Description: 'Custom attribute key (composite key)' },
-            { Name: 'attribute_value', DisplayName: 'Attribute Value', Type: 'text', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Stringified attribute value' },
-        ],
-    },
-    {
-        Name: 'analytics-activities', DisplayName: 'Activities Analytics',
-        Description: 'Email activity metrics (opens, clicks, deliveries, bounces) bucketed by date from POST /v1/analytics/activities. Supports date_range / interval / segment filters.',
-        SupportsWrite: false,
-        Fields: [
-            { Name: 'bucket_start', DisplayName: 'Bucket Start', Type: 'string', IsRequired: true, IsReadOnly: true, IsPrimaryKey: true, Description: 'Bucket start timestamp (composite key)' },
-            { Name: 'metric_name', DisplayName: 'Metric Name', Type: 'string', IsRequired: true, IsReadOnly: true, IsPrimaryKey: true, Description: 'Metric name (opens, clicks, ...) — composite key' },
-            { Name: 'metric_value', DisplayName: 'Metric Value', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Aggregated metric count' },
-            { Name: 'segment_code', DisplayName: 'Segment Code', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Segment filter' },
-            { Name: 'interval', DisplayName: 'Interval', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Bucket interval (day/hour/week)' },
-            { Name: 'timezone', DisplayName: 'Timezone', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Aggregation timezone' },
-        ],
-    },
-    {
-        Name: 'analytics-articles', DisplayName: 'Articles Analytics',
-        Description: 'Article click analytics ranked by popularity from POST /v1/analytics/articles.',
-        SupportsWrite: false,
-        Fields: [
-            { Name: 'article_id', DisplayName: 'Article ID', Type: 'string', IsRequired: true, IsReadOnly: true, IsPrimaryKey: true, Description: 'Article identifier' },
-            { Name: 'title', DisplayName: 'Title', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Article title' },
-            { Name: 'url', DisplayName: 'URL', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Article URL' },
-            { Name: 'click_count', DisplayName: 'Click Count', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Total clicks' },
-            { Name: 'unique_click_count', DisplayName: 'Unique Click Count', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Unique click count' },
-            { Name: 'date_range', DisplayName: 'Date Range', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Date range filter used' },
-            { Name: 'segment_code', DisplayName: 'Segment Code', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Segment filter' },
-        ],
-    },
-    {
-        Name: 'analytics-topics', DisplayName: 'Topics Analytics',
-        Description: 'Topic engagement ranking with unique user counts from POST /v1/analytics/topics.',
-        SupportsWrite: false,
-        Fields: [
-            { Name: 'topic', DisplayName: 'Topic', Type: 'string', IsRequired: true, IsReadOnly: true, IsPrimaryKey: true, Description: 'Topic name' },
-            { Name: 'total_interactions', DisplayName: 'Total Interactions', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Total engagement count' },
-            { Name: 'unique_users', DisplayName: 'Unique Users', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Unique engaged users' },
-            { Name: 'date_range', DisplayName: 'Date Range', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Date range filter used' },
-            { Name: 'segment_code', DisplayName: 'Segment Code', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Segment filter' },
-            { Name: 'timezone', DisplayName: 'Timezone', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Aggregation timezone' },
-        ],
-    },
-];
-
-// ─── Analytics query defaults ─────────────────────────────────────────
-
-/** Default date range label when no watermark is present (covers recent history). */
-const ANALYTICS_DEFAULT_DATE_RANGE = 'past_month';
-
-/** Default bucket interval for activities analytics. */
-const ANALYTICS_DEFAULT_INTERVAL = 'day';
-
-/** Default suspect-click filter. */
-const ANALYTICS_DEFAULT_SUSPECT_CLICK = 'real_clicks';
-
-/** Default analytics timezone. */
-const ANALYTICS_DEFAULT_TIMEZONE = 'UTC';
-
-/** Default segment code for analytics. */
-const ANALYTICS_DEFAULT_SEGMENT = 'All';
-
-/** Object names that require a POST body for analytics endpoints. */
-const ANALYTICS_POST_OBJECTS = new Set([
-    'analytics-activities',
-    'analytics-articles',
-    'analytics-topics',
-]);
-
-// Primary key follows the catalog convention (className == npm package name;
-// see scripts/build-connectors-catalog.mjs) — instance discovery reports the
-// package name, so the legacy bare key never matched in the catalog. The
-// legacy alias stays registered so pre-migration tenant Integration rows
-// keep resolving.
+/** CANONICAL registration key — the repo's catalog convention is `ClassName` == the npm package name, so
+ *  instance discovery matches. `Integration.ClassName` is seeded to this value.
+ *  The short `RasaConnector` key below stays registered for continuity: `ConnectorFactory.Resolve` looks the
+ *  Integration row's ClassName up verbatim in the ClassFactory, so any tenant row still carrying the legacy
+ *  short name resolves rather than failing with "No connector registered". Zero cost to keep; removing it
+ *  would be a breaking change independent of this release's rename. */
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-rasa-io')
 @RegisterClass(BaseIntegrationConnector, 'RasaConnector')
 export class RasaConnector extends BaseRESTIntegrationConnector {
+    // ── Instance state ───────────────────────────────────────────────
 
-    /**
-     * IntrospectSchema — pure WIRING of MJ's existing sampler into the declared catalog (the connector
-     * sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md). This connector adds NO discovery,
-     * merge, or sync logic — it only wires `DiscoverFieldsViaFetch` (MJ's sampler) into IntrospectSchema.
-     *
-     * `super.IntrospectSchema` yields the cache-driven Declared catalog (no measured widths). For each
-     * object we then call MJ's `DiscoverFieldsViaFetch` — MJ's own read-path sampler that measures real
-     * field widths and surfaces custom columns — and the shared PURE `mergeDeclaredWithSampledFields`
-     * unions the two by field name (adopt MJ's measured width; append MJ-discovered custom columns). MJ
-     * owns everything else (measurement, type/PK inference, persistence, reconcile, sync).
-     *
-     * Recursion note: `DiscoverFieldsViaFetch` falls back to the UNCHANGED `DiscoverFields` (cache-driven)
-     * when the read path can't run — never back into THIS method — so there is no infinite recursion.
-     * This connector does NOT override `DiscoverFields` to call any ViaFetch/ViaStream.
-     *
-     * Robustness: objects are sampled IN PARALLEL under a small bounded pool; any per-object failure
-     * keeps that object's declared fields, so a single bad sample never breaks introspection.
-     */
-    public override async IntrospectSchema(
-        companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
-    ): Promise<SourceSchemaInfo> {
-        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
-
-        await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
-            try {
-                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
-                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
-            } catch {
-                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
-            }
-        });
-
-        return schema;
-    }
-
-    /** Cached JWT token */
+    /** Cached JWT + mint time (idiosyncrasy #1). */
     private cachedToken: string | null = null;
-    /** When the cached token was obtained */
     private tokenObtainedAt = 0;
 
-    /** Timestamp of the last API request, used for throttling */
-    private lastRequestTime = 0;
+    /** Response context for the in-flight fetch (see {@link RasaResponseContext}). */
+    private responseCtx: RasaResponseContext | null = null;
 
-    public override get IntegrationName(): string { return 'Rasa.io'; }
+    /** Watermark value for the in-flight fetch — consumed by {@link AppendDefaultQueryParams}. */
+    private currentWatermark: string | null = null;
 
-    public override GetIntegrationObjects(): IntegrationObjectInfo[] {
-        return RASA_ACTION_OBJECTS;
+    /** Non-fatal diagnostics raised during the in-flight fetch, drained into the FetchBatchResult. */
+    private pendingWarnings: FetchWarning[] = [];
+
+    /** Running max of the watermark FIELD across the batches of one object's sync pass. */
+    private readonly watermarkHighWater = new Map<string, string>();
+
+    /** Integration ID observed on the last operation — lets `StableOrderingKey(name)` reach the cache. */
+    private lastIntegrationID: string | null = null;
+
+    /** Merged public-spec cache (credential-free); populated lazily by discovery. */
+    private specCache: { Definitions: Record<string, SwaggerSchema>; RecordTypes: SpecRecordType[] } | null = null;
+
+    // ── Identity + capability ────────────────────────────────────────
+
+    /** Verbatim from the identity handoff / `MJ: Integrations.Name`. */
+    public override get IntegrationName(): string {
+        return 'rasa';
     }
 
-    public override GetActionGeneratorConfig() {
-        const config = super.GetActionGeneratorConfig();
-        if (!config) return null;
-        config.IconClass = 'fa-solid fa-envelope-open-text';
-        config.CategoryDescription = 'Rasa.io email newsletter integration for managing subscribers, newsletters, and engagement data';
-        config.ParentCategoryName = 'Communication';
-        // Rasa.io is read-only but we still want Search/List actions for querying
-        config.IncludeSearch = true;
-        config.IncludeList = true;
-        return config;
+    /** v1 `POST /persons|/posts|/lead-posts`, v2 `POST /lists|/contacts|/subscriptions` — all metadata-driven. */
+    public override get SupportsCreate(): boolean {
+        return true;
     }
 
-    /** Running count of records fetched for the current object in this sync run */
-    private _runningFetchTotal = 0;
+    /** v1 `PUT /persons/{id}|/posts/{id}|/lead-posts`, v2 `PUT /contacts/{id}|/subscriptions/{id}`. */
+    public override get SupportsUpdate(): boolean {
+        return true;
+    }
 
-    /** Tracks all ExternalIDs seen per object in this sync run to detect API wrap-around */
-    private _seenIDs: Map<string, Set<string>> = new Map();
-
-
-    /** Last fetched URL path, used for per-page logging */
-    private _lastFetchedPath = '';
-
-    /** Watermark value for the current FetchChanges call — used in BuildPaginatedURL */
-    private _currentWatermark: string | undefined = undefined;
-
-    /** Object name for the current FetchChanges call — used in NormalizeResponse and BuildPaginatedURL */
-    private _currentObjectName = '';
+    /** v1 `DELETE /persons/{id}` (GDPR hard delete), v2 `DELETE /contacts/{id}` (archive). */
+    public override get SupportsDelete(): boolean {
+        return true;
+    }
 
     /**
-     * Buffer for non-paginated objects that return more records than BatchSize in one shot.
-     * Keyed by object name. Records are spliced out as they're served to the engine.
+     * `updated_since` / `created_since` are inclusive server-side filters over a monotonically
+     * advancing timestamp column, so the highest value seen is a safe resume point.
      */
-    private _batchBuffer: Map<string, FetchBatchResult['Records']> = new Map();
+    public override get MonotonicWatermark(): boolean {
+        return true;
+    }
 
     /**
-     * Watermark values pre-computed from the full result set when buffering.
-     * Stored so the final buffer batch can still advance the watermark correctly.
+     * Keyset hint the extractor emitted per object (`IntegrationObject.StableOrderingKey`). Returns the
+     * declared key, or null when the object has none — never a guess.
      */
-    private _batchBufferWatermarks: Map<string, string | null> = new Map();
+    public override StableOrderingKey(objectName: string): string | null {
+        if (!this.lastIntegrationID) return null;
+        try {
+            const obj = this.GetCachedObject(this.lastIntegrationID, objectName);
+            const key = obj.StableOrderingKey;
+            return key && key.trim().length > 0 ? key.trim() : null;
+        } catch {
+            return null;
+        }
+    }
 
-    // ─── Abstract method implementations ─────────────────────────────
+    // ── Idiosyncrasy #1 — two-step token exchange ────────────────────
 
+    /**
+     * Step 1 of the vendor's documented flow: `POST {host}/v1/tokens` with an HTTP Basic
+     * `Authorization` header AND a `{ key: <apiKey> }` body; the JWT comes back at
+     * `results[0]['rasa-token']`. Step 2 (the custom header) is {@link BuildHeaders}.
+     */
     protected async Authenticate(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser?: UserInfo
+        contextUser: UserInfo,
     ): Promise<RESTAuthContext> {
-        console.log(`[Rasa.io] Authenticating...`);
+        this.lastIntegrationID = companyIntegration.IntegrationID;
         const config = await this.ParseConfig(companyIntegration, contextUser);
-        const token = await this.GetToken(config);
-        // Do NOT log credential-derived info (token length, prefix, etc.) — would leak secret-shape data into MJAPI logs.
-        console.log(`[Rasa.io] Authenticated successfully`);
+        const token = await this.MintToken(config);
         const auth: RasaAuthContext = { Token: token, Config: config };
         return auth;
     }
 
+    /** Mints (or reuses) the session JWT. Never logs any credential-derived value. */
+    private async MintToken(config: RasaConnectionConfig): Promise<string> {
+        if (this.cachedToken && Date.now() - this.tokenObtainedAt < TOKEN_TTL_MS) {
+            return this.cachedToken;
+        }
+        const basic = Buffer.from(`${config.Username}:${config.Password}`, 'utf8').toString('base64');
+        const response = await fetch(`${this.HostOf(config)}/v1/tokens`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Basic ${basic}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ key: config.APIKey }),
+            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+        if (!response.ok) {
+            throw new Error(`[rasa] token exchange failed: HTTP ${response.status} from POST /v1/tokens`);
+        }
+        const token = this.ReadTokenFromBody(await response.json());
+        if (!token) throw new Error('[rasa] token exchange succeeded but no "rasa-token" was present in the response');
+        this.cachedToken = token;
+        this.tokenObtainedAt = Date.now();
+        return token;
+    }
+
+    /**
+     * Reads the JWT out of the token envelope. Primary shape is the documented
+     * `ApiResonseTokenCreated` → `results[0]['rasa-token']` (`definitions.RasaToken`); the `data`-wrapped
+     * and v2 `access_token` shapes are accepted as transport tolerance, not as a schema claim.
+     */
+    private ReadTokenFromBody(body: unknown): string | null {
+        const root = this.AsRecord(body);
+        if (!root) return null;
+        const candidates: Array<Record<string, unknown> | null> = [root];
+        const results = root.results;
+        if (Array.isArray(results) && results.length > 0) {
+            const first = this.AsRecord(results[0]);
+            candidates.unshift(first, this.AsRecord(first?.data));
+        }
+        for (const candidate of candidates) {
+            if (!candidate) continue;
+            for (const key of ['rasa-token', 'access_token', 'token']) {
+                const value = candidate[key];
+                if (typeof value === 'string' && value.length > 0) return value;
+            }
+        }
+        return null;
+    }
+
+    /** Step 2: the JWT rides a CUSTOM header (`securityDefinitions.authorizer`), not `Authorization`. */
     protected BuildHeaders(auth: RESTAuthContext): Record<string, string> {
         return {
-            'rasa-token': auth.Token!,
-            'Accept': 'application/json',
+            'rasa-token': auth.Token ?? '',
+            Accept: 'application/json',
             'Content-Type': 'application/json',
         };
     }
 
+    /** Host root for every request; APIPath supplies its own `/v1` or `/v2` segment. */
+    protected GetBaseURL(_companyIntegration: MJCompanyIntegrationEntity, auth: RESTAuthContext): string {
+        return this.HostOf((auth as RasaAuthContext).Config);
+    }
+
+    private HostOf(config: RasaConnectionConfig | undefined): string {
+        return (config?.BaseURL ?? RASA_API_HOST).replace(/\/+$/, '');
+    }
+
+    // ── Transport ────────────────────────────────────────────────────
+
+    /**
+     * HTTP transport with bounded retry: network blips, a 401 (mint a fresh JWT and replay once the
+     * cached one has aged out), and 429 honouring `Retry-After` when the vendor sends one.
+     */
     protected async MakeHTTPRequest(
         auth: RESTAuthContext,
         url: string,
         method: string,
         headers: Record<string, string>,
-        body?: unknown
+        body?: unknown,
     ): Promise<RESTResponse> {
-        const rasaAuth = auth as RasaAuthContext;
-
-        // Throttle requests
-        const elapsed = Date.now() - this.lastRequestTime;
-        if (elapsed < MIN_REQUEST_INTERVAL_MS) {
-            await this.Sleep(MIN_REQUEST_INTERVAL_MS - elapsed);
-        }
-
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-            const fetchOptions: RequestInit = {
-                method,
-                headers,
-                signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-            };
-            if (body && method !== 'GET') {
-                fetchOptions.body = JSON.stringify(body);
-            }
-
             let response: Response;
             try {
-                response = await fetch(url, fetchOptions);
+                response = await fetch(url, this.BuildRequestInit(method, headers, body));
             } catch (err) {
-                if (attempt < MAX_RETRIES && this.IsTimeoutOrNetworkError(err)) {
-                    console.warn(`Rasa.io timeout on ${url}, retrying (attempt ${attempt + 1}/${MAX_RETRIES})`);
-                    await this.Sleep(1000 * (attempt + 1));
+                if (attempt < MAX_RETRIES && this.IsRetriableNetworkError(err)) {
+                    await this.Sleep(500 * (attempt + 1));
                     continue;
                 }
                 throw err;
             }
 
             if (response.status === 401 && attempt < MAX_RETRIES) {
-                // Token expired, refresh and retry
-                console.warn('Rasa.io 401, refreshing token');
                 this.cachedToken = null;
-                const newToken = await this.GetToken(rasaAuth.Config);
-                rasaAuth.Token = newToken;
-                headers['rasa-token'] = newToken;
+                const fresh = await this.MintToken((auth as RasaAuthContext).Config);
+                auth.Token = fresh;
+                headers['rasa-token'] = fresh;
                 continue;
             }
-
             if (response.status === 429 && attempt < MAX_RETRIES) {
-                const delayMs = 2000 * Math.pow(2, attempt);
-                console.warn(`Rasa.io rate limited (429), retrying in ${delayMs}ms`);
-                await this.Sleep(delayMs);
+                await this.Sleep(this.RetryAfterMs(response.headers) ?? 2000 * 2 ** attempt);
                 continue;
             }
-
-            this.lastRequestTime = Date.now();
-            const responseBody = await response.json();
-            const responseHeaders: Record<string, string> = {};
-            response.headers.forEach((value, key) => {
-                responseHeaders[key.toLowerCase()] = value;
-            });
-
-            return {
-                Status: response.status,
-                Body: responseBody,
-                Headers: responseHeaders,
-            };
+            return this.ToRESTResponse(response);
         }
-
-        throw new Error(`Rasa.io request failed after ${MAX_RETRIES} retries: ${url}`);
+        throw new Error(`[rasa] request failed after ${MAX_RETRIES} retries: ${method} ${url}`);
     }
 
-    protected NormalizeResponse(
-        rawBody: unknown,
-        responseDataKey: string | null
-    ): Record<string, unknown>[] {
-        const body = rawBody as Record<string, unknown>;
-
-        if (body.results && Array.isArray(body.results)) {
-            const rawResults = body.results as Record<string, unknown>[];
-
-            // insights/topics: flatten nested topics[] per person into individual rows
-            if (this._currentObjectName.toLowerCase() === 'insights-topics') {
-                return this.FlattenInsightsTopics(rawResults);
-            }
-
-            // person-attributes: flatten the attributes object per person into one row per (person, attribute)
-            if (this._currentObjectName.toLowerCase() === 'person-attributes') {
-                return this.FlattenPersonAttributes(rawResults);
-            }
-
-            // analytics-activities: flatten date-bucketed metric dictionary into rows
-            if (this._currentObjectName.toLowerCase() === 'analytics-activities') {
-                return this.FlattenActivitiesAnalytics(rawResults);
-            }
-
-            // analytics-articles / analytics-topics: plain rows — just unwrap data envelopes
-
-            // Standard envelope: each item may wrap actual record under 'data' key — unwrap it
-            const records = rawResults.map(item => {
-                const inner = item['data'];
-                return (inner && typeof inner === 'object' && !Array.isArray(inner))
-                    ? inner as Record<string, unknown>
-                    : item;
-            });
-            this._runningFetchTotal += records.length;
-            const pathLabel = this._lastFetchedPath || 'unknown';
-            console.log(`[Rasa.io] Fetched ${records.length} records (running total: ${this._runningFetchTotal}) from ${pathLabel}`);
-            return records;
-        }
-
-        // If responseDataKey is specified, use it
-        if (responseDataKey && body[responseDataKey]) {
-            const data = body[responseDataKey];
-            return Array.isArray(data) ? data as Record<string, unknown>[] : [data as Record<string, unknown>];
-        }
-
-        // Fallback: if body itself is an array
-        if (Array.isArray(body)) {
-            return body as Record<string, unknown>[];
-        }
-
-        return [];
+    private BuildRequestInit(method: string, headers: Record<string, string>, body?: unknown): RequestInit {
+        const init: RequestInit = { method, headers, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) };
+        if (body !== undefined && method.toUpperCase() !== 'GET') init.body = JSON.stringify(body);
+        return init;
     }
 
-    protected ExtractPaginationInfo(
-        rawBody: unknown,
-        _paginationType: PaginationType,
-        _currentPage: number,
-        currentOffset: number,
-        pageSize: number
-    ): PaginationState {
-        const body = rawBody as Record<string, unknown>;
-        const metadata = body.metadata as Record<string, unknown> | undefined;
-
-        if (!metadata) {
-            return { HasMore: false };
-        }
-
-        const totalRecords = metadata.record_count as number | undefined;
-        const nextLink = metadata.next_link as string | undefined;
-
-        // Count actual records returned in this page
-        const results = body.results;
-        const returnedCount = Array.isArray(results) ? results.length : 0;
-
-        // If the API returned fewer records than the page size, this is the last page.
-        // The Rasa API returns next_link even past the end of the dataset, so we cannot
-        // rely on next_link alone. Fewer records than requested = no more data.
-        if (returnedCount < pageSize) {
-            return { HasMore: false, TotalRecords: totalRecords };
-        }
-
-        const hasMore = !!nextLink && nextLink.length > 0;
-        if (!hasMore) {
-            return { HasMore: false, TotalRecords: totalRecords };
-        }
-
-        // Determine cursor vs offset by inspecting the skip param in next_link
-        let nextCursor: string | undefined;
-        let nextOffset: number | undefined;
-
-        try {
-            const url = new URL(nextLink!);
-            const skipParam = url.searchParams.get('skip');
-            if (skipParam && isNaN(Number(skipParam))) {
-                // Non-numeric skip param = base64 cursor token (insights/actions)
-                nextCursor = skipParam;
-            } else {
-                nextOffset = currentOffset + returnedCount;
+    /** Normalizes a fetch Response, tolerating empty/non-JSON bodies (e.g. a 204 from DELETE). */
+    private async ToRESTResponse(response: Response): Promise<RESTResponse> {
+        const outHeaders: Record<string, string> = {};
+        response.headers.forEach((value, key) => {
+            outHeaders[key.toLowerCase()] = value;
+        });
+        const text = await response.text();
+        let parsed: unknown = text;
+        if (text.length === 0) parsed = null;
+        else {
+            try {
+                parsed = JSON.parse(text) as unknown;
+            } catch {
+                /* leave as text — ExtractErrorMessage/NormalizeResponse both tolerate it */
             }
-        } catch {
-            nextOffset = currentOffset + pageSize;
         }
-
-        return {
-            HasMore: true,
-            NextOffset: nextOffset,
-            NextCursor: nextCursor,
-            TotalRecords: totalRecords,
-        };
+        return { Status: response.status, Body: parsed, Headers: outHeaders };
     }
 
-    protected GetBaseURL(
-        _companyIntegration: MJCompanyIntegrationEntity
-    ): string {
-        return RASA_API_BASE;
+    /** `Retry-After` in seconds or as an HTTP-date; null when the vendor sent neither. */
+    private RetryAfterMs(headers: Headers): number | null {
+        const raw = headers.get('retry-after');
+        if (!raw) return null;
+        const seconds = Number(raw);
+        if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+        const when = Date.parse(raw);
+        return Number.isFinite(when) ? Math.max(0, when - Date.now()) : null;
+    }
+
+    private IsRetriableNetworkError(err: unknown): boolean {
+        if (!(err instanceof Error)) return false;
+        const msg = err.message.toLowerCase();
+        return ['timeout', 'abort', 'econnreset', 'econnrefused', 'enotfound', 'fetch failed'].some(t =>
+            msg.includes(t),
+        );
+    }
+
+    private Sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // ── Idiosyncrasy #4 — conditional per-record envelope unwrapping ──
+
+    /**
+     * Strips the rasa.io response envelope. TWO layers, both metadata-driven:
+     *
+     *  1. the LIST envelope — `{ code, event, metadata, results, status_code }` — via the object's
+     *     `ResponseDataKey` (`results`, `results[].data`, `results[].lists`, …);
+     *  2. the PER-RECORD envelope — rasa.io wraps some records JSON:API-style as `{ data, links }` —
+     *     via the object's `Configuration.recordUnwrapPath`, which materializes the RealityProbe's
+     *     `recordEnvelopeShape` verdict. Present ⇒ verdict was `nested` ⇒ unwrap. **Absent ⇒ we do NOT
+     *     unwrap** — a missing verdict is DEFERRED, never resolved as "flat" by assumption. When an
+     *     un-verdicted object nonetheless arrives looking exactly like the vendor's envelope
+     *     (`{data, links}` and nothing else), we emit a `RECORD_ENVELOPE_UNVERIFIED` warning naming the
+     *     object so the gap is loud in the run artifact rather than silently mis-mapped.
+     */
+    protected NormalizeResponse(rawBody: unknown, responseDataKey: string | null): Record<string, unknown>[] {
+        const ctx = this.responseCtx;
+        const path = ctx ? ctx.DataPath : responseDataKey;
+        const records = this.ExtractByPath(rawBody, path);
+        if (ctx && !ctx.UnwrapDeclared) this.FlagUndeclaredEnvelope(ctx.ObjectName, records);
+        return records;
     }
 
     /**
-     * Builds paginated URL with:
-     *  - Watermark filter params (updated_since / created_since) sent server-side
-     *  - Offset-based skip/limit for persons and posts
-     *  - Cursor-based skip token for insights/actions
-     *  - No pagination params for insights/topics
+     * Evaluates a dotted extraction path against a response body. A segment may be a plain key or a
+     * `key[]` list segment; arrays are flattened either way, so `results`, `results[].data` and
+     * `results[].data.topics` all resolve uniformly. A null path returns the body itself (array or object).
+     */
+    private ExtractByPath(body: unknown, path: string | null): Record<string, unknown>[] {
+        if (body == null) return [];
+        let current: unknown[] = Array.isArray(body) ? [...body] : [body];
+        if (path) {
+            for (const segment of path.split('.')) {
+                const key = segment.endsWith('[]') ? segment.slice(0, -2) : segment;
+                const next: unknown[] = [];
+                for (const node of current) {
+                    const record = this.AsRecord(node);
+                    const value = record ? record[key] : undefined;
+                    if (value == null) continue;
+                    if (Array.isArray(value)) next.push(...value);
+                    else next.push(value);
+                }
+                current = next;
+            }
+        }
+        return current.filter((n): n is Record<string, unknown> => this.AsRecord(n) !== null);
+    }
+
+    /** Raises a one-per-fetch diagnostic when an un-verdicted object arrives inside the vendor envelope. */
+    private FlagUndeclaredEnvelope(objectName: string, records: Record<string, unknown>[]): void {
+        if (records.length === 0) return;
+        const looksWrapped = records.every(r => {
+            const keys = Object.keys(r);
+            return keys.includes('data') && keys.every(k => k === 'data' || k === 'links');
+        });
+        if (!looksWrapped) return;
+        if (this.pendingWarnings.some(w => w.Code === 'RECORD_ENVELOPE_UNVERIFIED' && w.Data?.object === objectName)) {
+            return;
+        }
+        this.pendingWarnings.push({
+            Code: 'RECORD_ENVELOPE_UNVERIFIED',
+            Message:
+                `"${objectName}": records arrived in the vendor's per-record envelope ({data,links}) but no ` +
+                `recordEnvelopeShape verdict is declared for this object (Configuration.recordUnwrapPath is ` +
+                `absent). The connector DEFERS rather than assuming a shape — re-run the reality probe for ` +
+                `this object and amend the contract; field mapping is unreliable until then.`,
+            Data: { object: objectName, observedTopLevelKeys: Object.keys(records[0]) },
+        });
+    }
+
+    // ── Idiosyncrasy #2 — skip/limit + next_link paging ──────────────
+
+    /**
+     * rasa.io pages with `skip` + `limit` (NOT the base's `offset`/`limit`). The `skip` value is a
+     * numeric offset on offset endpoints and an opaque token on the endpoints whose `next_link` carries
+     * a non-numeric `skip` — {@link ExtractPaginationInfo} classifies it, we replay whichever it gave us.
+     * `limit` is capped by the object's declared `DefaultPageSize` (the v1 spec's hard `maximum: 50`).
      */
     protected override BuildPaginatedURL(
         basePath: string,
@@ -539,648 +518,659 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
         _page: number,
         offset: number,
         cursor?: string,
-        effectivePageSize?: number
+        effectivePageSize?: number,
     ): string {
-        try {
-            this._lastFetchedPath = new URL(basePath).pathname;
-        } catch {
-            this._lastFetchedPath = basePath;
-        }
-
-        const objectName = (obj.Name ?? '').toLowerCase();
-        const limit = effectivePageSize ?? obj.DefaultPageSize ?? DEFAULT_PAGE_SIZE;
+        const cap = obj.DefaultPageSize ?? RASA_FALLBACK_PAGE_SIZE;
+        const limit = Math.max(1, Math.min(effectivePageSize ?? cap, cap));
         const params = new URLSearchParams();
-
-        // Pass watermark filter to API so it only returns changed records
-        if (this._currentWatermark) {
-            if (objectName === 'persons' || objectName === 'posts') {
-                params.set('updated_since', this._currentWatermark);
-            } else if (objectName === 'insights-actions') {
-                params.set('created_since', this._currentWatermark);
-            }
-        }
-
-        // Pagination params — insights/topics has no pagination
-        if (objectName !== 'insights-topics') {
-            if (objectName === 'insights-actions' && cursor) {
-                // Cursor-based: cursor is the base64 skip token extracted from previous next_link
-                params.set('skip', cursor);
-            } else if (offset > 0) {
-                // Offset-based
-                params.set('skip', String(offset));
-            }
-            params.set('limit', String(limit));
-        }
-
-        const queryString = params.toString();
-        return queryString ? `${basePath}?${queryString}` : basePath;
+        if (cursor) params.set('skip', cursor);
+        else if (offset > 0) params.set('skip', String(offset));
+        params.set('limit', String(limit));
+        return `${basePath}${basePath.includes('?') ? '&' : '?'}${params.toString()}`;
     }
 
-    // ─── DiscoverObjects ──────────────────────────────────────────────
+    /**
+     * Drives the loop from the response-metadata envelope
+     * (`PersonsApiResponseMetadata` / `InsightApiResponseMetadata` / v2 `ResponseMetadata`):
+     * `next_link` is the vendor's own next-page URL. A short page (fewer records than requested) always
+     * terminates — the vendor emits `next_link` past the end of the dataset, so it is not a sufficient
+     * stop signal on its own.
+     */
+    protected ExtractPaginationInfo(
+        rawBody: unknown,
+        _paginationType: PaginationType,
+        _currentPage: number,
+        currentOffset: number,
+        pageSize: number,
+    ): PaginationState {
+        const root = this.AsRecord(rawBody);
+        const metadata = this.AsRecord(root?.metadata);
+        const totalRecords = typeof metadata?.record_count === 'number' ? metadata.record_count : undefined;
+        const returned = this.ExtractByPath(rawBody, this.responseCtx?.DataPath ?? 'results').length;
+
+        if (returned === 0 || (pageSize > 0 && returned < pageSize)) {
+            return { HasMore: false, TotalRecords: totalRecords };
+        }
+        const nextLink = typeof metadata?.next_link === 'string' ? metadata.next_link : '';
+        if (nextLink.length === 0) return { HasMore: false, TotalRecords: totalRecords };
+
+        const skip = this.ReadSkipParam(nextLink);
+        if (skip !== null && !/^\d+$/.test(skip)) {
+            return { HasMore: true, NextCursor: skip, TotalRecords: totalRecords };
+        }
+        const nextOffset = skip !== null ? Number(skip) : currentOffset + returned;
+        return { HasMore: true, NextOffset: nextOffset, TotalRecords: totalRecords };
+    }
+
+    /** Reads the `skip` query param out of a vendor `next_link`, tolerating a relative URL. */
+    private ReadSkipParam(nextLink: string): string | null {
+        try {
+            return new URL(nextLink, RASA_API_HOST).searchParams.get('skip');
+        } catch {
+            return null;
+        }
+    }
+
+    // ── Idiosyncrasy #3 — *_since watermarks ─────────────────────────
 
     /**
-     * Canonical Rasa.io v1 API top-level objects.  Rasa.io's schema is
-     * fixed — there are no per-tenant "custom tables".  Custom subscriber
-     * attributes ARE per-tenant and surface as additional columns on
-     * `persons` via the existing DiscoverFields path (live-queries
-     * `/v1/persons/{id}/attributes` and merges into the persons field set).
+     * Appends the object's declared incremental filter — `Configuration.watermarkParam`
+     * (`updated_since` / `created_since` / `archived_since`) — to every request of a watermarked
+     * object. Applied HERE rather than in {@link BuildPaginatedURL} so it also reaches non-paginated
+     * single-page fetches. Never invents a param name: silent metadata ⇒ full pull.
+     */
+    protected override AppendDefaultQueryParams(url: string, obj: MJIntegrationObjectEntity): string {
+        const withDefaults = super.AppendDefaultQueryParams(url, obj);
+        const watermark = this.currentWatermark;
+        if (!watermark || !obj.SupportsIncrementalSync) return withDefaults;
+        const param = this.ObjectConfig(obj).watermarkParam;
+        if (!param) return withDefaults;
+        if (new RegExp(`[?&]${param}=`, 'i').test(withDefaults)) return withDefaults;
+        const separator = withDefaults.includes('?') ? '&' : '?';
+        return `${withDefaults}${separator}${encodeURIComponent(param)}=${encodeURIComponent(watermark)}`;
+    }
+
+    // ── Fetch orchestration ──────────────────────────────────────────
+
+    /**
+     * Thin wrapper around the base's metadata-driven fetch. It (a) publishes the per-object response
+     * context the base's object-less `NormalizeResponse` signature can't carry, (b) bridges the frozen
+     * contract's `accessPath.parentObject` onto the key the base's parent resolver reads, (c) tracks the
+     * watermark high-water mark across the object's batches and emits it ONLY on the terminal batch, so
+     * a mid-pass failure (which throws before we return) leaves the stored watermark untouched.
+     */
+    public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
+        this.lastIntegrationID = ctx.CompanyIntegration.IntegrationID;
+        const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
+        this.AssertReadable(obj, ctx.ObjectName);
+        this.PublishResponseContext(obj, ctx.ObjectName);
+        this.BridgeAccessPathToParentConfig(obj);
+        this.currentWatermark = ctx.WatermarkValue;
+        this.pendingWarnings = [];
+        if (this.IsFirstBatch(ctx)) this.watermarkHighWater.delete(ctx.ObjectName);
+
+        const result = await super.FetchChanges(ctx);
+        this.AdvanceWatermarkHighWater(ctx.ObjectName, obj, result.Records);
+
+        const warnings = [...(result.Warnings ?? []), ...this.pendingWarnings];
+        this.pendingWarnings = [];
+        return {
+            ...result,
+            Warnings: warnings.length > 0 ? warnings : undefined,
+            NewWatermarkValue: result.HasMore ? undefined : this.FinalWatermark(ctx),
+        };
+    }
+
+    /**
+     * Refuses a read against an object that declares NO read door, instead of letting the base compose a
+     * request against the API ROOT. rasa.io has one such object — `Lead Post` is write-only (`APIPath`
+     * empty, `CreateAPIPath: /v1/lead-posts`, Create+Update only) — and a caller that syncs "all objects"
+     * will ask it to read. Without this guard the empty path resolves to `GET {baseURL}/`, whose failure
+     * mode is worse than an error: if the vendor root ever answers 200 (a status/banner document), the
+     * envelope reader would treat that payload as this object's record set. Fail precisely and name the
+     * cause instead.
+     */
+    private AssertReadable(obj: MJIntegrationObjectEntity, objectName: string): void {
+        if ((obj.APIPath ?? '').trim().length > 0) return;
+        throw new Error(
+            `Object "${objectName}" declares no read path (APIPath is empty) and cannot be read. ` +
+                `It is write-only in this connector's contract; use its per-operation write path instead.`,
+        );
+    }
+
+    /** GetRecord also runs NormalizeResponse — publish the same response context first. */
+    public override async GetRecord(ctx: GetRecordContext): Promise<ExternalRecord | null> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        this.lastIntegrationID = ci.IntegrationID;
+        this.PublishResponseContext(this.GetCachedObject(ci.IntegrationID, ctx.ObjectName), ctx.ObjectName);
+        this.currentWatermark = null;
+        return super.GetRecord(ctx);
+    }
+
+    private IsFirstBatch(ctx: FetchContext): boolean {
+        return !ctx.CurrentOffset && !ctx.CurrentPage && !ctx.CurrentCursor && !ctx.AfterKeyValue;
+    }
+
+    /** Resolves and stores the extraction path + unwrap-verdict state for the object being fetched. */
+    private PublishResponseContext(obj: MJIntegrationObjectEntity, objectName: string): void {
+        const config = this.ObjectConfig(obj);
+        this.responseCtx = {
+            ObjectName: objectName,
+            DataPath: this.EffectiveDataPath(obj, config),
+            UnwrapDeclared: !!config.recordUnwrapPath,
+        };
+    }
+
+    /**
+     * Composes the LIST path (`ResponseDataKey`) with the verdicted PER-RECORD unwrap path. The unwrap
+     * verdict is anchored at the list root, so `results` + `data` → `results[].data`, and
+     * `results[].topics` + `data.topics` → `results[].data.topics` (the probe's re-point: the declared
+     * fields live under `data`, not at the record root). No verdict ⇒ the declared key verbatim.
+     */
+    private EffectiveDataPath(obj: MJIntegrationObjectEntity, config: RasaObjectConfig): string | null {
+        const declaredKey = obj.ResponseDataKey && obj.ResponseDataKey.length > 0 ? obj.ResponseDataKey : null;
+        const unwrap = config.recordUnwrapPath;
+        if (!unwrap) return declaredKey;
+        const listRoot = (declaredKey ?? 'results').split('[]')[0].split('.')[0];
+        return `${listRoot}[].${unwrap}`;
+    }
+
+    /**
+     * The frozen contract expresses an object's owner as `Configuration.accessPath.parentObject`; the
+     * base's template-var resolver reads `Configuration.parentObjectName`. Same declared fact, two
+     * spellings — bridged here (in memory only, never persisted) so a `{var}` path resolves its parent
+     * instead of returning PARENT_UNRESOLVED. Additive: an existing `parentObjectName` always wins.
+     */
+    private BridgeAccessPathToParentConfig(obj: MJIntegrationObjectEntity): void {
+        if (!/\{\w+\}/.test(obj.APIPath ?? '')) return;
+        const parent = this.ObjectConfig(obj).accessPath?.parentObject;
+        if (!parent) return;
+        try {
+            const raw = obj.Configuration;
+            const parsed = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+            if (typeof parsed.parentObjectName === 'string' && parsed.parentObjectName.length > 0) return;
+            obj.Configuration = JSON.stringify({ ...parsed, parentObjectName: parent });
+        } catch {
+            /* unparseable configuration — the base already warns and skips rather than guessing */
+        }
+    }
+
+    /** Folds this batch's watermark-field values into the object's running high-water mark. */
+    private AdvanceWatermarkHighWater(
+        objectName: string,
+        obj: MJIntegrationObjectEntity,
+        records: ExternalRecord[],
+    ): void {
+        const field = obj.IncrementalWatermarkField;
+        if (!field || records.length === 0) return;
+        let best = this.watermarkHighWater.get(objectName) ?? null;
+        for (const record of records) {
+            const raw = record.Fields[field];
+            if (typeof raw !== 'string' && typeof raw !== 'number') continue;
+            const candidate = String(raw);
+            const parsed = Date.parse(candidate);
+            if (!Number.isFinite(parsed)) continue;
+            if (best === null || parsed > Date.parse(best)) best = candidate;
+        }
+        if (best !== null) this.watermarkHighWater.set(objectName, best);
+    }
+
+    /** Terminal-batch watermark: the run's high-water mark, else the caller's value unchanged. */
+    private FinalWatermark(ctx: FetchContext): string | undefined {
+        const best = this.watermarkHighWater.get(ctx.ObjectName);
+        this.watermarkHighWater.delete(ctx.ObjectName);
+        return best ?? ctx.WatermarkValue ?? undefined;
+    }
+
+    // ── Write-path envelope helpers (generic CRUD stays generic) ─────
+
+    /**
+     * The generic `CreateRecord` is used as-is; only ID extraction is vendor-shaped. rasa.io returns the
+     * new record inside the standard envelope — `PersonApiPostResponse.example` is
+     * `{ code, metadata, results: [ { id } ] }` — so the base's root-level `body.id` probe finds nothing.
+     * We look at `results[0]` and, when the per-record envelope is in play, `results[0].data`.
+     */
+    protected override ExtractIDFromResponse(response: RESTResponse, idLocation: string | null): string | undefined {
+        if (idLocation && idLocation !== 'body') return super.ExtractIDFromResponse(response, idLocation);
+        const root = this.AsRecord(response.Body);
+        const results = root?.results;
+        const first = Array.isArray(results) && results.length > 0 ? this.AsRecord(results[0]) : null;
+        for (const candidate of [first, this.AsRecord(first?.data), root]) {
+            if (!candidate) continue;
+            const value = candidate.id;
+            if (typeof value === 'string' || typeof value === 'number') return String(value);
+        }
+        return super.ExtractIDFromResponse(response, idLocation);
+    }
+
+    /** Vendor error envelope: `metadata.errors` alongside the standard `code` / `status_code`. */
+    protected override ExtractErrorMessage(response: RESTResponse): string | undefined {
+        const root = this.AsRecord(response.Body);
+        const errors = this.AsRecord(root?.metadata)?.errors;
+        if (typeof errors === 'string' && errors.length > 0) return errors;
+        if (Array.isArray(errors) && errors.length > 0) return JSON.stringify(errors);
+        return super.ExtractErrorMessage(response);
+    }
+
+    // ── Discovery — credential-free public schema of record ──────────
+
+    /**
+     * Enumerates the object universe from rasa.io's PUBLICLY-PUBLISHED OpenAPI documents (both API
+     * generations), unioned with the persisted Declared metadata. Deliberately credential-free: the
+     * runtime structure self-check runs without a token, so standard objects MUST re-yield without one.
+     * A live credential is additive only (see {@link IntrospectSchema}). If the specs are unreachable the
+     * method degrades to the persisted set rather than failing the sync.
      */
     public override async DiscoverObjects(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
+        contextUser: UserInfo,
     ): Promise<ExternalObjectSchema[]> {
+        this.lastIntegrationID = companyIntegration.IntegrationID;
         const persisted = await super.DiscoverObjects(companyIntegration, contextUser);
-        const canonical: ExternalObjectSchema[] = [
-            { Name: 'persons', Label: 'Persons (Subscribers)', Description: 'Subscriber records. v1 API /v1/persons. Per-account custom attributes surface here via DiscoverFields.', SupportsIncrementalSync: true, SupportsWrite: true },
-            { Name: 'posts', Label: 'Posts (Articles)', Description: 'Newsletter content items / articles. v1 API /v1/posts.', SupportsIncrementalSync: true, SupportsWrite: false },
-            { Name: 'communities', Label: 'Communities', Description: 'Tenant communities the API key has access to. v1 API /v1/communities.', SupportsIncrementalSync: false, SupportsWrite: false },
-            { Name: 'analytics.activities', Label: 'Email Activity Analytics', Description: 'Open/click/delivery/bounce metrics bucketed by date. v1 API POST /v1/analytics/activities.', SupportsIncrementalSync: true, SupportsWrite: false },
-            { Name: 'analytics.articles', Label: 'Article Analytics', Description: 'Article click analytics ranked by popularity. v1 API POST /v1/analytics/articles.', SupportsIncrementalSync: true, SupportsWrite: false },
-            { Name: 'analytics.topics', Label: 'Topic Engagement Analytics', Description: 'Topic engagement ranking with unique user counts. v1 API POST /v1/analytics/topics.', SupportsIncrementalSync: true, SupportsWrite: false },
-        ];
+        const spec = await this.LoadPublicSpecs();
+        if (!spec) return persisted;
+
         const byName = new Map<string, ExternalObjectSchema>();
-        for (const o of persisted) byName.set(o.Name.toLowerCase(), o);
-        for (const c of canonical) {
-            if (!byName.has(c.Name.toLowerCase())) byName.set(c.Name.toLowerCase(), c);
+        for (const obj of persisted) byName.set(obj.Name.toLowerCase(), obj);
+
+        const declaredBySchema = this.IndexDeclaredObjectsByRecordSchema(companyIntegration.IntegrationID);
+        const declaredDoors = this.IndexDeclaredDoors(companyIntegration.IntegrationID);
+        for (const recordType of spec.RecordTypes) {
+            const mapped = declaredBySchema.get(recordType.DefinitionName);
+            const name = mapped ?? this.DeriveObjectName(recordType.DefinitionName);
+            // A spec record type whose DOOR is already served by a Declared object is that same
+            // resource under its schema-derived alias, NOT a second object. Name dedup alone cannot
+            // catch this: `DeriveObjectName('CommunitiesApiGetResponseItem')` yields the PLURAL
+            // `Communities`, which never collides with the Declared singular `Community` — so the
+            // pre-fix code emitted BOTH, i.e. two objects (two target tables) for one endpoint.
+            // The door is the structural identity of a resource; compare on that.
+            if (!mapped && declaredDoors.has(this.NormalizeDoor(recordType.Door))) continue;
+            if (byName.has(name.toLowerCase())) continue;
+            byName.set(name.toLowerCase(), {
+                Name: name,
+                Label: name,
+                Description:
+                    recordType.Summary ??
+                    `Record type "${recordType.DefinitionName}" exposed at ${recordType.Door} (rasa.io public OpenAPI).`,
+                SupportsIncrementalSync: false,
+                SupportsWrite: false,
+            });
         }
         return [...byName.values()];
     }
 
-    // ─── TestConnection ──────────────────────────────────────────────
+    /**
+     * Fields for one object: the persisted Declared set, unioned with every property the PUBLIC spec
+     * declares on the object's backing definitions (`Configuration.recordSchemas`). Credential-free —
+     * a token contributes nothing here. Declared entries win on collision; spec-only properties are
+     * appended so a vendor schema addition surfaces without a metadata re-extract.
+     */
+    public override async DiscoverFields(
+        companyIntegration: MJCompanyIntegrationEntity,
+        objectName: string,
+        contextUser: UserInfo,
+    ): Promise<ExternalFieldSchema[]> {
+        this.lastIntegrationID = companyIntegration.IntegrationID;
+        const declared = await this.SafeDeclaredFields(companyIntegration, objectName, contextUser);
+        const schemaNames = this.RecordSchemaNamesFor(companyIntegration.IntegrationID, objectName);
+        const spec = schemaNames.length > 0 ? await this.LoadPublicSpecs() : null;
+        if (!spec) return declared;
 
+        const byName = new Map<string, ExternalFieldSchema>();
+        for (const field of declared) byName.set(field.Name.toLowerCase(), field);
+        for (const schemaName of schemaNames) {
+            for (const field of this.FieldsFromDefinition(spec.Definitions, schemaName)) {
+                if (!byName.has(field.Name.toLowerCase())) byName.set(field.Name.toLowerCase(), field);
+            }
+        }
+        return [...byName.values()];
+    }
+
+    /**
+     * Sample-union enrichment (MJ connector standard): after the cache-driven introspection, sample each
+     * object's LIVE read shape and union it into the declared field set — this is where a tenant's own
+     * custom person attributes reach the schema. Best-effort; a sample failure leaves the declared set
+     * untouched. Overrides `IntrospectSchema`, NOT `DiscoverFields` (which would recurse into
+     * `DiscoverFieldsViaFetch`'s own fallback).
+     *
+     * SEQUENTIAL, and that is load-bearing. {@link FetchChanges} publishes its per-object response
+     * context onto INSTANCE state (`responseCtx`/`currentWatermark`/`pendingWarnings`) which is read
+     * back AFTER the HTTP round-trip. Sampling the catalog with `Promise.all` therefore raced: every
+     * concurrent call overwrote `responseCtx`, so a response was normalized against some OTHER object's
+     * `DataPath`, matched nothing, and yielded ZERO records — cleanly, with no throw and no warning.
+     * Observed live: 17 of 18 objects that reached the sampler logged `rows=0 | cols: []`, the sole
+     * survivor being the one that happened to win the race, and the resulting all-null field widths
+     * were what made the framework's unknown-width defect drop 8,841 records. The sync engine iterates
+     * objects sequentially, which is why the identical read path works there. Do not re-parallelize
+     * this without first threading the response context through the call instead of the instance.
+     */
+    public override async IntrospectSchema(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+    ): Promise<SourceSchemaInfo> {
+        const info = await super.IntrospectSchema(companyIntegration, contextUser);
+        for (const obj of info.Objects) {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch (err) {
+                // Best-effort — the declared set stands. But NEVER swallow silently: a bare `catch {}`
+                // here is what hid 16 objects failing before they ever reached the sampler.
+                console.warn(
+                    `[RasaConnector.IntrospectSchema] sample-union skipped for "${obj.ExternalName}": ` +
+                        `${err instanceof Error ? err.message : String(err)}`,
+                );
+            }
+        }
+        return info;
+    }
+
+    /** Declared fields, tolerating an object the cache doesn't carry (a spec-only discovery). */
+    private async SafeDeclaredFields(
+        companyIntegration: MJCompanyIntegrationEntity,
+        objectName: string,
+        contextUser: UserInfo,
+    ): Promise<ExternalFieldSchema[]> {
+        try {
+            return await super.DiscoverFields(companyIntegration, objectName, contextUser);
+        } catch {
+            return [];
+        }
+    }
+
+    /** The Swagger definition name(s) backing an object, per its declared `Configuration.recordSchemas`. */
+    private RecordSchemaNamesFor(integrationID: string, objectName: string): string[] {
+        try {
+            return this.ObjectConfig(this.GetCachedObject(integrationID, objectName)).recordSchemas ?? [];
+        } catch {
+            return [];
+        }
+    }
+
+    /** Reverse index: Swagger definition name → the Declared object that claims it. */
+    private IndexDeclaredObjectsByRecordSchema(integrationID: string): Map<string, string> {
+        const index = new Map<string, string>();
+        for (const obj of this.ActiveObjects(integrationID)) {
+            for (const schemaName of this.ObjectConfig(obj).recordSchemas ?? []) {
+                if (!index.has(schemaName)) index.set(schemaName, obj.Name);
+            }
+        }
+        return index;
+    }
+
+    /**
+     * The set of doors (normalized endpoint paths) already served by a Declared object. Used to suppress
+     * spec-only "objects" that are really an alias of a Declared resource — see the door test in
+     * {@link DiscoverObjects}. Both the frozen contract's `accessPath.door` and the row's own `APIPath`
+     * are indexed, since either may carry the endpoint for a given object.
+     */
+    private IndexDeclaredDoors(integrationID: string): Set<string> {
+        const doors = new Set<string>();
+        for (const obj of this.ActiveObjects(integrationID)) {
+            for (const raw of [this.ObjectConfig(obj).accessPath?.door, obj.APIPath]) {
+                const normalized = this.NormalizeDoor(raw);
+                if (normalized.length > 0) doors.add(normalized);
+            }
+        }
+        return doors;
+    }
+
+    /**
+     * Canonical form of an endpoint path for identity comparison: version segment dropped (a Declared
+     * `APIPath` carries `/v1`|`/v2`; a Swagger 2.0 path key does not — the prefix lives in `basePath`),
+     * path parameters collapsed to `{}` (`/persons/{id}/topics` ≡ `/persons/{person_id}/topics`), and
+     * casing/trailing slashes normalized.
+     */
+    private NormalizeDoor(path: string | null | undefined): string {
+        if (!path) return '';
+        return path
+            .replace(/^\/?(v\d+)\//i, '/')
+            .replace(/\{[^}]*\}/g, '{}')
+            .replace(/\/+$/, '')
+            .toLowerCase();
+    }
+
+    /**
+     * Every ACTIVE IntegrationObject for this integration, read from the same engine cache the base
+     * class reads (`IntegrationEngineBase.GetActiveIntegrationObjects`). Empty when the engine has not
+     * been configured yet — discovery then degrades to the spec-only naming, never throws.
+     */
+    private ActiveObjects(integrationID: string): MJIntegrationObjectEntity[] {
+        try {
+            return IntegrationEngineBase.Instance.GetActiveIntegrationObjects(integrationID);
+        } catch {
+            return [];
+        }
+    }
+
+    // ── Public-spec reading ──────────────────────────────────────────
+
+    /**
+     * Fetches + merges rasa.io's public Swagger documents (v1 and v2) with NO credential, and walks
+     * every readable operation to enumerate RECORD TYPES (not entry points): each GET's success schema
+     * is resolved through the `{code, metadata, results[]}` envelope down to the item definition. Only
+     * the item type itself is yielded — nested `$ref`'d sub-objects are NOT promoted to record types
+     * (see {@link EnumerateRecordTypes}). Cached for the process lifetime.
+     */
+    private async LoadPublicSpecs(): Promise<{ Definitions: Record<string, SwaggerSchema>; RecordTypes: SpecRecordType[] } | null> {
+        if (this.specCache) return this.specCache;
+        const docs: SwaggerDoc[] = [];
+        for (const url of RASA_PUBLIC_SPEC_URLS) {
+            const doc = await this.FetchSpec(url);
+            if (doc) docs.push(doc);
+        }
+        if (docs.length === 0) return null;
+
+        const definitions: Record<string, SwaggerSchema> = {};
+        for (const doc of docs) Object.assign(definitions, doc.definitions ?? {});
+        const recordTypes: SpecRecordType[] = [];
+        const seen = new Set<string>();
+        for (const doc of docs) {
+            for (const found of this.EnumerateRecordTypes(doc, definitions)) {
+                if (seen.has(found.DefinitionName)) continue;
+                seen.add(found.DefinitionName);
+                recordTypes.push(found);
+            }
+        }
+        this.specCache = { Definitions: definitions, RecordTypes: recordTypes };
+        return this.specCache;
+    }
+
+    private async FetchSpec(url: string): Promise<SwaggerDoc | null> {
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { Accept: 'application/json' },
+                signal: AbortSignal.timeout(SPEC_FETCH_TIMEOUT_MS),
+            });
+            if (!response.ok) return null;
+            return (await response.json()) as SwaggerDoc;
+        } catch {
+            return null; // offline / blocked — discovery degrades to the persisted Declared set
+        }
+    }
+
+    /** Walks every readable operation in one document, yielding the record types it exposes. */
+    private EnumerateRecordTypes(doc: SwaggerDoc, definitions: Record<string, SwaggerSchema>): SpecRecordType[] {
+        const out: SpecRecordType[] = [];
+        for (const [path, operations] of Object.entries(doc.paths ?? {})) {
+            for (const [method, operation] of Object.entries(operations)) {
+                if (method.toLowerCase() !== 'get') continue;
+                const schema = operation.responses?.['200']?.schema ?? operation.responses?.['201']?.schema;
+                const itemName = this.ResolveRecordDefinitionName(schema, definitions);
+                if (!itemName) continue;
+                out.push({ DefinitionName: itemName, Door: path, Summary: operation.summary });
+                // Deliberately NOT promoting `$ref`'d child properties to objects. A child definition
+                // (`AttributesItem`, `UserAction`, `AnalyticsActivityData`, `ExternalIdentifier`, …) is a
+                // nested structure of its parent record, reachable only THROUGH the parent's door. Emitted
+                // as a top-level object it carries no door of its own, so it can never be fetched — a
+                // permanently-empty target table. When a child collection IS independently syncable, the
+                // Declared metadata says so with its own `accessPath` (door + nesting) and its
+                // `recordSchemas` claims the definition, so `declaredBySchema` already maps it and it is
+                // already present in `persisted`. Promoting the UNdeclared remainder can therefore only
+                // ever manufacture junk. Measured on rasa.io: this loop plus plural-alias duplication
+                // inflated discovery to 52 objects against 34 Declared.
+            }
+        }
+        return out;
+    }
+
+    /** Descends the `{code, metadata, results[]}` envelope to the item definition name. */
+    private ResolveRecordDefinitionName(
+        schema: SwaggerSchema | undefined,
+        definitions: Record<string, SwaggerSchema>,
+    ): string | null {
+        const rootName = this.RefName(schema);
+        const root = rootName ? definitions[rootName] : schema;
+        if (!root) return null;
+        const results = root.properties?.results;
+        const itemName = this.RefName(results?.items) ?? this.RefName(results);
+        if (itemName) {
+            const item = definitions[itemName];
+            // One more hop when the item is itself the {data, links} per-record envelope.
+            const inner = this.RefName(item?.properties?.data);
+            return inner ?? itemName;
+        }
+        return rootName;
+    }
+
+    private RefName(schema: SwaggerSchema | undefined): string | null {
+        const ref = schema?.$ref;
+        if (typeof ref !== 'string') return null;
+        const parts = ref.split('/');
+        return parts.length > 0 ? parts[parts.length - 1] : null;
+    }
+
+    /** Maps a Swagger definition's properties onto ExternalFieldSchema. Constraints come from the spec only. */
+    private FieldsFromDefinition(
+        definitions: Record<string, SwaggerSchema>,
+        definitionName: string,
+    ): ExternalFieldSchema[] {
+        const definition = definitions[definitionName];
+        if (!definition?.properties) return [];
+        const required = new Set(definition.required ?? []);
+        return Object.entries(definition.properties).map(([name, property]) => ({
+            Name: name,
+            Label: name,
+            Description: property.description,
+            DataType: property.format ?? property.type ?? 'string',
+            IsRequired: required.has(name),
+            IsUniqueKey: false,
+            IsReadOnly: false,
+            MaxLength: typeof property.maxLength === 'number' ? property.maxLength : null,
+        }));
+    }
+
+    /** Human-readable object name for a spec-only record type (`PersonsApiGetResponseItem` → `Persons`). */
+    private DeriveObjectName(definitionName: string): string {
+        const stripped = definitionName
+            .replace(/(Api)?(Get|Post|Put|Patch|Delete)?(Response|Request|Body)?(Item)?$/i, '')
+            .replace(/(Api)$/i, '');
+        const base = stripped.length > 0 ? stripped : definitionName;
+        return base.replace(/([a-z0-9])([A-Z])/g, '$1 $2').trim();
+    }
+
+    // ── Connection test ──────────────────────────────────────────────
+
+    /**
+     * Proves the whole auth chain end-to-end: mint the JWT (step 1) and spend it on a read (step 2).
+     * Uses `/v1/communities` — the smallest documented readable surface every v1 credential can reach.
+     */
     public async TestConnection(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser: UserInfo
+        contextUser: UserInfo,
     ): Promise<ConnectionTestResult> {
         try {
             const config = await this.ParseConfig(companyIntegration, contextUser);
-            const token = await this.GetToken(config);
-
-            // Verify token works by listing communities
-            const response = await fetch(`${RASA_API_BASE}/communities`, {
+            const token = await this.MintToken(config);
+            const response = await fetch(`${this.HostOf(config)}/v1/communities`, {
                 method: 'GET',
-                headers: { 'rasa-token': token, 'Accept': 'application/json' },
+                headers: { 'rasa-token': token, Accept: 'application/json' },
                 signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
             });
-
             if (!response.ok) {
-                return {
-                    Success: false,
-                    Message: `Connection failed: HTTP ${response.status} from communities endpoint`,
-                };
+                return { Success: false, Message: `Connection failed: HTTP ${response.status} from GET /v1/communities` };
             }
-
-            const body = await response.json() as Record<string, unknown>;
-            const results = body.results as Record<string, unknown>[] | undefined;
-            const communityCount = results?.length ?? 0;
-
+            const communities = this.ExtractByPath(await response.json(), 'results');
             return {
                 Success: true,
-                Message: `Connected to Rasa.io — ${communityCount} community(ies) accessible`,
-                ServerVersion: 'Rasa.io API v1',
+                Message: `Connected to rasa.io — ${communities.length} community(ies) reachable with this credential`,
+                ServerVersion: 'rasa.io API v1 + v2',
             };
         } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            return { Success: false, Message: `Connection failed: ${message}` };
+            return { Success: false, Message: `Connection failed: ${err instanceof Error ? err.message : String(err)}` };
         }
     }
 
-    // ─── Default Configuration ───────────────────────────────────────
+    // ── Configuration parsing ────────────────────────────────────────
 
-    public override GetDefaultConfiguration(): DefaultIntegrationConfig {
-        return {
-            DefaultSchemaName: 'RasaIO',
-            DefaultObjects: [],
-        };
-    }
-
-    public override GetDefaultFieldMappings(
-        objectName: string,
-        _entityName: string
-    ): DefaultFieldMapping[] {
-        const lowerName = objectName.toLowerCase();
-
-        if (lowerName === 'persons' || lowerName === 'contacts') {
-            return [
-                { SourceFieldName: 'id', DestinationFieldName: 'ExternalID', IsKeyField: true },
-                { SourceFieldName: 'email', DestinationFieldName: 'Email' },
-                { SourceFieldName: 'first_name', DestinationFieldName: 'FirstName' },
-                { SourceFieldName: 'last_name', DestinationFieldName: 'LastName' },
-                { SourceFieldName: 'external_id', DestinationFieldName: 'SourceExternalID' },
-                { SourceFieldName: 'is_active', DestinationFieldName: 'IsActive' },
-                { SourceFieldName: 'is_subscribed', DestinationFieldName: 'IsSubscribed' },
-                { SourceFieldName: 'created', DestinationFieldName: 'CreatedAt' },
-                { SourceFieldName: 'updated', DestinationFieldName: 'UpdatedAt' },
-            ];
-        }
-
-        if (lowerName === 'posts' || lowerName === 'content') {
-            return [
-                { SourceFieldName: 'id', DestinationFieldName: 'ExternalID', IsKeyField: true },
-                { SourceFieldName: 'url', DestinationFieldName: 'URL' },
-                { SourceFieldName: 'title', DestinationFieldName: 'Title' },
-                { SourceFieldName: 'description', DestinationFieldName: 'Description' },
-                { SourceFieldName: 'source_url', DestinationFieldName: 'SourceURL' },
-                { SourceFieldName: 'image_url', DestinationFieldName: 'ImageURL' },
-                { SourceFieldName: 'quality_score', DestinationFieldName: 'QualityScore' },
-                { SourceFieldName: 'is_active', DestinationFieldName: 'IsActive' },
-                { SourceFieldName: 'created', DestinationFieldName: 'CreatedAt' },
-                { SourceFieldName: 'updated', DestinationFieldName: 'UpdatedAt' },
-            ];
-        }
-
-        return [];
-    }
-
-    // ─── FetchChanges Override ────────────────────────────────────────
-
-    /**
-     * Override FetchChanges to:
-     *  1. Store watermark and object name for use in BuildPaginatedURL/NormalizeResponse
-     *  2. Advance watermark on final batch using latest record timestamp
-     *
-     * Watermark filtering is done server-side via updated_since/created_since params
-     * (set in BuildPaginatedURL), so no client-side filtering is needed here.
-     */
-    public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
-        console.log(`[Rasa.io] FetchChanges called for '${ctx.ObjectName}' (batchSize=${ctx.BatchSize}, watermark=${ctx.WatermarkValue ?? 'none'}, offset=${ctx.CurrentOffset ?? 'none'}, cursor=${ctx.CurrentCursor ?? 'none'})`);
-
-        // Reset counter and seen-IDs on the first page. Don't reset when serving from buffer
-        // (buffer calls also have no offset/cursor but the buffer key will be present).
-        const isFirstCall = !ctx.CurrentOffset && !ctx.CurrentPage && !ctx.CurrentCursor;
-        if (isFirstCall && !this._batchBuffer.has(ctx.ObjectName)) {
-            this._runningFetchTotal = 0;
-            this._seenIDs.set(ctx.ObjectName, new Set());
-        }
-
-        // Store for use in BuildPaginatedURL and NormalizeResponse
-        this._currentWatermark = ctx.WatermarkValue ?? undefined;
-        this._currentObjectName = ctx.ObjectName ?? '';
-
-        // Serve from buffer if a previous call left unconsumed records
-        const buffered = this._batchBuffer.get(ctx.ObjectName);
-        if (buffered && buffered.length > 0) {
-            return this.ServeBufferedRecords(ctx.ObjectName, buffered, ctx.BatchSize);
-        }
-
-        // Analytics endpoints use POST with a JSON body — the generic GET-only
-        // paginated loop in BaseRESTIntegrationConnector does not fit, so we
-        // short-circuit here.
-        if (ANALYTICS_POST_OBJECTS.has(ctx.ObjectName.toLowerCase())) {
-            return this.FetchAnalyticsBatch(ctx);
-        }
-
-        const result = await super.FetchChanges(ctx);
-
-        // Detect API wrap-around: track all seen IDs, stop when entire batch is duplicates
-        const seen = this._seenIDs.get(ctx.ObjectName);
-        if (seen && result.Records.length > 0) {
-            const dupeCount = result.Records.filter(r => seen.has(r.ExternalID)).length;
-            for (const r of result.Records) seen.add(r.ExternalID);
-
-            if (dupeCount === result.Records.length) {
-                return {
-                    Records: [],
-                    HasMore: false,
-                    NewWatermarkValue: this.FindLatestTimestamp(result.Records) ?? ctx.WatermarkValue ?? undefined,
-                };
-            }
-        }
-
-        // When a non-paginated endpoint returns more than BatchSize in one shot,
-        // buffer the full set and serve it in chunks so no records are silently dropped.
-        if (!result.HasMore && result.Records.length > ctx.BatchSize) {
-            const watermark = this.FindLatestTimestamp(result.Records);
-            this._batchBuffer.set(ctx.ObjectName, result.Records);
-            this._batchBufferWatermarks.set(ctx.ObjectName, watermark);
-            return this.ServeBufferedRecords(ctx.ObjectName, result.Records, ctx.BatchSize);
-        }
-
-        const isFinalBatch = !result.HasMore;
-        const latestTimestamp = isFinalBatch ? this.FindLatestTimestamp(result.Records) : null;
-
-        return {
-            ...result,
-            NewWatermarkValue: isFinalBatch ? (latestTimestamp ?? ctx.WatermarkValue ?? undefined) : undefined,
-        };
-    }
-
-    /**
-     * Serves records from the internal buffer in BatchSize-sized chunks.
-     * Splices consumed records from the buffer array so subsequent calls advance correctly.
-     * Emits NewWatermarkValue only on the final chunk.
-     */
-    private ServeBufferedRecords(
-        objectName: string,
-        buffer: FetchBatchResult['Records'],
-        batchSize: number
-    ): FetchBatchResult {
-        const batch = buffer.splice(0, batchSize);
-        const hasMore = buffer.length > 0;
-
-        let newWatermarkValue: string | undefined;
-        if (!hasMore) {
-            const stored = this._batchBufferWatermarks.get(objectName);
-            newWatermarkValue = stored ?? undefined;
-            this._batchBuffer.delete(objectName);
-            this._batchBufferWatermarks.delete(objectName);
-        }
-
-        return {
-            Records: batch,
-            HasMore: hasMore,
-            NewWatermarkValue: newWatermarkValue,
-        };
-    }
-
-    // ─── Private Helpers ─────────────────────────────────────────────
-
-    /**
-     * Flattens the nested insights/topics response structure.
-     * API returns one item per person with a topics[] array; we emit one row per (person, topic).
-     */
-    private FlattenInsightsTopics(rawResults: Record<string, unknown>[]): Record<string, unknown>[] {
-        const rows: Record<string, unknown>[] = [];
-
-        for (const item of rawResults) {
-            // Unwrap 'data' envelope if present
-            const record = (item['data'] && typeof item['data'] === 'object' && !Array.isArray(item['data']))
-                ? item['data'] as Record<string, unknown>
-                : item;
-
-            const personId = record['id'] ?? record['person_id'];
-            const externalId = record['external_id'];
-            const email = record['email'];
-            const topics = record['topics'];
-
-            if (!Array.isArray(topics)) continue;
-
-            for (const topicEntry of topics as Record<string, unknown>[]) {
-                rows.push({
-                    person_id: personId,
-                    external_id: externalId,
-                    email,
-                    topic: topicEntry['topic'],
-                    first_click: topicEntry['first_click'],
-                    last_click: topicEntry['last_click'],
-                    weight: topicEntry['weight'],
-                });
-            }
-        }
-
-        this._runningFetchTotal += rows.length;
-        console.log(`[Rasa.io] Flattened ${rows.length} insights/topics rows from ${rawResults.length} persons`);
-        return rows;
-    }
-
-    /**
-     * Flattens the /persons/{id}/attributes response into one row per (person, attribute).
-     * Rasa.io does NOT expose a schema discovery endpoint for attributes — custom attributes
-     * are free-form key-value pairs, so we emit each non-null key as a separate row.
-     */
-    private FlattenPersonAttributes(rawResults: Record<string, unknown>[]): Record<string, unknown>[] {
-        const rows: Record<string, unknown>[] = [];
-
-        for (const item of rawResults) {
-            const record = (item['data'] && typeof item['data'] === 'object' && !Array.isArray(item['data']))
-                ? item['data'] as Record<string, unknown>
-                : item;
-
-            const personId = record['id'] ?? record['person_id'];
-            const externalId = record['external_id'];
-            const email = record['email'];
-            const attributes = record['attributes'] ?? record['custom_attributes'];
-
-            if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) continue;
-
-            for (const [attrName, attrValue] of Object.entries(attributes as Record<string, unknown>)) {
-                if (attrValue === undefined) continue;
-                rows.push({
-                    person_id: personId,
-                    external_id: externalId,
-                    email,
-                    attribute_name: attrName,
-                    attribute_value: this.StringifyAttributeValue(attrValue),
-                });
-            }
-        }
-
-        this._runningFetchTotal += rows.length;
-        console.log(`[Rasa.io] Flattened ${rows.length} person-attribute rows from ${rawResults.length} persons`);
-        return rows;
-    }
-
-    /**
-     * Flattens /analytics/activities date-histogram responses. Each result is a bucket
-     * containing { bucket_start, <metric>: value, ... }. We emit one row per
-     * (bucket_start, metric_name).
-     */
-    private FlattenActivitiesAnalytics(rawResults: Record<string, unknown>[]): Record<string, unknown>[] {
-        const rows: Record<string, unknown>[] = [];
-
-        for (const item of rawResults) {
-            const record = (item['data'] && typeof item['data'] === 'object' && !Array.isArray(item['data']))
-                ? item['data'] as Record<string, unknown>
-                : item;
-
-            const bucketStart = (record['bucket_start'] ?? record['date'] ?? record['timestamp']) as unknown;
-            if (bucketStart == null) continue;
-
-            // The body carries metric values keyed by name (opens, clicks, deliveries, bounces, ...)
-            for (const [key, value] of Object.entries(record)) {
-                if (key === 'bucket_start' || key === 'date' || key === 'timestamp') continue;
-                if (key === 'segment_code' || key === 'interval' || key === 'timezone') continue;
-                if (value == null || typeof value === 'object') continue;
-                rows.push({
-                    bucket_start: String(bucketStart),
-                    metric_name: key,
-                    metric_value: typeof value === 'number' ? value : Number(value),
-                    segment_code: record['segment_code'] ?? null,
-                    interval: record['interval'] ?? null,
-                    timezone: record['timezone'] ?? null,
-                });
-            }
-        }
-
-        this._runningFetchTotal += rows.length;
-        console.log(`[Rasa.io] Flattened ${rows.length} analytics-activities rows from ${rawResults.length} buckets`);
-        return rows;
-    }
-
-    /** Stringifies a custom attribute value for nvarchar storage. */
-    private StringifyAttributeValue(value: unknown): string | null {
-        if (value == null) return null;
-        if (typeof value === 'string') return value;
-        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-        try { return JSON.stringify(value); }
-        catch { return null; }
-    }
-
-    /**
-     * Fetches a batch from a Rasa analytics endpoint. These endpoints require POST
-     * with a JSON body and are NOT paginated — the whole response is returned in
-     * one call. We build a body that respects the caller's watermark (if any) and
-     * delegate to the base pipeline for flattening/pagination-state resolution.
-     */
-    private async FetchAnalyticsBatch(ctx: FetchContext): Promise<FetchBatchResult> {
-        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
-        const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
-        const fields = this.GetCachedFields(obj.ID);
-
-        const baseURL = this.GetBaseURL(ctx.CompanyIntegration);
-        const url = `${baseURL.replace(/\/+$/, '')}${obj.APIPath.startsWith('/') ? obj.APIPath : `/${obj.APIPath}`}`;
-        this._lastFetchedPath = obj.APIPath;
-
-        const body = this.BuildAnalyticsBody(ctx.ObjectName, ctx.WatermarkValue, ctx.BatchSize ?? DEFAULT_PAGE_SIZE);
-        const headers = this.BuildHeaders(auth);
-        const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, body);
-
-        if (response.Status < 200 || response.Status >= 300) {
-            console.warn(`[Rasa.io] Analytics POST ${url} returned HTTP ${response.Status}`);
-            return { Records: [], HasMore: false };
-        }
-
-        const records = this.NormalizeResponse(response.Body, obj.ResponseDataKey);
-        const pkFieldNames = fields.filter(f => f.IsPrimaryKey).map(f => f.Name);
-        const pkNames = pkFieldNames.length > 0 ? pkFieldNames : ['id'];
-
-        const externalRecords = records.map(r => ({
-            ExternalID: pkNames.map(n => r[n] != null ? String(r[n]) : '').join('|'),
-            ObjectType: ctx.ObjectName,
-            Fields: r,
-        }));
-
-        // Advance watermark to 'now' — analytics endpoints don't return per-record timestamps.
-        const nowIso = new Date().toISOString();
-        return {
-            Records: externalRecords,
-            HasMore: false,
-            NewWatermarkValue: nowIso,
-        };
-    }
-
-    /**
-     * Builds the POST body for an analytics endpoint. Watermark is translated into
-     * an explicit `date_range.start_date` so that subsequent runs only pull new data.
-     */
-    private BuildAnalyticsBody(
-        objectName: string,
-        watermark: string | null,
-        limit: number
-    ): Record<string, unknown> {
-        const now = new Date();
-
-        // If we have a watermark, use explicit date range from watermark to now;
-        // otherwise fall back to the preset label.
-        const useExplicitRange = typeof watermark === 'string' && watermark.length > 0;
-        const dateRange: unknown = useExplicitRange
-            ? {
-                start_date: watermark,
-                end_date: now.toISOString(),
-            }
-            : ANALYTICS_DEFAULT_DATE_RANGE;
-
-        const commonBody: Record<string, unknown> = {
-            date_range: dateRange,
-            suspect_click: ANALYTICS_DEFAULT_SUSPECT_CLICK,
-            segment_code: ANALYTICS_DEFAULT_SEGMENT,
-            timezone: ANALYTICS_DEFAULT_TIMEZONE,
-            limit,
-        };
-
-        if (objectName.toLowerCase() === 'analytics-activities') {
-            commonBody['interval'] = ANALYTICS_DEFAULT_INTERVAL;
-        }
-
-        return commonBody;
-    }
-
-    /**
-     * Parses connection config from CompanyIntegration credentials.
-     * Tries CredentialID first (MJ: Credentials entity), then Configuration JSON.
-     */
+    /** Credential record first (the supported path), CompanyIntegration.Configuration as the fallback. */
     private async ParseConfig(
         companyIntegration: MJCompanyIntegrationEntity,
-        contextUser?: UserInfo
+        contextUser?: UserInfo,
+        provider?: IMetadataProvider,
     ): Promise<RasaConnectionConfig> {
-        // Try CredentialID first
         if (companyIntegration.CredentialID) {
-            return this.ParseConfigFromCredential(companyIntegration.CredentialID, contextUser);
+            return this.ParseConfigFromCredential(companyIntegration.CredentialID, contextUser, provider);
         }
-
-        // Fallback to Configuration JSON
         if (companyIntegration.Configuration) {
-            return this.ParseConfigFromJSON(companyIntegration.Configuration);
+            return this.NormalizeConfigValues(JSON.parse(companyIntegration.Configuration) as Record<string, unknown>);
         }
-
-        throw new Error('Rasa.io connector requires either CredentialID or Configuration JSON');
+        throw new Error('[rasa] connector requires either a CredentialID or a CompanyIntegration.Configuration JSON');
     }
 
-    /**
-     * Loads credentials from the MJ: Credentials entity.
-     */
-    private async ParseConfigFromCredential(credentialID: string, contextUser?: UserInfo, provider?: IMetadataProvider): Promise<RasaConnectionConfig> {
+    private async ParseConfigFromCredential(
+        credentialID: string,
+        contextUser?: UserInfo,
+        provider?: IMetadataProvider,
+    ): Promise<RasaConnectionConfig> {
         const md = provider ?? new Metadata();
-        const credEntity = await md.GetEntityObject<MJCredentialEntity>('MJ: Credentials', contextUser);
-        await credEntity.Load(credentialID);
-
-        const valuesJSON = credEntity.Values;
-        if (!valuesJSON) {
-            throw new Error('Credential record has no Values JSON');
-        }
-
-        const values = JSON.parse(valuesJSON) as Record<string, string>;
-        return this.ExtractConfigFields(values);
+        const credential = await md.GetEntityObject<MJCredentialEntity>('MJ: Credentials', contextUser);
+        await credential.Load(credentialID);
+        if (!credential.Values) throw new Error('[rasa] credential record has no Values JSON');
+        return this.NormalizeConfigValues(JSON.parse(credential.Values) as Record<string, unknown>);
     }
 
-    /**
-     * Parses config from the CompanyIntegration.Configuration JSON string.
-     */
-    private ParseConfigFromJSON(configJSON: string): RasaConnectionConfig {
-        const parsed = JSON.parse(configJSON) as Record<string, string>;
-        return this.ExtractConfigFields(parsed);
-    }
-
-    /**
-     * Extracts config fields with case-insensitive key matching.
-     */
-    private ExtractConfigFields(values: Record<string, string>): RasaConnectionConfig {
-        const get = (key: string): string | undefined => {
-            const lower = key.toLowerCase();
-            for (const [k, v] of Object.entries(values)) {
-                if (k.toLowerCase() === lower) return v;
+    /** Case-insensitive key matching over the credential payload, then strict Zod validation. */
+    private NormalizeConfigValues(values: Record<string, unknown>): RasaConnectionConfig {
+        const read = (...aliases: string[]): string | undefined => {
+            for (const [key, value] of Object.entries(values)) {
+                if (typeof value !== 'string' || value.length === 0) continue;
+                if (aliases.includes(key.toLowerCase())) return value;
             }
             return undefined;
         };
-
-        const apiKey = get('apikey') ?? get('api_key') ?? get('key');
-        const username = get('username') ?? get('email') ?? get('user');
-        const password = get('password') ?? get('pass');
-        const communityIdentifier = get('communityidentifier') ?? get('community_identifier') ?? get('community');
-
-        if (!apiKey) {
-            throw new Error('Rasa.io configuration missing required field: APIKey');
-        }
-        if (!username || !password) {
-            throw new Error('Rasa.io configuration missing required fields: Username and Password (for Basic auth)');
-        }
-
-        return {
-            APIKey: apiKey,
-            Username: username,
-            Password: password,
-            CommunityIdentifier: communityIdentifier,
-        };
-    }
-
-    /**
-     * Obtains a JWT token from Rasa.io, using cache if still valid.
-     */
-    private async GetToken(config: RasaConnectionConfig): Promise<string> {
-        // Return cached token if still fresh
-        if (this.cachedToken && (Date.now() - this.tokenObtainedAt) < TOKEN_TTL_MS) {
-            return this.cachedToken;
-        }
-
-        const basicAuth = Buffer.from(`${config.Username}:${config.Password}`).toString('base64');
-
-        const response = await fetch(`${RASA_API_BASE}/tokens`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${basicAuth}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ key: config.APIKey }),
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        const parsed = RasaConnectionConfigSchema.safeParse({
+            APIKey: read('apikey', 'api_key', 'key'),
+            Username: read('username', 'user', 'email'),
+            Password: read('password', 'pass'),
+            BaseURL: read('baseurl', 'base_url', 'host'),
         });
-
-        if (!response.ok) {
-            const body = await response.text();
-            throw new Error(`Rasa.io token request failed (HTTP ${response.status}): ${body.slice(0, 500)}`);
+        if (!parsed.success) {
+            const missing = parsed.error.issues.map(i => i.path.join('.')).join(', ');
+            throw new Error(`[rasa] configuration is missing or invalid for: ${missing} (need APIKey, Username, Password)`);
         }
-
-        const body = await response.json() as Record<string, unknown>;
-
-        // Token could be in results array or directly in response
-        let token: string | undefined;
-        if (body.results && Array.isArray(body.results) && body.results.length > 0) {
-            const firstResult = body.results[0] as Record<string, unknown>;
-            token = (firstResult.token ?? firstResult['rasa-token'] ?? firstResult.jwt) as string | undefined;
-        }
-        if (!token && typeof body.token === 'string') {
-            token = body.token;
-        }
-        if (!token && typeof body['rasa-token'] === 'string') {
-            token = body['rasa-token'] as string;
-        }
-
-        if (!token) {
-            throw new Error('Rasa.io token response did not contain a token');
-        }
-
-        this.cachedToken = token;
-        this.tokenObtainedAt = Date.now();
-        return token;
+        return parsed.data;
     }
 
-    /**
-     * Finds the latest timestamp from records for watermark advancement.
-     * Uses 'created' for insights/actions (its only timestamp field); 'updated' for everything else.
-     */
-    private FindLatestTimestamp(records: { Fields: Record<string, unknown> }[]): string | null {
-        const objectName = this._currentObjectName.toLowerCase();
-        const primaryField = objectName.includes('action') ? 'created' : 'updated';
-        const fallbackField = primaryField === 'updated' ? 'created' : 'updated';
+    // ── Small shared helpers ─────────────────────────────────────────
 
-        let latest: Date | null = null;
-
-        for (const record of records) {
-            const dateStr = (record.Fields[primaryField] ?? record.Fields[fallbackField]) as string | undefined;
-            if (!dateStr) continue;
-
-            const date = new Date(dateStr);
-            if (!isNaN(date.getTime()) && (latest === null || date > latest)) {
-                latest = date;
-            }
+    /** Parses an IntegrationObject's Configuration JSON into the typed per-object shape. */
+    private ObjectConfig(obj: MJIntegrationObjectEntity): RasaObjectConfig {
+        try {
+            const raw = obj.Configuration;
+            if (!raw) return {};
+            const parsed = RasaObjectConfigSchema.safeParse(JSON.parse(raw));
+            return parsed.success ? parsed.data : {};
+        } catch {
+            return {};
         }
-
-        return latest ? latest.toISOString() : null;
     }
 
-    /**
-     * Checks if an error is a timeout or network error.
-     */
-    private IsTimeoutOrNetworkError(err: unknown): boolean {
-        if (err instanceof Error) {
-            const msg = err.message.toLowerCase();
-            return msg.includes('timeout') || msg.includes('abort') ||
-                   msg.includes('econnreset') || msg.includes('econnrefused') ||
-                   msg.includes('fetch failed');
-        }
-        return false;
+    /** Narrows an unknown to a plain object record, or null. */
+    private AsRecord(value: unknown): Record<string, unknown> | null {
+        return value !== null && typeof value === 'object' && !Array.isArray(value)
+            ? (value as Record<string, unknown>)
+            : null;
     }
-
-    /**
-     * Sleeps for the specified number of milliseconds.
-     */
-    private Sleep(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-}
-
-/**
- * Minimal bounded promise-pool: runs `worker` over `items` with at most `limit` in flight.
- * (BaseRESTIntegrationConnector.RunBounded is private, so the sample-union override brings its own
- * tiny pool — this is local plumbing, NOT a shared framework artifact.)
- */
-async function runBounded<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
-    const queue = [...items];
-    const size = Math.max(1, Math.min(limit, queue.length));
-    const runners = Array.from({ length: size }, async () => {
-        for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
-            await worker(next);
-        }
-    });
-    await Promise.all(runners);
 }
