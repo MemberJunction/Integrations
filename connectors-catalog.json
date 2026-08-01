@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 37,
+  "count": 38,
   "connectors": [
     {
       "name": "Fonteva",
@@ -526,6 +526,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/PropFuel",
       "installTag": "Marketing-PropFuel@1.2.0"
+    },
+    {
+      "name": "rasa",
+      "displayName": "rasa.io Connector",
+      "description": "rasa.io newsletter and audience-engagement platform. Syncs subscribers (persons and their actions, topics, sends and attributes), newsletter content (posts, content pool, communities) and the v2 messaging/list surface via the rasa.io REST API.",
+      "category": "Marketing",
+      "tags": [
+        "rasa-io",
+        "marketing",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-newspaper",
+      "navigationBaseURL": "https://rasa.io",
+      "objectCount": 34,
+      "className": "@memberjunction/connector-rasa-io",
+      "npmPackage": "@memberjunction/connector-rasa-io",
+      "version": "1.1.1",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Marketing/Rasa",
+      "installTag": "Marketing-Rasa@1.1.1"
     },
     {
       "name": "higherlogic-thrive",
