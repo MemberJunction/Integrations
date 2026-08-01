@@ -26,6 +26,7 @@
     "LMS/Totara",
     "Marketing/MagnetMail",
     "Marketing/PropFuel",
+    "Marketing/Rasa",
     "Platform/HigherLogicThriveCommunity",
     "Platform/HigherLogicVanilla",
     "Platform/Hivebrite",
@@ -49,7 +50,6 @@
     "LMS/Reach360",
     "Marketing/ConstantContact",
     "Marketing/Mailchimp",
-    "Marketing/Rasa",
     "Platform/MJtoMJ"
   ]
 }
