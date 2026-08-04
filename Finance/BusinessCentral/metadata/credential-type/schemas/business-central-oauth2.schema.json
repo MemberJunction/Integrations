@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Business Central OAuth2 Credentials",
+  "description": "Dynamics 365 Business Central OAuth2 authentication using Azure Entra ID (formerly Azure AD)",
+  "properties": {
+    "azureClientId": {
+      "type": "string",
+      "title": "Azure Client ID",
+      "description": "The Application (Client) ID from your Azure Entra ID app registration",
+      "pattern": "^[a-fA-F0-9-]{36}$",
+      "isSecret": false,
+      "order": 0
+    },
+    "azureClientSecret": {
+      "type": "string",
+      "title": "Azure Client Secret",
+      "description": "The client secret value from your Azure Entra ID app registration",
+      "isSecret": true,
+      "order": 1
+    },
+    "azureTenantId": {
+      "type": "string",
+      "title": "Azure Tenant ID",
+      "description": "Your Azure Entra ID tenant ID (Directory ID / Tenant GUID)",
+      "pattern": "^[a-fA-F0-9-]{36}$",
+      "isSecret": false,
+      "order": 2
+    },
+    "companyId": {
+      "type": "string",
+      "title": "Business Central Company ID",
+      "description": "The GUID of the company in Business Central (find in Setup > Company Information, or via API)",
+      "pattern": "^[a-fA-F0-9-]{36}$",
+      "isSecret": false,
+      "order": 3
+    },
+    "environmentName": {
+      "type": "string",
+      "title": "Business Central Environment Name",
+      "description": "The environment name in Business Central (e.g., 'Production', 'Sandbox', or a custom environment name). This is case-sensitive and must match exactly.",
+      "minLength": 1,
+      "maxLength": 64,
+      "isSecret": false,
+      "order": 4
+    },
+    "apiVersion": {
+      "type": "string",
+      "title": "API Version (Optional)",
+      "description": "The Business Central API version (e.g., 'v2.0', 'v1.0'). Defaults to 'v2.0' if not specified.",
+      "enum": ["v1.0", "v2.0"],
+      "default": "v2.0",
+      "isSecret": false,
+      "order": 5
+    }
+  },
+  "required": ["azureClientId", "azureClientSecret", "azureTenantId", "companyId", "environmentName"]
+}

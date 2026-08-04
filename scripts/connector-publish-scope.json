@@ -20,6 +20,7 @@
     "Events/Eventbrite",
     "Events/OpenWater",
     "Events/PheedLoop",
+    "Finance/BusinessCentral",
     "Finance/NetSuite",
     "Finance/Stripe",
     "LMS/PathLMS",

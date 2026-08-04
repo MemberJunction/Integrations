@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 38,
+  "count": 39,
   "connectors": [
     {
       "name": "Fonteva",
@@ -400,6 +400,30 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
       "installTag": "Events-PheedLoop@1.4.1"
+    },
+    {
+      "name": "business-central",
+      "displayName": "Business Central Connector",
+      "description": "Microsoft Dynamics 365 Business Central connector for the REST/OData v4 API v2.0 — finance, sales, purchasing, inventory and master data — with OAuth 2.0 client-credentials (S2S) auth via Microsoft Entra ID and additive runtime $metadata (EDMX) discovery.",
+      "category": "Finance",
+      "tags": [
+        "business-central",
+        "dynamics-365",
+        "microsoft",
+        "erp",
+        "finance",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-microsoft",
+      "navigationBaseURL": null,
+      "objectCount": 83,
+      "className": "BusinessCentralConnector",
+      "npmPackage": "@memberjunction/connector-business-central",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Finance/BusinessCentral",
+      "installTag": "Finance-BusinessCentral@1.0.0"
     },
     {
       "name": "NetSuite",
