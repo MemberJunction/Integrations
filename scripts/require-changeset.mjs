@@ -46,6 +46,50 @@ try {
 const RELEASE_META_FILES = new Set(['package.json', 'mj-app.json', 'CHANGELOG.md']);
 const RELEASE_META_KEYS = { 'package.json': ['version'], 'mj-app.json': ['version', 'mjVersionRange'] };
 
+// A release commit rewrites more than `version`. With `updateInternalDependencies: "patch"` in
+// .changeset/config.json, changesets also rewrites every dependency range that points at a
+// workspace sibling it just bumped — Totara's `@memberjunction/connector-id-window-scan` moving
+// ^1.0.0 → ^1.1.0 is that rewrite, not a dependency someone chose to change. Treating it as real
+// work makes a back-merge unmergeable: the only way to satisfy the gate would be to bump Totara a
+// second time for the release that already shipped.
+//
+// So a dependency diff is release metadata too — but ONLY when it is provably that rewrite:
+// every changed range must point at a package in this workspace, and must ask for exactly the
+// version that package now carries. A range pointing anywhere else, or at a version the workspace
+// does not have, is a real dependency change and the gate applies with full force.
+const DEP_BLOCKS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+
+/** name → version for every package.json in the workspace, read at HEAD. */
+const workspaceVersions = (() => {
+  const map = new Map();
+  for (const f of sh('git ls-files */*/package.json */package.json').split('\n').filter(Boolean)) {
+    try {
+      const pkg = JSON.parse(readFileSync(join(ROOT, f), 'utf8'));
+      if (pkg.name && pkg.version) map.set(pkg.name, pkg.version);
+    } catch {}
+  }
+  return map;
+})();
+
+/**
+ * True iff every dependency range that differs between `before` and `after` is changesets'
+ * internal rewrite: a workspace sibling, asked for at the version it now carries.
+ */
+function onlyInternalDepRewrites(before, after) {
+  for (const block of DEP_BLOCKS) {
+    const b = before[block] || {};
+    const a = after[block] || {};
+    for (const name of new Set([...Object.keys(b), ...Object.keys(a)])) {
+      if (b[name] === a[name]) continue;
+      if (!(name in b) || !(name in a)) return false;             // added or removed → real change
+      const version = workspaceVersions.get(name);
+      if (!version) return false;                                 // not ours → real change
+      if (String(a[name]).replace(/^[\^~]/, '') !== version) return false;
+    }
+  }
+  return true;
+}
+
 const showAtBase = (relPath) => {
   try { return JSON.parse(sh(`git show ${diffBase}:${relPath}`)); } catch { return null; }
 };
@@ -57,7 +101,9 @@ function onlyAllowedKeysDiffer(relPath, allowed) {
   const after = JSON.parse(readFileSync(join(ROOT, relPath), 'utf8'));
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
   for (const k of keys) {
-    if (JSON.stringify(before[k]) !== JSON.stringify(after[k]) && !allowed.includes(k)) return false;
+    if (JSON.stringify(before[k]) === JSON.stringify(after[k]) || allowed.includes(k)) continue;
+    if (DEP_BLOCKS.includes(k) && onlyInternalDepRewrites(before, after)) continue;
+    return false;
   }
   return true;
 }

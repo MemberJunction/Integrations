@@ -1,0 +1,1487 @@
+[
+  {
+    "fields": {
+      "Name": "Everhour",
+      "Description": "Everhour time-tracking connector. Syncs team users, projects, per-project tasks and team-wide time records over the Everhour REST API v1.2 with an API-key credential. Read-only; money in cents and durations in seconds, as the vendor reports them.",
+      "ClassName": "@memberjunction/connector-everhour",
+      "ImportPath": "@memberjunction/connector-everhour",
+      "NavigationBaseURL": "https://app.everhour.com",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=API Key",
+      "Icon": "fa-solid fa-stopwatch"
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "Users",
+            "DisplayName": "Users",
+            "Description": "Members of the Everhour team, from the team-wide user listing. Read-only.",
+            "Category": "People",
+            "APIPath": "/team/users",
+            "ResponseDataKey": "",
+            "DefaultPageSize": 100,
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "Sequence": 1,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/team/users\"}"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Everhour numeric user id. Primary key of this object and the value time records carry in their user field.",
+                  "Type": "int",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4E797BBF-387E-40E1-81A0-831E22361052"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.805Z",
+                  "checksum": "e99677331450662d4ea2f599a8bcf409c965ae7e4ecb4b146372779df3e030a3"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "The user's full display name as a single string. Everhour stores no separate first/last name.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "860A6F2C-63B3-44E8-80E5-7768421C2965"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.823Z",
+                  "checksum": "91920637a507d08854b3f489ef19dfa8ba292886188639909071baa3f11d861f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "The user's email address.",
+                  "Type": "nvarchar",
+                  "Length": 320,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "BF643B35-CC77-4E9D-BAF4-C1D7866E7547"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.841Z",
+                  "checksum": "5b58c74d2946407654c12acb450edac94391ad328f9ee13e7f443fbd339370cd"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "headline",
+                  "DisplayName": "Headline",
+                  "Description": "The user's job title or headline as shown in Everhour. Null when unset.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4468F9BA-BBDD-449F-9BDC-78BB578BDF55"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.858Z",
+                  "checksum": "62be5f858d95df80acf8186d9e60df6745f9abb07320570bccc94a0825568488"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "avatarUrl",
+                  "DisplayName": "AvatarUrl",
+                  "Description": "URL of the user's avatar image. Null when the user has no avatar.",
+                  "Type": "nvarchar",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "B627E47A-7ABB-4C45-B002-22E853D3239C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.875Z",
+                  "checksum": "f45bc806ff32b1cee840062c4ce1e87b8167de898e882d55ce1cfb58959d5d8a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "role",
+                  "DisplayName": "Role",
+                  "Description": "Team role: admin, supervisor or member.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D8C8F234-1254-4593-B614-A53F9A86151D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.892Z",
+                  "checksum": "9a084df37f66563d0195ca28c8b904d045245eb51d55a064892460b7019f2709"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Membership status: active, invited, pending or removed. Removed users keep returning here, so filter on this rather than assuming the listing is only current members.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4CF46043-2208-42A6-9141-5FCFC028EF37"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.908Z",
+                  "checksum": "bab9f5ced46e046026b811e9a7f32d49d6efeb7d00c82b71e60b9f37b18702cd"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "35A77A05-BD65-4A46-A8FF-76BB81AB82FB"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T19:09:16.694Z",
+            "checksum": "7f615ebf24ebf292ddb055cc2f9fc4fad0a34826fee7292134b185c707bf2766"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "Projects",
+            "DisplayName": "Projects",
+            "Description": "Projects in the Everhour team, including those synced in from an upstream tool such as Asana or Jira. Read-only.",
+            "Category": "Work",
+            "APIPath": "/projects",
+            "ResponseDataKey": "",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "Sequence": 2,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/projects\"}"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Everhour project id, carrying the source-platform prefix (e.g. \"as:1234567890\" for an Asana-backed project). Primary key of this object and the value substituted into the Tasks door — stored verbatim, prefix included.",
+                  "Type": "nvarchar",
+                  "Length": 64,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "E95522D8-E1D3-43A6-B5D8-A2E7A5F4CB3B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.924Z",
+                  "checksum": "f1f024c80e1373dc26600ed1a083cbbb114de2da7a7e0914c855bffd62800502"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Project name as shown in Everhour.",
+                  "Type": "nvarchar",
+                  "Length": 500,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "63055BAF-C5EB-4EE1-9206-52C8AE44A47E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.942Z",
+                  "checksum": "8be668084e38c9588295c03de256f00c31fb17352beae718b47725dc2e6efdd7"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "platform",
+                  "DisplayName": "Platform",
+                  "Description": "Source-platform code parsed from the id prefix (\"as\" Asana, \"jr\" Jira, \"ev\" native Everhour, \"tr\" Trello, \"gh\" GitHub, ...). Derived by the connector, not returned as its own field; null when the id carries no prefix.",
+                  "Type": "nvarchar",
+                  "Length": 8,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "5D8FB897-26B0-424E-9FCA-682369F08A99"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.957Z",
+                  "checksum": "d5303174589326f9f836d54a93ee5215f3ac25ba1c480e27c602d97919e6699d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "workspaceId",
+                  "DisplayName": "WorkspaceId",
+                  "Description": "Id of the upstream workspace this project was synced from, with the same platform prefix. Null for projects created natively in Everhour.",
+                  "Type": "nvarchar",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "414B8D45-3464-4962-B531-0CDCB3444C9F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:16.984Z",
+                  "checksum": "cdeca2a45fe6dd01030501c85d87a6f4c382b6cd8fec1641a7c1321d6043608a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "workspaceName",
+                  "DisplayName": "WorkspaceName",
+                  "Description": "Name of the upstream workspace this project was synced from. Null for native projects.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "99FA499D-3740-400D-BBCE-2CC04A94C501"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.002Z",
+                  "checksum": "1ce5fd3299e0b02f87676ede98acd1eb30bc7eac9639561204b66dc319151ed2"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "client",
+                  "DisplayName": "Client",
+                  "Description": "Numeric id of the client the project is billed to. Null when the project has no client. Soft reference to Everhour clients, which this connector does not sync.",
+                  "Type": "int",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "44E8B29F-4B1E-49B5-9133-0791CD4FD647"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.016Z",
+                  "checksum": "a55bb262fe35589839a0e1f3a184a222666c038086bab2f4236d945afd72954a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "type",
+                  "DisplayName": "Type",
+                  "Description": "Project layout type: board or list.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "9C4D3517-B068-41C4-B150-B4739EB5CC9C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.034Z",
+                  "checksum": "83f03d89099439b3fa51a7a307cf03ded91f94063b2f6f2199df7bc9e38936fb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "favorite",
+                  "DisplayName": "Favorite",
+                  "Description": "True when the project is starred by the calling user. This is per-API-key, not a team-wide property.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "B08665A9-B2D1-4D8F-98B6-690A1B5AB2E8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.049Z",
+                  "checksum": "a3ab079cbee7dd0bde10ea0d28bd1b9a1e49e21f5529531ed43725bd2d02d2df"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "users_json",
+                  "DisplayName": "Users JSON",
+                  "Description": "The project's assigned user id array serialized as JSON. Null when no users are assigned. Unbounded, so it cannot be a set of columns.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "2701AEBE-5E6E-47CD-A803-71B8C4499957"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.071Z",
+                  "checksum": "be923510b90265516e2e910730160c4b5d9c06ccd767395a7aae76570baf76b3"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "billing_type",
+                  "DisplayName": "Billing Type",
+                  "Description": "Billing model, flattened from the nested billing object: non_billable, hourly or fixed_fee.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "16A47CA8-3B8F-476E-BBF8-E0AB3C7B92FC"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.091Z",
+                  "checksum": "771a7244d6fbfa76d81270177780496fc9a051f825005dbe1318dd41f2865a76"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "billing_fee",
+                  "DisplayName": "Billing Fee",
+                  "Description": "Fixed project fee in CENTS, flattened from billing.fee. Present only for fixed_fee projects. Vendor unit preserved — divide by 100 for currency.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "1D59FCA2-2696-4696-B428-2C53A94AD6B0"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.111Z",
+                  "checksum": "f24e1e41f419863231eab2934acbc29cbc302fe94d83811e0771228e318a1e80"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "rate_type",
+                  "DisplayName": "Rate Type",
+                  "Description": "Rate model, flattened from the nested rate object: project_rate (one flat rate) or user_rate (per-member rates).",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "BB92EC27-2CEB-4C88-8E94-8970D7940630"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.131Z",
+                  "checksum": "5677cc9c9c38135764a2e1bcf284975ede4f729f32e23166a20cd8845980f42c"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "rate_rate",
+                  "DisplayName": "Rate Rate",
+                  "Description": "Flat project rate in CENTS per hour, flattened from rate.rate. Present only for project_rate projects. Per-user overrides are not columns; they are keyed by user id and land as custom data.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "2749C489-F3FF-4BEB-82B9-F4359C381C9C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.147Z",
+                  "checksum": "7693f4451beb7a933ea1cabd0961b1cbeb01fc52e3c50f9486880df932ec9dbb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_type",
+                  "DisplayName": "Budget Type",
+                  "Description": "Budget model, flattened from the nested budget object: money, time or costs.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "B4A62125-1A7E-4D20-95B2-63E5DF9BF864"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.177Z",
+                  "checksum": "cd961374c3ae4f6df9a89ac24ef5b03090e3e4eaf166e4f3492c65659e9f3d18"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_budget",
+                  "DisplayName": "Budget Budget",
+                  "Description": "Budget value, flattened from budget.budget. Unit follows budget_type: CENTS for money/costs budgets, SECONDS for time budgets.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7A746A5C-5572-4EEF-9EF9-3A399AFFEC89"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.197Z",
+                  "checksum": "3aa8b17f842a0a76057dcf4cc7631228e6fed6fbe7e954b3c8816065f8fd2bac"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_period",
+                  "DisplayName": "Budget Period",
+                  "Description": "Budget periodicity: general (non-recurrent), monthly, weekly or daily.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D821CBA0-0FE9-41BE-8CE7-A0EB913E0F4F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.217Z",
+                  "checksum": "33c42f404833c63553c45d8236e39a7bce658ca953bb9fdb1b1520b14752ea9a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_progress",
+                  "DisplayName": "Budget Progress",
+                  "Description": "Current budget usage, flattened from budget.progress. Same unit as budget_budget. Read-only in Everhour.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 17,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "E7290308-E038-4849-A904-96B5C1EF0152"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.236Z",
+                  "checksum": "b1fe0dbc331551aacb86bd64a5431cd18397f89bac52ce8df56a13741ed9d830"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_time_progress",
+                  "DisplayName": "Budget Time Progress",
+                  "Description": "Portion of budget usage attributable to tracked time, flattened from budget.timeProgress.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 18,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "0A569909-EE2A-40FD-B33B-E1A3F84C6BBB"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.257Z",
+                  "checksum": "456d0f272229dc3d90c4624deae01f04e39eb76c9c79da7c1e32c9b3370b1655"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_expense_progress",
+                  "DisplayName": "Budget Expense Progress",
+                  "Description": "Portion of budget usage attributable to expenses, flattened from budget.expenseProgress.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 19,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "2BFAE840-2EEA-4E41-9C68-5B54718DF5E3"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.279Z",
+                  "checksum": "6ed75b0705fbac277e497f11a5f3c06eecd33e9944853763f7389f75fd147678"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_applied_from",
+                  "DisplayName": "Budget Applied From",
+                  "Description": "Date a non-recurrent budget starts from, flattened from budget.appliedFrom. Null for recurrent budgets.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 20,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "485FE68B-07EA-42AD-AE6D-77B0979FE9EA"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.300Z",
+                  "checksum": "37904f92bb74531f158e5359258bc4e246200678059edc6da705e80c5a81d513"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_threshold",
+                  "DisplayName": "Budget Threshold",
+                  "Description": "Percentage (1-100) of the budget at which Everhour emails admins, flattened from budget.threshold.",
+                  "Type": "int",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 21,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "CC398930-0BD3-479B-8A19-DB6E23FF01E8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.318Z",
+                  "checksum": "91e2b13afc48a8f9603a2ed76f75e1b0fa9b66271c9819ed767580f17203e360"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_disallow_overbudget",
+                  "DisplayName": "Budget Disallow Overbudget",
+                  "Description": "True when Everhour blocks tracking beyond the budget, flattened from budget.disallowOverbudget.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 22,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "E9E710A3-9038-47EE-AB83-229E4BCCEF8D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.340Z",
+                  "checksum": "b00675ec393d3eeb610c5dfdd1815bf6fce20eb6e468863b53793cc929b81aa7"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_exclude_unbillable_time",
+                  "DisplayName": "Budget Exclude Unbillable Time",
+                  "Description": "True when non-billable time is excluded from budget progress, flattened from budget.excludeUnbillableTime.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 23,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "0FC569EF-5763-4602-8A58-94A86AFFC8DE"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.358Z",
+                  "checksum": "e2e2cffb16b5674f5d750ab99a56dab149393d1226bd9fe8d718d7887931cd69"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "budget_exclude_expenses",
+                  "DisplayName": "Budget Exclude Expenses",
+                  "Description": "True when expenses are excluded from budget progress, flattened from budget.excludeExpenses.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 24,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F68C3356-32D6-41D0-A9E6-7502FD8BEF9F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.388Z",
+                  "checksum": "ce914813173aed6401c4a64b13d8f0e5f96c42de40d5b38353f5b33560a28a21"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E2564C78-DADA-47B7-AC95-76A95209BA88"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T19:09:16.713Z",
+            "checksum": "cf97bc586c706be452a29c4ecc72be456d9df727773679ce46ffedf95ff1b013"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "Tasks",
+            "DisplayName": "Tasks",
+            "Description": "Tasks, fetched one project at a time. Everhour publishes no unfiltered team-wide task listing, so this is a templated child door over Projects.",
+            "Category": "Work",
+            "APIPath": "/projects/{project_id}/tasks",
+            "ResponseDataKey": "",
+            "DefaultPageSize": 250,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "Sequence": 3,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/projects/{project_id}/tasks\",\"parentObjectName\":\"Projects\",\"parentObjectIDFieldName\":\"project_id\"}"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Everhour task id, carrying the source-platform prefix (e.g. \"ev:9876543210\"). Primary key of this object, stored verbatim.",
+                  "Type": "nvarchar",
+                  "Length": 64,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A698F937-1937-4BFA-BDF6-AA9FF7EAF152"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.404Z",
+                  "checksum": "f2c29ffa8a8a7bca4748182fa80620c1bee573e451fa1fcd52e05eba2ad95177"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "project_id",
+                  "DisplayName": "Project ID",
+                  "Description": "Id of the project this task was fetched under. Stamped by the engine from the parent record it iterated, not returned by Everhour on the task itself.",
+                  "Type": "nvarchar",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "672586E2-A185-4F21-B2AF-47FC0AA3BC05"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.424Z",
+                  "checksum": "bf5a0ad623ffa8f69db34e2eb28dcef2a076452e57f875313db2ce7db440bfc9"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Task name as shown in Everhour.",
+                  "Type": "nvarchar",
+                  "Length": 500,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "BA456C09-7422-4759-815D-0AC88A7DA09A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.444Z",
+                  "checksum": "08b5857e1d6622c5057a74925f2f8eb68348de5d7a306c5dd6036be2190cd2a4"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Free-text task description. Null when the task has none.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "585AC3DC-A7B9-4E78-932F-EF4FC287947C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.468Z",
+                  "checksum": "1fbc23f5dd0ca4ea7feb4807030cb705acc1841426565c096880a92f4cae2262"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "project_ids_json",
+                  "DisplayName": "Project IDs JSON",
+                  "Description": "The task's own projects array serialized as JSON. A task can belong to several projects, so this can list more than the project_id it was fetched under.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A23F54F9-D24C-4580-9E1E-AFE0E0A1D988"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.489Z",
+                  "checksum": "4cac7215c1eb278ceca60f34ce48c7cb1048ce79599996976050b04ad3a74df5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "section",
+                  "DisplayName": "Section",
+                  "Description": "Numeric id of the section the task sits in. Null when the task is in no section. Soft reference to Everhour sections, which this connector does not sync.",
+                  "Type": "int",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "8F4D90CF-E83C-445F-A49B-4ACF2FE1793A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.512Z",
+                  "checksum": "d21f08fce168ac0cc6513a327c7b43d17fdd6bdd1252eedc67e7f3a9c3b2668c"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "position",
+                  "DisplayName": "Position",
+                  "Description": "Ordering position of the task within its project or section.",
+                  "Type": "int",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A905E253-F7B1-46BC-BBE1-A6866873EC54"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.532Z",
+                  "checksum": "535225a3ad4bf04fbd7da2e35fd7eec1ebb775dae67533e55f7b6845fe7983ce"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "labels_json",
+                  "DisplayName": "Labels JSON",
+                  "Description": "The task's label array serialized as JSON. Null when the task has no labels. Labels are free-form per workspace, so they cannot be columns.",
+                  "Type": "nvarchar",
+                  "Length": 2000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "DFF503E2-1679-4E2E-BF2E-6F9AB21015F5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.553Z",
+                  "checksum": "5b4e51ad6216858e82b0e37153a65d5fb5d3d7a32eb00633301e047553dbcfad"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "dueAt",
+                  "DisplayName": "DueAt",
+                  "Description": "Task due date and time. Null when the task has no due date.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "9D6EC7AC-C14C-45B6-A18E-92EF60AF3D0A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.569Z",
+                  "checksum": "056bcf4bab7d0c25de5993e335e7b73b33937826eb68102d0a1ecf33f0212016"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Task status: open or closed.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D4FC9FFC-894C-45AC-89B0-11D23CADF4C8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.599Z",
+                  "checksum": "e13ab4b1da1d66c7f8c7b4f61f3af8b2f0bbffbbbc20f3a68eefd0d13bf2f7fe"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "unbillable",
+                  "DisplayName": "Unbillable",
+                  "Description": "True when time tracked against this task is marked non-billable.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4AF10E43-0824-4B80-8D81-DF857C1B99CC"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.619Z",
+                  "checksum": "2d7dd12f636186aabf32d1edb91e90365e374f0d6ba5a3185e2b9784a4218276"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "time_total",
+                  "DisplayName": "Time Total",
+                  "Description": "Total time tracked against the task in SECONDS, flattened from time.total. Per-user breakdown is keyed by user id and is not a set of columns.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7D9339F6-2EDE-4186-B2C5-5AC8F1797BAF"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.639Z",
+                  "checksum": "7b4b978fd0a41db177c6bdb85ed6d70f6f4049c3d861637b7624429fdfbbfa25"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "estimate_total",
+                  "DisplayName": "Estimate Total",
+                  "Description": "Task estimate in SECONDS, flattened from estimate.total. Null when the task has no estimate.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "E087E5A3-89A0-4938-B0A5-955DDFB2D927"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.658Z",
+                  "checksum": "193aee4daa670c2d0fa84443f667b4a95bda579f8b63ac44f30c81da545ee6a9"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "estimate_type",
+                  "DisplayName": "Estimate Type",
+                  "Description": "Whether the estimate is a single overall figure or per user, flattened from estimate.type.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "EF3A9D5D-176E-4F92-9D5D-673786FC666E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.676Z",
+                  "checksum": "bc63b104c0a6dd5415196269e908f10b8d55d6e606e0070066c3c5fd46ec785a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "attributes_json",
+                  "DisplayName": "Attributes JSON",
+                  "Description": "Custom attributes carried over from the upstream integration, serialized as JSON. These are defined per workspace and per source tool, so they can never be declared columns.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F5518363-2E09-4D1D-AACA-6A27AA79CC66"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.696Z",
+                  "checksum": "ac092266c26ed1213ea8286f04cbb4575da6bbc5e7258910d64865b1320e22b2"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "metrics_json",
+                  "DisplayName": "Metrics JSON",
+                  "Description": "Custom numeric metrics carried over from the upstream integration, serialized as JSON. Defined per workspace, so likewise not columns.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D335C4CE-D4CD-4625-AC31-133BE8C44B0A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.716Z",
+                  "checksum": "0104aef78f979c35d9bfbadfdf2d8a3f0a8346d06005405521022aca96404eb4"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "09EDF83C-D3E7-4277-B77F-68601234A587"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T19:09:16.746Z",
+            "checksum": "a3170fcca15e118c90a908067a894a411640ae9ac32319f2f67a4071ab749c0e"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "TimeRecords",
+            "DisplayName": "TimeRecords",
+            "Description": "Time records for the whole team from the team-wide door, filtered by date. Not a child of Projects — the team-wide endpoint returns the same records without an N+1 over projects.",
+            "Category": "Time",
+            "APIPath": "/team/time",
+            "ResponseDataKey": "",
+            "DefaultPageSize": 1000,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": true,
+            "SupportsWrite": false,
+            "Sequence": 4,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/team/time\",\"lookbackDays\":7}",
+            "IncrementalWatermarkField": "date"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Everhour numeric time record id. Primary key of this object.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "670457BD-0CEB-43E8-8A65-D57DCFF6E318"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.736Z",
+                  "checksum": "cb29f07b1f1c6c99556f4060a89c69509e9d4633f7c2cf926975808a942644c1"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "time",
+                  "DisplayName": "Time",
+                  "Description": "Time recorded in SECONDS. Vendor unit preserved.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "3D7269C4-383A-4C7E-B514-A21A524FE1C7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.756Z",
+                  "checksum": "13eb05fdfd4cb6f10c2bb71673e6bb67b8881bd1bc4e18d74fd7f2816f6f08d5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "user",
+                  "DisplayName": "User",
+                  "Description": "Numeric id of the user the time is recorded against. Matches Users.id.",
+                  "Type": "int",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F59D7290-4CB1-4ADD-A897-A1E34F7C4B17"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.771Z",
+                  "checksum": "edf15f8466e72aeaf63569ccca7a4c554777616f3595b93b911fb1450997fcf0"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "date",
+                  "DisplayName": "Date",
+                  "Description": "The day the work happened. Drives incremental sync via the from/to window; note the record itself stays editable after this date, which is why the connector re-reads a lookback window.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "708CE2AC-AFB1-4855-89D4-A4E12A95C9B9"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.801Z",
+                  "checksum": "22a2dab7fad898621e977ab12c008375f1c52646f69633ec7273ee4352bb4d04"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "comment",
+                  "DisplayName": "Comment",
+                  "Description": "Free-text note on the time record. Null when none was entered.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "1D4E2990-79D7-45F4-8C2E-784C9930CE43"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.819Z",
+                  "checksum": "40561a27a6191f2f8c62797687211266ba309703eb78c88d362479c6b18caac3"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "isLocked",
+                  "DisplayName": "IsLocked",
+                  "Description": "True when the record has been locked and can no longer be edited.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "6C9E50AA-59EE-405B-AE77-DBA1EAA97FCA"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.836Z",
+                  "checksum": "24b7cb5e8be336e48b4b1869ce788fa4f0022774ea1e100fc243811fd0d93691"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "isInvoiced",
+                  "DisplayName": "IsInvoiced",
+                  "Description": "True when the record has been included on an invoice.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A118F175-7013-4242-AA8B-5A5C1E1E32E2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.853Z",
+                  "checksum": "9a90becaa05fe503d739563a9b4ac664e2a1ee79d5b4bc88dc229c067c8c3a0c"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "task_id",
+                  "DisplayName": "Task ID",
+                  "Description": "Id of the task the time was tracked against, flattened from the nested task object. Null for time not attached to a task.",
+                  "Type": "nvarchar",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "ED379F0B-8F97-4C5B-A78D-2F45858BD1B1"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.871Z",
+                  "checksum": "c151ca081396a6d8ea337b3d360a1e7b059a5d3d7c3a08eff402b8461a047831"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "task_name",
+                  "DisplayName": "Task Name",
+                  "Description": "Name of the task the time was tracked against, flattened from the nested task object.",
+                  "Type": "nvarchar",
+                  "Length": 500,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4DA68DF5-DEBC-4B7B-9C0C-7034596476D4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.889Z",
+                  "checksum": "d48ab907ca49b04c46a608dda8e0c4ef1056fdf8f0f32f79abb635b729d7b0ff"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "history_json",
+                  "DisplayName": "History JSON",
+                  "Description": "The record's edit history array serialized as JSON (who changed the duration, when, and by how much). Null when Everhour returned no history.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "CF4868BE-B499-48E0-8E53-4D04D3E7EB98"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:09:17.905Z",
+                  "checksum": "edb5c96c5605abc320ce92421692e546971fa416066681678d3d3b13de557400"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "04DAC78E-32C6-4B1B-ABA0-6A540B325008"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T19:09:16.763Z",
+            "checksum": "dedad0cfc10a6b36c554d109a644a012ebe750e8694102b7bc1dcaa44bb7a249"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "3A1C40B0-4298-4398-AAD0-47EE427B9C31"
+    },
+    "sync": {
+      "lastModified": "2026-08-05T19:09:16.650Z",
+      "checksum": "c629b711014e8933af7968c07b8cd265e51ea55f5214f255ccabe7e3b4383726"
+    }
+  }
+]
