@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 37,
+  "count": 39,
   "connectors": [
     {
       "name": "Fonteva",
@@ -402,6 +402,30 @@
       "installTag": "Events-PheedLoop@1.4.1"
     },
     {
+      "name": "business-central",
+      "displayName": "Business Central Connector",
+      "description": "Microsoft Dynamics 365 Business Central connector for the REST/OData v4 API v2.0 — finance, sales, purchasing, inventory and master data — with OAuth 2.0 client-credentials (S2S) auth via Microsoft Entra ID and additive runtime $metadata (EDMX) discovery.",
+      "category": "Finance",
+      "tags": [
+        "business-central",
+        "dynamics-365",
+        "microsoft",
+        "erp",
+        "finance",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-microsoft",
+      "navigationBaseURL": null,
+      "objectCount": 83,
+      "className": "BusinessCentralConnector",
+      "npmPackage": "@memberjunction/connector-business-central",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Finance/BusinessCentral",
+      "installTag": "Finance-BusinessCentral@1.0.0"
+    },
+    {
       "name": "NetSuite",
       "displayName": "NetSuite Connector",
       "description": "Oracle NetSuite ERP/CRM connector: SuiteTalk REST Record Service (CRUD) + SuiteQL reads across standard and custom record types; incremental via lastModifiedDate; OAuth 1.0a TBA / OAuth 2.0; per-account host; runtime metadata-catalog discovery.",
@@ -526,6 +550,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/PropFuel",
       "installTag": "Marketing-PropFuel@1.2.0"
+    },
+    {
+      "name": "rasa",
+      "displayName": "rasa.io Connector",
+      "description": "rasa.io newsletter and audience-engagement platform. Syncs subscribers (persons and their actions, topics, sends and attributes), newsletter content (posts, content pool, communities) and the v2 messaging/list surface via the rasa.io REST API.",
+      "category": "Marketing",
+      "tags": [
+        "rasa-io",
+        "marketing",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-newspaper",
+      "navigationBaseURL": "https://rasa.io",
+      "objectCount": 34,
+      "className": "@memberjunction/connector-rasa-io",
+      "npmPackage": "@memberjunction/connector-rasa-io",
+      "version": "2.0.0",
+      "mjVersionRange": ">=5.42.0 <6.0.0",
+      "repoSubpath": "Marketing/Rasa",
+      "installTag": "Marketing-Rasa@2.0.0"
     },
     {
       "name": "higherlogic-thrive",
@@ -672,10 +717,10 @@
       "objectCount": 12,
       "className": "@memberjunction/connector-orcid",
       "npmPackage": "@memberjunction/connector-orcid",
-      "version": "1.1.3",
+      "version": "1.2.0",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Platform/ORCID",
-      "installTag": "Platform-ORCID@1.1.3"
+      "installTag": "Platform-ORCID@1.2.0"
     },
     {
       "name": "PostgreSQL",

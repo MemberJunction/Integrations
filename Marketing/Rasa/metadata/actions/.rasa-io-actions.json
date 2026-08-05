@@ -8,8 +8,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "persons",
+        "IntegrationName": "rasa",
+        "ObjectName": "Person",
         "Verb": "Get"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -285,8 +285,8 @@
       "ID": "DD07C385-C998-4B6E-BE34-5C3C5D1972DF"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.411Z",
-      "checksum": "fa788b6cb9417bf913fccc5712b0a1d56c5e273931b0801f4d99213364c86f5e"
+      "lastModified": "2026-08-01T18:57:11.290Z",
+      "checksum": "0ebcbd8fdafc9945aaf7c091c72c7a686f88f6ad8cd389e961ce6082220dfaaa"
     }
   },
   {
@@ -298,8 +298,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "persons",
+        "IntegrationName": "rasa",
+        "ObjectName": "Person",
         "Verb": "Search"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -614,8 +614,8 @@
       "ID": "002BD7D0-7F30-401F-83D3-8C5C652149C0"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.424Z",
-      "checksum": "14d9437aedde57079162eeff4439226299ef35e2dbae330092587f8bc7a1b237"
+      "lastModified": "2026-08-01T18:57:11.308Z",
+      "checksum": "48aa040c737efddb9012841e7e641591074c6c05b01e19dbe92cdbd1064e74f4"
     }
   },
   {
@@ -627,8 +627,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "persons",
+        "IntegrationName": "rasa",
+        "ObjectName": "Person",
         "Verb": "List"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -817,8 +817,8 @@
       "ID": "D89EC8E2-1384-40A0-8B8B-87AFDEC547A7"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.437Z",
-      "checksum": "d3b3e1c52ecb86010198dfd31d339ebe083b7c76fdd5b45ad1aafb11b491fa15"
+      "lastModified": "2026-08-01T18:57:11.326Z",
+      "checksum": "8b68b170d8dc119d90121f7102f4155c80d116df428bd242be056cc9a7dcfbc5"
     }
   },
   {
@@ -830,8 +830,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "posts",
+        "IntegrationName": "rasa",
+        "ObjectName": "Post",
         "Verb": "Get"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -1125,8 +1125,8 @@
       "ID": "88D4D813-4208-44F9-AE60-09F36E694860"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.450Z",
-      "checksum": "55e1118b6510c72d04a783f832681cc08e7bf47293511d3498c5a98f6ea1dfcc"
+      "lastModified": "2026-08-01T18:57:11.342Z",
+      "checksum": "8535248d069d6f56251fd64437fd6a57ae73521ca2249cec8abf3d6c87faa925"
     }
   },
   {
@@ -1138,8 +1138,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "posts",
+        "IntegrationName": "rasa",
+        "ObjectName": "Post",
         "Verb": "Search"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -1472,8 +1472,8 @@
       "ID": "DD46EDA9-8C92-4331-9E75-F8582A21BCCD"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.462Z",
-      "checksum": "1fdfe8f1de323b0b15b5b4e09c6b450bd42254bfe902994ed704261a40ef523f"
+      "lastModified": "2026-08-01T18:57:11.359Z",
+      "checksum": "249cd6d08888a1c5ddc9fd31e57787dbd172730e3c8a8ebdca16511280253ac0"
     }
   },
   {
@@ -1485,8 +1485,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "posts",
+        "IntegrationName": "rasa",
+        "ObjectName": "Post",
         "Verb": "List"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -1675,8 +1675,8 @@
       "ID": "5436D85E-E2A2-4C56-A503-9C3574AB4E5E"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.474Z",
-      "checksum": "1dc6cb58d1e93a96058589a50077d02ca080990c0c8c02e843d9d4ed5a4d6d18"
+      "lastModified": "2026-08-01T18:57:11.375Z",
+      "checksum": "0fb50a2887565e97aefad207874258a06533f975df214bdf99c7337244023387"
     }
   },
   {
@@ -1688,8 +1688,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "insights-actions",
+        "IntegrationName": "rasa",
+        "ObjectName": "Insight Action",
         "Verb": "Get"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -1893,8 +1893,8 @@
       "ID": "A06C4837-3CA9-446A-B670-DDC971648927"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.486Z",
-      "checksum": "db7d58935ffe661deed757a557d4c4c7eb57150f2c3df00afc7e0eec24421a9c"
+      "lastModified": "2026-08-01T18:57:11.392Z",
+      "checksum": "e09fcb785a7f774fb10ebc5bb8d786c96911408d720ca3e22be0e60e7b4a26cc"
     }
   },
   {
@@ -1906,8 +1906,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "insights-actions",
+        "IntegrationName": "rasa",
+        "ObjectName": "Insight Action",
         "Verb": "Search"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -2150,8 +2150,8 @@
       "ID": "FE15D2AA-8CE1-4B90-A3E5-01F5CFAB7E17"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.501Z",
-      "checksum": "82bc4ecf590ad01d502da997adb42fc741e5722a9060af128a42ff4f093e54b4"
+      "lastModified": "2026-08-01T18:57:11.410Z",
+      "checksum": "163a718f4030787b4de7d2ba53fefe7038f9bb4d890c00f5f9b9f083eb475fb4"
     }
   },
   {
@@ -2163,8 +2163,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "insights-actions",
+        "IntegrationName": "rasa",
+        "ObjectName": "Insight Action",
         "Verb": "List"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -2353,8 +2353,8 @@
       "ID": "B7358517-DBAF-440D-925B-A1E855832898"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.514Z",
-      "checksum": "27260d9ebbd6b573a57f52d2c25494a7a57e29dd7b5a32c92b70e89c00195b74"
+      "lastModified": "2026-08-01T18:57:11.426Z",
+      "checksum": "ad141d4fdbbdf0671dd2443f4d1b1cfeb01655c369623de110154ca239b5b018"
     }
   },
   {
@@ -2366,8 +2366,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "insights-topics",
+        "IntegrationName": "rasa",
+        "ObjectName": "Insight Topic",
         "Verb": "Get"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -2607,8 +2607,8 @@
       "ID": "7CF75CCD-4DB4-4A8F-8C99-12B5900219BD"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.523Z",
-      "checksum": "655a33acdb29c137ac9dfa3fa9c28c3bb1d4582a19305746ef8fc83d25a1c834"
+      "lastModified": "2026-08-01T18:57:11.442Z",
+      "checksum": "22003b1173b4d1f942cda9bd0932b29a5f1a120f091e1ceafeb814f2b7f030ed"
     }
   },
   {
@@ -2620,8 +2620,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "insights-topics",
+        "IntegrationName": "rasa",
+        "ObjectName": "Insight Topic",
         "Verb": "Search"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -2900,8 +2900,8 @@
       "ID": "6F638653-F270-4D7A-9573-49D29513E89F"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.548Z",
-      "checksum": "790d8838a8ab5f78e8e0432767fbe0b58d53f4519b142ad01bc163a63e1209d0"
+      "lastModified": "2026-08-01T18:57:11.467Z",
+      "checksum": "5baf9767382ff6d869de7efa817ba73dbb83fc5f16a58bc7daaab5981d03ca00"
     }
   },
   {
@@ -2913,8 +2913,8 @@
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
-        "IntegrationName": "Rasa.io",
-        "ObjectName": "insights-topics",
+        "IntegrationName": "rasa",
+        "ObjectName": "Insight Topic",
         "Verb": "List"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -3103,8 +3103,8 @@
       "ID": "FF768FA6-7B07-4C5B-A0C3-8A9D67B40BA0"
     },
     "sync": {
-      "lastModified": "2026-03-17T18:14:11.557Z",
-      "checksum": "645193a73374b86bebd100e0f510769a6c41cca0e8d7cb64123d0f8b9b476e89"
+      "lastModified": "2026-08-01T18:57:11.482Z",
+      "checksum": "64680b2432b36477cacc2e3851a04b9ba4df0afbb2675cb0ccd83bc7c211e465"
     }
   }
 ]
