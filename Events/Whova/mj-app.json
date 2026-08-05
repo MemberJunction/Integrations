@@ -4,7 +4,7 @@
   "name": "connector-whova",
   "displayName": "Whova Connector",
   "description": "Whova events / conference-management connector. Read-only over the three objects Whova exposes programmatically — Attendees, Orders, Registrants — each scoped by a required per-tenant Event. Whova publishes no machine-readable API contract and no native third-party REST API; the base URL, auth scheme and per-object paths are resolved at runtime from the credential / CompanyIntegration.Configuration rather than hardcoded, so a live sync requires a credential plus a discovered REST path.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
