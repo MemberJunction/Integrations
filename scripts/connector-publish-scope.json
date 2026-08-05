@@ -25,9 +25,12 @@
     "Finance/Stripe",
     "LMS/PathLMS",
     "LMS/Totara",
+    "Marketing/GA4",
     "Marketing/MagnetMail",
     "Marketing/PropFuel",
     "Marketing/Rasa",
+    "PM/Asana",
+    "PM/Everhour",
     "Platform/HigherLogicThriveCommunity",
     "Platform/HigherLogicVanilla",
     "Platform/Hivebrite",
@@ -50,10 +53,7 @@
     "Finance/SageIntacct",
     "LMS/Reach360",
     "Marketing/ConstantContact",
-    "Marketing/GA4",
     "Marketing/Mailchimp",
-    "PM/Asana",
-    "PM/Everhour",
     "Platform/MJtoMJ"
   ]
 }
