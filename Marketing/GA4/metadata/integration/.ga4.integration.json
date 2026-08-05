@@ -1,0 +1,933 @@
+[
+  {
+    "fields": {
+      "Name": "Google Analytics 4",
+      "Description": "Google Analytics 4 connector over the Data API v1beta. Syncs three defined reports — daily page performance, and campaign traffic at both campaign and utm_content grain — keyed by date plus their dimension tuple. Read-only, service-account credential.",
+      "ClassName": "@memberjunction/connector-ga4",
+      "ImportPath": "@memberjunction/connector-ga4",
+      "NavigationBaseURL": "https://analytics.google.com",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Google Service Account",
+      "Icon": "fa-brands fa-google"
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "PagePerformance",
+            "DisplayName": "Page Performance",
+            "Description": "Daily traffic and engagement per page path. One row per (date, pagePath). The page-level report the legacy AIDP provider read, minus its slug-to-Blog join — this lands the raw dimensioned rows and the CRM join happens downstream.",
+            "Category": "Marketing",
+            "APIPath": "/v1beta/properties/{propertyId}:runReport#PagePerformance",
+            "SupportsPagination": true,
+            "PaginationType": "Cursor",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "date",
+            "SupportsWrite": false,
+            "Sequence": 1,
+            "Status": "Active"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "date",
+                  "DisplayName": "date",
+                  "Description": "The reporting day in the property's configured reporting time zone. GA4 returns this as YYYYMMDD; it is normalized to a date here.",
+                  "Type": "nvarchar",
+                  "Length": 10,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "296E17CE-35AC-4D59-9250-7354795E4F47"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:31.987Z",
+                  "checksum": "120efe325e3ebf9bae7340a65190f15bcd1273f60aeed64125f423ccf0960f26"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "pagePath",
+                  "DisplayName": "pagePath",
+                  "Description": "Page path WITHOUT the query string (GA4 dimension pagePath, not pagePathPlusQueryString) — so /pricing?utm_source=x and /pricing are one row, which is what a page-performance report wants.",
+                  "Type": "nvarchar",
+                  "Length": 512,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "8DE8DBD1-C468-4606-BEA7-376162D13B46"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.006Z",
+                  "checksum": "3aef373fa8f251561276ea319cb83218c7eab724b6124962dd0ecb62abb519bf"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessions",
+                  "DisplayName": "sessions",
+                  "Description": "Sessions in this row's grain. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7F7A78CB-FEF8-45F7-9608-643FC8B1E065"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.026Z",
+                  "checksum": "604d1936998612dd371dc131d885d3a2ccea6b08c29f757c2180f1e5dd4d3f65"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "engagedSessions",
+                  "DisplayName": "engagedSessions",
+                  "Description": "Sessions that lasted 10+ seconds, had a key event, or had 2+ screen views. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "1C0130C3-7D6A-4E67-AE50-619F71C91125"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.044Z",
+                  "checksum": "862fc76beff68d8b002ed7157c765f2b15f10a8e8c753f5ea958be26da70dda8"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "userEngagementDuration",
+                  "DisplayName": "userEngagementDuration",
+                  "Description": "Total time the app or site was in the foreground, in SECONDS, summed over the row. Additive across rows. Divide by sessions or users for an average — the average itself is deliberately not landed, because an average cannot be re-aggregated.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7A373764-86FC-44F8-AF6E-77877C8F34BF"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.063Z",
+                  "checksum": "41f431007b7edb662584610facf454c6f0c193898792f52571ab68286dc74b9d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "screenPageViews",
+                  "DisplayName": "screenPageViews",
+                  "Description": "Screen and page views, counting repeat views of the same page. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "25559DD8-91FE-4394-8187-DA2D0C57C2D2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.081Z",
+                  "checksum": "2c053f439d9a026ed24c9ffa79175429078d9ad8516c7278c43af342ee6a6924"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "keyEvents",
+                  "DisplayName": "keyEvents",
+                  "Description": "Key events (what GA4 called \"conversions\" before the May 2024 rename). Float-typed by GA4 because a key event can be weighted. Additive across rows.",
+                  "Type": "decimal",
+                  "Precision": 18,
+                  "Scale": 4,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "827B45F7-1EDE-4A73-8A35-C6F483B28E8A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.099Z",
+                  "checksum": "7fa5cb24ac90cad8261a985196db4c6a66c55e7d79e5829fe4cd6fd30430a12a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "totalUsers",
+                  "DisplayName": "totalUsers",
+                  "Description": "DISTINCT users in this row's grain. NOT ADDITIVE — GA4 de-duplicates users at the grain requested, so summing rows double-counts anyone who appears in more than one. Use the object whose grain you want.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7C95342F-8A9A-400F-82CB-16C85374D744"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.118Z",
+                  "checksum": "bff382219de0a88793ecd69e6ceae85099e0b868b9fc10c1604471055724a59b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "activeUsers",
+                  "DisplayName": "activeUsers",
+                  "Description": "DISTINCT users who had an engaged session. NOT ADDITIVE, for the same reason as totalUsers.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "C57C9E37-DDDF-4F8E-B482-9912C07F7D28"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.136Z",
+                  "checksum": "f4b1e8d26cbdfb0a481c919868eec75df542bac4a5f64150cf444320417980fb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "propertyId",
+                  "DisplayName": "propertyId",
+                  "Description": "The numeric GA4 property this row was read from. Stamped by the connector from Configuration.propertyId; GA4 does not return it.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "EA05D25D-CC2B-47A1-BE6B-20E454084644"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.151Z",
+                  "checksum": "c0610809404dc3a347e393c7e90b822774d18c43d762af313ecb86d61b5767b6"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "ABA0F46A-77E3-4640-87BA-C2FCFF303041"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T19:44:31.914Z",
+            "checksum": "407265dd1fd7c4b74150be017a5d1ef6c81df5e405787ee90c140fef84443a96"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "UtmPerformance",
+            "DisplayName": "UTM Performance",
+            "Description": "Daily traffic per campaign / source / medium; one row per (date, campaign, source, medium). Session-scoped: a session is credited to the campaign that drove it. Read user counts at THIS grain — they are cardinalities and do not sum up from finer rows.",
+            "Category": "Marketing",
+            "APIPath": "/v1beta/properties/{propertyId}:runReport#UtmPerformance",
+            "SupportsPagination": true,
+            "PaginationType": "Cursor",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "date",
+            "SupportsWrite": false,
+            "Sequence": 2,
+            "Status": "Active"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "date",
+                  "DisplayName": "date",
+                  "Description": "The reporting day in the property's configured reporting time zone. GA4 returns this as YYYYMMDD; it is normalized to a date here.",
+                  "Type": "nvarchar",
+                  "Length": 10,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A5D65AE7-26CE-4433-A4DC-D55C10F7AB14"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.179Z",
+                  "checksum": "120efe325e3ebf9bae7340a65190f15bcd1273f60aeed64125f423ccf0960f26"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessionCampaignName",
+                  "DisplayName": "sessionCampaignName",
+                  "Description": "utm_campaign for the session. GA4 returns '(not set)' / '(direct)' / '(organic)' verbatim rather than null; those sentinels are preserved.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7EC1E813-AB2B-4671-9D0D-2CFEFDC64D86"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.197Z",
+                  "checksum": "3f6e13c03882f7c6df9fbb554c8ec7542a1ae6e17e59bf124974f64d20e15114"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessionSource",
+                  "DisplayName": "sessionSource",
+                  "Description": "utm_source for the session, e.g. google, newsletter, (direct).",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "0DD6025D-F511-4B2F-ABC1-7ED79DA5BA63"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.214Z",
+                  "checksum": "603a146bec10fb182af008b5d8dd0a6cc090143f4400c025b5a9ab13b40775bb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessionMedium",
+                  "DisplayName": "sessionMedium",
+                  "Description": "utm_medium for the session, e.g. cpc, email, organic, (none).",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "BDE2E1A2-102D-43D8-8840-740F1CD02175"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.232Z",
+                  "checksum": "2aee8b4142dfff0b742f6b667bda62512953a48f061df953c934886f07ca432f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessions",
+                  "DisplayName": "sessions",
+                  "Description": "Sessions in this row's grain. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "80DE0DC8-2546-4F58-8D7E-FAAC58DE1B3B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.250Z",
+                  "checksum": "6710600ea1bcf9dd385633adaa2dc18ed773a8052a67167f90c0849fb244db8b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "engagedSessions",
+                  "DisplayName": "engagedSessions",
+                  "Description": "Sessions that lasted 10+ seconds, had a key event, or had 2+ screen views. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "0106BE22-5DCE-463C-B84B-AD4CA2C97C7F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.268Z",
+                  "checksum": "4674cd012b43293f9e8888f842ad65d07a8e0465da18854ff23977cb9d3582c3"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "userEngagementDuration",
+                  "DisplayName": "userEngagementDuration",
+                  "Description": "Total time the app or site was in the foreground, in SECONDS, summed over the row. Additive across rows. Divide by sessions or users for an average — the average itself is deliberately not landed, because an average cannot be re-aggregated.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F243DE5D-76F7-4F3E-9B29-1A49D10550B5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.290Z",
+                  "checksum": "ba3267b8821a61532a738c48b1456486027c9337654c60279a090653058ca074"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "screenPageViews",
+                  "DisplayName": "screenPageViews",
+                  "Description": "Screen and page views, counting repeat views of the same page. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "765E020E-8BF4-4312-9009-C946F4259C03"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.312Z",
+                  "checksum": "e76a682eb99fd5ff4a877fad5de2b70ed42383e532b64cc4f0f1a42cb4e3cbca"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "keyEvents",
+                  "DisplayName": "keyEvents",
+                  "Description": "Key events (what GA4 called \"conversions\" before the May 2024 rename). Float-typed by GA4 because a key event can be weighted. Additive across rows.",
+                  "Type": "decimal",
+                  "Precision": 18,
+                  "Scale": 4,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "30A7F369-A1C2-460F-921E-65F1667B1061"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.333Z",
+                  "checksum": "e126ebece9e8beae9ce957ac2b77b2d21535345e57b0fff02e3fb60641aea6bb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "totalUsers",
+                  "DisplayName": "totalUsers",
+                  "Description": "DISTINCT users in this row's grain. NOT ADDITIVE — GA4 de-duplicates users at the grain requested, so summing rows double-counts anyone who appears in more than one. Use the object whose grain you want.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "2AAB500F-EF34-476D-BCCA-4201DB277ABB"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.351Z",
+                  "checksum": "edb65e7e69a4539535414e7725d8eec467e51247d7e7a898a9b5713cd83572c4"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "activeUsers",
+                  "DisplayName": "activeUsers",
+                  "Description": "DISTINCT users who had an engaged session. NOT ADDITIVE, for the same reason as totalUsers.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F12BFA1B-34F4-4D06-BD74-81404D7C9FB5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.385Z",
+                  "checksum": "7ad79d5675e11176a8a2a3ab01956b4bfdf92d38d52628ee769a5a4eed5e688d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "propertyId",
+                  "DisplayName": "propertyId",
+                  "Description": "The numeric GA4 property this row was read from. Stamped by the connector from Configuration.propertyId; GA4 does not return it.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7F4B8F52-AC85-4A1F-B786-CBA205FE74E9"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.409Z",
+                  "checksum": "2b54c6b99e2852d5863e7f99ce4ded438ef3dd6f5587f38895e83d8c71bca521"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "844FC557-5901-45D9-874A-FD5C33546CC5"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T19:44:31.941Z",
+            "checksum": "badf0ccd4172f6fbd492776436f2f91f65a930476b46ffc9247deca789dea31b"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "UtmContentPerformance",
+            "DisplayName": "UTM Content Performance",
+            "Description": "The daily campaign report split one level finer, by utm_content; one row per (date, campaign, source, medium, content). utm_content carries the variant tag, so an A/B comparison lives here. Additive metrics roll up to UtmPerformance; user counts do not.",
+            "Category": "Marketing",
+            "APIPath": "/v1beta/properties/{propertyId}:runReport#UtmContentPerformance",
+            "SupportsPagination": true,
+            "PaginationType": "Cursor",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "date",
+            "SupportsWrite": false,
+            "Sequence": 3,
+            "Status": "Active"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "date",
+                  "DisplayName": "date",
+                  "Description": "The reporting day in the property's configured reporting time zone. GA4 returns this as YYYYMMDD; it is normalized to a date here.",
+                  "Type": "nvarchar",
+                  "Length": 10,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A292E0CC-0771-41B7-B9AD-D1EA84AAFE29"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.432Z",
+                  "checksum": "120efe325e3ebf9bae7340a65190f15bcd1273f60aeed64125f423ccf0960f26"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessionCampaignName",
+                  "DisplayName": "sessionCampaignName",
+                  "Description": "utm_campaign for the session. GA4 returns '(not set)' / '(direct)' / '(organic)' verbatim rather than null; those sentinels are preserved.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "3C63DC99-4761-463A-923F-BD13B608DE2F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.454Z",
+                  "checksum": "3f6e13c03882f7c6df9fbb554c8ec7542a1ae6e17e59bf124974f64d20e15114"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessionSource",
+                  "DisplayName": "sessionSource",
+                  "Description": "utm_source for the session, e.g. google, newsletter, (direct).",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "9E54887B-817F-444B-9055-0DB1C2DB672C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.473Z",
+                  "checksum": "603a146bec10fb182af008b5d8dd0a6cc090143f4400c025b5a9ab13b40775bb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessionMedium",
+                  "DisplayName": "sessionMedium",
+                  "Description": "utm_medium for the session, e.g. cpc, email, organic, (none).",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "6F5AF775-EF84-4A97-BC4C-20FCA706E77B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.496Z",
+                  "checksum": "2aee8b4142dfff0b742f6b667bda62512953a48f061df953c934886f07ca432f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessionManualAdContent",
+                  "DisplayName": "sessionManualAdContent",
+                  "Description": "utm_content for the session (GA4 UI name \"Session manual ad content\"). Free text set by whoever built the link; '(not set)' when absent. Any variant convention encoded in it belongs to the tagger and is parsed downstream, not here.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "689E6920-4A83-4CD6-8798-B1E45BAB6C31"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.521Z",
+                  "checksum": "eaba0457a619fc33a0d43f36381b80bdd72e84091db16a02c2b7db474278c6d7"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sessions",
+                  "DisplayName": "sessions",
+                  "Description": "Sessions in this row's grain. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "532DB880-92B2-4174-88A8-F359F98F1257"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.544Z",
+                  "checksum": "8a6d9b757d1a80bf30947374f441935efc4374df166699e578ac94068a03ec55"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "engagedSessions",
+                  "DisplayName": "engagedSessions",
+                  "Description": "Sessions that lasted 10+ seconds, had a key event, or had 2+ screen views. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7A5302F2-1799-44E2-8158-C2BFC2CAE65C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.567Z",
+                  "checksum": "fb9f9ba3e380606d97d07f600d8a1891996567ea3aab6c471936345d95485539"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "userEngagementDuration",
+                  "DisplayName": "userEngagementDuration",
+                  "Description": "Total time the app or site was in the foreground, in SECONDS, summed over the row. Additive across rows. Divide by sessions or users for an average — the average itself is deliberately not landed, because an average cannot be re-aggregated.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "1B9FED38-7108-4400-A927-70472A001662"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.582Z",
+                  "checksum": "5d1a39565a58fe563851507de53fe4c33e87c1e9da046b54527592aecd1ad7fc"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "screenPageViews",
+                  "DisplayName": "screenPageViews",
+                  "Description": "Screen and page views, counting repeat views of the same page. Additive across rows.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4AEE9171-FB28-4F41-BF90-C30B0FCF3D69"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.612Z",
+                  "checksum": "23eb03df566f0603825716961ca3e67a138369406b4474a19e0eb368e4a40e8b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "keyEvents",
+                  "DisplayName": "keyEvents",
+                  "Description": "Key events (what GA4 called \"conversions\" before the May 2024 rename). Float-typed by GA4 because a key event can be weighted. Additive across rows.",
+                  "Type": "decimal",
+                  "Precision": 18,
+                  "Scale": 4,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4F08CABA-8B36-40EA-B6F9-F7CA55AC2C33"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.630Z",
+                  "checksum": "304a758330fc8cbd230de0e322f5663f8b5e89a1f998d8f6ae693fe34448a998"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "totalUsers",
+                  "DisplayName": "totalUsers",
+                  "Description": "DISTINCT users in this row's grain. NOT ADDITIVE — GA4 de-duplicates users at the grain requested, so summing rows double-counts anyone who appears in more than one. Use the object whose grain you want.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "ABB8BBC4-499E-4E95-A324-8E0CED7FB838"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.655Z",
+                  "checksum": "9481a78b4212b550c4ab9321aebc62f7ddd4b2cca27598004b3f5b5a885c2f3e"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "activeUsers",
+                  "DisplayName": "activeUsers",
+                  "Description": "DISTINCT users who had an engaged session. NOT ADDITIVE, for the same reason as totalUsers.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "56264D5D-A4BD-4A13-83B0-D336C0311DF0"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.680Z",
+                  "checksum": "2130270924ce49710a2033e8282ea7932b549b2267df3a5f3dd6b0b1c16cd1b9"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "propertyId",
+                  "DisplayName": "propertyId",
+                  "Description": "The numeric GA4 property this row was read from. Stamped by the connector from Configuration.propertyId; GA4 does not return it.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "C914A6E2-417B-420A-A0DF-FED6AD92B61F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T19:44:32.698Z",
+                  "checksum": "5b27e6c5cd96c7e8a05689685632d56b87381cda5d5a4e1c985a1d060bcf826d"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "528FA30F-56B2-499E-91E1-40C8E1BE222B"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T19:44:31.957Z",
+            "checksum": "c185c8f78d4687f77023c8640d27828d36d3c6d5ce6940a7073a699d1e816b0f"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "A769FFE9-6930-43A6-88AC-1B1781ACFBA1"
+    },
+    "sync": {
+      "lastModified": "2026-08-05T19:44:31.879Z",
+      "checksum": "b4c8a34f5146a3e366b42886fb07b0035a25743e33c647f4ad592b4a2fb1b783"
+    }
+  }
+]
