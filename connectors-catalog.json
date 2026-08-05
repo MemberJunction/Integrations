@@ -375,10 +375,10 @@
       "objectCount": 25,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/OpenWater",
-      "installTag": "Events-OpenWater@1.3.0"
+      "installTag": "Events-OpenWater@1.3.1"
     },
     {
       "name": "PheedLoop",
@@ -504,10 +504,10 @@
       "objectCount": 28,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.2.1"
+      "installTag": "LMS-Totara@0.3.0"
     },
     {
       "name": "Google Analytics 4",

@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-id-window-scan",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pure helper that reads an object the vendor will not bulk-list, by walking its numeric key in bounded windows. Budget-aware, resumable, and it isolates records the vendor refuses instead of losing the object to them. One function, no class, no base — connectors import it; they do NOT extend anything new.",
   "type": "module",
   "main": "dist/index.js",
