@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-totara",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "MemberJunction Totara connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -21,7 +21,7 @@
     "@memberjunction/integration-engine": ">=5.43.0 <6.0.0"
   },
   "dependencies": {
-    "@memberjunction/connector-id-window-scan": "^1.0.0",
+    "@memberjunction/connector-id-window-scan": "^1.1.0",
     "@memberjunction/connector-schema-merge": "^1.0.1",
     "zod": "~3.24.4"
   },
