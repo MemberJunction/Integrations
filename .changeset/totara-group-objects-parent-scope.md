@@ -33,7 +33,7 @@ caching a partial list would freeze that short view for the whole cache window a
 complete. An upstream hop that errors (a course whose groups the token cannot read) costs only its own ids,
 never the enumeration.
 
-**Proven live — and the earlier "all three are `[accessexception]`" was wrong.** Read-only runs on the client
+**Proven live — and the earlier "all three are `[accessexception]`" was wrong.** Read-only runs on the production
 site (`9200B480`, `DE595754`), read back out of `MJ_CT48`:
 
 - **`Groups` — 201 rows.** Walked per-course in batches of 17, 9, 8, 10, 10, 8, 9, 11, 4, 5, 1, 4, 5, 0, 0, 2:

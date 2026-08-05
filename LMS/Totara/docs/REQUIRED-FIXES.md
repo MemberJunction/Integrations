@@ -180,7 +180,7 @@ tolerance, and the truncation warning. Delta migration `V202608050400__totara__G
 (+ hand-authored `.pg.sql`), verified live against the test catalog: 3 rows on first apply, 0 on re-apply.
 
 **PROVEN LIVE — and the previous paragraph here, which said all three were `[accessexception]`, was wrong.**
-Read-only runs `9200B480` and `DE595754` on the client site, read back out of `MJ_CT48`:
+Read-only runs `9200B480` and `DE595754` on a live production site, read back out of `MJ_CT48`:
 
 | Object | Live outcome | Verdict |
 |---|---|---|

@@ -10,7 +10,7 @@ time carrying *that course's* roles and groups. The catalog declared one key fie
 user"), marked `IsUniqueKey=1`. Every per-course row upserted onto the same key, so the last course
 written won and the earlier ones were destroyed on the way in.
 
-Live evidence (ACR, read-only, run `5E8070E2`): **26,300 records processed, 13,950 rows landed**, and
+Live evidence (production site, read-only, run `5E8070E2`): **26,300 records processed, 13,950 rows landed**, and
 across every course the walk reached, only **2 distinct `courseid` values survived** in the table. Nothing
 errored, nothing warned — the run was green and the object looked populated, which is why this sat behind
 the fetch defects that were fixed first. It is the same family as those: not a failure, an untruth.

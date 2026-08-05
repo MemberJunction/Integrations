@@ -34,7 +34,7 @@ None of this changes what the connector fetches. It changes what a zero means to
 which is the difference between "this connector is unproven" and "this tenant has no funds, and here is the
 request that established it."
 
-**Proven live, and it immediately earned its keep.** Read-only run `F2644D5B` against the same client
+**Proven live, and it immediately earned its keep.** Read-only run `F2644D5B` against the same production
 tenant, same 13,198 records: every one of the 15 zeros now carries a code — 1 `LEAF_FORBIDDEN`
 (`/v2/Funds` answers **401**, which also explains `FundTransaction`'s previously dead-end `ZERO_PARENTS`),
 5 `ZERO_LEAVES`, 7 `EMPTY_COLLECTION`, 1 `ZERO_PARENTS`, 1 `FETCH_ABORTED_INCOMPLETE`. Unattributed zeros:

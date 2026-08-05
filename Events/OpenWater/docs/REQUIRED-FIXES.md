@@ -1,6 +1,6 @@
 # OpenWater connector — required fixes for the next release
 
-Open items found while proving this connector against a live client tenant (read-only). Each entry names
+Open items found while proving this connector against a live production tenant (read-only). Each entry names
 the failure as a *user* experiences it, the evidence, and what the fix has to do. Delete an entry when it
 ships — a changeset entry is the record of the fix, this file is the record of the debt.
 
@@ -94,7 +94,7 @@ partial pull must never be described as the vendor having nothing to return. 401
 
 Three regression tests cover the three behaviours (44/44 in `OpenWaterConnector.test.ts`).
 
-**Proven live.** Read-only run `847A4E5E` (2026-08-05, same client tenant) walked all 7 rounds and created
+**Proven live.** Read-only run `847A4E5E` (2026-08-05, same production tenant) walked all 7 rounds and created
 **68 `Report` rows** — an object that had never returned a single row. Every row carries `roundId 82013`: one
 round holds this tenant's reports and the other six answered 200 with nothing, which is the correct outcome
 and is now distinguishable from the failure it used to look like. The pull also drove this connector's first
@@ -175,7 +175,7 @@ sync.entity-map.complete  recordsProcessed 43  recordsErrored 43
 ```
 
 With no field maps the engine has nothing to map onto, so every value fell through to
-`__mj_integration_CustomOverflow` (`{"id":6067,"name":"ACR Master Designation","code":"01","programId":"102013"}`
+`__mj_integration_CustomOverflow` (a four-key object: `{"id":…,"name":…,"code":…,"programId":…}`
 — the payload is plainly correct), every declared column went in as `NULL`, the primary key came out null, and
 the insert returned no rows. It is the same downstream shape as the Postgres `syntax error at or near ","`
 class: an empty record id, arriving from a mapping gap rather than a missing PK declaration.

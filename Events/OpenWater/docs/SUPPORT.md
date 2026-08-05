@@ -1,6 +1,6 @@
 # OpenWater — Supported & Proven
 
-> **Evidence tier:** 🥇 Client-DB-live (real client tenant, production data)  ·  **Last verified:** 2026-08-05  ·  **Proof DB(s):** MJ_CT48
+> **Evidence tier:** 🥇 Production-live (real vendor API, real production dataset, read-only)  ·  **Last verified:** 2026-08-05  ·  **Proof DB(s):** MJ_CT48
 
 ## What this connector supports
 
@@ -58,7 +58,7 @@
 **Total proven rows: 13,266** across **11 of 25 declared objects.**
 
 > **This section previously read "5 rows across 1 object", and that was the doc lagging the evidence, not
-> the connector lagging the fleet.** A live full-catalog run (`3BA35740`) against a real client tenant
+> the connector lagging the fleet.** A live full-catalog run (`3BA35740`) against a real production tenant
 > processed **13,198 records with 0 failed** (13,194 succeeded, 4 skipped by the row-hash), and the counts
 > above are that run read back out of `MJ_CT48` table by table. The stale figure came from a generator run
 > against a DB that had since been torn down. `Report`'s 68 rows arrived later, on run `847A4E5E`

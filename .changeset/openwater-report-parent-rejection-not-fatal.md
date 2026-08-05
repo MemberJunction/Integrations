@@ -25,8 +25,8 @@ server fault is not parent-scoped, and walking past it would turn an outage into
 `ZERO_LEAVES` is suppressed when any parent was refused, so a partial pull is never described as the vendor
 having nothing to return. 401/403 keep their existing `LEAF_FORBIDDEN` treatment.
 
-**Proven live** on the same client tenant, read-only run `847A4E5E`: `Report` created **68 rows**, all under
-`roundId 82013` — one round holds this tenant's reports, the other six answered 200 with nothing. The pull also
+**Proven live** on the same production tenant, read-only run `847A4E5E`: `Report` created **68 rows**, all under
+a single round — one round holds this tenant's reports, the other six answered 200 with nothing. The pull also
 drove the connector's first schema evolution, promoting the walk's `roundId` tag out of custom-overflow into a
 real `Reports.roundId` column. No round returned a 400 on that run, so `LEAF_REQUEST_REJECTED` itself remains
 unit-tested only (three tests); what is proven live is that the object which could never return a row now does.

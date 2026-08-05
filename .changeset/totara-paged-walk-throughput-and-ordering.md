@@ -4,7 +4,7 @@
 
 `Enrolled Users` re-read 44% of what it fetched, and its offset pages had no defined boundary.
 
-Live read-only run `9200B480` against the client site ran for 8.6 hours over 208 fetch batches, fetched **50,608
+Live read-only run `9200B480` against a production site ran for 8.6 hours over 208 fetch batches, fetched **50,608
 records**, and produced **29,002 distinct keyed rows** — a 1.74x re-read — with only 3 INSERT and 18 UPDATE run
 details logged. Everything else was a content-hash skip of a row already present. Three separate causes, two of
 them defects in this connector.
