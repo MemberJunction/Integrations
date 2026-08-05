@@ -1,7 +1,6 @@
 {
   "name": "@memberjunction/connector-everhour",
   "version": "0.1.0",
-  "private": true,
   "description": "MemberJunction Everhour connector.",
   "type": "module",
   "main": "dist/index.js",

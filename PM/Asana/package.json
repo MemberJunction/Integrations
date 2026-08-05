@@ -1,7 +1,7 @@
 {
-  "name": "@memberjunction/connector-totara",
-  "version": "0.3.0",
-  "description": "MemberJunction Totara connector.",
+  "name": "@memberjunction/connector-asana",
+  "version": "0.1.0",
+  "description": "MemberJunction Asana connector.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,8 +21,6 @@
     "@memberjunction/integration-engine": ">=5.43.0 <6.0.0"
   },
   "dependencies": {
-    "@memberjunction/connector-id-window-scan": "^1.1.0",
-    "@memberjunction/connector-schema-merge": "^1.0.1",
     "zod": "~3.24.4"
   },
   "devDependencies": {
@@ -30,7 +28,6 @@
     "@memberjunction/core-entities": "^5.43.0",
     "@memberjunction/global": "^5.43.0",
     "@memberjunction/integration-engine": "^5.43.0",
-    "@memberjunction/integration-engine-base": "^5.43.0",
     "@types/node": "24.10.11",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
