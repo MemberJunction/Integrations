@@ -24,6 +24,7 @@ import { TotaraConnector, type TotaraAuthContext, type MoodleRPCRequest } from '
 const seededAuth: TotaraAuthContext = {
     Token: 'WSTOKEN-ABC-123',
     Endpoint: 'https://learn.example.org/webservice/rest/server.php',
+    RequestTimeoutMs: 25000,
 };
 
 /** Moodle exception envelope (HTTP 200 body signalling an error). */
@@ -153,6 +154,13 @@ class MockedTotaraConnector extends TotaraConnector {
     public queue(...bodies: unknown[]): void {
         for (const b of bodies) this.Responses.push({ Status: 200, Body: b, Headers: {} });
     }
+
+    /**
+     * Controllable clock for the parent-walk budget. `null` = the real one. A function makes elapsed time
+     * deterministic without fake timers, which would deadlock here — the walk awaits real promises.
+     */
+    public Clock: (() => number) | null = null;
+    protected override nowMs(): number { return this.Clock ? this.Clock() : super.nowMs(); }
 }
 
 /** Exposes the REAL MakeHTTPRequest (no override) so the urlencoded wire body can be asserted. */
@@ -228,6 +236,48 @@ describe('TotaraConnector — MakeHTTPRequest (wstoken + format + wsfunction as 
         // bracket keys are percent-encoded but round-trip to Moodle array syntax
         expect(decodeURIComponent(bodyStr)).toContain('options[0][name]=x');
         expect(Array.isArray(res.Body)).toBe(true);
+    });
+
+    it('passes an abort signal carrying the resolved deadline, so a silent vendor cannot hang the fetch', async () => {
+        // The original transport passed no signal at all: a site that accepts the connection and then
+        // never answers wedged the worker with no failed run and no artifact anyone could read.
+        const c = new RealTransportTotaraConnector();
+        await c.PublicMakeHTTP(seededAuth, seededAuth.Endpoint,
+            { WsFunction: 'core_course_get_courses', Params: {} } as MoodleRPCRequest);
+
+        expect(calls[0].init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('translates an abort into a named error identifying the function and the deadline', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => {
+            const err = new Error('The operation was aborted due to timeout');
+            err.name = 'TimeoutError';
+            throw err;
+        }));
+        const c = new RealTransportTotaraConnector();
+
+        await expect(c.PublicMakeHTTP({ ...seededAuth, RequestTimeoutMs: 1234 }, seededAuth.Endpoint,
+            { WsFunction: 'core_enrol_get_enrolled_users', Params: {} } as MoodleRPCRequest))
+            .rejects.toThrow(/core_enrol_get_enrolled_users" did not respond within 1234ms/);
+    });
+
+    it('a non-abort transport error is re-thrown untouched, not relabelled as a timeout', async () => {
+        vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('ECONNREFUSED'); }));
+        const c = new RealTransportTotaraConnector();
+
+        await expect(c.PublicMakeHTTP(seededAuth, seededAuth.Endpoint,
+            { WsFunction: 'core_course_get_courses', Params: {} } as MoodleRPCRequest))
+            .rejects.toThrow('ECONNREFUSED');
+    });
+
+    it('RequestTimeoutMs:0 opts out — no signal is passed', async () => {
+        // Some sites legitimately have a function slower than any sane default; the escape hatch has to
+        // exist, and it has to be the connection's choice rather than a code edit.
+        const c = new RealTransportTotaraConnector();
+        await c.PublicMakeHTTP({ ...seededAuth, RequestTimeoutMs: 0 }, seededAuth.Endpoint,
+            { WsFunction: 'core_course_get_courses', Params: {} } as MoodleRPCRequest);
+
+        expect(calls[0].init.signal).toBeUndefined();
     });
 });
 
@@ -352,6 +402,138 @@ describe('TotaraConnector — FetchChanges (Moodle REST-RPC read)', () => {
         expect(res.Records[0].Fields.username).toBe('jdoe');
     });
 
+    // ── ID-WINDOW SCAN ────────────────────────────────────────────────────
+    // core_user_get_users declares no pagination and the vendor docs warn it "could [be] very slow or
+    // timeout" without narrow criteria. Live, the criteria=email:% bulk list timed out 3x at 30s and synced
+    // ZERO users behind a green run. Reads now walk the id space in bounded windows against the documented
+    // bulk reader instead. windowSize is kept tiny here so the wire assertions stay readable.
+    const scanCfg = (over: Record<string, unknown> = {}) => JSON.stringify({
+        wsfunction: 'core_user_get_users', responseEnvelopeKey: 'users', stableOrderingKey: 'id',
+        idWindowScan: { wsFunction: 'core_user_get_users_by_field', field: 'id', windowSize: 2, windowsPerCall: 2, maxConsecutiveEmptyWindows: 2, ...over },
+    });
+
+    it('ID-WINDOW SCAN: bounded PK lookups against the bulk reader — never the unbounded criteria search', async () => {
+        c.seedIO(makeIO({ ID: 'io-scan', Name: 'Users', Configuration: scanCfg() }), idPK());
+        c.queue([{ id: 1, username: 'a' }, { id: 2, username: 'b' }], [{ id: 3, username: 'c' }]);
+        const res = await c.FetchChanges(fetchCtx('Users'));
+
+        // every call is the BULK by-field reader; the unbounded core_user_get_users is never issued
+        expect(c.Captured.map(r => r.body?.WsFunction)).toEqual(['core_user_get_users_by_field', 'core_user_get_users_by_field']);
+        expect(c.Captured.some(r => r.body?.WsFunction === 'core_user_get_users')).toBe(false);
+        // contiguous id windows in Moodle bracket-array notation
+        expect(c.Captured[0].body?.Params).toMatchObject({ field: 'id', 'values[0]': 1, 'values[1]': 2 });
+        expect(c.Captured[1].body?.Params).toMatchObject({ field: 'id', 'values[0]': 3, 'values[1]': 4 });
+        expect(res.Records.map(r => r.ExternalID)).toEqual(['1', '2', '3']);
+        // more to scan → keyset cursor carries the next start id and the empty-run counter
+        expect(res.HasMore).toBe(true);
+        expect(res.NextAfterKeyValue).toBe('5|0|3|0');
+    });
+
+    it('ID-WINDOW SCAN: resumes from the keyset cursor instead of re-reading from id 1', async () => {
+        c.seedIO(makeIO({ ID: 'io-scan2', Name: 'Users', Configuration: scanCfg() }), idPK());
+        c.queue([{ id: 401 }], [{ id: 403 }]);
+        const res = await c.FetchChanges(fetchCtx('Users', { AfterKeyValue: '401|1' }));
+        expect(c.Captured[0].body?.Params).toMatchObject({ 'values[0]': 401, 'values[1]': 402 });
+        expect(res.NextAfterKeyValue).toBe('405|0|403|0');   // records found → empty-run resets
+    });
+
+    it('ID-WINDOW SCAN: stops after N consecutive EMPTY windows and says so out loud (never a silent truncation)', async () => {
+        c.seedIO(makeIO({ ID: 'io-scan3', Name: 'Users', Configuration: scanCfg() }), idPK());
+        c.queue([], []);                              // two empty windows === maxConsecutiveEmptyWindows
+        const res = await c.FetchChanges(fetchCtx('Users'));
+        expect(res.HasMore).toBe(false);
+        expect(res.NextAfterKeyValue).toBeUndefined();
+        const end = res.Warnings?.find(w => w.Code === 'ID_WINDOW_SCAN_END');
+        expect(end).toBeDefined();                     // a stop is ALWAYS reported, with the range scanned
+        expect(end?.Data).toMatchObject({ scannedThrough: 4, windowSize: 2, maxConsecutiveEmptyWindows: 2 });
+    });
+
+    it('ID-WINDOW SCAN: a FAILED window is not an empty one — it cannot trip the stop heuristic', async () => {
+        // The truncation trap: if an errored window counted as empty, a blip would end the scan early and
+        // silently drop every user past it. A window whose ids the vendor refuses is bisected and skipped by
+        // id, but it must NEVER be counted toward the past-the-end heuristic.
+        const fail = { exception: 'moodle_exception', errorcode: 'servererror', message: 'upstream blew up' };
+        c.seedIO(makeIO({ ID: 'io-scan4', Name: 'Users', Configuration: scanCfg() }), idPK());
+        c.queue(
+            [],                                     // window 1 (ids 1-2): genuinely empty
+            fail,                                   // window 2 (ids 3-4): FAILED → bisect
+            fail, fail,                             // id 3: first try + retry
+            fail, fail,                             // id 4: first try + retry
+        );
+        const res = await c.FetchChanges(fetchCtx('Users'));
+        expect(res.Warnings?.some(w => w.Code === 'ID_WINDOW_FETCH_ERROR')).toBe(true);
+        expect(res.Warnings?.some(w => w.Code === 'ID_WINDOW_SCAN_END')).toBe(false);  // NOT stopped
+        expect(res.HasMore).toBe(true);
+        // Past the refused window (nothing is left behind unexamined), and the empty-run still counts ONLY
+        // the genuinely empty window — the refused one contributed nothing to the stop decision.
+        expect(res.NextAfterKeyValue).toBe('5|1|0|2');
+    });
+
+    it('ID-WINDOW SCAN: an unreadable window with the budget ALREADY spent still advances the cursor', async () => {
+        // The live stall, in miniature: budget gone AND the first window unreadable. If the deadline applied
+        // here the call would resolve no id at all, return empty with an unchanged cursor, and repeat forever
+        // — the exact symptom the whole scan exists to remove. The deadline is therefore suspended until one
+        // id has been examined, and the descent to find it goes down the left spine only.
+        const invalid = { exception: 'moodle_exception', errorcode: 'invalidresponse', message: 'Invalid response value detected' };
+        c.seedIO(makeIO({ ID: 'io-scan7', Name: 'Users', Configuration: scanCfg({ budgetMs: 0, windowSize: 4, windowsPerCall: 1 }) }), idPK());
+        c.queue(
+            invalid,             // window ids 1-4
+            invalid,             // left half ids 1-2
+            invalid, invalid,    // id 1 alone: first try + retry → skipped
+        );
+        const res = await c.FetchChanges(fetchCtx('Users'));
+        expect(res.Warnings?.find(w => w.Code === 'ID_WINDOW_RECORD_SKIPPED')?.Data).toMatchObject({ id: 1 });
+        expect(res.HasMore).toBe(true);
+        expect(res.NextAfterKeyValue).toBe('2|0|0|1');   // moved past id 1 — the cursor is never stuck again
+    });
+
+    it('ID-WINDOW SCAN: isolates the ONE id the vendor refuses and keeps the rest of the window', async () => {
+        // Live failure mode: Moodle/Totara validate their own response per record, so a single bad user row
+        // fails the whole call with [invalidresponse]. Before bisection that killed the window, the cursor
+        // never advanced, and the object synced 0 rows forever. One bad user must cost one user.
+        const invalid = { exception: 'moodle_exception', errorcode: 'invalidresponse', message: 'Invalid response value detected' };
+        c.seedIO(makeIO({ ID: 'io-scan6', Name: 'Users', Configuration: scanCfg() }), idPK());
+        c.queue(
+            invalid,                 // window 1 (ids 1-2) fails because of id 1
+            invalid, invalid,        // id 1 alone: first try + retry → skipped
+            [{ id: 2 }],             // id 2 alone: reads fine
+            [{ id: 3 }, { id: 4 }],  // window 2 (ids 3-4): normal
+        );
+        const res = await c.FetchChanges(fetchCtx('Users'));
+        const skip = res.Warnings?.find(w => w.Code === 'ID_WINDOW_RECORD_SKIPPED');
+        expect(skip?.Data).toMatchObject({ id: 1, field: 'id' });         // names the exact unreadable id
+        expect(res.Records.map(r => r.ExternalID)).toEqual(['2', '3', '4']);   // the good rows all survive
+        expect(res.HasMore).toBe(true);
+        expect(res.NextAfterKeyValue).toBe('5|0|4|0');                        // and the scan MOVES ON
+    });
+
+    it('ID-WINDOW SCAN: stops at the fetch budget and resumes, instead of being killed with nothing to show', async () => {
+        // The engine kills a FetchChanges that overruns FetchChangesMs and a killed batch persists NOTHING —
+        // which is how the first live run of this scan died (5 windows, 30000ms, 0 users). With budgetMs=0
+        // every window after the first is skipped, so the call returns the first window's rows plus a cursor.
+        c.seedIO(makeIO({ ID: 'io-scan5', Name: 'Users', Configuration: scanCfg({ budgetMs: 0, windowsPerCall: 3 }) }), idPK());
+        c.queue([{ id: 1, username: 'a' }], [{ id: 3, username: 'c' }], [{ id: 5, username: 'e' }]);
+        const res = await c.FetchChanges(fetchCtx('Users'));
+
+        expect(c.Captured.length).toBe(1);              // ONE window attempted — the rest never started
+        expect(res.Records.length).toBe(1);             // and its rows are kept, not thrown away
+        expect(res.HasMore).toBe(true);
+        expect(res.NextAfterKeyValue).toBe('3|0|1|0');      // resumes exactly where the budget cut it off
+        const stop = res.Warnings?.find(w => w.Code === 'ID_WINDOW_BUDGET_STOP');
+        expect(stop).toBeDefined();                     // a short batch is always explained, never silent
+        expect(stop?.Data).toMatchObject({ scannedThrough: 2, windowSize: 2 });
+    });
+
+    it('ID-WINDOW SCAN: an already-spent budget still attempts one window, so the cursor can never stall', async () => {
+        // Guard against the deadlock the deadline could otherwise create: skip EVERY window and the call
+        // returns no rows with an unchanged cursor — the same call, forever.
+        c.seedIO(makeIO({ ID: 'io-scan6', Name: 'Users', Configuration: scanCfg({ budgetMs: 0 }) }), idPK());
+        c.queue([{ id: 1, username: 'a' }], [{ id: 3, username: 'c' }]);
+        const res = await c.FetchChanges(fetchCtx('Users'));
+        expect(c.Captured.length).toBeGreaterThanOrEqual(1);
+        expect(res.NextAfterKeyValue).not.toBe('1|0');   // the cursor MOVED
+    });
+
     it('PARENT-SCOPED: iterates ONE request per parent course (Enrolled Users → courseid) + tags each child', async () => {
         const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
             parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id' } });
@@ -373,18 +555,339 @@ describe('TotaraConnector — FetchChanges (Moodle REST-RPC read)', () => {
     });
 
     it('PARENT-SCOPED: a per-parent error is a WARNING, never fatal to the batch', async () => {
+        // A non-permission fault stays per-parent, because it genuinely is per-parent. Permission refusals are
+        // attributed separately as LEAF_FORBIDDEN (see the two refusal tests below) — one ungranted credential
+        // is one fact, not one fault per id.
         const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
             parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id' } });
         c.seedIO(makeIO({ ID: 'io-eu2', Name: 'Enrolled Users', Configuration: cfg }), idPK());
         c.queue(
             [{ id: 1 }, { id: 2 }],
-            { exception: 'moodle_exception', errorcode: 'accessexception', message: 'Access control exception' }, // course 1 → error
+            { exception: 'moodle_exception', errorcode: 'invalidrecord', message: 'Can not find data record in database' }, // course 1 → error
             [{ id: 11, fullname: 'Bob' }],       // course 2 → ok
         );
         const res = await c.FetchChanges(fetchCtx('Enrolled Users'));
         expect(res.Records).toHaveLength(1);     // course 2 still lands despite course 1 failing
         expect(res.Records[0].Fields).toMatchObject({ id: 11 });
         expect(res.Warnings?.some(w => w.Code === 'PARENT_FETCH_ERROR')).toBe(true);
+    });
+
+    it('PARENT-SCOPED (array param): Cohort Members sends cohortids[0], not a scalar cohortid', async () => {
+        // REGRESSION. core_cohort_get_cohort_members takes an ARRAY of ids; sending it a scalar (or nothing at
+        // all, which is what an unscoped object sends) is answered with [invalidparameter] and the object
+        // lands 0 rows on every run — it did, on every live run, until this was wired.
+        const cfg = JSON.stringify({ wsfunction: 'core_cohort_get_cohort_members', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_cohort_get_cohorts', paramName: 'cohortids',
+                paramStyle: 'array', childIdField: 'cohortid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-cm', Name: 'Cohort Members', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 7 }, { id: 9 }],                       // core_cohort_get_cohorts → parent ids
+            [{ cohortid: 7, userids: [1, 2] }],           // members of cohort 7
+            [{ userids: [3] }],                           // cohort 9 answers WITHOUT echoing cohortid
+        );
+        const res = await c.FetchChanges(fetchCtx('Cohort Members'));
+        expect(c.Captured[1].body?.Params).toEqual({ 'cohortids[0]': '7' });
+        expect(c.Captured[2].body?.Params).toEqual({ 'cohortids[0]': '9' });
+        // the tag uses the CHILD field name (cohortid), never the plural request param
+        expect(res.Records[1].Fields).toMatchObject({ userids: [3], cohortid: '9' });
+        expect(res.Records[1].Fields.cohortids).toBeUndefined();
+    });
+
+    it('CHAINED PARENT SCOPE: Group Members reaches its ids through Courses -> course groups', async () => {
+        // core_group_get_group_members(groupids[]) is a by-id reader and NOTHING in Moodle lists a site's
+        // groups, so one hop cannot name a single id — the object shipped dispatching the function bare, which
+        // is the [invalidparameter] defect Cohort Members had. Two hops: courses -> that course's groups ->
+        // group ids -> members.
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_group_members', responseEnvelopeKey: null,
+            parentScope: {
+                parentWsFunction: 'core_group_get_course_groups', paramName: 'groupids', paramStyle: 'array',
+                childIdField: 'groupid', parentIdField: 'id',
+                parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid',
+                    paramStyle: 'scalar', parentIdField: 'id' },
+            } });
+        c.seedIO(makeIO({ ID: 'io-gm', Name: 'Group Members', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 1 }, { id: 2 }],                       // core_course_get_courses  → course ids
+            [{ id: 30, courseid: 1 }],                    // course 1 → group 30
+            [{ id: 31, courseid: 2 }],                    // course 2 → group 31
+            [{ groupid: 30, userids: [5, 6] }],           // members of group 30
+            [{ userids: [7] }],                           // group 31 answers WITHOUT echoing groupid
+        );
+        const res = await c.FetchChanges(fetchCtx('Group Members'));
+
+        // Hop 2 is scoped by the scalar param the inner level declares...
+        expect(c.Captured[1].body?.WsFunction).toBe('core_group_get_course_groups');
+        expect(c.Captured[1].body?.Params).toEqual({ courseid: '1' });
+        expect(c.Captured[2].body?.Params).toEqual({ courseid: '2' });
+        // ...and the object's own request takes the resolved GROUP ids in array form.
+        expect(c.Captured[3].body?.WsFunction).toBe('core_group_get_group_members');
+        expect(c.Captured[3].body?.Params).toEqual({ 'groupids[0]': '30' });
+        expect(c.Captured[4].body?.Params).toEqual({ 'groupids[0]': '31' });
+        expect(res.Records).toHaveLength(2);
+        expect(res.Records[1].Fields).toMatchObject({ userids: [7], groupid: '31' });
+    });
+
+    it('CHAINED PARENT SCOPE: an upstream hop that errors costs its own ids, not the whole enumeration', async () => {
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_group_members', responseEnvelopeKey: null,
+            parentScope: {
+                parentWsFunction: 'core_group_get_course_groups', paramName: 'groupids', paramStyle: 'array',
+                childIdField: 'groupid', parentIdField: 'id',
+                parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid',
+                    paramStyle: 'scalar', parentIdField: 'id' },
+            } });
+        c.seedIO(makeIO({ ID: 'io-gm2', Name: 'Group Members', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 1 }, { id: 2 }],
+            { exception: 'moodle_exception', errorcode: 'accessexception', message: 'Access control exception' },
+            [{ id: 31 }],
+            [{ groupid: 31, userids: [7] }],
+        );
+        const res = await c.FetchChanges(fetchCtx('Group Members'));
+        expect(res.Records).toHaveLength(1);
+        expect(res.Records[0].Fields).toMatchObject({ groupid: 31 });
+    });
+
+    it('CHAINED PARENT SCOPE: a chain cut short by the budget says so, and is not cached as complete', async () => {
+        // The enumeration costs one request per upstream id, so on a real site it competes with the walk for
+        // the same budget. A truncated chain is an INCOMPLETE parent list: reporting it is what keeps a short
+        // walk from reading as a complete one, and not caching it is what lets the next call finish the job.
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_group_members', responseEnvelopeKey: null,
+            parentScope: {
+                parentWsFunction: 'core_group_get_course_groups', paramName: 'groupids', paramStyle: 'array',
+                childIdField: 'groupid', parentIdField: 'id', budgetMs: 50,
+                parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid',
+                    paramStyle: 'scalar', parentIdField: 'id' },
+            } });
+        c.seedIO(makeIO({ ID: 'io-gm3', Name: 'Group Members', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }, { id: 3 }], [{ id: 30 }], [{ id: 31 }], [{ id: 32 }],
+            [{ groupid: 30, userids: [1] }]);
+        let reads = 0;
+        c.Clock = () => (reads++ === 0 ? 0 : 1000);   // every request looks like it consumed the whole budget
+
+        const res = await c.FetchChanges(fetchCtx('Group Members'));
+
+        const w = res.Warnings?.find(x => x.Code === 'PARENT_CHAIN_TRUNCATED');
+        expect(w?.Data).toMatchObject({ object: 'Group Members' });
+        expect(w?.Message).toContain('re-enumerated');
+    });
+
+    it('PARENT-SCOPED: stops at the wall-clock budget and resumes, instead of being killed with nothing', async () => {
+        // Enrolled Users walks one call per course; 428 courses did not fit FetchChangesMs and the batch was
+        // killed with 0 records on every live run. The budget stops DISPATCHING and keeps what landed.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', budgetMs: 50 } });
+        c.seedIO(makeIO({ ID: 'io-eu3', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }, { id: 3 }], [{ id: 10 }], [{ id: 11 }], [{ id: 12 }]);
+        let reads = 0;
+        c.Clock = () => (reads++ === 0 ? 0 : 1000);   // the first read starts the clock; every later one is past the budget
+
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(c.Captured.map(r => r.body?.WsFunction))
+            .toEqual(['core_course_get_courses', 'core_enrol_get_enrolled_users']);   // ONE parent attempted
+        expect(res.Records).toHaveLength(1);          // and its rows are KEPT, not discarded
+        expect(res.HasMore).toBe(true);
+        expect(res.NextAfterKeyValue).toBe('1');      // cursor covers only the contiguous prefix examined
+        const stop = res.Warnings?.find(w => w.Code === 'PARENT_BUDGET_STOP');
+        expect(stop?.Data).toMatchObject({ covered: 1, batch: 3, skipped: 2, budgetMs: 50 });
+    });
+
+    it('PARENT-SCOPED: PAGES within one parent when the function documents limitfrom/limitnumber', async () => {
+        // A per-CALL budget cannot save a single request that is itself too big:
+        // core_enrol_get_enrolled_users returns every enrolment on a course with full user profiles, and on a
+        // real site ONE such call outran the 30000ms kill — persisting nothing. The walk pages inside the parent.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            paginationParams: ['options.limitfrom', 'options.limitnumber'],
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', pageSize: 2 } });
+        c.seedIO(makeIO({ ID: 'io-eu5', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 1 }],                          // one course
+            [{ id: 10 }, { id: 11 }],             // full page → there is more
+            [{ id: 12 }],                         // short page → this course is exhausted
+        );
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(c.Captured[1].body?.Params).toMatchObject({ courseid: '1', 'options[0][name]': 'limitfrom', 'options[0][value]': 0, 'options[1][name]': 'limitnumber', 'options[1][value]': 2 });
+        expect(c.Captured[2].body?.Params).toMatchObject({ courseid: '1', 'options[0][value]': 2 });   // second page
+        expect(res.Records).toHaveLength(3);
+        expect(res.HasMore).toBe(false);          // the only course was read to the end
+    });
+
+    it('PARENT-SCOPED: a mid-parent budget stop resumes INTO that parent, not at its first page again', async () => {
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            paginationParams: ['options.limitfrom', 'options.limitnumber'],
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', pageSize: 2, budgetMs: 50 } });
+        c.seedIO(makeIO({ ID: 'io-eu6', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }], [{ id: 10 }, { id: 11 }]);   // full page, then the budget bites
+        let reads = 0;
+        c.Clock = () => (reads++ === 0 ? 0 : 1000);
+
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(res.Records).toHaveLength(2);              // the page that landed is KEPT
+        expect(res.NextAfterKeyValue).toBe('1#2');        // resume AT course 1, from record 2
+        const stop = res.Warnings?.find(w => w.Code === 'PARENT_BUDGET_STOP');
+        expect(stop?.Data).toMatchObject({ covered: 0, resumeOffset: 2 });
+
+        // and the resume actually starts there rather than re-reading the first page
+        const c2 = new MockedTotaraConnector();
+        c2.seedIO(makeIO({ ID: 'io-eu6', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c2.queue([{ id: 1 }, { id: 2 }], [{ id: 12 }], [{ id: 20 }]);
+        await c2.FetchChanges(fetchCtx('Enrolled Users', { AfterKeyValue: '1#2' }));
+        expect(c2.Captured[1].body?.Params).toMatchObject({ courseid: '1', 'options[0][value]': 2 });
+        expect(c2.Captured[2].body?.Params).toMatchObject({ courseid: '2', 'options[0][value]': 0 });
+    });
+
+    it('PARENT-SCOPED: a PAGED walk runs ONE parent at a time however much concurrency the engine offers', async () => {
+        // The cursor can name exactly one mid-parent resume offset, and only for the head of the covered
+        // prefix. Read two parents concurrently and let the budget stop both, and the second lane's offset is
+        // discarded — so it re-reads its pages from 0 on the next call, every call. Live (MaxConcurrency 2,
+        // run 9200B480): 50,608 records fetched for 29,002 rows, a 1.74x re-read that was purely this.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            paginationParams: ['options.limitfrom', 'options.limitnumber'],
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', pageSize: 2 } });
+        c.seedIO(makeIO({ ID: 'io-eu-seq', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 1 }, { id: 2 }],               // two courses
+            [{ id: 10 }, { id: 11 }],             // course 1, full page
+            [{ id: 12 }],                         // course 1, short page → exhausted
+            [{ id: 20 }],                         // course 2, short page → exhausted
+        );
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users', { MaxConcurrency: 8 }));
+        // Course 1 is read to the END before course 2 is touched at all — no interleaving.
+        expect(c.Captured.map(r => r.body?.Params?.['courseid'])).toEqual([undefined, '1', '1', '2']);
+        expect(res.Records).toHaveLength(4);
+    });
+
+    it('PARENT-SCOPED: an UNPAGED walk keeps the engine concurrency (no partial progress to lose)', async () => {
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_course_groups', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-grp-conc', Name: 'Groups', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }], [{ id: 10 }], [{ id: 20 }]);
+        const res = await c.FetchChanges(fetchCtx('Groups', { MaxConcurrency: 4 }));
+        expect(res.Records).toHaveLength(2);   // one request per parent, both read
+    });
+
+    it('PARENT-SCOPED: offset paging sends the DECLARED stable ordering, so pages cannot overlap or gap', async () => {
+        // limitfrom/limitnumber is SQL OFFSET/LIMIT. Without ORDER BY there is no defined page boundary:
+        // consecutive pages repeat rows and may never return others (the gaps are silent data loss). The vendor
+        // documents sortby/sortdirection beside the limits and the catalog already declared stableOrderingKey.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            paginationParams: ['options.limitfrom', 'options.limitnumber'],
+            orderingParams: ['options.sortby', 'options.sortdirection'],
+            stableOrderingKey: 'id',
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', pageSize: 2 } });
+        c.seedIO(makeIO({ ID: 'io-eu-ord', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }], [{ id: 10 }]);
+        await c.FetchChanges(fetchCtx('Enrolled Users'));
+        // All four options share ONE bracket array — ordering must not restart the indexes and clobber the limits.
+        expect(c.Captured[1].body?.Params).toMatchObject({
+            courseid: '1',
+            'options[0][name]': 'limitfrom', 'options[0][value]': 0,
+            'options[1][name]': 'limitnumber', 'options[1][value]': 2,
+            'options[2][name]': 'sortby', 'options[2][value]': 'id',
+            'options[3][name]': 'sortdirection', 'options[3][value]': 'ASC',
+        });
+    });
+
+    it('PARENT-SCOPED: an object declaring no orderingParams is UNCHANGED (option names are per-wsfunction)', async () => {
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            paginationParams: ['options.limitfrom', 'options.limitnumber'], stableOrderingKey: 'id',
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', pageSize: 2 } });
+        c.seedIO(makeIO({ ID: 'io-eu-noord', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }], [{ id: 10 }]);
+        await c.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(c.Captured[1].body?.Params).not.toHaveProperty('options[2][name]');
+    });
+
+    it('PARENT-SCOPED: a walk the vendor refuses on PERMISSIONS says so ONCE, not once per parent', async () => {
+        // Live (run DE595754): core_group_get_group_members answered [accessexception] for all 52 batches of
+        // group ids. Reported per-parent that reads like 52 separate faults; it is one ungranted credential.
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_group_members', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'groupids', paramStyle: 'array',
+                childIdField: 'groupid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-gm-forbid', Name: 'Group Members', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 1 }, { id: 2 }],
+            { exception: 'webservice_access_exception', errorcode: 'accessexception', message: 'Access control exception' },
+            { exception: 'webservice_access_exception', errorcode: 'accessexception', message: 'Access control exception' },
+        );
+        const res = await c.FetchChanges(fetchCtx('Group Members'));
+        expect(res.Records).toHaveLength(0);
+        expect(res.Warnings?.filter(w => w.Code === 'PARENT_FETCH_ERROR')).toHaveLength(0);
+        const forbidden = res.Warnings?.filter(w => w.Code === 'LEAF_FORBIDDEN') ?? [];
+        expect(forbidden).toHaveLength(1);
+        expect(forbidden[0].Data).toMatchObject({ wsfunction: 'core_group_get_group_members', refusedParents: 2 });
+        expect(forbidden[0].Message).toContain('not permitted this function');
+    });
+
+    it('PARENT-SCOPED: a PARTIAL permission refusal stays distinguishable from an ungranted function', async () => {
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_group_members', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'groupids', paramStyle: 'array',
+                childIdField: 'groupid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-gm-part', Name: 'Group Members', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 1 }, { id: 2 }],
+            [{ id: 10 }],
+            { exception: 'webservice_access_exception', errorcode: 'accessexception', message: 'Access control exception' },
+        );
+        const res = await c.FetchChanges(fetchCtx('Group Members'));
+        expect(res.Records).toHaveLength(1);
+        const forbidden = res.Warnings?.find(w => w.Code === 'LEAF_FORBIDDEN');
+        expect(forbidden?.Data).toMatchObject({ refusedParents: 1, examined: 2 });
+        expect(forbidden?.Message).not.toContain('not permitted this function');
+    });
+
+    it('PARENT-SCOPED: an already-spent budget still fetches ONE parent, so the walk can never stall', async () => {
+        // Skipping every parent would return no rows with an unchanged cursor — the same call, forever.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', budgetMs: 1 } });
+        c.seedIO(makeIO({ ID: 'io-eu4', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }], [{ id: 10 }]);
+        let reads = 0;
+        c.Clock = () => (reads++ === 0 ? 0 : 10_000_000);   // the budget is gone the instant the walk starts
+
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(res.Records).toHaveLength(1);
+        expect(res.NextAfterKeyValue).toBe('1');   // the cursor MOVED
+        expect(res.HasMore).toBe(true);
+    });
+
+    it('PARENT-SCOPED: the budget stops work ABOUT TO START, judged by the slowest request so far', async () => {
+        // `elapsed >= budget` is the wrong test when one request is a large fraction of the whole budget:
+        // live, a single enrolled-users page took 25823ms, so a walk 900ms into a 1000ms budget would happily
+        // dispatch one more and land 26s past the kill. The gate is `elapsed + slowestSoFar >= budget`.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', budgetMs: 1000 } });
+        c.seedIO(makeIO({ ID: 'io-eu7', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }], [{ id: 10 }], [{ id: 11 }]);
+        let reads = 0;
+        c.Clock = () => (reads++ < 2 ? 0 : 900);   // the parent list took 900ms; elapsed stays 900 thereafter
+
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users'));
+        // elapsed (900) is UNDER the 1000ms budget — the old rule would have started another 900ms request.
+        expect(c.Captured.map(r => r.body?.WsFunction))
+            .toEqual(['core_course_get_courses', 'core_enrol_get_enrolled_users']);
+        expect(res.Records).toHaveLength(1);
+        expect(res.Warnings?.find(w => w.Code === 'PARENT_BUDGET_STOP')?.Data).toMatchObject({ covered: 1, skipped: 1 });
+    });
+
+    it('PARENT-SCOPED: the parent-id list is cached across calls, and parentCacheMs:0 opts out', async () => {
+        // core_course_get_courses measured 6147ms live. Re-reading it on every resumed call spends a fifth of
+        // the budget before the walk begins — on a list that cannot change meaningfully inside one sync.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-eu8', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }], [{ id: 10 }], [{ id: 11 }]);
+        await c.FetchChanges(fetchCtx('Enrolled Users'));
+        await c.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(c.Captured.filter(r => r.body?.WsFunction === 'core_course_get_courses')).toHaveLength(1);
+
+        const c2 = new MockedTotaraConnector();
+        const cfgNoCache = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', parentCacheMs: 0 } });
+        c2.seedIO(makeIO({ ID: 'io-eu8', Name: 'Enrolled Users', Configuration: cfgNoCache }), idPK());
+        c2.queue([{ id: 1 }], [{ id: 10 }], [{ id: 1 }], [{ id: 11 }]);
+        await c2.FetchChanges(fetchCtx('Enrolled Users'));
+        await c2.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(c2.Captured.filter(r => r.body?.WsFunction === 'core_course_get_courses')).toHaveLength(2);
     });
 
     it('reads the envelope key from the first-class ResponseDataKey COLUMN when Configuration omits it (frozen-metadata shape)', async () => {

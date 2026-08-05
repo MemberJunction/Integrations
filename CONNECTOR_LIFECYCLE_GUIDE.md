@@ -87,6 +87,40 @@ mj migrate --schema mj_connector_<slug> --dir <Category>/<Connector>/migrations
 4. **Non-column metadata noise** (`IsForeignKey`, `Source`, `IsMutable`, …) — silently dropped at push; strict
    `--ci` validation rejects them, so generation uses `--no-validate` (real `@lookup` resolution still runs).
 5. **No duplicate IOF name within an IO**, every IO carries `IntegrationID:@parent:ID`, valid `PaginationType` enum.
+6. **Every unbounded object can be read in bounded pieces** — see below. `PaginationType: 'None'` on an object
+   whose size tracks the tenant's size is a time bomb, not a simplification.
+
+---
+
+## Objects the vendor will not let you LIST (the zero-rows-behind-a-green-run class)
+
+Run `npm run audit:unlistable` for the current candidate list (765 one-shot readers today, 235 of them named
+like tables that grow without bound).
+
+**The failure.** An object with no pagination is read in one request. On a small tenant that is correct and
+common. On a large one the request cannot finish inside the engine's `FetchChangesMs` (30000ms), the batch is
+**killed, and a killed batch persists nothing** — so the object lands zero rows while its entity map reports
+success. It reads as "this tenant has no people" rather than as an error, which is why it survives review and
+surfaces weeks later as "the client says records are missing".
+
+Totara `Users` shipped this: `core_user_get_users` declares no pagination params and the vendor's own docs warn
+it "could [be] very slow or timeout" without narrow criteria. Live, it timed out 3× at 30000ms and synced 0 of
+~25,000 users, green throughout.
+
+**The remedy.** Almost every API that cannot LIST an object can still read it BY KEY in bulk. Declare
+`Configuration.idWindowScan` and delegate the fetch to `runIdWindowScan()` from
+`@memberjunction/connector-id-window-scan`; the connector supplies only "turn these ids into one request".
+`LMS/Totara/src/TotaraConnector.ts` is the worked example. The helper owns the three things that are easy to
+get wrong and were each paid for with a live failure:
+
+- the **call** bounds itself in time, not just each request (several bounded windows still overrun the budget
+  together — the original defect wearing a different hat);
+- a window the vendor refuses is **bisected** to isolate the bad record, because a failed window cannot advance
+  the cursor and one bad row otherwise locks the object forever (observed: 61 identical failures, 0 rows);
+- the cursor advances **only over ids actually examined**, so coverage is never traded for speed.
+
+Ship the window values you PROVED, not defaults that look tidy: `windowSize` must be small enough that a full
+bisection of one window still fits the budget (25×2 is proven live; 200×5 was killed with 0 records).
 
 ---
 

@@ -49,15 +49,22 @@ const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', '.github', '.changese
 /** A literal `HasMore: false` / `HasMore = false` (not `HasMore: someExpr`). */
 const RETURNS_FALSE = /HasMore\s*[:=]\s*false\b/;
 /**
- * Any page-advance mechanism. Three families, because the repo genuinely ships
- * all three and a rule that knows only one turns correct code into a "violation":
+ * Any page-advance mechanism. FOUR families, because the repo genuinely ships
+ * all four and a rule that knows only one turns correct code into a "violation":
  *   • page size   — offset/limit style
  *   • cursor      — vendor hands back an opaque next-page token or URL
  *   • page number — Impexium advances a {pageNumber} PATH segment (no query param
  *                   and no cursor at all), declared as PaginationType 'PageNumber'
+ *   • keyset      — the connector advances a KEY it derives itself and hands back
+ *                   through the engine's own keyset channel (`NextAfterKeyValue` →
+ *                   `FetchContext.AfterKeyValue`). This is what a parent-scope walk
+ *                   and an id-window scan use; there is no vendor cursor and no page
+ *                   size, and the object is nonetheless fully resumable. Omitting
+ *                   this arm flagged `Shared/IdWindowScan` — a module whose entire
+ *                   purpose is bounded, resumable reads — as unable to paginate.
  * No leading \b: `_pageSize` (the unused-parameter convention) must still count.
  */
-const CAN_ADVANCE = /(pageSize|batchSize|nextCursor|nextRecordsUrl|nextPageToken|nextLink|nextPageURL|pageNumber)\b/i;
+const CAN_ADVANCE = /(pageSize|batchSize|nextCursor|nextRecordsUrl|nextPageToken|nextLink|nextPageURL|pageNumber|afterKeyValue)\b/i;
 
 /**
  * Connectors with NO page-advance mechanism that are nonetheless correct, each

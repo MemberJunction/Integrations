@@ -627,16 +627,31 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         const path = this.AppendQuery(obj.APIPath, watermarkParam);
         const fields = this.GetCachedFields(obj.ID);
         const pkFieldNames = this.PrimaryKeyNames(fields);
+        const warnings: FetchWarning[] = [];
 
         const { records, newWatermark, hasMore, nextPage } = await this.PaginateLeaf(
-            auth, baseURL, path, obj, ctx, undefined, watermarkParam
+            auth, baseURL, path, obj, ctx, undefined, watermarkParam, false, warnings
         );
+
+        // A first-page-empty flat collection with no watermark in play has nothing left to blame it on:
+        // the request succeeded and the vendor returned nothing. Say so, so the zero is a stated finding
+        // rather than an absence of evidence. (On an incremental page an empty result is normal — no
+        // watermark, first page only.)
+        if (records.length === 0 && warnings.length === 0 && !ctx.WatermarkValue && !ctx.CurrentPage) {
+            warnings.push({
+                Code: 'EMPTY_COLLECTION',
+                Message: `"${obj.Name}" fetched zero records from ${path} — the request succeeded and the`
+                    + ` collection is genuinely empty for this tenant.`,
+                Data: { object: obj.Name, path },
+            });
+        }
 
         return {
             Records: records.map(r => this.BuildExternalRecord(r, obj, fields, pkFieldNames)),
             HasMore: hasMore,
             NextPage: nextPage,
             NewWatermarkValue: newWatermark,
+            Warnings: warnings.length ? warnings : undefined,
         };
     }
 
@@ -670,6 +685,15 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         // embedded-array: records are already inside the door payload (e.g. Program.rounds[]).
         if (accessPath.extractionMode === 'embedded-array') {
             const records = this.ExtractEmbedded(doorRows, accessPath.nestingSegments ?? []);
+            if (records.length === 0) {
+                warnings.push({
+                    Code: 'ZERO_LEAVES',
+                    Message: `"${obj.Name}" found ${doorRows.length} "${accessPath.door}" door record(s) but`
+                        + ` ${(accessPath.nestingSegments ?? []).join('->')} held no entries in any of them.`,
+                    Data: { object: obj.Name, door: accessPath.door, doorRows: doorRows.length,
+                        nestingSegments: accessPath.nestingSegments ?? [] },
+                });
+            }
             return {
                 Records: records.map(r => this.BuildExternalRecord(r, obj, fields, pkFieldNames)),
                 HasMore: false,
@@ -690,11 +714,23 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         const entryPaths = [accessPath.entryPath, ...(accessPath.alternativePaths ?? [])];
         const parentTagName = accessPath.parentParamName; // e.g. roundId / programId / fundId
         const out: ExternalRecord[] = [];
+        let leafRequests = 0;
+        const skippedPaths = new Set<string>();
+        const rejections: { parentID: string; url: string; status: number; vendor: string | null }[] = [];
+        let lastRejectionResponse: RESTResponse | undefined;
         for (const parentID of parentIDs) {
             for (const entryPath of entryPaths) {
                 const leafPath = this.InjectParentID(entryPath, parentID, accessPath);
-                if (leafPath == null) continue; // template var this entry path doesn't use
-                const { records } = await this.PaginateLeaf(auth, baseURL, leafPath, obj, ctx, parentID, '');
+                if (leafPath == null) { skippedPaths.add(entryPath); continue; }
+                leafRequests++;
+                const { records, rejection } = await this.PaginateLeaf(
+                    auth, baseURL, leafPath, obj, ctx, parentID, '', false, warnings, true);
+                if (rejection) {
+                    rejections.push({ parentID, url: rejection.url, status: rejection.status,
+                                      vendor: rejection.vendor });
+                    lastRejectionResponse = rejection.response;
+                    continue;
+                }
                 for (const r of records) {
                     // Tag the leaf with its parent id (e.g. roundId) when the record doesn't already
                     // carry it — makes round/program-scoped objects self-describing for pass-through
@@ -704,6 +740,73 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                 }
             }
         }
+        // A skipped alternative path narrows the walk, so it is reported rather than assumed harmless.
+        // Silently dropping a declared path is how "we searched everywhere" turns into a claim nobody
+        // checked — the same failure this whole pass exists to remove.
+        if (skippedPaths.size > 0) {
+            warnings.push({
+                Code: 'PATH_SKIPPED_PARAM_MISMATCH',
+                Message: `"${obj.Name}" declares ${skippedPaths.size} alternative path(s) templated on a`
+                    + ` parameter other than its declared "${parentTagName ?? 'parent'}"`
+                    + ` — ${[...skippedPaths].join(', ')}. They were NOT requested, because filling that`
+                    + ` slot with a "${parentTagName ?? 'parent'}" value would ask the vendor for the wrong`
+                    + ` record. Declare a second access path if those records are wanted.`,
+                Data: { object: obj.Name, parentParamName: parentTagName ?? null, skipped: [...skippedPaths] },
+            });
+        }
+
+        // Every request the vendor refused. Not one parent's problem — the endpoint, the credential or the
+        // vendor is, and calling that a clean zero would be the exact untruth this pass exists to remove.
+        if (rejections.length > 0 && rejections.length === leafRequests && lastRejectionResponse) {
+            const first = rejections[0];
+            throw this.HttpError(
+                `OpenWater fetch failed for "${obj.Name}": all ${leafRequests} request(s) across`
+                    + ` ${parentIDs.length} "${parentTagName ?? 'parent'}" value(s) were rejected.`
+                    + ` First: HTTP ${first.status} at ${first.url}`
+                    + (first.vendor ? ` — ${first.vendor}` : ''),
+                lastRejectionResponse
+            );
+        }
+        // Some parents answered and some were refused. The records that DID arrive are real and are kept;
+        // what would otherwise be lost is the fact that the pull is partial, and which parents are missing
+        // from it. A count alone would not let anyone check it, so the parent ids travel with the warning.
+        if (rejections.length > 0) {
+            const byStatus = new Map<number, number>();
+            for (const r of rejections) byStatus.set(r.status, (byStatus.get(r.status) ?? 0) + 1);
+            warnings.push({
+                Code: 'LEAF_REQUEST_REJECTED',
+                Message: `"${obj.Name}" walked ${parentIDs.length} "${parentTagName ?? 'parent'}" value(s) and`
+                    + ` the vendor refused ${rejections.length} of ${leafRequests} request(s)`
+                    + ` (${[...byStatus.entries()].map(([s, n]) => `HTTP ${s} x${n}`).join(', ')}).`
+                    + ` Those parents contributed zero records; the rest were fetched normally, so this pull`
+                    + ` is partial rather than empty.`
+                    + ` First: ${rejections[0].url}`
+                    + (rejections[0].vendor ? ` — ${rejections[0].vendor}` : ''),
+                Data: {
+                    object: obj.Name,
+                    parentParamName: parentTagName ?? null,
+                    rejected: rejections.length,
+                    leafRequests,
+                    rejectedParentIDs: rejections.map(r => r.parentID),
+                    statuses: [...byStatus.entries()].map(([status, count]) => ({ status, count })),
+                },
+            });
+        }
+
+        // Parents were found and every leaf came back empty. That is the one zero the walk could not
+        // previously explain — ZERO_PARENTS covers "nothing to walk", but "walked everything, found
+        // nothing" looked identical to a malformed request. Naming the parent count and the paths tried
+        // is what makes the difference checkable instead of assumed.
+        if (out.length === 0 && rejections.length === 0 && !warnings.some(w => w.Code === 'LEAF_FORBIDDEN')) {
+            warnings.push({
+                Code: 'ZERO_LEAVES',
+                Message: `"${obj.Name}" walked ${parentIDs.length} "${parentTagName ?? 'parent'}" value(s)`
+                    + ` over ${leafRequests} request(s) to ${entryPaths.join(', ')} and every one returned zero`
+                    + ` records — the paths resolved and the vendor has nothing to return for this tenant.`,
+                Data: { object: obj.Name, parents: parentIDs.length, leafRequests, entryPaths },
+            });
+        }
+
         return { Records: out, HasMore: false, Warnings: warnings };
     }
 
@@ -731,8 +834,16 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         ctx?: FetchContext,
         _parentID?: string,
         _watermarkParam?: string,
-        forceFullScan = false
-    ): Promise<{ records: Record<string, unknown>[]; newWatermark?: string; hasMore: boolean; nextPage?: number }> {
+        forceFullScan = false,
+        warnings?: FetchWarning[],
+        parentScoped = false
+    ): Promise<{
+        records: Record<string, unknown>[];
+        newWatermark?: string;
+        hasMore: boolean;
+        nextPage?: number;
+        rejection?: { status: number; url: string; vendor: string | null; response: RESTResponse };
+    }> {
         const headers = this.BuildHeaders(auth);
         const pageSize = obj.DefaultPageSize && obj.DefaultPageSize > 0 ? obj.DefaultPageSize : DEFAULT_PAGE_SIZE;
         const batchLimit = !forceFullScan && ctx?.BatchSize ? ctx.BatchSize : Number.MAX_SAFE_INTEGER;
@@ -752,11 +863,43 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
 
             if (response.Status === 403 || response.Status === 401) {
-                console.warn(`[OpenWater] HTTP ${response.Status} for "${obj.Name}" at ${url} — skipping.`);
+                // A permission-scoped endpoint is NOT an empty one, and the difference is the whole
+                // diagnosis. This used to be a console.warn on the server and nothing else, so the object
+                // returned zero records behind a successful run and read as "this tenant has no Funds"
+                // rather than "this token may not read Funds" — indistinguishable, from the outside, from
+                // a broken request. The warning travels with the batch so a zero is always attributable.
+                warnings?.push({
+                    Code: 'LEAF_FORBIDDEN',
+                    Message: `HTTP ${response.Status} reading "${obj.Name}" at ${path}`
+                        + ` — the token is not permitted this endpoint, so it contributed zero records.`
+                        + ` This is a credential scope limit, not an empty collection.`,
+                    Data: { object: obj.Name, path, status: response.Status },
+                });
                 break;
             }
             if (response.Status < 200 || response.Status >= 300) {
-                throw this.HttpError(`OpenWater fetch failed for "${obj.Name}": HTTP ${response.Status}`, response);
+                // Name the request and quote the vendor. "HTTP 400" alone is unactionable: it does not say
+                // which of an object's entry paths failed, which parent id was in it, or what OpenWater
+                // objected to — and the write paths have used ExtractErrorMessage for exactly this reason
+                // since they shipped. A read that fails is the one a client notices, so it gets the same
+                // treatment: the URL actually issued, plus the vendor's own words.
+                const vendor = this.ExtractErrorMessage(response);
+                if (parentScoped && response.Status >= 400 && response.Status < 500) {
+                    // One parent the vendor will not answer for is NOT the object failing. This request is
+                    // one of N issued in a parent walk, so throwing here discards every other parent's
+                    // records — a single unusable round took the whole Report object to zero. A 4xx is the
+                    // vendor rejecting THIS parent (round is judging-only, program has no sessions, id is
+                    // out of scope for the token); the caller records it against that parent and keeps
+                    // walking. 5xx still throws: a server fault is not parent-scoped, and continuing past
+                    // it would turn an outage into a quietly partial pull.
+                    return { records: all, newWatermark: undefined, hasMore: false, nextPage: page,
+                             rejection: { status: response.Status, url, vendor: vendor ?? null, response } };
+                }
+                throw this.HttpError(
+                    `OpenWater fetch failed for "${obj.Name}": HTTP ${response.Status} at ${url}`
+                        + (vendor ? ` — ${vendor}` : ''),
+                    response
+                );
             }
 
             const records = this.NormalizeResponse(response.Body, obj.ResponseDataKey);
@@ -882,10 +1025,14 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         if (paramName && entryPath.includes(`{${paramName}}`)) {
             return entryPath.replace(`{${paramName}}`, encoded);
         }
-        // A single remaining template var (e.g. {roundId}/{programId} in an alternativePath) also
-        // takes the parent id; this keeps roundId-based alternative report paths working.
-        const m = entryPath.match(/\{(\w+)\}/);
-        if (m) return entryPath.replace(m[0], encoded);
+        // A template var that is NOT the declared parent param is a DIFFERENT id, and filling it with
+        // this one issues a well-formed request for the wrong thing. `Report` declares parentParamName
+        // 'roundId' and lists /v2/Programs/{programId}/SessionReports among its alternatives — a roundId
+        // in the programId slot is not a near-miss, it is a request the vendor is right to reject. This
+        // used to substitute anyway (the first remaining {var} took the id regardless of its name),
+        // which is what the docblock above has always said it must not do. Skip the path instead; the
+        // caller records the skip so a narrowed walk is never silent.
+        if (/\{\w+\}/.test(entryPath)) return null;
         // No template var to fill and not a query param → use as-is (already-flat entry path).
         return entryPath;
     }
@@ -1057,17 +1204,17 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         body: unknown,
         timeoutMs: number
     ): Promise<Response> {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            const requestInit: RequestInit = { method, headers, signal: controller.signal };
-            if (body !== undefined && method !== 'GET' && method !== 'DELETE') {
-                requestInit.body = JSON.stringify(body);
-            }
-            return await fetch(url, requestInit);
-        } finally {
-            clearTimeout(timer);
+        // The deadline must outlive the fetch() call itself. `fetch` resolves once the HEADERS arrive;
+        // the body is read later, in BuildRESTResponse. Clearing the timer in a `finally` here — which is
+        // what this did — disarmed the abort at exactly the moment the response body started streaming,
+        // so a vendor that answered with headers and then stalled mid-body hung indefinitely anyway. An
+        // AbortSignal.timeout stays armed for the life of the signal, body stream included, and needs no
+        // manual teardown; a fresh one per attempt is correct, since each retry gets its own deadline.
+        const requestInit: RequestInit = { method, headers, signal: AbortSignal.timeout(timeoutMs) };
+        if (body !== undefined && method !== 'GET' && method !== 'DELETE') {
+            requestInit.body = JSON.stringify(body);
         }
+        return await fetch(url, requestInit);
     }
 
     private async BuildRESTResponse(response: Response): Promise<RESTResponse> {
