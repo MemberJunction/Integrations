@@ -1,0 +1,26 @@
+{
+  "contactId": 12345,
+  "isOptedOut": false,
+  "callStatus": "toCall",
+  "meetingStatus": "none",
+  "sequences": [
+    {
+      "sequenceId": 100,
+      "sequenceName": "Sales Outreach",
+      "statusInSequence": "active",
+      "emailDisposition": {
+        "isReplied": false,
+        "isBounced": false
+      }
+    },
+    {
+      "sequenceId": 101,
+      "sequenceName": "Re-engagement",
+      "statusInSequence": "finished",
+      "emailDisposition": {
+        "isReplied": true,
+        "isBounced": false
+      }
+    }
+  ]
+}
