@@ -93,6 +93,17 @@ function readSeeded(migrationsDir) {
       if (name) objectNames.add(name);
     }
     fieldCount += (sql.match(/spCreateIntegrationObjectField\s*@/g) ?? []).length;
+
+    // Delta migrations ship catalog rows too, and until this was added the gate could not see them at all:
+    // it counted only the generated seed's `spCreateIntegrationObjectField` calls, so a field delivered by a
+    // hand-authored delta read as "declared but never shipped" no matter how correct the delta was. That is the
+    // wrong answer to the gate's own question — the question is whether `migrations/` ships what `metadata/`
+    // declares, and a guarded INSERT ships it. Each delivered field is counted by its hardcoded ID literal,
+    // which every delta must carry anyway (IDs are never NEWID(), so the same field is the same row on every
+    // tenant). UPDATE-only deltas contribute nothing here, which is correct — they ship no new field.
+    for (const stmt of sql.matchAll(/INSERT\s+INTO\s+[^;]*?IntegrationObjectField[^;]*;/gis)) {
+      fieldCount += (stmt[0].match(/'[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}'/g) ?? []).length;
+    }
   }
   return { objectNames, fieldCount };
 }

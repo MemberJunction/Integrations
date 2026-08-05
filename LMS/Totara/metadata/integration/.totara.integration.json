@@ -2595,6 +2595,16 @@
               "defaultArgs": {
                 "criteria[0][key]": "email",
                 "criteria[0][value]": "%"
+              },
+              "idWindowScanRationale": "core_user_get_users declares NO pagination params and the vendor docs state it 'could [be] very slow or timeout' without narrow criteria (and that the % wildcard 'may be considerably slower'). The defaultArgs email=% bulk list is therefore a documented anti-pattern: against a real-sized site it never returns inside the engine's FetchChangesMs budget and the object syncs ZERO rows behind a green run (observed live: 3x 30s timeouts, 0 users). Reads route through the bounded id-window scan below — an indexed PK lookup via the documented bulk reader — instead. defaultArgs is retained only as the legacy fallback if idWindowScan is removed. The window values below are the ones PROVEN against a live production site, not a guess: 25 ids per window x 2 windows per call reads 50 users in ~2.5s, an order of magnitude inside the 30s kill even when a window has to be bisected to isolate an unreadable id (25 -> 12 -> 6 -> 3 -> 2 -> 1 is 5 splits, under the default maxBisectSplitsPerCall of 8). Wider windows were tried first and failed live: 200 x 5 overran the budget and was killed with 0 records, and a 200-wide window containing one unreadable id could not finish its bisection inside the budget at all. maxConsecutiveEmptyWindows 40 tolerates a 1000-id gap of deleted users before the scan concludes it is past the end.",
+              "idWindowScan": {
+                "wsFunction": "core_user_get_users_by_field",
+                "field": "id",
+                "windowSize": 25,
+                "windowsPerCall": 2,
+                "maxConsecutiveEmptyWindows": 40,
+                "budgetMs": 20000,
+                "maxBisectSplitsPerCall": 8
               }
             },
             "IntegrationID": "@parent:ID",
@@ -3477,6 +3487,11 @@
                 "options.limitfrom",
                 "options.limitnumber"
               ],
+              "orderingParams": [
+                "options.sortby",
+                "options.sortdirection"
+              ],
+              "orderingNote": "limitfrom/limitnumber is SQL OFFSET/LIMIT, and an offset over a result set with no ORDER BY has no defined page boundary — consecutive pages repeat rows and, worse, may never return others. Measured live (run 9200B480): 50,608 records fetched produced 29,002 distinct keyed rows, a 1.74x re-read, behind a run that reported success. core_enrol_get_enrolled_users documents sortby (id|firstname|lastname|siteorder) and sortdirection (ASC|DESC) alongside the limits, and stableOrderingKey below already names the key; these two params are what finally join them. Citation: packages/Integration/connectors-registry/totara/sources/totara-webservices-api-documentation.html#core_enrol_get_enrolled_users",
               "syncStrategy": "FullPullHashDiff (no server-side watermark param on the list function; content-hash + keyset resume)",
               "stableOrderingKey": "id",
               "writeSurfaceNote": "Write ENABLED (doc-derived, Gap-6 fix): Create/Delete wired via per-operation columns. enrol_manual_enrol_users CREATES a user's course-enrolment record; enrol_manual_unenrol_users DELETES it — semantically Enrolled-Users writes, not enrolment-method-object CRUD. No Update fn exists (SupportsUpdate stays false). All ops dispatch through the shared /webservice/rest/server.php by wsfunction with Moodle bracket-notation urlencoded ARRAY bodies (CreateBodyShape=literal — connector overrides body encoding). DefaultSyncDirection remains Pull; enabling bidirectional still requires the live-sandbox round-trip in Integration.Configuration.BidirectionalPreconditions.",
@@ -3494,7 +3509,10 @@
               "parentScope": {
                 "parentWsFunction": "core_course_get_courses",
                 "paramName": "courseid",
-                "parentIdField": "id"
+                "childIdField": "courseid",
+                "parentIdField": "id",
+                "pageSize": 50,
+                "budgetMs": 20000
               }
             },
             "IntegrationID": "@parent:ID",
@@ -3514,14 +3532,37 @@
             "MJ: Integration Object Fields": [
               {
                 "fields": {
+                  "Name": "courseid",
+                  "DisplayName": "Courseid",
+                  "Description": "ID of the course this enrolment is in. Stamped from the parent scope (childIdField), and the other half of this object's identity: core_enrol_get_enrolled_users answers per course, so the same user id recurs once per course they are enrolled in. Declared as a key so those rows stay distinct instead of overwriting one another, and so a delete (enrol_manual_unenrol_users) names the course it is unenrolling from.",
+                  "Type": "integer",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Courses&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Category": null,
+                  "Sequence": 0,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3C1E9A46-52B7-4D0F-9E88-7A4F5C21B9D3"
+                }
+              },
+              {
+                "fields": {
                   "Name": "id",
                   "DisplayName": "Id",
-                  "Description": "ID of the user",
+                  "Description": "ID of the user. NOT unique on this object: core_enrol_get_enrolled_users is read per COURSE, so a user enrolled in several courses is returned once per course, each time carrying THAT course's roles and groups. Identity is the composite (courseid, id) — as this object's own writeFunctions.createResponseNote has said all along.",
                   "Type": "integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": true,
-                  "IsUniqueKey": true,
+                  "IsUniqueKey": false,
                   "Length": null,
                   "AllowsNull": false,
                   "Category": null,
@@ -4470,6 +4511,14 @@
                 "createResponseIDField": null,
                 "createShape": "association/add-members or contact-id-list (no single created record id)",
                 "citation": "packages/Integration/connectors-registry/totara/sources/totara-webservices-api-documentation.html#core_cohort_add_cohort_members / #core_cohort_delete_cohort_members"
+              },
+              "parentScope": {
+                "parentWsFunction": "core_cohort_get_cohorts",
+                "paramName": "cohortids",
+                "paramStyle": "array",
+                "childIdField": "cohortid",
+                "parentIdField": "id",
+                "budgetMs": 20000
               }
             },
             "IntegrationID": "@parent:ID",
@@ -4561,11 +4610,11 @@
             "PaginationType": "None",
             "SupportsPagination": false,
             "IncrementalWatermarkField": null,
-            "DefaultQueryParams": "wsfunction=core_group_get_groups&moodlewsrestformat=json",
+            "DefaultQueryParams": "wsfunction=core_group_get_course_groups&moodlewsrestformat=json",
             "Sequence": 11,
             "Status": "Active",
             "Configuration": {
-              "wsfunction": "core_group_get_groups",
+              "wsfunction": "core_group_get_course_groups",
               "responseEnvelopeKey": null,
               "recordPath": "list[]",
               "paginationParams": [],
@@ -4580,6 +4629,15 @@
                 "createResponseIDField": "id",
                 "createShape": "record",
                 "citation": "packages/Integration/connectors-registry/totara/sources/totara-webservices-api-documentation.html#core_group_create_groups / #core_group_delete_groups"
+              },
+              "readFunctionNote": "Reads via core_group_get_course_groups(courseid), NOT core_group_get_groups(groupids[]). core_group_get_groups is a BY-ID reader — it answers with the groups you already name, so it can never enumerate a site's groups, and dispatched bare it is the same [invalidparameter] defect Cohort Members had. Nothing in Moodle lists groups site-wide; the only enumerator is per-course, and it returns the full group record, so scoping over Courses reads every group in one hop instead of two. Write functions are unchanged (core_group_create_groups / core_group_delete_groups).",
+              "parentScope": {
+                "parentWsFunction": "core_course_get_courses",
+                "paramName": "courseid",
+                "paramStyle": "scalar",
+                "childIdField": "courseid",
+                "parentIdField": "id",
+                "budgetMs": 20000
               }
             },
             "IntegrationID": "@parent:ID",
@@ -4797,11 +4855,11 @@
             "PaginationType": "None",
             "SupportsPagination": false,
             "IncrementalWatermarkField": null,
-            "DefaultQueryParams": "wsfunction=core_group_get_groupings&moodlewsrestformat=json",
+            "DefaultQueryParams": "wsfunction=core_group_get_course_groupings&moodlewsrestformat=json",
             "Sequence": 12,
             "Status": "Active",
             "Configuration": {
-              "wsfunction": "core_group_get_groupings",
+              "wsfunction": "core_group_get_course_groupings",
               "responseEnvelopeKey": null,
               "recordPath": "list[]",
               "paginationParams": [],
@@ -4816,6 +4874,15 @@
                 "createResponseIDField": "id",
                 "createShape": "record",
                 "citation": "packages/Integration/connectors-registry/totara/sources/totara-webservices-api-documentation.html#core_group_create_groupings / #core_group_update_groupings / #core_group_delete_groupings"
+              },
+              "readFunctionNote": "Reads via core_group_get_course_groupings(courseid), NOT core_group_get_groupings(groupingids[]) — same reason as Groups: the declared function is a by-id reader that cannot enumerate, and the only enumerator Moodle offers is per-course. Write functions are unchanged.",
+              "parentScope": {
+                "parentWsFunction": "core_course_get_courses",
+                "paramName": "courseid",
+                "paramStyle": "scalar",
+                "childIdField": "courseid",
+                "parentIdField": "id",
+                "budgetMs": 20000
               }
             },
             "IntegrationID": "@parent:ID",
@@ -5058,6 +5125,21 @@
                 "createResponseIDField": null,
                 "createShape": "association/add-members or contact-id-list (no single created record id)",
                 "citation": "packages/Integration/connectors-registry/totara/sources/totara-webservices-api-documentation.html#core_group_add_group_members / #core_group_delete_group_members"
+              },
+              "readFunctionNote": "core_group_get_group_members(groupids[]) is a by-id reader and nothing in Moodle lists a site's groups, so this object needs TWO hops to name a single id: core_course_get_courses -> core_group_get_course_groups(courseid) -> group ids. That is the chained parentScope below (a parentScope nested inside a parentScope). Dispatched bare, as it shipped, it is the same [invalidparameter] defect Cohort Members had.",
+              "parentScope": {
+                "parentWsFunction": "core_group_get_course_groups",
+                "paramName": "groupids",
+                "paramStyle": "array",
+                "childIdField": "groupid",
+                "parentIdField": "id",
+                "budgetMs": 20000,
+                "parentScope": {
+                  "parentWsFunction": "core_course_get_courses",
+                  "paramName": "courseid",
+                  "paramStyle": "scalar",
+                  "parentIdField": "id"
+                }
               }
             },
             "IntegrationID": "@parent:ID",

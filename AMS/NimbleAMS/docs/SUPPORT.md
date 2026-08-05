@@ -1,20 +1,25 @@
 # Nimble AMS — Supported & Proven
 
-> **Evidence tier:** 🥇 Client-DB-live (real client tenant, production data)  ·  **Last verified:** 2026-07-26  ·  **Proof DB(s):** MJ_CT48, MJ_SS_E2E
+> **Evidence tier:** 🥇 Production-live (real vendor API, real production dataset, read-only)  ·  **Last verified:** 2026-07-26  ·  **Proof DB(s):** MJ_CT48, MJ_SS_E2E
 
 ## What this connector supports
 
 **32 objects** declared across **164 fields** (source: `metadata/integration/.nimble-ams.integration.json`). 25 declare a write path; 7 are read-only (pull). 31 support incremental sync.
 
+The table below names the **26 standard-surface objects**: the managed-package objects (`NU__`/`NUINT__`
+namespace), the two standard Salesforce objects, and Nimble's own Apex REST APIs (`FuseEndpoint`, and the
+`nams/api/lms/v1` LMS resources).
+
+**The remaining 6 are classified, not named: org-local custom objects.** They are un-namespaced `__c` sObjects
+read by bare SOQL, and an un-namespaced custom object exists only in the org where it was created — so it is not
+part of any Nimble deployment's standard surface, and its name describes one org's schema rather than this
+product's. They are counted here and never enumerated. **Consequence worth knowing before you install:** a
+tenant whose org does not define them will find those 6 objects unresolvable, which is expected, not a fault.
+
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
 | Account | ✓ | `CU` | ✓ |
-| CartItem__c | ✓ | — (read-only) | ✓ |
-| CartItemLine__c | ✓ | — (read-only) | ✓ |
 | Contact | ✓ | — (read-only) | ✓ |
-| EventAnswer__c | ✓ | `CUD` | ✓ |
-| EventBadge__c | ✓ | `CUD` | ✓ |
-| EventSessionGroup__c | ✓ | `CUD` | ✓ |
 | FuseEndpoint | ✓ | — (read-only) | — |
 | LmsProduct | ✓ | — (read-only) | ✓ |
 | LmsPurchase | ✓ | `U` | ✓ |
@@ -55,7 +60,7 @@ _First 30 of 32 objects shown, alphabetically. The full catalog is the metadata 
 | Contact | Proven | 116,157 | MJ_CT48 |
 | Contact | Proven | 116,154 | MJ_SS_E2E |
 | NU__PaymentLine__c | Proven | 78,451 | MJ_CT48 |
-| NU__OrderItemLine__c | Proven `!` | 32,000 `!` | MJ_CT48 |
+| NU__OrderItemLine__c | Proven, **partial pull** | 32,000 `!` | MJ_CT48 |
 | NU__ExternalProfile__c | Proven | 8,139 | MJ_CT48 |
 | NU__Schedule__c | Proven | 2,353 | MJ_CT48 |
 | NU__Coupon__c | Proven | 1,870 | MJ_CT48 |
@@ -93,7 +98,23 @@ _First 30 of 32 objects shown, alphabetically. The full catalog is the metadata 
 
 **Total proven rows: 618,547** across 37 distinct objects (40 object×DB landings).
 
-> ℹ️ **`!` = round-number worth a glance (1 object: NU__OrderItemLine__c=32000).** These counts are ≥200 and exactly divisible by 100. That is *sometimes* the signature of an un-paged pull cap — so it's flagged for a look — but a round total is **not** itself evidence of truncation, and where the run's `forward.completeness` check passed, the pull was complete and the round number is just the real count. Treat `!` as "confirm, don't assume broken."
+> ⚠️ **`!` = round-number flag, and on `NU__OrderItemLine__c` it was a real partial pull — confirmed, not assumed.**
+> The round-number heuristic (≥200 and divisible by 100) only says "look"; the test that actually settles it is the
+> **span of the object's own watermark field**. A complete pull of a live object spans the system's whole history;
+> a cursor stopped mid-stream spans a moment. Checked in the proof DB: `NU__Order__c` (140,575) spans **2018 →
+> 2026**, while `NU__OrderItemLine__c` (32,000 = 16 × the 2,000-record Salesforce page) spans **7 seconds**. So its
+> count is a contiguous prefix, not the table.
+>
+> **This is a run-window limit, not a connector defect, and nothing was silently skipped.** `FetchChanges` returns
+> one Salesforce page per call, takes `HasMore` verbatim from the vendor's `done` flag, and sends **no SOQL
+> `LIMIT`** — precisely so the vendor cannot report `done=true` at an artificial cap. There is no page cap,
+> max-records constant, or fetch loop in the package, so nothing here can produce a 16-page stop. And because
+> `NewWatermarkValue` is returned **only** when `done` is true, the object has **no watermark row at all** in the
+> proof DB: the next sync resumes from the cursor instead of skipping ahead. An unfinished pull stays unfinished
+> rather than becoming permanent data loss.
+>
+> **How to re-check any object here:** compare `MIN`/`MAX` of its declared watermark field against the run date. A
+> span of seconds, or a `MAX` far behind the run, means the pull was stopped — regardless of how round the count is.
 
 ### Push (write / bidirectional)
 
@@ -103,6 +124,9 @@ _First 30 of 32 objects shown, alphabetically. The full catalog is the metadata 
 ## Residual gap (honest)
 
 - Live **write side-effects** — never executed against a real tenant (needs `allowWrite` + a disposable record).
+- **No large object has been proven read start-to-finish in one window.** `NU__OrderItemLine__c` is the documented
+  case above: paging works, follows the vendor's own cursor, and resumes — but the pull was stopped, not finished.
+  Nothing about that is credential-limited; it needs a run allowed to reach the end.
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
 
