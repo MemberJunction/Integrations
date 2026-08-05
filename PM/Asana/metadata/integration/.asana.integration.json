@@ -1,0 +1,1497 @@
+[
+  {
+    "fields": {
+      "Name": "Asana",
+      "Description": "Asana work-management connector. Syncs workspace users, projects, top-level tasks and subtasks over the Asana REST API v1.0 with a personal-access-token bearer credential. Read-only.",
+      "ClassName": "@memberjunction/connector-asana",
+      "ImportPath": "@memberjunction/connector-asana",
+      "NavigationBaseURL": "https://app.asana.com",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=API Key",
+      "Icon": "fa-solid fa-diagram-project"
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "Users",
+            "DisplayName": "Users",
+            "Description": "Members of the Asana workspace. Read-only over the API.",
+            "Category": "People",
+            "APIPath": "/users",
+            "ResponseDataKey": "data",
+            "DefaultQueryParams": "{\"opt_fields\":\"gid,name,email,resource_type\"}",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "Cursor",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "Sequence": 1,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/users\"}"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "gid",
+                  "DisplayName": "Gid",
+                  "Description": "Asana global id of the user. Stable across the workspace and the primary key of this object.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "0BDE6DE0-C6C7-418F-9484-EFF4AD9F644D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.339Z",
+                  "checksum": "9dd1baccfb02085d3913b52458d087f1bd93a3972dbb435694c3c1e31c620686"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "The user's full display name as a single string. Asana stores no separate first/last name.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "B7C9F2EA-8384-4C5F-B3FA-93C0CF776383"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.358Z",
+                  "checksum": "8dce942fd35b4e9b518863d178825e38e098fc4de91c424eea10bc6b7eb4900d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "The user's email address. Visible only when the calling token has permission to see it.",
+                  "Type": "nvarchar",
+                  "Length": 320,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "80D98088-FBB4-4912-9B28-21F27DE156C1"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.380Z",
+                  "checksum": "dcc8a9c0be73c5253a9e20085af22e944e4c5207701b4937a44a02b7a3210d2d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "resource_type",
+                  "DisplayName": "Resource Type",
+                  "Description": "Asana resource type discriminator; always \"user\" for this object.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D4A0C83E-633A-461E-9A4A-94BA2B5F4684"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.402Z",
+                  "checksum": "83e6bf017e5562a79451c034a9a9bb4d657772316fadc8b56d31171c8070bb4c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "1E0CA399-4F6C-449F-83C8-FBEB45778D30"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T18:47:57.229Z",
+            "checksum": "315bd6b638c2e288955ce9b71f98659d5a00e40a6a2f8b2cb3477b04adeebf36"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "Projects",
+            "DisplayName": "Projects",
+            "Description": "Projects in the Asana workspace. Read-only over the API.",
+            "Category": "Work",
+            "APIPath": "/projects",
+            "ResponseDataKey": "data",
+            "DefaultQueryParams": "{\"opt_fields\":\"gid,name,resource_type,archived,color,icon,notes,start_on,due_on,current_status.color,current_status.title,current_status.text,owner.gid,team.gid,workspace.gid,permalink_url,public,created_at,modified_at\"}",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "Cursor",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "Sequence": 2,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/projects\"}"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "gid",
+                  "DisplayName": "Gid",
+                  "Description": "Asana global id of the project. Primary key of this object and the value substituted into the Tasks door.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "AF2466DB-55E7-4245-8F7D-9183A6FC3D2C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.422Z",
+                  "checksum": "42e6b1816b62b9c429544c273759ddc33b2da6a328b302b54f984a02dd8b2055"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Project name as shown in Asana.",
+                  "Type": "nvarchar",
+                  "Length": 500,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "7EFF68CA-1433-4064-B024-80D9DCC67764"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.446Z",
+                  "checksum": "64d47cb95ec623cc6addcb533b5ec9e7b87e92b603cd826ded5e2404541e95a3"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "resource_type",
+                  "DisplayName": "Resource Type",
+                  "Description": "Asana resource type discriminator; always \"project\" for this object.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "409F7E05-CBBE-4357-AECE-9E62DB4B3C6B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.466Z",
+                  "checksum": "0acd31800f3116699efe28e56cd85736d089951be47677956a74520ab8b1c787"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "archived",
+                  "DisplayName": "Archived",
+                  "Description": "True when the project has been archived in Asana.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "E15582A4-5E03-403C-83F5-370D4F59135A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.487Z",
+                  "checksum": "5366e8c46ac2d4c29f5343c38428a89a045880a41f749dce8d4b91d03a967e0a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "color",
+                  "DisplayName": "Color",
+                  "Description": "Asana colour token for the project (e.g. \"dark-blue\"). Null when no colour is set.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "03FA3E1B-3910-4F33-A840-0A609FAE61F4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.507Z",
+                  "checksum": "25eb067ec00feb087d443e87478bf895debbec0c163c38b65cff30b0ff1051ad"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "icon",
+                  "DisplayName": "Icon",
+                  "Description": "Asana icon token for the project (e.g. \"chart\"). Null when no icon is set.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "ABE38B57-D611-4CF4-A058-AEBFA4D70969"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.523Z",
+                  "checksum": "35611e49cb1b69dd3d2670a0bb7612ea608490b9488687cc98dc16522085d408"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "notes",
+                  "DisplayName": "Notes",
+                  "Description": "Free-text project description.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F080C121-74D5-44EB-91B2-9428BF1BF3F7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.555Z",
+                  "checksum": "6a46a8cae1abe95c423146154ee159374dd635e0f8478605f6e4f17f975b6483"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "start_on",
+                  "DisplayName": "Start On",
+                  "Description": "Project start date (date only). Null when unset.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "2541AC20-FD80-475C-8CF9-DEAA46A13288"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.576Z",
+                  "checksum": "2e40dab600b4d12c7d99ee4a8b2e999587e079178f3ae0993a8d915d2d08c136"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "due_on",
+                  "DisplayName": "Due On",
+                  "Description": "Project due date (date only). Null when unset.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "AAFB9D28-EBEE-4267-B260-25DFC09CAD20"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.595Z",
+                  "checksum": "a92e92114feb2825fc2b8880fb208f23b9ae7e69a862fdc78bd6487265884191"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "current_status_color",
+                  "DisplayName": "Current Status Color",
+                  "Description": "Colour of the latest status update (\"green\"/\"yellow\"/\"red\"), flattened from the nested current_status object.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "004E3E25-F622-46F6-ACFB-5CDF072E64C1"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.616Z",
+                  "checksum": "6d1f4709deb2808151b75d1692bf97694d58cea02426afdabc34cbd741f40f5a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "current_status_title",
+                  "DisplayName": "Current Status Title",
+                  "Description": "Title of the latest status update, flattened from the nested current_status object.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "08AFB5F9-8525-4CC5-95FA-6F4091BFA2DF"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.637Z",
+                  "checksum": "efca48d0441c1bb6136e5126b02b02fdda5cefca38819a92abc29041b918af87"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "current_status_text",
+                  "DisplayName": "Current Status Text",
+                  "Description": "Body text of the latest status update, flattened from the nested current_status object.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "C66765A1-B8CD-4FB5-BDFB-8463986915C2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.659Z",
+                  "checksum": "78088708aec277fb70e6e86bb1ae785c372484be36f9a9f9ff955a9e843da344"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "owner_gid",
+                  "DisplayName": "Owner Gid",
+                  "Description": "Gid of the project owner, flattened from the nested owner object. Null when the project has no owner.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "3E742613-46DB-47FE-ADDF-27E0DCFA6FB2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.686Z",
+                  "checksum": "77577afcd9afad832c0f03b3707420027583239b371a2c8f608f1d2e9a978174"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "team_gid",
+                  "DisplayName": "Team Gid",
+                  "Description": "Gid of the owning team, flattened from the nested team object.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "34E107C8-8864-4AA1-8524-81AD2EAADC27"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.710Z",
+                  "checksum": "8c99fd923e579dc590f63bc8155a3af92fc0f27718dff0677ffc0376169acfc9"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "workspace_gid",
+                  "DisplayName": "Workspace Gid",
+                  "Description": "Gid of the workspace the project belongs to, flattened from the nested workspace object.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "80C50ADA-894B-4CC6-82BD-8E207B889A63"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.734Z",
+                  "checksum": "d5da17272ed13b53024cd2f57a8e3db4ab7f5a55f5b31fc1242848b89c1994a5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "permalink_url",
+                  "DisplayName": "Permalink URL",
+                  "Description": "Canonical Asana web URL for the project.",
+                  "Type": "nvarchar",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "6D25A110-10F2-4030-8372-B97CCEE6A52C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.753Z",
+                  "checksum": "e532da560beee7fae68cc1f5dabe37b9112dbaf9328446c4bc45e3d1a2893292"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "public",
+                  "DisplayName": "Public",
+                  "Description": "True when the project is visible to the whole team rather than only its members.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 17,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "3D0A6F3E-9550-46E4-B51A-63137E962B48"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.786Z",
+                  "checksum": "ae7997f1937209a18de372f100633de6ba5b59ace47112636de5a0557b59eae9"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "When the project was created in Asana.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 18,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "2A3E39B1-DB59-4F3D-A327-4FFD9F37F49B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.816Z",
+                  "checksum": "b3707147a9a59773bf4ecdfd2cc10beeab866cd7f71860771d85f43447e5c29b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "modified_at",
+                  "DisplayName": "Modified At",
+                  "Description": "When the project was last modified in Asana.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 19,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "84E88BFA-C4A0-43D1-A29B-8F0573BC3AD8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.843Z",
+                  "checksum": "dc74de81a525ec3ef4dc180bf8e47eca546c77bed30a74ca332c0f102926b7ee"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "ADA89E43-B391-48C1-8A4C-6737674294DC"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T18:47:57.253Z",
+            "checksum": "76f2e4aaf5d1788512ef83f8b352cd4873256e81adf0959bd1a2b28a4a8c9ff2"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "Tasks",
+            "DisplayName": "Tasks",
+            "Description": "Top-level tasks, fetched one project at a time. Asana has no workspace-wide task listing, so this is a templated child door over Projects; subtasks are excluded here and sync as their own object.",
+            "Category": "Work",
+            "APIPath": "/tasks?project={project_gid}",
+            "ResponseDataKey": "data",
+            "DefaultQueryParams": "{\"opt_fields\":\"gid,name,resource_type,completed,completed_at,assignee.gid,parent.gid,start_on,due_on,due_at,notes,permalink_url,created_at,modified_at,memberships.section.name,custom_fields\"}",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "Cursor",
+            "SupportsIncrementalSync": true,
+            "SupportsWrite": false,
+            "Sequence": 3,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/tasks?project={project_gid}\",\"parentObjectName\":\"Projects\",\"parentObjectIDFieldName\":\"project_gid\"}",
+            "IncrementalWatermarkField": "modified_at"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "gid",
+                  "DisplayName": "Gid",
+                  "Description": "Asana global id of the task. Primary key of this object and the value substituted into the Subtasks door.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "1D81ECD6-4D5A-4DDE-97D0-24B42E0C9CC8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.868Z",
+                  "checksum": "7212322dc75a9ad93cf5f780cdbfc35402b2e0881916036538f209ca272859de"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "project_gid",
+                  "DisplayName": "Project Gid",
+                  "Description": "Gid of the project this task was fetched under. Stamped by the engine from the parent record it iterated, not returned by Asana on the task itself.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A44D4692-7CA1-4DAE-B535-81F2800A04F5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.894Z",
+                  "checksum": "aa226ca0650fdaef8a0cdb5c5281b071d75c83a853fef36df6a208187f527f26"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Task title as shown in Asana.",
+                  "Type": "nvarchar",
+                  "Length": 500,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D25633AD-A3CF-4C83-BAD3-1DFDA661CC68"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.919Z",
+                  "checksum": "676688007e360ff2aeb54b9602acc44fc3d1817305c307a211f46bb0c6c81698"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "resource_type",
+                  "DisplayName": "Resource Type",
+                  "Description": "Asana resource type discriminator; always \"task\" for this object.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D66CD34B-DA49-41D0-960D-6C316C8F7376"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.944Z",
+                  "checksum": "ae62a8280d437775d5097d4b281e5115024a013b042f63f10092e119d5e0d839"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "completed",
+                  "DisplayName": "Completed",
+                  "Description": "True once the task has been marked complete.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "960CE42C-6BFE-4070-B66F-161597A1CD24"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.970Z",
+                  "checksum": "cb08b895696cbaecbf6e726746ced2eadf6b1179724ba4ec8fe3e3258cc90d1a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "completed_at",
+                  "DisplayName": "Completed At",
+                  "Description": "When the task was marked complete, or null while it is open.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "49060404-614E-4525-8CFA-09CBE1F9C254"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:57.994Z",
+                  "checksum": "8009a19f3dfacf049d9321987b3a31f237ab7bec7b5dc76e70520da6ee6d2e7b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "assignee_gid",
+                  "DisplayName": "Assignee Gid",
+                  "Description": "Gid of the assigned user, flattened from the nested assignee object. Null when unassigned.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "AB9B8435-3A06-4292-98D5-634822BBB20D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.012Z",
+                  "checksum": "4efd520cf9e8805e9c954fb2ca8f53b5f311d56ba9c0d5ffbeff5fe399d1aafc"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "parent_gid",
+                  "DisplayName": "Parent Gid",
+                  "Description": "Gid of this task's parent task, flattened from the nested parent object. Null for top-level tasks.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "41C4C17F-7444-4B72-85DD-A682E2CBA0D1"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.048Z",
+                  "checksum": "c18e8f799fd671f9eeadd61b1e151cc4d451a284fe2fe3a3567f096b8dd56332"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "start_on",
+                  "DisplayName": "Start On",
+                  "Description": "Start date (date only). Null when the task has no start date.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D78F7B69-82DA-4B94-A294-A1248049C845"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.067Z",
+                  "checksum": "8d6b5f69f3c29b0e52dfb28e552d7c6a9164503f3816c6c988b87cd6ba9c5b6b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "due_on",
+                  "DisplayName": "Due On",
+                  "Description": "Due date (date only). Null when the task has no due date, or when it uses a due timestamp instead.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "86E1DF30-7109-4FE9-93D4-36BE85C22B5A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.092Z",
+                  "checksum": "2aaea099fef4762ccb39559507cae71dba89eb8527adab16eb3b786d2326737d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "due_at",
+                  "DisplayName": "Due At",
+                  "Description": "Due timestamp when the task carries a time-of-day deadline rather than a plain due date.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "B9E1679E-CDCD-47C7-B14F-BD0BD28423AB"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.118Z",
+                  "checksum": "5e0c64061a5251ef9cfc4350890322001527579af2a69a3796d911dd438fe590"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "notes",
+                  "DisplayName": "Notes",
+                  "Description": "Free-text task description.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "476E8FD3-B9A9-4DDB-BF5E-9A1215A94319"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.142Z",
+                  "checksum": "3ee988c5a5fbd789fedccc9d7dd6a7d27ddc38c9614f044082650528839510a8"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "permalink_url",
+                  "DisplayName": "Permalink URL",
+                  "Description": "Canonical Asana web URL for the task.",
+                  "Type": "nvarchar",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "1DE0B0DC-7421-420A-B842-1E10858800BC"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.168Z",
+                  "checksum": "689e0b85547e85cb4157c802517f323a0561427fcd93a96492400794103f3fe5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "When the task was created in Asana.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F1BABAB3-B90D-45D1-9269-285ED63C9DF7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.196Z",
+                  "checksum": "d4cd2badabf5c8f158dfb6f784329bbf8580fac7d99698b295ca118ef7b8b883"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "modified_at",
+                  "DisplayName": "Modified At",
+                  "Description": "When the task was last modified in Asana. Drives incremental sync via modified_since.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "62A645C9-A275-4C95-91E4-F06F0A9E1EC8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.222Z",
+                  "checksum": "d1f41a7a7f99837566551b6925161b9d0190bd3f39bc4401c94104c284ccb24c"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "section_name",
+                  "DisplayName": "Section Name",
+                  "Description": "Name of the section the task sits in, flattened from the first project membership. Null when the task is in no section.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "0BCB695D-2400-478F-8782-3045F98A4E90"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.246Z",
+                  "checksum": "2b18820a104abcc5d9fddbaf66ce3299ada98a1be711cea63b582699cd94d2aa"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "custom_fields_json",
+                  "DisplayName": "Custom Fields JSON",
+                  "Description": "The task's custom_fields array serialized as JSON. Custom fields are configured per workspace, so they cannot be declared as columns; downstream consumers project the ones they care about out of this blob.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 17,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "1B2A822F-4F8C-430D-BDB9-6670828D2ED0"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.264Z",
+                  "checksum": "900a81d96c907e05cc2887f51c7c871d85169a4bdf21ca8f2cb834cd093f0aa4"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "116A212E-8725-4277-AEB5-0F83C6C5B6E8"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T18:47:57.277Z",
+            "checksum": "940da2a82e57177723c88343b123d7e4826c95e294568b3b7f100a6fc3aea6b3"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "Subtasks",
+            "DisplayName": "Subtasks",
+            "Description": "Subtasks, fetched one parent task at a time. Asana returns the same task resource here as for a top-level task, so the shape matches Tasks with the parent scope stamped on.",
+            "Category": "Work",
+            "APIPath": "/tasks/{parent_task_gid}/subtasks",
+            "ResponseDataKey": "data",
+            "DefaultQueryParams": "{\"opt_fields\":\"gid,name,resource_type,completed,completed_at,assignee.gid,parent.gid,start_on,due_on,due_at,notes,permalink_url,created_at,modified_at,memberships.section.name,custom_fields\"}",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "Cursor",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "Sequence": 4,
+            "Status": "Active",
+            "Configuration": "{\"apiPath\":\"/tasks/{parent_task_gid}/subtasks\",\"parentObjectName\":\"Tasks\",\"parentObjectIDFieldName\":\"parent_task_gid\"}"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "gid",
+                  "DisplayName": "Gid",
+                  "Description": "Asana global id of the subtask. Subtasks are tasks, so this shares the Tasks id space.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D3E76396-E926-4290-A50D-C5EA00CF0BB8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.296Z",
+                  "checksum": "6d85569fb5895adc69a521215599a5e74171dc41e9fdc1de4fca7f9c6a3d8833"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "parent_task_gid",
+                  "DisplayName": "Parent Task Gid",
+                  "Description": "Gid of the task this subtask was fetched under. Stamped by the engine from the parent record it iterated.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 2,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "173EF2BB-A6FB-4E25-866F-23EF126CD75C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.323Z",
+                  "checksum": "63a870bb722cb36037c579600771b34f9620081d48b77e459a137a98611d8888"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Task title as shown in Asana.",
+                  "Type": "nvarchar",
+                  "Length": 500,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "BB7D9F90-516A-4DC2-AC9C-1571E635C240"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.344Z",
+                  "checksum": "676688007e360ff2aeb54b9602acc44fc3d1817305c307a211f46bb0c6c81698"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "resource_type",
+                  "DisplayName": "Resource Type",
+                  "Description": "Asana resource type discriminator; always \"task\" for this object.",
+                  "Type": "nvarchar",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "567FA576-7C56-4222-A7B5-011183033E1F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.373Z",
+                  "checksum": "ae62a8280d437775d5097d4b281e5115024a013b042f63f10092e119d5e0d839"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "completed",
+                  "DisplayName": "Completed",
+                  "Description": "True once the task has been marked complete.",
+                  "Type": "bit",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "06393606-9CD7-464B-9394-B0DC378124C5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.398Z",
+                  "checksum": "cb08b895696cbaecbf6e726746ced2eadf6b1179724ba4ec8fe3e3258cc90d1a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "completed_at",
+                  "DisplayName": "Completed At",
+                  "Description": "When the task was marked complete, or null while it is open.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "2946752F-979D-4B58-B781-20A9C0018D2C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.418Z",
+                  "checksum": "8009a19f3dfacf049d9321987b3a31f237ab7bec7b5dc76e70520da6ee6d2e7b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "assignee_gid",
+                  "DisplayName": "Assignee Gid",
+                  "Description": "Gid of the assigned user, flattened from the nested assignee object. Null when unassigned.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "6F7E0821-91C0-441B-964E-9698D45F5360"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.438Z",
+                  "checksum": "4efd520cf9e8805e9c954fb2ca8f53b5f311d56ba9c0d5ffbeff5fe399d1aafc"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "parent_gid",
+                  "DisplayName": "Parent Gid",
+                  "Description": "Gid of this task's parent task, flattened from the nested parent object. Null for top-level tasks.",
+                  "Type": "nvarchar",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "DC276DCE-25BF-47F7-908A-E4C7503B4121"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.456Z",
+                  "checksum": "c18e8f799fd671f9eeadd61b1e151cc4d451a284fe2fe3a3567f096b8dd56332"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "start_on",
+                  "DisplayName": "Start On",
+                  "Description": "Start date (date only). Null when the task has no start date.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4F6442A7-7A76-436C-B3EB-2C9168DF771E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.477Z",
+                  "checksum": "8d6b5f69f3c29b0e52dfb28e552d7c6a9164503f3816c6c988b87cd6ba9c5b6b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "due_on",
+                  "DisplayName": "Due On",
+                  "Description": "Due date (date only). Null when the task has no due date, or when it uses a due timestamp instead.",
+                  "Type": "date",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F03904A5-920B-494E-9E49-C27E0C75069B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.497Z",
+                  "checksum": "2aaea099fef4762ccb39559507cae71dba89eb8527adab16eb3b786d2326737d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "due_at",
+                  "DisplayName": "Due At",
+                  "Description": "Due timestamp when the task carries a time-of-day deadline rather than a plain due date.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "4BEEE5A6-BB48-43B3-ABB2-5443BB5DDCA0"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.525Z",
+                  "checksum": "5e0c64061a5251ef9cfc4350890322001527579af2a69a3796d911dd438fe590"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "notes",
+                  "DisplayName": "Notes",
+                  "Description": "Free-text task description.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "DF6C1D1B-01A6-4E30-8611-3960A6200FCA"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.547Z",
+                  "checksum": "3ee988c5a5fbd789fedccc9d7dd6a7d27ddc38c9614f044082650528839510a8"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "permalink_url",
+                  "DisplayName": "Permalink URL",
+                  "Description": "Canonical Asana web URL for the task.",
+                  "Type": "nvarchar",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "D43834B4-35CC-48FF-8088-F3E53E07589A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.565Z",
+                  "checksum": "689e0b85547e85cb4157c802517f323a0561427fcd93a96492400794103f3fe5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "When the task was created in Asana.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "F3A73767-F3AF-4208-8D31-4E12FB25D8C8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.584Z",
+                  "checksum": "d4cd2badabf5c8f158dfb6f784329bbf8580fac7d99698b295ca118ef7b8b883"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "modified_at",
+                  "DisplayName": "Modified At",
+                  "Description": "When the task was last modified in Asana. Drives incremental sync via modified_since.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "47358599-F065-461C-9DD2-7D7C881AEF65"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.604Z",
+                  "checksum": "d1f41a7a7f99837566551b6925161b9d0190bd3f39bc4401c94104c284ccb24c"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "section_name",
+                  "DisplayName": "Section Name",
+                  "Description": "Name of the section the task sits in, flattened from the first project membership. Null when the task is in no section.",
+                  "Type": "nvarchar",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "3C4302BB-937F-4540-A323-D9A0FF484732"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.623Z",
+                  "checksum": "2b18820a104abcc5d9fddbaf66ce3299ada98a1be711cea63b582699cd94d2aa"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "custom_fields_json",
+                  "DisplayName": "Custom Fields JSON",
+                  "Description": "The task's custom_fields array serialized as JSON. Custom fields are configured per workspace, so they cannot be declared as columns; downstream consumers project the ones they care about out of this blob.",
+                  "Type": "nvarchar",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 17,
+                  "Status": "Active"
+                },
+                "primaryKey": {
+                  "ID": "A8A199B3-3B1C-4184-8A60-A6449D477D3F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-05T18:47:58.640Z",
+                  "checksum": "900a81d96c907e05cc2887f51c7c871d85169a4bdf21ca8f2cb834cd093f0aa4"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "F4681E2B-AEFF-425D-A683-AF09EF22CF11"
+          },
+          "sync": {
+            "lastModified": "2026-08-05T18:47:57.295Z",
+            "checksum": "9d1d5ca6588d929e6074cd5bb76dff59881f6878a4b9e67d660a42a592662a7f"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "DD73DD85-93F1-4D6C-A642-E5D64CFEEA04"
+    },
+    "sync": {
+      "lastModified": "2026-08-05T18:47:57.173Z",
+      "checksum": "699882925964856742ab0ac45c90aa4b3aa00f127eea04f73a0d3a0489484d45"
+    }
+  }
+]
