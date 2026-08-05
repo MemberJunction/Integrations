@@ -364,13 +364,26 @@ hand-author the `.pg.sql` with the jsonb body, as `UsersIdWindowScan` does.
 
 ---
 
-## 7. `Enrolled Users` needs ~4 hours of vendor time for one full pull, and the catalog is why
+## 7. `Enrolled Users` — the healthy vendor cost is ~1.8 h per full pull; the 8.6 h run was mostly a broken deadline
 
 Live read-only run `9200B480` ran **8.6 hours** on this object alone and did not finish: 208 fetch batches,
-**50,608 records fetched**, **29,002 rows** in `totara.Enrolled_Users`, **64 of 428 courses** covered. Two of the
-three causes were connector defects and are fixed (see
-`.changeset/totara-paged-walk-throughput-and-ordering.md`); this item is the third, which is not a bug and cannot
-be fixed without a catalog decision someone has to make deliberately.
+**50,608 records fetched**, **29,002 rows** in `totara.Enrolled_Users`, **64 of 428 courses** covered.
+
+**The first version of this item said the vendor is simply this slow, and that was wrong.** It rested on a single
+per-record figure and the p50 of the batch durations, both of which look healthy — and stopped there. The run did
+not go where p50 says it went. Split the 208 batches by duration:
+
+| Batches | Records | Fetch time | Per record |
+|---|---|---|---|
+| 193 healthy | 48,720 (96.3%) | 0.92 h | **68 ms** |
+| 15 pathological | 1,888 (3.7%) | 3.30 h | **6,296 ms** |
+
+**3.7% of the records consumed 78% of the fetch time**, and at wall-clock level 31 of the 207 cycles ate **84%** of
+the run. The largest single batch was **1,063,987 ms against a 20,000 ms budget** — 53× the deadline the connector
+believed it was enforcing. That is not a vendor throughput limit, it is two connector defects, both now fixed:
+`ctx.RateLimitAcquire()` was awaited outside the timer with no clock re-check after it, so a throttled walk had no
+deadline at all; and 24 requests aborted on the 25,000 ms read timeout each *retired* a course whose enrolments
+were unread. See `.changeset/totara-parent-walk-deadline-and-transient-retry.md`.
 
 **Measured, from the run log:**
 
@@ -379,14 +392,22 @@ be fixed without a catalog decision someone has to make deliberately.
 | Wall clock | 30,972 s (8.6 h) | first `sync.fetch.batch.start` → last `…complete` |
 | Fetch time | 15,207 s (49%) | sum of `durationMs` |
 | Persist time | 15,766 s (51%) | sum of gaps between a batch completing and the next starting |
-| Batch fetch, p50 | 17,438 ms | `durationMs` percentiles; p90 19,702, and 15 batches over 60 s (max **1,064 s**) |
+| Batch fetch, p50 / p90 / max | 17,438 / 19,702 / **1,063,987** ms | `durationMs` percentiles — p50 is inside budget and tells you nothing about where the run went |
+| Requests aborted on the read deadline | 24, across 24 distinct courses at mostly shallow offsets | `did not respond within 25000ms` — intermittent vendor slowness, not a deep-offset effect |
 | Page size | 50 records | `parentScope.pageSize` |
-| **Per-record vendor cost** | **~68 ms** | ~3.4 s per 50-record request, and it is **linear in rows** — the code's own earlier live note measured ~26 s for a 250-row page |
+| **Healthy per-record vendor cost** | **~68 ms** | 193 batches, and it is **linear in rows** — the code's own earlier live note measured ~26 s for a 250-row page |
 
-The per-record cost is the wall. It is linear, so **enlarging the page buys nothing**: five 50-row requests and
-one 250-row request cost the same ~17 s, which is also why the 20000ms budget fits about 250 records however it
-is sliced. At 68 ms/record a complete site pull is **~4 hours of pure vendor time** with both defects fixed and
-every millisecond of connector and engine overhead removed.
+**What a full pull actually costs.** The whole site is ≈**93,000 enrolment rows** (17,937 for the site course plus
+~176 × 428 for the rest), so ~3.2× what has been read so far. At the healthy 68 ms/record that is **≈1.8 hours of
+vendor time**, not the ~4 h this item previously claimed — that figure came from scaling 29,002 rows by 428/64
+courses, which double-counts the already-completed site course.
+
+Per-record cost is linear, so enlarging the page does not reduce *vendor* time: five 50-row requests and one
+250-row request cost the same ~17 s, which is also why the 20000ms budget fits about 250 records however it is
+sliced. It does change something else, though, and the earlier "enlarging the page buys nothing" overstated it:
+fewer, larger requests mean fewer independent chances to hit the intermittent stall above, at the cost of losing
+more work when one does. That is a real trade-off on this endpoint rather than a no-op, and it is left alone for
+now because the deadline fix addresses the stall directly.
 
 **Why each record is that expensive:** `core_enrol_get_enrolled_users` returns a full user profile per
 *enrolment*, and this catalog declares all 29 of those fields — including `groups`, `roles`, `preferences`,

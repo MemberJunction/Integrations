@@ -81,11 +81,16 @@
 > enrolled in, so 17,937 of these 29,002 rows (62%) are one course, and string-sorted ids walk it first — hours
 > pass showing one `courseid`; (2) **44% of what was fetched was re-read** — 50,608 records fetched produced
 > 29,002 distinct rows, because the keyset cursor can hold only one mid-parent offset and a second concurrent
-> lane restarted from 0 every call. That was a defect and it is **fixed**: paged parent walks now run one parent
-> at a time; (3) **~68 ms of vendor time per record, linear in rows**, because `core_enrol_get_enrolled_users`
-> returns a full user profile per enrolment including the `groups`/`roles`/`preferences`/`enrolledcourses`
-> aggregates. Enlarging the page buys nothing. `options.userfields` would trim it but drops declared columns, so
-> it is written up with the numbers rather than applied silently. Separately fixed on the correctness side: the
+> lane restarted from 0 every call. That was a defect and it is **fixed**: the cursor now carries an offset per
+> parent, so every lane resumes and paged walks keep the engine's concurrency; (3) **~68 ms of vendor time per
+> record, linear in rows**, because `core_enrol_get_enrolled_users` returns a full user profile per enrolment
+> including the `groups`/`roles`/`preferences`/`enrolledcourses` aggregates. Larger pages do not reduce that
+> per-record cost. `options.userfields` would trim it but drops declared columns, so it is written up with the
+> numbers rather than applied silently. **Two further defects came out of re-reading the same run by batch
+> duration instead of by percentile**: the rate-limit wait sat *outside* the fetch deadline (one call reached
+> **1,063,987 ms against a 20,000 ms budget**), and a transient read timeout **retired** its course — 24 courses
+> were left partly read behind a green run. Both fixed; abandoning a parent now always emits `PARENT_ABANDONED`.
+> Separately fixed on the correctness side: the
 > offset paging sent **no `ORDER BY`**, which risks silent gaps as well as overlap; `orderingParams` now sends
 > `sortby`/`sortdirection` from the catalog's long-declared `stableOrderingKey`.
 
@@ -127,7 +132,7 @@ remaining cause is a connector defect: both open defects on that run have since 
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
 - **Coverage:** 10 of 28 declared objects have proven rows — every object this site's token can reach and key, plus one (`Groupings`) proven reachable and empty. The other 18 are attributed above (13 token-scope, 4 keyless, 1 empty), not untested.
-- **`Enrolled Users` has never been read to completion on this site** — 64 of 428 courses in 8.6 hours. The re-read defect is fixed; the remaining ~4 hours is vendor throughput, quantified in `docs/REQUIRED-FIXES.md` item 7.
+- **`Enrolled Users` has never been read to completion on this site** — 64 of 428 courses in 8.6 hours. Three defects in that run are fixed (re-read, unbounded deadline, transient-retire). At the measured healthy rate the ≈93,000-row site is **≈1.8 hours** of vendor time; that estimate is not yet confirmed by a completed run. Quantified in `docs/REQUIRED-FIXES.md` item 7.
 
 ---
 

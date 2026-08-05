@@ -114,7 +114,8 @@ interface CapturedRequest { url: string; method: string; headers: Record<string,
 
 class MockedTotaraConnector extends TotaraConnector {
     public Captured: CapturedRequest[] = [];
-    public Responses: RESTResponse[] = [];
+    /** A queued `Error` is THROWN in request order — transport faults (timeouts, resets) never reach a body. */
+    public Responses: Array<RESTResponse | Error> = [];
     public IOFixtures = new Map<string, MJIntegrationObjectEntity>();
     public IOFFixtures = new Map<string, MJIntegrationObjectFieldEntity[]>();
 
@@ -128,6 +129,7 @@ class MockedTotaraConnector extends TotaraConnector {
         this.Captured.push({ url, method, headers, body: body as MoodleRPCRequest | undefined });
         const next = this.Responses.shift();
         if (!next) throw new Error(`MockedTotaraConnector: no canned response queued for ${method} ${url}`);
+        if (next instanceof Error) throw next;
         return next;
     }
 
@@ -153,6 +155,10 @@ class MockedTotaraConnector extends TotaraConnector {
     }
     public queue(...bodies: unknown[]): void {
         for (const b of bodies) this.Responses.push({ Status: 200, Body: b, Headers: {} });
+    }
+    /** Queues a THROWN transport fault at this point in the request order (a read deadline, a reset socket). */
+    public queueError(message: string): void {
+        this.Responses.push(new Error(message));
     }
 
     /**
@@ -735,25 +741,127 @@ describe('TotaraConnector — FetchChanges (Moodle REST-RPC read)', () => {
         expect(c2.Captured[2].body?.Params).toMatchObject({ courseid: '2', 'options[0][value]': 0 });
     });
 
-    it('PARENT-SCOPED: a PAGED walk runs ONE parent at a time however much concurrency the engine offers', async () => {
-        // The cursor can name exactly one mid-parent resume offset, and only for the head of the covered
-        // prefix. Read two parents concurrently and let the budget stop both, and the second lane's offset is
-        // discarded — so it re-reads its pages from 0 on the next call, every call. Live (MaxConcurrency 2,
-        // run 9200B480): 50,608 records fetched for 29,002 rows, a 1.74x re-read that was purely this.
+    it('PARENT-SCOPED: a PAGED walk KEEPS the engine concurrency (the re-read cause is in the cursor, not the lanes)', async () => {
+        // This walk was forced SERIAL to stop a 1.74x re-read: with a single-slot cursor, only the head of the
+        // covered prefix could carry a mid-parent offset, so a second lane's offset was discarded and that lane
+        // restarted from 0 on every call (live, MaxConcurrency 2, run 9200B480: 50,608 records fetched for
+        // 29,002 rows). Serialising fixed the waste by REMOVING the parallelism — a poor trade on an object
+        // whose healthy cost is 68ms/record and which has never been read to completion. The cursor now carries
+        // an offset per parent, so the cause is gone; this asserts the walk is not silently serial again.
         const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
             paginationParams: ['options.limitfrom', 'options.limitnumber'],
             parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', pageSize: 2 } });
-        c.seedIO(makeIO({ ID: 'io-eu-seq', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.seedIO(makeIO({ ID: 'io-eu-conc', Name: 'Enrolled Users', Configuration: cfg }), idPK());
         c.queue(
             [{ id: 1 }, { id: 2 }],               // two courses
-            [{ id: 10 }, { id: 11 }],             // course 1, full page
-            [{ id: 12 }],                         // course 1, short page → exhausted
+            [{ id: 10 }, { id: 11 }],             // course 1, page 1 — full, so course 1 has more
             [{ id: 20 }],                         // course 2, short page → exhausted
+            [{ id: 12 }],                         // course 1, page 2 → exhausted
         );
         const res = await c.FetchChanges(fetchCtx('Enrolled Users', { MaxConcurrency: 8 }));
-        // Course 1 is read to the END before course 2 is touched at all — no interleaving.
-        expect(c.Captured.map(r => r.body?.Params?.['courseid'])).toEqual([undefined, '1', '1', '2']);
+        // Both courses are in flight: course 2 is requested BEFORE course 1's second page, which cannot
+        // happen if the walk reads one parent to the end before starting the next.
+        expect(c.Captured.map(r => r.body?.Params?.['courseid'])).toEqual([undefined, '1', '2', '1']);
         expect(res.Records).toHaveLength(4);
+        expect(res.HasMore).toBe(false);
+    });
+
+    it('PARENT-SCOPED: EVERY partly-read parent keeps its own offset, so no lane restarts from zero', async () => {
+        // The whole point of the extended cursor. Two lanes both stop mid-parent; both offsets must survive.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            paginationParams: ['options.limitfrom', 'options.limitnumber'],
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', pageSize: 2, budgetMs: 50 } });
+        c.seedIO(makeIO({ ID: 'io-eu-multi', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }], [{ id: 10 }, { id: 11 }], [{ id: 20 }, { id: 21 }]);   // both pages FULL
+        // Time is spent by REQUESTS, so both lanes get their first page out and the budget then bites both.
+        c.Clock = () => (c.Captured.length >= 3 ? 1000 : 0);
+
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users', { MaxConcurrency: 2 }));
+        expect(res.Records).toHaveLength(4);          // everything that landed is KEPT
+        expect(res.HasMore).toBe(true);
+        // Neither parent is covered (course 1 is the prefix head and is only partly read), so `a` is absent and
+        // both offsets ride on `p`. Under the old single-slot cursor this was `'1#2'` and course 2's 2 records
+        // were re-read on every call, forever.
+        expect(JSON.parse(res.NextAfterKeyValue as string)).toEqual({ p: { '1': 2, '2': 2 } });
+
+        // and each parent resumes AT its own offset
+        const c2 = new MockedTotaraConnector();
+        c2.seedIO(makeIO({ ID: 'io-eu-multi', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c2.queue([{ id: 1 }, { id: 2 }], [{ id: 12 }], [{ id: 22 }]);
+        await c2.FetchChanges(fetchCtx('Enrolled Users', { AfterKeyValue: JSON.stringify({ p: { '1': 2, '2': 2 } }) }));
+        const offsets = c2.Captured.slice(1).map(r => [r.body?.Params?.['courseid'], r.body?.Params?.['options[0][value]']]);
+        expect(offsets).toEqual(expect.arrayContaining([['1', 2], ['2', 2]]));
+    });
+
+    it('PARENT-SCOPED: a TRANSIENT failure does NOT retire its parent — it is retried, then abandoned OUT LOUD', async () => {
+        // Every caught error used to end with `examined.add(index)`, which lets the cursor move past the parent.
+        // For a 25000ms read deadline that is silent data loss: run 9200B480 aborted 24 requests that way,
+        // including `courseid=1 (offset 18850)`, each retiring a course whose enrolments were unread — behind a
+        // green run. The bounded attempt count is what stops the opposite bug (the `Users` [invalidresponse]
+        // deadlock: 61 identical failures, no forward progress possible).
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', maxParentAttempts: 2 } });
+        c.seedIO(makeIO({ ID: 'io-eu-transient', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }]);
+        c.queueError('Totara request did not respond within 25000ms');
+
+        const first = await c.FetchChanges(fetchCtx('Enrolled Users'));
+        expect(first.Records).toHaveLength(0);
+        expect(first.HasMore).toBe(true);                                    // the course is NOT done
+        // Nothing is claimed lost yet — the parent is simply owed another attempt.
+        expect((first.Warnings ?? []).some(w => w.Code === 'PARENT_ABANDONED')).toBe(false);
+        expect(JSON.parse(first.NextAfterKeyValue as string)).toEqual({ f: { '1': 1 } });
+
+        // Second attempt fails the same way and reaches maxParentAttempts: the walk gives up DELIBERATELY and
+        // names the parent, rather than moving on quietly.
+        const c2 = new MockedTotaraConnector();
+        c2.seedIO(makeIO({ ID: 'io-eu-transient', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c2.queue([{ id: 1 }]);
+        c2.queueError('Totara request did not respond within 25000ms');
+        const second = await c2.FetchChanges(fetchCtx('Enrolled Users', { AfterKeyValue: JSON.stringify({ f: { '1': 1 } }) }));
+        const gone = second.Warnings?.find(w => w.Code === 'PARENT_ABANDONED');
+        expect(gone?.Data).toMatchObject({ abandoned: 1, maxAttempts: 2 });
+        expect(gone?.Message).toContain('NOT synced');
+        expect(second.HasMore).toBe(false);                                  // the walk ends rather than looping
+    });
+
+    it('PARENT-SCOPED: a PERMISSION refusal still retires its parent immediately (no pointless retries)', async () => {
+        // The transient/permanent split matters in both directions: a token is not granted mid-run, so retrying
+        // an [accessexception] three times per parent buys nothing and costs the budget.
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_group_members', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'groupids', paramStyle: 'array',
+                childIdField: 'groupid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-gm-perm', Name: 'Group Members', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }], { exception: 'webservice_access_exception', errorcode: 'accessexception', message: 'Access control exception' });
+        const res = await c.FetchChanges(fetchCtx('Group Members'));
+        expect(res.Warnings?.find(w => w.Code === 'LEAF_FORBIDDEN')).toBeDefined();
+        expect(res.Warnings?.some(w => w.Code === 'PARENT_ABANDONED')).toBe(false);
+        expect(res.HasMore).toBe(false);
+        expect(res.NextAfterKeyValue).toBeUndefined();   // no `f` state — nothing to come back for
+    });
+
+    it('PARENT-SCOPED: the rate-limit WAIT counts against the budget', async () => {
+        // `await ctx.RateLimitAcquire()` sat outside the deadline entirely: not wrapped in the timer, and
+        // nothing re-checked the clock after it. A throttled walk blew its own budget without bound — the
+        // engine measured single `Enrolled Users` calls at up to 1,063,987ms against a 20000ms budget the
+        // connector believed it was honouring. A deadline that only sees the awaits it happens to wrap is not
+        // a deadline.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id', budgetMs: 1000 } });
+        c.seedIO(makeIO({ ID: 'io-eu-rl', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue([{ id: 1 }, { id: 2 }], [{ id: 10 }], [{ id: 11 }]);
+        let now = 0;
+        c.Clock = () => now;
+        // Nothing but the throttle consumes time: each acquire burns 900ms of a 1000ms budget.
+        const res = await c.FetchChanges(fetchCtx('Enrolled Users', {
+            MaxConcurrency: 1,
+            RateLimitAcquire: async () => { now += 900; },
+        }));
+        // One parent read (index 0 is always allowed to issue its first request); the second parent's acquire
+        // pushes elapsed past the budget and it is stopped rather than dispatched.
+        expect(c.Captured.filter(r => r.body?.WsFunction === 'core_enrol_get_enrolled_users')).toHaveLength(1);
+        expect(res.Records).toHaveLength(1);
+        expect(res.Warnings?.find(w => w.Code === 'PARENT_BUDGET_STOP')?.Data).toMatchObject({ covered: 1 });
     });
 
     it('PARENT-SCOPED: an UNPAGED walk keeps the engine concurrency (no partial progress to lose)', async () => {

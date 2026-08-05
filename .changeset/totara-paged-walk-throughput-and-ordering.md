@@ -14,9 +14,13 @@ mid-parent resume offset, and only for the parent at the head of the covered pre
 would claim a budget-skipped parent as done. With `MaxConcurrency: 2` the walk read two courses at once, the
 20000ms budget stopped both mid-way, and only the head course's offset survived. The second lane restarted from
 offset 0 on the next call, every call, forever. Its records were kept (upserts are idempotent) so nothing was
-lost or wrong — it was pure repeated work, and it is essentially all of the 1.74x. A **paged** parent walk now
-runs one parent at a time whatever concurrency the engine offers. Unpaged walks keep full concurrency: one
-request per parent either finishes or errors, so there is no partial progress to lose.
+lost or wrong — it was pure repeated work, and it is essentially all of the 1.74x.
+
+The first fix here made **paged** parent walks serial, which removed the waste by removing the parallelism.
+`.changeset/totara-parent-walk-deadline-and-transient-retry.md`, in the same release, replaces it: the cursor
+carries an offset **per parent**, so no lane's progress can be discarded and paged walks keep the engine's
+concurrency. Unpaged walks were never affected — one request per parent either finishes or errors, so there is no
+partial progress to lose.
 
 **2. Offset paging sent no ORDER BY (fixed).** `limitfrom`/`limitnumber` is SQL `OFFSET`/`LIMIT`, and an offset
 over a result set with no `ORDER BY` has no defined page boundary — consecutive pages may repeat rows and, worse,
@@ -39,8 +43,9 @@ when everything reached was refused, and a distinct partial-refusal warning when
 non-permission fault stays per-parent, because it genuinely is per-parent.
 
 **What is NOT fixed, and is a catalog decision rather than a bug.** The remaining cost is the vendor's:
-`core_enrol_get_enrolled_users` returns a full user profile per enrolment, measured at **~68 ms per record** and
-linear in rows, so enlarging the page buys nothing. Two facts make that expensive here — the catalog declares all
+`core_enrol_get_enrolled_users` returns a full user profile per enrolment, measured at **~68 ms per record** on the
+193 healthy batches and linear in rows, so enlarging the page does not reduce vendor time. Two facts make that
+expensive here — the catalog declares all
 29 profile fields including the `groups`/`roles`/`preferences`/`enrolledcourses` aggregates, each its own
 sub-query, and **course `1` is the site course that every user is enrolled in** (17,937 of the 29,002 rows
 landed, sorted first, so it is walked first). Totara documents `options.userfields` to trim the payload, but
