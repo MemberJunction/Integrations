@@ -525,10 +525,10 @@
       "objectCount": 3,
       "className": "@memberjunction/connector-ga4",
       "npmPackage": "@memberjunction/connector-ga4",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Marketing/GA4",
-      "installTag": "Marketing-GA4@0.1.0"
+      "installTag": "Marketing-GA4@0.2.0"
     },
     {
       "name": "magnetmail",
@@ -867,10 +867,10 @@
       "objectCount": 4,
       "className": "@memberjunction/connector-asana",
       "npmPackage": "@memberjunction/connector-asana",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "PM/Asana",
-      "installTag": "PM-Asana@0.1.0"
+      "installTag": "PM-Asana@0.2.0"
     },
     {
       "name": "Everhour",
@@ -888,10 +888,10 @@
       "objectCount": 4,
       "className": "@memberjunction/connector-everhour",
       "npmPackage": "@memberjunction/connector-everhour",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "PM/Everhour",
-      "installTag": "PM-Everhour@0.1.0"
+      "installTag": "PM-Everhour@0.2.0"
     }
   ]
 }
