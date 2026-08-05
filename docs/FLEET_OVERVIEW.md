@@ -4,7 +4,8 @@ Every connector in this repo ships a `docs/SUPPORT.md` stating what it declares,
 been executed against a real system, and what has not. This page is the roll-up of those files and is
 generated from them, so the two can't disagree.
 
-**30 connectors documented · 644,493 rows verified in a database · 0 verified live writes.**
+**31 connectors documented · 644,493 rows verified in a database from live systems · a further 251 from
+a mock-only run · 0 verified live writes.**
 
 That last number is not a typo, and it is the single most important line here. Read on.
 
@@ -19,7 +20,7 @@ excellent and sit in the bottom tier simply because nobody has had a credential 
 | 🥇 **Client-DB-live** | Ran against a real client tenant with production data; rows landed in a database we can query. | That every declared object was exercised — check the per-connector coverage note. |
 | 🟢 **Live-vendor** | Ran against the vendor's real API using a real (often sandbox or developer) account. | That the data volume or shape matches a production tenant. |
 | ⚙️ **Synthetic-local** | Ran against a disposable local instance. Proves the mechanics — connect, discover, page, parse. | Anything about the vendor's real API, which was never contacted. |
-| 🧪 **Mock-only** | Ran against a mock server built from the vendor's own specification. Proves request and response shape. | That the real API behaves as its specification claims. |
+| 🧪 **Mock-only** | Ran against a mock server built from the vendor's own specification. At minimum proves request and response shape; where the full behavioural suite ran, it also proves sync, idempotency, ordering, retry and pagination through the real engine into a real database. | That the real API behaves as its specification claims — payload variety, real volumes, real errors and real throttling are all untouched. |
 | 🟡 **Honest-NA** | Not tested, for a stated non-defect reason — usually no credential was obtainable. | That the connector is broken. It means untested, and the reason is written down. |
 
 Two rules that apply to every row on this page:
@@ -82,7 +83,22 @@ schema discovery against the real API, without a persisted sync. Its `SUPPORT.md
 
 | Connector | Objects declared | Objects with rows | Rows verified | Setup guide |
 |---|---:|---:|---:|:--:|
+| [BusinessCentral](../Finance/BusinessCentral/docs/SUPPORT.md) | 83 | 83 | 251 | — |
 | [MagnetMail](../Marketing/MagnetMail/docs/SUPPORT.md) | 47 | — | — | — |
+
+Business Central is the first connector in this repo where **every declared object landed rows** — 83 of
+83, no object left untested — and the first where **every flat-writable object completed a create/update/
+delete round-trip** (50 of 50). It is also the only connector whose rows sit in this tier: the engine, the
+mapping and the database writes are all production code paths, but the API it talked to was a fixture
+replay, because no Business Central credential exists. Breadth of coverage and strength of evidence are
+separate axes, and this row is deliberately strong on the first and weak on the second.
+
+Its `SUPPORT.md` carries two things worth copying elsewhere. First, it classifies every gap as a **genuine
+limitation** (unobtainable without a credential) or an **omission** (something that could have been set up
+and wasn't) — because those are different admissions and blurring them flatters the run. Second, it
+discloses that **four of its 517 passing assertions depend on two unpublished MJ engine fixes**; against a
+stock engine the same run scores 513/4. A green that only holds on a patched engine is not the same green,
+and the doc says so above the results rather than below them.
 
 ## 🟡 Honest-NA — untested, reason stated
 
@@ -100,7 +116,8 @@ schema discovery against the real API, without a persisted sync. Its `SUPPORT.md
 ## Reading a proof row
 
 Each `SUPPORT.md` proof table names the database the rows were counted in (`MJ_CT48`,
-`MJ_ALLOWLIST`, `MJ_SS_E2E` — the databases used for live sync runs). That column exists so a claim
+`MJ_ALLOWLIST`, `MJ_SS_E2E` — the databases used for live sync runs; `MJ_BC_E2E` — an isolated
+database used for a mock-only run, marked as such in its own doc). That column exists so a claim
 can be re-checked rather than taken on trust: the number came from counting rows in that database after
 a sync, not from a test asserting its own success.
 
