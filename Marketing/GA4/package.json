@@ -1,7 +1,6 @@
 {
   "name": "@memberjunction/connector-ga4",
   "version": "0.1.0",
-  "private": true,
   "description": "MemberJunction Google Analytics 4 connector (Data API v1beta).",
   "type": "module",
   "main": "dist/index.js",

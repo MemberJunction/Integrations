@@ -1,7 +1,6 @@
 {
   "name": "@memberjunction/connector-asana",
   "version": "0.1.0",
-  "private": true,
   "description": "MemberJunction Asana connector.",
   "type": "module",
   "main": "dist/index.js",
