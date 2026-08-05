@@ -1,7 +1,7 @@
 {
-  "name": "@memberjunction/connector-orcid",
-  "version": "1.2.0",
-  "description": "MemberJunction ORCID connector.",
+  "name": "@memberjunction/connector-id-window-scan",
+  "version": "1.0.0",
+  "description": "Pure helper that reads an object the vendor will not bulk-list, by walking its numeric key in bounded windows. Budget-aware, resumable, and it isolates records the vendor refuses instead of losing the object to them. One function, no class, no base — connectors import it; they do NOT extend anything new.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,26 +9,19 @@
     "/dist"
   ],
   "scripts": {
-    "build": "tsc && tsc-alias -f",
+    "build": "tsc",
     "test": "vitest run --passWithNoTests"
   },
   "author": "MemberJunction.com",
   "license": "ISC",
   "peerDependencies": {
-    "@memberjunction/core": ">=5.42.0 <6.0.0",
-    "@memberjunction/core-entities": ">=5.42.0 <6.0.0",
-    "@memberjunction/global": ">=5.42.0 <6.0.0",
     "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
   },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "24.10.11",
-    "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
-    "@memberjunction/core": "^5.42.0",
-    "@memberjunction/core-entities": "^5.42.0",
-    "@memberjunction/global": "^5.42.0",
     "@memberjunction/integration-engine": "^5.42.0"
   },
   "repository": {

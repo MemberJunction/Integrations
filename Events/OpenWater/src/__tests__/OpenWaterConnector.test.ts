@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import type {
     RESTAuthContext,
     RESTResponse,
@@ -63,6 +63,13 @@ class MockedOpenWaterConnector extends OpenWaterConnector {
             if (url.includes(r.match)) return r.response;
         }
         return { Status: 200, Body: [], Headers: {} };
+    }
+}
+
+/** Exposes the REAL MakeHTTPRequest (no transport override) so the abort deadline can be asserted. */
+class RealTransportOpenWaterConnector extends OpenWaterConnector {
+    public async PublicMakeHTTP(auth: RESTAuthContext, url: string): Promise<RESTResponse> {
+        return this.MakeHTTPRequest(auth, url, 'GET', {});
     }
 }
 
@@ -351,6 +358,206 @@ describe('OpenWaterConnector — FetchChanges (nested access-path walk)', () => 
         expect(result.Records).toHaveLength(0);
         expect(result.Warnings?.[0]?.Code).toBe('ZERO_PARENTS');
     });
+
+    it('a 401/403 leaf is reported as LEAF_FORBIDDEN, not swallowed into a silent zero', async () => {
+        // REGRESSION. This was a console.warn on the server and nothing else, so a permission-scoped
+        // endpoint produced zero records behind a SUCCESSFUL run — reading as "this tenant has no
+        // OtherSessionItemTypes" rather than "this token may not read them". A live full-catalog run
+        // scored three objects as unexplained zeros for exactly this reason.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-osit', Name: 'OtherSessionItemType', APIPath: '/v2/Programs/{programId}/OtherSessionItemTypes',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs', parentParamName: 'programId',
+                    entryPath: '/v2/Programs/{programId}/OtherSessionItemTypes',
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/OtherSessionItemTypes', response: { Status: 403, Body: {}, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 7 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('OtherSessionItemType'));
+
+        expect(result.Records).toHaveLength(0);
+        const w = result.Warnings?.find(x => x.Code === 'LEAF_FORBIDDEN');
+        expect(w?.Data).toMatchObject({ object: 'OtherSessionItemType', status: 403 });
+        // and it must NOT also claim the collection is empty — the two causes are different diagnoses
+        expect(result.Warnings?.some(x => x.Code === 'ZERO_LEAVES')).toBe(false);
+    });
+
+    it('parents walked but every leaf empty is ZERO_LEAVES, naming the parents and paths tried', async () => {
+        // ZERO_PARENTS covers "nothing to walk". "Walked everything, found nothing" had no code at all,
+        // which is what made it indistinguishable from a malformed request.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-rep', Name: 'Report', APIPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                    parentParamName: 'roundId', entryPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                    alternativePaths: ['/v2/Rounds/{roundId}/JudgeReports'],
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 11 }, { id: 12 }] }] }, Headers: {} } },
+            { match: '/v2/Rounds/', response: { Status: 200, Body: { records: [] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('Report'));
+
+        expect(result.Records).toHaveLength(0);
+        const w = result.Warnings?.find(x => x.Code === 'ZERO_LEAVES');
+        expect(w?.Data).toMatchObject({ object: 'Report', parents: 2, leafRequests: 4 });   // 2 rounds x 2 paths
+        expect(w?.Message).toContain('/v2/Rounds/{roundId}/JudgeReports');
+    });
+
+    it('one parent the vendor refuses does not take the whole object to zero (LEAF_REQUEST_REJECTED)', async () => {
+        // REGRESSION, live. `Report` failed with "HTTP 400" on the FIRST round it walked and threw, so
+        // every other round's reports were discarded and the object returned nothing at all. The request
+        // shape is right (OpenWater's own swagger: GET /v2/Rounds/{roundId}/ApplicationReports, roundId
+        // int32 in path, pageIndex/pageSize optional) — a 400 is the vendor refusing THAT round, not the
+        // object being unfetchable. So the walk keeps going and the refusal is recorded against its parent.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-rep', Name: 'Report', APIPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                    parentParamName: 'roundId', entryPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Rounds/11/', response: { Status: 400, Body: { message: 'Round is judging only' }, Headers: {} } },
+            { match: '/v2/Rounds/12/', response: { Status: 200, Body: { records: [{ id: 900 }] }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 11 }, { id: 12 }] }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('Report'));
+
+        // The good round's records survive the bad round.
+        expect(result.Records.map(r => r.ExternalID)).toEqual(['900']);
+        const w = result.Warnings?.find(x => x.Code === 'LEAF_REQUEST_REJECTED');
+        expect(w?.Data).toMatchObject({ object: 'Report', rejected: 1, leafRequests: 2, rejectedParentIDs: ['11'] });
+        expect(w?.Message).toContain('/v2/Rounds/11/ApplicationReports');
+        // A partial pull is not an empty one, and must not be described as the vendor having nothing.
+        expect(result.Warnings?.some(x => x.Code === 'ZERO_LEAVES')).toBe(false);
+    });
+
+    it('every request refused is still a failure, not a clean zero', async () => {
+        // The non-fatal path is per-parent. When NOTHING answered, the endpoint/credential/vendor is the
+        // problem, and returning zero records behind a successful run would be the untruth all over again.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-rep', Name: 'Report', APIPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                    parentParamName: 'roundId', entryPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Rounds/', response: { Status: 400, Body: { message: 'nope' }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 11 }, { id: 12 }] }] }, Headers: {} } },
+        ];
+
+        await expect(connector.FetchChanges(fetchCtx('Report'))).rejects.toThrow(
+            /all 2 request\(s\).*HTTP 400 at .*\/v2\/Rounds\/11\/ApplicationReports/s);
+    });
+
+    it('a 5xx in a parent walk still throws — a server fault is not parent-scoped', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-rep', Name: 'Report', APIPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                    parentParamName: 'roundId', entryPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Rounds/11/', response: { Status: 503, Body: {}, Headers: {} } },
+            { match: '/v2/Rounds/12/', response: { Status: 200, Body: { records: [{ id: 900 }] }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 11 }, { id: 12 }] }] }, Headers: {} } },
+        ];
+
+        await expect(connector.FetchChanges(fetchCtx('Report'))).rejects.toThrow(/HTTP 503/);
+    });
+
+    it('an alternative path templated on a DIFFERENT param is skipped, not filled with the wrong id', async () => {
+        // `Report` walks roundIds but lists /v2/Programs/{programId}/SessionReports among its
+        // alternatives. Substituting a roundId there is not a near-miss — it is a well-formed request
+        // for the wrong record, and the vendor is right to reject it (live: HTTP 400). The skip is
+        // reported so a narrowed walk is never silent.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-rep2', Name: 'Report', APIPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                    parentParamName: 'roundId', entryPath: '/v2/Rounds/{roundId}/ApplicationReports',
+                    alternativePaths: ['/v2/Programs/{programId}/SessionReports'],
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Programs/', response: { Status: 400, Body: { message: 'must not be reached' }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 11 }] }] }, Headers: {} } },
+            { match: '/v2/Rounds/', response: { Status: 200, Body: { records: [{ id: 7 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('Report'));
+
+        // The programId-templated alternative was never requested — only the door and the roundId path.
+        expect(connector.Requests.filter(r => r.url.includes('SessionReports'))).toHaveLength(0);
+        expect(result.Records).toHaveLength(1);
+        expect(result.Warnings?.find(x => x.Code === 'PATH_SKIPPED_PARAM_MISMATCH')?.Data)
+            .toMatchObject({ object: 'Report', parentParamName: 'roundId',
+                             skipped: ['/v2/Programs/{programId}/SessionReports'] });
+    });
+
+    it('a flat collection that is genuinely empty says so (EMPTY_COLLECTION), rather than saying nothing', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({ ID: 'o-fund', Name: 'Fund', APIPath: '/v2/Funds' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [{ match: '/v2/Funds', response: { Status: 200, Body: { records: [] }, Headers: {} } }];
+
+        const result = await connector.FetchChanges(fetchCtx('Fund'));
+
+        expect(result.Records).toHaveLength(0);
+        expect(result.Warnings?.find(x => x.Code === 'EMPTY_COLLECTION')?.Data)
+            .toMatchObject({ object: 'Fund', path: '/v2/Funds' });
+    });
+
+    it('an incremental page that comes back empty is NOT reported as an empty collection', async () => {
+        // Nothing-new-since-the-watermark is the normal steady state; warning on it would train
+        // everyone to ignore the warning that matters.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({ ID: 'o-fund2', Name: 'Fund', APIPath: '/v2/Funds', IncrementalWatermarkField: 'modifiedOn' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [{ match: '/v2/Funds', response: { Status: 200, Body: { records: [] }, Headers: {} } }];
+
+        const result = await connector.FetchChanges(fetchCtx('Fund', { WatermarkValue: '2026-01-01T00:00:00Z' }));
+
+        expect(result.Records).toHaveLength(0);
+        expect(result.Warnings ?? []).toHaveLength(0);
+    });
 });
 
 // ─── Generic CRUD via per-operation IO columns ──────────────────────────
@@ -538,5 +745,54 @@ describe('OpenWaterConnector — ExtractRetryAfterMs', () => {
     it('returns undefined for a non-throttle error', () => {
         expect(connector.ExtractRetryAfterMs({ Status: 500, Headers: {} })).toBeUndefined();
         expect(connector.ExtractRetryAfterMs(new Error('boom'))).toBeUndefined();
+    });
+});
+
+// ─── Transport deadline ─────────────────────────────────────────────────
+
+describe('OpenWaterConnector — the read deadline outlives the fetch call', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    const authWith = (timeoutMs: number): RESTAuthContext =>
+        ({ Config: { RequestTimeoutMs: timeoutMs, MaxRetries: 0 }, BaseURL: 'https://api.example.com' }) as unknown as RESTAuthContext;
+
+    it('the signal is still armed after the response headers arrive, so a stalled BODY still aborts', async () => {
+        // `fetch` resolves on HEADERS; the body is read afterwards in BuildRESTResponse. The old
+        // AbortController+clearTimeout pair disarmed the deadline in a `finally` at exactly that moment,
+        // so a vendor that answered with headers and then stalled mid-body hung forever regardless.
+        let captured: AbortSignal | undefined;
+        vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+            captured = init.signal as AbortSignal;
+            return {
+                status: 200,
+                headers: new Headers({ 'content-type': 'text/plain' }),
+                text: async () => 'ok',
+            } as unknown as Response;
+        }));
+
+        await new RealTransportOpenWaterConnector().PublicMakeHTTP(authWith(20), 'https://api.example.com/v2/Programs');
+
+        expect(captured).toBeInstanceOf(AbortSignal);
+        expect(captured!.aborted).toBe(false);            // not yet — the request finished in time
+        await new Promise(r => setTimeout(r, 60));
+        expect(captured!.aborted).toBe(true);             // still armed: a stalled body would have aborted
+    });
+
+    it('each attempt gets its own deadline rather than sharing one across retries', async () => {
+        const signals: AbortSignal[] = [];
+        vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+            signals.push(init.signal as AbortSignal);
+            return {
+                status: signals.length === 1 ? 429 : 200,
+                headers: new Headers({ 'content-type': 'text/plain', 'retry-after': '0' }),
+                text: async () => 'ok',
+            } as unknown as Response;
+        }));
+
+        const auth = { Config: { RequestTimeoutMs: 5000, MaxRetries: 1 }, BaseURL: 'https://api.example.com' } as unknown as RESTAuthContext;
+        await new RealTransportOpenWaterConnector().PublicMakeHTTP(auth, 'https://api.example.com/v2/Programs');
+
+        expect(signals).toHaveLength(2);
+        expect(signals[0]).not.toBe(signals[1]);
     });
 });

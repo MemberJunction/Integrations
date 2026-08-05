@@ -61,6 +61,7 @@ import {
 } from '@memberjunction/integration-engine';
 import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
+import { runIdWindowScan } from '@memberjunction/connector-id-window-scan';
 
 // ─── Constants ─────────────────────────────────────────────────────────
 const REST_ENDPOINT_SUFFIX = '/webservice/rest/server.php';
@@ -78,6 +79,8 @@ interface TotaraConfig {
     Token: string;
     /** The tenant's site base URL (e.g. https://learn.example.org). */
     BaseURL: string;
+    /** Per-request read deadline in ms; 0 disables it. Defaults to {@link DEFAULT_REQUEST_TIMEOUT_MS}. */
+    RequestTimeoutMs: number;
 }
 
 /** Auth context threaded through every request. Carries the token + the resolved RPC endpoint. */
@@ -86,6 +89,8 @@ export interface TotaraAuthContext extends RESTAuthContext {
     Token: string;
     /** Fully-resolved RPC endpoint: `{base_url}/webservice/rest/server.php`. */
     Endpoint: string;
+    /** Per-request read deadline in ms (0 = no deadline). Resolved once at Authenticate. */
+    RequestTimeoutMs: number;
 }
 
 /**
@@ -110,13 +115,82 @@ const ConfigSchema = z.object({
     ),
 });
 
+/**
+ * The declared stable ordering applied to an offset-paged read. Assembled from the object's own
+ * `Configuration` (`orderingParams` + `stableOrderingKey`), never inferred — the option names are
+ * per-wsfunction. See {@link TotaraConnector.readOffsetOrdering} for why an offset read without one is a
+ * correctness defect and not merely a slow one.
+ */
+interface OffsetOrdering {
+    SortByParam: string;
+    SortDirectionParam: string;
+    Key: string;
+    Direction: string;
+}
+
+/**
+ * Decoded parent-walk cursor. `After` is the parent the walk is finished THROUGH; `Partials` carries a
+ * mid-parent offset for any parent at or past that point; `Fails` counts consecutive transient failures per
+ * parent so a flaky parent is retried a bounded number of times instead of forever or never.
+ * See {@link TotaraConnector.parseParentCursor} for the wire forms and why they are what they are.
+ */
+interface ParentCursor {
+    After: string | null;
+    Partials: Map<string, number>;
+    Fails: Map<string, number>;
+}
+
 // ─── Connector ─────────────────────────────────────────────────────────
+
+/**
+ * Wall-clock budget for one parent-scoped fetch call, in ms. Deliberately under the engine's
+ * `FetchChangesMs` (30000): a batch that overruns that is KILLED and persists nothing, so a walk that stops
+ * itself at 20s with partial progress beats one that is 30s deep and loses everything. Per-object override:
+ * `Configuration.parentScope.budgetMs`.
+ */
+const DEFAULT_PARENT_WALK_BUDGET_MS = 20000;
+
+/**
+ * How long a cached parent-id list stays usable, in ms. The list is re-read once per fetch batch otherwise,
+ * and it is not cheap — `core_course_get_courses` measured 6.1s live, spent out of a budget that must fit
+ * inside a 30000ms kill. Per-object override: `Configuration.parentScope.parentCacheMs` (0 disables).
+ */
+const DEFAULT_PARENT_LIST_CACHE_MS = 300000;
+
+/**
+ * Read deadline for a single web-service call, in ms. Deliberately UNDER the engine's
+ * `FetchChangesMs = 30000` kill: a vendor that accepts the connection and then never answers used to hang
+ * the fetch forever — observed twice as wedged worker processes that had to be killed from outside, which
+ * is not a failed run and produces no artifact anyone can read. Aborting first turns that into an ordinary
+ * fetch error the engine can retry and the run artifact can record.
+ *
+ * Override per connection with `requestTimeoutMs` in CompanyIntegration.Configuration; `0` disables it.
+ */
+const DEFAULT_REQUEST_TIMEOUT_MS = 25000;
+
+/**
+ * How many consecutive TRANSIENT failures one parent may cost before the walk abandons it and moves past.
+ *
+ * A transient failure must not advance the cursor over its parent: doing so drops that parent's unread records
+ * silently, behind a green run. Measured live (run `9200B480`): 24 requests were aborted on the 25000ms read
+ * deadline, and because every caught error marked its parent examined, each one advanced the cursor past a
+ * course whose enrolments had not been fully read. But refusing to advance forever is the OTHER failure mode —
+ * the `Users` `[invalidresponse]` deadlock was 61 identical failures, 0 records, and no forward progress
+ * possible. So the attempt count rides the CURSOR (a per-call counter forgets it at every batch boundary), and
+ * after this many tries the parent is abandoned with a warning that names it.
+ *
+ * Per-object override: `Configuration.parentScope.maxParentAttempts`.
+ */
+const DEFAULT_MAX_PARENT_ATTEMPTS = 3;
 
 @RegisterClass(BaseIntegrationConnector, 'TotaraConnector')
 export class TotaraConnector extends BaseRESTIntegrationConnector {
 
     /** Resolved auth per CompanyIntegration.ID — avoids re-loading the credential every fetch/CRUD call. */
     protected authCache = new Map<string, TotaraAuthContext>();
+
+    /** Parent-id lists per connection+parent function, so a resumed parent walk does not re-read them. */
+    protected parentIDCache = new Map<string, { IDs: string[]; At: number }>();
 
     // ── Identity + capabilities ──────────────────────────────────────
 
@@ -236,6 +310,7 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const auth: TotaraAuthContext = {
             Token: config.Token,
             Endpoint: this.buildEndpoint(config.BaseURL),
+            RequestTimeoutMs: config.RequestTimeoutMs,
         };
         this.authCache.set(companyIntegration.ID, auth);
         return auth;
@@ -285,8 +360,31 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             form.append(key, String(value));
         }
 
-        const httpResponse = await fetch(url, { method, headers, body: form.toString() });
-        const text = await httpResponse.text();
+        // The deadline covers the response BODY, not just the headers: a site that streams a header block
+        // and then stalls mid-body hangs just as hard as one that never answers, so the same signal is
+        // passed to fetch and held across the text() read.
+        const timeoutMs = (auth as TotaraAuthContext).RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+        const signal = timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined;
+
+        let httpResponse: Response;
+        let text: string;
+        try {
+            httpResponse = await fetch(url, { method, headers, body: form.toString(), signal });
+            text = await httpResponse.text();
+        } catch (err: unknown) {
+            // Surface an abort as an ordinary fetch error naming the function and the deadline, so the
+            // engine retries it like any other transport failure and the run artifact records WHY. An
+            // unnamed abort reads as a mystery; "core_enrol_get_enrolled_users exceeded 25000ms" is a
+            // fact someone can act on.
+            if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+                throw new Error(
+                    `Totara web service "${request.WsFunction}" did not respond within ${timeoutMs}ms`
+                    + ` and the request was aborted. Raise requestTimeoutMs in the connection's Configuration`
+                    + ` (0 disables the deadline) if this function is legitimately slower than that.`
+                );
+            }
+            throw err;
+        }
         return {
             Status: httpResponse.status,
             Body: this.parseJson(text),
@@ -406,6 +504,15 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             };
         }
 
+        // Objects whose LIST function cannot be bulk-listed (no pagination params, and the vendor docs
+        // explicitly warn it "could [be] very slow or timeout" without narrow criteria — core_user_get_users
+        // is the canonical case) fetch through a bounded id-window scan against the by-field bulk reader
+        // instead. Declared via Configuration.idWindowScan. Delegate before every other path.
+        const idWindowScan = this.readConfigObject(cfg, 'idWindowScan');
+        if (idWindowScan) {
+            return this.fetchIdWindowScan(obj, cfg, ctx, idWindowScan);
+        }
+
         // Parent-scoped RPC objects (e.g. core_enrol_get_enrolled_users / core_course_get_contents need a
         // `courseid`) iterate ONE request per parent — declared via Configuration.parentScope. Delegate
         // before the single-call path so these objects sync instead of failing with [invalidparameter].
@@ -454,7 +561,100 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
      * parent — keyset-resumable over the parent ids (ctx.AfterKeyValue), bounded per call (engine loops until
      * HasMore=false), concurrency + rate-limit governed by the engine hooks. A per-parent failure (e.g. an
      * accessexception on one course) is surfaced as a warning, never fatal to the whole batch.
+     *
+     * TWO shapes of parent param, because Moodle uses both:
+     *   • scalar — `courseid=12` (core_enrol_get_enrolled_users, core_course_get_contents)
+     *   • array  — `cohortids[0]=12` (core_cohort_get_cohort_members, core_group_get_group_members)
+     * Declared as `paramStyle: 'scalar' | 'array'` (default scalar). Sending the array functions a scalar is
+     * what made `Cohort Members` fail `[invalidparameter]` on every run, with 0 records, since it shipped.
+     *
+     * The walk is also bounded IN TIME, not just in parent count. The engine kills a FetchChanges that
+     * overruns `FetchChangesMs` (30000) and **a killed batch persists nothing** — `Enrolled Users` timed out
+     * 3x and landed 0 rows behind a green run for exactly this reason: a page cap of N parents says nothing
+     * about how long N vendor calls take. `parentScope.budgetMs` (default 20000, under the kill) stops
+     * dispatching new parents and returns partial progress with a cursor, and the cursor advances only over
+     * the contiguous PREFIX of parents that actually completed — out-of-order completions past the prefix are
+     * still emitted (upserts are idempotent) but are not counted as covered. The first parent of a call never
+     * skips, so a call always makes forward progress and the scan cannot stall.
      */
+    /**
+     * A stable, human-readable signature of a (possibly chained) parent scope — the cache key, and the value
+     * reported when the chain is truncated. Deepest hop first, matching the order the requests actually go in.
+     */
+    private parentChainSignature(scope: Record<string, unknown>): string {
+        const inner = this.readConfigObject(scope, 'parentScope');
+        const here = `${this.readConfigString(scope, 'parentWsFunction') ?? '?'}.${this.readConfigString(scope, 'parentIdField') ?? 'id'}`;
+        return inner ? `${this.parentChainSignature(inner)} -> ${here}` : here;
+    }
+
+    /**
+     * Resolves the ids the object's own request will iterate, following a parent CHAIN when one is declared.
+     *
+     * A one-hop scope is the common case: call `parentWsFunction` bare and read `parentIdField` off each row.
+     * But some Moodle read functions are reachable only through two hops, because the thing that lists their
+     * parents is ITSELF parent-scoped. `core_group_get_group_members(groupids[])` is the live example: nothing
+     * lists a site's groups, so the group ids come from `core_group_get_course_groups(courseid)`, whose course
+     * ids come from `core_course_get_courses`. Declaring only the near hop leaves the object with no way to
+     * name a single id, which is why these objects shipped unfetchable.
+     *
+     * A chain is expressed by nesting the SAME shape under `parentScope`, so each level reads exactly like the
+     * top one: the outer level's `parentWsFunction` is called once per id produced by the inner level, passed
+     * through the inner level's `paramName`/`paramStyle`. Depth is arbitrary; two is what the catalog needs.
+     *
+     * The expansion is bounded by the SAME budget as the walk, because it costs one request per id at each
+     * hop — a 408-course site is 408 requests just to learn the group ids, which would otherwise be spent
+     * inside the engine's 30000ms kill and land nothing. Running out of time returns what was resolved plus
+     * `Truncated`, and the caller declines to cache a truncated list so the next call re-enumerates.
+     */
+    private async resolveParentIDs(
+        auth: TotaraAuthContext,
+        scope: Record<string, unknown>,
+        timed: (send: () => Promise<RESTResponse>) => Promise<RESTResponse>,
+        outOfTime: () => boolean,
+    ): Promise<{ IDs: string[]; Truncated: boolean }> {
+        const wsFn = this.readConfigString(scope, 'parentWsFunction');
+        const idField = this.readConfigString(scope, 'parentIdField') ?? 'id';
+        if (!wsFn) return { IDs: [], Truncated: false };
+
+        const collect = (body: unknown): string[] => this.NormalizeResponse(body, null)
+            .map(r => r[idField]).filter(v => v != null && String(v).length > 0).map(String);
+        const dedupeSorted = (ids: string[]): string[] =>
+            Array.from(new Set(ids)).sort((a, b) => a.localeCompare(b));
+
+        const inner = this.readConfigObject(scope, 'parentScope');
+        if (!inner) {
+            const resp = await timed(() => this.MakeHTTPRequest(auth, auth.Endpoint, 'POST', this.BuildHeaders(auth),
+                { WsFunction: wsFn, Params: {} } as MoodleRPCRequest));
+            return { IDs: dedupeSorted(collect(resp.Body)), Truncated: false };
+        }
+
+        const upstream = await this.resolveParentIDs(auth, inner, timed, outOfTime);
+        const innerParam = this.readConfigString(inner, 'paramName');
+        if (!innerParam) return { IDs: [], Truncated: upstream.Truncated };
+        const innerIsArray = this.readConfigString(inner, 'paramStyle') === 'array';
+
+        const ids: string[] = [];
+        let truncated = upstream.Truncated;
+        for (let i = 0; i < upstream.IDs.length; i++) {
+            // The first hop always runs, for the same reason the first parent of a walk always runs: a call
+            // that resolves nothing makes no progress and the engine would loop on an empty list forever.
+            if (i > 0 && outOfTime()) { truncated = true; break; }
+            const params: Record<string, string | number> = innerIsArray
+                ? { [`${innerParam}[0]`]: upstream.IDs[i] }
+                : { [innerParam]: upstream.IDs[i] };
+            try {
+                const resp = await timed(() => this.MakeHTTPRequest(auth, auth.Endpoint, 'POST', this.BuildHeaders(auth),
+                    { WsFunction: wsFn, Params: params } as MoodleRPCRequest));
+                ids.push(...collect(resp.Body));
+            } catch {
+                // One upstream id the site will not answer for (a course whose groups the token cannot read)
+                // must not abort the enumeration — the same rule the per-parent walk already follows. The hop
+                // contributes nothing and the rest of the chain proceeds.
+            }
+        }
+        return { IDs: dedupeSorted(ids), Truncated: truncated };
+    }
+
     private async fetchParentScoped(
         obj: MJIntegrationObjectEntity,
         cfg: Record<string, unknown>,
@@ -465,59 +665,471 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const parentWsFn = this.readConfigString(parentScope, 'parentWsFunction');
         const paramName = this.readConfigString(parentScope, 'paramName');
         const parentIdField = this.readConfigString(parentScope, 'parentIdField') ?? 'id';
+        const isArrayParam = this.readConfigString(parentScope, 'paramStyle') === 'array';
+        const budgetMs = this.readConfigNonNegativeInt(parentScope, 'budgetMs') ?? DEFAULT_PARENT_WALK_BUDGET_MS;
         if (!parentWsFn || !paramName) {
             return { Records: [], HasMore: false, Warnings: [{ Code: 'PARENT_SCOPE_INCOMPLETE',
                 Message: `"${obj.Name}": Configuration.parentScope requires parentWsFunction + paramName.`, Data: { object: obj.Name } }] };
+        }
+
+        // The field the CHILD row carries the parent id in. Defaults to the request param name, which is right
+        // for scalar params (`courseid`) and wrong for array ones (the param is `cohortids`, the field is
+        // `cohortid`) — so array-shaped scopes declare it.
+        const childIdField = this.readConfigString(parentScope, 'childIdField') ?? paramName;
+
+        // The budget is measured from HERE, not from the start of the walk. The engine's FetchChangesMs timer
+        // starts when this method is entered, and the parent LIST call below is part of that: measuring only
+        // the walk meant "parent list (however long) + a full 20s of walking", which overran the 30000ms kill
+        // and was killed with 0 records — the exact failure this budget exists to prevent, still happening
+        // with the budget in place. Every parent request now competes with the parent list for one budget.
+        const startedAt = this.nowMs();
+        /**
+         * How long the slowest request of this call took. The deadline is enforced against work ABOUT TO
+         * START, not work already done: measured live, `core_enrol_get_enrolled_users` needs ~26s for a
+         * 250-user page, so "elapsed < budget" would happily start a request that lands 26s past it. Stopping
+         * when `elapsed + slowest >= budget` is what keeps the call under the engine's kill.
+         */
+        let slowestRequestMs = 0;
+        // Generic so EVERY await inside the walk can be measured, not just the ones that return a response.
+        // The rate-limit acquire is the one that mattered: untimed, it let a call outrun its own budget by 53x.
+        const timed = async <T>(step: () => Promise<T>): Promise<T> => {
+            const t0 = this.nowMs();
+            try { return await step(); } finally { slowestRequestMs = Math.max(slowestRequestMs, this.nowMs() - t0); }
+        };
+        const outOfTime = (): boolean => budgetMs > 0 && this.nowMs() - startedAt + slowestRequestMs >= budgetMs;
+
+        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+        const fields = this.GetCachedFields(obj.ID);
+        const pkFieldNames = this.primaryKeyFieldNames(fields);
+        const warnings: NonNullable<FetchBatchResult['Warnings']> = [];
+
+        // 1) Parent ids from the parent's list wsfunction (bare array or single-collection envelope), CACHED.
+        //    The walk is resumed once per batch and the list does not change between them, but re-reading it
+        //    is not free: `core_course_get_courses` measured 6.1s live, which every batch was paying out of a
+        //    budget that has to fit inside a 30000ms kill. Cached, that time goes to reading records instead.
+        const cacheKey = `${ctx.CompanyIntegration.ID}|${this.parentChainSignature(parentScope)}`;
+        const cacheMs = this.readConfigNonNegativeInt(parentScope, 'parentCacheMs') ?? DEFAULT_PARENT_LIST_CACHE_MS;
+        const cached = this.parentIDCache.get(cacheKey);
+        let allParentIDs: string[];
+        let parentsTruncated = false;
+        if (cached && this.nowMs() - cached.At < cacheMs) {
+            allParentIDs = cached.IDs;
+        } else {
+            const resolved = await this.resolveParentIDs(auth, parentScope, timed, outOfTime);
+            allParentIDs = resolved.IDs;
+            parentsTruncated = resolved.Truncated;
+            // A truncated chain is an INCOMPLETE parent list. Caching it would freeze that partial view for
+            // the whole cache window and make every later batch walk the same short list — the run would then
+            // look complete while missing every parent the budget never reached.
+            if (!parentsTruncated) this.parentIDCache.set(cacheKey, { IDs: allParentIDs, At: this.nowMs() });
+        }
+        if (parentsTruncated) {
+            warnings.push({
+                Code: 'PARENT_CHAIN_TRUNCATED',
+                Message: `"${obj.Name}": the parent chain ran out of time while enumerating ids, so this call`
+                    + ` walked ${allParentIDs.length} parent(s) rather than all of them. The chain is`
+                    + ` re-enumerated (uncached) on the next call, so coverage is not lost — but a run that`
+                    + ` never completes the chain will not reach every parent.`,
+                Data: { object: obj.Name, resolvedParents: allParentIDs.length,
+                        chain: this.parentChainSignature(parentScope) },
+            });
+        }
+        if (allParentIDs.length === 0) {
+            warnings.push({ Code: 'ZERO_PARENTS',
+                Message: `"${obj.Name}": ${parentWsFn} returned no parent ids to iterate ${paramName} over — sync the parent first.`, Data: { object: obj.Name } });
+            return { Records: [], HasMore: false, Warnings: warnings };
+        }
+
+        // 2) Keyset-resume + bounded batch over the parent ids. The cursor is either "<parentID>" (that parent
+        //    is DONE, start after it) or "<parentID>#<offset>" (that parent is PARTLY read, resume AT it).
+        const cursor = this.parseParentCursor(ctx.AfterKeyValue);
+        // Resume AT the earliest parent that still has unread pages, and after `After` otherwise. Taking the
+        // earliest of the partials (rather than the single one the old cursor could name) is what makes a
+        // multi-lane stop resumable: every parent from there on either carries its own offset or starts at 0.
+        const firstPartial = [...cursor.Partials.keys()]
+            .map(id => allParentIDs.indexOf(id))
+            .filter(i => i >= 0)
+            .sort((a, b) => a - b)[0];
+        const remaining = firstPartial != null
+            ? allParentIDs.slice(firstPartial)
+            : cursor.After != null
+                ? allParentIDs.filter(id => id.localeCompare(cursor.After as string) > 0)
+                : allParentIDs;
+        const batch = remaining.slice(0, Math.max(1, this.TemplateVarParentBatchSize()));
+
+        // Paging WITHIN one parent. Only for functions that document offset params (Enrolled Users declares
+        // options.limitfrom/options.limitnumber); objects with an empty paginationParams read a parent in one
+        // request as before. This is not an optimisation: `core_enrol_get_enrolled_users` returns every
+        // enrolment on a course with full user profiles, and on a real site ONE such call outruns the engine's
+        // 30000ms kill — at which point the batch persists nothing, which is how this object landed 0 rows on
+        // every live run. A per-call budget cannot save a single request that is itself too big.
+        const pageParams = this.readConfigStringArray(cfg, 'paginationParams') ?? [];
+        const parentPageSize = pageParams.length >= 2
+            ? Math.max(1, this.readConfigPositiveInt(parentScope, 'pageSize') ?? obj.DefaultPageSize ?? ctx.BatchSize)
+            : 0;   // 0 = this function has no paging; one request per parent
+
+        // 3) One request per parent (bounded concurrency + adaptive rate-limit via the engine hooks), inside a
+        //    wall-clock budget so the call returns partial progress instead of being killed with nothing.
+        const out: ExternalRecord[] = [];
+        const collectionKeys = this.recordCollectionKeys(obj, cfg);
+        /** Parents read to the END — successfully OR with a recorded warning. Both are "nothing left here". */
+        const examined = new Set<number>();
+        /** Parents stopped mid-way by the budget → the offset to resume that parent from. */
+        const partial = new Map<number, number>();
+        let skippedForBudget = 0;
+        /** Parents the vendor refused on PERMISSIONS, attributed as one fact after the walk, not one each. */
+        const forbidden: string[] = [];
+        let forbiddenMessage: string | undefined;
+        /** Parents that failed TRANSIENTLY this call → their new consecutive-failure count, carried on the cursor. */
+        const transientFails = new Map<number, number>();
+        /** Parents abandoned because they have now failed transiently `maxParentAttempts` times in a row. */
+        const abandoned: Array<{ id: string; attempts: number; message: string }> = [];
+
+        const ordering = parentPageSize > 0 ? this.readOffsetOrdering(cfg) : undefined;
+        const maxAttempts = this.readConfigNonNegativeInt(parentScope, 'maxParentAttempts') ?? DEFAULT_MAX_PARENT_ATTEMPTS;
+
+        /**
+         * Paged walks keep the engine's concurrency, because every lane's offset now survives the stop.
+         *
+         * This was `parentPageSize > 0 ? 1 : …` — paged walks were forced serial to stop the 1.74x re-read, since
+         * a single-slot cursor threw away every lane's offset but one. That fixed the waste by removing the
+         * parallelism, which is a poor trade on an object whose healthy cost is 68ms per record and which has
+         * never once been read to completion. {@link ParentCursor} carries an offset per parent, so the cause is
+         * gone and the concurrency can come back.
+         */
+        const parentConcurrency = Math.max(1, ctx.MaxConcurrency ?? 1);
+
+        await this.runParentBounded(batch.map((id, index) => ({ id, index })), parentConcurrency,
+            async ({ id: parentID, index }) => {
+                // Index 0 always runs: a call that skips every parent makes no progress and the engine would
+                // loop on the same cursor forever. Everything after it yields to the budget.
+                if (index > 0 && outOfTime()) { skippedForBudget++; return; }
+                // Any parent may resume mid-way now — it reads its own offset rather than the one slot the
+                // cursor used to have. A parent with no recorded offset starts at its beginning.
+                let offset = cursor.Partials.get(parentID) ?? 0;
+                let issuedRequest = false;
+                try {
+                    for (;;) {
+                        /**
+                         * The rate-limit wait counts against the budget, and is checked before the request.
+                         *
+                         * This await used to sit outside the deadline entirely: it was not passed through
+                         * `timed`, so its wait never entered `slowestStepMs`, and nothing re-checked the clock
+                         * after it. A throttled walk therefore blew its own budget without bound — the engine
+                         * measured single `Enrolled Users` calls at up to **1,063,987ms** on run `9200B480`
+                         * against a 20000ms budget the connector believed it was honouring, and 15 such calls
+                         * consumed 3.30 of the run's 4.22 fetch-hours for 3.7% of its records. A deadline that
+                         * only sees the awaits it happens to wrap is not a deadline.
+                         */
+                        if (ctx.RateLimitAcquire) await timed(() => ctx.RateLimitAcquire!());
+                        // Gate the request itself, not just the next loop turn — except for the very first
+                        // request of parent 0, which must always go out or the call makes no progress at all.
+                        if (outOfTime() && !(index === 0 && !issuedRequest)) {
+                            if (offset > 0 || issuedRequest) partial.set(index, offset);
+                            else skippedForBudget++;
+                            return;
+                        }
+                        const params: Record<string, string | number> = isArrayParam
+                            ? { [`${paramName}[0]`]: parentID }
+                            : { [paramName]: parentID };
+                        if (parentPageSize > 0) this.applyOffsetPagination(params, pageParams, offset, parentPageSize, ordering);
+                        const resp = await timed(() => this.MakeHTTPRequest(auth, auth.Endpoint, 'POST', this.BuildHeaders(auth),
+                            { WsFunction: wsfunction, Params: params } as MoodleRPCRequest));
+                        issuedRequest = true;
+                        let pageCount = 0;
+                        for (const key of collectionKeys) {
+                            for (const raw of this.NormalizeResponse(resp.Body, key)) {
+                                // tag the child with the parent FK so its row links back to the parent record
+                                const tagged = raw[childIdField] != null ? raw : { ...raw, [childIdField]: parentID };
+                                out.push(this.buildExternalRecord(this.applyTransformPreservingKeys(tagged, obj, fields), ctx.ObjectName, pkFieldNames));
+                                pageCount++;
+                            }
+                        }
+                        ctx.RateLimitReport?.();
+                        // Unpaged function, or a short page → this parent is exhausted.
+                        if (parentPageSize === 0 || pageCount < parentPageSize) break;
+                        offset += pageCount;
+                        // Mid-parent budget stop: record where to resume rather than dropping the rest.
+                        if (outOfTime()) { partial.set(index, offset); return; }
+                    }
+                    examined.add(index);
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    if (/429|rate.?limit|Retry-After/i.test(msg)) { ctx.RateLimitReport?.(e); throw e; }  // rate-limit → propagate for backoff
+                    /**
+                     * A TRANSIENT failure must not advance the cursor over its parent.
+                     *
+                     * Every caught error used to end with `examined.add(index)`, which marks the parent "nothing
+                     * left here" and lets the cursor move past it. For a permission refusal that is correct — the
+                     * token will not be granted mid-run. For a 25000ms read timeout it is **silent data loss**:
+                     * run `9200B480` aborted 24 requests that way, including `courseid=1 (offset 18850)`, and
+                     * each one retired a course whose enrolments had not been fully read, behind a green run.
+                     *
+                     * So a transient failure keeps the parent's offset and counts an attempt on the cursor. The
+                     * bounded count is what stops this becoming the opposite bug (the `Users` `[invalidresponse]`
+                     * deadlock: 61 identical failures and no forward progress possible).
+                     */
+                    if (/did not respond within|\bETIMEDOUT\b|\bECONNRESET\b|\bECONNREFUSED\b|\bEAI_AGAIN\b|socket hang up|fetch failed|network|\b5\d\d\b/i.test(msg)) {
+                        const attempts = (cursor.Fails.get(parentID) ?? 0) + 1;
+                        if (attempts >= maxAttempts) {
+                            abandoned.push({ id: parentID, attempts, message: msg });
+                            examined.add(index);   // give up deliberately, and say so — never silently
+                        } else {
+                            transientFails.set(index, attempts);
+                            if (offset > 0) partial.set(index, offset);
+                        }
+                        return;
+                    }
+                    // A permission refusal is not a fetch error. Moodle answers `[accessexception]` for a
+                    // function the token may not call at all, and it answers it for EVERY parent — so the
+                    // per-parent error is the wrong grain: it says "52 things went wrong" about one credential
+                    // that was never granted. Counted here, attributed once below.
+                    if (/\[accessexception\]|\[requiredcapability\]|\[nopermission\]/i.test(msg)) {
+                        forbidden.push(parentID);
+                        forbiddenMessage ??= msg;
+                    } else {
+                        warnings.push({ Code: 'PARENT_FETCH_ERROR', Message: `"${obj.Name}" fetch for ${paramName}=${parentID}${offset ? ` (offset ${offset})` : ''}: ${msg}`, Data: { object: obj.Name, [paramName]: parentID, offset } });
+                    }
+                    examined.add(index);
+                }
+            });
+
+        // Every parent this call reached was refused on permissions, and nothing was read. That is a credential
+        // scope limit stated as one fact — the same grain OpenWater's `LEAF_FORBIDDEN` uses — rather than N
+        // fetch errors that read like N separate faults. A PARTIAL refusal stays per-parent (below), because
+        // "some courses' groups are readable" is genuinely different from "this function is not granted".
+        if (forbidden.length > 0 && out.length === 0 && forbidden.length === examined.size) {
+            warnings.push({
+                Code: 'LEAF_FORBIDDEN',
+                Message: `"${obj.Name}": ${wsfunction} refused every one of the ${forbidden.length} ${paramName}`
+                    + ` value(s) this call reached — the token is not permitted this function on this site.`
+                    + ` The parent chain resolved fine (${allParentIDs.length} parent id(s)), so this is a`
+                    + ` credential scope limit, not a request-shape or empty-data result. Vendor: ${forbiddenMessage}`,
+                Data: { object: obj.Name, wsfunction, refusedParents: forbidden.length,
+                        resolvedParents: allParentIDs.length, sample: forbidden.slice(0, 5) },
+            });
+        } else if (forbidden.length > 0) {
+            warnings.push({
+                Code: 'LEAF_FORBIDDEN',
+                Message: `"${obj.Name}": ${forbidden.length} of the ${examined.size} ${paramName} value(s) this`
+                    + ` call reached were refused on permissions; the rest were read. Vendor: ${forbiddenMessage}`,
+                Data: { object: obj.Name, wsfunction, refusedParents: forbidden.length,
+                        examined: examined.size, sample: forbidden.slice(0, 5) },
+            });
+        }
+
+        // A parent abandoned after repeated transient failures is stated, with the vendor's own words and the
+        // attempt count. It is the one place the walk knowingly leaves records unread, so it must never be
+        // quiet about it — and it names the parent so an operator can go and look at that course.
+        if (abandoned.length > 0) {
+            warnings.push({
+                Code: 'PARENT_ABANDONED',
+                Message: `"${obj.Name}": ${abandoned.length} ${paramName} value(s) failed ${maxAttempts} times in a`
+                    + ` row on transport errors and were passed over so the walk can continue —`
+                    + ` ${abandoned.slice(0, 5).map(a => a.id).join(', ')}. Their records are NOT synced. This is`
+                    + ` usually a vendor-side slow response for that parent (raise requestTimeoutMs, or`
+                    + ` parentScope.maxParentAttempts, if it is legitimately slow). Vendor: ${abandoned[0].message}`,
+                Data: { object: obj.Name, wsfunction, abandoned: abandoned.length, maxAttempts,
+                        sample: abandoned.slice(0, 5).map(a => ({ [paramName]: a.id, attempts: a.attempts })) },
+            });
+        }
+
+        // The cursor may only advance over the contiguous prefix that was examined. A parent past a
+        // budget-skipped one may well have completed (concurrency finishes out of order) and its records are
+        // kept — upserts are idempotent — but claiming it as covered would silently drop the skipped parent.
+        let covered = 0;
+        while (covered < batch.length && examined.has(covered)) covered++;
+
+        // Every parent at or past the covered prefix that holds mid-parent progress, or a transient-failure
+        // count, is carried by id. Entries before the prefix are dropped: those parents are finished, and
+        // keeping their state would resume a walk into ground it has already covered.
+        const carriedPartials = new Map<string, number>();
+        for (const [index, off] of partial) if (index >= covered) carriedPartials.set(batch[index], off);
+        const carriedFails = new Map<string, number>();
+        for (const [index, n] of transientFails) if (index >= covered) carriedFails.set(batch[index], n);
+
+        const resumeOffset = partial.get(covered);
+        const stopped = skippedForBudget > 0 || partial.size > 0;
+        if (stopped) {
+            warnings.push({
+                Code: 'PARENT_BUDGET_STOP',
+                Message: `"${obj.Name}": stopped after ${covered} of ${batch.length} ${paramName} values`
+                    + (resumeOffset != null ? ` (plus ${resumeOffset} records into the next)` : '')
+                    + (partial.size > 1 ? ` and ${partial.size} partly-read parent(s) whose offsets are carried` : '')
+                    + ` on the ${budgetMs}ms budget — resuming from there.`,
+                Data: { object: obj.Name, covered, batch: batch.length, skipped: skippedForBudget,
+                        resumeOffset: resumeOffset ?? null, partlyRead: partial.size, budgetMs },
+            });
+        }
+
+        // A parent held back for a retry is not covered, so the walk still has work even if the prefix reached
+        // the end of the batch — otherwise a transient failure on the last parent would end the walk early.
+        const hasMore = remaining.length > covered || carriedFails.size > 0 || carriedPartials.size > 0;
+        return {
+            Records: out,
+            HasMore: hasMore,
+            NextAfterKeyValue: !hasMore ? undefined
+                : this.serializeParentCursor(covered > 0 ? batch[covered - 1] : null, carriedPartials, carriedFails),
+            Warnings: warnings.length ? warnings : undefined,
+        };
+    }
+
+    /**
+     * Reads a parent-walk cursor.
+     *
+     * Three wire forms, all still parsed, because an in-flight walk must resume rather than restart:
+     *
+     * - `"<id>"` — that parent is finished; start after it.
+     * - `"<id>#<offset>"` — that parent is partly read; resume AT it from that offset. **One** parent only.
+     * - `'{"a":"<id>","p":{"<id>":<offset>},"f":{"<id>":<n>}}'` — the extended form: `a` is the finished-through
+     *   parent, `p` maps ANY parent to its mid-parent offset, `f` counts consecutive transient failures per
+     *   parent.
+     *
+     * The extended form exists because the single-slot form is what made paged walks serial. Only the head of
+     * the covered prefix could carry an offset (pointing anywhere else would claim a budget-skipped parent as
+     * done), so when N parents were read concurrently and the budget stopped them all mid-way, N-1 offsets were
+     * thrown away and those parents restarted from 0 on the next call — every call, forever. Measured live on
+     * `Enrolled Users` (run `9200B480`, `MaxConcurrency: 2`): 50,608 records fetched for 29,002 rows, a 1.74x
+     * re-read that was entirely the discarded lane. Carrying every lane's offset fixes the cause, which is what
+     * lets the walk keep the engine's concurrency instead of trading throughput for correctness.
+     *
+     * JSON rather than more delimiters: parent ids are vendor strings and a `;`/`,` scheme cannot be made safe
+     * against one that contains the delimiter. The legacy forms are still EMITTED whenever they suffice, so a
+     * cursor only grows when the walk actually has multi-lane state to carry.
+     */
+    private parseParentCursor(raw: string | null | undefined): ParentCursor {
+        const empty: ParentCursor = { After: null, Partials: new Map(), Fails: new Map() };
+        if (!raw) return empty;
+
+        if (raw.startsWith('{')) {
+            try {
+                const p = JSON.parse(raw) as { a?: unknown; p?: unknown; f?: unknown };
+                const nums = (v: unknown): Map<string, number> => {
+                    const m = new Map<string, number>();
+                    if (v && typeof v === 'object') {
+                        for (const [k, n] of Object.entries(v as Record<string, unknown>)) {
+                            const parsed = typeof n === 'number' ? n : Number.parseInt(String(n), 10);
+                            if (Number.isFinite(parsed) && parsed >= 0) m.set(k, parsed);
+                        }
+                    }
+                    return m;
+                };
+                return {
+                    After: typeof p.a === 'string' && p.a.length > 0 ? p.a : null,
+                    Partials: nums(p.p),
+                    Fails: nums(p.f),
+                };
+            } catch {
+                // A cursor we cannot read must not be guessed at: restarting the walk re-reads (idempotent
+                // upserts) where a mis-parse could skip parents outright.
+                return empty;
+            }
+        }
+
+        const hash = raw.lastIndexOf('#');
+        if (hash < 0) return { After: raw, Partials: new Map(), Fails: new Map() };
+        const offset = Number.parseInt(raw.slice(hash + 1), 10);
+        if (!Number.isFinite(offset) || offset < 0) return { After: raw.slice(0, hash), Partials: new Map(), Fails: new Map() };
+        return { After: null, Partials: new Map([[raw.slice(0, hash), offset]]), Fails: new Map() };
+    }
+
+    /**
+     * Writes the cursor back, preferring the legacy forms so it stays human-readable and short whenever there
+     * is no multi-lane state to carry. `After` is the parent finished through; `partials`/`fails` are keyed by
+     * parent id and must only ever describe parents at or past the covered prefix.
+     */
+    private serializeParentCursor(after: string | null, partials: Map<string, number>, fails: Map<string, number>): string | undefined {
+        if (partials.size === 0 && fails.size === 0) return after ?? undefined;
+        if (fails.size === 0 && partials.size === 1 && after == null) {
+            const [id, offset] = [...partials.entries()][0];
+            return `${id}#${offset}`;
+        }
+        const payload: { a?: string; p?: Record<string, number>; f?: Record<string, number> } = {};
+        if (after != null) payload.a = after;
+        if (partials.size > 0) payload.p = Object.fromEntries(partials);
+        if (fails.size > 0) payload.f = Object.fromEntries(fails);
+        return JSON.stringify(payload);
+    }
+
+    /** Wall clock, isolated so the budget is testable without fake timers. */
+    protected nowMs(): number {
+        return Date.now();
+    }
+
+    /**
+     * Bounded id-window scan for objects whose list function cannot be bulk-listed.
+     *
+     * WHY THIS EXISTS. `core_user_get_users` declares no pagination params, and the Totara/Moodle docs are
+     * explicit: "You can search without criteria, but the function is not designed for it. It could [be] very
+     * slow or timeout" — and the `%` wildcard "may be considerably slower". Asking it for every user in one
+     * shot (criteria email=%) is therefore a request the server is documented to be unable to satisfy: against
+     * a real-sized site it never returns inside the engine's FetchChangesMs budget, the batch is killed, and the
+     * object syncs ZERO rows behind an otherwise-green run. Observed live: 3x 30s timeouts, 0 users.
+     *
+     * WHAT THIS DOES INSTEAD. Walks the id space in bounded windows against the documented BULK reader
+     * (`core_user_get_users_by_field`, field=id, values[]) — an indexed primary-key lookup rather than a search.
+     *
+     * The scan itself is NOT Totara-specific and does not live here: `runIdWindowScan` in
+     * `@memberjunction/connector-id-window-scan` owns the windowing, the fetch budget, the bisection that
+     * isolates records the vendor refuses, and the resume cursor. This method supplies only the two things that
+     * ARE Totara-specific — how to turn a list of ids into a Moodle RPC call, and how to map the raw rows back
+     * into `ExternalRecord`s. Any connector facing the same "the list endpoint cannot list" shape imports the
+     * same helper rather than reimplementing it.
+     */
+    private async fetchIdWindowScan(
+        obj: MJIntegrationObjectEntity,
+        _cfg: Record<string, unknown>,
+        ctx: FetchContext,
+        scan: Record<string, unknown>,
+    ): Promise<FetchBatchResult> {
+        const scanWsFn = this.readConfigString(scan, 'wsFunction');
+        const field = this.readConfigString(scan, 'field') ?? 'id';
+        if (!scanWsFn) {
+            return { Records: [], HasMore: false, Warnings: [{ Code: 'ID_WINDOW_SCAN_INCOMPLETE',
+                Message: `"${obj.Name}": Configuration.idWindowScan requires wsFunction.`, Data: { object: obj.Name } }] };
         }
 
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const fields = this.GetCachedFields(obj.ID);
         const pkFieldNames = this.primaryKeyFieldNames(fields);
 
-        // 1) Load parent ids from the parent's list wsfunction (bare array or single-collection envelope).
-        const parentResp = await this.MakeHTTPRequest(auth, auth.Endpoint, 'POST', this.BuildHeaders(auth),
-            { WsFunction: parentWsFn, Params: {} } as MoodleRPCRequest);
-        const parentRecords = this.NormalizeResponse(parentResp.Body, null);
-        const allParentIDs = Array.from(new Set(parentRecords
-            .map(r => r[parentIdField]).filter(v => v != null && String(v).length > 0).map(String)))
-            .sort((a, b) => a.localeCompare(b));
-        if (allParentIDs.length === 0) {
-            return { Records: [], HasMore: false, Warnings: [{ Code: 'ZERO_PARENTS',
-                Message: `"${obj.Name}": ${parentWsFn} returned no parent ids to iterate ${paramName} over — sync the parent first.`, Data: { object: obj.Name } }] };
-        }
-
-        // 2) Keyset-resume + bounded batch over the parent ids.
-        const after = ctx.AfterKeyValue ?? null;
-        const remaining = after != null ? allParentIDs.filter(id => id.localeCompare(after) > 0) : allParentIDs;
-        const batch = remaining.slice(0, Math.max(1, this.TemplateVarParentBatchSize()));
-
-        // 3) One request per parent (bounded concurrency + adaptive rate-limit via the engine hooks).
-        const out: ExternalRecord[] = [];
-        const warnings: NonNullable<FetchBatchResult['Warnings']> = [];
-        const collectionKeys = this.recordCollectionKeys(obj, cfg);
-        await this.runParentBounded(batch, Math.max(1, ctx.MaxConcurrency ?? 1), async (parentID) => {
-            if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
-            try {
+        const result = await runIdWindowScan({
+            ObjectName: obj.Name,
+            Config: {
+                field,
+                windowSize: this.readConfigPositiveInt(scan, 'windowSize') ?? undefined,
+                windowsPerCall: this.readConfigPositiveInt(scan, 'windowsPerCall') ?? undefined,
+                maxConsecutiveEmptyWindows: this.readConfigPositiveInt(scan, 'maxConsecutiveEmptyWindows') ?? undefined,
+                // Non-negative (not positive): budgetMs=0 is meaningful — "spend no time beyond the first
+                // window" — and it is what makes the deadline deterministically testable.
+                budgetMs: this.readConfigNonNegativeInt(scan, 'budgetMs') ?? undefined,
+                maxBisectSplitsPerCall: this.readConfigPositiveInt(scan, 'maxBisectSplitsPerCall') ?? undefined,
+            },
+            AfterKeyValue: ctx.AfterKeyValue,
+            MaxConcurrency: ctx.MaxConcurrency,
+            RateLimitAcquire: ctx.RateLimitAcquire,
+            RateLimitReport: ctx.RateLimitReport,
+            // Moodle takes the id list as bracket-notation params. NormalizeResponse THROWS on an in-band
+            // Moodle exception envelope, which is exactly the signal the scan bisects on — so it must not be
+            // caught here.
+            FetchWindow: async (ids: number[]): Promise<Record<string, unknown>[]> => {
+                const params: Record<string, string | number> = { field };
+                ids.forEach((id, i) => { params[`values[${i}]`] = id; });
                 const resp = await this.MakeHTTPRequest(auth, auth.Endpoint, 'POST', this.BuildHeaders(auth),
-                    { WsFunction: wsfunction, Params: { [paramName]: parentID } } as MoodleRPCRequest);
-                for (const key of collectionKeys) {
-                    for (const raw of this.NormalizeResponse(resp.Body, key)) {
-                        // tag the child with the parent FK so its row links back to the parent record
-                        const tagged = raw[paramName] != null ? raw : { ...raw, [paramName]: parentID };
-                        out.push(this.buildExternalRecord(this.applyTransformPreservingKeys(tagged, obj, fields), ctx.ObjectName, pkFieldNames));
-                    }
-                }
-                ctx.RateLimitReport?.();
-            } catch (e) {
-                const msg = e instanceof Error ? e.message : String(e);
-                if (/429|rate.?limit|Retry-After/i.test(msg)) { ctx.RateLimitReport?.(e); throw e; }  // rate-limit → propagate for backoff
-                warnings.push({ Code: 'PARENT_FETCH_ERROR', Message: `"${obj.Name}" fetch for ${paramName}=${parentID}: ${msg}`, Data: { object: obj.Name, [paramName]: parentID } });
-            }
+                    { WsFunction: scanWsFn, Params: params } as MoodleRPCRequest);
+                return this.NormalizeResponse(resp.Body, null);
+            },
         });
 
-        const hasMore = remaining.length > batch.length;
-        return { Records: out, HasMore: hasMore, NextAfterKeyValue: hasMore ? batch[batch.length - 1] : undefined, Warnings: warnings.length ? warnings : undefined };
+        return {
+            Records: result.Records.map((raw) =>
+                this.buildExternalRecord(this.applyTransformPreservingKeys(raw, obj, fields), ctx.ObjectName, pkFieldNames)),
+            HasMore: result.HasMore,
+            ...(result.NextAfterKeyValue !== undefined ? { NextAfterKeyValue: result.NextAfterKeyValue } : {}),
+            ...(result.Warnings ? { Warnings: result.Warnings } : {}),
+        };
     }
+
 
     /** Bounded-concurrency runner (the base's RunBounded is private). Single-threaded async → array pushes are safe. */
     private async runParentBounded<T>(items: T[], concurrency: number, worker: (item: T) => Promise<void>): Promise<void> {
@@ -719,21 +1331,51 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         pagParams: string[],
         offset: number,
         pageSize: number,
+        ordering?: OffsetOrdering,
     ): void {
         const fromRaw = pagParams[0] ?? 'limitfrom';
         const countRaw = (pagParams[1] ?? 'limitnum').split('|')[0];
+        const pairs: Array<[string, string | number]> = [[fromRaw, offset], [countRaw, pageSize]];
+        // Ordering rides in the SAME option array as the limits, which is why it is written here rather than
+        // by a second helper: a separate helper would start its own bracket indexes at 0 and overwrite the
+        // limits it was meant to accompany.
+        if (ordering) pairs.push([ordering.SortByParam, ordering.Key], [ordering.SortDirectionParam, ordering.Direction]);
         if (fromRaw.includes('.')) {
-            const prefix = fromRaw.split('.')[0];
-            const fromName = fromRaw.slice(prefix.length + 1);
-            const countName = countRaw.includes('.') ? countRaw.slice(countRaw.indexOf('.') + 1) : countRaw;
-            params[`${prefix}[0][name]`] = fromName;
-            params[`${prefix}[0][value]`] = offset;
-            params[`${prefix}[1][name]`] = countName;
-            params[`${prefix}[1][value]`] = pageSize;
+            const prefix = fromRaw.slice(0, fromRaw.indexOf('.'));
+            const short = (n: string): string => (n.includes('.') ? n.slice(n.indexOf('.') + 1) : n);
+            pairs.forEach(([name, value], i) => {
+                params[`${prefix}[${i}][name]`] = short(name);
+                params[`${prefix}[${i}][value]`] = value;
+            });
         } else {
-            params[fromRaw] = offset;
-            params[countRaw] = pageSize;
+            for (const [name, value] of pairs) params[name] = value;
         }
+    }
+
+    /**
+     * The declared stable ordering for an offset-paged read, or `undefined` when the object declares none.
+     *
+     * WHY THIS IS NOT OPTIONAL POLISH. `limitfrom`/`limitnumber` is SQL `OFFSET`/`LIMIT`, and an offset over a
+     * result set with no `ORDER BY` has no defined page boundary: consecutive pages may repeat rows and, worse,
+     * may never return others at all. Measured live on `Enrolled Users` (run `9200B480`): 50,608 records fetched
+     * produced 29,002 distinct keyed rows — a 1.74x re-read — behind a run that reported success. Overlap costs
+     * time; the gaps are silent data loss.
+     *
+     * Every object in this catalog already declares `stableOrderingKey`, and Totara/Moodle documents `sortby` +
+     * `sortdirection` next to `limitfrom`/`limitnumber` on the paged functions. Both halves existed; nothing
+     * joined them. Objects that declare no `orderingParams` are unchanged — the option names are per-function
+     * and are read from the catalog, never guessed.
+     */
+    private readOffsetOrdering(cfg: Record<string, unknown>): OffsetOrdering | undefined {
+        const orderParams = this.readConfigStringArray(cfg, 'orderingParams') ?? [];
+        const key = this.readConfigString(cfg, 'stableOrderingKey');
+        if (orderParams.length < 2 || !orderParams[0] || !orderParams[1] || !key) return undefined;
+        return {
+            SortByParam: orderParams[0],
+            SortDirectionParam: orderParams[1],
+            Key: key,
+            Direction: this.readConfigString(cfg, 'orderingDirection') ?? 'ASC',
+        };
     }
 
     /** PageNumber pagination. `paginationParams` = [pageName, sizeName?]; sizeName is optional (`page` alone). */
@@ -973,9 +1615,17 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             }
             return undefined;
         };
+        // Numeric knob, read separately: `pick` only matches string values, and a timeout is normally
+        // written as a number. Absent/invalid → the default; an explicit 0 → no deadline (opt out).
+        const timeoutRaw = Object.entries(raw)
+            .find(([k]) => k.toLowerCase() === 'requesttimeoutms')?.[1];
+        const timeout = typeof timeoutRaw === 'number' ? timeoutRaw
+            : typeof timeoutRaw === 'string' && timeoutRaw.trim() !== '' ? Number(timeoutRaw)
+            : NaN;
         const candidate: TotaraConfig = {
             Token: pick('wstoken', 'token', 'wsToken', 'apiKey', 'api_key', 'apitoken') ?? '',
             BaseURL: pick('base_url', 'baseUrl', 'baseURL', 'url', 'site', 'siteUrl', 'site_url', 'host') ?? '',
+            RequestTimeoutMs: Number.isFinite(timeout) && timeout >= 0 ? timeout : DEFAULT_REQUEST_TIMEOUT_MS,
         };
         const parsed = ConfigSchema.safeParse(candidate);
         if (!parsed.success) {
@@ -1031,6 +1681,20 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
     private readConfigObject(cfg: Record<string, unknown>, key: string): Record<string, unknown> | null {
         const v = cfg[key];
         return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : null;
+    }
+
+    /** Positive-integer config reader (accepts a numeric string). Returns null for absent/zero/negative/NaN. */
+    private readConfigPositiveInt(cfg: Record<string, unknown>, key: string): number | null {
+        const v = cfg[key];
+        const n = typeof v === 'number' ? v : typeof v === 'string' ? Number.parseInt(v, 10) : Number.NaN;
+        return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+    }
+
+    /** As readConfigPositiveInt, but 0 is a legal value (e.g. a zero time budget). Returns null for absent/negative/NaN. */
+    private readConfigNonNegativeInt(cfg: Record<string, unknown>, key: string): number | null {
+        const v = cfg[key];
+        const n = typeof v === 'number' ? v : typeof v === 'string' ? Number.parseInt(v, 10) : Number.NaN;
+        return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
     }
 
     // ── Small utilities ────────────────────────────────────────────────

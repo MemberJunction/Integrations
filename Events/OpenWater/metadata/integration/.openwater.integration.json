@@ -3234,6 +3234,25 @@
                   "lastModified": "2026-06-29T03:44:58.708Z",
                   "checksum": "e559b27026f5f4764a1a193702bbef3d70f170a0be547444b43976be77940813"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "2BFE5913-9D8F-5769-B46A-EC38C98FD9C6"
+                }
               }
             ]
           },
@@ -3412,6 +3431,25 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:44:58.795Z",
                   "checksum": "e535de963d12fd5b390bcf215eb67a50ac692e4665b33ee3816694f2b5de4e6c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "fundId",
+                  "DisplayName": "Fund Id",
+                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Fund&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "2212B345-8394-5E7B-9A35-34110D54D538"
                 }
               }
             ]
@@ -3859,6 +3897,25 @@
                   "lastModified": "2026-06-29T03:44:59.007Z",
                   "checksum": "37d26e69113675b27239ba7d1e1c52171d20238e2b9031e3d3153a6a84eed2ea"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "42F46EF8-074F-5BAD-8D36-6C5DE00862F3"
+                }
               }
             ]
           },
@@ -3943,6 +4000,25 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:44:59.033Z",
                   "checksum": "c55027dfb06ad0f1b024253571cb9e17bb1afe637b7fb704d2dede30a6317899"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "DE1496E1-64A1-5F78-9BFC-B44C7EBFB569"
                 }
               }
             ]
@@ -4079,6 +4155,25 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:44:59.086Z",
                   "checksum": "67e023f31dbfa2d8250bae7c376f09564b5f261f9b75bb75e00f0e328520edb3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "5860D712-577F-57C2-89F2-1D51E934699F"
                 }
               }
             ]
@@ -4238,6 +4333,25 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:44:59.166Z",
                   "checksum": "fac4e8609a6b8723d5f06738d4f16ba4ea40ec45f11cdb849b4d53aa9066111c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "152C9C7A-DC82-5C11-81D4-92753315C3AC"
                 }
               }
             ]
@@ -4420,6 +4534,25 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:44:59.254Z",
                   "checksum": "1463d2b4bc7411865cd0cd8ed8d741ac5ab8ee1fe37ff6a9c89bf2613f56ea5e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "26A08615-7040-5CDC-9162-6646C583C239"
                 }
               }
             ]
@@ -4612,6 +4745,25 @@
                   "lastModified": "2026-06-29T03:44:59.344Z",
                   "checksum": "ef130af4573dbfe702bf03e884abe9bf07f3e345a8d892f11aa3b86b11ecfdd7"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "7D9FF438-D975-5CD5-8E14-E3A5D40473F6"
+                }
               }
             ]
           },
@@ -4689,6 +4841,25 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:44:59.368Z",
                   "checksum": "33bea927633f5afe6cc17c1c09631e4ca97f5946c3f0e896e3e341d4348bb7b7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Program&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "F5C6C9BF-B530-5C9C-8B56-FF89358C8428"
                 }
               }
             ]

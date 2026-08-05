@@ -21,6 +21,7 @@
     "@memberjunction/integration-engine": ">=5.43.0 <6.0.0"
   },
   "dependencies": {
+    "@memberjunction/connector-id-window-scan": "^1.0.0",
     "@memberjunction/connector-schema-merge": "^1.0.1",
     "zod": "~3.24.4"
   },
