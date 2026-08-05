@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 39,
+  "count": 42,
   "connectors": [
     {
       "name": "Fonteva",
@@ -510,6 +510,27 @@
       "installTag": "LMS-Totara@0.2.1"
     },
     {
+      "name": "Google Analytics 4",
+      "displayName": "Google Analytics 4 Connector",
+      "description": "Google Analytics 4 connector over the Data API v1beta. Syncs three defined reports — daily page performance, and campaign traffic at both campaign and utm_content grain — keyed by date plus their dimension tuple. Read-only, service-account credential.",
+      "category": "Marketing",
+      "tags": [
+        "ga4",
+        "marketing",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-google",
+      "navigationBaseURL": "https://analytics.google.com",
+      "objectCount": 3,
+      "className": "@memberjunction/connector-ga4",
+      "npmPackage": "@memberjunction/connector-ga4",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Marketing/GA4",
+      "installTag": "Marketing-GA4@0.1.0"
+    },
+    {
       "name": "magnetmail",
       "displayName": "MagnetMail Connector",
       "description": "Higher Logic Marketing Enterprise (formerly Real Magnet/MagnetMail) — legacy SOAP/XML email-marketing platform (mmapi.asmx, 55 ops): recipients, groups, messages, tracking, unsubscribes, bulk-CSV uploads. Two-step session-token auth. No delete op exists.",
@@ -829,6 +850,48 @@
       "mjVersionRange": ">=5.45.0 <6.0.0",
       "repoSubpath": "Platform/Zendesk",
       "installTag": "Platform-Zendesk@1.1.2"
+    },
+    {
+      "name": "Asana",
+      "displayName": "Asana Connector",
+      "description": "Asana work-management connector. Syncs workspace users, projects, top-level tasks and subtasks over the Asana REST API v1.0 with a personal-access-token bearer credential. Read-only.",
+      "category": "PM",
+      "tags": [
+        "asana",
+        "pm",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-diagram-project",
+      "navigationBaseURL": "https://app.asana.com",
+      "objectCount": 4,
+      "className": "@memberjunction/connector-asana",
+      "npmPackage": "@memberjunction/connector-asana",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "PM/Asana",
+      "installTag": "PM-Asana@0.1.0"
+    },
+    {
+      "name": "Everhour",
+      "displayName": "Everhour Connector",
+      "description": "Everhour time-tracking connector. Syncs team users, projects, per-project tasks and team-wide time records over the Everhour REST API v1.2 with an API-key credential. Read-only; money in cents and durations in seconds, as the vendor reports them.",
+      "category": "PM",
+      "tags": [
+        "everhour",
+        "pm",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-stopwatch",
+      "navigationBaseURL": "https://app.everhour.com",
+      "objectCount": 4,
+      "className": "@memberjunction/connector-everhour",
+      "npmPackage": "@memberjunction/connector-everhour",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "PM/Everhour",
+      "installTag": "PM-Everhour@0.1.0"
     }
   ]
 }
