@@ -900,6 +900,58 @@ describe('writes (MOCK ONLY — no live endpoint, no mutation)', () => {
         expect(connector.Captured[0].url).toContain(`companies(${COMPANY_B})/journals(j-7)/journalLines`);
     });
 
+    it('CREATE resolves a nested parent segment from the GENERIC parentId a BC sub-entity carries', async () => {
+        // `dimensionSetLines` / `documentAttachments` hang off SEVERAL parents, so Business Central keys
+        // them on a polymorphic `parentId` (+`parentType`) rather than a `<parent>Id` named for any one of
+        // them. Without the generic fallback the create is refused with "could not resolve the key for
+        // segment", which is what the credential-free write matrix caught.
+        connector.IOFixtures.set('dimensionSetLines', makeIO({
+            ID: 'io-dimensionSetLines',
+            Name: 'dimensionSetLines',
+            APIPath: '/companies({id})/salesInvoices({id})/dimensionSetLines',
+            SupportsWrite: true,
+            SupportsCreate: true,
+            CreateAPIPath: '/companies({id})/salesInvoices({id})/dimensionSetLines',
+            CreateMethod: 'POST',
+            CreateBodyShape: 'flat',
+            CreateIDLocation: 'body',
+        }));
+        connector.IOFFixtures.set('io-dimensionSetLines', idPK);
+        connector.Responses.push({ Status: 201, Body: { id: 'dsl-new' }, Headers: {} });
+
+        const result = await connector.CreateRecord(createCtx({ parentId: 'inv-3', valueId: 'v-1' }, 'dimensionSetLines'));
+
+        expect(result.Success).toBe(true);
+        expect(connector.Captured[0].url).toContain(`companies(${COMPANY_A})/salesInvoices(inv-3)/dimensionSetLines`);
+    });
+
+    it('CREATE reads the new record\'s ID from the object\'s METADATA primary key, not just a literal `id`', async () => {
+        // Seven BC objects key on something other than `id` (`customerSales` → `customerId`, …). The base
+        // scan looks for id/ID/externalID only, so a perfectly successful 201 was reported as a failure AND
+        // the identity was lost — which would re-create the same record on the next sync.
+        connector.IOFixtures.set('customerSales', makeIO({
+            ID: 'io-customerSales',
+            Name: 'customerSales',
+            APIPath: '/companies({id})/customerSales',
+            SupportsWrite: true,
+            SupportsCreate: true,
+            CreateAPIPath: '/companies({id})/customerSales',
+            CreateMethod: 'POST',
+            CreateBodyShape: 'flat',
+            CreateIDLocation: 'body',
+        }));
+        connector.IOFFixtures.set('io-customerSales', [
+            makeIOF({ Name: 'customerId', IsPrimaryKey: true, IsRequired: true, IsUniqueKey: true }),
+            makeIOF({ Name: 'name', Sequence: 1 }),
+        ]);
+        connector.Responses.push({ Status: 201, Body: { customerId: 'cs-42', name: 'Adatum' }, Headers: {} });
+
+        const result = await connector.CreateRecord(createCtx({ name: 'Adatum' }, 'customerSales'));
+
+        expect(result.Success).toBe(true);
+        expect(result.ExternalID).toBe('cs-42');
+    });
+
     it('CREATE fails loudly rather than issuing a request with an unresolved path key', async () => {
         await expect(connector.CreateRecord(createCtx({ amount: 1 }, 'journalLines')))
             .rejects.toThrow(/could not resolve the key for segment "journals"/);

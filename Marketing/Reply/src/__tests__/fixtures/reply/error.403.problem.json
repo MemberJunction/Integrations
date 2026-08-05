@@ -1,0 +1,6 @@
+{
+  "title": "Forbidden",
+  "status": 403,
+  "detail": "Feature scopes [ViewProspect] are denied for userId 123.",
+  "code": "contact.forbidden"
+}
