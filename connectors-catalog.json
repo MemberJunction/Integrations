@@ -420,10 +420,10 @@
       "objectCount": 83,
       "className": "BusinessCentralConnector",
       "npmPackage": "@memberjunction/connector-business-central",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Finance/BusinessCentral",
-      "installTag": "Finance-BusinessCentral@1.0.0"
+      "installTag": "Finance-BusinessCentral@1.0.1"
     },
     {
       "name": "NetSuite",
