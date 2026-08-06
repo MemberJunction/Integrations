@@ -593,6 +593,34 @@ describe('row projection', () => {
         expect(p.Record.Fields.sessionCampaignName).toBe('(not set)');
         expect(p.Record.ExternalID).toBe('2026-07-14|(not set)|(direct)|(none)');
     });
+
+    it('fills an empty key dimension with (not set) so the row can actually be written', () => {
+        // Untagged traffic (direct visits, email-signature links) arrives with an empty campaign
+        // and medium. An empty key component does not survive the write: MJ's generated spCreate
+        // inserts and then re-selects by primary key, empty is stored as NULL for a nullable
+        // column, and `= NULL` matches nothing — the create comes back as "no rows returned from
+        // SQL" and the row is lost. Observed live on AIDP against key
+        // `2026-08-05||email_signature|`, which failed the entire GA4 run.
+        const utm = catalogObject('UtmPerformance');
+        const row = {
+            dims: ['20260805', '', 'email_signature', ''],
+            metrics: ['1', '1', '1', '1', '1', '1', '1'],
+        };
+        const p = projectRow(utm, response([row]).rows![0], PROPERTY_ID)!;
+
+        expect(p.Record.Fields.sessionCampaignName).toBe('(not set)');
+        expect(p.Record.Fields.sessionMedium).toBe('(not set)');
+        expect(p.Record.Fields.sessionSource).toBe('email_signature');
+        expect(p.Record.ExternalID).toBe('2026-08-05|(not set)|email_signature|(not set)');
+    });
+
+    it('leaves a non-key dimension empty — only key components need a stand-in', () => {
+        // Scoped to primary-key components on purpose. An empty non-key dimension is a truthful
+        // "no value" and writes fine, so substituting there would invent data.
+        const page = catalogObject('PagePerformance');
+        const p = projectRow(page, response([{ dims: ['20260714', ''], metrics: ['1'] }]).rows![0], PROPERTY_ID)!;
+        expect(p.Record.Fields.pagePath).toBe('(not set)');
+    });
 });
 
 // ── The fetch loop, end to end ────────────────────────────────────────────────
