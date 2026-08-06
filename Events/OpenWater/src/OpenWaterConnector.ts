@@ -130,8 +130,11 @@ interface AccessPath {
 
 // ─── Constants ──────────────────────────────────────────────────────────
 
-// No DEFAULT_BASE_URL: OpenWater is tenant-specific (per-customer host on *.secure-platform.com);
-// the legacy api.getopenwater.com host does NOT resolve. BaseURL is REQUIRED — see GetAuth().
+// No DEFAULT_BASE_URL: OpenWater's real API host is the SHARED https://api.secure-platform.com
+// (confirmed live against its own published swagger), not a per-customer subdomain — but we still
+// require it explicitly rather than hardcoding it, since a wrong silent default is worse than a
+// loud one; the legacy api.getopenwater.com host does NOT resolve. BaseURL is REQUIRED — see
+// GetAuth(). The tenant's own subdomain is a separate value that goes in ClientKey, not here.
 const DEFAULT_PAGE_SIZE = 100;
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
@@ -1106,14 +1109,17 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         const config = await this.ParseConfig(companyIntegration, contextUser);
         const baseURL = this.StripTrailingSlash(config.BaseURL ?? '');
         if (!baseURL) {
-            // OpenWater is tenant-specific (each customer is white-labeled on its own host, e.g.
-            // https://<org>.secure-platform.com). There is NO shared public API host — the legacy
-            // default api.getopenwater.com does NOT resolve (NXDOMAIN), so a silent fallback would
-            // fail every real connection at DNS. Require the per-tenant BaseURL and fail loudly here.
+            // OpenWater's real API host is the SHARED https://api.secure-platform.com (confirmed
+            // live against its own published swagger) — NOT a per-tenant vanity subdomain. The
+            // legacy default api.getopenwater.com does NOT resolve (NXDOMAIN), so a silent fallback
+            // would fail every real connection at DNS. Require BaseURL and fail loudly here rather
+            // than guess wrong. (The tenant's own domain, e.g. https://<org>.secure-platform.com,
+            // is a SEPARATE value — it goes in ClientKey, not here.)
             throw new Error(
-                'OpenWater requires a per-tenant BaseURL — your OpenWater API host, e.g. ' +
-                'https://<your-org>.secure-platform.com. There is no shared public default ' +
-                '(api.getopenwater.com does not resolve); set Configuration.BaseURL on the connection.'
+                'OpenWater requires a BaseURL — the OpenWater API host. This is almost always ' +
+                'https://api.secure-platform.com (the shared host, same for every customer), NOT ' +
+                'your own OpenWater subdomain; the legacy api.getopenwater.com does not resolve. ' +
+                'Set Configuration.BaseURL on the connection.'
             );
         }
         this.authState = { Config: { ...config, BaseURL: baseURL }, BaseURL: baseURL };
