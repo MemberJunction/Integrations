@@ -615,11 +615,31 @@ describe('row projection', () => {
     });
 
     it('leaves a non-key dimension empty — only key components need a stand-in', () => {
-        // Scoped to primary-key components on purpose. An empty non-key dimension is a truthful
-        // "no value" and writes fine, so substituting there would invent data.
-        const page = catalogObject('PagePerformance');
-        const p = projectRow(page, response([{ dims: ['20260714', ''], metrics: ['1'] }]).rows![0], PROPERTY_ID)!;
-        expect(p.Record.Fields.pagePath).toBe('(not set)');
+        // Scoped to primary-key components on purpose: an empty non-key dimension is a truthful
+        // "no value" that writes without issue, so substituting there would invent data.
+        //
+        // Every dimension on every shipped object is currently a key component, so this branch has
+        // no natural fixture. Rather than assert on an object that happens to be all-key today —
+        // which would silently stop testing anything the moment that changed — derive one by
+        // demoting a single field, so the assertion is about the RULE and not about the catalog.
+        const base = catalogObject('UtmContentPerformance');
+        const withNonKeyDim = {
+            ...base,
+            Fields: base.Fields.map((f) =>
+                f.Name === 'sessionManualAdContent' ? { ...f, IsPrimaryKey: false } : f
+            ),
+        };
+        const row = {
+            dims: ['20260805', '', 'email_signature', '', ''],
+            metrics: ['1', '1', '1', '1', '1', '1', '1'],
+        };
+        const p = projectRow(withNonKeyDim, response([row]).rows![0], PROPERTY_ID)!;
+
+        // the demoted dimension keeps its empty value …
+        expect(p.Record.Fields.sessionManualAdContent).toBe('');
+        // … while the still-key components are filled, and it drops out of the key entirely
+        expect(p.Record.Fields.sessionCampaignName).toBe('(not set)');
+        expect(p.Record.ExternalID).toBe('2026-08-05|(not set)|email_signature|(not set)');
     });
 });
 
