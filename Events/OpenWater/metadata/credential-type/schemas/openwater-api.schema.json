@@ -5,20 +5,19 @@
     "BaseURL": {
       "type": "string",
       "title": "OpenWater API Host",
-      "description": "Your OpenWater tenant's API host, used for every request this connector makes - e.g. 'https://your-org.secure-platform.com'. OpenWater is white-labeled per tenant; there is no shared default host.",
+      "description": "The OpenWater API host this connector calls. This is almost always the SHARED host 'https://api.secure-platform.com' (the same value for every OpenWater customer) - NOT your own OpenWater subdomain. The legacy 'api.getopenwater.com' host does not resolve.",
       "order": 0
     },
     "ClientKey": {
       "type": "string",
-      "title": "Client Key",
-      "description": "OpenWater API secret, sent as the 'X-ClientKey' header. OpenWater issues this alongside the API Key from your account manager or support, as a genuinely separate value from both the API Key and the API Host above - requests to OpenWater often come back with only one of the two keys, so ask explicitly for both.",
-      "isSecret": true,
+      "title": "Client Key (Your OpenWater Domain)",
+      "description": "Your OpenWater tenant's own domain, sent as the 'X-ClientKey' header - e.g. 'your-org.secure-platform.com' (no 'https://'). This is how OpenWater's shared API host identifies your account; it is a different value from the API Host above.",
       "order": 1
     },
     "ApiKey": {
       "type": "string",
       "title": "API Key",
-      "description": "OpenWater API secret, sent as the 'X-ApiKey' header. Issued together with the Client Key above.",
+      "description": "OpenWater admin API secret, sent as the 'X-ApiKey' header.",
       "isSecret": true,
       "order": 2
     },
