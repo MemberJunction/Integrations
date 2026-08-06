@@ -1,0 +1,10 @@
+{
+  "12345": {
+    "error": "contactAlreadyInSequence",
+    "errorDetails": "Contact is already enrolled"
+  },
+  "12346": {
+    "error": "contactNotFound",
+    "errorDetails": "Contact does not exist"
+  }
+}

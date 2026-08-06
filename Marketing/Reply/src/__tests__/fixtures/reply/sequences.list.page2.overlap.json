@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "id": 12346,
+      "ownerUserId": 42,
+      "name": "Follow-up Campaign",
+      "status": "paused",
+      "created": "2024-03-07T14:30:00+00:00",
+      "isArchived": false,
+      "health": "degraded"
+    },
+    {
+      "id": 12347,
+      "ownerUserId": 42,
+      "name": "Sales Outreach",
+      "status": "active",
+      "created": "2024-03-07T14:30:00+00:00",
+      "isArchived": false,
+      "health": "degraded"
+    }
+  ],
+  "hasMore": false
+}

@@ -857,10 +857,41 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
         const response = await this.PacedRequest(() => this.MakeHTTPRequest(auth, url, obj.CreateMethod as string, this.BuildHeaders(auth), body));
         if (response.Status >= 200 && response.Status < 300) {
             this.captureETagFromResponse(obj.Name, response);
-            const externalID = this.ExtractIDFromResponse(response, obj.CreateIDLocation);
+            const externalID = this.extractCreatedID(obj, response);
             return this.BuildCreatedResult(externalID, response.Status, ctx.ObjectName);
         }
         return this.failureResult(response, 'create');
+    }
+
+    /**
+     * Extracts the created record's ExternalID using the object's METADATA primary key before falling back
+     * to the base's conventional `id`/`ID`/`externalID` scan.
+     *
+     * Most Business Central entities key on a plain `id`, which the base handles. Seven do NOT —
+     * `subscriptions` (`subscriptionId`), `agedAccountsPayables`/`vendorPurchases` (`vendorId`),
+     * `agedAccountsReceivables`/`customerSales` (`customerId`), `contactsInformation` (`contactId`), and
+     * `trialBalances` (`accountId`). For those, the base scan finds nothing, so a perfectly successful
+     * create (BC returns 201 with the new record) would be reported as a failure — and, worse, the record's
+     * identity would be lost, so the next sync would create it AGAIN. That is exactly the duplicate-create
+     * hazard `BuildCreatedResult`'s loud-on-empty-id invariant exists to prevent, so the fix belongs here
+     * rather than in a weakened invariant.
+     *
+     * Reading `IsPrimaryKey` from the field cache keeps this metadata-driven: it needs no hardcoded list of
+     * the seven, and it stays correct if the vendor's key naming changes or new objects are added.
+     * Composite keys are delimiter-joined, matching `ToExternalRecord`'s convention.
+     */
+    private extractCreatedID(obj: MJIntegrationObjectEntity, response: RESTResponse): string | undefined {
+        const created = this.NormalizeResponse(response.Body, obj.ResponseDataKey)[0];
+        if (created) {
+            const pkNames = this.GetCachedFields(obj.ID)
+                .filter((f) => f.IsPrimaryKey)
+                .sort((a, b) => a.Sequence - b.Sequence)
+                .map((f) => f.Name);
+            if (pkNames.length > 0 && pkNames.every((n) => created[n] != null && String(created[n]).length > 0)) {
+                return pkNames.map((n) => String(created[n])).join('|');
+            }
+        }
+        return this.ExtractIDFromResponse(response, obj.CreateIDLocation);
     }
 
     /** Update — company/parent-scoped PATCH with the required `If-Match`; one re-read + retry on a stale tag. */
@@ -1392,7 +1423,15 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
     /** Resolves a parent segment's key from the record's attributes (`journals` → `journalId`/`journalID`). */
     private parentKeyFromAttributes(segmentName: string, attributes: Record<string, unknown>): string | undefined {
         const singular = singularize(segmentName);
-        const candidates = [`${singular}Id`, `${singular}ID`, `${singular}_id`, `${segmentName}Id`, singular, segmentName];
+        // Named-parent candidates first (`journalLines` carries `journalId`), then Business Central's
+        // GENERIC sub-entity parent key: entities reachable under several different parent documents
+        // — dimensionSetLines (salesOrders / purchaseInvoices / journals / …), documentAttachments —
+        // do not carry a `<parent>Id` field at all. BC models them with `parentId` + `parentType`, so
+        // `parentId` is the only key such a record can supply for its parent segment.
+        const candidates = [
+            `${singular}Id`, `${singular}ID`, `${singular}_id`, `${segmentName}Id`, singular, segmentName,
+            'parentId', 'parentID',
+        ];
         for (const key of candidates) {
             const value = attributes[key];
             if (typeof value === 'string' && value.length > 0) return value;

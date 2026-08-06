@@ -1,0 +1,6 @@
+{
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "Invalid requested page view.",
+  "code": "contact.invalidPagination"
+}

@@ -1,0 +1,4154 @@
+{
+  "Transport": "http",
+  "ConfigUrlKey": "BaseURL",
+  "Configuration": {
+    "ApiKey": "mock-reply-api-key-not-a-secret"
+  },
+  "Objects": [
+    {
+      "Name": "BackgroundJob"
+    },
+    {
+      "Name": "ContactAccountList"
+    },
+    {
+      "Name": "ContactAccount"
+    },
+    {
+      "Name": "ContactAccountContact"
+    },
+    {
+      "Name": "ContactBlacklistRuleDomain"
+    },
+    {
+      "Name": "ContactBlacklistRuleEmailException"
+    },
+    {
+      "Name": "ContactBlacklistRuleEmail"
+    },
+    {
+      "Name": "ContactList"
+    },
+    {
+      "Name": "Contact"
+    },
+    {
+      "Name": "ContactActivity"
+    },
+    {
+      "Name": "ContactInboxThread"
+    },
+    {
+      "Name": "ContactListReference"
+    },
+    {
+      "Name": "ContactSequence"
+    },
+    {
+      "Name": "ContactStatus"
+    },
+    {
+      "Name": "CustomField"
+    },
+    {
+      "Name": "EmailAccount"
+    },
+    {
+      "Name": "EmailAccountStat"
+    },
+    {
+      "Name": "EmailAccountTag"
+    },
+    {
+      "Name": "EmailTemplateFolder"
+    },
+    {
+      "Name": "EmailTemplate"
+    },
+    {
+      "Name": "EmailTemplateVariable"
+    },
+    {
+      "Name": "HolidayCalendar"
+    },
+    {
+      "Name": "LinkedinAccount"
+    },
+    {
+      "Name": "LinkedinAccountPending"
+    },
+    {
+      "Name": "Schedule"
+    },
+    {
+      "Name": "ScheduleHolidayCalendar"
+    },
+    {
+      "Name": "SequenceFolder"
+    },
+    {
+      "Name": "SequenceFolderSequence"
+    },
+    {
+      "Name": "Sequence"
+    },
+    {
+      "Name": "SequenceContact"
+    },
+    {
+      "Name": "SequenceContactPreview"
+    },
+    {
+      "Name": "SequenceContactState"
+    },
+    {
+      "Name": "SequenceEmailAccount"
+    },
+    {
+      "Name": "SequenceLinkedinAccount"
+    },
+    {
+      "Name": "SequenceStep"
+    },
+    {
+      "Name": "SequenceStepVariant"
+    },
+    {
+      "Name": "Setting"
+    },
+    {
+      "Name": "Task"
+    },
+    {
+      "Name": "Webhook"
+    },
+    {
+      "Name": "WebhookEvent"
+    },
+    {
+      "Name": "WebhookLog"
+    },
+    {
+      "Name": "Whoami"
+    },
+    {
+      "Name": "WhoamiTeamUser"
+    },
+    {
+      "Name": "ContactCustomField"
+    },
+    {
+      "Name": "ContactStatusSequence"
+    },
+    {
+      "Name": "EmailTemplateAttachment"
+    },
+    {
+      "Name": "Holiday"
+    },
+    {
+      "Name": "ScheduleTiming"
+    },
+    {
+      "Name": "ScheduleFollowUpTiming"
+    },
+    {
+      "Name": "SequenceTemplateGlobalTemplate"
+    },
+    {
+      "Name": "SequenceTemplateOrganizationTemplate"
+    },
+    {
+      "Name": "SequenceTemplateTeamTemplate"
+    },
+    {
+      "Name": "Step"
+    },
+    {
+      "Name": "EmailVariant"
+    },
+    {
+      "Name": "ConditionTemplate"
+    }
+  ],
+  "Routes": [
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000001/variants/seq000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "seq000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000001/variants/seq000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000001/variants",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "seq000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/email-exceptions/con000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/email-exceptions/con000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/sequences/{sequence_id}/contacts/{contact_id}/preview",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "sequenceId": "seq000000000000001",
+          "contactId": "con000000000000001",
+          "steps": [
+            {
+              "stepId": "ste000000000000001"
+            },
+            {
+              "stepId": "ste000000000000002"
+            },
+            {
+              "stepId": "ste000000000000003"
+            }
+          ]
+        },
+        {
+          "sequenceId": "seq000000000000002",
+          "contactId": "con000000000000002",
+          "steps": [
+            {
+              "stepId": "ste000000000000001"
+            },
+            {
+              "stepId": "ste000000000000002"
+            },
+            {
+              "stepId": "ste000000000000003"
+            }
+          ]
+        },
+        {
+          "sequenceId": "seq000000000000003",
+          "contactId": "con000000000000003",
+          "steps": [
+            {
+              "stepId": "ste000000000000001"
+            },
+            {
+              "stepId": "ste000000000000002"
+            },
+            {
+              "stepId": "ste000000000000003"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "seq000000000000001",
+        "parentId": "seq000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/sequences/{sequence_id}/contacts/{contact_id}/preview",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "stepId": "ste000000000000001"
+        },
+        {
+          "stepId": "ste000000000000002"
+        },
+        {
+          "stepId": "ste000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/domains/con000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/domains/con000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/emails/con000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/emails/con000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/linkedin-accounts/pending/lin000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/email-template-folders/ema000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/email-template-folders/ema000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contact-account-lists/con000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-account-lists/con000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/email-exceptions",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/email-exceptions",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000001/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv01010100000000",
+          "subject": "Step variant subject 1 (seq 1 step 1)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv01010200000000",
+          "subject": "Step variant subject 2 (seq 1 step 1)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv01010300000000",
+          "subject": "Step variant subject 3 (seq 1 step 1)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000002/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv01020100000000",
+          "subject": "Step variant subject 1 (seq 1 step 2)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv01020200000000",
+          "subject": "Step variant subject 2 (seq 1 step 2)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv01020300000000",
+          "subject": "Step variant subject 3 (seq 1 step 2)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps/seq000000000000003/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv01030100000000",
+          "subject": "Step variant subject 1 (seq 1 step 3)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv01030200000000",
+          "subject": "Step variant subject 2 (seq 1 step 3)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv01030300000000",
+          "subject": "Step variant subject 3 (seq 1 step 3)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000002/steps/seq000000000000001/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv02010100000000",
+          "subject": "Step variant subject 1 (seq 2 step 1)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv02010200000000",
+          "subject": "Step variant subject 2 (seq 2 step 1)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv02010300000000",
+          "subject": "Step variant subject 3 (seq 2 step 1)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000002/steps/seq000000000000002/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv02020100000000",
+          "subject": "Step variant subject 1 (seq 2 step 2)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv02020200000000",
+          "subject": "Step variant subject 2 (seq 2 step 2)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv02020300000000",
+          "subject": "Step variant subject 3 (seq 2 step 2)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000002/steps/seq000000000000003/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv02030100000000",
+          "subject": "Step variant subject 1 (seq 2 step 3)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv02030200000000",
+          "subject": "Step variant subject 2 (seq 2 step 3)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv02030300000000",
+          "subject": "Step variant subject 3 (seq 2 step 3)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000003/steps/seq000000000000001/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv03010100000000",
+          "subject": "Step variant subject 1 (seq 3 step 1)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv03010200000000",
+          "subject": "Step variant subject 2 (seq 3 step 1)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv03010300000000",
+          "subject": "Step variant subject 3 (seq 3 step 1)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000003/steps/seq000000000000002/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv03020100000000",
+          "subject": "Step variant subject 1 (seq 3 step 2)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv03020200000000",
+          "subject": "Step variant subject 2 (seq 3 step 2)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv03020300000000",
+          "subject": "Step variant subject 3 (seq 3 step 2)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000003/steps/seq000000000000003/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv03030100000000",
+          "subject": "Step variant subject 1 (seq 3 step 3)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv03030200000000",
+          "subject": "Step variant subject 2 (seq 3 step 3)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv03030300000000",
+          "subject": "Step variant subject 3 (seq 3 step 3)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000004/steps/seq000000000000001/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv04010100000000",
+          "subject": "Step variant subject 1 (seq 4 step 1)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv04010200000000",
+          "subject": "Step variant subject 2 (seq 4 step 1)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv04010300000000",
+          "subject": "Step variant subject 3 (seq 4 step 1)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000004/steps/seq000000000000002/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv04020100000000",
+          "subject": "Step variant subject 1 (seq 4 step 2)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv04020200000000",
+          "subject": "Step variant subject 2 (seq 4 step 2)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv04020300000000",
+          "subject": "Step variant subject 3 (seq 4 step 2)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000004/steps/seq000000000000003/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv04030100000000",
+          "subject": "Step variant subject 1 (seq 4 step 3)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv04030200000000",
+          "subject": "Step variant subject 2 (seq 4 step 3)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv04030300000000",
+          "subject": "Step variant subject 3 (seq 4 step 3)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000005/steps/seq000000000000001/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv05010100000000",
+          "subject": "Step variant subject 1 (seq 5 step 1)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv05010200000000",
+          "subject": "Step variant subject 2 (seq 5 step 1)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv05010300000000",
+          "subject": "Step variant subject 3 (seq 5 step 1)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000005/steps/seq000000000000002/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv05020100000000",
+          "subject": "Step variant subject 1 (seq 5 step 2)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv05020200000000",
+          "subject": "Step variant subject 2 (seq 5 step 2)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv05020300000000",
+          "subject": "Step variant subject 3 (seq 5 step 2)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000005/steps/seq000000000000003/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv05030100000000",
+          "subject": "Step variant subject 1 (seq 5 step 3)",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv05030200000000",
+          "subject": "Step variant subject 2 (seq 5 step 3)",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv05030300000000",
+          "subject": "Step variant subject 3 (seq 5 step 3)",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/{id}/steps/{step_id}/variants",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ssv000000000000901",
+          "subject": "Step variant subject 1",
+          "message": "<p>Step variant body 1</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": true
+        },
+        {
+          "id": "ssv000000000000902",
+          "subject": "Step variant subject 2",
+          "message": "<p>Step variant body 2</p>",
+          "hasAttachments": false,
+          "attachmentIds": null,
+          "isEnabled": false
+        },
+        {
+          "id": "ssv000000000000903",
+          "subject": "Step variant subject 3",
+          "message": "<p>Step variant body 3</p>",
+          "hasAttachments": true,
+          "attachmentIds": "eta000000000000031",
+          "isEnabled": true
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-accounts/ema000000000000001/tags",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/email-accounts/tags/ema000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/holiday-calendars/hol000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "hol000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/holiday-calendars/hol000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/linkedin-accounts/lin000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contact-accounts/con000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-accounts/con000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/sequence-folders/seq000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "seq000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequence-folders/seq000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/email-templates/ema000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "ema000000000000001",
+        "folderId": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/email-templates/ema000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001/steps",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "seq000000000000001",
+        "parentId": "seq000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/email-accounts/ema000000000000001",
+      "Method": "PATCH",
+      "Status": 200,
+      "Body": {
+        "id": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/email-accounts/ema000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contact-lists/con000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-lists/con000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/custom-fields/cus000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "cus000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/custom-fields/cus000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/schedules/{id}/holiday-calendars",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "sch000000000000001"
+        },
+        {
+          "id": "sch000000000000002"
+        },
+        {
+          "id": "sch000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/{id}/linkedin-accounts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001"
+        },
+        {
+          "id": "seq000000000000002"
+        },
+        {
+          "id": "seq000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/domains",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/domains",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequence-folders/{id}/sequences",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001"
+        },
+        {
+          "id": "seq000000000000002"
+        },
+        {
+          "id": "seq000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-accounts/{id}/contacts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/emails",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-blacklist-rules/emails",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequences/{id}/contacts/state",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "contactId": "seq000000000000001"
+        },
+        {
+          "contactId": "seq000000000000002"
+        },
+        {
+          "contactId": "seq000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/{id}/email-accounts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001"
+        },
+        {
+          "id": "seq000000000000002"
+        },
+        {
+          "id": "seq000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/schedules/sch000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "sch000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/schedules/sch000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001",
+      "Method": "PATCH",
+      "Status": 200,
+      "Body": {
+        "id": "seq000000000000001",
+        "scheduleId": "sch000000000000001",
+        "Rating__c": "Hot",
+        "CustomScore__c": 42
+      }
+    },
+    {
+      "Path": "/v3/sequences/seq000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contacts/con000000000000001",
+      "Method": "PATCH",
+      "Status": 200,
+      "Body": {
+        "id": "con000000000000001",
+        "accountId": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contacts/con000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contacts/{id}/inbox-threads",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/webhooks/web000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "web000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/webhooks/web000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/email-accounts/{id}/stats",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ema000000000000001"
+        },
+        {
+          "id": "ema000000000000002"
+        },
+        {
+          "id": "ema000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-templates/variables",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "prospect": "ema000000000000001"
+        },
+        {
+          "prospect": "ema000000000000002"
+        },
+        {
+          "prospect": "ema000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/linkedin-accounts/pending",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "lin000000000000001"
+        },
+        {
+          "id": "lin000000000000002"
+        },
+        {
+          "id": "lin000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contacts/{id}/activities",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/tasks/tas000000000000001",
+      "Method": "PUT",
+      "Status": 200,
+      "Body": {
+        "id": "tas000000000000001",
+        "sequenceId": "seq000000000000001",
+        "sequenceStepId": "seq000000000000001",
+        "contactId": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/tasks/tas000000000000001",
+      "Method": "DELETE",
+      "Status": 204,
+      "Body": null
+    },
+    {
+      "Path": "/v3/contacts/con000000000000001/sequences",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "sequenceId": "seq000000000000011",
+          "id": "cs0000000000000011",
+          "sequenceName": "Sequence 1-1",
+          "addingDate": "2026-01-11T00:00:00Z",
+          "currentStep": 1,
+          "statusInSequence": "Active",
+          "emailAccountId": "ema000000000000001",
+          "linkedInAccountId": null
+        },
+        {
+          "sequenceId": "seq000000000000012",
+          "id": "cs0000000000000012",
+          "sequenceName": "Sequence 1-2",
+          "addingDate": "2026-02-12T00:00:00Z",
+          "currentStep": 2,
+          "statusInSequence": "Paused",
+          "emailAccountId": "ema000000000000002",
+          "linkedInAccountId": null
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contacts/con000000000000002/sequences",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "sequenceId": "seq000000000000021",
+          "id": "cs0000000000000021",
+          "sequenceName": "Sequence 2-1",
+          "addingDate": "2026-01-11T00:00:00Z",
+          "currentStep": 1,
+          "statusInSequence": "Active",
+          "emailAccountId": "ema000000000000001",
+          "linkedInAccountId": null
+        },
+        {
+          "sequenceId": "seq000000000000022",
+          "id": "cs0000000000000022",
+          "sequenceName": "Sequence 2-2",
+          "addingDate": "2026-02-12T00:00:00Z",
+          "currentStep": 2,
+          "statusInSequence": "Paused",
+          "emailAccountId": "ema000000000000002",
+          "linkedInAccountId": null
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contacts/con000000000000003/sequences",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "sequenceId": "seq000000000000031",
+          "id": "cs0000000000000031",
+          "sequenceName": "Sequence 3-1",
+          "addingDate": "2026-01-11T00:00:00Z",
+          "currentStep": 1,
+          "statusInSequence": "Active",
+          "emailAccountId": "ema000000000000001",
+          "linkedInAccountId": null
+        },
+        {
+          "sequenceId": "seq000000000000032",
+          "id": "cs0000000000000032",
+          "sequenceName": "Sequence 3-2",
+          "addingDate": "2026-02-12T00:00:00Z",
+          "currentStep": 2,
+          "statusInSequence": "Paused",
+          "emailAccountId": "ema000000000000002",
+          "linkedInAccountId": null
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/{id}/contacts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "contactId": "seq000000000000001",
+          "sequenceId": "seq000000000000001",
+          "emailAccountId": "ema000000000000001",
+          "linkedInAccountId": "lin000000000000001"
+        },
+        {
+          "contactId": "seq000000000000002",
+          "sequenceId": "seq000000000000002",
+          "emailAccountId": "ema000000000000002",
+          "linkedInAccountId": "lin000000000000002"
+        },
+        {
+          "contactId": "seq000000000000003",
+          "sequenceId": "seq000000000000003",
+          "emailAccountId": "ema000000000000003",
+          "linkedInAccountId": "lin000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contacts/{id}/statuses",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "contactId": "con000000000000001",
+          "sequences": [
+            {
+              "sequenceId": "css000000000000011",
+              "sequenceName": "Sequence 1-1",
+              "statusInSequence": "Active",
+              "emailDisposition": "Opened"
+            },
+            {
+              "sequenceId": "css000000000000012",
+              "sequenceName": "Sequence 1-2",
+              "statusInSequence": "Finished",
+              "emailDisposition": "Replied"
+            }
+          ]
+        },
+        {
+          "contactId": "con000000000000002",
+          "sequences": [
+            {
+              "sequenceId": "css000000000000021",
+              "sequenceName": "Sequence 2-1",
+              "statusInSequence": "Active",
+              "emailDisposition": "Opened"
+            },
+            {
+              "sequenceId": "css000000000000022",
+              "sequenceName": "Sequence 2-2",
+              "statusInSequence": "Finished",
+              "emailDisposition": "Replied"
+            }
+          ]
+        },
+        {
+          "contactId": "con000000000000003",
+          "sequences": [
+            {
+              "sequenceId": "css000000000000031",
+              "sequenceName": "Sequence 3-1",
+              "statusInSequence": "Active",
+              "emailDisposition": "Opened"
+            },
+            {
+              "sequenceId": "css000000000000032",
+              "sequenceName": "Sequence 3-2",
+              "statusInSequence": "Finished",
+              "emailDisposition": "Replied"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-template-folders",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ema000000000000001"
+        },
+        {
+          "id": "ema000000000000002"
+        },
+        {
+          "id": "ema000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-template-folders",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contacts/{id}/statuses",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "sequenceId": "con000000000000001"
+        },
+        {
+          "sequenceId": "con000000000000002"
+        },
+        {
+          "sequenceId": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-account-lists",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-account-lists",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/email-accounts/stats",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequences/{id}/steps",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001",
+          "parentId": "seq000000000000001",
+          "variants": [
+            {
+              "id": "ssv000000000000011",
+              "subject": "Variant subject 1-1",
+              "message": "<p>Variant body 1-1</p>",
+              "hasAttachments": false,
+              "attachmentIds": null,
+              "isEnabled": true
+            },
+            {
+              "id": "ssv000000000000012",
+              "subject": "Variant subject 1-2",
+              "message": "<p>Variant body 1-2</p>",
+              "hasAttachments": true,
+              "attachmentIds": "eta000000000000012",
+              "isEnabled": true
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000002",
+          "parentId": "seq000000000000002",
+          "variants": [
+            {
+              "id": "ssv000000000000021",
+              "subject": "Variant subject 2-1",
+              "message": "<p>Variant body 2-1</p>",
+              "hasAttachments": false,
+              "attachmentIds": null,
+              "isEnabled": true
+            },
+            {
+              "id": "ssv000000000000022",
+              "subject": "Variant subject 2-2",
+              "message": "<p>Variant body 2-2</p>",
+              "hasAttachments": true,
+              "attachmentIds": "eta000000000000022",
+              "isEnabled": true
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000003",
+          "parentId": "seq000000000000003",
+          "variants": [
+            {
+              "id": "ssv000000000000031",
+              "subject": "Variant subject 3-1",
+              "message": "<p>Variant body 3-1</p>",
+              "hasAttachments": false,
+              "attachmentIds": null,
+              "isEnabled": true
+            },
+            {
+              "id": "ssv000000000000032",
+              "subject": "Variant subject 3-2",
+              "message": "<p>Variant body 3-2</p>",
+              "hasAttachments": true,
+              "attachmentIds": "eta000000000000032",
+              "isEnabled": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/{id}/steps",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ema000000000000001"
+        },
+        {
+          "id": "ema000000000000002"
+        },
+        {
+          "id": "ema000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences/{id}/steps",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "property": "con000000000000001"
+        },
+        {
+          "property": "con000000000000002"
+        },
+        {
+          "property": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contacts/{id}/lists",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-accounts/tags",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ema000000000000001"
+        },
+        {
+          "id": "ema000000000000002"
+        },
+        {
+          "id": "ema000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/webhooks/{id}/logs",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "eventId": "web000000000000001"
+        },
+        {
+          "eventId": "web000000000000002"
+        },
+        {
+          "eventId": "web000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequence-templates",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000001-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000001-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000001-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000002",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000002-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000002-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000002-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000003",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000003-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000003-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000003-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequence-templates",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000001-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000001-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000001-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000002",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000002-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000002-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000002-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000003",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000003-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000003-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000003-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequence-templates",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000001-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000001-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000001-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000001-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000002",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000002-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000002-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000002-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000002-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        },
+        {
+          "id": "seq000000000000003",
+          "globalTemplates": [
+            {
+              "id": "seq000000000000003-gt1",
+              "name": "mock gt 1",
+              "description": "mock nested gt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-gt2",
+              "name": "mock gt 2",
+              "description": "mock nested gt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "organizationTemplates": [
+            {
+              "id": "seq000000000000003-ot1",
+              "name": "mock ot 1",
+              "description": "mock nested ot row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-ot2",
+              "name": "mock ot 2",
+              "description": "mock nested ot row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ],
+          "teamTemplates": [
+            {
+              "id": "seq000000000000003-tt1",
+              "name": "mock tt 1",
+              "description": "mock nested tt row 1",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            },
+            {
+              "id": "seq000000000000003-tt2",
+              "name": "mock tt 2",
+              "description": "mock nested tt row 2",
+              "stepTypes": "Email",
+              "isConditional": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/holiday-calendars",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "hol000000000000001",
+          "holidays": [
+            {
+              "id": "hly000000000000011",
+              "name": "Holiday 1-1",
+              "startDate": "2026-01-11T00:00:00Z",
+              "endDate": "2026-01-12T00:00:00Z"
+            },
+            {
+              "id": "hly000000000000012",
+              "name": "Holiday 1-2",
+              "startDate": "2026-02-12T00:00:00Z",
+              "endDate": "2026-02-13T00:00:00Z"
+            }
+          ]
+        },
+        {
+          "id": "hol000000000000002",
+          "holidays": [
+            {
+              "id": "hly000000000000021",
+              "name": "Holiday 2-1",
+              "startDate": "2026-01-11T00:00:00Z",
+              "endDate": "2026-01-12T00:00:00Z"
+            },
+            {
+              "id": "hly000000000000022",
+              "name": "Holiday 2-2",
+              "startDate": "2026-02-12T00:00:00Z",
+              "endDate": "2026-02-13T00:00:00Z"
+            }
+          ]
+        },
+        {
+          "id": "hol000000000000003",
+          "holidays": [
+            {
+              "id": "hly000000000000031",
+              "name": "Holiday 3-1",
+              "startDate": "2026-01-11T00:00:00Z",
+              "endDate": "2026-01-12T00:00:00Z"
+            },
+            {
+              "id": "hly000000000000032",
+              "name": "Holiday 3-2",
+              "startDate": "2026-02-12T00:00:00Z",
+              "endDate": "2026-02-13T00:00:00Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/holiday-calendars",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "hol000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/linkedin-accounts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "lin000000000000001"
+        },
+        {
+          "id": "lin000000000000002"
+        },
+        {
+          "id": "lin000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/whoami/team-users",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "userId": "who000000000000001"
+        },
+        {
+          "userId": "who000000000000002"
+        },
+        {
+          "userId": "who000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/holiday-calendars",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "hol000000000000001"
+        },
+        {
+          "id": "hol000000000000002"
+        },
+        {
+          "id": "hol000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-accounts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-accounts",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequence-folders",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001"
+        },
+        {
+          "id": "seq000000000000002"
+        },
+        {
+          "id": "seq000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequence-folders",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "seq000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/background-jobs",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "jobId": "bac000000000000001"
+        },
+        {
+          "jobId": "bac000000000000002"
+        },
+        {
+          "jobId": "bac000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-templates",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ema000000000000001",
+          "folderId": "ema000000000000001",
+          "attachments": [
+            {
+              "id": "eta000000000000011",
+              "fileName": "file-1-1.pdf",
+              "size": 11264,
+              "url": "https://cdn.reply.io/att/1-1.pdf"
+            },
+            {
+              "id": "eta000000000000012",
+              "fileName": "file-1-2.pdf",
+              "size": 12288,
+              "url": "https://cdn.reply.io/att/1-2.pdf"
+            }
+          ]
+        },
+        {
+          "id": "ema000000000000002",
+          "folderId": "ema000000000000002",
+          "attachments": [
+            {
+              "id": "eta000000000000021",
+              "fileName": "file-2-1.pdf",
+              "size": 21504,
+              "url": "https://cdn.reply.io/att/2-1.pdf"
+            },
+            {
+              "id": "eta000000000000022",
+              "fileName": "file-2-2.pdf",
+              "size": 22528,
+              "url": "https://cdn.reply.io/att/2-2.pdf"
+            }
+          ]
+        },
+        {
+          "id": "ema000000000000003",
+          "folderId": "ema000000000000003",
+          "attachments": [
+            {
+              "id": "eta000000000000031",
+              "fileName": "file-3-1.pdf",
+              "size": 31744,
+              "url": "https://cdn.reply.io/att/3-1.pdf"
+            },
+            {
+              "id": "eta000000000000032",
+              "fileName": "file-3-2.pdf",
+              "size": 32768,
+              "url": "https://cdn.reply.io/att/3-2.pdf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-templates",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "ema000000000000001",
+        "folderId": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/webhooks/events",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "events": "web000000000000001"
+        },
+        {
+          "events": "web000000000000002"
+        },
+        {
+          "events": "web000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-templates",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ema000000000000001"
+        },
+        {
+          "id": "ema000000000000002"
+        },
+        {
+          "id": "ema000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-accounts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "ema000000000000001"
+        },
+        {
+          "id": "ema000000000000002"
+        },
+        {
+          "id": "ema000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/email-accounts",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "ema000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contact-lists",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001"
+        },
+        {
+          "id": "con000000000000002"
+        },
+        {
+          "id": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contact-lists",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/custom-fields",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "cus000000000000001"
+        },
+        {
+          "id": "cus000000000000002"
+        },
+        {
+          "id": "cus000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/custom-fields",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "cus000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequences",
+      "Method": "GET",
+      "Match": "page=1",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001",
+          "scheduleId": "sch000000000000001",
+          "Rating__c": "Hot",
+          "CustomScore__c": 42
+        },
+        {
+          "id": "seq000000000000002",
+          "scheduleId": "sch000000000000002"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences",
+      "Method": "GET",
+      "Match": "page=2",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000003",
+          "scheduleId": "sch000000000000003"
+        },
+        {
+          "id": "seq000000000000004",
+          "scheduleId": "sch000000000000001"
+        },
+        {
+          "id": "seq000000000000005",
+          "scheduleId": "sch000000000000002"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/schedules",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "sch000000000000001"
+        },
+        {
+          "id": "sch000000000000002"
+        },
+        {
+          "id": "sch000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/schedules",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "sch000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/sequences",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "seq000000000000001",
+          "scheduleId": "sch000000000000001",
+          "Rating__c": "Hot",
+          "CustomScore__c": 42
+        },
+        {
+          "id": "seq000000000000002",
+          "scheduleId": "sch000000000000002"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/sequences",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "seq000000000000001",
+        "scheduleId": "sch000000000000001",
+        "Rating__c": "Hot",
+        "CustomScore__c": 42
+      }
+    },
+    {
+      "Path": "/v3/schedules",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "weekDay": "sch000000000000001"
+        },
+        {
+          "weekDay": "sch000000000000002"
+        },
+        {
+          "weekDay": "sch000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/schedules",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "weekDay": "sch000000000000001"
+        },
+        {
+          "weekDay": "sch000000000000002"
+        },
+        {
+          "weekDay": "sch000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contacts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "con000000000000001",
+          "accountId": "con000000000000001",
+          "sequences": [
+            {
+              "sequenceId": "seq-001-1",
+              "id": "cs-001-1",
+              "sequenceName": "Sequence 001-1",
+              "addingDate": "2026-01-11T00:00:00Z",
+              "currentStep": 1,
+              "statusInSequence": "Active",
+              "emailAccountId": "ema000000000000001",
+              "linkedInAccountId": null
+            },
+            {
+              "sequenceId": "seq-001-2",
+              "id": "cs-001-2",
+              "sequenceName": "Sequence 001-2",
+              "addingDate": "2026-02-12T00:00:00Z",
+              "currentStep": 2,
+              "statusInSequence": "Paused",
+              "emailAccountId": "ema000000000000002",
+              "linkedInAccountId": null
+            }
+          ]
+        },
+        {
+          "id": "con000000000000002",
+          "accountId": "con000000000000002",
+          "sequences": [
+            {
+              "sequenceId": "seq-002-1",
+              "id": "cs-002-1",
+              "sequenceName": "Sequence 002-1",
+              "addingDate": "2026-01-11T00:00:00Z",
+              "currentStep": 1,
+              "statusInSequence": "Active",
+              "emailAccountId": "ema000000000000001",
+              "linkedInAccountId": null
+            },
+            {
+              "sequenceId": "seq-002-2",
+              "id": "cs-002-2",
+              "sequenceName": "Sequence 002-2",
+              "addingDate": "2026-02-12T00:00:00Z",
+              "currentStep": 2,
+              "statusInSequence": "Paused",
+              "emailAccountId": "ema000000000000002",
+              "linkedInAccountId": null
+            }
+          ]
+        },
+        {
+          "id": "con000000000000003",
+          "accountId": "con000000000000003",
+          "sequences": [
+            {
+              "sequenceId": "seq-003-1",
+              "id": "cs-003-1",
+              "sequenceName": "Sequence 003-1",
+              "addingDate": "2026-01-11T00:00:00Z",
+              "currentStep": 1,
+              "statusInSequence": "Active",
+              "emailAccountId": "ema000000000000001",
+              "linkedInAccountId": null
+            },
+            {
+              "sequenceId": "seq-003-2",
+              "id": "cs-003-2",
+              "sequenceName": "Sequence 003-2",
+              "addingDate": "2026-02-12T00:00:00Z",
+              "currentStep": 2,
+              "statusInSequence": "Paused",
+              "emailAccountId": "ema000000000000002",
+              "linkedInAccountId": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "/v3/contacts",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "con000000000000001",
+        "accountId": "con000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/settings",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "account": "set000000000000001"
+        },
+        {
+          "account": "set000000000000002"
+        },
+        {
+          "account": "set000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/webhooks",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "web000000000000001"
+        },
+        {
+          "id": "web000000000000002"
+        },
+        {
+          "id": "web000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/webhooks",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "web000000000000001"
+      }
+    },
+    {
+      "Path": "/v3/contacts",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "key": "con000000000000001"
+        },
+        {
+          "key": "con000000000000002"
+        },
+        {
+          "key": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/whoami",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "userId": "who000000000000001"
+        },
+        {
+          "userId": "who000000000000002"
+        },
+        {
+          "userId": "who000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/tasks",
+      "Method": "GET",
+      "Status": 200,
+      "Body": [
+        {
+          "id": "tas000000000000001",
+          "sequenceId": "seq000000000000001",
+          "sequenceStepId": "seq000000000000001",
+          "contactId": "con000000000000001"
+        },
+        {
+          "id": "tas000000000000002",
+          "sequenceId": "seq000000000000002",
+          "sequenceStepId": "seq000000000000002",
+          "contactId": "con000000000000002"
+        },
+        {
+          "id": "tas000000000000003",
+          "sequenceId": "seq000000000000003",
+          "sequenceStepId": "seq000000000000003",
+          "contactId": "con000000000000003"
+        }
+      ]
+    },
+    {
+      "Path": "/v3/tasks",
+      "Method": "POST",
+      "Status": 201,
+      "Body": {
+        "id": "tas000000000000001",
+        "sequenceId": "seq000000000000001",
+        "sequenceStepId": "seq000000000000001",
+        "contactId": "con000000000000001"
+      }
+    }
+  ],
+  "DeltaPasses": [
+    {
+      "Object": "Sequence",
+      "Description": "update Sequence1 (field value changes, id stable)",
+      "Routes": [
+        {
+          "Path": "/v3/sequences/seq000000000000001",
+          "Method": "PATCH",
+          "Status": 200,
+          "Body": {
+            "id": "seq000000000000001"
+          }
+        },
+        {
+          "Path": "/v3/sequences/seq000000000000001",
+          "Method": "DELETE",
+          "Status": 204,
+          "Body": null
+        },
+        {
+          "Path": "/v3/sequences",
+          "Method": "GET",
+          "Status": 200,
+          "Body": [
+            {
+              "id": "seq000000000000001"
+            },
+            {
+              "id": "seq000000000000003"
+            }
+          ]
+        },
+        {
+          "Path": "/v3/sequences",
+          "Method": "POST",
+          "Status": 201,
+          "Body": {
+            "id": "seq000000000000001"
+          }
+        }
+      ],
+      "ExpectedUpdates": [],
+      "ExpectedPresent": [
+        "seq000000000000001",
+        "seq000000000000003"
+      ]
+    },
+    {
+      "Object": "Sequence",
+      "Description": "create Sequence6 (new id appears)",
+      "Routes": [
+        {
+          "Path": "/v3/sequences/seq000000000000001",
+          "Method": "PATCH",
+          "Status": 200,
+          "Body": {
+            "id": "seq000000000000001"
+          }
+        },
+        {
+          "Path": "/v3/sequences/seq000000000000001",
+          "Method": "DELETE",
+          "Status": 204,
+          "Body": null
+        },
+        {
+          "Path": "/v3/sequences",
+          "Method": "GET",
+          "Status": 200,
+          "Body": [
+            {
+              "id": "seq000000000000001"
+            },
+            {
+              "id": "seq000000000000003"
+            },
+            {
+              "id": "seq000000000000006"
+            }
+          ]
+        },
+        {
+          "Path": "/v3/sequences",
+          "Method": "POST",
+          "Status": 201,
+          "Body": {
+            "id": "seq000000000000001"
+          }
+        }
+      ],
+      "ExpectedPresent": [
+        "seq000000000000006",
+        "seq000000000000001"
+      ]
+    },
+    {
+      "Object": "Sequence",
+      "Description": "delete Sequence2 (tombstone; absent from the page)",
+      "Routes": [
+        {
+          "Path": "/v3/sequences/seq000000000000001",
+          "Method": "PATCH",
+          "Status": 200,
+          "Body": {
+            "id": "seq000000000000001"
+          }
+        },
+        {
+          "Path": "/v3/sequences/seq000000000000001",
+          "Method": "DELETE",
+          "Status": 204,
+          "Body": null
+        },
+        {
+          "Path": "/v3/sequences",
+          "Method": "GET",
+          "Status": 200,
+          "Body": [
+            {
+              "id": "seq000000000000001"
+            },
+            {
+              "id": "seq000000000000003"
+            }
+          ]
+        },
+        {
+          "Path": "/v3/sequences",
+          "Method": "POST",
+          "Status": 201,
+          "Body": {
+            "id": "seq000000000000001"
+          }
+        }
+      ],
+      "ExpectedDeletes": [
+        "seq000000000000002"
+      ],
+      "ExpectedPresent": [
+        "seq000000000000001"
+      ]
+    }
+  ],
+  "Lifecycle": {
+    "supportsDiscovery": false,
+    "supportsFieldDiscovery": false,
+    "authoritativeDiscovery": false,
+    "supportsCustomColumns": true,
+    "incrementalStrategy": "content-hash",
+    "supportsWrite": true,
+    "writeRoundTrip": {
+      "Object": "Contact",
+      "Routes": [
+        {
+          "Path": "/v3/contacts",
+          "Method": "POST",
+          "Status": 200,
+          "Body": {
+            "id": "mock-wr-id-1",
+            "ID": "mock-wr-id-1",
+            "Id": "mock-wr-id-1",
+            "externalID": "mock-wr-id-1",
+            "ExternalID": "mock-wr-id-1",
+            "email": "mock-created"
+          },
+          "Headers": {
+            "content-type": "application/json"
+          }
+        },
+        {
+          "Path": "/v3/contacts/{id}",
+          "Method": "PATCH",
+          "Status": 200,
+          "Body": {
+            "id": "mock-wr-id-1",
+            "ID": "mock-wr-id-1",
+            "Id": "mock-wr-id-1",
+            "externalID": "mock-wr-id-1",
+            "ExternalID": "mock-wr-id-1",
+            "email": "mock-updated"
+          }
+        },
+        {
+          "Path": "/v3/contacts/{id}",
+          "Method": "DELETE",
+          "Status": 200,
+          "Body": {
+            "id": "mock-wr-id-1",
+            "deleted": true
+          }
+        }
+      ],
+      "CreateAttributes": {
+        "email": "mock-created"
+      },
+      "CreatePathMatch": "v3",
+      "DeleteMethodMatch": "DELETE",
+      "UpdateAttributes": {
+        "email": "mock-updated"
+      },
+      "Templated": false
+    },
+    "writeRoundTrips": [
+      {
+        "Object": "Contact",
+        "Routes": [
+          {
+            "Path": "/v3/contacts",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "email": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/contacts/{id}",
+            "Method": "PATCH",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "email": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/contacts/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "email": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "email": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "ContactAccount",
+        "Routes": [
+          {
+            "Path": "/v3/contact-accounts",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/contact-accounts/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/contact-accounts/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "ContactAccountList",
+        "Routes": [
+          {
+            "Path": "/v3/contact-account-lists",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/contact-account-lists/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/contact-account-lists/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "ContactBlacklistRuleDomain",
+        "Routes": [
+          {
+            "Path": "/v3/contact-blacklist-rules/domains",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "pattern": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/contact-blacklist-rules/domains/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "pattern": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/contact-blacklist-rules/domains/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "pattern": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "pattern": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "ContactBlacklistRuleEmail",
+        "Routes": [
+          {
+            "Path": "/v3/contact-blacklist-rules/emails",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "pattern": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/contact-blacklist-rules/emails/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "pattern": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/contact-blacklist-rules/emails/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "pattern": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "pattern": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "ContactBlacklistRuleEmailException",
+        "Routes": [
+          {
+            "Path": "/v3/contact-blacklist-rules/email-exceptions",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "pattern": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/contact-blacklist-rules/email-exceptions/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "pattern": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/contact-blacklist-rules/email-exceptions/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "pattern": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "pattern": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "ContactList",
+        "Routes": [
+          {
+            "Path": "/v3/contact-lists",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/contact-lists/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/contact-lists/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "CustomField",
+        "Routes": [
+          {
+            "Path": "/v3/custom-fields",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "title": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/custom-fields/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "title": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/custom-fields/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "title": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "title": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "EmailAccount",
+        "Routes": [
+          {
+            "Path": "/v3/email-accounts",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "email": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/email-accounts/{id}",
+            "Method": "PATCH",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "email": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/email-accounts/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "email": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "email": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "EmailAccountStat",
+        "Routes": [
+          {
+            "Path": "/v3/email-accounts/stats",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "emailsSentToday": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/email-accounts/stats/{id}",
+            "Method": "PATCH",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "emailsSentToday": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/email-accounts/stats/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "emailsSentToday": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "emailsSentToday": "mock-updated"
+        },
+        "Templated": true
+      },
+      {
+        "Object": "EmailAccountTag",
+        "Routes": [
+          {
+            "Path": "/v3/email-accounts/{id}/tags",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/email-accounts/tags/{tagId}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/email-accounts/{id}/tags/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "EmailTemplate",
+        "Routes": [
+          {
+            "Path": "/v3/email-templates",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/email-templates/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/email-templates/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "EmailTemplateFolder",
+        "Routes": [
+          {
+            "Path": "/v3/email-template-folders",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/email-template-folders/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/email-template-folders/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "HolidayCalendar",
+        "Routes": [
+          {
+            "Path": "/v3/holiday-calendars",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/holiday-calendars/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/holiday-calendars/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "Schedule",
+        "Routes": [
+          {
+            "Path": "/v3/schedules",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/schedules/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/schedules/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "Sequence",
+        "Routes": [
+          {
+            "Path": "/v3/sequences",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/sequences/{id}",
+            "Method": "PATCH",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/sequences/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "SequenceFolder",
+        "Routes": [
+          {
+            "Path": "/v3/sequence-folders",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/sequence-folders/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "name": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/sequence-folders/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "name": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "name": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "SequenceStep",
+        "Routes": [
+          {
+            "Path": "/v3/sequences/{id}/steps",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "type": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/sequences/{id}/steps/{step_id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "type": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/sequences/{id}/steps/{step_id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "type": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "type": "mock-updated"
+        },
+        "Templated": true
+      },
+      {
+        "Object": "SequenceStepVariant",
+        "Routes": [
+          {
+            "Path": "/v3/sequences/{id}/steps/{step_id}/variants",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "subject": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/sequences/{id}/steps/{step_id}/variants/{variant_id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "subject": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/sequences/{id}/steps/{step_id}/variants/{variant_id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "subject": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "subject": "mock-updated"
+        },
+        "Templated": true
+      },
+      {
+        "Object": "Task",
+        "Routes": [
+          {
+            "Path": "/v3/tasks",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "taskType": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/tasks/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "taskType": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/tasks/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "taskType": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "taskType": "mock-updated"
+        },
+        "Templated": false
+      },
+      {
+        "Object": "Webhook",
+        "Routes": [
+          {
+            "Path": "/v3/webhooks",
+            "Method": "POST",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "eventType": "mock-created"
+            },
+            "Headers": {
+              "content-type": "application/json"
+            }
+          },
+          {
+            "Path": "/v3/webhooks/{id}",
+            "Method": "PUT",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "ID": "mock-wr-id-1",
+              "Id": "mock-wr-id-1",
+              "externalID": "mock-wr-id-1",
+              "ExternalID": "mock-wr-id-1",
+              "eventType": "mock-updated"
+            }
+          },
+          {
+            "Path": "/v3/webhooks/{id}",
+            "Method": "DELETE",
+            "Status": 200,
+            "Body": {
+              "id": "mock-wr-id-1",
+              "deleted": true
+            }
+          }
+        ],
+        "CreateAttributes": {
+          "eventType": "mock-created"
+        },
+        "CreatePathMatch": "v3",
+        "DeleteMethodMatch": "DELETE",
+        "UpdateAttributes": {
+          "eventType": "mock-updated"
+        },
+        "Templated": false
+      }
+    ],
+    "supportsScheduling": true,
+    "connectionTestable": true,
+    "derivedFromMetadata": true,
+    "sourceClass": "ReplyConnector"
+  }
+}

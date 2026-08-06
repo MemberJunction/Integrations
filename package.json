@@ -2,7 +2,7 @@
   "name": "@memberjunction/integrations-repo",
   "version": "0.0.0",
   "private": true,
-  "description": "MemberJunction Integrations — vendor connectors, each its own installable Open App + npm package under <Category>/<Connector>. Full Open App model: schema + metadata-seed migrations (SQL Server + Postgres) + CI/CD.",
+  "description": "MemberJunction Integrations \u2014 vendor connectors, each its own installable Open App + npm package under <Category>/<Connector>. Full Open App model: schema + metadata-seed migrations (SQL Server + Postgres) + CI/CD.",
   "type": "module",
   "license": "ISC",
   "workspaces": [
@@ -33,6 +33,7 @@
     "@memberjunction/open-app-engine": "^5.42.0",
     "turbo": "^2.8.3",
     "typescript": "^5.9.3",
+    "undici": "^6.21.1",
     "vitest": "^4.0.18"
   },
   "engines": {
