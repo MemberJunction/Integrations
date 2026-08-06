@@ -2,27 +2,35 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "BaseURL": {
+      "type": "string",
+      "title": "OpenWater API Host",
+      "description": "Your OpenWater tenant's API host, used for every request this connector makes - e.g. 'https://your-org.secure-platform.com'. OpenWater is white-labeled per tenant; there is no shared default host.",
+      "order": 0
+    },
     "ClientKey": {
       "type": "string",
-      "title": "Client Key (Tenant Domain)",
-      "description": "OpenWater tenant domain, sent as the 'X-ClientKey' header (e.g. 'demo.secure-platform.com').",
-      "order": 0
+      "title": "Client Key",
+      "description": "OpenWater API secret, sent as the 'X-ClientKey' header. OpenWater issues this alongside the API Key from your account manager or support, as a genuinely separate value from both the API Key and the API Host above - requests to OpenWater often come back with only one of the two keys, so ask explicitly for both.",
+      "isSecret": true,
+      "order": 1
     },
     "ApiKey": {
       "type": "string",
       "title": "API Key",
-      "description": "OpenWater admin API secret, sent as the 'X-ApiKey' header.",
+      "description": "OpenWater API secret, sent as the 'X-ApiKey' header. Issued together with the Client Key above.",
       "isSecret": true,
-      "order": 1
+      "order": 2
     },
     "OrganizationCode": {
       "type": "string",
       "title": "Organization Code",
       "description": "Optional organization scope, sent as the 'X-OrganizationCode' header when present.",
-      "order": 2
+      "order": 3
     }
   },
   "required": [
+    "BaseURL",
     "ClientKey",
     "ApiKey"
   ]
