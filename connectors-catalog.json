@@ -504,10 +504,10 @@
       "objectCount": 28,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.3.0"
+      "installTag": "LMS-Totara@0.3.1"
     },
     {
       "name": "Google Analytics 4",
