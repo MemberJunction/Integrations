@@ -25,6 +25,13 @@ export const MAX_EXTERNAL_ID_LENGTH = 700;
 export const OTHER_ROW_SENTINEL = '(other)';
 
 /**
+ * GA4's own literal for a dimension that has no value on a row. Used to fill empty primary-key
+ * components — see `projectRow`. This is the vendor's spelling, not ours, so a consumer joining
+ * these rows to anything else in GA4 sees the same token they would in the GA4 UI.
+ */
+export const GA4_UNSET_DIMENSION = '(not set)';
+
+/**
  * Build the `ExternalID` from the declared key values.
  *
  * It must equal the key fields joined on '|' — that is what the engine's REST base class produces
@@ -118,6 +125,19 @@ export function projectRow(obj: CatalogObject, row: GA4Row, propertyId: string):
     }
 
     fields.propertyId = propertyId;
+
+    // A primary-key component must never be empty. GA4 reports untagged traffic with an empty
+    // `sessionCampaignName` / `sessionMedium` (direct visits, email-signature links, anything with
+    // no UTM tagging), and an empty component does not survive the write: MJ's generated
+    // `spCreate` inserts the row and then re-selects it by primary key, an empty string is stored
+    // as NULL for a nullable column, and `= NULL` matches nothing — so the create comes back as
+    // "no rows returned from SQL" and the row is dropped. GA4's own convention for a dimension
+    // with no value is the literal `(not set)`, so use that rather than inventing a sentinel.
+    for (const f of obj.Fields) {
+        if (f.IsPrimaryKey && f.Name !== 'date' && fields[f.Name] === '') {
+            fields[f.Name] = GA4_UNSET_DIMENSION;
+        }
+    }
 
     const keyValues = obj.Fields.filter((f) => f.IsPrimaryKey).map((f) => String(fields[f.Name] ?? ''));
 
