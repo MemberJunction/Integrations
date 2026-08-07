@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "BaseURL": {
+      "type": "string",
+      "title": "Totara Site URL",
+      "description": "Your Totara site's own base URL, e.g. 'https://learn.your-org.com'. The connector calls '{BaseURL}/webservice/rest/server.php' - Totara is self-hosted per customer, so there is no shared default.",
+      "format": "uri",
+      "order": 0
+    },
+    "Token": {
+      "type": "string",
+      "title": "Web Service Token (wstoken)",
+      "description": "A Totara/Moodle web service token (wstoken) for a user with the required REST function permissions. Generated in Totara under Site administration > Server > Web services > Manage tokens.",
+      "isSecret": true,
+      "order": 1
+    }
+  },
+  "required": ["BaseURL", "Token"]
+}
