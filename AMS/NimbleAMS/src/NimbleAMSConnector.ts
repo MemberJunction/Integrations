@@ -257,8 +257,9 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
             throw new Error(`Nimble AMS DiscoverObjects failed: HTTP ${response.Status} at ${url}`);
         }
         const body = response.Body as { sobjects?: Array<{ name: string; label: string; queryable: boolean; createable: boolean; updateable: boolean; deletable: boolean; }> };
+        const rawObjects = body.sobjects ?? [];
         const results: ExternalObjectSchema[] = [];
-        for (const obj of (body.sobjects ?? [])) {
+        for (const obj of rawObjects) {
             if (!obj.queryable) continue;
             if (!this.IsNimbleScopedObject(obj.name)) continue;
             results.push({
@@ -268,6 +269,36 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
                 SupportsIncrementalSync: true,
                 SupportsWrite: obj.createable || obj.updateable,
             });
+        }
+        // A silent empty array here is indistinguishable from "genuinely nothing to sync" —
+        // observed live as a connection that authenticates fine (TestConnection passes) and
+        // then reports "0 tables" with no error anywhere. Distinguish the two real causes so a
+        // caller who cannot log into the Salesforce org directly (e.g. a BYOC platform operator
+        // holding only API credentials, not org admin access) still gets a definitive answer:
+        //   - Salesforce returned object metadata, but NONE of it matched the Nimble AMS scope
+        //     (Account, Contact, or NU__/NUINT__ namespace) — almost always means the Nimble AMS
+        //     managed package isn't installed in this org, or these credentials point at the
+        //     wrong org entirely.
+        //   - Salesforce returned literally no object metadata at all — a different, more
+        //     fundamental problem (API version, org-wide describe restriction, etc.), not a
+        //     missing-package question.
+        if (results.length === 0 && rawObjects.length > 0) {
+            throw new Error(
+                `Nimble AMS DiscoverObjects: Salesforce returned ${rawObjects.length} object(s), but none matched ` +
+                `the Nimble AMS scope (standard objects Account/Contact, or the NU__/NUINT__ managed-package ` +
+                `namespace). This almost always means the Nimble AMS managed package is not installed in this ` +
+                `Salesforce org, or these credentials point at a different org than intended — not a connector ` +
+                `or platform bug. Verify in Salesforce Setup → Installed Packages (look for a package with ` +
+                `namespace prefix "NU"), or confirm with whoever provisioned these credentials.`
+            );
+        }
+        if (rawObjects.length === 0) {
+            throw new Error(
+                `Nimble AMS DiscoverObjects: Salesforce returned zero objects from ${url} — the org's global ` +
+                `describe response was empty. This is unusual even for an org without Nimble AMS installed ` +
+                `(standard objects like Account normally still appear) and suggests an API version, permission, ` +
+                `or org-configuration issue rather than a missing package.`
+            );
         }
         return results;
     }

@@ -154,6 +154,49 @@ describe('NimbleAMSConnector — namespace scoping', () => {
     });
 });
 
+describe('NimbleAMSConnector — DiscoverObjects scope diagnostics', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const companyIntegration = {} as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contextUser = {} as any;
+
+    it('returns only scoped objects when Salesforce reports a normal mixed org', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push({
+            Status: 200,
+            Body: {
+                sobjects: [
+                    { name: 'NU__Order__c', label: 'Order', queryable: true, createable: true, updateable: true, deletable: false },
+                    { name: 'Opportunity', label: 'Opportunity', queryable: true, createable: true, updateable: true, deletable: true },
+                    { name: 'Account', label: 'Account', queryable: true, createable: true, updateable: true, deletable: false },
+                ],
+            },
+        } as RESTResponse);
+        const objects = await c.DiscoverObjects(companyIntegration, contextUser);
+        expect(objects.map(o => o.Name)).toEqual(['NU__Order__c', 'Account']);
+    });
+
+    it('throws a diagnosable error (not a silent empty list) when SF returns objects but none are Nimble-scoped', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push({
+            Status: 200,
+            Body: {
+                sobjects: [
+                    { name: 'Opportunity', label: 'Opportunity', queryable: true, createable: true, updateable: true, deletable: true },
+                    { name: 'Lead', label: 'Lead', queryable: true, createable: true, updateable: true, deletable: true },
+                ],
+            },
+        } as RESTResponse);
+        await expect(c.DiscoverObjects(companyIntegration, contextUser)).rejects.toThrow(/managed package is not installed|different org than intended/);
+    });
+
+    it('throws a different, more fundamental error when Salesforce returns zero objects at all', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push({ Status: 200, Body: { sobjects: [] } } as RESTResponse);
+        await expect(c.DiscoverObjects(companyIntegration, contextUser)).rejects.toThrow(/global describe response was empty/);
+    });
+});
+
 describe('NimbleAMSConnector — TransformRecord strips the SF attributes blob', () => {
     const c = new MockedNimbleAMSConnector();
 
