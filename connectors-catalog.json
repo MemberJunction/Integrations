@@ -123,10 +123,10 @@
       "objectCount": 32,
       "className": "@memberjunction/connector-nimble-ams",
       "npmPackage": "@memberjunction/connector-nimble-ams",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NimbleAMS",
-      "installTag": "AMS-NimbleAMS@1.3.1"
+      "installTag": "AMS-NimbleAMS@1.3.2"
     },
     {
       "name": "Novi AMS",
