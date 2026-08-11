@@ -564,16 +564,49 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         return this.FetchSOQL(ctx, obj);
     }
 
+    /**
+     * The datetime column this object can actually be ordered and filtered by — or null when it has none.
+     *
+     * `LastModifiedDate` was assumed unconditionally, and that assumption is wrong for a large share of a
+     * real Salesforce org. `__History` objects are append-only and expose `CreatedDate` but NOT
+     * `LastModifiedDate`; `__mdt` custom-metadata objects expose neither. Every one of those produced an
+     * instant `HTTP 400 — No such column 'LastModifiedDate' on entity '<obj>'`, on the FETCH path — so the
+     * object could not sync at all, and discovery's sampler fell back to single-record field inference for
+     * it. On a full Nimble org those object types are the bulk of the catalog, so the bulk of the catalog
+     * was failing. Observed live: NU__Event__History, NU__Entity__History, NU__Engagement__History,
+     * NU__FieldMapping__mdt, NU__EventHandler__mdt, and many more.
+     *
+     * Resolution order, first one the object really has:
+     *   1. `IncrementalWatermarkField` — an explicit per-object override always wins.
+     *   2. `LastModifiedDate` — the correct answer for ordinary sObjects.
+     *   3. `SystemModstamp` — SF's own system-maintained mirror; present where LastModifiedDate is not.
+     *   4. `CreatedDate` — correct for append-only `__History`, where created IS modified.
+     *
+     * null means the object has no usable datetime column, so it is fetched unfiltered and unordered by
+     * date (see BuildSOQL). That is honest rather than incremental: it cannot be watermarked, and pretending
+     * otherwise is what produced the 400s.
+     */
+    private ResolveWatermarkField(obj: MJIntegrationObjectEntity, fieldNames: string[]): string | null {
+        const available = new Set(fieldNames.map(f => f.toLowerCase()));
+        const declared = obj.IncrementalWatermarkField?.trim();
+        if (declared) return declared;
+        for (const candidate of ['LastModifiedDate', 'SystemModstamp', 'CreatedDate']) {
+            if (available.has(candidate.toLowerCase())) return candidate;
+        }
+        return null;
+    }
+
     /** Salesforce REST SOQL fetch — cursor pagination via nextRecordsUrl + watermark-ordered incremental. */
     private async FetchSOQL(ctx: FetchContext, obj: MJIntegrationObjectEntity): Promise<FetchBatchResult> {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as NimbleAuthContext;
         const headers = this.BuildHeaders(auth);
-        const watermarkField = obj.IncrementalWatermarkField ?? 'LastModifiedDate';
-
-        // Follow the SF cursor when present; otherwise build the first SOQL page.
+        // Follow the SF cursor when present; otherwise build the first SOQL page. Field names
+        // are needed either way to resolve the watermark, and they are describe-cached.
+        const fieldNames = await this.GetSOQLFieldNames(auth, ctx.ObjectName);
+        const watermarkField = this.ResolveWatermarkField(obj, fieldNames);
         const url = ctx.CurrentCursor
             ? `${this.GetBaseURL(ctx.CompanyIntegration, auth)}${ctx.CurrentCursor}`
-            : `${this.SFDataBase(auth)}/query?q=${encodeURIComponent(this.BuildSOQL(ctx.ObjectName, await this.GetSOQLFieldNames(auth, ctx.ObjectName), watermarkField, ctx.WatermarkValue ?? null))}`;
+            : `${this.SFDataBase(auth)}/query?q=${encodeURIComponent(this.BuildSOQL(ctx.ObjectName, fieldNames, watermarkField, ctx.WatermarkValue ?? null))}`;
 
         const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
         if (response.Status < 200 || response.Status >= 300) {
@@ -591,7 +624,9 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
 
         // Watermark advances ONLY on the final page (full-batch success), and only to the max seen.
         let newWatermark: string | undefined;
-        if (body.done) {
+        // An object with no datetime column (see ResolveWatermarkField) cannot advance a watermark —
+        // there is nothing to read. It is fetched in full each run, which is the honest behaviour.
+        if (body.done && watermarkField) {
             for (const r of raw) {
                 const mod = r[watermarkField];
                 if (typeof mod === 'string' && (!newWatermark || mod > newWatermark)) newWatermark = mod;
@@ -614,13 +649,19 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
      * watermark past them next sync. Use `>=` (not `>`) so records at the exact watermark instant
      * aren't lost; engine dedupe absorbs the boundary re-fetch. ORDER BY the watermark for monotonicity.
      */
-    private BuildSOQL(objectName: string, fieldNames: string[], watermarkField: string, watermarkValue: string | null): string {
+    private BuildSOQL(objectName: string, fieldNames: string[], watermarkField: string | null, watermarkValue: string | null): string {
         // Explicit field list (NOT FIELDS(ALL)) — see GetSOQLFieldNames: FIELDS(ALL) forces LIMIT<=200,
         // incompatible with native nextRecordsUrl paging. An explicit SELECT has no LIMIT requirement.
         const cols = fieldNames.length ? fieldNames.join(', ') : 'Id';
         let soql = `SELECT ${cols} FROM ${objectName}`;
-        if (watermarkValue) soql += ` WHERE ${watermarkField} >= ${this.FormatSOQLDateTime(watermarkValue)}`;
-        soql += ` ORDER BY ${watermarkField} ASC`;
+        // Both clauses are conditional on the object HAVING a datetime column — naming one it does not
+        // have is a hard SOQL 400, not a degraded query. See ResolveWatermarkField.
+        if (watermarkField && watermarkValue) {
+            soql += ` WHERE ${watermarkField} >= ${this.FormatSOQLDateTime(watermarkValue)}`;
+        }
+        // Order by Id when there is no date column: paging is cursor-based (nextRecordsUrl) so ordering is
+        // not required for correctness, but a deterministic order still beats SF's unspecified default.
+        soql += ` ORDER BY ${watermarkField ?? 'Id'} ASC`;
         return soql;
     }
 
@@ -807,7 +848,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
      * declared in {@link ExcludedSourceKeys}. The PK field supplies ExternalID; the watermark field supplies
      * ModifiedAt. (FetchSOQL/FetchLMS override the base fetch, so we hand-build records here.)
      */
-    private RawToExternalRecord(raw: Record<string, unknown>, obj: MJIntegrationObjectEntity, objectType: string, watermarkField: string, pkField: string): ExternalRecord {
+    private RawToExternalRecord(raw: Record<string, unknown>, obj: MJIntegrationObjectEntity, objectType: string, watermarkField: string | null, pkField: string): ExternalRecord {
         const transformed = this.TransformRecord(raw, obj, this.GetCachedFields(obj.ID));
         const excluded = new Set(this.ExcludedSourceKeys(objectType));
         const fields: Record<string, unknown> = {};
@@ -815,7 +856,8 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
             if (excluded.has(key)) continue;
             fields[key] = value;
         }
-        const modRaw = raw[watermarkField];
+        // No datetime column on this object → no ModifiedAt to report, rather than reading `raw[null]`.
+        const modRaw = watermarkField ? raw[watermarkField] : undefined;
         return {
             ExternalID: String(raw[pkField] ?? ''),
             ObjectType: objectType,
