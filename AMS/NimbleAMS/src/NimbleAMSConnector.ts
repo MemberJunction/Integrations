@@ -149,7 +149,25 @@ const FUSE_MAX_BYTES_PER_CALL = 3 * 1024 * 1024; // 3MB
 const TOKEN_REFRESH_BUFFER_MS = 60_000;
 const TOKEN_LIFETIME_MS = 3_600_000;
 const MAX_RETRIES = 3;
-const REQUEST_TIMEOUT_MS = 30_000;
+/**
+ * 120s, raised from 30s, to match Salesforce's OWN server-side query timeout.
+ *
+ * 30s gave up long before the vendor did. On a full org, `describe` and the first sampling
+ * page for large objects legitimately take more than half a minute, and every one that
+ * expired came back as
+ *
+ *   [DiscoverFieldsViaFetch] read-path discovery failed for "X" (Request timed out: …)
+ *
+ * and fell back to single-record field inference — so that object shipped with declared
+ * fields only: no measured widths, no data-proven key. Not a failure the customer sees,
+ * just quietly worse schema, on exactly the biggest tables.
+ *
+ * Matching Salesforce's limit means we now stop when IT stops, rather than inventing an
+ * earlier deadline of our own. The cost is that a slow object holds its concurrency slot
+ * longer, so discovery takes more wall-clock — which is the right trade: discovery of a
+ * large catalog is expected to be long, and being slow beats being wrong.
+ */
+const REQUEST_TIMEOUT_MS = 120_000;
 const MIN_REQUEST_INTERVAL_MS = 50;
 
 // ─── Connector ──────────────────────────────────────────────────────────────
