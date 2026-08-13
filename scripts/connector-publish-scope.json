@@ -22,11 +22,14 @@
     "Events/PheedLoop",
     "Finance/BusinessCentral",
     "Finance/NetSuite",
+    "Finance/QuickBooks",
     "Finance/Stripe",
     "LMS/PathLMS",
     "LMS/Totara",
+    "Marketing/ConstantContact",
     "Marketing/GA4",
     "Marketing/MagnetMail",
+    "Marketing/Mailchimp",
     "Marketing/PropFuel",
     "Marketing/Rasa",
     "Marketing/Reply",
@@ -50,11 +53,8 @@
     "AMS/Wicket",
     "AMS/YourMembership",
     "Events/Whova",
-    "Finance/QuickBooks",
     "Finance/SageIntacct",
     "LMS/Reach360",
-    "Marketing/ConstantContact",
-    "Marketing/Mailchimp",
     "Platform/MJtoMJ"
   ]
 }
