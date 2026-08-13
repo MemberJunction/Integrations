@@ -119,6 +119,11 @@ const RE_DECLARED =
 const RE_ROWS =
   /\*\*Total proven rows: ([\d,]+)(?:\s*\([^)]*\))?\*\* across \*{0,2}([\d,]+)(?: of ([\d,]+) declared| distinct)? objects/;
 const RE_PUSH_STATUS = /^- \*\*Status: ([^*]+?)\*\*\s*(.*)$/m;
+// Optional. A connector can be genuinely live-verified AND still carry outstanding defects — Totara is
+// verified against the real service with known bugs, ORCID is in client production and unfinished. The
+// tier alone cannot say that, and a reader who sees only "Verified against the live service" would
+// reasonably assume there is nothing outstanding.
+const RE_KNOWN_ISSUES = /^> \*\*Known issues:\*\* (.+?)\s*$/mu;
 
 const num = (s) => (s == null ? null : Number(String(s).replace(/,/g, '')));
 
@@ -157,6 +162,7 @@ function parseSupport(text, relPath) {
   const tierDef = TIERS[emoji] ?? fail(`an unknown evidence tier "${emoji}"`);
   const proofDbsRaw = tier[5].trim();
 
+  const knownIssues = RE_KNOWN_ISSUES.exec(text);
   const declared = RE_DECLARED.exec(text);
   const rows = RE_ROWS.exec(text);
 
@@ -175,6 +181,7 @@ function parseSupport(text, relPath) {
     tierRank: tierDef.rank,
     lastVerified: tier[4],
     proofDbs: proofDbsRaw === '—' ? [] : proofDbsRaw.split(/,\s*/),
+    knownIssues: knownIssues ? plain(knownIssues[1]) : null,
     declared: declared
       ? {
           objects: num(declared[1]),
@@ -505,7 +512,9 @@ function renderMarketing(model) {
           <p class="conn-desc">${esc(c.marketingDescription ?? marketingBlurb(c.description))}</p>
           <p class="conn-meta" style="margin-top:auto">
             ${chips.map((chip) => `<span class="chip">${esc(chip)}</span>`).join('\n            ')}
-            <span class="chip conf" title="${esc(tier.marketingBlurb)}">${esc(tier.marketing)}</span>
+            <span class="chip conf" title="${esc(tier.marketingBlurb)}">${esc(tier.marketing)}</span>${
+              c.support?.knownIssues ? '\n            <span class="chip warnchip" title="Verified, with known issues still outstanding.">known issues</span>' : ''
+            }
           </p>
         </li>`);
     }
@@ -582,6 +591,7 @@ function renderMarketing(model) {
   .chip { font-size:11.5px; font-weight:600; color:var(--muted); background:var(--surface-2);
           border:1px solid var(--line-soft); border-radius:999px; padding:2px 9px; }
   .chip.conf { color:var(--brand-deep); background:transparent; border-color:var(--line); }
+  .chip.warnchip { color:var(--warn); background:var(--warn-bg); border-color:var(--warn-line); font-weight:700; }
 
   .band { display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); margin-top:30px; }
   .band h3 { margin:0 0 8px; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--brand); }
@@ -817,9 +827,11 @@ function renderTechnical(model) {
           <span class="cname">${esc(c.marketingName)}</span>
           <span class="cpath">${esc(c.subpath)}</span>
         </th>
-        <td><span class="badge">${tier.emoji}</span> ${esc(tier.label)}<span class="sub">${esc(
-          s ? s.lastVerified : BASELINE.gloss,
-        )}</span></td>
+        <td><span class="badge">${tier.emoji}</span> ${esc(tier.label)}${
+          s?.knownIssues ? ' <span class="flag">known issues</span>' : ''
+        }<span class="sub">${esc(s ? s.lastVerified : BASELINE.gloss)}</span>${
+          s?.knownIssues ? `<span class="sub issue">${esc(s.knownIssues)}</span>` : ''
+        }</td>
         <td>${declared}<span class="sub">${s?.declared ? `${fmt(s.declared.write)} declare write` : 'no declared catalog'}</span></td>
         <td class="numcell">${s?.proven.rows ? fmt(s.proven.rows) : '0'}<span class="sub">${esc(coverage)}</span></td>
         <td>${esc(s?.push.status ?? 'Not stated')}<span class="sub">${esc(
@@ -927,6 +939,10 @@ function renderTechnical(model) {
      would otherwise overflow and wrap the detail cell onto its own line. */
   .advgroup table { min-width:0; table-layout:fixed; }
   .advgroup tbody td { padding:7px 12px 7px 0; vertical-align:baseline; }
+  .flag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; font-size:10.5px;
+          font-weight:700; letter-spacing:.02em; text-transform:uppercase;
+          color:var(--warn); background:var(--warn-bg); border:1px solid var(--warn-line); }
+  .sub.issue { color:var(--warn); margin-top:4px; }
   .advgroup td.advmeta { font-size:12px; color:var(--muted); }
   .advgroup tbody td:nth-child(1) { width:32%; }
   .advgroup tbody td:nth-child(2) { width:34%; }

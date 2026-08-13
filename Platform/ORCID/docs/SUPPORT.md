@@ -1,6 +1,8 @@
 # ORCID — Supported & Proven
 
-> **Evidence tier:** 🟢 Live-vendor (real API + real account)  ·  **Last verified:** 2026-07-26  ·  **Proof DB(s):** MJ_CT48
+> **Evidence tier:** 🥇 Production-live (real production system, real data)  ·  **Last verified:** 2026-07-26  ·  **Proof DB(s):** MJ_CT48
+>
+> **Known issues:** In production use with a client today, and still needs work — treat it as live but not finished.
 
 ## What this connector supports
 
