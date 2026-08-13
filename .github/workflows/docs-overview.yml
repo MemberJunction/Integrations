@@ -67,14 +67,14 @@ jobs:
         id: commit
         run: |
           set -euo pipefail
-          if git diff --quiet -- docs/marketing.html docs/technical.html; then
+          if git diff --quiet -- docs/index.html docs/marketing.html docs/technical.html; then
             echo "No change — nothing to commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/marketing.html docs/technical.html
+          git add docs/index.html docs/marketing.html docs/technical.html
           git commit -m "docs: regenerate fleet overview pages [skip ci]"
           # Another job may have landed on main while this one ran; rebase rather than force.
           git pull --rebase origin main
@@ -102,7 +102,7 @@ jobs:
           git push origin "$BRANCH"
           gh pr create --base next --head "$BRANCH" \
             --title "Back-merge main (docs overview regen) into next" \
-            --body "Automated back-merge of the regenerated \`docs/marketing.html\` and \`docs/technical.html\`.
+            --body "Automated back-merge of the regenerated pages under \`docs/\`.
 
           The direct push to \`next\` did not succeed — either the merge conflicted or branch
           protection rejected it. Resolve and merge so \`next\` does not revert the generated pages
