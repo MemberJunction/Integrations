@@ -1,6 +1,8 @@
 # Totara — Supported & Proven
 
 > **Evidence tier:** 🟢 Live-vendor (real API + real account)  ·  **Last verified:** 2026-08-05  ·  **Proof DB(s):** MJ_CT48
+>
+> **Known issues:** Verified against the live service, with known defects outstanding — see the residual gap below and `docs/REQUIRED-FIXES.md`.
 
 ## What this connector supports
 
