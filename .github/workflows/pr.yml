@@ -96,6 +96,15 @@ jobs:
       - name: Connector catalog up to date
         run: node scripts/build-connectors-catalog.mjs --check
 
+      # The fleet overview pages are generated FROM the per-connector docs/SUPPORT.md files, whose
+      # rigid format the generator parses (and refuses to guess at — an unparseable evidence doc
+      # would otherwise render as "no evidence", understating real proof). This checks only that
+      # every SUPPORT.md still parses. It deliberately does NOT check the pages are up to date:
+      # they embed main-side package versions that `next` legitimately lags after a release, so a
+      # staleness gate here would fail for reasons no PR author caused. See docs-overview.yml.
+      - name: Connector evidence docs parseable
+        run: node scripts/build-overview-docs.mjs --parse-only
+
       # Build + unit-test only the connectors a PR touches (and their dependents, e.g. Fonteva when Salesforce changes).
       - name: Build & test changed connectors
         run: npx turbo run build test --filter='...[origin/${{ github.base_ref }}]'

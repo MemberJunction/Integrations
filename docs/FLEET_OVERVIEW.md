@@ -4,6 +4,12 @@ Every connector in this repo ships a `docs/SUPPORT.md` stating what it declares,
 been executed against a real system, and what has not. This page is the roll-up of those files and is
 generated from them, so the two can't disagree.
 
+> **The counts below are a hand-maintained snapshot and have drifted from their sources.**
+> [`technical.html`](technical.html) is regenerated from the same `docs/SUPPORT.md` files on every
+> push to `main`, so it is the current roll-up — prefer it for numbers.
+> [`marketing.html`](marketing.html) is the client-facing view of the same data. This page is kept
+> for its prose: the tier definitions below are what the generated pages cite.
+
 **31 connectors documented · 644,493 rows verified in a database from live systems · a further 251 from
 a mock-only run · 0 verified live writes.**
 

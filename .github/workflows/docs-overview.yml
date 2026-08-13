@@ -1,0 +1,109 @@
+# Regenerate the two fleet overview pages after every publish, then sync them back to `next`.
+#
+# WHY THIS RUNS ON main AND NOT ON PRs
+# docs/marketing.html and docs/technical.html embed package versions from connectors-catalog.json.
+# Those versions are bumped by the changesets "Version Packages" PR, which lands on `main` — so the
+# pages are only correct once that merge exists. A PR to `next` opened between a release and its
+# back-merge would see stale versions, which is exactly the state catalog-freshness.yml already
+# tracks as expected-red. Gating PRs on page freshness would therefore fail for reasons the PR
+# author neither caused nor can fix. pr.yml instead runs `--parse-only`, which depends only on files
+# in the PR's own tree and so cannot flake.
+#
+# WHY THE BACK-MERGE STEP EXISTS
+# `next` is the default branch and all work flows next -> main. These two files are the only
+# artifacts generated ON main, so without a merge back they would conflict with, or be silently
+# reverted by, the next promotion. The repo already has this pattern by hand (the
+# backmerge/main-to-next-* branches); this automates it for the docs commit.
+#
+# WHY THIS DOES NOT LOOP
+# Two independent guards. First, the generator is deterministic — it derives every date from its
+# inputs rather than the clock — so a run that changes nothing writes nothing and the commit step
+# is skipped entirely. Second, a push made with the default GITHUB_TOKEN does not trigger workflow
+# runs, and the commit is additionally marked [skip ci]. Either alone would be sufficient.
+#
+# ORDERING vs release.yml: both fire on the same push to main, and they do not race. The version
+# bumps this generator reads arrive as tree content when the Version Packages PR is merged — that
+# merge IS the push event, so this run already sees the fresh catalog. release.yml's publish leg
+# writes npm packages, git tags and GitHub releases, none of which are inputs here.
+#
+# SETUP PREREQUISITE: branch protection on `main` (and ideally `next`) must permit
+# github-actions[bot] to push. If it does not, the commit step fails and the back-merge falls back
+# to opening a PR — see the fallback in the last step.
+
+name: Docs Overview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: docs-overview-${{ github.ref }}
+  cancel-in-progress: false # never kill a half-finished back-merge
+
+permissions:
+  contents: write # commit the regenerated pages to main, push the back-merge
+  pull-requests: write # open the fallback back-merge PR
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the back-merge needs real history, not a shallow clone
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # No `npm ci`: build-overview-docs.mjs is dependency-free (node: stdlib only) by design, so
+      # this job cannot be broken by an unrelated dependency problem in the workspace.
+      - name: Regenerate overview pages
+        run: node scripts/build-overview-docs.mjs
+
+      - name: Commit to main if changed
+        id: commit
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- docs/marketing.html docs/technical.html; then
+            echo "No change — nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/marketing.html docs/technical.html
+          git commit -m "docs: regenerate fleet overview pages [skip ci]"
+          # Another job may have landed on main while this one ran; rebase rather than force.
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Back-merge main into next
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          git fetch origin next main
+          git checkout -B next origin/next
+          # Plain merge — never -X ours/theirs. These two files exist on both branches, and a
+          # strategy option applied to resolve them would silently pick a side in every OTHER
+          # conflicting file too.
+          if git merge --no-edit origin/main && git push origin next; then
+            echo "Back-merged into next."
+            exit 0
+          fi
+          git merge --abort 2>/dev/null || true
+          BRANCH="backmerge/docs-overview-${GITHUB_RUN_ID}"
+          git checkout -B "$BRANCH" origin/main
+          git push origin "$BRANCH"
+          gh pr create --base next --head "$BRANCH" \
+            --title "Back-merge main (docs overview regen) into next" \
+            --body "Automated back-merge of the regenerated \`docs/marketing.html\` and \`docs/technical.html\`.
+
+          The direct push to \`next\` did not succeed — either the merge conflicted or branch
+          protection rejected it. Resolve and merge so \`next\` does not revert the generated pages
+          on its next promotion to \`main\`."
