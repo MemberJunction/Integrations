@@ -1,7 +1,7 @@
 {
   "name": "@memberjunction/connector-quickbooks",
   "version": "2.0.0",
-  "private": true,
+  "private": false,
   "description": "MemberJunction QuickBooks connector.",
   "type": "module",
   "main": "dist/index.js",

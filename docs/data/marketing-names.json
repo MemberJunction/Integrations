@@ -1,0 +1,283 @@
+{
+  "$comment": [
+    "Curated presentation layer for the generated overview pages (docs/marketing.html, docs/technical.html).",
+    "Hand-maintained — scripts/build-overview-docs.mjs reads it but never writes it.",
+    "",
+    "WHY: connectors-catalog.json is generated from each connector's own metadata, where the `name`",
+    "field is whatever the connector author typed. It is inconsistent by nature — some entries are",
+    "vendor-cased ('Nimble AMS'), others are raw slugs ('blackbaud', 'magnetmail', 'business-central').",
+    "Slugs must never reach a prospect-facing page, and several vendors have since rebranded",
+    "(Impexium -> re:Members, MagnetMail -> Higher Logic Marketing Enterprise), so the marketing name",
+    "cannot be derived mechanically. Keyed by repoSubpath because that is the one stable identifier.",
+    "",
+    "`sections` are MARKETING groupings and deliberately differ from the repo's category folders:",
+    "Platform/ splits into 'Community & Content' and 'Databases & Warehouses', and two sections",
+    "(Social Media, Forms & Surveys) are populated entirely from MJ action packs with no connector.",
+    "The technical page ignores sections and groups by repo category instead.",
+    "",
+    "Add a `connectors` entry only when the catalog name is wrong for a prospect; the generator's",
+    "fallback (catalog name if it starts uppercase, else displayName minus ' Connector') covers the rest."
+  ],
+  "sections": [
+    {
+      "key": "ams",
+      "label": "Association Management",
+      "accent": "#6b4fd8"
+    },
+    {
+      "key": "crm",
+      "label": "CRM, Fundraising & Enrichment",
+      "accent": "#0a6c7c"
+    },
+    {
+      "key": "finance",
+      "label": "Finance & Accounting",
+      "accent": "#1a7a52"
+    },
+    {
+      "key": "events",
+      "label": "Events & Awards",
+      "accent": "#a8502f"
+    },
+    {
+      "key": "learning",
+      "label": "Learning",
+      "accent": "#8a6510"
+    },
+    {
+      "key": "marketing",
+      "label": "Marketing & Engagement",
+      "accent": "#a52f60"
+    },
+    {
+      "key": "communications",
+      "label": "Email, SMS & Communications",
+      "accent": "#3f5bbf"
+    },
+    {
+      "key": "forms",
+      "label": "Forms & Surveys",
+      "accent": "#7a4bb5"
+    },
+    {
+      "key": "social",
+      "label": "Social Media",
+      "accent": "#0f6fb0"
+    },
+    {
+      "key": "community",
+      "label": "Community & Content",
+      "accent": "#2a6b8f"
+    },
+    {
+      "key": "databases",
+      "label": "Databases & Warehouses",
+      "accent": "#4a5568"
+    },
+    {
+      "key": "pm",
+      "label": "Project & Time Management",
+      "accent": "#4a5fc1"
+    }
+  ],
+  "categoryToSection": {
+    "AMS": "ams",
+    "CRM": "crm",
+    "Finance": "finance",
+    "Events": "events",
+    "LMS": "learning",
+    "Marketing": "marketing",
+    "PM": "pm",
+    "Platform": "community"
+  },
+  "vendorGroupToSection": {
+    "Association Management": "ams",
+    "CRM & Fundraising": "crm",
+    "Finance & Accounting": "finance",
+    "Learning": "learning",
+    "Marketing & Engagement": "marketing",
+    "Forms & Surveys": "forms",
+    "Social Media": "social"
+  },
+  "connectors": {
+    "AMS/Impexium": {
+      "marketingName": "re:Members (Impexium)",
+      "marketingDescription": "Individuals, organizations, memberships, events, committees, awards, exams and certifications."
+    },
+    "AMS/NetForum": {
+      "marketingName": "NetForum Enterprise",
+      "marketingDescription": "Member, event and financial records from NetForum Enterprise."
+    },
+    "AMS/Rhythm": {
+      "marketingName": "Rhythm",
+      "marketingDescription": "Contacts, memberships, committees, events, certifications, finance, commerce, fundraising and awards."
+    },
+    "AMS/WildApricot": {
+      "marketingName": "Wild Apricot (Personify)",
+      "marketingDescription": "Contacts, events, registrations, finances and store data from Wild Apricot."
+    },
+    "CRM/Blackbaud": {
+      "marketingName": "Blackbaud Raiser's Edge NXT",
+      "marketingDescription": "Constituents, gifts, fundraising and prospect records from Raiser's Edge NXT."
+    },
+    "CRM/DynamicsDataverse": {
+      "marketingName": "Microsoft Dynamics 365 (Dataverse)",
+      "marketingDescription": "Any Dataverse table from your Dynamics 365 environment, discovered at connection time."
+    },
+    "Events/Eventbrite": {
+      "marketingName": "Eventbrite",
+      "marketingDescription": "Events, attendees, orders, ticket classes and venues from Eventbrite."
+    },
+    "Finance/BusinessCentral": {
+      "marketingName": "Microsoft Dynamics 365 Business Central",
+      "marketingDescription": "Finance, sales, purchasing, inventory and master data from Business Central."
+    },
+    "Finance/Stripe": {
+      "marketingName": "Stripe",
+      "marketingDescription": "Payments, billing, subscriptions and Connect platform data from Stripe."
+    },
+    "LMS/PathLMS": {
+      "marketingName": "Path LMS (Blue Sky eLearn)",
+      "marketingDescription": "Learner, course and engagement analytics across 16 Path LMS reporting surfaces."
+    },
+    "LMS/Totara": {
+      "marketingName": "Totara",
+      "marketingDescription": "Courses, users, cohorts, enrolments, grades, badges, competencies and the org hierarchy."
+    },
+    "Marketing/ConstantContact": {
+      "marketingName": "Constant Contact",
+      "marketingDescription": "Contacts, lists, tags, segments, custom fields, campaigns and campaign reporting."
+    },
+    "Marketing/MagnetMail": {
+      "marketingName": "Higher Logic Marketing Enterprise (MagnetMail)",
+      "marketingDescription": "Recipients, groups, messages, tracking and unsubscribes from Higher Logic Marketing Enterprise."
+    },
+    "Marketing/Mailchimp": {
+      "marketingName": "Mailchimp",
+      "marketingDescription": "Campaigns, contacts, lists and automation workflows from Mailchimp."
+    },
+    "Marketing/Rasa": {
+      "marketingName": "rasa.io",
+      "marketingDescription": "Subscribers and their actions, topics, sends and attributes, plus newsletter content."
+    },
+    "Marketing/Reply": {
+      "marketingName": "Reply.io",
+      "marketingDescription": "Contacts, accounts, sequences, outreach channels, tasks and inbox activity."
+    },
+    "Platform/HigherLogicThriveCommunity": {
+      "marketingName": "Higher Logic Thrive Community",
+      "section": "community",
+      "marketingDescription": "Community discussions, events, resource libraries and member activity from Higher Logic Thrive."
+    },
+    "Platform/HigherLogicVanilla": {
+      "marketingName": "Higher Logic Vanilla",
+      "section": "community",
+      "marketingDescription": "Users, roles, categories, discussions, comments, reactions, groups and knowledge-base articles."
+    },
+    "Platform/Hivebrite": {
+      "section": "community",
+      "marketingDescription": "Users, companies, events, memberships, donations, groups and 40+ other community objects."
+    },
+    "Platform/MJtoMJ": {
+      "marketingName": "MemberJunction to MemberJunction",
+      "section": "databases",
+      "marketingDescription": "Replicate data between two MemberJunction instances."
+    },
+    "Platform/MongoDB": {
+      "section": "databases",
+      "marketingDescription": "Any MongoDB database, with its schema discovered when you connect."
+    },
+    "Platform/MySQL": {
+      "section": "databases",
+      "marketingDescription": "MySQL, MariaDB and Aurora-MySQL databases, with schema discovered when you connect."
+    },
+    "Platform/ORCID": {
+      "section": "community",
+      "marketingDescription": "Researcher iDs and their public record and activity sections from the ORCID registry."
+    },
+    "Platform/Oracle": {
+      "marketingName": "Oracle Database",
+      "section": "databases",
+      "marketingDescription": "Oracle databases, with schema discovered when you connect."
+    },
+    "Platform/PostgreSQL": {
+      "section": "databases",
+      "marketingDescription": "PostgreSQL and compatible engines — Supabase, Neon, Redshift, CockroachDB, Aurora."
+    },
+    "Platform/SQLServer": {
+      "marketingName": "SQL Server",
+      "section": "databases",
+      "marketingDescription": "Microsoft SQL Server and Azure SQL, with schema discovered when you connect."
+    },
+    "Platform/SharePoint": {
+      "section": "community",
+      "marketingDescription": "Sites, drives, files and folders, lists, list items, content types and permissions."
+    },
+    "Platform/Snowflake": {
+      "section": "databases",
+      "marketingDescription": "Snowflake warehouses, with schema discovered when you connect."
+    },
+    "Platform/Zendesk": {
+      "marketingName": "Zendesk",
+      "section": "community",
+      "marketingDescription": "Support tickets and Help Center content from Zendesk."
+    },
+    "AMS/Fonteva": {
+      "marketingDescription": "Salesforce-native association management: memberships, events, commerce, orders, payments and badges."
+    },
+    "AMS/GrowthZone": {
+      "marketingDescription": "Contacts, memberships, groups, events, store orders and certifications from your GrowthZone AMS."
+    },
+    "AMS/iMIS": {
+      "marketingDescription": "Parties, memberships, events, fundraising, invoicing and commerce from iMIS EMS."
+    },
+    "AMS/MemberSuite": {
+      "marketingDescription": "Members, organizations, memberships, chapters, events, registrations, orders and certifications."
+    },
+    "AMS/NimbleAMS": {
+      "marketingDescription": "Salesforce-native association data: members, orders, events and the Nimble managed-package objects."
+    },
+    "AMS/Novi": {
+      "marketingDescription": "Members, events, ecommerce, blogs, site content, NPS surveys and catalog items from Novi AMS."
+    },
+    "CRM/HubSpot": {
+      "marketingDescription": "Contacts, companies, deals and activities, plus the full curated HubSpot object catalog."
+    },
+    "CRM/NeonCRM": {
+      "marketingDescription": "Accounts, donations, memberships, events, campaigns, pledges, volunteers and custom objects."
+    },
+    "CRM/Salesforce": {
+      "marketingDescription": "Accounts, contacts, leads, opportunities, cases and campaigns — including your custom objects."
+    },
+    "Events/Cvent": {
+      "marketingDescription": "Events, attendees, sessions, speakers, exhibitors, housing, surveys and webcasts."
+    },
+    "Events/OpenWater": {
+      "marketingDescription": "Awards, grants, abstracts and fellowship programs: applications, judges, rounds and reviews."
+    },
+    "Events/PheedLoop": {
+      "marketingDescription": "Attendees, sessions, speakers, exhibitors, sponsors, registrations and memberships."
+    },
+    "Finance/NetSuite": {
+      "marketingDescription": "ERP and CRM records across standard and custom record types, including saved-query reads."
+    },
+    "Finance/QuickBooks": {
+      "marketingDescription": "Customers, vendors, invoices, bills, payments, accounts and items from QuickBooks Online."
+    },
+    "Marketing/GA4": {
+      "marketingDescription": "Daily page performance and campaign traffic, at both campaign and content grain."
+    },
+    "Marketing/PropFuel": {
+      "marketingDescription": "Member insight and engagement results, delivered as an hourly data export feed."
+    },
+    "PM/Asana": {
+      "marketingDescription": "Workspace users, projects, tasks and subtasks from Asana."
+    },
+    "PM/Everhour": {
+      "marketingDescription": "Team users, projects, tasks and time records from Everhour."
+    },
+    "Finance/SageIntacct": {
+      "marketingDescription": "General ledger, accounts payable and receivable, and dimensional financial data."
+    }
+  }
+}

@@ -1,0 +1,2341 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repo": "MemberJunction/MJ",
+    "path": "metadata/actions",
+    "commit": "acce3452ed",
+    "capturedAt": "2026-08-12"
+  },
+  "actionCount": 514,
+  "vendorPacks": [
+    {
+      "category": "Data Enrichment",
+      "display": "Apollo",
+      "group": "CRM & Fundraising",
+      "connector": null,
+      "actionCount": 2,
+      "actions": [
+        {
+          "name": "Apollo Enrichment - Accounts",
+          "description": "Enriches account/organization records with company information, technologies used, and associated contacts using Apollo.io API. Processes accounts by domain name and automatically discovers contacts within each organization."
+        },
+        {
+          "name": "Apollo Enrichment - Contacts",
+          "description": "Enriches contact records with verified email addresses, employment history, and education details using Apollo.io API. Matches contacts by name and email combinations and provides comprehensive contact enrichment."
+        }
+      ]
+    },
+    {
+      "category": "Buffer",
+      "display": "Buffer",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "Create Post (Buffer)",
+          "description": "Creates a post in Buffer's queue for scheduled publishing"
+        },
+        {
+          "name": "Delete Post (Buffer)",
+          "description": "Deletes a scheduled post from Buffer's queue"
+        },
+        {
+          "name": "Get Analytics (Buffer)",
+          "description": "Retrieves post performance analytics from Buffer"
+        },
+        {
+          "name": "Get Pending Posts (Buffer)",
+          "description": "Retrieves all pending posts in Buffer's queue"
+        },
+        {
+          "name": "Get Profiles (Buffer)",
+          "description": "Retrieves all connected social media profiles from Buffer"
+        },
+        {
+          "name": "Get Sent Posts (Buffer)",
+          "description": "Retrieves published posts from Buffer's history"
+        },
+        {
+          "name": "Reorder Queue (Buffer)",
+          "description": "Reorders posts in Buffer's publishing queue"
+        },
+        {
+          "name": "Search Posts (Buffer)",
+          "description": "Searches through Buffer's post history and queue"
+        }
+      ]
+    },
+    {
+      "category": "Facebook",
+      "display": "Facebook",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 9,
+      "actions": [
+        {
+          "name": "Create Post (Facebook)",
+          "description": "Creates a post on a Facebook page or profile"
+        },
+        {
+          "name": "Delete Post (Facebook)",
+          "description": "Deletes a post from Facebook"
+        },
+        {
+          "name": "Get Ad Account Insights (Facebook)",
+          "description": "Retrieves advertising insights and analytics from Facebook Ad accounts"
+        },
+        {
+          "name": "Get Page Insights (Facebook)",
+          "description": "Retrieves analytics and insights for Facebook pages"
+        },
+        {
+          "name": "Get Page Posts (Facebook)",
+          "description": "Retrieves posts from a Facebook page"
+        },
+        {
+          "name": "Get Pages (Facebook)",
+          "description": "Retrieves all Facebook pages managed by the user"
+        },
+        {
+          "name": "Search Content (Facebook)",
+          "description": "Searches Facebook for pages, posts, events, and other content"
+        },
+        {
+          "name": "Update Post (Facebook)",
+          "description": "Updates an existing Facebook post"
+        },
+        {
+          "name": "Upload Media (Facebook)",
+          "description": "Uploads photos or videos to Facebook for use in posts"
+        }
+      ]
+    },
+    {
+      "category": "Google Forms",
+      "display": "Google Forms",
+      "group": "Forms & Surveys",
+      "connector": null,
+      "actionCount": 5,
+      "actions": [
+        {
+          "name": "Export Google Forms Responses to CSV",
+          "description": "Exports Google Form responses to CSV format for use in spreadsheets, data analysis tools, or archival. Requires Google OAuth 2.0 authentication with forms.responses.readonly scope. Supports custom delimiters and optional metadata columns."
+        },
+        {
+          "name": "Get Google Forms Details",
+          "description": "Retrieves complete details of a Google Form including title, questions, settings, and metadata. Requires Google OAuth 2.0 authentication with forms.readonly scope. Use this to inspect or backup form configurations."
+        },
+        {
+          "name": "Get Google Forms Response Statistics",
+          "description": "Calculates comprehensive statistics from Google Form responses including completion rates, response trends, popular answers, and time-based analytics. Requires Google OAuth 2.0 authentication with forms.responses.readonly scope. Useful for dashboards and reporting."
+        },
+        {
+          "name": "Get Google Forms Responses",
+          "description": "Retrieves responses from a Google Form with filtering, pagination, and search capabilities. Requires Google OAuth 2.0 authentication with forms.responses.readonly scope. Supports date ranges, completion status filters, and automatic pagination through all responses."
+        },
+        {
+          "name": "Get Single Google Forms Response",
+          "description": "Retrieves details of a specific Google Form response by its unique response ID. Requires Google OAuth 2.0 authentication with forms.responses.readonly scope. Includes all answers, metadata, and submission timestamps."
+        }
+      ]
+    },
+    {
+      "category": "Hootsuite",
+      "display": "Hootsuite",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "Create Post (Hootsuite)",
+          "description": "Creates a post in Hootsuite for scheduling across multiple social networks"
+        },
+        {
+          "name": "Delete Post (Hootsuite)",
+          "description": "Deletes a scheduled post from Hootsuite"
+        },
+        {
+          "name": "Get Analytics (Hootsuite)",
+          "description": "Retrieves comprehensive analytics data from Hootsuite"
+        },
+        {
+          "name": "Get Profiles (Hootsuite)",
+          "description": "Retrieves all connected social media profiles from Hootsuite"
+        },
+        {
+          "name": "Get Scheduled Posts (Hootsuite)",
+          "description": "Retrieves all scheduled posts from Hootsuite"
+        },
+        {
+          "name": "Get Teams (Hootsuite)",
+          "description": "Retrieves team information from Hootsuite organization"
+        },
+        {
+          "name": "Search Content (Hootsuite)",
+          "description": "Searches for content across Hootsuite including posts, media, and tags"
+        },
+        {
+          "name": "Update Post (Hootsuite)",
+          "description": "Updates a scheduled post in Hootsuite"
+        }
+      ]
+    },
+    {
+      "category": "HubSpot",
+      "display": "HubSpot",
+      "group": "CRM & Fundraising",
+      "connector": "CRM/HubSpot",
+      "actionCount": 40,
+      "actions": [
+        {
+          "name": "HubSpot - Associate Contact to Company",
+          "description": "Associates a contact with a company in HubSpot CRM"
+        },
+        {
+          "name": "HubSpot - Create Company",
+          "description": "Creates a new Company record in HubSpot"
+        },
+        {
+          "name": "HubSpot - Create Contact",
+          "description": "Creates a new Contact record in HubSpot"
+        },
+        {
+          "name": "HubSpot - Create Deal",
+          "description": "Creates a new Deal record in HubSpot"
+        },
+        {
+          "name": "HubSpot - Create Product",
+          "description": "Creates a new Product record in HubSpot"
+        },
+        {
+          "name": "HubSpot - Create Task",
+          "description": "Creates a new Task record in HubSpot"
+        },
+        {
+          "name": "HubSpot - Create Ticket",
+          "description": "Creates a new Ticket record in HubSpot"
+        },
+        {
+          "name": "HubSpot - Delete Company",
+          "description": "Deletes (archives) a Company record from HubSpot"
+        },
+        {
+          "name": "HubSpot - Delete Contact",
+          "description": "Deletes (archives) a Contact record from HubSpot"
+        },
+        {
+          "name": "HubSpot - Delete Deal",
+          "description": "Deletes (archives) a Deal record from HubSpot"
+        },
+        {
+          "name": "HubSpot - Delete Product",
+          "description": "Deletes (archives) a Product record from HubSpot"
+        },
+        {
+          "name": "HubSpot - Delete Task",
+          "description": "Deletes (archives) a Task record from HubSpot"
+        },
+        {
+          "name": "HubSpot - Delete Ticket",
+          "description": "Deletes (archives) a Ticket record from HubSpot"
+        },
+        {
+          "name": "HubSpot - Get Activities by Contact",
+          "description": "Retrieves all activities (calls, emails, meetings, notes) for a contact"
+        },
+        {
+          "name": "HubSpot - Get Company",
+          "description": "Retrieves a single Company record from HubSpot by its external ID"
+        },
+        {
+          "name": "HubSpot - Get Contact",
+          "description": "Retrieves a single Contact record from HubSpot by its external ID"
+        },
+        {
+          "name": "HubSpot - Get Deal",
+          "description": "Retrieves a single Deal record from HubSpot by its external ID"
+        },
+        {
+          "name": "HubSpot - Get Product",
+          "description": "Retrieves a single Product record from HubSpot by its external ID"
+        },
+        {
+          "name": "HubSpot - Get Task",
+          "description": "Retrieves a single Task record from HubSpot by its external ID"
+        },
+        {
+          "name": "HubSpot - Get Ticket",
+          "description": "Retrieves a single Ticket record from HubSpot by its external ID"
+        },
+        {
+          "name": "HubSpot - List Company",
+          "description": "Lists Company records from HubSpot with cursor-based pagination"
+        },
+        {
+          "name": "HubSpot - List Contact",
+          "description": "Lists Contact records from HubSpot with cursor-based pagination"
+        },
+        {
+          "name": "HubSpot - List Deal",
+          "description": "Lists Deal records from HubSpot with cursor-based pagination"
+        },
+        {
+          "name": "HubSpot - List Product",
+          "description": "Lists Product records from HubSpot with cursor-based pagination"
+        },
+        {
+          "name": "HubSpot - List Task",
+          "description": "Lists Task records from HubSpot with cursor-based pagination"
+        },
+        {
+          "name": "HubSpot - List Ticket",
+          "description": "Lists Ticket records from HubSpot with cursor-based pagination"
+        },
+        {
+          "name": "HubSpot - Log Activity",
+          "description": "Logs an activity (call, email, meeting, note) in HubSpot"
+        },
+        {
+          "name": "HubSpot - Merge Contacts",
+          "description": "Merges two contacts in HubSpot, combining their data and associations"
+        },
+        {
+          "name": "HubSpot - Search Company",
+          "description": "Searches for Company records in HubSpot matching the given field filters"
+        },
+        {
+          "name": "HubSpot - Search Contact",
+          "description": "Searches for Contact records in HubSpot matching the given field filters"
+        },
+        {
+          "name": "HubSpot - Search Deal",
+          "description": "Searches for Deal records in HubSpot matching the given field filters"
+        },
+        {
+          "name": "HubSpot - Search Product",
+          "description": "Searches for Product records in HubSpot matching the given field filters"
+        },
+        {
+          "name": "HubSpot - Search Task",
+          "description": "Searches for Task records in HubSpot matching the given field filters"
+        },
+        {
+          "name": "HubSpot - Search Ticket",
+          "description": "Searches for Ticket records in HubSpot matching the given field filters"
+        },
+        {
+          "name": "HubSpot - Update Company",
+          "description": "Updates an existing Company record in HubSpot. Only provided fields are changed."
+        },
+        {
+          "name": "HubSpot - Update Contact",
+          "description": "Updates an existing Contact record in HubSpot. Only provided fields are changed."
+        },
+        {
+          "name": "HubSpot - Update Deal",
+          "description": "Updates an existing Deal record in HubSpot. Only provided fields are changed."
+        },
+        {
+          "name": "HubSpot - Update Product",
+          "description": "Updates an existing Product record in HubSpot. Only provided fields are changed."
+        },
+        {
+          "name": "HubSpot - Update Task",
+          "description": "Updates an existing Task record in HubSpot. Only provided fields are changed."
+        },
+        {
+          "name": "HubSpot - Update Ticket",
+          "description": "Updates an existing Ticket record in HubSpot. Only provided fields are changed."
+        }
+      ]
+    },
+    {
+      "category": "Instagram",
+      "display": "Instagram",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "Create Post (Instagram)",
+          "description": "Creates a post on Instagram Business account"
+        },
+        {
+          "name": "Delete Post (Instagram)",
+          "description": "Deletes a post from Instagram"
+        },
+        {
+          "name": "Get Comments (Instagram)",
+          "description": "Retrieves comments from Instagram posts"
+        },
+        {
+          "name": "Get Insights (Instagram)",
+          "description": "Retrieves insights and analytics for Instagram Business accounts"
+        },
+        {
+          "name": "Get Media (Instagram)",
+          "description": "Retrieves media posts from Instagram accounts"
+        },
+        {
+          "name": "Get Profile (Instagram)",
+          "description": "Retrieves Instagram profile information"
+        },
+        {
+          "name": "Reply to Comment (Instagram)",
+          "description": "Replies to a comment on an Instagram post"
+        },
+        {
+          "name": "Search Hashtags (Instagram)",
+          "description": "Searches for hashtag information on Instagram"
+        }
+      ]
+    },
+    {
+      "category": "JotForm",
+      "display": "Jotform",
+      "group": "Forms & Surveys",
+      "connector": null,
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "Create JotForm",
+          "description": "Creates a new JotForm with specified title, questions, and properties. Supports all JotForm field types including text, email, multiple choice, rating, and more. Returns the new form ID and shareable link."
+        },
+        {
+          "name": "Export JotForm Submissions to CSV",
+          "description": "Exports JotForm submissions to CSV format for use in spreadsheets, data analysis tools, or archival. Supports custom delimiters and optional metadata columns."
+        },
+        {
+          "name": "Get JotForm Details",
+          "description": "Retrieves complete details of a JotForm including title, questions, properties, and settings. Use this to inspect or backup form configurations."
+        },
+        {
+          "name": "Get JotForm Response Statistics",
+          "description": "Calculates comprehensive statistics from JotForm submissions including response counts, trends, popular answers, and time-based analytics. Useful for dashboards and reporting."
+        },
+        {
+          "name": "Get JotForm Submissions",
+          "description": "Retrieves submissions from a JotForm with filtering, pagination, and ordering capabilities. Supports regional endpoints (US, EU, HIPAA) and offset-based pagination through all submissions."
+        },
+        {
+          "name": "Get Single JotForm Submission",
+          "description": "Retrieves details of a specific JotForm submission by its unique submission ID. Includes all answers, metadata, and submission status."
+        },
+        {
+          "name": "Update JotForm",
+          "description": "Updates an existing JotForm. Supports merging with existing form data to safely update only specified properties, or full replacement mode. Can update title, questions, and properties."
+        },
+        {
+          "name": "Watch for New JotForm Submissions",
+          "description": "Polls JotForm for new submissions since the last check. Returns only new submissions and updates the last checked timestamp. Perfect for triggering workflows, sending notifications, or syncing data to other systems."
+        }
+      ]
+    },
+    {
+      "category": "LearnWorlds",
+      "display": "LearnWorlds",
+      "group": "Learning",
+      "connector": null,
+      "actionCount": 19,
+      "actions": [
+        {
+          "name": "LearnWorlds - Attach Tags",
+          "description": "Attaches one or more tags to a LearnWorlds user"
+        },
+        {
+          "name": "LearnWorlds - Create User",
+          "description": "Creates a new user in LearnWorlds LMS with optional course enrollments"
+        },
+        {
+          "name": "LearnWorlds - Detach Tags",
+          "description": "Detaches one or more tags from a LearnWorlds user"
+        },
+        {
+          "name": "LearnWorlds - Enroll User",
+          "description": "Enrolls a user in a LearnWorlds course"
+        },
+        {
+          "name": "LearnWorlds - Get Bulk Data",
+          "description": "Orchestrates bulk data retrieval from LearnWorlds, fetching users, courses, bundles, enrollments, progress, certificates, and quiz results into a single sync payload"
+        },
+        {
+          "name": "LearnWorlds - Get Bundles",
+          "description": "Retrieves course bundles from LearnWorlds with optional search filtering"
+        },
+        {
+          "name": "LearnWorlds - Get Certificates",
+          "description": "Retrieves certificates earned by a user"
+        },
+        {
+          "name": "LearnWorlds - Get Course Analytics",
+          "description": "Retrieves analytics data for a course including enrollments and completion rates"
+        },
+        {
+          "name": "LearnWorlds - Get Course Details",
+          "description": "Retrieves detailed information about a specific course"
+        },
+        {
+          "name": "LearnWorlds - Get Courses",
+          "description": "Retrieves available courses from LearnWorlds"
+        },
+        {
+          "name": "LearnWorlds - Get Quiz Results",
+          "description": "Retrieves quiz results for a user across courses"
+        },
+        {
+          "name": "LearnWorlds - Get User Details",
+          "description": "Retrieves detailed information about a LearnWorlds user"
+        },
+        {
+          "name": "LearnWorlds - Get User Enrollments",
+          "description": "Retrieves all course enrollments for a specific user"
+        },
+        {
+          "name": "LearnWorlds - Get User Progress",
+          "description": "Gets a user's progress in a specific course"
+        },
+        {
+          "name": "LearnWorlds - Get Users",
+          "description": "Retrieves a list of users from LearnWorlds with filtering options"
+        },
+        {
+          "name": "LearnWorlds - Onboard Learner",
+          "description": "Orchestrates full learner onboarding: create or find user, enroll in courses/bundles, and generate SSO login URL"
+        },
+        {
+          "name": "LearnWorlds - SSO Login",
+          "description": "Generates an SSO login URL for a LearnWorlds user"
+        },
+        {
+          "name": "LearnWorlds - Update User",
+          "description": "Updates an existing user profile in LearnWorlds"
+        },
+        {
+          "name": "LearnWorlds - Update User Progress",
+          "description": "Updates a user's progress in a course"
+        }
+      ]
+    },
+    {
+      "category": "LinkedIn",
+      "display": "LinkedIn",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "Create Post (LinkedIn)",
+          "description": "Creates a post on LinkedIn company page or personal profile"
+        },
+        {
+          "name": "Delete Post (LinkedIn)",
+          "description": "Deletes a post from LinkedIn"
+        },
+        {
+          "name": "Get Analytics (LinkedIn)",
+          "description": "Retrieves analytics for LinkedIn pages and posts"
+        },
+        {
+          "name": "Get Companies (LinkedIn)",
+          "description": "Retrieves company pages managed by the user"
+        },
+        {
+          "name": "Get Connections (LinkedIn)",
+          "description": "Retrieves LinkedIn connections for the authenticated user"
+        },
+        {
+          "name": "Get Posts (LinkedIn)",
+          "description": "Retrieves posts from LinkedIn profiles or company pages"
+        },
+        {
+          "name": "Get Profile (LinkedIn)",
+          "description": "Retrieves LinkedIn profile information"
+        },
+        {
+          "name": "Search People (LinkedIn)",
+          "description": "Searches for people on LinkedIn"
+        }
+      ]
+    },
+    {
+      "category": "Business Central",
+      "display": "Microsoft Dynamics 365 Business Central",
+      "group": "Finance & Accounting",
+      "connector": "Finance/BusinessCentral",
+      "actionCount": 4,
+      "actions": [
+        {
+          "name": "Business Central - Get Customers",
+          "description": "Retrieves customers from Microsoft Dynamics 365 Business Central"
+        },
+        {
+          "name": "Business Central - Get General Ledger Entries",
+          "description": "Retrieves general ledger entries from Business Central"
+        },
+        {
+          "name": "Business Central - Get GL Accounts",
+          "description": "Retrieves chart of GL accounts from Business Central"
+        },
+        {
+          "name": "Business Central - Get Sales Invoices",
+          "description": "Retrieves sales invoices from Business Central with filtering options"
+        }
+      ]
+    },
+    {
+      "category": "QuickBooks",
+      "display": "QuickBooks",
+      "group": "Finance & Accounting",
+      "connector": "Finance/QuickBooks",
+      "actionCount": 64,
+      "actions": [
+        {
+          "name": "QuickBooks - Create Account",
+          "description": "Creates a new Account record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Bill",
+          "description": "Creates a new Bill record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Class",
+          "description": "Creates a new Class record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Customer",
+          "description": "Creates a new Customer record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Department",
+          "description": "Creates a new Department record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Employee",
+          "description": "Creates a new Employee record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Invoice",
+          "description": "Creates a new Invoice record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Item",
+          "description": "Creates a new Item record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Journal Entry",
+          "description": "Creates a journal entry in QuickBooks with multiple debit and credit lines"
+        },
+        {
+          "name": "QuickBooks - Create Payment",
+          "description": "Creates a new Payment record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Create Vendor",
+          "description": "Creates a new Vendor record in QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Account",
+          "description": "Deletes (archives) a Account record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Bill",
+          "description": "Deletes (archives) a Bill record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Class",
+          "description": "Deletes (archives) a Class record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Customer",
+          "description": "Deletes (archives) a Customer record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Department",
+          "description": "Deletes (archives) a Department record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Employee",
+          "description": "Deletes (archives) a Employee record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Invoice",
+          "description": "Deletes (archives) a Invoice record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Item",
+          "description": "Deletes (archives) a Item record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Payment",
+          "description": "Deletes (archives) a Payment record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Delete Vendor",
+          "description": "Deletes (archives) a Vendor record from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Get Account",
+          "description": "Retrieves a single Account record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Account Balances",
+          "description": "Retrieves account balances from QuickBooks as of a specific date"
+        },
+        {
+          "name": "QuickBooks - Get Bill",
+          "description": "Retrieves a single Bill record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Class",
+          "description": "Retrieves a single Class record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Customer",
+          "description": "Retrieves a single Customer record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Department",
+          "description": "Retrieves a single Department record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Employee",
+          "description": "Retrieves a single Employee record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get GL Codes",
+          "description": "Retrieves general ledger codes/chart of accounts from QuickBooks"
+        },
+        {
+          "name": "QuickBooks - Get Invoice",
+          "description": "Retrieves a single Invoice record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Item",
+          "description": "Retrieves a single Item record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Payment",
+          "description": "Retrieves a single Payment record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - Get Transactions",
+          "description": "Retrieves transactions from QuickBooks for a date range"
+        },
+        {
+          "name": "QuickBooks - Get Vendor",
+          "description": "Retrieves a single Vendor record from QuickBooks by its external ID"
+        },
+        {
+          "name": "QuickBooks - List Account",
+          "description": "Lists Account records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Bill",
+          "description": "Lists Bill records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Class",
+          "description": "Lists Class records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Customer",
+          "description": "Lists Customer records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Department",
+          "description": "Lists Department records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Employee",
+          "description": "Lists Employee records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Invoice",
+          "description": "Lists Invoice records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Item",
+          "description": "Lists Item records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Payment",
+          "description": "Lists Payment records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - List Vendor",
+          "description": "Lists Vendor records from QuickBooks with cursor-based pagination"
+        },
+        {
+          "name": "QuickBooks - Search Account",
+          "description": "Searches for Account records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Bill",
+          "description": "Searches for Bill records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Class",
+          "description": "Searches for Class records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Customer",
+          "description": "Searches for Customer records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Department",
+          "description": "Searches for Department records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Employee",
+          "description": "Searches for Employee records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Invoice",
+          "description": "Searches for Invoice records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Item",
+          "description": "Searches for Item records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Payment",
+          "description": "Searches for Payment records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Search Vendor",
+          "description": "Searches for Vendor records in QuickBooks matching the given field filters"
+        },
+        {
+          "name": "QuickBooks - Update Account",
+          "description": "Updates an existing Account record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Bill",
+          "description": "Updates an existing Bill record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Class",
+          "description": "Updates an existing Class record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Customer",
+          "description": "Updates an existing Customer record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Department",
+          "description": "Updates an existing Department record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Employee",
+          "description": "Updates an existing Employee record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Invoice",
+          "description": "Updates an existing Invoice record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Item",
+          "description": "Updates an existing Item record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Payment",
+          "description": "Updates an existing Payment record in QuickBooks. Only provided fields are changed."
+        },
+        {
+          "name": "QuickBooks - Update Vendor",
+          "description": "Updates an existing Vendor record in QuickBooks. Only provided fields are changed."
+        }
+      ]
+    },
+    {
+      "category": "Rasa.io",
+      "display": "rasa.io",
+      "group": "Marketing & Engagement",
+      "connector": "Marketing/Rasa",
+      "actionCount": 12,
+      "actions": [
+        {
+          "name": "Rasa.io - Get Insight Action",
+          "description": "Retrieves a single Insight Action record from Rasa.io by its external ID"
+        },
+        {
+          "name": "Rasa.io - Get Insight Topic",
+          "description": "Retrieves a single Insight Topic record from Rasa.io by its external ID"
+        },
+        {
+          "name": "Rasa.io - Get Person",
+          "description": "Retrieves a single Person record from Rasa.io by its external ID"
+        },
+        {
+          "name": "Rasa.io - Get Post",
+          "description": "Retrieves a single Post record from Rasa.io by its external ID"
+        },
+        {
+          "name": "Rasa.io - List Insight Action",
+          "description": "Lists Insight Action records from Rasa.io with cursor-based pagination"
+        },
+        {
+          "name": "Rasa.io - List Insight Topic",
+          "description": "Lists Insight Topic records from Rasa.io with cursor-based pagination"
+        },
+        {
+          "name": "Rasa.io - List Person",
+          "description": "Lists Person records from Rasa.io with cursor-based pagination"
+        },
+        {
+          "name": "Rasa.io - List Post",
+          "description": "Lists Post records from Rasa.io with cursor-based pagination"
+        },
+        {
+          "name": "Rasa.io - Search Insight Action",
+          "description": "Searches for Insight Action records in Rasa.io matching the given field filters"
+        },
+        {
+          "name": "Rasa.io - Search Insight Topic",
+          "description": "Searches for Insight Topic records in Rasa.io matching the given field filters"
+        },
+        {
+          "name": "Rasa.io - Search Person",
+          "description": "Searches for Person records in Rasa.io matching the given field filters"
+        },
+        {
+          "name": "Rasa.io - Search Post",
+          "description": "Searches for Post records in Rasa.io matching the given field filters"
+        }
+      ]
+    },
+    {
+      "category": "Sage Intacct",
+      "display": "Sage Intacct",
+      "group": "Finance & Accounting",
+      "connector": null,
+      "actionCount": 54,
+      "actions": [
+        {
+          "name": "Sage Intacct - Create AP Bill",
+          "description": "Creates a new AP Bill record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create AR Invoice",
+          "description": "Creates a new AR Invoice record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create Class",
+          "description": "Creates a new Class record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create Customer",
+          "description": "Creates a new Customer record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create Department",
+          "description": "Creates a new Department record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create Employee",
+          "description": "Creates a new Employee record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create GL Account",
+          "description": "Creates a new GL Account record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create Project",
+          "description": "Creates a new Project record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Create Vendor",
+          "description": "Creates a new Vendor record in Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete AP Bill",
+          "description": "Deletes (archives) a AP Bill record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete AR Invoice",
+          "description": "Deletes (archives) a AR Invoice record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete Class",
+          "description": "Deletes (archives) a Class record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete Customer",
+          "description": "Deletes (archives) a Customer record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete Department",
+          "description": "Deletes (archives) a Department record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete Employee",
+          "description": "Deletes (archives) a Employee record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete GL Account",
+          "description": "Deletes (archives) a GL Account record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete Project",
+          "description": "Deletes (archives) a Project record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Delete Vendor",
+          "description": "Deletes (archives) a Vendor record from Sage Intacct"
+        },
+        {
+          "name": "Sage Intacct - Get AP Bill",
+          "description": "Retrieves a single AP Bill record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get AR Invoice",
+          "description": "Retrieves a single AR Invoice record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get Class",
+          "description": "Retrieves a single Class record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get Customer",
+          "description": "Retrieves a single Customer record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get Department",
+          "description": "Retrieves a single Department record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get Employee",
+          "description": "Retrieves a single Employee record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get GL Account",
+          "description": "Retrieves a single GL Account record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get Project",
+          "description": "Retrieves a single Project record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - Get Vendor",
+          "description": "Retrieves a single Vendor record from Sage Intacct by its external ID"
+        },
+        {
+          "name": "Sage Intacct - List AP Bill",
+          "description": "Lists AP Bill records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List AR Invoice",
+          "description": "Lists AR Invoice records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List Class",
+          "description": "Lists Class records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List Customer",
+          "description": "Lists Customer records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List Department",
+          "description": "Lists Department records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List Employee",
+          "description": "Lists Employee records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List GL Account",
+          "description": "Lists GL Account records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List Project",
+          "description": "Lists Project records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - List Vendor",
+          "description": "Lists Vendor records from Sage Intacct with cursor-based pagination"
+        },
+        {
+          "name": "Sage Intacct - Search AP Bill",
+          "description": "Searches for AP Bill records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search AR Invoice",
+          "description": "Searches for AR Invoice records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search Class",
+          "description": "Searches for Class records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search Customer",
+          "description": "Searches for Customer records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search Department",
+          "description": "Searches for Department records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search Employee",
+          "description": "Searches for Employee records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search GL Account",
+          "description": "Searches for GL Account records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search Project",
+          "description": "Searches for Project records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Search Vendor",
+          "description": "Searches for Vendor records in Sage Intacct matching the given field filters"
+        },
+        {
+          "name": "Sage Intacct - Update AP Bill",
+          "description": "Updates an existing AP Bill record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update AR Invoice",
+          "description": "Updates an existing AR Invoice record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update Class",
+          "description": "Updates an existing Class record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update Customer",
+          "description": "Updates an existing Customer record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update Department",
+          "description": "Updates an existing Department record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update Employee",
+          "description": "Updates an existing Employee record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update GL Account",
+          "description": "Updates an existing GL Account record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update Project",
+          "description": "Updates an existing Project record in Sage Intacct. Only provided fields are changed."
+        },
+        {
+          "name": "Sage Intacct - Update Vendor",
+          "description": "Updates an existing Vendor record in Sage Intacct. Only provided fields are changed."
+        }
+      ]
+    },
+    {
+      "category": "Salesforce",
+      "display": "Salesforce",
+      "group": "CRM & Fundraising",
+      "connector": "CRM/Salesforce",
+      "actionCount": 40,
+      "actions": [
+        {
+          "name": "Salesforce - Create Account",
+          "description": "Creates a new Account record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Create Campaign",
+          "description": "Creates a new Campaign record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Create Case",
+          "description": "Creates a new Case record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Create Contact",
+          "description": "Creates a new Contact record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Create Event",
+          "description": "Creates a new Event record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Create Lead",
+          "description": "Creates a new Lead record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Create Opportunity",
+          "description": "Creates a new Opportunity record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Create Task",
+          "description": "Creates a new Task record in Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Account",
+          "description": "Deletes (archives) a Account record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Campaign",
+          "description": "Deletes (archives) a Campaign record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Case",
+          "description": "Deletes (archives) a Case record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Contact",
+          "description": "Deletes (archives) a Contact record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Event",
+          "description": "Deletes (archives) a Event record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Lead",
+          "description": "Deletes (archives) a Lead record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Opportunity",
+          "description": "Deletes (archives) a Opportunity record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Delete Task",
+          "description": "Deletes (archives) a Task record from Salesforce"
+        },
+        {
+          "name": "Salesforce - Get Account",
+          "description": "Retrieves a single Account record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Get Campaign",
+          "description": "Retrieves a single Campaign record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Get Case",
+          "description": "Retrieves a single Case record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Get Contact",
+          "description": "Retrieves a single Contact record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Get Event",
+          "description": "Retrieves a single Event record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Get Lead",
+          "description": "Retrieves a single Lead record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Get Opportunity",
+          "description": "Retrieves a single Opportunity record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Get Task",
+          "description": "Retrieves a single Task record from Salesforce by its external ID"
+        },
+        {
+          "name": "Salesforce - Search Account",
+          "description": "Searches for Account records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Search Campaign",
+          "description": "Searches for Campaign records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Search Case",
+          "description": "Searches for Case records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Search Contact",
+          "description": "Searches for Contact records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Search Event",
+          "description": "Searches for Event records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Search Lead",
+          "description": "Searches for Lead records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Search Opportunity",
+          "description": "Searches for Opportunity records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Search Task",
+          "description": "Searches for Task records in Salesforce matching the given field filters"
+        },
+        {
+          "name": "Salesforce - Update Account",
+          "description": "Updates an existing Account record in Salesforce. Only provided fields are changed."
+        },
+        {
+          "name": "Salesforce - Update Campaign",
+          "description": "Updates an existing Campaign record in Salesforce. Only provided fields are changed."
+        },
+        {
+          "name": "Salesforce - Update Case",
+          "description": "Updates an existing Case record in Salesforce. Only provided fields are changed."
+        },
+        {
+          "name": "Salesforce - Update Contact",
+          "description": "Updates an existing Contact record in Salesforce. Only provided fields are changed."
+        },
+        {
+          "name": "Salesforce - Update Event",
+          "description": "Updates an existing Event record in Salesforce. Only provided fields are changed."
+        },
+        {
+          "name": "Salesforce - Update Lead",
+          "description": "Updates an existing Lead record in Salesforce. Only provided fields are changed."
+        },
+        {
+          "name": "Salesforce - Update Opportunity",
+          "description": "Updates an existing Opportunity record in Salesforce. Only provided fields are changed."
+        },
+        {
+          "name": "Salesforce - Update Task",
+          "description": "Updates an existing Task record in Salesforce. Only provided fields are changed."
+        }
+      ]
+    },
+    {
+      "category": "SurveyMonkey",
+      "display": "SurveyMonkey",
+      "group": "Forms & Surveys",
+      "connector": null,
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "Create SurveyMonkey",
+          "description": "Creates a new SurveyMonkey survey with specified title, pages, questions, and settings. Supports all question types including multiple choice, text, rating, matrix, and more. Returns the new survey ID and collector URLs."
+        },
+        {
+          "name": "Export SurveyMonkey Responses to CSV",
+          "description": "Exports SurveyMonkey responses to CSV format for use in spreadsheets, data analysis tools, or archival. Supports custom delimiters, optional metadata columns, and flexible date filtering."
+        },
+        {
+          "name": "Get Single SurveyMonkey Response",
+          "description": "Retrieves details of a specific SurveyMonkey response by its unique response ID. Includes all answers, metadata, recipient information, and response timing data."
+        },
+        {
+          "name": "Get SurveyMonkey Details",
+          "description": "Retrieves complete details of a SurveyMonkey survey including title, questions, pages, logic, quota settings, theme, and metadata. Use this to inspect survey configurations, backup survey designs, or analyze survey structure."
+        },
+        {
+          "name": "Get SurveyMonkey Response Statistics",
+          "description": "Calculates comprehensive statistics from SurveyMonkey responses including completion rates, response trends, answer distributions, and time-based analytics. Perfect for dashboards, reporting, and data analysis."
+        },
+        {
+          "name": "Get SurveyMonkey Responses",
+          "description": "Retrieves responses from a SurveyMonkey survey with advanced filtering, pagination, and sorting capabilities. Supports date range filters, status filtering, and automatic pagination through all responses."
+        },
+        {
+          "name": "Update SurveyMonkey",
+          "description": "Updates an existing SurveyMonkey survey including title, pages, questions, and settings. Use PATCH mode (default) for safe partial updates or PUT mode for complete replacement. WARNING: PUT mode replaces all survey data - pages and questions not included will be deleted."
+        },
+        {
+          "name": "Watch for New SurveyMonkey Responses",
+          "description": "Polls SurveyMonkey for new responses since the last check. Returns only new submissions and updates the last checked timestamp. Ideal for triggering workflows, sending notifications, or syncing data to other systems in real-time."
+        }
+      ]
+    },
+    {
+      "category": "TikTok",
+      "display": "TikTok",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 7,
+      "actions": [
+        {
+          "name": "Delete Video (TikTok)",
+          "description": "Deletes a video from TikTok"
+        },
+        {
+          "name": "Get Analytics (TikTok)",
+          "description": "Retrieves analytics data for TikTok Business accounts"
+        },
+        {
+          "name": "Get Comments (TikTok)",
+          "description": "Retrieves comments from TikTok videos"
+        },
+        {
+          "name": "Get User Info (TikTok)",
+          "description": "Retrieves TikTok user profile information"
+        },
+        {
+          "name": "Get Videos (TikTok)",
+          "description": "Retrieves videos from TikTok accounts"
+        },
+        {
+          "name": "Reply to Comment (TikTok)",
+          "description": "Replies to a comment on a TikTok video"
+        },
+        {
+          "name": "Upload Video (TikTok)",
+          "description": "Uploads a video to TikTok Business account"
+        }
+      ]
+    },
+    {
+      "category": "Typeform",
+      "display": "Typeform",
+      "group": "Forms & Surveys",
+      "connector": null,
+      "actionCount": 10,
+      "actions": [
+        {
+          "name": "Create Typeform",
+          "description": "Creates a new Typeform with specified title, fields, and settings. Supports all field types including text, email, multiple choice, rating, and more. Returns the new form ID and shareable link."
+        },
+        {
+          "name": "Export Typeform Responses to CSV",
+          "description": "Exports Typeform responses to CSV format for use in spreadsheets, data analysis tools, or archival. Supports custom delimiters and optional metadata columns."
+        },
+        {
+          "name": "Get Single Typeform Response",
+          "description": "Retrieves details of a specific Typeform response by its unique response token. Includes all answers, metadata, hidden fields, and calculated values."
+        },
+        {
+          "name": "Get Typeform Details",
+          "description": "Retrieves complete details of a Typeform including title, fields, logic jumps, settings, theme, and metadata. Use this to inspect or backup form configurations."
+        },
+        {
+          "name": "Get Typeform Forms",
+          "description": "Retrieves a list of all TypeForms for a company including form IDs, titles, and basic metadata. Use this to discover available forms before processing submissions."
+        },
+        {
+          "name": "Get Typeform Response Statistics",
+          "description": "Calculates comprehensive statistics from Typeform responses including completion rates, response trends, popular answers, and time-based analytics. Useful for dashboards and reporting."
+        },
+        {
+          "name": "Get Typeform Responses",
+          "description": "Retrieves responses from a Typeform with filtering, pagination, and search capabilities. Supports date ranges, completion status filters, and automatic pagination through all responses."
+        },
+        {
+          "name": "Typeform Get File Content",
+          "description": "Downloads file content from Typeform using the file URL from response data. Returns file content in base64, text, or binary format with metadata."
+        },
+        {
+          "name": "Update Typeform",
+          "description": "Updates an existing Typeform. WARNING: Uses PUT which replaces all form data - fields not included will be deleted. Set MergeWithExisting=true to safely update only specified properties while preserving others."
+        },
+        {
+          "name": "Watch for New Typeform Responses",
+          "description": "Polls Typeform for new responses since the last check. Returns only new submissions and updates the last checked timestamp. Perfect for triggering workflows, sending notifications, or syncing data to other systems."
+        }
+      ]
+    },
+    {
+      "category": "Twitter",
+      "display": "X (Twitter)",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "Create Tweet (Twitter)",
+          "description": "Creates a tweet on Twitter/X"
+        },
+        {
+          "name": "Delete Tweet (Twitter)",
+          "description": "Deletes a tweet from Twitter/X"
+        },
+        {
+          "name": "Get Followers (Twitter)",
+          "description": "Retrieves followers for a Twitter/X account"
+        },
+        {
+          "name": "Get Timeline (Twitter)",
+          "description": "Retrieves tweets from a user's timeline"
+        },
+        {
+          "name": "Get Trending Topics (Twitter)",
+          "description": "Retrieves trending topics from Twitter/X"
+        },
+        {
+          "name": "Get User Info (Twitter)",
+          "description": "Retrieves user profile information from Twitter/X"
+        },
+        {
+          "name": "Search Tweets (Twitter)",
+          "description": "Searches for tweets on Twitter/X"
+        },
+        {
+          "name": "Upload Media (Twitter)",
+          "description": "Uploads media files to Twitter/X for use in tweets"
+        }
+      ]
+    },
+    {
+      "category": "YourMembership",
+      "display": "YourMembership",
+      "group": "Association Management",
+      "connector": null,
+      "actionCount": 27,
+      "actions": [
+        {
+          "name": "YourMembership - Get Career Opening",
+          "description": "Retrieves a single Career Opening record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Donation",
+          "description": "Retrieves a single Donation record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Dues Transaction",
+          "description": "Retrieves a single Dues Transaction record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Event",
+          "description": "Retrieves a single Event record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Event Registration",
+          "description": "Retrieves a single Event Registration record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Event Session",
+          "description": "Retrieves a single Event Session record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Group",
+          "description": "Retrieves a single Group record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Invoice Item",
+          "description": "Retrieves a single Invoice Item record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - Get Member",
+          "description": "Retrieves a single Member record from YourMembership by its external ID"
+        },
+        {
+          "name": "YourMembership - List Career Opening",
+          "description": "Lists Career Opening records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Donation",
+          "description": "Lists Donation records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Dues Transaction",
+          "description": "Lists Dues Transaction records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Event",
+          "description": "Lists Event records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Event Registration",
+          "description": "Lists Event Registration records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Event Session",
+          "description": "Lists Event Session records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Group",
+          "description": "Lists Group records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Invoice Item",
+          "description": "Lists Invoice Item records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - List Member",
+          "description": "Lists Member records from YourMembership with cursor-based pagination"
+        },
+        {
+          "name": "YourMembership - Search Career Opening",
+          "description": "Searches for Career Opening records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Donation",
+          "description": "Searches for Donation records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Dues Transaction",
+          "description": "Searches for Dues Transaction records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Event",
+          "description": "Searches for Event records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Event Registration",
+          "description": "Searches for Event Registration records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Event Session",
+          "description": "Searches for Event Session records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Group",
+          "description": "Searches for Group records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Invoice Item",
+          "description": "Searches for Invoice Item records in YourMembership matching the given field filters"
+        },
+        {
+          "name": "YourMembership - Search Member",
+          "description": "Searches for Member records in YourMembership matching the given field filters"
+        }
+      ]
+    },
+    {
+      "category": "YouTube",
+      "display": "YouTube",
+      "group": "Social Media",
+      "connector": null,
+      "actionCount": 9,
+      "actions": [
+        {
+          "name": "Delete Video (YouTube)",
+          "description": "Deletes a video from YouTube"
+        },
+        {
+          "name": "Get Analytics (YouTube)",
+          "description": "Retrieves YouTube Analytics data for channels and videos"
+        },
+        {
+          "name": "Get Channel Info (YouTube)",
+          "description": "Retrieves detailed information about YouTube channels"
+        },
+        {
+          "name": "Get Comments (YouTube)",
+          "description": "Retrieves comments from YouTube videos"
+        },
+        {
+          "name": "Get Playlists (YouTube)",
+          "description": "Retrieves playlists from YouTube channels"
+        },
+        {
+          "name": "Get Videos (YouTube)",
+          "description": "Retrieves videos from YouTube channels or search results"
+        },
+        {
+          "name": "Search Videos (YouTube)",
+          "description": "Searches for videos on YouTube based on various criteria"
+        },
+        {
+          "name": "Update Video (YouTube)",
+          "description": "Updates metadata for an existing YouTube video"
+        },
+        {
+          "name": "Upload Video (YouTube)",
+          "description": "Uploads a video to YouTube with metadata and settings"
+        }
+      ]
+    }
+  ],
+  "platformGroups": [
+    {
+      "name": "Data & records",
+      "actionCount": 45,
+      "actions": [
+        {
+          "name": "Aggregate Data",
+          "description": "Perform aggregation operations on data arrays including sum, average, min, max, count, and group by"
+        },
+        {
+          "name": "Create Conversation Record",
+          "description": "Creates a record in the Conversations entity."
+        },
+        {
+          "name": "Create Entity",
+          "description": "Creates a new MemberJunction entity from a fully-formed TableDefinition. Validates authorization then executes the SchemaEngine → RuntimeSchemaManager pipeline. Use this when an agent needs to create a new database table without going through the full conversational Database Designer flow."
+        },
+        {
+          "name": "Create Mermaid Diagram",
+          "description": "Generates SVG diagrams from Mermaid text syntax. Supports flowcharts, sequence diagrams, ER diagrams, class diagrams, state machines, Gantt charts, and more. Mermaid is a text-based diagram tool that converts markdown-like syntax into rich visualizations suitable for reports, documentation, and AI-generated content."
+        },
+        {
+          "name": "Create Record",
+          "description": "Inserts a NEW record into an MJ entity. Use when the record does not yet exist and you need a generated primary key returned. To modify an existing record, use Update Record. To read existing records, use Get Record (single) or Run View (multiple). Accepts any entity in the MJ metadata; respects entity validation and permissions."
+        },
+        {
+          "name": "Create Scheduled Job",
+          "description": "Create a new scheduled job with the specified configuration including name, job type, cron expression, and optional parameters"
+        },
+        {
+          "name": "Create SVG Chart",
+          "description": "Generates SVG charts from data using D3. Supports various chart types including bar, line, pie, scatter, and area charts. Designed for AI agents and workflows to create publication-quality visualizations from structured data without writing visualization code."
+        },
+        {
+          "name": "Create SVG Diagram",
+          "description": "Generates SVG diagrams including flowcharts, org charts, and ER diagrams. Uses dagre for directed graph layouts and d3-hierarchy for tree structures. Designed for AI agents and workflows to create publication-quality diagrams from structured data."
+        },
+        {
+          "name": "Create SVG Infographic",
+          "description": "Composes multiple SVG visualizations into a single infographic with grid layout, header, and footer. Takes panels from other SVG actions (charts, diagrams, networks, word clouds) and arranges them professionally. Designed for AI agents to create comprehensive visual reports."
+        },
+        {
+          "name": "Create SVG Network",
+          "description": "Generates SVG network graphs including force-directed layouts, decision trees, and radial networks. Uses d3-force for physics simulations and d3-hierarchy for tree structures. Designed for AI agents and workflows to create publication-quality network visualizations from structured data."
+        },
+        {
+          "name": "Create SVG Sketch Diagram",
+          "description": "Creates hand-drawn/sketch-style SVG diagrams using Rough.js for informal, whiteboard-style visualizations. Supports flowcharts, org charts, and ER diagrams with configurable roughness and fill styles. Perfect for brainstorming presentations and informal documentation."
+        },
+        {
+          "name": "Create SVG Word Cloud",
+          "description": "Generates SVG word clouds and tag bars from weighted word lists. Uses d3-cloud for cloud layouts. Designed for AI agents and workflows to create publication-quality text visualizations from data."
+        },
+        {
+          "name": "CSV Parser",
+          "description": "Parse CSV data into structured JSON with configurable options for headers, delimiters, and data handling"
+        },
+        {
+          "name": "Data Mapper",
+          "description": "Transform data using Nunjucks templates for flexible and powerful data mapping"
+        },
+        {
+          "name": "Delete Record",
+          "description": "Permanently removes a record from an MJ entity. Hard delete — irreversible. For entities that support soft deletes (e.g. setting Status='Archived'), prefer Update Record. To confirm a record exists before deletion, call Get Record first. Respects cascade rules defined in entity metadata."
+        },
+        {
+          "name": "Delete Scheduled Job",
+          "description": "Delete an existing scheduled job from the system. Will fail if the job has related records that prevent deletion"
+        },
+        {
+          "name": "Describe Entity",
+          "description": "Returns detailed column-level metadata for a MemberJunction entity. Useful for inspecting an entity's current structure before deciding to modify it."
+        },
+        {
+          "name": "Entity Data Quality Report",
+          "description": "Scans a sample of records for a given entity and returns a data quality report: per-field null rates, distinct value counts, and an overall completeness score (0-1) that weights non-nullable fields 2x. Useful for data stewards triaging bad data. Exercises the `md` (entity introspection) and `rv` (RunView) bridge namespaces."
+        },
+        {
+          "name": "Execute Code",
+          "description": "Executes JavaScript code in a secure sandboxed environment. Designed for AI agents to generate and run code for data analysis, transformations, and calculations. Supports lodash, date-fns, mathjs, papaparse, uuid, and validator libraries. No filesystem or network access."
+        },
+        {
+          "name": "Explore Database Schema",
+          "description": "Retrieves comprehensive database schema information using MemberJunction's rich metadata layer. Provides business context, field descriptions, semantic relationships, virtual entities, API settings, and much more beyond raw database schema. Essential for understanding the data model for research purposes."
+        },
+        {
+          "name": "Find Similar Records",
+          "description": "Finds records in an entity whose text field is similar to a search string. Ranks matches by a blended score (30% containment, 70% normalized Levenshtein) so both typos and long-substring matches rank well. No AI dependency — cheap and deterministic. Validates the target field via metadata before scanning."
+        },
+        {
+          "name": "Get AI Model Cost",
+          "description": "Gets an AI Model Cost record from the database."
+        },
+        {
+          "name": "Get Entity Details",
+          "description": "Returns complete field information and sample data for a specific entity. Shows field names, types, descriptions, primary keys, related entities, and a few rows of actual data (3 by default, max 10, long values truncated). Perfect for understanding entity structure before writing SQL queries."
+        },
+        {
+          "name": "Get Entity List",
+          "description": "Returns a lightweight list of all entities in the system with only name, schema, and description. Perfect for discovering available entities before exploring details. Uses cached metadata - extremely fast with no database queries."
+        },
+        {
+          "name": "Get Record",
+          "description": "Retrieves a SINGLE record from an MJ entity by primary key. Use when you already know the exact record's primary key. To find records by other criteria (status, name, date range), use Run View with a filter. To execute a stored, named query, use Run Query. Returns the full record with all fields the user has read permission on."
+        },
+        {
+          "name": "Get Records",
+          "description": "Generic action for retrieving multiple records from any entity with filtering and sorting capabilities. Supports SQL WHERE clause filters, ORDER BY sorting, and result limits."
+        },
+        {
+          "name": "Get Scheduled Job Statistics",
+          "description": "Retrieve execution statistics for scheduled jobs including total runs, success/failure counts, success rate, and average duration"
+        },
+        {
+          "name": "JSON Transform",
+          "description": "Transform JSON data using JSONPath or JMESPath expressions for flexible data manipulation"
+        },
+        {
+          "name": "List My Entities",
+          "description": "Returns a list of all MemberJunction entities created by the current user via the Database Designer (based on MJ:UDT:Owner EntitySettings provenance records)."
+        },
+        {
+          "name": "Modify Entity",
+          "description": "Applies ALTER TABLE changes to an existing MemberJunction entity based on a desired TableDefinition. Diffs the desired state against the current table, generates ALTER SQL, and executes the pipeline."
+        },
+        {
+          "name": "Query Scheduled Jobs",
+          "description": "Query scheduled jobs based on filter criteria including Status, JobTypeID, IsActive flag, and creation date ranges"
+        },
+        {
+          "name": "Run Ad-hoc Query",
+          "description": "Executes a read-only SQL SELECT query for ad-hoc purposes with security validation. Supports {{query:\"CategoryPath/QueryName\"}} composition macros — the composition engine resolves these into CTEs before execution, enabling reuse of saved queries. Ensures SELECT-only operations, prevents dangerous SQL operations, enforces timeouts, and logs all queries for audit trail."
+        },
+        {
+          "name": "Run External Change Detection",
+          "description": "Executes the External Change Detection process to identify changes in data that bypassed MemberJunction."
+        },
+        {
+          "name": "Run Integration Sync",
+          "description": "Triggers a data sync for a Company Integration. Pulls or pushes records according to entity maps, field maps, and watermarks configured for the integration."
+        },
+        {
+          "name": "Run Record Process",
+          "description": "Runs a MJ: Record Processes definition against a runtime scope (selected records, a view, a list, or a filter), optionally as a dry-run. Thin wrapper over the RecordProcessExecutor engine — the agent / workflow / low-code surface for the same bulk-update capability the Record Process Runner UX drives. For WorkType=FieldRules, a dry-run computes the exact per-record field diff without writing."
+        },
+        {
+          "name": "Run Stored Query",
+          "description": "Executes a stored query by ID or name, with optional parameters. Uses the full query pipeline including composition resolution, Nunjucks templating, caching, and audit logging. Preferred over ad-hoc SQL when a matching stored query exists."
+        },
+        {
+          "name": "Scheduled Geocoding",
+          "description": "Maintenance action that finds records missing geocodes, retries failed geocoding attempts, and cleans up orphaned RecordGeoCode rows. Processes all pending records in parallel batches with cache invalidation. Designed to run on a schedule as a safety net for records that bypass BaseEntity.Save() (bulk SQL imports, direct DB operations)."
+        },
+        {
+          "name": "Scoped Search",
+          "description": "Scope-aware universal search for AI agents. Enforces the calling agent's SearchScopeAccess ('All' | 'Assigned' | 'None') and resolves the requested scope against the agent's AIAgentSearchScope rows. Supports agent-invoked pre-rendered query templates, per-provider query transforms, multi-scope RRF fusion, and (optional) re-ranking. Returns ranked, scored, and enriched results in the same shape as the universal Search action."
+        },
+        {
+          "name": "Search",
+          "description": "Executes a universal search across the organization's knowledge base using vector similarity, full-text, and entity LIKE-based search with Reciprocal Rank Fusion (RRF). Returns ranked, scored, and enriched results. Designed for AI agents, MCP connectors, A2A connectors, and workflow orchestration."
+        },
+        {
+          "name": "Search Query Catalog",
+          "description": "Searches the saved query catalog using vector-based semantic search. Takes a natural language description of what data is needed and returns ranked matching queries with similarity scores. Use this to find existing queries before writing ad-hoc SQL."
+        },
+        {
+          "name": "Update Record",
+          "description": "Modifies an EXISTING record in an MJ entity. Use when the record already exists and you know its primary key. To insert a new record, use Create Record. To remove a record, use Delete Record. Only the supplied fields are changed; all other fields are preserved. Respects entity validation, permissions, and audit trails (Record Changes)."
+        },
+        {
+          "name": "Update Scheduled Job",
+          "description": "Update an existing scheduled job. Only provided fields will be updated; omitted fields remain unchanged"
+        },
+        {
+          "name": "Validate Entity Schema",
+          "description": "Validates a TableDefinition against all Database Designer pre-creation checks (blocked schemas, reserved column names, naming conflicts). Returns a ValidationResult with Valid, Errors, and Warnings. Call this before CreateEntity to surface problems at the UI review step rather than mid-pipeline."
+        },
+        {
+          "name": "Write Entity Field(s)",
+          "description": "Writes one or more fields onto a SINGLE entity record — either updating an existing record (identified by its PrimaryKey) or creating a new one (when CreateIfMissing=true and no PrimaryKey is supplied). A reusable write primitive for Flow Agents and as the terminal write-back step of a Feature Pipeline: give it the target entity, an optional primary key, and a field map, and it loads-or-creates, sets the fields, and saves. Respects entity validation, permissions, and audit trails (Record Changes). To always insert use Create Record; to read use Get Record / Run View."
+        },
+        {
+          "name": "XML Parser",
+          "description": "Parse XML data and extract values using XPath expressions with namespace support"
+        }
+      ]
+    },
+    {
+      "name": "AI & agents",
+      "actionCount": 14,
+      "actions": [
+        {
+          "name": "Autotag and Vectorize Content",
+          "description": "Runs MJ's Content Autotagging and/or Vector Embedding pipeline over Content Items. Either step can be toggled independently via the Autotag and Vectorize boolean parameters (both default ON). Operates on the Content Items entity by default. For vectorizing OTHER entities (not Content Items), use Vectorize Entity instead."
+        },
+        {
+          "name": "Betty",
+          "description": "Query your organization's knowledge base assistant for information about company policies, procedures, documentation, and institutional knowledge. Betty provides context-aware responses with optional reference links to supporting materials."
+        },
+        {
+          "name": "Computer Use",
+          "description": "Drives a web browser via LLM reasoning over screenshots to accomplish a natural-language goal. Uses a vision-to-action loop: captures screenshots, sends them to a controller LLM that plans browser actions (click, type, navigate, scroll), executes those actions via Playwright, and evaluates progress with a judge LLM. Supports per-domain authentication, domain allow/block lists, and configurable step limits."
+        },
+        {
+          "name": "Create Runtime Action",
+          "description": "Creates a new Action record with Type='Runtime'. Validates the supplied RuntimeActionConfiguration, persists the Action row (CodeApprovalStatus='Pending'), and creates companion ActionParam + ActionResultCode rows from the input/output/resultCodes payloads. The created action is NOT activated until a human approves it."
+        },
+        {
+          "name": "Execute Agent",
+          "description": "Executes a top-level AI Agent by name or ID using the framework's AgentRunner. Only invokable for agents with ExposeAsAction=true. Returns the AgentRunID, final payload, and full AgentResult. Sub-agents (ParentID set) cannot be invoked through this action — run the parent agent instead."
+        },
+        {
+          "name": "Execute AI Prompt",
+          "description": "Execute MemberJunction AI prompts with variable substitution and model overrides"
+        },
+        {
+          "name": "Find Candidate Actions",
+          "description": "Finds the most relevant actions for a given task using semantic search with embeddings. Returns top N most similar actions based on task description. Used by Planning Designer Agent to discover relevant actions without searching through hundreds of options."
+        },
+        {
+          "name": "Find Candidate Agents",
+          "description": "Finds the best-matching AI agents for a given task using embedding-based semantic search. Returns agents ranked by similarity score."
+        },
+        {
+          "name": "Generate Image",
+          "description": "Generates or edits images using AI image generation models (OpenAI GPT-4o Image, Google Nano Banana Pro, Black Forest Labs FLUX). Supports text-to-image generation and image-to-image editing/transformation when SourceImage is provided. Configurable size, quality, style, and output format. Returns images as base64 or URLs."
+        },
+        {
+          "name": "Load Agent Spec",
+          "description": "Loads the complete AgentSpec structure for an existing agent by ID. Returns full agent specification including all nested structures: Actions, SubAgents, Prompts, Steps, and Paths. Used by Agent Manager for modification workflow."
+        },
+        {
+          "name": "Run Cluster Analysis",
+          "description": "Clusters an entity's embedding vectors (KMeans or DBSCAN), projects them to a 2D/3D layout via UMAP (PCA fallback), optionally names clusters with an LLM, and — when a PersistAs name is supplied — saves the result as an MJ: Cluster Analysis record. Thin wrapper over the framework-agnostic ClusteringEngine."
+        },
+        {
+          "name": "Summarize Entity Records",
+          "description": "Queries a sample of records from the specified entity, passes them to an AI prompt, and returns a structured summary with key themes and suggested follow-up questions. Exercises the `rv` + `ai` bridge namespaces — the most common composition agents reach for."
+        },
+        {
+          "name": "Test Runtime Action",
+          "description": "Runs a Runtime action against declared test cases. Accepts either (ActionID/ActionName) for an existing Action record or (Code + Configuration) for a freshly-generated, not-yet-persisted Runtime action. Each case runs through ActionEngine.RunAction so the full timeout / bridge / approval path is exercised. Returns per-case pass/fail plus AllPassed / PassedCount / FailedCount for the whole batch."
+        },
+        {
+          "name": "Vectorize Entity",
+          "description": "Creates and stores vector embeddings for records in one or more MJ entities. Use to enable semantic search over arbitrary entity data. For Content Items specifically, prefer Autotag and Vectorize Content which also assigns tags. Vectors are stored per the entity's configured vector database and embedding model."
+        }
+      ]
+    },
+    {
+      "name": "Lists & audiences",
+      "actionCount": 11,
+      "actions": [
+        {
+          "name": "Add View Results To List",
+          "description": "Append a User View's current results to an existing List. Always additive — never removes existing members. Dedupes silently."
+        },
+        {
+          "name": "Bulk Update List Item Status",
+          "description": "Bulk-update the Status field on MJ: List Detail rows for a given list. NewStatus must match the MJ: List Detail Status check constraint (Active / Complete / Disabled / Error / Other / Pending / Rejected)."
+        },
+        {
+          "name": "Compose Lists",
+          "description": "Compose multiple List or View sources into a delta via a set-op (union / intersection / difference). Preview-only by default; supplying a Target projects the result into that list, which can trigger the drop-guard."
+        },
+        {
+          "name": "Invite To List",
+          "description": "Issue a pending-email invitation to share a List. Returns a generated token + expiry. Caller is expected to deliver an accept link to the recipient."
+        },
+        {
+          "name": "Materialize List From View",
+          "description": "Create a new MJ List from a User View. Thin wrapper around ListOperations.MaterializeFromView. Captures lineage when RememberLineage=true. Cannot produce drops (target is new)."
+        },
+        {
+          "name": "Move List Members",
+          "description": "Move (or copy) a set of records from one list to another. Move mode also removes the records from the source list — requires ConfirmDrops=true to actually delete. Copy mode skips the removal step."
+        },
+        {
+          "name": "Refresh List From Source",
+          "description": "Refresh an existing lineage-bearing List against its captured source view (Additive or Sync mode). Sync-mode refreshes that would remove records require ConfirmDrops=true; otherwise rejected with DROP_NOT_CONFIRMED."
+        },
+        {
+          "name": "Resolve Audience",
+          "description": "Resolve an AudienceSource (list / view / ad-hoc filter) to its current record IDs. Read-only — never mutates. Useful for previewing how many records a campaign would hit before sending."
+        },
+        {
+          "name": "Revoke List Invitation",
+          "description": "Revoke a pending List invitation before it has been accepted. Returns INVITATION_ALREADY_USED if the invitation was already consumed — callers should use Unshare List against the resulting permission row in that case."
+        },
+        {
+          "name": "Share List",
+          "description": "Grant a direct share on a List to a user or role. Idempotent at the (list, target) pair. Writes to ResourcePermission; emits a share-notification when sharing with a user."
+        },
+        {
+          "name": "Unshare List",
+          "description": "Revoke a previously-granted List permission. Soft-revokes (sets Status='Revoked' on ResourcePermission) so the audit trail remains intact."
+        }
+      ]
+    },
+    {
+      "name": "Documents & files",
+      "actionCount": 24,
+      "actions": [
+        {
+          "name": "Add Document Content",
+          "description": "Appends content to an in-progress document created by Create Document. Each call creates a new addressable section. Operations include: heading, paragraph, table, list, image, hr, pageBreak, sheet (Excel), formula (Excel)."
+        },
+        {
+          "name": "Create Document",
+          "description": "Creates a new in-progress document (PDF, DOCX, or XLSX) and returns a handle for incremental building. Use with Add Document Content, Preview Document, Modify Document Section, and Finalize Document to build documents piece by piece across multiple turns."
+        },
+        {
+          "name": "Excel Reader",
+          "description": "Read Excel files and convert to JSON with support for specific sheets and ranges"
+        },
+        {
+          "name": "File Compress",
+          "description": "Compress or decompress files using ZIP format with configurable compression levels"
+        },
+        {
+          "name": "File Storage: Check Directory Exists",
+          "description": "Check if a directory exists in a storage provider."
+        },
+        {
+          "name": "File Storage: Check Object Exists",
+          "description": "Check if a file object exists in a storage provider."
+        },
+        {
+          "name": "File Storage: Copy Object",
+          "description": "Copy a file object within a storage provider from one location to another."
+        },
+        {
+          "name": "File Storage: Create Directory",
+          "description": "Create a directory in a storage provider."
+        },
+        {
+          "name": "File Storage: Delete Directory",
+          "description": "Delete a directory from a storage provider. Optionally delete recursively."
+        },
+        {
+          "name": "File Storage: Delete Object",
+          "description": "Delete a file object from a storage provider."
+        },
+        {
+          "name": "File Storage: Get Download URL",
+          "description": "Generate a pre-authenticated download URL for a file. The URL can be used to download the file without additional authentication."
+        },
+        {
+          "name": "File Storage: Get File Content",
+          "description": "Smart file content retrieval with automatic extraction based on file type. Returns LLM-ready content: plain text for documents (PDF/Word/Excel extraction), base64 for images, decoded text for text formats. Optimized for AI agent consumption."
+        },
+        {
+          "name": "File Storage: Get Object",
+          "description": "Download file content from a storage provider. Returns the file content as base64-encoded data."
+        },
+        {
+          "name": "File Storage: Get Object Metadata",
+          "description": "Retrieve metadata about a file object in a storage provider. Returns size, content type, last modified date, and other properties."
+        },
+        {
+          "name": "File Storage: Get Upload URL",
+          "description": "Generate a pre-authenticated upload URL for a file. The URL can be used to upload a file without additional authentication."
+        },
+        {
+          "name": "File Storage: List Objects",
+          "description": "List files and directories in a storage provider path. Active providers: Azure Blob Storage, Google Drive, Dropbox, Box.com, SharePoint Storage. Inactive: AWS S3 Storage, Google Cloud Storage."
+        },
+        {
+          "name": "File Storage: Move Object",
+          "description": "Move or rename a file object within a storage provider."
+        },
+        {
+          "name": "Finalize Document",
+          "description": "Renders an in-progress document to its final binary format, saves to MJ Storage, and outputs FileOutput for automatic artifact creation. The document handle is disposed after finalization."
+        },
+        {
+          "name": "Gamma Generate Presentation",
+          "description": "Generates presentations, documents, or social media posts using Gamma's AI-powered Generations API. Creates professional slides from text input with customizable themes, images, and export formats."
+        },
+        {
+          "name": "List Storage Providers",
+          "description": "Retrieves a list of active file storage providers configured in the system. Returns provider names, descriptions, and search support status. Useful for agents to discover available storage before searching or accessing files."
+        },
+        {
+          "name": "Modify Document Section",
+          "description": "Replaces or removes a previously-added section in an in-progress document. Section IDs are returned by Add Document Content and Preview Document."
+        },
+        {
+          "name": "PDF Extractor",
+          "description": "Extract text, metadata, and pages from PDF files"
+        },
+        {
+          "name": "Preview Document",
+          "description": "Returns a summary of an in-progress document's current state: section count, per-section operation counts and content summaries. Use to check what has been built before adding more or finalizing."
+        },
+        {
+          "name": "Search Storage Files",
+          "description": "Searches for files across configured storage providers using native search APIs. Supports Google Drive, SharePoint, Dropbox, and Box with content search, file type filtering, date ranges, and path restrictions."
+        }
+      ]
+    },
+    {
+      "name": "Communication",
+      "actionCount": 5,
+      "actions": [
+        {
+          "name": "Send Single Message",
+          "description": "Sends one outbound message (email, SMS, push notification, etc.) via the MJ Communication Framework. The actual channel is determined by the Provider + MessageType parameters — this single action handles all message types the configured provider supports. For bulk send, use a Run View to gather recipients then loop, or use a provider-specific bulk action if available."
+        },
+        {
+          "name": "Send To Audience",
+          "description": "Send a single message template to every record resolved from an AudienceSource. Wraps SendToAudience() in @memberjunction/communication-engine. Records missing the recipient field are skipped and surfaced in SkippedRecords output."
+        },
+        {
+          "name": "Slack Webhook",
+          "description": "Send messages to Slack channels via incoming webhooks with rich formatting support"
+        },
+        {
+          "name": "Teams Webhook",
+          "description": "Send messages to Microsoft Teams channels via incoming webhooks with card formatting"
+        },
+        {
+          "name": "Weekly Entity Digest",
+          "description": "Composes a weekly markdown digest from activity across one or more entities, then emails it via the Send Single Message action. Exercises every major bridge namespace: metadata-bounded entity queries (rv), standard library helpers (libs), AI prompt rendering (ai), and downstream action invocation (actions). Supports dryRun=true to return the markdown without sending."
+        }
+      ]
+    },
+    {
+      "name": "Integration & APIs",
+      "actionCount": 8,
+      "actions": [
+        {
+          "name": "API Rate Limiter",
+          "description": "Add rate limiting to any API endpoint with automatic retry and backoff"
+        },
+        {
+          "name": "Execute MCP Tool",
+          "description": "Executes a tool on an MCP server. Connects to the server if not already connected, calls the specified tool with provided arguments, and returns the result. This is the primary action for invoking external tool capabilities through MCP."
+        },
+        {
+          "name": "GraphQL Query",
+          "description": "Execute GraphQL queries and mutations with variable support"
+        },
+        {
+          "name": "HTTP Request",
+          "description": "Make HTTP requests with full control over headers, authentication, and request options"
+        },
+        {
+          "name": "List MCP Tools",
+          "description": "Retrieves the list of available tools from an MCP server connection. Returns tool names, descriptions, and input schemas for each tool. Use this action for discovery to understand what tools are available on a server before executing them."
+        },
+        {
+          "name": "OAuth Flow",
+          "description": "Handle OAuth 2.0 authentication flows including authorization code and client credentials"
+        },
+        {
+          "name": "Sync MCP Tools",
+          "description": "Synchronizes tools from an MCP server to the local database. Discovers all available tools, adds new ones, updates existing tool definitions, and marks tools that are no longer available as deprecated. Use this action to keep the local tool catalog up to date with the server."
+        },
+        {
+          "name": "Test MCP Connection",
+          "description": "Tests connectivity to an MCP server and retrieves server information including name, version, capabilities, and connection latency. Use this action to verify an MCP server is reachable and responding correctly before attempting to execute tools."
+        }
+      ]
+    },
+    {
+      "name": "Web & research",
+      "actionCount": 6,
+      "actions": [
+        {
+          "name": "Google Custom Search",
+          "description": "Performs web search using Google's Custom Search JSON API with advanced filtering and structured results. Provides high-quality search results with support for site filtering, date restrictions, file type filtering, and more."
+        },
+        {
+          "name": "Perplexity Search",
+          "description": "Performs AI-powered web search using Perplexity's Search API. Returns comprehensive search results with citations, related questions, and optional images. Supports advanced filtering by domain and recency."
+        },
+        {
+          "name": "URL Link Validator",
+          "description": "Validates URLs by checking accessibility, response codes, and performing health checks with detailed status information"
+        },
+        {
+          "name": "URL Metadata Extractor",
+          "description": "Extracts comprehensive metadata from web pages including OpenGraph, Twitter Cards, Schema.org structured data, and standard HTML meta tags"
+        },
+        {
+          "name": "Web Page Content",
+          "description": "Fetches the content of a specific URL and converts it to text/markdown/JSON. Use when you already have a URL (from Web Search, a user-supplied link, or an API endpoint) and need its content. Handles HTML, PDF, DOCX, XML, CSV, and JSON automatically with format detection."
+        },
+        {
+          "name": "Web Search",
+          "description": "Searches the open web via DuckDuckGo and returns a ranked list of result URLs with titles and snippets. Use when you need to discover relevant pages but do not yet know specific URLs. To fetch the actual content of a known URL, use Web Page Content. Rate-limited; supports queueing."
+        }
+      ]
+    },
+    {
+      "name": "Workflow control",
+      "actionCount": 5,
+      "actions": [
+        {
+          "name": "Conditional",
+          "description": "Execute different actions based on a condition evaluation"
+        },
+        {
+          "name": "Delay",
+          "description": "Add fixed or random delays to workflows for timing control"
+        },
+        {
+          "name": "Loop",
+          "description": "Iterate over collections executing actions for each item with parallel processing support"
+        },
+        {
+          "name": "Parallel Execute",
+          "description": "Execute multiple actions in parallel with configurable concurrency and completion modes"
+        },
+        {
+          "name": "Retry",
+          "description": "Retry failed actions with exponential backoff and configurable retry conditions"
+        }
+      ]
+    },
+    {
+      "name": "Machine learning",
+      "actionCount": 5,
+      "actions": [
+        {
+          "name": "Promote ML Model",
+          "description": "Transitions an ML Model through its lifecycle (Validated / Published / Archived). Enforces the leakage sign-off gate — a model flagged for possible target leakage cannot be promoted unless SignOff=true. Lifecycle-only: never edits the model's metrics or artifact, only its Status."
+        },
+        {
+          "name": "Run Experiment Session",
+          "description": "Executes an approved modeling plan as an experiment session — running its proposed experiments in waves to completion or until the budget bound, maintaining a leaderboard. Outputs the session id, the best (winning) model id, the final leaderboard, and why the session stopped."
+        },
+        {
+          "name": "Schedule Model Scoring",
+          "description": "Binds a trained ML Model to write its prediction into a target entity column on a recurring schedule (e.g. monthly). Creates a scheduled Record Process that scores the rows selected by a filter and writes the prediction back into the chosen column on its cadence. Outputs the new Record Process id and the cron expression."
+        },
+        {
+          "name": "Score Record Set",
+          "description": "Scores a set of records with a trained ML Model. The scope selects records (explicit ids / a saved view / a list / an entity+filter / a single record). Returns the scored count and either the ephemeral predictions or confirmation that scores were written back to the target."
+        },
+        {
+          "name": "Train ML Model",
+          "description": "Trains a predictive model from an ML Training Pipeline definition. Carves a locked holdout, trains via the sidecar, persists an immutable Draft ML Model, and flags single-feature dominance (possible target leakage). Outputs the new model id, its honest holdout metrics, and whether it was leakage-flagged."
+        }
+      ]
+    },
+    {
+      "name": "E-signature",
+      "actionCount": 4,
+      "actions": [
+        {
+          "name": "Download Signed Document",
+          "description": "Download the executed/signed document for a completed signature request and record it as a Signed-role document. Returns the document as base64."
+        },
+        {
+          "name": "Get Signature Status",
+          "description": "Poll the provider for the current envelope status of a signature request and persist it (including recipient statuses)."
+        },
+        {
+          "name": "Send Document for Signature",
+          "description": "Send one or more documents through a configured signature account/provider (e.g. DocuSign) and create the envelope lifecycle record. Documents are supplied as base64. Optionally links to an originating record (EntityID/RecordID) and an Artifact for provenance."
+        },
+        {
+          "name": "Void Signature Request",
+          "description": "Void/cancel an in-flight signature request with a reason."
+        }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "actionCount": 29,
+      "actions": [
+        {
+          "name": "Activate Interactive Form Version",
+          "description": "Promote a Pending EntityFormOverride to Active. Atomically demotes any sibling Active override at the same scope target to Inactive (and its Component). The Pending Override is the one the agent just produced via Modify; activating it makes it the live form. Old Component rows persist forever as immutable history — revertible via 'Revert Interactive Form'."
+        },
+        {
+          "name": "Assign User Roles",
+          "description": "Assigns one or more roles to a user by creating UserRole associations. Accepts either a single role name (RoleName) or an array of role names (RoleNames)."
+        },
+        {
+          "name": "Business Days Calculator",
+          "description": "Calculates business days between dates, accounting for weekends and holidays. Can add/subtract business days from a date"
+        },
+        {
+          "name": "Calculate Array Statistics",
+          "description": "Takes an array of numbers and returns summary statistics: count, min, max, sum, mean, median, stdDev, variance, and outliers detected via n-sigma distance from the mean. Pure compute — runs entirely inside the sandbox, no MJ metadata or entity access required. Useful as a building block for numeric summarization inside agent workflows, and as a smoke test for the Runtime Actions pipeline."
+        },
+        {
+          "name": "Calculate Expression",
+          "description": "Evaluates mathematical expressions supporting basic arithmetic, parentheses, and common math functions"
+        },
+        {
+          "name": "Census Data Lookup",
+          "description": "Retrieves US Census demographic and economic data for a given ZIP code or city/state location"
+        },
+        {
+          "name": "Color Converter",
+          "description": "Converts colors between different formats (HEX, RGB, HSL, HSV) and provides color analysis"
+        },
+        {
+          "name": "Create Employee",
+          "description": "Creates a new employee record in the MemberJunction system"
+        },
+        {
+          "name": "Create Interactive Form",
+          "description": "Persists a net-new AI-authored or human-authored runtime form. Lints the supplied ComponentSpec (must declare componentRole='form'), inserts a Component row v1.0.0 with the spec, and creates an EntityFormOverride row that activates the form for the calling user. Returns ALREADY_EXISTS if the user already has an Active override for this entity — agents should call 'Modify Interactive Form' in that case. Scope is always clamped to 'User' regardless of any args — the action never writes Global or Role overrides."
+        },
+        {
+          "name": "Create User",
+          "description": "Creates a new user in the MemberJunction system with validation and optional employee linking"
+        },
+        {
+          "name": "Execute Scheduled Job Now",
+          "description": "Run a scheduled job immediately, bypassing its cron schedule. Executes through the scheduling engine — lock acquisition, the job's plugin, the run record, statistics and notifications — and reports the job's actual outcome. Set Wait=false to start it and return without waiting."
+        },
+        {
+          "name": "Geocode Address",
+          "description": "Converts a free-form address string into structured address components (street, city, state, postal code, country) and geographic coordinates using the Google Geocoding API."
+        },
+        {
+          "name": "Get Active Form For Entity",
+          "description": "Read-only action returning the currently-resolved interactive-form override (if any) for the (entity, requesting user) pair plus the full list of applicable variants. Returns null Active + empty Variants when no override exists. Used by the Form Builder agent to decide between Create (no override exists) and Modify (an override already exists)."
+        },
+        {
+          "name": "Get Default Form Scaffold For Entity",
+          "description": "Read-only action that produces a working form-role ComponentSpec scaffolded from an entity's CodeGen metadata (Category, GeneratedFormSectionType, Sequence, FK relationships, value lists, EntitySetting icons). Mirrors the default Angular form layout. Agents call this first when authoring a net-new form, then modify the scaffold per user requirements — far fewer lint failures than writing JSX from scratch."
+        },
+        {
+          "name": "Get Entity Schema For Form",
+          "description": "Read-only action consumed by the Form Builder agent. Returns the curated form-relevant schema for an entity: field list with normalised types (string | number | boolean | datetime | enum | foreign-key), FK references resolved to {entity, displayField}, value-list fields annotated with allowedValues, and audit / virtual / computed fields stripped. The shape matches the CuratedFormSchema type in @memberjunction/interactive-component-types/forms."
+        },
+        {
+          "name": "Get Stock Price",
+          "description": "Looks up the current price and trading data for a single publicly-traded stock by ticker symbol. US/major-exchange tickers only. Returns the latest price snapshot."
+        },
+        {
+          "name": "Get Weather",
+          "description": "Looks up the current weather for a single location, either by city name or by latitude/longitude. Returns current conditions and temperature for a single point in time."
+        },
+        {
+          "name": "IP Geolocation",
+          "description": "Retrieves geolocation information for an IP address including location, timezone, ISP, and privacy indicators"
+        },
+        {
+          "name": "Modify Interactive Form",
+          "description": "Modify an existing interactive-form override. Routes off the source Override's status (not the underlying Component). Behavior is driven by the optional VersionBumpKind input: 'in-place' (default for Pending sources) overwrites the Pending Component row with no new version; 'patch'/'minor'/'major' snapshot a new Pending Component + sibling Override using the bumped version. Pending sources with a bump demote the prior Pending to Inactive (preserves rollback history). Active sources reject 'in-place' (would corrupt the live row) and default to 'minor'. Inactive sources reject 'in-place' (use Revert to re-activate first) but accept patch/minor/major as a branch-from-historical operation — default 'patch'; the Inactive source row is left untouched. Scope is preserved from the existing override."
+        },
+        {
+          "name": "Password Strength",
+          "description": "Check password strength and generate secure passwords using zxcvbn analysis"
+        },
+        {
+          "name": "Postal Code Lookup",
+          "description": "Looks up city, state, country, and geographic coordinates from a postal code using the Google Geocoding API. Supports international postal codes."
+        },
+        {
+          "name": "QR Code",
+          "description": "Generates and reads QR codes with customizable options for size, error correction, and styling"
+        },
+        {
+          "name": "Reverse Geocode",
+          "description": "Converts geographic coordinates (latitude/longitude) into a structured address using the Google Geocoding API. Useful for finding the address at a known location."
+        },
+        {
+          "name": "Revert Interactive Form",
+          "description": "Re-point an Active EntityFormOverride at an older Component version in the same Name lineage. Pure UPDATE on the override row; no new Components or Overrides are created. Use to roll back to a prior working form when a recent change misbehaves. Old Component rows are never deleted, so revert is fully reversible by reverting again to the original version."
+        },
+        {
+          "name": "Summarize Content",
+          "description": "Creates a concise summary of content with citations to source material. Can work with either a URL (fetch + summarize) or pre-fetched content. Supports configurable summary length, optional citations with quotes and links, focus instructions for domain-specific summarization, and multiple output formats (paragraph, bullets, hybrid)."
+        },
+        {
+          "name": "Text Analyzer",
+          "description": "Analyzes text content providing statistics, readability scores, and word frequency analysis"
+        },
+        {
+          "name": "Unit Converter",
+          "description": "Converts values between different units of measurement including length, weight, temperature, volume, area, speed, and time"
+        },
+        {
+          "name": "Validate Address",
+          "description": "Validates and standardizes an address using the Google Address Validation API. Returns corrected address fields, deliverability verdict, geographic coordinates, and USPS data for US addresses. Requires the Address Validation API to be enabled in Google Cloud."
+        },
+        {
+          "name": "Validate Email Unique",
+          "description": "Validates that an email address is not already in use by another user in the system"
+        }
+      ]
+    }
+  ],
+  "communicationProviders": [
+    "Gmail",
+    "Microsoft Outlook (Graph)",
+    "Mobile push (Expo)",
+    "SendGrid",
+    "Twilio"
+  ],
+  "fileStorageProviders": [
+    "Amazon S3",
+    "Azure Blob Storage",
+    "Box",
+    "Dropbox",
+    "Google Cloud Storage",
+    "Google Drive",
+    "SharePoint"
+  ]
+}

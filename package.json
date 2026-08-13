@@ -21,6 +21,12 @@
     "audit:unlistable": "node scripts/audit-unlistable-objects.mjs",
     "check:catalog-freshness": "node scripts/check-catalog-freshness.mjs",
     "sync:publish-scope": "node scripts/sync-publish-scope.mjs",
+    "docs:overview": "node scripts/build-overview-docs.mjs",
+    "docs:overview:check": "node scripts/build-overview-docs.mjs --check",
+    "docs:baseline-support": "node scripts/gen-baseline-support-docs.mjs",
+    "docs:refresh-mj-actions": "node scripts/refresh-mj-actions.mjs",
+    "docs:ai-copy": "node scripts/ai-marketing-copy.mjs",
+    "docs:ai-copy:list": "node scripts/ai-marketing-copy.mjs --list",
     "new-connector": "node scripts/new-connector.mjs",
     "migrations:wrap": "node scripts/wrap-migration.mjs",
     "migrations:pg": "node scripts/build-pg-migrations.mjs",
@@ -29,6 +35,7 @@
     "release": "turbo run build && changeset publish && node scripts/tag-apps.mjs"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "@changesets/cli": "^2.27.10",
     "@memberjunction/open-app-engine": "^5.42.0",
     "turbo": "^2.8.3",
