@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "source": "MemberJunction Connectors One-Pager, Q3 2026 — the list distributed to Account Directors",
+  "purpose": "The systems Sales advertises. Reconciled against the repo by build-overview-docs.mjs so the register states the gap between what is sold and what is built, rather than only enumerating what exists.",
+  "note": "Names are as they appear on the one-pager, including its spellings. The generator matches them to repoSubpaths via `matches`; a null match means the generator could find no connector, action pack, or provider for it. Keep this list in step with whatever Sales actually circulates — if the AD list changes, change this file.",
+  "categories": [
+    {
+      "name": "Association Management",
+      "systems": [
+        { "name": "iMIS", "matches": "AMS/iMIS" },
+        { "name": "Personify", "matches": null },
+        { "name": "Aptify", "matches": "AMS/Aptify" },
+        { "name": "Rhythm", "matches": "AMS/Rhythm" },
+        { "name": "MemberSuite", "matches": "AMS/MemberSuite" },
+        { "name": "re:Members (Impexium)", "matches": "AMS/Impexium" },
+        { "name": "GrowthZone", "matches": "AMS/GrowthZone" },
+        { "name": "NetForum", "matches": "AMS/NetForum" },
+        { "name": "Nimble AMS", "matches": "AMS/NimbleAMS" },
+        { "name": "Novi AMS", "matches": "AMS/Novi" },
+        { "name": "Fonteva", "matches": "AMS/Fonteva" },
+        { "name": "Wild Apricot", "matches": "AMS/WildApricot" }
+      ]
+    },
+    {
+      "name": "CRM, Fundraising & Enrichment",
+      "systems": [
+        { "name": "Salesforce", "matches": "CRM/Salesforce" },
+        { "name": "Microsoft Dynamics 365", "matches": "CRM/DynamicsDataverse" },
+        { "name": "HubSpot", "matches": "CRM/HubSpot" },
+        { "name": "Neon CRM", "matches": "CRM/NeonCRM" },
+        { "name": "Blackbaud", "matches": "CRM/Blackbaud" },
+        { "name": "Pipedrive", "matches": null },
+        { "name": "Apollo", "matches": null, "actionPack": "Apollo" }
+      ]
+    },
+    {
+      "name": "Finance & Accounting",
+      "systems": [
+        { "name": "NetSuite", "matches": "Finance/NetSuite" },
+        { "name": "QuickBooks", "matches": "Finance/QuickBooks" },
+        { "name": "Sage", "matches": "Finance/SageIntacct" },
+        { "name": "Stripe", "matches": "Finance/Stripe" }
+      ]
+    },
+    {
+      "name": "Events & Awards",
+      "systems": [
+        { "name": "Cvent", "matches": "Events/Cvent" },
+        { "name": "Eventbrite", "matches": "Events/Eventbrite" },
+        { "name": "PheedLoop", "matches": "Events/PheedLoop" },
+        { "name": "OpenWater", "matches": "Events/OpenWater" }
+      ]
+    },
+    {
+      "name": "Learning",
+      "systems": [
+        { "name": "Path LMS", "matches": "LMS/PathLMS" },
+        { "name": "Totara", "matches": "LMS/Totara" },
+        { "name": "Moodle", "matches": null },
+        { "name": "Canvas", "matches": null },
+        { "name": "Blackboard", "matches": null },
+        { "name": "LearnDash", "matches": null }
+      ]
+    },
+    {
+      "name": "Marketing & Engagement",
+      "systems": [
+        { "name": "Higher Logic Marketing", "matches": null },
+        { "name": "PropFuel", "matches": "Marketing/PropFuel" }
+      ]
+    },
+    {
+      "name": "Email, SMS & Communications",
+      "systems": [
+        { "name": "SendGrid", "matches": null, "provider": "delivery" },
+        { "name": "Gmail", "matches": null, "provider": "delivery" },
+        { "name": "Microsoft Outlook (Graph)", "matches": null, "provider": "delivery" },
+        { "name": "Twilio", "matches": null, "provider": "delivery" }
+      ]
+    },
+    {
+      "name": "Forms & Surveys",
+      "systems": [
+        { "name": "Typeform", "matches": null, "actionPack": "Typeform" },
+        { "name": "Google Forms", "matches": null, "actionPack": "Google Forms" },
+        { "name": "Jotform", "matches": null, "actionPack": "Jotform" }
+      ]
+    },
+    {
+      "name": "Social Media",
+      "systems": [
+        { "name": "X (Twitter)", "matches": null, "actionPack": "X (Twitter)" },
+        { "name": "LinkedIn", "matches": null, "actionPack": "LinkedIn" },
+        { "name": "Facebook", "matches": null, "actionPack": "Facebook" },
+        { "name": "Instagram", "matches": null, "actionPack": "Instagram" },
+        { "name": "TikTok", "matches": null, "actionPack": "TikTok" },
+        { "name": "YouTube", "matches": null, "actionPack": "YouTube" },
+        { "name": "Hootsuite", "matches": null, "actionPack": "Hootsuite" },
+        { "name": "Buffer", "matches": null, "actionPack": "Buffer" }
+      ]
+    },
+    {
+      "name": "Community & Content",
+      "systems": [
+        { "name": "Zendesk", "matches": "Platform/Zendesk" },
+        { "name": "Hivebrite", "matches": "Platform/Hivebrite" },
+        { "name": "Higher Logic Vanilla", "matches": "Platform/HigherLogicVanilla" },
+        { "name": "Higher Logic Thrive", "matches": "Platform/HigherLogicThriveCommunity" },
+        { "name": "SharePoint", "matches": "Platform/SharePoint" },
+        { "name": "ORCID", "matches": "Platform/ORCID" }
+      ]
+    },
+    {
+      "name": "Databases & Warehouses",
+      "systems": [
+        { "name": "SQL Server", "matches": "Platform/SQLServer" },
+        { "name": "PostgreSQL", "matches": "Platform/PostgreSQL" },
+        { "name": "MySQL", "matches": "Platform/MySQL" },
+        { "name": "Oracle", "matches": "Platform/Oracle" },
+        { "name": "Snowflake", "matches": "Platform/Snowflake" },
+        { "name": "MongoDB", "matches": "Platform/MongoDB" }
+      ]
+    }
+  ]
+}

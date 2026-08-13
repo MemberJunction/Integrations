@@ -30,7 +30,7 @@
 # github-actions[bot] to push. If it does not, the commit step fails and the back-merge falls back
 # to opening a PR — see the fallback in the last step.
 
-name: Docs Overview
+name: Marketing copy for new connectors
 
 on:
   push:
@@ -75,14 +75,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/ai-marketing-copy.mjs
 
-      - name: Regenerate overview pages
-        run: node scripts/build-overview-docs.mjs
-
       - name: Commit to main if changed
         id: commit
         run: |
           set -euo pipefail
-          PAGES="docs/index.html docs/marketing.html docs/technical.html docs/data/marketing-names.json"
+          PAGES="docs/data/marketing-names.json"
           if git diff --quiet -- $PAGES; then
             echo "No change — nothing to commit."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -91,7 +88,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add $PAGES
-          git commit -m "docs: regenerate fleet overview pages [skip ci]"
+          git commit -m "docs: marketing copy for newly added connectors [skip ci]"
           # Another job may have landed on main while this one ran; rebase rather than force.
           git pull --rebase origin main
           git push origin HEAD:main

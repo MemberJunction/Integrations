@@ -290,7 +290,49 @@ function fleetStats(connectors) {
     liveRows,
     documented,
     baseline: baseline + undocumented,
+    advertised: reconcileAdvertised(connectors),
   };
+}
+
+/**
+ * Reconcile the systems Sales advertises against what the repo can actually back.
+ *
+ * WHY THIS IS ON THE PAGE
+ * Without it the register enumerates only what exists, which makes it silent on the more expensive
+ * question: what is being sold that isn't built. Two failure modes hide in that silence —
+ *
+ *   1. A system on the AD list with no connector and no action pack. Priced as an integration,
+ *      nothing to install.
+ *   2. A system backed only by an action pack. An agent can act on it; no data lands in
+ *      MemberJunction, so there is nothing to report on. On a flat list it looks identical to a
+ *      connector that replicates 32 objects.
+ *
+ * Both surface during delivery rather than during the sale, which is the expensive end.
+ */
+function reconcileAdvertised(connectors) {
+  const file = path.join(REPO_ROOT, 'docs', 'data', 'advertised-systems.json');
+  if (!existsSync(file)) return null;
+  const doc = JSON.parse(readFileSync(file, 'utf8'));
+  const bySub = new Map(connectors.map((c) => [c.subpath, c]));
+
+  const rows = [];
+  for (const category of doc.categories) {
+    for (const system of category.systems) {
+      const connector = system.matches ? bySub.get(system.matches) : null;
+      let kind;
+      if (connector && connector.published) kind = 'data';
+      else if (connector) kind = 'held';
+      else if (system.matches) kind = 'missing'; // named a subpath that no longer exists
+      else if (system.actionPack) kind = 'action';
+      else if (system.provider) kind = 'provider';
+      else kind = 'absent';
+      rows.push({ category: category.name, name: system.name, kind, connector, system });
+    }
+  }
+
+  const tally = {};
+  for (const r of rows) tally[r.kind] = (tally[r.kind] ?? 0) + 1;
+  return { source: doc.source, rows, tally, total: rows.length };
 }
 
 /** Tier identity for a connector: baseline stubs and missing docs collapse to the build floor. */
@@ -878,6 +920,22 @@ function renderTechnical(model) {
   .caveatlabel { font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; font-size:10.5px; margin-right:6px; }
   .held { margin-top:34px; }
   .held p { color:var(--ink-soft); font-size:14.5px; margin:0 0 12px; }
+  .advgroup { margin-top:18px; border-left:3px solid var(--line); padding-left:14px; }
+  .advgroup h3 { margin:0 0 4px; font-size:15px; letter-spacing:-.01em; }
+  .advgroup p { margin:0 0 8px; font-size:13.5px; color:var(--muted); }
+  /* The 960px min-width above exists for the wide evidence tables; these have three columns and
+     would otherwise overflow and wrap the detail cell onto its own line. */
+  .advgroup table { min-width:0; table-layout:fixed; }
+  .advgroup tbody td { padding:7px 12px 7px 0; vertical-align:baseline; }
+  .advgroup td.advmeta { font-size:12px; color:var(--muted); }
+  .advgroup tbody td:nth-child(1) { width:32%; }
+  .advgroup tbody td:nth-child(2) { width:34%; }
+  .advgroup tbody td:nth-child(3) { width:34%; }
+  .advgroup.k-absent { border-left-color:#b4342b; }
+  .advgroup.k-action { border-left-color:var(--warn); }
+  .advgroup.k-held   { border-left-color:var(--warn); }
+  .advgroup.k-prov   { border-left-color:var(--line); }
+  .advgroup.k-data   { border-left-color:var(--ok); }
 </style>
 </head>
 <body>
@@ -935,6 +993,8 @@ ${categorySections}
     ${tableFor(held)}
   </section>
 
+${renderAdvertised(model.advertised)}
+
   <footer>
     Evidence data as of ${esc(dataAsOf)} · package versions as of the current <code>connectors-catalog.json</code> ·
     platform actions snapshot from MemberJunction/MJ <code>${esc(actions.source.commit)}</code> (${esc(
@@ -946,6 +1006,90 @@ ${categorySections}
 </body>
 </html>
 `;
+}
+
+/**
+ * "What Sales advertises vs what the repo can back" — the section that makes this a reconciliation
+ * rather than an inventory.
+ *
+ * Ordered worst-first on purpose: the systems with nothing behind them are the ones that cost money
+ * when they surface late, so they are not buried under the 37 rows that are fine.
+ */
+function renderAdvertised(adv) {
+  if (!adv) return '';
+
+  const KIND = {
+    absent: {
+      label: 'Not built',
+      cls: 'k-absent',
+      what: 'No connector, no action pack, no provider in the repo. Nothing to install.',
+    },
+    action: {
+      label: 'Actions only',
+      cls: 'k-action',
+      what: 'An agent can act on this system. No data replicates into MemberJunction, so there is nothing to report on.',
+    },
+    held: {
+      label: 'Built, held',
+      cls: 'k-held',
+      what: 'Code exists but <code>private: true</code> keeps it out of the catalog — not installable today.',
+    },
+    provider: {
+      label: 'Outbound channel',
+      cls: 'k-prov',
+      what: 'A delivery channel MemberJunction sends through, not a system it reads from.',
+    },
+    missing: {
+      label: 'Mapping stale',
+      cls: 'k-absent',
+      what: 'advertised-systems.json names a connector path that no longer exists — fix the mapping.',
+    },
+    data: { label: 'Data integration', cls: 'k-data', what: 'Replicates records into MemberJunction.' },
+  };
+  const ORDER = ['absent', 'missing', 'held', 'action', 'provider', 'data'];
+
+  const groups = ORDER.map((kind) => {
+    const rows = adv.rows.filter((r) => r.kind === kind);
+    if (!rows.length) return '';
+    const meta = KIND[kind];
+    const items = rows
+      .map((r) => {
+        const detail =
+          r.kind === 'data'
+            ? `${fmt(r.connector.support?.proven.rows ?? 0)} rows proven · ${r.connector.declared?.objects ?? r.connector.objectCount ?? '—'} objects`
+            : r.kind === 'action'
+              ? `pack: ${esc(r.system.actionPack)}`
+              : r.kind === 'held'
+                ? `<code>${esc(r.system.matches)}</code>`
+                : '';
+        return `<tr><td><b>${esc(r.name)}</b></td><td class="advmeta">${esc(r.category)}</td><td class="advmeta">${detail}</td></tr>`;
+      })
+      .join('\n');
+    return `
+    <div class="advgroup ${meta.cls}">
+      <h3>${meta.label} <span class="catcount">(${rows.length})</span></h3>
+      <p>${meta.what}</p>
+      <div class="scroll"><table><tbody>${items}</tbody></table></div>
+    </div>`;
+  }).join('\n');
+
+  const notBuilt = adv.tally.absent ?? 0;
+  const actionOnly = adv.tally.action ?? 0;
+
+  return `
+  <section class="held">
+    <h2>Advertised vs built <span class="catcount">(${adv.total} systems on the AD list)</span></h2>
+    <p>Reconciles ${esc(adv.source)} against this repo. The register above lists what exists; this
+      lists what is <em>sold</em>, and where the two disagree. Two disagreements cost money if they
+      surface during delivery rather than during the sale:
+      <b>${notBuilt} advertised systems have nothing behind them</b>, and
+      <b>${actionOnly} are actions-only</b> — an agent can act on them, but no data lands, so a deal
+      scoped as a data integration has no data to integrate.</p>
+    <p style="margin:10px 0 0; color:var(--muted); font-size:13.5px;">
+      Keep <code>docs/data/advertised-systems.json</code> in step with whatever Sales actually
+      circulates — this section is only as accurate as that list.</p>
+    ${groups}
+  </section>`;
 }
 
 /* ------------------------------------------------------------------ *
