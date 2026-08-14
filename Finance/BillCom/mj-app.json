@@ -4,7 +4,7 @@
   "name": "connector-bill-com",
   "displayName": "Bill.com Connector",
   "description": "Bill.com connector for MemberJunction — full curated object catalog.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
