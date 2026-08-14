@@ -108,6 +108,13 @@ function trimTrailingSlash(value: string): string {
 }
 
 /**
+ * Maximum operations Business Central accepts in one `$batch` envelope. Microsoft's documented ceiling:
+ * "A maximum number of '100' query operations and change sets are allowed in a batch message." Larger
+ * inputs are chunked rather than rejected, so a 250-line journal is three envelopes, not an error.
+ */
+export const BUSINESS_CENTRAL_BATCH_LIMIT = 100;
+
+/**
  * Builds the API ROOT (everything before the company/entity-set segments) for a surface.
  *
  * webapi:  `{server}/v2.0/[{tenantId}/]{environment}/api/{apiVersion}`
@@ -887,6 +894,129 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
     //   · the OData If-Match/@odata.etag precondition required on PATCH and DELETE, with one re-read + retry
     //     when the tag is stale;
     //   · serialized write pacing (never a parallel fan-out of journal-line POSTs).
+
+    /**
+     * Business Central exposes an OData `$batch` endpoint, so N creates can travel in ONE request.
+     *
+     * This matters most for the case the connector exists to serve: a journal batch is a header plus many
+     * lines, and the default batch implementation loops single-record CreateRecord — each one serialized
+     * through `PacedRequest` with a pacing sleep in front of it. A 60-line journal is then 60 round trips
+     * plus 60 sleeps. Batched, it is one round trip.
+     */
+    public override get SupportsBatchWrite(): boolean {
+        return true;
+    }
+
+    /**
+     * Batch-create via OData `$batch`.
+     *
+     * Constraints encoded here, each from Microsoft's contract rather than guesswork:
+     *  · **100 operations maximum per batch** — larger inputs are chunked, not rejected.
+     *  · **Responses are matched by `id`, never by position.** Microsoft's own guidance is explicit that
+     *    the response order is not guaranteed to mirror the request order; matching positionally would
+     *    silently attribute one record's created ID to a different record, which is worse than failing.
+     *  · **Partial success is normal.** Each sub-response carries its own status, so results are built
+     *    per record exactly as the single-record path does — same ID extraction, same failure classifier.
+     *
+     * Falls back to the sequential path when batching cannot apply: a single record (no point paying the
+     * envelope), the `odatav4` surface (published pages do not share the API's batch grammar), or a mixed
+     * set of CompanyIntegrations (the endpoint is per tenant/environment, so one envelope cannot span them).
+     */
+    public override async BatchCreateRecords(ctxs: CreateRecordContext[]): Promise<CRUDResult[]> {
+        if (ctxs.length === 0) return [];
+        if (ctxs.length === 1) return [await this.CreateRecord(ctxs[0])];
+
+        const first = ctxs[0].CompanyIntegration as MJCompanyIntegrationEntity;
+        const sameTenant = ctxs.every(c => (c.CompanyIntegration as MJCompanyIntegrationEntity).ID === first.ID);
+        const obj = this.GetCachedObject(first.IntegrationID, ctxs[0].ObjectName);
+        const sameObject = ctxs.every(c => c.ObjectName === ctxs[0].ObjectName);
+        if (!sameTenant || !sameObject || this.ResolveSurface(obj) === 'odatav4') {
+            return super.BatchCreateRecords(ctxs);
+        }
+        if (!obj.CreateAPIPath || !obj.CreateMethod) {
+            throw new Error(
+                `BatchCreateRecords not supported for "${ctxs[0].ObjectName}": CreateAPIPath / CreateMethod not configured on IntegrationObject.`,
+            );
+        }
+
+        const auth = await this.Authenticate(first, ctxs[0].ContextUser as UserInfo);
+        const results: CRUDResult[] = new Array<CRUDResult>(ctxs.length);
+
+        for (let start = 0; start < ctxs.length; start += BUSINESS_CENTRAL_BATCH_LIMIT) {
+            const chunk = ctxs.slice(start, start + BUSINESS_CENTRAL_BATCH_LIMIT);
+            await this.executeCreateBatch(auth, obj, chunk, start, results);
+        }
+        return results;
+    }
+
+    /** Sends one `$batch` envelope and writes its per-record outcomes into `results` at their original indexes. */
+    private async executeCreateBatch(
+        auth: BusinessCentralAuthContext,
+        obj: MJIntegrationObjectEntity,
+        chunk: CreateRecordContext[],
+        offset: number,
+        results: CRUDResult[],
+    ): Promise<void> {
+        const root = BuildBusinessCentralRootURL('webapi', this.urlParts(auth.Config, null));
+        const requests = chunk.map((ctx, i) => {
+            const absolute = this.ResolveWriteURL(auth, obj.CreateAPIPath as string, ctx.Attributes, null, 'webapi');
+            // A relative url replaces the `$batch` segment, so strip the shared root — keeping it absolute
+            // also works, but relative keeps the envelope readable when a batch has to be debugged by hand.
+            const relative = absolute.startsWith(`${root}/`) ? absolute.slice(root.length + 1) : absolute;
+            return {
+                id: String(offset + i),
+                method: obj.CreateMethod as string,
+                url: relative,
+                headers: { 'Content-Type': 'application/json' },
+                body: this.BuildOperationBody(ctx.Attributes, obj.CreateBodyShape, obj.CreateBodyKey),
+            };
+        });
+
+        const headers = { ...this.BuildHeaders(auth), 'Content-Type': 'application/json', Accept: 'application/json' };
+        const envelope = await this.PacedRequest(() =>
+            this.MakeHTTPRequest(auth, `${root}/$batch`, 'POST', headers, { requests }),
+        );
+
+        // The envelope itself failed (auth, throttling, malformed batch): every record in it is unresolved.
+        // Attribute the same failure to each rather than leaving holes the caller would read as success.
+        if (envelope.Status < 200 || envelope.Status >= 300) {
+            const failure = this.failureResult(envelope, 'batch create');
+            chunk.forEach((_, i) => { results[offset + i] = failure; });
+            return;
+        }
+
+        const body = envelope.Body as { responses?: Array<{ id?: string; status?: number; body?: unknown; headers?: Record<string, string> }> } | null;
+        const byId = new Map<string, { id?: string; status?: number; body?: unknown; headers?: Record<string, string> }>();
+        for (const r of body?.responses ?? []) {
+            if (r && typeof r.id === 'string') byId.set(r.id, r);
+        }
+
+        chunk.forEach((ctx, i) => {
+            const index = offset + i;
+            const sub = byId.get(String(index));
+            if (!sub) {
+                // A missing sub-response is not a success. Saying so loudly beats inventing an outcome:
+                // a silently-dropped create is the duplicate-on-next-sync hazard.
+                results[index] = {
+                    Success: false,
+                    StatusCode: 0,
+                    ErrorMessage: `[BATCH_RESPONSE_MISSING] Business Central returned no $batch response for operation ${index} on "${ctx.ObjectName}".`,
+                };
+                return;
+            }
+            const asResponse: RESTResponse = {
+                Status: sub.status ?? 0,
+                Body: sub.body ?? null,
+                Headers: sub.headers ?? {},
+            };
+            if (asResponse.Status >= 200 && asResponse.Status < 300) {
+                this.captureETagFromResponse(obj.Name, asResponse);
+                results[index] = this.BuildCreatedResult(this.extractCreatedID(obj, asResponse), asResponse.Status, ctx.ObjectName);
+            } else {
+                results[index] = this.failureResult(asResponse, 'create');
+            }
+        });
+    }
 
     /** Create — company/parent-scoped POST. ID extraction + failure semantics stay on the base contract. */
     public override async CreateRecord(ctx: CreateRecordContext): Promise<CRUDResult> {

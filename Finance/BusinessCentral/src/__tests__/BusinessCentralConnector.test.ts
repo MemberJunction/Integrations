@@ -1360,3 +1360,133 @@ class SeededBusinessCentralConnector extends BusinessCentralConnector {
         ];
     }
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+/**
+ * Batch writes via OData `$batch`.
+ *
+ * The case this exists for is a journal batch: a header plus many lines. The inherited default loops
+ * single-record CreateRecord through the paced write chain, so 60 lines are 60 round trips plus 60
+ * pacing sleeps. One envelope replaces all of it.
+ *
+ * The failure modes here are quiet rather than loud, which is why they are pinned individually:
+ * matching responses positionally would attach one record's ID to a different record, and a dropped
+ * sub-response read as success becomes a duplicate create on the next sync.
+ */
+describe('batch writes ($batch)', () => {
+    const ciWrite = () => makeCI();
+    const batchCtx = (attributes: Record<string, unknown>, objectName = 'journalLines'): CreateRecordContext =>
+        ({ CompanyIntegration: ciWrite(), ContextUser: user, ObjectName: objectName, Attributes: attributes } as unknown as CreateRecordContext);
+
+    const lines = (n: number) =>
+        Array.from({ length: n }, (_, i) => batchCtx({ journalId: 'j-7', accountNumber: '1000', amount: i + 1 }));
+
+    it('declares batch-write support so the engine routes through the batch form', () => {
+        expect(connector.SupportsBatchWrite).toBe(true);
+    });
+
+    it('sends ONE request for many records, to the $batch endpoint', async () => {
+        connector.Responses.push(ok({
+            responses: [
+                { id: '0', status: 201, body: { id: 'jl-0' } },
+                { id: '1', status: 201, body: { id: 'jl-1' } },
+                { id: '2', status: 201, body: { id: 'jl-2' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(3));
+
+        expect(connector.Captured.length).toBe(1);
+        expect(connector.Captured[0].method).toBe('POST');
+        expect(connector.Captured[0].url).toBe(
+            `https://api.businesscentral.dynamics.com/v2.0/${TENANT}/Sandbox/api/v2.0/$batch`,
+        );
+        expect(results.map(r => r.ExternalID)).toEqual(['jl-0', 'jl-1', 'jl-2']);
+        expect(results.every(r => r.Success)).toBe(true);
+    });
+
+    it('sends relative urls inside the envelope, keyed by operation id', async () => {
+        connector.Responses.push(ok({ responses: [{ id: '0', status: 201, body: { id: 'jl-0' } }, { id: '1', status: 201, body: { id: 'jl-1' } }] }));
+        await connector.BatchCreateRecords(lines(2));
+
+        const body = connector.Captured[0].body as { requests: Array<{ id: string; method: string; url: string; body: unknown }> };
+        expect(body.requests).toHaveLength(2);
+        expect(body.requests[0].id).toBe('0');
+        expect(body.requests[0].method).toBe('POST');
+        // relative — replaces the `$batch` segment, so no scheme/host
+        expect(body.requests[0].url).toBe(`companies(${COMPANY_A})/journals(j-7)/journalLines`);
+        expect(body.requests[0].url.startsWith('http')).toBe(false);
+    });
+
+    it('matches responses by id, NOT by position', async () => {
+        // Microsoft does not guarantee response order. Returning them reversed must still attribute each
+        // created ID to the right record — positional matching would silently swap them.
+        connector.Responses.push(ok({
+            responses: [
+                { id: '2', status: 201, body: { id: 'jl-THIRD' } },
+                { id: '0', status: 201, body: { id: 'jl-FIRST' } },
+                { id: '1', status: 201, body: { id: 'jl-SECOND' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(3));
+        expect(results.map(r => r.ExternalID)).toEqual(['jl-FIRST', 'jl-SECOND', 'jl-THIRD']);
+    });
+
+    it('reports partial failure per record, not for the whole envelope', async () => {
+        connector.Responses.push(ok({
+            responses: [
+                { id: '0', status: 201, body: { id: 'jl-0' } },
+                { id: '1', status: 400, body: { error: { code: 'BadRequest', message: 'Posting date is not within your range of allowed posting dates.' } } },
+                { id: '2', status: 201, body: { id: 'jl-2' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(3));
+
+        expect(results[0].Success).toBe(true);
+        expect(results[1].Success).toBe(false);
+        expect(results[1].StatusCode).toBe(400);
+        expect(results[1].ErrorMessage).toContain('allowed posting dates');
+        expect(results[2].Success).toBe(true);
+        expect(results[2].ExternalID).toBe('jl-2');
+    });
+
+    it('fails a record loudly when its sub-response is missing', async () => {
+        // A dropped create reported as success becomes a duplicate on the next sync.
+        connector.Responses.push(ok({ responses: [{ id: '0', status: 201, body: { id: 'jl-0' } }] }));
+        const results = await connector.BatchCreateRecords(lines(2));
+        expect(results[0].Success).toBe(true);
+        expect(results[1].Success).toBe(false);
+        expect(results[1].ErrorMessage).toContain('BATCH_RESPONSE_MISSING');
+    });
+
+    it('attributes an envelope-level failure to every record in it', async () => {
+        // 400 rather than 429 deliberately: throttling statuses are retried with backoff by the transport,
+        // so using one here would exercise the retry path instead of the attribution this asserts.
+        connector.Responses.push(status(400, { error: { code: 'BadRequest', message: 'Batch request is malformed.' } }));
+        const results = await connector.BatchCreateRecords(lines(3));
+        expect(results).toHaveLength(3);
+        expect(results.every(r => !r.Success && r.StatusCode === 400)).toBe(true);
+        expect(results[2].ErrorMessage).toContain('malformed');
+    });
+
+    it('chunks at 100 operations — the documented Business Central ceiling', async () => {
+        connector.Responses.push(
+            ok({ responses: Array.from({ length: 100 }, (_, i) => ({ id: String(i), status: 201, body: { id: `jl-${i}` } })) }),
+            ok({ responses: Array.from({ length: 50 }, (_, i) => ({ id: String(100 + i), status: 201, body: { id: `jl-${100 + i}` } })) }),
+        );
+        const results = await connector.BatchCreateRecords(lines(150));
+
+        expect(connector.Captured.length).toBe(2);
+        expect((connector.Captured[0].body as { requests: unknown[] }).requests).toHaveLength(100);
+        expect((connector.Captured[1].body as { requests: unknown[] }).requests).toHaveLength(50);
+        expect(results).toHaveLength(150);
+        expect(results.every(r => r.Success)).toBe(true);
+        expect(results[149].ExternalID).toBe('jl-149');
+    });
+
+    it('does not pay the envelope cost for a single record', async () => {
+        connector.Responses.push({ Status: 201, Body: { id: 'jl-solo' }, Headers: {} });
+        const results = await connector.BatchCreateRecords(lines(1));
+        expect(connector.Captured[0].url).not.toContain('$batch');
+        expect(results[0].ExternalID).toBe('jl-solo');
+    });
+});
