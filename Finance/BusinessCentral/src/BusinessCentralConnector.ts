@@ -30,7 +30,10 @@ import {
     type SourceSchemaInfo,
     type RateLimitPolicy,
     type SyncErrorCode,
+    type IntegrationObjectInfo,
+    type ActionGeneratorConfig,
 } from '@memberjunction/integration-engine';
+import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 
 // ─── Design note ────────────────────────────────────────────────────────
@@ -343,6 +346,50 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
     public override get SupportsCreate(): boolean { return true; }
     public override get SupportsUpdate(): boolean { return true; }
     public override get SupportsDelete(): boolean { return true; }
+
+    // ── Action generation ────────────────────────────────────────────
+
+    /**
+     * Shapes the cached Declared catalog into the ActionMetadataGenerator's hint structure, so one MJ
+     * Action is generated per applicable object/verb. Without this the base class returns an empty
+     * array, `GetActionGeneratorConfig()` returns null, and **no Business Central Actions exist at
+     * all** — the connector is reachable by sync and by IntegrationWriteRecord, but not by an agent or
+     * a flow. That is what keeps A-UC7 (stage a JE batch) from being invoked like any other Action.
+     *
+     * Derived entirely from the runtime IntegrationObject / IntegrationObjectField cache. When that
+     * cache is unseeded — action generation can run before the integration is seeded — this returns an
+     * empty array and generates nothing. It must never fall back to a hardcoded list: with 83 declared
+     * objects, a fallback serving a familiar handful still looks like it worked, which is precisely the
+     * `catalog-in-code` defect.
+     */
+    public override GetIntegrationObjects(): IntegrationObjectInfo[] {
+        const engine = IntegrationEngineBase.Instance;
+        const integration = engine.Integrations.find(i => i.Name === this.IntegrationName);
+        if (!integration) return [];
+
+        return engine.GetActiveIntegrationObjects(integration.ID).map(obj => ({
+            Name: obj.Name,
+            DisplayName: obj.DisplayName ?? obj.Name,
+            Description: obj.Description ?? undefined,
+            SupportsWrite: obj.SupportsWrite,
+            Fields: engine.GetIntegrationObjectFields(obj.ID).map(f => ({
+                Name: f.Name,
+                DisplayName: f.DisplayName ?? f.Name,
+                Description: f.Description ?? undefined,
+                Type: f.Type ?? 'string',
+                IsRequired: f.IsRequired,
+                IsReadOnly: f.IsReadOnly,
+                IsPrimaryKey: f.IsPrimaryKey,
+            })),
+        }));
+    }
+
+    public override GetActionGeneratorConfig(): ActionGeneratorConfig | null {
+        const config = super.GetActionGeneratorConfig();
+        if (!config) return null;
+        config.IconClass = 'fa-brands fa-microsoft';
+        return config;
+    }
 
     /**
      * NOT authoritative. No Microsoft statement asserts that either `$metadata` endpoint is a complete,
