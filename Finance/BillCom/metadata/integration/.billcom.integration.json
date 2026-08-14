@@ -1,0 +1,1473 @@
+[
+  {
+    "fields": {
+      "Name": "Bill.com",
+      "Description": "Bill.com (BILL) v3 Connect API — accounts receivable. Session-based auth; 3 concurrent requests per developer key per organization.",
+      "ClassName": "@memberjunction/connector-bill-com",
+      "ImportPath": "@memberjunction/connector-bill-com",
+      "NavigationBaseURL": "https://gateway.stage.bill.com/connect/v3/",
+      "BatchMaxRequestCount": 100,
+      "BatchRequestWaitTime": 1,
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Bill.com Session",
+      "Configuration": {
+        "AuthFlow": "session-login",
+        "AuthFlowNote": "POST /login with username, password, organizationId, devKey returns an opaque sessionId, carried with devKey as headers. Sessions expire after 35 MINUTES OF INACTIVITY (sliding) with NO refresh mechanism — re-login is the only recovery. Logins are capped at 200/hour, so the session must be cached and reused, never acquired per request.",
+        "Concurrency": "3 simultaneous requests per developer key per organization (BDC_1322). 20,000 requests/hour (BDC_1144). Concurrency, not rate, is the binding constraint.",
+        "Environments": {
+          "sandbox": "https://gateway.stage.bill.com/connect/v3",
+          "production": "https://gateway.prod.bill.com/connect/v3"
+        },
+        "RefundNote": "No AR refund endpoint exists in v3, /v3/orders does not exist, and negative invoices are unsupported. The sanctioned reversing document is a credit memo (ledger-only; no cash movement). Descoped — see bc-aidp-next-golive#51."
+      }
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "Name": "customers",
+            "DisplayName": "Customers",
+            "Description": "AR customers billed through BILL. ID prefix 0cu.",
+            "Category": "Accounts Receivable",
+            "APIPath": "/v3/customers",
+            "ResponseDataKey": "results",
+            "PaginationType": "Cursor",
+            "SupportsPagination": true,
+            "DefaultPageSize": 100,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updatedTime",
+            "SupportsWrite": true,
+            "Status": "Active",
+            "Configuration": {
+              "idPrefixNote": "AR customers billed through BILL. ID prefix 0cu.",
+              "pagination": {
+                "mode": "opaque-cursor",
+                "params": {
+                  "pageSize": "max",
+                  "cursor": "page"
+                },
+                "maxPageSize": 100,
+                "terminationRule": "Terminate on ABSENCE of nextPage. An empty results[] with nextPage present still means continue.",
+                "defaultDisagreement": "Concepts page says max defaults to 100; endpoint refs say 20. Always send it."
+              },
+              "filterSyntax": "filters={field}:{op}:{value}, comma-joined for AND. Ops: eq ne gt gte lt lte in nin sw."
+            },
+            "IntegrationID": "@parent:ID",
+            "CreateAPIPath": "/v3/customers",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateBodyKey": null,
+            "CreateIDLocation": "body",
+            "UpdateAPIPath": "/v3/customers/{id}",
+            "UpdateMethod": "PATCH",
+            "UpdateBodyShape": "flat",
+            "UpdateBodyKey": null,
+            "UpdateIDLocation": "path"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "BILL-generated ID of the customer. The value begins with `0cu`.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "12FC16D5-068B-557E-B7E9-50C5784FEB36"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "archived",
+                  "DisplayName": "Archived",
+                  "Description": "Set as `true` if the customer is archived.",
+                  "Type": "bit",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DAA3A570-50A1-5DB6-B787-6247913D153C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Customer name",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": false,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3FE8BE48-030B-5023-B4CA-FC12098B1D44"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "companyName",
+                  "DisplayName": "Company Name",
+                  "Description": "Customer company name. This field is overridden when you connect with a customer in the BILL network.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F390A842-ED89-5BEF-9266-1E39F2A41BCB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "contact",
+                  "DisplayName": "Contact",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C8ECBCFF-73F5-5DC2-BFE9-2CFD180A69A2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Customer email address",
+                  "Type": "string",
+                  "Length": 320,
+                  "AllowsNull": false,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7B872F27-CDDC-52C6-A334-5F2529058E77"
+                },
+                "sync": {
+                  "lastModified": "2026-08-14T03:53:37.892Z",
+                  "checksum": "61830bffc169d5d5b557b6bd8f0df609a95ea717a1f1c749afc2ce47736f57fa"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "phone",
+                  "DisplayName": "Phone",
+                  "Description": "Customer phone number. This field is overridden when you connect with a customer in the BILL network.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2FDEF1C0-CE69-562F-B511-007719268180"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "fax",
+                  "DisplayName": "Fax",
+                  "Description": "Customer fax number",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C49BB0F5-BF73-58D9-8257-1722EBF0B95D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Customer description",
+                  "Type": "string",
+                  "Length": 4000,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "63DFBEE8-65D2-5964-B13B-E2FA50B3C8C3"
+                },
+                "sync": {
+                  "lastModified": "2026-08-14T03:53:37.912Z",
+                  "checksum": "2bf219c268c2d501442f67a76b50f90afb90a919b11a45f18489d4514770a9ac"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceCurrency",
+                  "DisplayName": "Invoice Currency",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "74AF0AA3-9270-5D4B-AAAE-C909EA7D8041"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "accountType",
+                  "DisplayName": "Account Type",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 11,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BACCEB1C-C328-5414-999D-655C4F98A25A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "paymentTermId",
+                  "DisplayName": "Payment Term Id",
+                  "Description": "BILL-generated ID of the payment term. Use payment terms to set the number of days the customer has to clear an invoice.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 12,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D54A229B-9688-512E-899B-75B68C162BE0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "accountNumber",
+                  "DisplayName": "Account Number",
+                  "Description": "Customer account number. The number appears in customer invoices.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 13,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E0D4B90A-8F57-58DF-9202-BDF0E474A57B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "billingAddress",
+                  "DisplayName": "Billing Address",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 14,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3E72970D-1944-5155-91C7-29EAD1FA4D88"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "shippingAddress",
+                  "DisplayName": "Shipping Address",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 15,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2CA00769-FD00-50D0-AC4B-C5D5197B6213"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "balance",
+                  "DisplayName": "Balance",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A227565E-6727-5C61-980F-95D5D9867D4C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "hasBankAccount",
+                  "DisplayName": "Has Bank Account",
+                  "Description": "Set as `true` if the customer bank account is added",
+                  "Type": "bit",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 17,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0371B8D3-AED5-5061-BA3E-0EECD43C4481"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "authorizedToCharge",
+                  "DisplayName": "Authorized To Charge",
+                  "Description": "Set as `true` if your organization is authorized to charge the customer for invoices",
+                  "Type": "bit",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 18,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7AE6F6EC-DC28-5CAB-A144-823E3A292127"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdTime",
+                  "DisplayName": "Created Time",
+                  "Description": "Created date and time",
+                  "Type": "datetime",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 19,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "35AF70E1-C624-535A-A2DC-E680B337DCB3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedTime",
+                  "DisplayName": "Updated Time",
+                  "Description": "Updated date and time",
+                  "Type": "datetime",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 20,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DB6DC918-7778-516F-838D-F6E9816A9C8E"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "A281C9C5-3AEA-5F3A-86F6-B37F5B31E8A3"
+          }
+        },
+        {
+          "fields": {
+            "Name": "invoices",
+            "DisplayName": "Invoices",
+            "Description": "AR invoices issued to customers. ID prefix 00e. Cancellation is POST /v3/invoices/{id}/archive (idempotent, reversed by /restore) — InvoiceStatus has no VOID/CANCELED value, so cancellation is the separate `archived` boolean and must NOT be modelled as...",
+            "Category": "Accounts Receivable",
+            "APIPath": "/v3/invoices",
+            "ResponseDataKey": "results",
+            "PaginationType": "Cursor",
+            "SupportsPagination": true,
+            "DefaultPageSize": 100,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updatedTime",
+            "SupportsWrite": true,
+            "Status": "Active",
+            "Configuration": {
+              "idPrefixNote": "AR invoices issued to customers. ID prefix 00e. Cancellation is POST /v3/invoices/{id}/archive (idempotent, reversed by /restore) — InvoiceStatus has no VOID/CANCELED value, so cancellation is the separate `archived` boolean and must NOT be modelled as a status transition.",
+              "pagination": {
+                "mode": "opaque-cursor",
+                "params": {
+                  "pageSize": "max",
+                  "cursor": "page"
+                },
+                "maxPageSize": 100,
+                "terminationRule": "Terminate on ABSENCE of nextPage. An empty results[] with nextPage present still means continue.",
+                "defaultDisagreement": "Concepts page says max defaults to 100; endpoint refs say 20. Always send it."
+              },
+              "filterSyntax": "filters={field}:{op}:{value}, comma-joined for AND. Ops: eq ne gt gte lt lte in nin sw.",
+              "archivePath": "/v3/invoices/{invoiceId}/archive",
+              "archiveMethod": "POST",
+              "restorePath": "/v3/invoices/{invoiceId}/restore",
+              "archiveNote": "Cancel = archive. Idempotent — archiving an archived invoice is a no-op. `archived` is filterable and the default archived-inclusion behaviour is undocumented, so filter explicitly.",
+              "recordPaymentPath": "/v3/invoices/record-payment",
+              "recordPaymentNote": "Records a payment received OUTSIDE BILL (may serve the manual-check path)."
+            },
+            "IntegrationID": "@parent:ID",
+            "CreateAPIPath": "/v3/invoices",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateBodyKey": null,
+            "CreateIDLocation": "body",
+            "UpdateAPIPath": "/v3/invoices/{id}",
+            "UpdateMethod": "PUT",
+            "UpdateBodyShape": "flat",
+            "UpdateBodyKey": null,
+            "UpdateIDLocation": "path"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "BILL-generated ID of the invoice. The value begins with `00e`.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5D4D563F-81A1-5C34-A8F4-6D33F8A70A44"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "archived",
+                  "DisplayName": "Archived",
+                  "Description": "Set as `true` if the invoice is archived",
+                  "Type": "bit",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "33933A22-BCE4-5F30-B5DD-B068EC41A4AC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "recordStatus",
+                  "DisplayName": "Record Status",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3A994454-D460-5399-9994-98BEC46CD4EF"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceNumber",
+                  "DisplayName": "Invoice Number",
+                  "Description": "User-generated invoice number. This value can be your chosen number scheme.\n\nIf you do not set this field, `invoiceNumber` is auto-generated.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C234AE08-D5B3-527D-A9FF-BEEBF45CB6F3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceDate",
+                  "DisplayName": "Invoice Date",
+                  "Description": "Invoice creation date. This value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `invoiceDate` is set as the date when the invoice is created.",
+                  "Type": "date",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "69EEE3FC-7A1F-5284-A743-20679EB89F8B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "dueDate",
+                  "DisplayName": "Due Date",
+                  "Description": "Invoice due date. The value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `dueDate` is set as the date when the invoice is created.",
+                  "Type": "date",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4A52B70E-5D03-5B89-AD64-D6A00EA72206"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "paymentTermId",
+                  "DisplayName": "Payment Term Id",
+                  "Description": null,
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "57402732-5D98-5F2B-84E4-E3FE715F9357"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "customerId",
+                  "DisplayName": "Customer Id",
+                  "Description": "BILL-generated ID of the customer. The value begins with `0cu`.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "773C34EC-569D-585D-8116-8689CF6EC617"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "totalAmount",
+                  "DisplayName": "Total Amount",
+                  "Description": "Invoice total amount",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AC2C349D-39F4-500A-B4C5-1166DBC33108"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "dueAmount",
+                  "DisplayName": "Due Amount",
+                  "Description": "Invoice due amount. The value is calculated by subtracting any applied credits (`creditAmount`), scheduled payment (`scheduledAmount`), and cleared payment from `totalAmount`.",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "056CB900-D724-5D19-BC1C-9282FBD2B59B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "scheduledAmount",
+                  "DisplayName": "Scheduled Amount",
+                  "Description": "Invoice scheduled amount. The value is set as the customer payment amount that is pending clearance.",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 11,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2D9E2966-0EE5-516F-ABD3-F0539BEC0201"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "creditAmount",
+                  "DisplayName": "Credit Amount",
+                  "Description": "Credit amount applied to the invoice.\n\nWhen a credit amount is applied to an invoice, the invoice `status` is set as `PARTIAL_PAYMENT` or `PAID_IN_FULL` depending on the invoice `totalAmount`.",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 12,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E35A6173-D310-5277-9535-9FECBAEAA9FC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 13,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B1822AA0-1E7D-5A33-8C1F-1164786E4491"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "exchangeRate",
+                  "DisplayName": "Exchange Rate",
+                  "Description": "Invoice exchange rate",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 14,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A120A69B-1CC8-5277-A8F8-EEFE51C40731"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdBy",
+                  "DisplayName": "Created By",
+                  "Description": "BILL-generated ID of the user that created the invoice. The value begins with `006`.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 15,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "27957CC5-809F-5246-8FA7-D2B30999640D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdTime",
+                  "DisplayName": "Created Time",
+                  "Description": "Invoice created time",
+                  "Type": "datetime",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E6B01DFF-E513-5D26-8358-129E5D70AD8B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedTime",
+                  "DisplayName": "Updated Time",
+                  "Description": "Invoice updated time",
+                  "Type": "datetime",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 17,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "198C3B34-AB2F-5DA0-B603-27743D199476"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceLineItems",
+                  "DisplayName": "Invoice Line Items",
+                  "Description": "Invoice line item information",
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 18,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E8A823A8-740D-58DA-BE84-F73D7E6E0C40"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "payToChartOfAccountId",
+                  "DisplayName": "Pay To Chart Of Account Id",
+                  "Description": "BILL-generated ID of the chart of accounts for the invoice payment. The value begins with `0ca`.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 19,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AE33330F-E0C8-5E4D-B8EF-E6C8B3C0AC67"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "payments",
+                  "DisplayName": "Payments",
+                  "Description": "Invoice payments information",
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 20,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9B3B247B-7144-5540-9DEA-66A777185EDC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "classifications",
+                  "DisplayName": "Classifications",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 21,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8494730C-40EC-59DD-A73F-8503DD77470B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "salesTaxItemId",
+                  "DisplayName": "Sales Tax Item Id",
+                  "Description": "BILL-generated ID of the `SALES_TAX` item. The value begins with `0ii`. The tax rate is applied to all the invoice line items set as taxable.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 22,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "89A67042-0320-5ECF-B44B-D71857E9FABA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "salesTaxTotal",
+                  "DisplayName": "Sales Tax Total",
+                  "Description": "Invoice sales tax amount. The value is set based on `salesTaxItemId`.",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 23,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "723136FB-1F2C-5EBA-A2F0-F760B8466C49"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "salesTaxPercentage",
+                  "DisplayName": "Sales Tax Percentage",
+                  "Description": "Invoice sales tax percentage. The value is set based on `salesTaxItemId`.",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 24,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B162D2AF-E551-50FC-9EC3-3083C16337A7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "enableCardPayment",
+                  "DisplayName": "Enable Card Payment",
+                  "Description": "Set as `true` if the card payment option is enabled for the invoice",
+                  "Type": "bit",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 25,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "569413F9-A1A8-5DAE-98EC-633419BD5F18"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "convenienceFee",
+                  "DisplayName": "Convenience Fee",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 26,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "77967AB8-30AE-5B8D-978F-C970EF604D34"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoicePdfId",
+                  "DisplayName": "Invoice Pdf Id",
+                  "Description": "BILL-generated ID of the invoice PDF. The value begins with `att`.\n\nThe invoice PDF is sent as an email attachment when you send an invoice to a customer. The invoice PDF also appears when the customer clicks the invoice payment link to complete the in...",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 27,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F7E1E219-5F04-5BD0-BF32-A92E0D31AF32"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "customer",
+                  "DisplayName": "Customer",
+                  "Description": "Customer the invoice is issued to, as an InvoiceCustomer object — {\"id\":\"0cu…\"}, NOT a bare ID string. Write-only: BILL returns the same value flattened to `customerId` on read.",
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": false,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 28,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D78FD2EA-2614-539C-AC21-0FE7C4384BE1"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "08C7D86A-E2D8-55DE-8879-F0789FF63D14"
+          }
+        },
+        {
+          "fields": {
+            "Name": "receivable-payments",
+            "DisplayName": "Receivable Payments",
+            "Description": "Payments received from customers. ID prefix 0rp — distinct from AP vendor payments (stp). invoicePayments[] links one payment to MANY invoices, so a consuming Payment record must model a collection, not a single invoice FK. No v3 endpoint transitions a...",
+            "Category": "Accounts Receivable",
+            "APIPath": "/v3/receivable-payments",
+            "ResponseDataKey": "results",
+            "PaginationType": "Cursor",
+            "SupportsPagination": true,
+            "DefaultPageSize": 100,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updatedTime",
+            "SupportsWrite": true,
+            "Status": "Active",
+            "Configuration": {
+              "idPrefixNote": "Payments received from customers. ID prefix 0rp — distinct from AP vendor payments (stp). invoicePayments[] links one payment to MANY invoices, so a consuming Payment record must model a collection, not a single invoice FK. No v3 endpoint transitions a 0rp payment to VOID/CANCELED.",
+              "pagination": {
+                "mode": "opaque-cursor",
+                "params": {
+                  "pageSize": "max",
+                  "cursor": "page"
+                },
+                "maxPageSize": 100,
+                "terminationRule": "Terminate on ABSENCE of nextPage. An empty results[] with nextPage present still means continue.",
+                "defaultDisagreement": "Concepts page says max defaults to 100; endpoint refs say 20. Always send it."
+              },
+              "filterSyntax": "filters={field}:{op}:{value}, comma-joined for AND. Ops: eq ne gt gte lt lte in nin sw.",
+              "chargePrerequisite": "POST /v3/customers/{customerId}/charge-authorization must have set authorizedToCharge=true, and a customer bank account must exist.",
+              "detectionNote": "Payment detection is poll-authoritative. BILL publishes NO payment-received webhook event; the only AR events are invoice.created/updated/archived/restored, and invoice.updated carries no 0rp payment ID."
+            },
+            "IntegrationID": "@parent:ID",
+            "CreateAPIPath": "/v3/receivable-payments",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateBodyKey": null,
+            "CreateIDLocation": "body"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "BILL-generated ID of the received payment. The value begins with `0rp`.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": true,
+                  "IsPrimaryKey": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "01E5DA7F-0CA7-586B-A963-9F86E34E2CC6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "customerId",
+                  "DisplayName": "Customer Id",
+                  "Description": "BILL-generated ID of the customer. The value begins with `0cu`.",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C8630735-01DB-5E20-BCCF-74875456D03C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoicePayments",
+                  "DisplayName": "Invoice Payments",
+                  "Description": "List of invoice payments",
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A7340C23-F6F9-5517-B1A3-E019AA8E86F4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Invoice payment description. This value is included in the check memo or in the bank descriptor for electronic payments.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "158483CD-63AF-5628-BA44-61F54344D831"
+                },
+                "sync": {
+                  "lastModified": "2026-08-14T03:53:37.987Z",
+                  "checksum": "67b07df4d0060f1fdeb28ea194c5e08c3a810932c01040274e3adc48f5708cb6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "paymentDate",
+                  "DisplayName": "Payment Date",
+                  "Description": "Received payment date. Funds are withdrawn from the customer bank account on this date.",
+                  "Type": "date",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "360D85B6-2E18-51DB-AFFB-DE49016F3A49"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "fundingAccount",
+                  "DisplayName": "Funding Account",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "987D7206-6F60-5A91-8BA3-E20B796740B3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "receivablesAccount",
+                  "DisplayName": "Receivables Account",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B43AF65-B326-5F01-8C0A-47C948CB2093"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "amount",
+                  "DisplayName": "Amount",
+                  "Description": "Received payment amount. For a payment in an international currency (not USD), this value is in the local currency.",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": false,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EB53BFD6-8351-54FE-A714-EEC4BB49A258"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "unappliedAmount",
+                  "DisplayName": "Unapplied Amount",
+                  "Description": "Unapplied received payment amount. This value is available for an overpayment, double payment, or customer payment not currently linked to an invoice.",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0EF7DE08-D0E2-5B72-BEB0-1EEFBA659246"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "convenienceFeeAmount",
+                  "DisplayName": "Convenience Fee Amount",
+                  "Description": "Convenience fee charged to the customer",
+                  "Type": "decimal",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "022FFF86-6D01-552E-85C3-2205F16836CA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "receivablesType",
+                  "DisplayName": "Receivables Type",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 11,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DF278FA0-DE0E-5C6C-86B2-7FD9454E186D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": null,
+                  "Type": "json",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 12,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A32E7C49-3554-5491-AB0D-95C675474D02"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "referenceNumber",
+                  "DisplayName": "Reference Number",
+                  "Description": "Received payment reference number",
+                  "Type": "string",
+                  "Length": 255,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 13,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EF299739-D915-5588-BE73-6C1DD09CDF90"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "onlinePayment",
+                  "DisplayName": "Online Payment",
+                  "Description": "Information about how the received payment is recorded.\n* `true`: The payment is received with BILL\n* `false`: The payment is received outside BILL, and then recorded in BILL",
+                  "Type": "bit",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 14,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CE0D1075-490C-5C67-ACC5-7FF7636BEAAB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "createdTime",
+                  "DisplayName": "Created Time",
+                  "Description": "Received payment created date and time",
+                  "Type": "datetime",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 15,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BD7F340B-F1A2-557E-B1BB-E1AE3C9EB64F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedTime",
+                  "DisplayName": "Updated Time",
+                  "Description": "Received payment updated date and time",
+                  "Type": "datetime",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsUniqueKey": false,
+                  "IsPrimaryKey": false,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AFBD9F7A-A418-5C0F-BD0B-A443F5B65A7A"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "F8C90EF8-1EA0-5F7D-8713-1D4129C87C43"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "B4A39191-3649-51C7-B5E4-6D82B9AD389E"
+    }
+  }
+]
