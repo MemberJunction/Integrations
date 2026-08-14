@@ -1270,3 +1270,93 @@ describe('resume cursor round-trip', () => {
         expect(DecodeResumeCursor('!!!not-base64-json!!!')).toBeNull();
     });
 });
+
+/**
+ * Action generation is what makes the connector reachable by an agent or a flow rather than only by
+ * a sync or a direct IntegrationWriteRecord call. It was absent entirely: the base class returns an
+ * empty object list by default, which makes GetActionGeneratorConfig() return null, which means zero
+ * Business Central Actions were ever generated despite 83 declared objects.
+ */
+describe('action generation surface', () => {
+    const connector = new BusinessCentralConnector();
+
+    it('returns an empty catalog when the metadata cache is unseeded — never a baked list', () => {
+        // The catalog-in-code defect: a hardcoded fallback freezes the object universe to whatever was
+        // current when the list was written. With 83 objects declared, one serving a familiar handful
+        // still looks like it works, which is exactly why this is asserted rather than assumed.
+        const objects = connector.GetIntegrationObjects();
+        expect(Array.isArray(objects)).toBe(true);
+        expect(objects.length).toBe(0);
+    });
+
+    it('generates no config while the catalog is empty, rather than an empty-object config', () => {
+        expect(connector.GetActionGeneratorConfig()).toBeNull();
+    });
+
+    it('produces a config carrying the objects once the catalog resolves', () => {
+        const config = new SeededBusinessCentralConnector().GetActionGeneratorConfig();
+        expect(config).not.toBeNull();
+        expect(config?.IntegrationName).toBe('business-central');
+        expect(config?.Objects.map((o) => o.Name).sort()).toEqual(['accounts', 'journalLines', 'journals']);
+    });
+
+    it('stamps the Microsoft icon so generated Actions are identifiable in the UI', () => {
+        expect(new SeededBusinessCentralConnector().GetActionGeneratorConfig()?.IconClass).toBe('fa-brands fa-microsoft');
+    });
+
+    it('carries write capability through, so read-only objects cannot generate write Actions', () => {
+        const objects = new SeededBusinessCentralConnector().GetIntegrationObjects();
+        // `accounts` is read-only in Business Central: a journal entry posts TO an account, it never
+        // creates one. A Create Action here would be a broken Action that always fails at the vendor.
+        expect(objects.find((o) => o.Name === 'accounts')?.SupportsWrite).toBe(false);
+        expect(objects.find((o) => o.Name === 'journals')?.SupportsWrite).toBe(true);
+        expect(objects.find((o) => o.Name === 'journalLines')?.SupportsWrite).toBe(true);
+    });
+});
+
+/**
+ * Stands in for a populated IntegrationEngineBase cache. Overriding the object source — rather than
+ * stubbing the engine singleton — exercises the real base-class config assembly, which is what the
+ * connector's override contributes to. The three objects mirror the accounting path: pull the chart
+ * of accounts (A-UC6), then stage a journal batch and its lines (A-UC7).
+ */
+class SeededBusinessCentralConnector extends BusinessCentralConnector {
+    public override GetIntegrationObjects() {
+        const field = (Name: string, over: Record<string, unknown> = {}) => ({
+            Name,
+            DisplayName: Name,
+            Type: 'string',
+            IsRequired: false,
+            IsReadOnly: false,
+            IsPrimaryKey: false,
+            ...over,
+        });
+        return [
+            {
+                Name: 'accounts',
+                DisplayName: 'Accounts',
+                Description: 'General ledger accounts.',
+                SupportsWrite: false,
+                Fields: [field('id', { IsPrimaryKey: true, IsReadOnly: true }), field('number', { IsReadOnly: true })],
+            },
+            {
+                Name: 'journals',
+                DisplayName: 'Journals',
+                Description: 'Journal batches.',
+                SupportsWrite: true,
+                Fields: [field('id', { IsPrimaryKey: true, IsReadOnly: true }), field('code', { IsRequired: true })],
+            },
+            {
+                Name: 'journalLines',
+                DisplayName: 'Journal Lines',
+                Description: 'Lines within a journal batch.',
+                SupportsWrite: true,
+                Fields: [
+                    field('id', { IsPrimaryKey: true, IsReadOnly: true }),
+                    field('accountId'),
+                    field('amount', { Type: 'decimal' }),
+                ],
+            },
+        ];
+    }
+}
