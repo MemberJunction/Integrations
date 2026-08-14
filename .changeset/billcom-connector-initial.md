@@ -14,10 +14,19 @@ Vendor characteristics handled explicitly:
   capped at 200/hour, so acquiring one per request is not viable.
 - Concurrency capped at 3 per developer key per organization (`BDC_1322`).
 - Opaque-cursor pagination terminating on the absence of `nextPage`, not on an empty page.
+- The invoice customer reference differs between read and write: BILL returns a flat `customerId`
+  string but requires a nested `customer` object (`{"id":"0cu…"}`) on create. The catalog declares
+  both, since sending the read name fails every create with HTTP 400.
 
 The catalog and the Action object model are both generated from BILL's published OpenAPI by
 `scripts/extract-catalog.mjs`, so they cannot drift apart.
 
 Refunds are deliberately absent: v3 has no AR refund endpoint, `/v3/orders` does not exist, and
-negative invoices are unsupported. Evidence tier is mock-only — no write has run against a live
-BILL tenant.
+negative invoices are unsupported.
+
+Verified against BILL's real API using a sandbox account (evidence tier 🟢 Live-vendor). Session
+login, all three read paths, the `updatedTime` incremental filter, cursor advance, invoice create,
+invoice archive and its idempotency, and the customers-`PATCH`/invoices-`PUT` asymmetry are all
+confirmed live. Creating a receivable payment is declared but unproven — charging a customer
+requires an authorized customer with a bank account, which a fresh sandbox cannot provide. No write
+has been executed against a production BILL organization.
