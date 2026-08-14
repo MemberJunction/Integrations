@@ -188,7 +188,34 @@ function deriveRowDto(schemas, fallback) {
 }
 
 /** Maps an OpenAPI property to the MJ IntegrationObjectField Type vocabulary. */
-function mapType(prop) {
+/**
+ * Semantic length tiers for string fields the vendor's response schema leaves unbounded.
+ *
+ * Mirrors `scripts/infer-field-lengths.mjs`, which CI enforces. Falling back to the 255 default for a
+ * prose field is a build failure there, and for good reason: an oversize value is **skipped, not
+ * truncated**, so an over-long description would drop the whole record silently rather than fail
+ * loudly. BILL's response DTOs omit `maxLength` on exactly these fields even where the matching
+ * request DTO declares one (`description` is 4000 in CustomerCreateRequestDto), so inferring by name
+ * is what keeps a regenerated catalog green.
+ */
+const LENGTH_TIERS = [
+  {
+    length: 4000,
+    re: /^(about|description|bio|biography|notes?|summary|body|content|message|comments?|details?|abstract|overview|remarks?|instructions?|agenda|blurb|text)$/i,
+  },
+  {
+    length: 2048,
+    re: /^(url|uri|link|href|website|homepage|image(url)?|photo(url)?|picture(url)?|avatar(url)?|logo(url)?|banner(url)?|thumbnail(url)?)$/i,
+  },
+  { length: 320, re: /^(email|emailaddress)$/i },
+];
+
+function inferLength(propName) {
+  const tier = LENGTH_TIERS.find((t) => t.re.test(propName));
+  return tier ? tier.length : 255;
+}
+
+function mapType(prop, propName) {
   if (!prop || typeof prop !== 'object') return { type: 'string', length: null };
   if (prop.$ref || prop.allOf) return { type: 'json', length: null };
   switch (prop.type) {
@@ -201,8 +228,9 @@ function mapType(prop) {
       if (prop.format === 'date') return { type: 'date', length: null };
       if (prop.format === 'date-time') return { type: 'datetime', length: null };
       if (Array.isArray(prop.enum)) return { type: 'string', length: 100 };
-      return { type: 'string', length: prop.maxLength ?? 255 };
-    default: return { type: 'string', length: 255 };
+      // Vendor bound wins; otherwise infer by name rather than defaulting to a lossy 255.
+      return { type: 'string', length: prop.maxLength ?? inferLength(propName) };
+    default: return { type: 'string', length: inferLength(propName) };
   }
 }
 
@@ -218,7 +246,7 @@ function buildFields(schema, objName) {
   const out = [];
   let seq = 1;
   for (const [propName, prop] of Object.entries(props)) {
-    const { type, length } = mapType(prop);
+    const { type, length } = mapType(prop, propName);
     // `id` is the vendor primary key on every AR object.
     const isPk = propName === 'id';
     // Server-computed fields — writing them is meaningless and the API ignores or rejects them.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 46,
+  "count": 47,
   "connectors": [
     {
       "name": "Fonteva",
@@ -400,6 +400,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
       "installTag": "Events-PheedLoop@1.4.1"
+    },
+    {
+      "name": "Bill.com",
+      "displayName": "Bill.com Connector",
+      "description": "Bill.com (BILL) v3 Connect API — accounts receivable. Session-based auth; 3 concurrent requests per developer key per organization.",
+      "category": "Finance",
+      "tags": [
+        "bill-com",
+        "finance",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://gateway.stage.bill.com/connect/v3/",
+      "objectCount": 3,
+      "className": "@memberjunction/connector-bill-com",
+      "npmPackage": "@memberjunction/connector-bill-com",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Finance/BillCom",
+      "installTag": "Finance-BillCom@0.1.0"
     },
     {
       "name": "business-central",

@@ -171,7 +171,7 @@
                   "DisplayName": "Email",
                   "Description": "Customer email address",
                   "Type": "string",
-                  "Length": 255,
+                  "Length": 320,
                   "AllowsNull": false,
                   "IsRequired": true,
                   "IsReadOnly": false,
@@ -183,6 +183,10 @@
                 },
                 "primaryKey": {
                   "ID": "7B872F27-CDDC-52C6-A334-5F2529058E77"
+                },
+                "sync": {
+                  "lastModified": "2026-08-14T03:53:37.892Z",
+                  "checksum": "61830bffc169d5d5b557b6bd8f0df609a95ea717a1f1c749afc2ce47736f57fa"
                 }
               },
               {
@@ -231,7 +235,7 @@
                   "DisplayName": "Description",
                   "Description": "Customer description",
                   "Type": "string",
-                  "Length": 255,
+                  "Length": 4000,
                   "AllowsNull": true,
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -243,6 +247,10 @@
                 },
                 "primaryKey": {
                   "ID": "63DFBEE8-65D2-5964-B13B-E2FA50B3C8C3"
+                },
+                "sync": {
+                  "lastModified": "2026-08-14T03:53:37.912Z",
+                  "checksum": "2bf219c268c2d501442f67a76b50f90afb90a919b11a45f18489d4514770a9ac"
                 }
               },
               {
@@ -678,10 +686,6 @@
                 },
                 "primaryKey": {
                   "ID": "773C34EC-569D-585D-8116-8689CF6EC617"
-                },
-                "sync": {
-                  "lastModified": "2026-08-14T03:06:04.018Z",
-                  "checksum": "fd2e6f338cfc3d09d42842be385bd6800bac13d983c755330afa943f8b726880"
                 }
               },
               {
@@ -1082,10 +1086,6 @@
                 },
                 "primaryKey": {
                   "ID": "D78FD2EA-2614-539C-AC21-0FE7C4384BE1"
-                },
-                "sync": {
-                  "lastModified": "2026-08-14T03:06:04.327Z",
-                  "checksum": "e16afdc1e0a1abc04e30355e159760052561dfaef344f3c604e0478b4653dca7"
                 }
               }
             ]
@@ -1200,7 +1200,7 @@
                   "DisplayName": "Description",
                   "Description": "Invoice payment description. This value is included in the check memo or in the bank descriptor for electronic payments.",
                   "Type": "string",
-                  "Length": 255,
+                  "Length": 4000,
                   "AllowsNull": true,
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -1212,6 +1212,10 @@
                 },
                 "primaryKey": {
                   "ID": "158483CD-63AF-5628-BA44-61F54344D831"
+                },
+                "sync": {
+                  "lastModified": "2026-08-14T03:53:37.987Z",
+                  "checksum": "67b07df4d0060f1fdeb28ea194c5e08c3a810932c01040274e3adc48f5708cb6"
                 }
               },
               {
