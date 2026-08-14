@@ -1432,7 +1432,16 @@ describe('batch writes ($batch)', () => {
         expect(results.map(r => r.ExternalID)).toEqual(['jl-FIRST', 'jl-SECOND', 'jl-THIRD']);
     });
 
-    it('reports partial failure per record, not for the whole envelope', async () => {
+    it('sends Isolation: snapshot so the batch is all-or-nothing', async () => {
+        connector.Responses.push(ok({ responses: [{ id: '0', status: 201, body: { id: 'jl-0' } }, { id: '1', status: 201, body: { id: 'jl-1' } }] }));
+        await connector.BatchCreateRecords(lines(2));
+        expect(connector.Captured[0].headers.Isolation).toBe('snapshot');
+    });
+
+    it('fails EVERY record when one operation fails — the batch was reverted', async () => {
+        // Under snapshot isolation Business Central still reports each operation's own status, so the
+        // two 201s below describe creates that were rolled back. Reporting them as successes would hand
+        // the caller an ExternalID for a record that does not exist, and the next sync would not recreate it.
         connector.Responses.push(ok({
             responses: [
                 { id: '0', status: 201, body: { id: 'jl-0' } },
@@ -1442,21 +1451,34 @@ describe('batch writes ($batch)', () => {
         }));
         const results = await connector.BatchCreateRecords(lines(3));
 
-        expect(results[0].Success).toBe(true);
-        expect(results[1].Success).toBe(false);
-        expect(results[1].StatusCode).toBe(400);
-        expect(results[1].ErrorMessage).toContain('allowed posting dates');
-        expect(results[2].Success).toBe(true);
-        expect(results[2].ExternalID).toBe('jl-2');
+        expect(results.every(r => !r.Success)).toBe(true);
+        expect(results.every(r => r.ExternalID === undefined)).toBe(true);
+        expect(results[0].ErrorMessage).toContain('BATCH_ROLLED_BACK');
+        expect(results[0].ErrorMessage).toContain('allowed posting dates');
+        expect(results[2].ErrorMessage).toContain('reverted');
     });
 
-    it('fails a record loudly when its sub-response is missing', async () => {
-        // A dropped create reported as success becomes a duplicate on the next sync.
+    it('matches positionally when Business Central returns null ids', async () => {
+        // Microsoft's own transactional example returns `"id": null` for every operation. Failing every
+        // record on that technicality would be worse than reading them in order.
+        connector.Responses.push(ok({
+            responses: [
+                { id: null, status: 201, body: { id: 'jl-A' } },
+                { id: null, status: 201, body: { id: 'jl-B' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(2));
+        expect(results.map(r => r.ExternalID)).toEqual(['jl-A', 'jl-B']);
+    });
+
+    it('treats a short response list as a whole-batch failure', async () => {
+        // Fewer responses than operations means the outcome of at least one create is unknown. Guessing
+        // success there is the duplicate-on-next-sync hazard; guessing per-record is worse under a
+        // transactional batch, where the unknown one may have reverted the rest.
         connector.Responses.push(ok({ responses: [{ id: '0', status: 201, body: { id: 'jl-0' } }] }));
         const results = await connector.BatchCreateRecords(lines(2));
-        expect(results[0].Success).toBe(true);
-        expect(results[1].Success).toBe(false);
-        expect(results[1].ErrorMessage).toContain('BATCH_RESPONSE_MISSING');
+        expect(results.every(r => !r.Success)).toBe(true);
+        expect(results[0].ErrorMessage).toContain('BATCH_RESPONSE_MISSING');
     });
 
     it('attributes an envelope-level failure to every record in it', async () => {
