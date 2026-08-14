@@ -1,7 +1,7 @@
 {
   "name": "@memberjunction/connector-schema-merge",
   "version": "1.0.1",
-  "description": "Pure helper that unions a connector's DECLARED field catalog with a data-measured streaming sample. One function, no class, no base — connectors import it; they do NOT extend anything new.",
+  "description": "Pure helper that unions a connector's DECLARED field catalog with a data-measured streaming sample. One function, no class, no base \u2014 connectors import it; they do NOT extend anything new.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,7 +15,7 @@
   "author": "MemberJunction.com",
   "license": "ISC",
   "peerDependencies": {
-    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
+    "@memberjunction/integration-engine": ">=5.42.0 <7.0.0"
   },
   "dependencies": {},
   "devDependencies": {
