@@ -981,7 +981,17 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
             };
         });
 
-        const headers = { ...this.BuildHeaders(auth), 'Content-Type': 'application/json', Accept: 'application/json' };
+        const headers = {
+            ...this.BuildHeaders(auth),
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            // Transactional batch. Microsoft: "if an inner request fails after another request(s) has
+            // committed changes, all changes within a batch will be reverted as if the batch request
+            // never happened." For journal lines this is the behaviour you want by default — a
+            // half-staged journal batch is worse than none, because it looks like a real batch and
+            // will not balance.
+            Isolation: 'snapshot',
+        };
         const envelope = await this.PacedRequest(() =>
             this.MakeHTTPRequest(auth, `${root}/$batch`, 'POST', headers, { requests }),
         );
@@ -994,36 +1004,61 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
             return;
         }
 
-        const body = envelope.Body as { responses?: Array<{ id?: string; status?: number; body?: unknown; headers?: Record<string, string> }> } | null;
-        const byId = new Map<string, { id?: string; status?: number; body?: unknown; headers?: Record<string, string> }>();
-        for (const r of body?.responses ?? []) {
-            if (r && typeof r.id === 'string') byId.set(r.id, r);
+        type SubResponse = { id?: string | null; status?: number; body?: unknown; headers?: Record<string, string> };
+        const body = envelope.Body as { responses?: SubResponse[] } | null;
+        const subs = body?.responses ?? [];
+
+        // Match by `id` when Business Central echoes it. It does not always: Microsoft's own transactional
+        // example returns `"id": null` for every operation. When no response carries an id there is nothing
+        // to match on, so fall back to position — correct here because the envelope is built and read in
+        // one place, and far better than failing every record on a technicality.
+        const byId = new Map<string, SubResponse>();
+        for (const r of subs) {
+            if (r && typeof r.id === 'string' && r.id.length > 0) byId.set(r.id, r);
+        }
+        const positional = byId.size === 0;
+        const subFor = (i: number): SubResponse | undefined => (positional ? subs[i] : byId.get(String(offset + i)));
+
+        const asRESTResponse = (sub: SubResponse): RESTResponse => ({
+            Status: sub.status ?? 0,
+            Body: sub.body ?? null,
+            Headers: sub.headers ?? {},
+        });
+
+        // Under `Isolation: snapshot` the batch is all-or-nothing, but Business Central still reports each
+        // operation's own status — so a rolled-back create still comes back as 201. Reporting that as
+        // success would hand the caller an ExternalID for a record that does not exist, and the next sync
+        // would not recreate it. One failure therefore fails the whole chunk.
+        // findIndex, not find: `find` returns undefined both when nothing matches AND when the matching
+        // element IS undefined — which is exactly the missing-sub-response case, so it would silently
+        // fall through to the success path.
+        const failureIndex = chunk.findIndex((_, i) => {
+            const sub = subFor(i);
+            return !sub || (sub.status ?? 0) < 200 || (sub.status ?? 0) >= 300;
+        });
+
+        if (failureIndex >= 0) {
+            const firstFailure = subFor(failureIndex);
+            const rolledBack: CRUDResult = firstFailure
+                ? {
+                    ...this.failureResult(asRESTResponse(firstFailure), 'create'),
+                    ErrorMessage: `[BATCH_ROLLED_BACK] ${this.ExtractErrorMessage(asRESTResponse(firstFailure))
+                        ?? `HTTP ${firstFailure.status ?? 0}`} — the whole $batch was reverted (Isolation: snapshot), so no record in it was created.`,
+                }
+                : {
+                    Success: false,
+                    StatusCode: 0,
+                    ErrorMessage: `[BATCH_RESPONSE_MISSING] Business Central returned fewer $batch responses than operations for "${chunk[0].ObjectName}"; treating the whole batch as failed.`,
+                };
+            chunk.forEach((_, i) => { results[offset + i] = rolledBack; });
+            return;
         }
 
         chunk.forEach((ctx, i) => {
-            const index = offset + i;
-            const sub = byId.get(String(index));
-            if (!sub) {
-                // A missing sub-response is not a success. Saying so loudly beats inventing an outcome:
-                // a silently-dropped create is the duplicate-on-next-sync hazard.
-                results[index] = {
-                    Success: false,
-                    StatusCode: 0,
-                    ErrorMessage: `[BATCH_RESPONSE_MISSING] Business Central returned no $batch response for operation ${index} on "${ctx.ObjectName}".`,
-                };
-                return;
-            }
-            const asResponse: RESTResponse = {
-                Status: sub.status ?? 0,
-                Body: sub.body ?? null,
-                Headers: sub.headers ?? {},
-            };
-            if (asResponse.Status >= 200 && asResponse.Status < 300) {
-                this.captureETagFromResponse(obj.Name, asResponse);
-                results[index] = this.BuildCreatedResult(this.extractCreatedID(obj, asResponse), asResponse.Status, ctx.ObjectName);
-            } else {
-                results[index] = this.failureResult(asResponse, 'create');
-            }
+            const sub = subFor(i) as SubResponse;
+            const asResponse = asRESTResponse(sub);
+            this.captureETagFromResponse(obj.Name, asResponse);
+            results[offset + i] = this.BuildCreatedResult(this.extractCreatedID(obj, asResponse), asResponse.Status, ctx.ObjectName);
         });
     }
 
