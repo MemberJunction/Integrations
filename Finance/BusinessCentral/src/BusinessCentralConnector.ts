@@ -115,6 +115,15 @@ function trimTrailingSlash(value: string): string {
 export const BUSINESS_CENTRAL_BATCH_LIMIT = 100;
 
 /**
+ * The bound action that posts a journal batch to the general ledger.
+ *
+ * Case sensitive, and asymmetrically so: the namespace is capitalised but the action's first word must
+ * be lower case. `Microsoft.NAV.Post` returns 404 — which reads as "no such journal" and sends you
+ * looking at the ID rather than the verb.
+ */
+export const BUSINESS_CENTRAL_POST_ACTION = 'Microsoft.NAV.post';
+
+/**
  * Builds the API ROOT (everything before the company/entity-set segments) for a surface.
  *
  * webapi:  `{server}/v2.0/[{tenantId}/]{environment}/api/{apiVersion}`
@@ -1016,6 +1025,62 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
                 results[index] = this.failureResult(asResponse, 'create');
             }
         });
+    }
+
+    /**
+     * Posts a journal batch to the general ledger.
+     *
+     * This is the step that makes staged lines real. Creating `journals` and `journalLines` builds a
+     * batch that sits unposted in Business Central — nothing reaches the general ledger until it is
+     * posted, and until then a reconciliation against BC will not see any of it.
+     *
+     * Posting is an OData **bound action**, not a CRUD verb, so it cannot travel through the generic
+     * Create/Update/Delete surface and cannot be emitted by `ActionMetadataGenerator` (whose verb set is
+     * fixed at Get/Create/Update/Delete/Upsert/Search/List). It is therefore an explicit method: the
+     * accounting app calls it directly, or wraps it in an Action of its own.
+     *
+     * Irreversible by design. A posted journal cannot be un-posted through the API; correcting it means
+     * a reversing entry. Treat a successful return as a ledger mutation, not a staging step.
+     *
+     * @param companyIntegration the tenant binding
+     * @param journalId          the `journals` record ID returned when the batch was created
+     * @param contextUser        the acting user
+     * @param companyId          optional override; defaults to the company on the connection config
+     */
+    public async PostJournal(
+        companyIntegration: MJCompanyIntegrationEntity,
+        journalId: string,
+        contextUser: UserInfo,
+        companyId?: string,
+    ): Promise<CRUDResult> {
+        if (!journalId || journalId.trim().length === 0) {
+            return { Success: false, StatusCode: 0, ErrorMessage: '[VALIDATION] PostJournal requires a journalId.' };
+        }
+
+        const auth = await this.Authenticate(companyIntegration, contextUser);
+        const resolvedCompany = companyId?.trim() || this.writeCompanyId(auth.Config, {});
+        if (!resolvedCompany) {
+            return {
+                Success: false,
+                StatusCode: 0,
+                ErrorMessage: '[VALIDATION] PostJournal requires a company GUID, and none is configured on the connection.',
+            };
+        }
+
+        const root = BuildBusinessCentralRootURL('webapi', this.urlParts(auth.Config, resolvedCompany));
+        // `Microsoft.NAV.post` is CASE SENSITIVE — Business Central requires the action's first word in
+        // lower case. `Microsoft.NAV.Post` 404s, which reads as "no such journal" rather than "wrong verb".
+        const url = `${root}/companies(${encodeURIComponent(resolvedCompany)})/journals(${encodeURIComponent(journalId)})/${BUSINESS_CENTRAL_POST_ACTION}`;
+
+        const response = await this.PacedRequest(() =>
+            this.MakeHTTPRequest(auth, url, 'POST', this.BuildHeaders(auth), {}),
+        );
+
+        // Documented as 204 No Content on success; accept the 2xx family rather than pinning to 204 alone.
+        if (response.Status >= 200 && response.Status < 300) {
+            return { Success: true, StatusCode: response.Status, ExternalID: journalId };
+        }
+        return this.failureResult(response, 'post journal');
     }
 
     /** Create — company/parent-scoped POST. ID extraction + failure semantics stay on the base contract. */

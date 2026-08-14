@@ -14,6 +14,7 @@ import type {
 } from '@memberjunction/core-entities';
 import {
     BusinessCentralConnector,
+    BUSINESS_CENTRAL_POST_ACTION,
     BuildBusinessCentralRootURL,
     BuildBusinessCentralCompanySegment,
     BuildBusinessCentralResourceURL,
@@ -1488,5 +1489,58 @@ describe('batch writes ($batch)', () => {
         const results = await connector.BatchCreateRecords(lines(1));
         expect(connector.Captured[0].url).not.toContain('$batch');
         expect(results[0].ExternalID).toBe('jl-solo');
+    });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+/**
+ * Posting a journal batch.
+ *
+ * Staged lines are invisible to the ledger until the batch is posted, so this is the step that makes
+ * A-UC7 real rather than a staging exercise. It is a bound action rather than a CRUD verb, which is
+ * why it is an explicit method and not a generated Action.
+ */
+describe('PostJournal (MOCK ONLY — no live endpoint, no mutation)', () => {
+    const ciWrite = () => makeCI();
+
+    it('posts to the case-sensitive bound action on the journal', async () => {
+        connector.Responses.push(status(204));
+        const result = await connector.PostJournal(ciWrite(), 'j-7', user);
+
+        expect(result.Success).toBe(true);
+        expect(result.StatusCode).toBe(204);
+        expect(result.ExternalID).toBe('j-7');
+        expect(connector.Captured[0].method).toBe('POST');
+        expect(connector.Captured[0].url).toBe(
+            `https://api.businesscentral.dynamics.com/v2.0/${TENANT}/Sandbox/api/v2.0/companies(${COMPANY_A})/journals(j-7)/Microsoft.NAV.post`,
+        );
+    });
+
+    it('uses lower-case `post` — Business Central 404s on Microsoft.NAV.Post', () => {
+        // The capitalised form fails as "not found", which points at the journal ID rather than the verb.
+        expect(BUSINESS_CENTRAL_POST_ACTION).toBe('Microsoft.NAV.post');
+        expect(BUSINESS_CENTRAL_POST_ACTION.endsWith('.post')).toBe(true);
+    });
+
+    it('rejects a missing journal id before touching the network', async () => {
+        const result = await connector.PostJournal(ciWrite(), '   ', user);
+        expect(result.Success).toBe(false);
+        expect(result.ErrorMessage).toContain('VALIDATION');
+        expect(connector.Captured).toHaveLength(0);
+    });
+
+    it('accepts a company override for a multi-company tenant', async () => {
+        connector.Responses.push(status(204));
+        await connector.PostJournal(ciWrite(), 'j-9', user, COMPANY_B);
+        expect(connector.Captured[0].url).toContain(`companies(${COMPANY_B})/journals(j-9)/`);
+    });
+
+    it('surfaces a vendor rejection rather than reporting a false success', async () => {
+        // The realistic failure: posting date outside the allowed range, or an unbalanced batch.
+        connector.Responses.push(status(400, { error: { code: 'BadRequest', message: 'The journal batch is not balanced.' } }));
+        const result = await connector.PostJournal(ciWrite(), 'j-7', user);
+        expect(result.Success).toBe(false);
+        expect(result.StatusCode).toBe(400);
+        expect(result.ErrorMessage).toContain('not balanced');
     });
 });
