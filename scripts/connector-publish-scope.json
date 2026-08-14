@@ -20,6 +20,7 @@
     "Events/Eventbrite",
     "Events/OpenWater",
     "Events/PheedLoop",
+    "Finance/BillCom",
     "Finance/BusinessCentral",
     "Finance/NetSuite",
     "Finance/QuickBooks",

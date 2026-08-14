@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Bill.com Session Credentials",
+  "description": "Bill.com (BILL) v3 Connect API credentials. The connector POSTs these to /login to obtain an opaque sessionId, which is then sent alongside the developer key on every request. Sessions expire after 35 minutes of inactivity and cannot be refreshed — the connector caches and re-acquires as needed, so no session value is stored here.",
+  "properties": {
+    "username": {
+      "type": "string",
+      "title": "Username",
+      "description": "The BILL user account the integration authenticates as. Use a dedicated integration user rather than a person's login, so access survives staff changes.",
+      "minLength": 1,
+      "isSecret": false,
+      "order": 0
+    },
+    "password": {
+      "type": "string",
+      "title": "Password",
+      "description": "Password for the integration user.",
+      "minLength": 1,
+      "isSecret": true,
+      "order": 1
+    },
+    "organizationId": {
+      "type": "string",
+      "title": "Organization ID",
+      "description": "The BILL organization to operate against. Found in the BILL web app under Settings, or returned by the login response.",
+      "minLength": 1,
+      "isSecret": false,
+      "order": 2
+    },
+    "devKey": {
+      "type": "string",
+      "title": "Developer Key",
+      "description": "The BILL developer key issued for your application. Rate limits are scoped to this key: 3 concurrent requests per organization and 20,000 requests per hour.",
+      "minLength": 1,
+      "isSecret": true,
+      "order": 3
+    },
+    "environment": {
+      "type": "string",
+      "title": "Environment",
+      "description": "Which BILL gateway to target. Defaults to sandbox — a connection must be switched to production deliberately, never by omission.",
+      "enum": ["sandbox", "production"],
+      "default": "sandbox",
+      "isSecret": false,
+      "order": 4
+    },
+    "apiUrl": {
+      "type": "string",
+      "title": "API Base URL (optional)",
+      "description": "Explicit gateway override. Leave blank to derive from Environment: sandbox is https://gateway.stage.bill.com/connect/v3 and production is https://gateway.prod.bill.com/connect/v3 (note gateway.prod, not gateway). Set this only to point at a mock server or a non-standard gateway.",
+      "isSecret": false,
+      "order": 5
+    }
+  },
+  "required": ["username", "password", "organizationId", "devKey"]
+}

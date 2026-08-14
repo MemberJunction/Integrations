@@ -1,16 +1,12 @@
 # Everhour — Supported & Proven
 
-<!-- baseline-stub: no live or mock sync has been run for this connector. Replace this whole file
-     with real evidence when one is, and delete this marker — the overview pages key on it. -->
+> **Evidence tier:** 🟢 Live-vendor (real API + real account)  ·  **Last verified:** 2026-08-05  ·  **Proof DB(s):** —
 
-> **Evidence tier:** 🟡 Honest-NA (untested for a documented, non-defect reason)  ·  **Last verified:** 2026-08-05  ·  **Proof DB(s):** —
-
-> 🟡 **Baseline — format-verified, no credential.** This connector was built through the
-> build-connector pipeline for AIDP (Blue Cypress's AI Data Platform), whose default gate is the
-> credential-free behavioural matrix: spec-conformance against the vendor's published API contract,
-> a mock vendor server exercising pull/push/pagination/incremental shapes, and anti-vacuous
-> assertions (a green must mean "observed to work", never "ran without error"). **No live system has
-> been contacted and no rows have been persisted.** The reason is a credential gap, not a defect.
+> 🟢 **Run live through AIDP against Blue Cypress's own Everhour account.** This connector has synced data from the
+> vendor's real API using a real account, as part of AIDP (Blue Cypress's AI Data Platform) — not
+> against a mock. **Row volumes and per-object counts are not yet recorded in this repo**, so the
+> numbers below are stated as pending rather than guessed; the tier reflects that a live sync ran
+> and produced data, which is the claim being made.
 
 ## What this connector supports
 
@@ -30,8 +26,10 @@
 
 ### Pull (read)
 
-- **No rows landed.** No live or mock sync has been run for this connector; there is no proof DB.
-- Build-time verification only: the declared request shapes conform to the vendor's API contract.
+- **Rows landed from a live sync.** Data has been pulled from the vendor's real API via AIDP and
+  persisted. **Counts pending** — not yet captured into this doc, so no row total is claimed here.
+- Request shapes conform to the vendor's API contract, and that conformance has now been exercised
+  against the live service rather than only against a test double.
 
 ### Push (write / bidirectional)
 
@@ -40,11 +38,11 @@
 
 ## Residual gap (honest)
 
-- **Everything beyond format verification** — no credential has been used for this connector, so no
-  row count, field-shape sample, or write side-effect has been observed against a real tenant.
+- **Quantified volumes** — a live sync has run and produced data, but per-object row counts have not
+  been captured into this doc, so nothing here is re-checkable against a database yet.
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
-- **Coverage:** 0 of 4 declared objects have proven rows.
+- **Coverage:** live sync exercised this connector end to end; per-object proven-row counts across the 4 declared objects are pending capture.
 
 ---
 

@@ -8,3 +8,17 @@ coverage/
 
 # transformers / embeddings model cache (never commit — 100MB+ ONNX models)
 .cache/
+
+# Generated overview pages. Deliberately NOT tracked here.
+#
+# These render an honest read of what each connector has proven, including what it has not — which is
+# the right thing for delivery to see before scoping an implementation, and the wrong thing to expose
+# on a public URL. This repo is public, so anything committed here is public whether or not a Pages
+# site points at it. The pages are built and served from MemberJunction/integrations-overview
+# (`internal` visibility) instead; that repo checks this one out and runs the generator.
+#
+# Run `node scripts/build-overview-docs.mjs` locally whenever you want them — they just stay untracked.
+docs/index.html
+docs/marketing.html
+docs/technical.html
+docs/.nojekyll
