@@ -108,6 +108,22 @@ function trimTrailingSlash(value: string): string {
 }
 
 /**
+ * Maximum operations Business Central accepts in one `$batch` envelope. Microsoft's documented ceiling:
+ * "A maximum number of '100' query operations and change sets are allowed in a batch message." Larger
+ * inputs are chunked rather than rejected, so a 250-line journal is three envelopes, not an error.
+ */
+export const BUSINESS_CENTRAL_BATCH_LIMIT = 100;
+
+/**
+ * The bound action that posts a journal batch to the general ledger.
+ *
+ * Case sensitive, and asymmetrically so: the namespace is capitalised but the action's first word must
+ * be lower case. `Microsoft.NAV.Post` returns 404 — which reads as "no such journal" and sends you
+ * looking at the ID rather than the verb.
+ */
+export const BUSINESS_CENTRAL_POST_ACTION = 'Microsoft.NAV.post';
+
+/**
  * Builds the API ROOT (everything before the company/entity-set segments) for a surface.
  *
  * webapi:  `{server}/v2.0/[{tenantId}/]{environment}/api/{apiVersion}`
@@ -887,6 +903,220 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
     //   · the OData If-Match/@odata.etag precondition required on PATCH and DELETE, with one re-read + retry
     //     when the tag is stale;
     //   · serialized write pacing (never a parallel fan-out of journal-line POSTs).
+
+    /**
+     * Business Central exposes an OData `$batch` endpoint, so N creates can travel in ONE request.
+     *
+     * This matters most for the case the connector exists to serve: a journal batch is a header plus many
+     * lines, and the default batch implementation loops single-record CreateRecord — each one serialized
+     * through `PacedRequest` with a pacing sleep in front of it. A 60-line journal is then 60 round trips
+     * plus 60 sleeps. Batched, it is one round trip.
+     */
+    public override get SupportsBatchWrite(): boolean {
+        return true;
+    }
+
+    /**
+     * Batch-create via OData `$batch`.
+     *
+     * Constraints encoded here, each from Microsoft's contract rather than guesswork:
+     *  · **100 operations maximum per batch** — larger inputs are chunked, not rejected.
+     *  · **Responses are matched by `id`, never by position.** Microsoft's own guidance is explicit that
+     *    the response order is not guaranteed to mirror the request order; matching positionally would
+     *    silently attribute one record's created ID to a different record, which is worse than failing.
+     *  · **Partial success is normal.** Each sub-response carries its own status, so results are built
+     *    per record exactly as the single-record path does — same ID extraction, same failure classifier.
+     *
+     * Falls back to the sequential path when batching cannot apply: a single record (no point paying the
+     * envelope), the `odatav4` surface (published pages do not share the API's batch grammar), or a mixed
+     * set of CompanyIntegrations (the endpoint is per tenant/environment, so one envelope cannot span them).
+     */
+    public override async BatchCreateRecords(ctxs: CreateRecordContext[]): Promise<CRUDResult[]> {
+        if (ctxs.length === 0) return [];
+        if (ctxs.length === 1) return [await this.CreateRecord(ctxs[0])];
+
+        const first = ctxs[0].CompanyIntegration as MJCompanyIntegrationEntity;
+        const sameTenant = ctxs.every(c => (c.CompanyIntegration as MJCompanyIntegrationEntity).ID === first.ID);
+        const obj = this.GetCachedObject(first.IntegrationID, ctxs[0].ObjectName);
+        const sameObject = ctxs.every(c => c.ObjectName === ctxs[0].ObjectName);
+        if (!sameTenant || !sameObject || this.ResolveSurface(obj) === 'odatav4') {
+            return super.BatchCreateRecords(ctxs);
+        }
+        if (!obj.CreateAPIPath || !obj.CreateMethod) {
+            throw new Error(
+                `BatchCreateRecords not supported for "${ctxs[0].ObjectName}": CreateAPIPath / CreateMethod not configured on IntegrationObject.`,
+            );
+        }
+
+        const auth = await this.Authenticate(first, ctxs[0].ContextUser as UserInfo);
+        const results: CRUDResult[] = new Array<CRUDResult>(ctxs.length);
+
+        for (let start = 0; start < ctxs.length; start += BUSINESS_CENTRAL_BATCH_LIMIT) {
+            const chunk = ctxs.slice(start, start + BUSINESS_CENTRAL_BATCH_LIMIT);
+            await this.executeCreateBatch(auth, obj, chunk, start, results);
+        }
+        return results;
+    }
+
+    /** Sends one `$batch` envelope and writes its per-record outcomes into `results` at their original indexes. */
+    private async executeCreateBatch(
+        auth: BusinessCentralAuthContext,
+        obj: MJIntegrationObjectEntity,
+        chunk: CreateRecordContext[],
+        offset: number,
+        results: CRUDResult[],
+    ): Promise<void> {
+        const root = BuildBusinessCentralRootURL('webapi', this.urlParts(auth.Config, null));
+        const requests = chunk.map((ctx, i) => {
+            const absolute = this.ResolveWriteURL(auth, obj.CreateAPIPath as string, ctx.Attributes, null, 'webapi');
+            // A relative url replaces the `$batch` segment, so strip the shared root — keeping it absolute
+            // also works, but relative keeps the envelope readable when a batch has to be debugged by hand.
+            const relative = absolute.startsWith(`${root}/`) ? absolute.slice(root.length + 1) : absolute;
+            return {
+                id: String(offset + i),
+                method: obj.CreateMethod as string,
+                url: relative,
+                headers: { 'Content-Type': 'application/json' },
+                body: this.BuildOperationBody(ctx.Attributes, obj.CreateBodyShape, obj.CreateBodyKey),
+            };
+        });
+
+        const headers = {
+            ...this.BuildHeaders(auth),
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            // Transactional batch. Microsoft: "if an inner request fails after another request(s) has
+            // committed changes, all changes within a batch will be reverted as if the batch request
+            // never happened." For journal lines this is the behaviour you want by default — a
+            // half-staged journal batch is worse than none, because it looks like a real batch and
+            // will not balance.
+            Isolation: 'snapshot',
+        };
+        const envelope = await this.PacedRequest(() =>
+            this.MakeHTTPRequest(auth, `${root}/$batch`, 'POST', headers, { requests }),
+        );
+
+        // The envelope itself failed (auth, throttling, malformed batch): every record in it is unresolved.
+        // Attribute the same failure to each rather than leaving holes the caller would read as success.
+        if (envelope.Status < 200 || envelope.Status >= 300) {
+            const failure = this.failureResult(envelope, 'batch create');
+            chunk.forEach((_, i) => { results[offset + i] = failure; });
+            return;
+        }
+
+        type SubResponse = { id?: string | null; status?: number; body?: unknown; headers?: Record<string, string> };
+        const body = envelope.Body as { responses?: SubResponse[] } | null;
+        const subs = body?.responses ?? [];
+
+        // Match by `id` when Business Central echoes it. It does not always: Microsoft's own transactional
+        // example returns `"id": null` for every operation. When no response carries an id there is nothing
+        // to match on, so fall back to position — correct here because the envelope is built and read in
+        // one place, and far better than failing every record on a technicality.
+        const byId = new Map<string, SubResponse>();
+        for (const r of subs) {
+            if (r && typeof r.id === 'string' && r.id.length > 0) byId.set(r.id, r);
+        }
+        const positional = byId.size === 0;
+        const subFor = (i: number): SubResponse | undefined => (positional ? subs[i] : byId.get(String(offset + i)));
+
+        const asRESTResponse = (sub: SubResponse): RESTResponse => ({
+            Status: sub.status ?? 0,
+            Body: sub.body ?? null,
+            Headers: sub.headers ?? {},
+        });
+
+        // Under `Isolation: snapshot` the batch is all-or-nothing, but Business Central still reports each
+        // operation's own status — so a rolled-back create still comes back as 201. Reporting that as
+        // success would hand the caller an ExternalID for a record that does not exist, and the next sync
+        // would not recreate it. One failure therefore fails the whole chunk.
+        // findIndex, not find: `find` returns undefined both when nothing matches AND when the matching
+        // element IS undefined — which is exactly the missing-sub-response case, so it would silently
+        // fall through to the success path.
+        const failureIndex = chunk.findIndex((_, i) => {
+            const sub = subFor(i);
+            return !sub || (sub.status ?? 0) < 200 || (sub.status ?? 0) >= 300;
+        });
+
+        if (failureIndex >= 0) {
+            const firstFailure = subFor(failureIndex);
+            const rolledBack: CRUDResult = firstFailure
+                ? {
+                    ...this.failureResult(asRESTResponse(firstFailure), 'create'),
+                    ErrorMessage: `[BATCH_ROLLED_BACK] ${this.ExtractErrorMessage(asRESTResponse(firstFailure))
+                        ?? `HTTP ${firstFailure.status ?? 0}`} — the whole $batch was reverted (Isolation: snapshot), so no record in it was created.`,
+                }
+                : {
+                    Success: false,
+                    StatusCode: 0,
+                    ErrorMessage: `[BATCH_RESPONSE_MISSING] Business Central returned fewer $batch responses than operations for "${chunk[0].ObjectName}"; treating the whole batch as failed.`,
+                };
+            chunk.forEach((_, i) => { results[offset + i] = rolledBack; });
+            return;
+        }
+
+        chunk.forEach((ctx, i) => {
+            const sub = subFor(i) as SubResponse;
+            const asResponse = asRESTResponse(sub);
+            this.captureETagFromResponse(obj.Name, asResponse);
+            results[offset + i] = this.BuildCreatedResult(this.extractCreatedID(obj, asResponse), asResponse.Status, ctx.ObjectName);
+        });
+    }
+
+    /**
+     * Posts a journal batch to the general ledger.
+     *
+     * This is the step that makes staged lines real. Creating `journals` and `journalLines` builds a
+     * batch that sits unposted in Business Central — nothing reaches the general ledger until it is
+     * posted, and until then a reconciliation against BC will not see any of it.
+     *
+     * Posting is an OData **bound action**, not a CRUD verb, so it cannot travel through the generic
+     * Create/Update/Delete surface and cannot be emitted by `ActionMetadataGenerator` (whose verb set is
+     * fixed at Get/Create/Update/Delete/Upsert/Search/List). It is therefore an explicit method: the
+     * accounting app calls it directly, or wraps it in an Action of its own.
+     *
+     * Irreversible by design. A posted journal cannot be un-posted through the API; correcting it means
+     * a reversing entry. Treat a successful return as a ledger mutation, not a staging step.
+     *
+     * @param companyIntegration the tenant binding
+     * @param journalId          the `journals` record ID returned when the batch was created
+     * @param contextUser        the acting user
+     * @param companyId          optional override; defaults to the company on the connection config
+     */
+    public async PostJournal(
+        companyIntegration: MJCompanyIntegrationEntity,
+        journalId: string,
+        contextUser: UserInfo,
+        companyId?: string,
+    ): Promise<CRUDResult> {
+        if (!journalId || journalId.trim().length === 0) {
+            return { Success: false, StatusCode: 0, ErrorMessage: '[VALIDATION] PostJournal requires a journalId.' };
+        }
+
+        const auth = await this.Authenticate(companyIntegration, contextUser);
+        const resolvedCompany = companyId?.trim() || this.writeCompanyId(auth.Config, {});
+        if (!resolvedCompany) {
+            return {
+                Success: false,
+                StatusCode: 0,
+                ErrorMessage: '[VALIDATION] PostJournal requires a company GUID, and none is configured on the connection.',
+            };
+        }
+
+        const root = BuildBusinessCentralRootURL('webapi', this.urlParts(auth.Config, resolvedCompany));
+        // `Microsoft.NAV.post` is CASE SENSITIVE — Business Central requires the action's first word in
+        // lower case. `Microsoft.NAV.Post` 404s, which reads as "no such journal" rather than "wrong verb".
+        const url = `${root}/companies(${encodeURIComponent(resolvedCompany)})/journals(${encodeURIComponent(journalId)})/${BUSINESS_CENTRAL_POST_ACTION}`;
+
+        const response = await this.PacedRequest(() =>
+            this.MakeHTTPRequest(auth, url, 'POST', this.BuildHeaders(auth), {}),
+        );
+
+        // Documented as 204 No Content on success; accept the 2xx family rather than pinning to 204 alone.
+        if (response.Status >= 200 && response.Status < 300) {
+            return { Success: true, StatusCode: response.Status, ExternalID: journalId };
+        }
+        return this.failureResult(response, 'post journal');
+    }
 
     /** Create — company/parent-scoped POST. ID extraction + failure semantics stay on the base contract. */
     public override async CreateRecord(ctx: CreateRecordContext): Promise<CRUDResult> {
