@@ -1,34 +1,22 @@
-# Regenerate the two fleet overview pages after every publish, then sync them back to `next`.
+# Write the prospect-facing line for connectors that reach the catalog without one.
 #
-# WHY THIS RUNS ON main AND NOT ON PRs
-# docs/marketing.html and docs/technical.html embed package versions from connectors-catalog.json.
-# Those versions are bumped by the changesets "Version Packages" PR, which lands on `main` — so the
-# pages are only correct once that merge exists. A PR to `next` opened between a release and its
-# back-merge would see stale versions, which is exactly the state catalog-freshness.yml already
-# tracks as expected-red. Gating PRs on page freshness would therefore fail for reasons the PR
-# author neither caused nor can fix. pr.yml instead runs `--parse-only`, which depends only on files
-# in the PR's own tree and so cannot flake.
+# WHY THIS RUNS ON main
+# A connector becomes real to a client when it is published, which happens on main via the changesets
+# "Version Packages" merge. That is the moment a connector can appear on the overview pages with no
+# marketing copy behind it — everything else on those pages is derived, but the sentence a prospect
+# reads cannot be.
 #
-# WHY THE BACK-MERGE STEP EXISTS
-# `next` is the default branch and all work flows next -> main. These two files are the only
-# artifacts generated ON main, so without a merge back they would conflict with, or be silently
-# reverted by, the next promotion. The repo already has this pattern by hand (the
-# backmerge/main-to-next-* branches); this automates it for the docs commit.
+# WHY IT OPENS A PR RATHER THAN COMMITTING
+# protect-main and protect-next are PR-only rulesets with an empty bypass list: nothing pushes
+# directly to either branch, this workflow included. The PR targets `next`, because
+# docs/data/marketing-names.json is an input, next is where inputs live, and the overview pages
+# regenerate from next.
 #
-# WHY THIS DOES NOT LOOP
-# Two independent guards. First, the generator is deterministic — it derives every date from its
-# inputs rather than the clock — so a run that changes nothing writes nothing and the commit step
-# is skipped entirely. Second, a push made with the default GITHUB_TOKEN does not trigger workflow
-# runs, and the commit is additionally marked [skip ci]. Either alone would be sufficient.
-#
-# ORDERING vs release.yml: both fire on the same push to main, and they do not race. The version
-# bumps this generator reads arrive as tree content when the Version Packages PR is merged — that
-# merge IS the push event, so this run already sees the fresh catalog. release.yml's publish leg
-# writes npm packages, git tags and GitHub releases, none of which are inputs here.
-#
-# SETUP PREREQUISITE: branch protection on `main` (and ideally `next`) must permit
-# github-actions[bot] to push. If it does not, the commit step fails and the back-merge falls back
-# to opening a PR — see the fallback in the last step.
+# WHY THE PAGES ARE NOT BUILT HERE
+# They render an honest read of what each connector has NOT proven, so they are not published from a
+# public repo. MemberJunction/integrations-overview (internal visibility, Entra-gated) checks this
+# repo out and runs the generator. What stays here is the copy itself, which is an input rather than
+# a rendered page.
 
 name: Marketing copy for new connectors
 
