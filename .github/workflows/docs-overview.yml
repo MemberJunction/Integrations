@@ -1,34 +1,22 @@
-# Regenerate the two fleet overview pages after every publish, then sync them back to `next`.
+# Write the prospect-facing line for connectors that reach the catalog without one.
 #
-# WHY THIS RUNS ON main AND NOT ON PRs
-# docs/marketing.html and docs/technical.html embed package versions from connectors-catalog.json.
-# Those versions are bumped by the changesets "Version Packages" PR, which lands on `main` — so the
-# pages are only correct once that merge exists. A PR to `next` opened between a release and its
-# back-merge would see stale versions, which is exactly the state catalog-freshness.yml already
-# tracks as expected-red. Gating PRs on page freshness would therefore fail for reasons the PR
-# author neither caused nor can fix. pr.yml instead runs `--parse-only`, which depends only on files
-# in the PR's own tree and so cannot flake.
+# WHY THIS RUNS ON main
+# A connector becomes real to a client when it is published, which happens on main via the changesets
+# "Version Packages" merge. That is the moment a connector can appear on the overview pages with no
+# marketing copy behind it — everything else on those pages is derived, but the sentence a prospect
+# reads cannot be.
 #
-# WHY THE BACK-MERGE STEP EXISTS
-# `next` is the default branch and all work flows next -> main. These two files are the only
-# artifacts generated ON main, so without a merge back they would conflict with, or be silently
-# reverted by, the next promotion. The repo already has this pattern by hand (the
-# backmerge/main-to-next-* branches); this automates it for the docs commit.
+# WHY IT OPENS A PR RATHER THAN COMMITTING
+# protect-main and protect-next are PR-only rulesets with an empty bypass list: nothing pushes
+# directly to either branch, this workflow included. The PR targets `next`, because
+# docs/data/marketing-names.json is an input, next is where inputs live, and the overview pages
+# regenerate from next.
 #
-# WHY THIS DOES NOT LOOP
-# Two independent guards. First, the generator is deterministic — it derives every date from its
-# inputs rather than the clock — so a run that changes nothing writes nothing and the commit step
-# is skipped entirely. Second, a push made with the default GITHUB_TOKEN does not trigger workflow
-# runs, and the commit is additionally marked [skip ci]. Either alone would be sufficient.
-#
-# ORDERING vs release.yml: both fire on the same push to main, and they do not race. The version
-# bumps this generator reads arrive as tree content when the Version Packages PR is merged — that
-# merge IS the push event, so this run already sees the fresh catalog. release.yml's publish leg
-# writes npm packages, git tags and GitHub releases, none of which are inputs here.
-#
-# SETUP PREREQUISITE: branch protection on `main` (and ideally `next`) must permit
-# github-actions[bot] to push. If it does not, the commit step fails and the back-merge falls back
-# to opening a PR — see the fallback in the last step.
+# WHY THE PAGES ARE NOT BUILT HERE
+# They render an honest read of what each connector has NOT proven, so they are not published from a
+# public repo. MemberJunction/integrations-overview (internal visibility, Entra-gated) checks this
+# repo out and runs the generator. What stays here is the copy itself, which is an input rather than
+# a rendered page.
 
 name: Marketing copy for new connectors
 
@@ -42,8 +30,8 @@ concurrency:
   cancel-in-progress: false # never kill a half-finished back-merge
 
 permissions:
-  contents: write # commit the regenerated pages to main, push the back-merge
-  pull-requests: write # open the fallback back-merge PR
+  contents: write # push the copy branch (protected branches are never pushed to directly)
+  pull-requests: write # open the PR that carries the copy to next
 
 jobs:
   regenerate:
@@ -75,48 +63,59 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/ai-marketing-copy.mjs
 
-      - name: Commit to main if changed
-        id: commit
-        run: |
-          set -euo pipefail
-          PAGES="docs/data/marketing-names.json"
-          if git diff --quiet -- $PAGES; then
-            echo "No change — nothing to commit."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add $PAGES
-          git commit -m "docs: marketing copy for newly added connectors [skip ci]"
-          # Another job may have landed on main while this one ran; rebase rather than force.
-          git pull --rebase origin main
-          git push origin HEAD:main
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
-      - name: Back-merge main into next
-        if: steps.commit.outputs.changed == 'true'
+      # OPEN A PR — DO NOT PUSH.
+      #
+      # `protect-main` and `protect-next` are both PR-only rulesets with an EMPTY bypass list, so no
+      # actor can push directly to either branch — github-actions[bot] included. The previous version
+      # of this step pushed to main and failed the moment it actually had something to commit
+      # (Version Packages #183: a new connector arrived, copy was written, push rejected).
+      #
+      # The PR targets `next` rather than `main`: marketing-names.json is an input, next is where
+      # inputs live, and the overview pages regenerate from next. It reaches main on the next
+      # promotion like everything else.
+      #
+      # A review step is a feature here, not a tax — this is model-written prose that goes in front of
+      # prospects, and a human glancing at one sentence per new connector is cheap insurance.
+      - name: Open a PR if the copy changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -uo pipefail
-          git fetch origin next main
-          git checkout -B next origin/next
-          # Plain merge — never -X ours/theirs. These two files exist on both branches, and a
-          # strategy option applied to resolve them would silently pick a side in every OTHER
-          # conflicting file too.
-          if git merge --no-edit origin/main && git push origin next; then
-            echo "Back-merged into next."
+          set -euo pipefail
+          COPY="docs/data/marketing-names.json"
+          if git diff --quiet -- "$COPY"; then
+            echo "No change — every catalog connector already has marketing copy."
             exit 0
           fi
-          git merge --abort 2>/dev/null || true
-          BRANCH="backmerge/docs-overview-${GITHUB_RUN_ID}"
-          git checkout -B "$BRANCH" origin/main
-          git push origin "$BRANCH"
-          gh pr create --base next --head "$BRANCH" \
-            --title "Back-merge main (docs overview regen) into next" \
-            --body "Automated back-merge of the regenerated pages under \`docs/\`.
 
-          The direct push to \`next\` did not succeed — either the merge conflicted or branch
-          protection rejected it. Resolve and merge so \`next\` does not revert the generated pages
-          on its next promotion to \`main\`."
+          BRANCH="docs/marketing-copy-${GITHUB_RUN_ID}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Branch from next, carrying only the copy file: this run checked out main, and committing
+          # its whole tree onto next would drag unrelated release state along with the one file we mean.
+          git stash push -- "$COPY"
+          git fetch origin next
+          git checkout -B "$BRANCH" origin/next
+          git stash pop
+
+          if git diff --quiet -- "$COPY"; then
+            echo "next already has this copy — nothing to open."
+            exit 0
+          fi
+
+          git add "$COPY"
+          git commit -m "docs: marketing copy for newly added connectors"
+          git push origin "$BRANCH"
+
+          gh pr create --base next --head "$BRANCH" \
+            --title "docs: marketing copy for newly added connectors" \
+            --body "One or more connectors reached the catalog without a prospect-facing line, so
+          \`scripts/ai-marketing-copy.mjs\` wrote one for each.
+
+          **Please read the sentences.** They are model-written and appear on the client-facing
+          overview page. Check they claim only what the connector does, name records in the words a
+          member would use, and avoid protocol or auth vocabulary.
+
+          Merging pins the copy: the pages generate from this file, so regeneration stays byte-stable
+          and the model is not consulted for these connectors again unless their source description
+          changes."
