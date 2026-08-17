@@ -366,3 +366,71 @@ describe('PheedLoopConnector — generic CRUD via per-operation IO columns', () 
         expect(req.url).toContain('/attendees/ATT500/');
     });
 });
+
+/**
+ * Rate limiting.
+ *
+ * PheedLoop throttles hard, and its nested objects are request-heavy: session attendance sits at
+ * `/events/{eventCode}/sessions/{sessionCode}/attendance/`, so it issues one request PER SESSION —
+ * ~640 for a 5-event / 128-session tenant, where a flat object needs one. With no declared policy the
+ * engine used its generic default, and the object returned zero records on every run:
+ *
+ *   HTTP 429 ... {"detail":"Request was throttled. Expected available in 1 second."}
+ *
+ * These are pure unit tests over the two declarations the engine reads — no network, no credential.
+ */
+describe('PheedLoop rate-limit policy', () => {
+    const connector = new PheedLoopConnector();
+
+    it('declares a policy, so the engine does not fall back to its generic default', () => {
+        const policy = connector.RateLimitPolicy;
+        expect(policy).not.toBeNull();
+        expect(policy!.TokensPerSec).toBeGreaterThan(0);
+        // Burst must not exceed the sustained rate: a burst above it is exactly what trips the 429
+        // on the first page of a per-parent walk.
+        expect(policy!.Burst).toBeLessThanOrEqual(policy!.TokensPerSec);
+        // Recovery is deliberately slower than the backoff, because this API stays throttled for a
+        // while after a 429.
+        expect(policy!.SuccessRampPerCall!).toBeLessThan(policy!.TokensPerSec);
+        // A floor keeps a heavily-throttled walk making progress rather than stalling to nothing.
+        expect(policy!.MinTokensPerSec!).toBeGreaterThan(0);
+    });
+});
+
+describe('PheedLoop ExtractRetryAfterMs', () => {
+    const connector = new PheedLoopConnector();
+
+    it('parses the wait out of PheedLoop’s own throttle body', () => {
+        const err = new Error(
+            'HTTP 429 from https://api.pheedloop.com/api/v3/organization/ORG/events/EVT/sessions/SES/attendance/: ' +
+            '{"detail":"Request was throttled. Expected available in 1 second."}'
+        );
+        expect(connector.ExtractRetryAfterMs(err)).toBe(1000);
+    });
+
+    it('handles a multi-second and a fractional wait', () => {
+        expect(connector.ExtractRetryAfterMs(new Error('429 throttled. Expected available in 30 seconds.'))).toBe(30000);
+        expect(connector.ExtractRetryAfterMs(new Error('429 throttled. Expected available in 1.5 seconds.'))).toBe(1500);
+    });
+
+    it('falls back to a Retry-After header when present', () => {
+        expect(connector.ExtractRetryAfterMs(new Error('HTTP 429 throttled; Retry-After: 12'))).toBe(12000);
+    });
+
+    it('still returns a real pause for a throttle that states no wait', () => {
+        // Better than the engine's sub-second first backoff — this API talks in whole seconds.
+        expect(connector.ExtractRetryAfterMs(new Error('HTTP 429 Too Many Requests'))).toBe(1000);
+    });
+
+    it('returns undefined for anything that is not a throttle', () => {
+        // Non-429 errors must keep their normal retry behaviour.
+        expect(connector.ExtractRetryAfterMs(new Error('HTTP 500 Internal Server Error'))).toBeUndefined();
+        expect(connector.ExtractRetryAfterMs(new Error('ECONNRESET'))).toBeUndefined();
+        expect(connector.ExtractRetryAfterMs(undefined)).toBeUndefined();
+        expect(connector.ExtractRetryAfterMs(null)).toBeUndefined();
+    });
+
+    it('accepts a raw string error as well as an Error', () => {
+        expect(connector.ExtractRetryAfterMs('429 throttled. Expected available in 5 seconds.')).toBe(5000);
+    });
+});
