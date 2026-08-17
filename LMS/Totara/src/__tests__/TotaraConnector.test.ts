@@ -1155,3 +1155,101 @@ describe('TotaraConnector — StableOrderingKey (keyset hint from IO Configurati
         expect(new TotaraConnector().StableOrderingKey('Nonexistent')).toBeNull();
     });
 });
+
+/**
+ * IntrospectSchema sampling concurrency.
+ *
+ * The sampling pass used `Promise.all` over every object, so one live fetch per object went out AT
+ * ONCE — honouring neither MaxConcurrency nor the rate limiter, even though this same class already
+ * routes its FetchChanges parent walk through `runParentBounded`. On a real catalog that is a burst of
+ * simultaneous requests from a single Node process: the event loop stops serving anything else,
+ * unrelated cheap reads time out, and the per-environment circuit breaker opens and reports the whole
+ * workspace as unavailable (observed live, alongside a second connector's discovery running).
+ *
+ * These drive the REAL IntrospectSchema — the base implementation reads the seeded engine cache, and
+ * only the per-object sampling call is stubbed, so the bound under test is the one that ships.
+ */
+describe('TotaraConnector — IntrospectSchema samples with bounded concurrency', () => {
+    const OBJECT_COUNT = 24;
+
+    /** Counts concurrent sampling calls; no transport is involved. */
+    class SamplingProbeConnector extends TotaraConnector {
+        public InFlight = 0;
+        public PeakInFlight = 0;
+        public Sampled: string[] = [];
+        public FailEvery = 0;
+
+        protected override async ParseConfig(): Promise<never> {
+            return { Token: 'T', BaseURL: 'https://learn.example.org' } as never;
+        }
+        protected override GetCachedFields(): MJIntegrationObjectFieldEntity[] {
+            return [];
+        }
+        public override async DiscoverFieldsViaFetch(
+            _ci: MJCompanyIntegrationEntity, objectName: string,
+        ): Promise<never> {
+            this.InFlight++;
+            this.PeakInFlight = Math.max(this.PeakInFlight, this.InFlight);
+            this.Sampled.push(objectName);
+            await new Promise(resolve => setTimeout(resolve, 1));
+            this.InFlight--;
+            if (this.FailEvery > 0 && this.Sampled.length % this.FailEvery === 0) {
+                throw new Error(`sampling failed for ${objectName}`);
+            }
+            return [] as never;
+        }
+    }
+
+    const ci = { ID: 'ci-1', IntegrationID: 'int-totara' } as unknown as MJCompanyIntegrationEntity;
+
+    beforeEach(() => {
+        IntegrationEngineBase.Instance.SeedForTesting({
+            Integrations: [{ ID: 'int-totara', Name: 'totara' }],
+            IntegrationObjects: Array.from({ length: OBJECT_COUNT }, (_, i) => ({
+                ID: `io-${i}`,
+                IntegrationID: 'int-totara',
+                Name: `Object${i}`,
+                Status: 'Active',
+                Sequence: i,
+            })),
+        });
+    });
+
+    it('never samples more than the bound at once, and still covers every object', async () => {
+        const c = new SamplingProbeConnector();
+        const info = await c.IntrospectSchema(ci, {} as never);
+
+        expect(info.Objects).toHaveLength(OBJECT_COUNT);
+        expect(c.Sampled).toHaveLength(OBJECT_COUNT);
+        expect(new Set(c.Sampled).size).toBe(OBJECT_COUNT);
+        // The regression this pins: unbounded, PeakInFlight was OBJECT_COUNT.
+        expect(c.PeakInFlight).toBeLessThanOrEqual(4);
+        // ...but still genuinely concurrent — the fix must not serialise discovery.
+        expect(c.PeakInFlight).toBeGreaterThan(1);
+    });
+
+    it('keeps the bound when a sampling call throws (declared fields stay authoritative)', async () => {
+        const c = new SamplingProbeConnector();
+        c.FailEvery = 3;
+        const info = await c.IntrospectSchema(ci, {} as never);
+
+        // A per-object failure is best-effort by design and must not abort the pass or leak a lane.
+        expect(info.Objects).toHaveLength(OBJECT_COUNT);
+        expect(c.Sampled).toHaveLength(OBJECT_COUNT);
+        expect(c.PeakInFlight).toBeLessThanOrEqual(4);
+        expect(c.InFlight).toBe(0);
+    });
+
+    it('handles a catalog smaller than the bound without stalling', async () => {
+        IntegrationEngineBase.Instance.SeedForTesting({
+            Integrations: [{ ID: 'int-totara', Name: 'totara' }],
+            IntegrationObjects: [
+                { ID: 'io-a', IntegrationID: 'int-totara', Name: 'OnlyOne', Status: 'Active', Sequence: 0 },
+            ],
+        });
+        const c = new SamplingProbeConnector();
+        const info = await c.IntrospectSchema(ci, {} as never);
+        expect(info.Objects).toHaveLength(1);
+        expect(c.PeakInFlight).toBe(1);
+    });
+});

@@ -169,6 +169,17 @@ const DEFAULT_PARENT_LIST_CACHE_MS = 300000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 25000;
 
 /**
+ * How many objects {@link TotaraConnector.IntrospectSchema} may sample CONCURRENTLY.
+ *
+ * Discovery sampling wants a handful of records per object, not throughput, so there is nothing to buy
+ * by fanning out wider — while the cost of fanning out is severe. Unbounded, one live fetch per object
+ * goes out at once from a single Node process: the event loop stops serving anything else, unrelated
+ * cheap reads time out, and the per-environment circuit breaker opens and reports the whole workspace
+ * as unavailable. Four keeps sampling brisk while leaving the process responsive.
+ */
+const SAMPLE_CONCURRENCY = 4;
+
+/**
  * How many consecutive TRANSIENT failures one parent may cost before the walk abandons it and moves past.
  *
  * A transient failure must not advance the cursor over its parent: doing so drops that parent's unread records
@@ -468,12 +479,24 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         contextUser: UserInfo,
     ): Promise<SourceSchemaInfo> {
         const info = await super.IntrospectSchema(companyIntegration, contextUser);
-        await Promise.all(info.Objects.map(async (obj) => {
+        // BOUNDED, like this connector's own parent walk (see FetchChanges → runParentBounded).
+        //
+        // This was `Promise.all` over every object, which puts one live sampling fetch per object in
+        // flight AT ONCE — honouring neither MaxConcurrency nor the rate limiter, even though the same
+        // class already routes its FetchChanges walk through the bounded runner. On a real catalog that
+        // is a burst of simultaneous requests from a single Node process: the event loop stops serving
+        // anything else, unrelated cheap reads time out, and the per-environment circuit breaker opens
+        // and declares the whole workspace unavailable — observed live, alongside a second connector's
+        // discovery running at the same time.
+        //
+        // Sampling is also the wrong place to spend parallelism: discovery wants a handful of records
+        // per object, not throughput.
+        await this.runParentBounded(info.Objects, SAMPLE_CONCURRENCY, async (obj) => {
             try {
                 const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
                 obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
             } catch { /* best-effort — declared fields remain authoritative on a sampling failure */ }
-        }));
+        });
         return info;
     }
 
