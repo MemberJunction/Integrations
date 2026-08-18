@@ -1,5 +1,19 @@
 # @memberjunction/connector-fonteva
 
+## 1.2.3
+
+### Patch Changes
+
+- 6ee916d: Relicense to the Business Source License 1.1.
+
+  Metadata and documentation only: the `license` field moves to `BUSL-1.1` and the
+  repo gains a LICENSE file. No runtime behaviour, API surface, or dependency
+  changes. The bump exists so the new licence metadata reaches npm, since the
+  registry shows the licence of the latest published version.
+
+- Updated dependencies [6ee916d]
+  - @memberjunction/connector-salesforce@1.3.1
+
 ## 1.2.2
 
 ### Patch Changes
