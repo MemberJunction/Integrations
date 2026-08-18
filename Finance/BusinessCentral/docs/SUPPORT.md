@@ -1,8 +1,9 @@
 # Microsoft Dynamics 365 Business Central — Supported & Proven
 
-> **Evidence tier:** 🔴 **Live-verified (read + write), partial coverage** · **Last verified:** 2026-08-17
-> · **Tenant:** Blue Cypress `Test` environment, company *Association Success Corp*
-> · **Prior tier:** 🧪 mock-only, superseded — see "What the mock got wrong" below.
+> **Evidence tier:** 🟢 Live-vendor (real API + real tenant, read + write)  ·  **Last verified:** 2026-08-17  ·  **Proof DB(s):** MJ_BC_E2E
+>
+> Tenant: Blue Cypress `Test` environment, company *Association Success Corp*. Prior tier: 🧪 mock-only,
+> superseded — see "What the mock got wrong" below.
 
 ## Read this first: the previous version of this page was wrong
 
