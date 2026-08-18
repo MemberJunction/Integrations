@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-higher-logic-vanilla",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "MemberJunction HigherLogicVanilla connector.",
   "type": "module",
   "main": "dist/index.js",
