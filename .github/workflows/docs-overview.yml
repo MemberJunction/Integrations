@@ -103,13 +103,46 @@ jobs:
             exit 0
           fi
 
+          # WHAT CHANGED SINCE THE LAST COPY UPDATE — not just this run's diff.
+          # A reviewer opening this PR sees one file of prose and no context for it. The useful
+          # question is "what has landed since anyone last looked at this page", which spans every
+          # release between the previous copy commit and now, not the single merge that triggered
+          # this run. Derived from the catalog, so it stays honest without a second source.
+          LAST=$(git log -1 --format=%H -- "$COPY" 2>/dev/null || true)
+          NOTE=""
+          if [ -n "$LAST" ]; then
+            NOTE=$(node -e '
+              const {execSync}=require("child_process");
+              const last=process.argv[1];
+              const read=(ref)=>{ try { return JSON.parse(execSync(`git show ${ref}:connectors-catalog.json`,{encoding:"utf8",maxBuffer:64e6})); } catch { return null; } };
+              const norm=(c)=>Object.fromEntries((Array.isArray(c)?c:(c.connectors||[])).map(x=>[x.name||x.slug||x.id,x.version||""]));
+              const before=read(last), after=read("HEAD");
+              if(!before||!after){ console.log(""); process.exit(0); }
+              const b=norm(before), a=norm(after);
+              const added=Object.keys(a).filter(k=>!(k in b));
+              const bumped=Object.keys(a).filter(k=>k in b && b[k]!==a[k]).map(k=>`${k} ${b[k]} → ${a[k]}`);
+              const lines=[];
+              if(added.length)  lines.push(`**New connectors (${added.length}):** ${added.join(", ")}`);
+              if(bumped.length) lines.push(`**Version changes (${bumped.length}):** ${bumped.join(", ")}`);
+              console.log(lines.join("\n\n"));
+            ' "$LAST" 2>/dev/null || true)
+          fi
+          if [ -n "$NOTE" ]; then
+            SINCE=$(git log -1 --format='%ad (%h)' --date=short "$LAST" 2>/dev/null || echo unknown)
+            NOTE=$(printf '## Changed since the last copy update — %s\n\n%s' "$SINCE" "$NOTE")
+          else
+            NOTE="_No catalog delta could be derived since the last copy update._"
+          fi
+
           git add "$COPY"
           git commit -m "docs: marketing copy for newly added connectors"
           git push origin "$BRANCH"
 
           gh pr create --base next --head "$BRANCH" \
             --title "docs: marketing copy for newly added connectors" \
-            --body "One or more connectors reached the catalog without a prospect-facing line, so
+            --body "$NOTE
+
+          One or more connectors reached the catalog without a prospect-facing line, so
           \`scripts/ai-marketing-copy.mjs\` wrote one for each.
 
           **Please read the sentences.** They are model-written and appear on the client-facing
