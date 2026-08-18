@@ -4,7 +4,7 @@
   "name": "connector-reply",
   "displayName": "Reply.io Connector",
   "description": "Reply.io AI-powered sales-engagement platform. Syncs contacts and accounts, sequences (steps, variants, templates, schedules), outreach channels (email accounts, LinkedIn accounts), tasks, the shared inbox, and webhooks via the Reply.io v3 REST API. Reads are incremental via content-hash (Reply exposes no server-side watermark); 34 objects support write-back.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "ISC",
   "icon": "fa-solid fa-paper-plane",
   "publisher": {
