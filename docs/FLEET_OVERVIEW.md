@@ -92,12 +92,20 @@ schema discovery against the real API, without a persisted sync. Its `SUPPORT.md
 | [BusinessCentral](../Finance/BusinessCentral/docs/SUPPORT.md) | 83 | 83 | 251 | — |
 | [MagnetMail](../Marketing/MagnetMail/docs/SUPPORT.md) | 47 | — | — | — |
 
-Business Central is the first connector in this repo where **every declared object landed rows** — 83 of
-83, no object left untested — and the first where **every flat-writable object completed a create/update/
-delete round-trip** (50 of 50). It is also the only connector whose rows sit in this tier: the engine, the
-mapping and the database writes are all production code paths, but the API it talked to was a fixture
-replay, because no Business Central credential exists. Breadth of coverage and strength of evidence are
-separate axes, and this row is deliberately strong on the first and weak on the second.
+Business Central is the first connector in this repo to be tested against a **live vendor tenant**
+(2026-08-17). That run immediately overturned the previous entry here, which claimed all 83 declared
+objects were proven on the strength of a mock-only suite: a full-catalog sweep against real Business
+Central returned HTTP errors for 13 of 83, of which **eleven were a genuine catalog defect** — child
+objects addressing their collection flat under the company where the vendor requires nesting under the
+parent document. A mock cannot catch that class, because it replays fixtures at whatever path the
+catalog declares.
+
+Live evidence now covers the full read sweep, journal batch writes with atomic rollback, the documented
+100-operation `$batch` ceiling, watermark round-trip, a real general-ledger posting, and the `odatav4`
+custom-page surface. The engine-side matrix (real MJAPI, real SQL Server, mock HTTP peer) re-runs green
+on the corrected catalog. Write coverage is still narrow — only `journals` and `journalLines` have been
+written live — so breadth and strength of evidence remain separate axes here, and the honest summary is
+strong on reads, proven-but-narrow on writes. See its SUPPORT.md for the classified gaps.
 
 Its `SUPPORT.md` carries two things worth copying elsewhere. First, it classifies every gap as a **genuine
 limitation** (unobtainable without a credential) or an **omission** (something that could have been set up
