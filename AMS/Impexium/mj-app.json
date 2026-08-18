@@ -4,7 +4,7 @@
   "name": "connector-impexium",
   "displayName": "re:Members AMS Connector",
   "description": "re:Members AMS connector for MemberJunction — full curated object catalog.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",

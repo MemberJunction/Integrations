@@ -4,7 +4,7 @@
   "name": "connector-mongodb",
   "displayName": "MongoDB Connector",
   "description": "MongoDB connector for MemberJunction — ingest data from an external MongoDB via a shared External Data Source. Schema is discovered at connection time; the connector delegates all connectivity to the EDS MongoExternalDriver driver.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "ISC",
   "icon": "fa-solid fa-leaf",
   "color": "#47A248",

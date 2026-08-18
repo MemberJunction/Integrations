@@ -4,7 +4,7 @@
   "name": "connector-ga4",
   "displayName": "Google Analytics 4 Connector",
   "description": "Google Analytics 4 connector for MemberJunction — full curated object catalog.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
