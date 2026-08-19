@@ -61,6 +61,7 @@ import {
 } from '@memberjunction/integration-engine';
 import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
+import { ParseDerivedCollectionConfig, ExplodeCollection, DropConfiguredFields } from './DerivedCollections.js';
 import { runIdWindowScan } from '@memberjunction/connector-id-window-scan';
 
 // ─── Constants ─────────────────────────────────────────────────────────
@@ -191,6 +192,16 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
 
     /** Parent-id lists per connection+parent function, so a resumed parent walk does not re-read them. */
     protected parentIDCache = new Map<string, { IDs: string[]; At: number }>();
+
+    /**
+     * Short-lived cache of parent FETCH PAGES, keyed by (integration, parent object,
+     * cursor). Derived collections re-run their parent's fetch; when several derived
+     * objects share one parent (Enrolled Users carries roles AND groups) and sync in
+     * the same run, this serves the later walks from memory instead of re-reading the
+     * vendor. Deliberately small and short-TTL — it is an optimisation, never a
+     * correctness dependency: a miss is just a vendor read.
+     */
+    protected derivedPageCache = new Map<string, { At: number; Result: FetchBatchResult }>();
 
     // ── Identity + capabilities ──────────────────────────────────────
 
@@ -491,6 +502,15 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const fields = this.GetCachedFields(obj.ID);
         const cfg = this.readIOConfig(obj);
 
+        // Derived-collection objects (Configuration.derivedCollection) don't fetch the vendor
+        // themselves at all — they run their PARENT object's fetch (same pagination, same
+        // parent-scoping, same budgets; the cursor rides through unchanged) and explode one of
+        // its array fields into child records. Delegate before every other path.
+        const derivedRaw = (cfg as Record<string, unknown>)['derivedCollection'];
+        if (derivedRaw != null) {
+            return this.fetchDerivedCollection(obj, ctx, derivedRaw, fields);
+        }
+
         const wsfunction = this.readConfigString(cfg, 'wsfunction');
         if (!wsfunction) {
             return {
@@ -538,8 +558,9 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         }
 
         const pkFieldNames = this.primaryKeyFieldNames(fields);
+        const dropFields = this.dropFieldsFor(cfg);
         const records = rawRecords.map(r => this.buildExternalRecord(
-            this.applyTransformPreservingKeys(r, obj, fields),
+            DropConfiguredFields(this.applyTransformPreservingKeys(r, obj, fields), dropFields),
             ctx.ObjectName,
             pkFieldNames,
         ));
@@ -701,6 +722,7 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const fields = this.GetCachedFields(obj.ID);
         const pkFieldNames = this.primaryKeyFieldNames(fields);
+        const dropFields = this.dropFieldsFor(cfg);
         const warnings: NonNullable<FetchBatchResult['Warnings']> = [];
 
         // 1) Parent ids from the parent's list wsfunction (bare array or single-collection envelope), CACHED.
@@ -841,7 +863,7 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                             for (const raw of this.NormalizeResponse(resp.Body, key)) {
                                 // tag the child with the parent FK so its row links back to the parent record
                                 const tagged = raw[childIdField] != null ? raw : { ...raw, [childIdField]: parentID };
-                                out.push(this.buildExternalRecord(this.applyTransformPreservingKeys(tagged, obj, fields), ctx.ObjectName, pkFieldNames));
+                                out.push(this.buildExternalRecord(DropConfiguredFields(this.applyTransformPreservingKeys(tagged, obj, fields), dropFields), ctx.ObjectName, pkFieldNames));
                                 pageCount++;
                             }
                         }
@@ -1092,6 +1114,7 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const fields = this.GetCachedFields(obj.ID);
         const pkFieldNames = this.primaryKeyFieldNames(fields);
+        const dropFields = this.dropFieldsFor(_cfg);
 
         const result = await runIdWindowScan({
             ObjectName: obj.Name,
@@ -1123,7 +1146,7 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
 
         return {
             Records: result.Records.map((raw) =>
-                this.buildExternalRecord(this.applyTransformPreservingKeys(raw, obj, fields), ctx.ObjectName, pkFieldNames)),
+                this.buildExternalRecord(DropConfiguredFields(this.applyTransformPreservingKeys(raw, obj, fields), dropFields), ctx.ObjectName, pkFieldNames)),
             HasMore: result.HasMore,
             ...(result.NextAfterKeyValue !== undefined ? { NextAfterKeyValue: result.NextAfterKeyValue } : {}),
             ...(result.Warnings ? { Warnings: result.Warnings } : {}),
@@ -1509,6 +1532,94 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         }
         if (typeof target === 'object') return [target as Record<string, unknown>];
         return [];
+    }
+
+    // ── Derived collections — child objects exploded from a parent's arrays ──
+
+    /** TTL for cached parent fetch pages. Long enough to span sibling derived objects syncing
+     *  back-to-back in one run; short enough that a re-run always re-reads the vendor. */
+    private static readonly DERIVED_PAGE_CACHE_TTL_MS = 15 * 60_000;
+    /** Page cap. ~64 pages of 100-record parents bounds worst-case memory at a few tens of MB. */
+    private static readonly DERIVED_PAGE_CACHE_MAX = 64;
+
+    /**
+     * Serves a derived object's fetch by running its PARENT object's FetchChanges and exploding
+     * `Configuration.derivedCollection.collectionField` into child records. Pagination is entirely
+     * the parent's: HasMore / NextPage / NextOffset / NextAfterKeyValue pass through untouched, so
+     * the engine walks the parent's cursor exactly as the parent itself would — including
+     * parent-scoped budgets and keyset resume. Identity is the child object's DECLARED PK via the
+     * ordinary buildExternalRecord rule (declared-PK-else-content-hash), so during discovery
+     * sampling (no fields yet) children still get stable hash identities.
+     */
+    private async fetchDerivedCollection(
+        obj: MJIntegrationObjectEntity,
+        ctx: FetchContext,
+        derivedRaw: unknown,
+        fields: MJIntegrationObjectFieldEntity[],
+    ): Promise<FetchBatchResult> {
+        const config = ParseDerivedCollectionConfig(derivedRaw);
+        if (!config) {
+            return { Records: [], HasMore: false, Warnings: [{ Code: 'DERIVED_CONFIG_MISSING', Message: `"${obj.Name}": empty derivedCollection`, Data: { object: obj.Name } }] };
+        }
+        const parentObj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, config.parentObjectName);
+        if (!parentObj) {
+            // Loud, not empty: a wrong parent name must fail the sync, not present as an
+            // enabled-and-empty object nobody can explain.
+            throw new Error(`"${obj.Name}": derivedCollection.parentObjectName "${config.parentObjectName}" is not an integration object of this integration.`);
+        }
+
+        const parentBatch = await this.fetchParentPageCached(parentObj.Name, ctx);
+        const exploded = ExplodeCollection(parentBatch.Records, config);
+        const pkFieldNames = this.primaryKeyFieldNames(fields);
+        const records = exploded.ChildFields.map(f => this.buildExternalRecord(f, ctx.ObjectName, pkFieldNames));
+
+        const warnings = [...(parentBatch.Warnings ?? [])];
+        if (exploded.ElementsSkipped > 0) {
+            warnings.push({
+                Code: 'DERIVED_ELEMENTS_SKIPPED',
+                Message: `"${obj.Name}": ${exploded.ElementsSkipped} element(s) did not match elementKind '${config.elementKind}' and were skipped.`,
+                Data: { object: obj.Name, skipped: exploded.ElementsSkipped },
+            });
+        }
+        return {
+            Records: records,
+            HasMore: parentBatch.HasMore,
+            NextPage: parentBatch.NextPage,
+            NextOffset: parentBatch.NextOffset,
+            NextAfterKeyValue: parentBatch.NextAfterKeyValue,
+            Warnings: warnings.length > 0 ? warnings : undefined,
+        };
+    }
+
+    /**
+     * The parent's FetchChanges for one cursor position, served from the page cache when a
+     * sibling derived object (or the parent itself, run recently) already fetched it. Cache key
+     * is the full cursor — page, offset, keyset value — so a hit is exactly the same page.
+     */
+    private async fetchParentPageCached(parentObjectName: string, ctx: FetchContext): Promise<FetchBatchResult> {
+        const key = [
+            ctx.CompanyIntegration.IntegrationID, parentObjectName,
+            ctx.CurrentPage ?? '', ctx.CurrentOffset ?? '', ctx.AfterKeyValue ?? '',
+        ].join('\u0001');
+        const hit = this.derivedPageCache.get(key);
+        if (hit && (this.nowMs() - hit.At) < TotaraConnector.DERIVED_PAGE_CACHE_TTL_MS) {
+            return hit.Result;
+        }
+        const result = await this.FetchChanges({ ...ctx, ObjectName: parentObjectName });
+        this.derivedPageCache.set(key, { At: this.nowMs(), Result: result });
+        // FIFO eviction — insertion order is good enough for a sequential page walk.
+        while (this.derivedPageCache.size > TotaraConnector.DERIVED_PAGE_CACHE_MAX) {
+            const oldest = this.derivedPageCache.keys().next().value;
+            if (oldest === undefined) break;
+            this.derivedPageCache.delete(oldest);
+        }
+        return result;
+    }
+
+    /** Configuration.dropFields for this object, or null. Read once per shaping call. */
+    private dropFieldsFor(cfg: Record<string, unknown>): string[] | null {
+        const v = this.readConfigStringArray(cfg, 'dropFields');
+        return v && v.length > 0 ? v : null;
     }
 
     /**
