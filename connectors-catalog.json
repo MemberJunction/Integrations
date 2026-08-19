@@ -543,7 +543,7 @@
       ],
       "logo": null,
       "navigationBaseURL": "{base_url}/webservice/rest/server.php",
-      "objectCount": 28,
+      "objectCount": 33,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
       "version": "0.3.2",
