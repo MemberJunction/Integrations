@@ -13,7 +13,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "author": "MemberJunction.com",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "peerDependencies": {
     "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
   },

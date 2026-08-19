@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-business-central",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "MemberJunction Microsoft Dynamics 365 Business Central connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "author": "MemberJunction.com",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "peerDependencies": {
     "@memberjunction/core": ">=5.43.0 <7.0.0",
     "@memberjunction/core-entities": ">=5.43.0 <7.0.0",
@@ -22,10 +22,10 @@
     "@memberjunction/integration-engine-base": ">=5.43.0 <7.0.0"
   },
   "dependencies": {
-    "@memberjunction/connector-schema-merge": "^1.0.0"
+    "@memberjunction/connector-schema-merge": "^1.1.0"
   },
   "devDependencies": {
-    "@memberjunction/connector-schema-merge": "^1.0.0",
+    "@memberjunction/connector-schema-merge": "^1.1.0",
     "@memberjunction/core": "^5.43.0",
     "@memberjunction/core-entities": "^5.43.0",
     "@memberjunction/global": "^5.43.0",

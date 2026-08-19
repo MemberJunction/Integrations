@@ -4,7 +4,7 @@
   "name": "connector-oracle",
   "displayName": "Oracle Database Connector",
   "description": "Oracle Database connector for MemberJunction — ingest data from an external Oracle Database via a shared External Data Source. Schema is discovered at connection time; the connector delegates all connectivity to the EDS OracleExternalDriver driver.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "ISC",
   "icon": "fa-solid fa-database",
   "color": "#F80000",

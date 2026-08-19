@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-stripe",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "MemberJunction Stripe connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "author": "MemberJunction.com",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "peerDependencies": {
     "@memberjunction/core": ">=5.42.0 <6.0.0",
     "@memberjunction/core-entities": ">=5.42.0 <6.0.0",

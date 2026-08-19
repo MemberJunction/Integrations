@@ -5260,7 +5260,7 @@
             "Name": "contactsInformation",
             "DisplayName": "Contacts Information",
             "Description": "Contact information — Business Central API v2.0 resource 'contactInformation'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_contactinformation.md.",
-            "APIPath": "/companies({id})/contactsInformation",
+            "APIPath": "/companies({id})/customers({id})/contactsInformation",
             "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Category": "vendor children",
@@ -5297,11 +5297,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → contactsInformation[]",
+                "nesting": "companies[] → customers[] → contactsInformation[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/vendors({id})/contactsInformation",
@@ -7705,7 +7705,7 @@
             "Name": "customerPayments",
             "DisplayName": "Customer Payments",
             "Description": "Customer payment — Business Central API v2.0 resource 'customerPayment'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_customerpayment.md.",
-            "APIPath": "/companies({id})/customerPayments",
+            "APIPath": "/companies({id})/customerPaymentJournals({id})/customerPayments",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
             "Category": "Company-scoped",
@@ -7715,19 +7715,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": "lastModifiedDateTime",
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/customerPayments",
+            "CreateAPIPath": "/companies({id})/customerPaymentJournals({id})/customerPayments",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/customerPayments({id})",
+            "UpdateAPIPath": "/companies({id})/customerPaymentJournals({id})/customerPayments({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/customerPayments({id})",
+            "DeleteAPIPath": "/companies({id})/customerPaymentJournals({id})/customerPayments({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "WatermarkIncremental",
@@ -7742,11 +7742,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → customerPayments[]",
+                "nesting": "companies[] → customerPaymentJournals[] → customerPayments[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/customerPaymentsJournals({id})/customerPayments({id})",
@@ -21814,7 +21814,7 @@
             "Name": "purchaseCreditMemoLines",
             "DisplayName": "Purchase Credit Memo Lines",
             "Description": "Purchase credit memo line — Business Central API v2.0 resource 'purchaseCreditMemoLine'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_purchasecreditmemoli...",
-            "APIPath": "/companies({id})/purchaseCreditMemoLines",
+            "APIPath": "/companies({id})/purchaseCreditMemos({id})/purchaseCreditMemoLines",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "Company-scoped",
@@ -21824,19 +21824,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/purchaseCreditMemoLines",
+            "CreateAPIPath": "/companies({id})/purchaseCreditMemos({id})/purchaseCreditMemoLines",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/purchaseCreditMemoLines({id})",
+            "UpdateAPIPath": "/companies({id})/purchaseCreditMemos({id})/purchaseCreditMemoLines({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/purchaseCreditMemoLines({id})",
+            "DeleteAPIPath": "/companies({id})/purchaseCreditMemos({id})/purchaseCreditMemoLines({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -21851,11 +21851,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → purchaseCreditMemoLines[]",
+                "nesting": "companies[] → purchaseCreditMemos[] → purchaseCreditMemoLines[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [],
               "documentedPaths": [
@@ -24039,7 +24039,7 @@
             "Name": "purchaseInvoiceLines",
             "DisplayName": "Purchase Invoice Lines",
             "Description": "Purchase invoice line — Business Central API v2.0 resource 'purchaseInvoiceLine'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_purchaseinvoiceline.md.",
-            "APIPath": "/companies({id})/purchaseInvoiceLines",
+            "APIPath": "/companies({id})/purchaseInvoices({id})/purchaseInvoiceLines",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "purchaseInvoice children",
@@ -24049,19 +24049,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/purchaseInvoiceLines",
+            "CreateAPIPath": "/companies({id})/purchaseInvoices({id})/purchaseInvoiceLines",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/purchaseInvoiceLines({purchaseInvoiceLineId})",
+            "UpdateAPIPath": "/companies({id})/purchaseInvoices({id})/purchaseInvoiceLines({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/purchaseInvoiceLines({purchaseInvoiceLineId})",
+            "DeleteAPIPath": "/companies({id})/purchaseInvoices({id})/purchaseInvoiceLines({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -24076,11 +24076,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → purchaseInvoiceLines[]",
+                "nesting": "companies[] → purchaseInvoices[] → purchaseInvoiceLines[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/purchaseInvoices({id})/purchaseInvoiceLines({purchaseInvoiceLineId})",
@@ -26298,7 +26298,7 @@
             "Name": "purchaseOrderLines",
             "DisplayName": "Purchase Order Lines",
             "Description": "Purchase order line — Business Central API v2.0 resource 'purchaseOrderLine'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_purchaseorderline.md.",
-            "APIPath": "/companies({id})/purchaseOrderLines",
+            "APIPath": "/companies({id})/purchaseOrders({id})/purchaseOrderLines",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "purchaseOrder children",
@@ -26308,19 +26308,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/purchaseOrderLines",
+            "CreateAPIPath": "/companies({id})/purchaseOrders({id})/purchaseOrderLines",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/purchaseOrderLines({purchaseOrderLineId})",
+            "UpdateAPIPath": "/companies({id})/purchaseOrders({id})/purchaseOrderLines({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/purchaseOrderLines({purchaseOrderLineId})",
+            "DeleteAPIPath": "/companies({id})/purchaseOrders({id})/purchaseOrderLines({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -26335,11 +26335,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → purchaseOrderLines[]",
+                "nesting": "companies[] → purchaseOrders[] → purchaseOrderLines[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/purchaseOrders({id})/purchaseOrderLines({purchaseOrderLineId})",
@@ -30296,7 +30296,7 @@
             "Name": "salesCreditMemoLines",
             "DisplayName": "Sales Credit Memo Lines",
             "Description": "Sales credit memo line — Business Central API v2.0 resource 'salesCreditMemoLine'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_salescreditmemoline.md.",
-            "APIPath": "/companies({id})/salesCreditMemoLines",
+            "APIPath": "/companies({id})/salesCreditMemos({id})/salesCreditMemoLines",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "salesCreditMemo children",
@@ -30306,19 +30306,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/salesCreditMemoLines",
+            "CreateAPIPath": "/companies({id})/salesCreditMemos({id})/salesCreditMemoLines",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/salesCreditMemoLines({salesCreditMemoLineId})",
+            "UpdateAPIPath": "/companies({id})/salesCreditMemos({id})/salesCreditMemoLines({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/salesCreditMemoLines({salesCreditMemoLineId})",
+            "DeleteAPIPath": "/companies({id})/salesCreditMemos({id})/salesCreditMemoLines({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -30333,11 +30333,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → salesCreditMemoLines[]",
+                "nesting": "companies[] → salesCreditMemos[] → salesCreditMemoLines[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/salesCreditMemos({id})/salesCreditMemoLines({salesCreditMemoLineId})",
@@ -32820,7 +32820,7 @@
             "Name": "salesInvoiceLines",
             "DisplayName": "Sales Invoice Lines",
             "Description": "Sales invoice line — Business Central API v2.0 resource 'salesInvoiceLine'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_salesinvoiceline.md.",
-            "APIPath": "/companies({id})/salesInvoiceLines",
+            "APIPath": "/companies({id})/salesInvoices({id})/salesInvoiceLines",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "salesInvoice children",
@@ -32830,19 +32830,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/salesInvoiceLines",
+            "CreateAPIPath": "/companies({id})/salesInvoices({id})/salesInvoiceLines",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/salesInvoiceLines({salesInvoiceLineId})",
+            "UpdateAPIPath": "/companies({id})/salesInvoices({id})/salesInvoiceLines({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/salesInvoiceLines({salesInvoiceLineId})",
+            "DeleteAPIPath": "/companies({id})/salesInvoices({id})/salesInvoiceLines({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -32857,11 +32857,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → salesInvoiceLines[]",
+                "nesting": "companies[] → salesInvoices[] → salesInvoiceLines[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/salesInvoices({id})/salesInvoiceLines({salesInvoiceLineId})",
@@ -35198,7 +35198,7 @@
             "Name": "salesOrderLines",
             "DisplayName": "Sales Order Lines",
             "Description": "Sales order line — Business Central API v2.0 resource 'salesOrderLine'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_salesorderline.md.",
-            "APIPath": "/companies({id})/salesOrderLines",
+            "APIPath": "/companies({id})/salesOrders({id})/salesOrderLines",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "salesOrder children",
@@ -35208,19 +35208,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/salesOrderLines",
+            "CreateAPIPath": "/companies({id})/salesOrders({id})/salesOrderLines",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/salesOrderLines({salesOrderLineId})",
+            "UpdateAPIPath": "/companies({id})/salesOrders({id})/salesOrderLines({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/salesOrderLines({salesOrderLineId})",
+            "DeleteAPIPath": "/companies({id})/salesOrders({id})/salesOrderLines({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -35235,11 +35235,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → salesOrderLines[]",
+                "nesting": "companies[] → salesOrders[] → salesOrderLines[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/salesOrders({id})/salesOrderLines({salesOrderLineId})",
@@ -38045,7 +38045,7 @@
             "Name": "salesQuoteLines",
             "DisplayName": "Sales Quote Lines",
             "Description": "Sales quote line — Business Central API v2.0 resource 'salesQuoteLine'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_salesquoteline.md.",
-            "APIPath": "/companies({id})/salesQuoteLines",
+            "APIPath": "/companies({id})/salesQuotes({id})/salesQuoteLines",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "salesQuote children",
@@ -38055,19 +38055,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/salesQuoteLines",
+            "CreateAPIPath": "/companies({id})/salesQuotes({id})/salesQuoteLines",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/salesQuoteLines({salesQuoteLineId})",
+            "UpdateAPIPath": "/companies({id})/salesQuotes({id})/salesQuoteLines({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/salesQuoteLines({salesQuoteLineId})",
+            "DeleteAPIPath": "/companies({id})/salesQuotes({id})/salesQuoteLines({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -38082,11 +38082,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → salesQuoteLines[]",
+                "nesting": "companies[] → salesQuotes[] → salesQuoteLines[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({id})/salesQuotes({id})/salesQuoteLines({salesQuoteLineId})",
@@ -41635,7 +41635,7 @@
             "Name": "timeRegistrationEntries",
             "DisplayName": "Time Registration Entries",
             "Description": "Time registration entry — Business Central API v2.0 resource 'timeRegistrationEntry'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_timeRegistrationEntry.md.",
-            "APIPath": "/companies({companyId})/timeRegistrationEntries",
+            "APIPath": "/companies({id})/employees({id})/timeRegistrationEntries",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
             "Category": "employee children",
@@ -41645,19 +41645,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": null,
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({companyId})/timeRegistrationEntries",
+            "CreateAPIPath": "/companies({id})/employees({id})/timeRegistrationEntries",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({companyId})/timeRegistrationEntries({timeregistrationId})",
+            "UpdateAPIPath": "/companies({id})/employees({id})/timeRegistrationEntries({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/timeRegistrationEntries({timeregistrationId})",
+            "DeleteAPIPath": "/companies({id})/employees({id})/timeRegistrationEntries({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "FullPullHashDiff",
@@ -41672,11 +41672,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → timeRegistrationEntries[]",
+                "nesting": "companies[] → employees[] → timeRegistrationEntries[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [
                 "/companies({companyId})/employees({employeeId})/timeRegistrationEntries({timeregistrationId})",
@@ -43422,7 +43422,7 @@
             "Name": "vendorPayments",
             "DisplayName": "Vendor Payments",
             "Description": "Vendor payment — Business Central API v2.0 resource 'vendorPayment'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_vendorPayment.md.",
-            "APIPath": "/companies({id})/vendorPayments",
+            "APIPath": "/companies({id})/vendorPaymentJournals({id})/vendorPayments",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
             "Category": "Company-scoped",
@@ -43432,19 +43432,19 @@
             "SupportsPagination": true,
             "IncrementalWatermarkField": "lastModifiedDateTime",
             "SupportsCreate": true,
-            "CreateAPIPath": "/companies({id})/vendorPayments",
+            "CreateAPIPath": "/companies({id})/vendorPaymentJournals({id})/vendorPayments",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
             "CreateBodyKey": null,
             "CreateIDLocation": "body",
             "SupportsUpdate": true,
-            "UpdateAPIPath": "/companies({id})/vendorPayments ({id})",
+            "UpdateAPIPath": "/companies({id})/vendorPaymentJournals({id})/vendorPayments({id})",
             "UpdateMethod": "PATCH",
             "UpdateBodyShape": "flat",
             "UpdateBodyKey": null,
             "UpdateIDLocation": "path",
             "SupportsDelete": true,
-            "DeleteAPIPath": "/companies({id})/vendorPayments({id})",
+            "DeleteAPIPath": "/companies({id})/vendorPaymentJournals({id})/vendorPayments({id})",
             "DeleteMethod": "DELETE",
             "DeleteIDLocation": "path",
             "SyncStrategy": "WatermarkIncremental",
@@ -43459,11 +43459,11 @@
               "companyScoped": true,
               "accessPath": {
                 "door": "companies",
-                "nesting": "companies[] → vendorPayments[]",
+                "nesting": "companies[] → vendorPaymentJournals[] → vendorPayments[]",
                 "doorArgs": [
                   "companies({companyId}) path segment, or ?company=<companyGuid> query param"
                 ],
-                "depth": 1
+                "depth": 2
               },
               "nestedAlternatePaths": [],
               "documentedPaths": [

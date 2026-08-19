@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-totara",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "MemberJunction Totara connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "author": "MemberJunction.com",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "peerDependencies": {
     "@memberjunction/core": ">=5.43.0 <6.0.0",
     "@memberjunction/core-entities": ">=5.43.0 <6.0.0",

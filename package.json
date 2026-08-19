@@ -4,7 +4,7 @@
   "private": true,
   "description": "MemberJunction Integrations \u2014 vendor connectors, each its own installable Open App + npm package under <Category>/<Connector>. Full Open App model: schema + metadata-seed migrations (SQL Server + Postgres) + CI/CD.",
   "type": "module",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "workspaces": [
     "*/*"
   ],

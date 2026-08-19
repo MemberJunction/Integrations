@@ -1538,8 +1538,10 @@ describe('PostJournal (MOCK ONLY — no live endpoint, no mutation)', () => {
         );
     });
 
-    it('uses lower-case `post` — Business Central 404s on Microsoft.NAV.Post', () => {
-        // The capitalised form fails as "not found", which points at the journal ID rather than the verb.
+    it('uses the documented lower-case `post` action name', () => {
+        // Asserts the constant only. It does NOT establish anything about the capitalised form: live
+        // testing (2026-08-17) showed `Microsoft.NAV.Post` also posts, returning 204 — it is not a
+        // safe no-op, and an earlier name for this test wrongly claimed it 404s.
         expect(BUSINESS_CENTRAL_POST_ACTION).toBe('Microsoft.NAV.post');
         expect(BUSINESS_CENTRAL_POST_ACTION.endsWith('.post')).toBe(true);
     });
