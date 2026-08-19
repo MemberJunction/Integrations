@@ -546,10 +546,10 @@
       "objectCount": 33,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.3.2"
+      "installTag": "LMS-Totara@0.4.0"
     },
     {
       "name": "constant-contact",
