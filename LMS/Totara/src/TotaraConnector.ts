@@ -61,8 +61,20 @@ import {
 } from '@memberjunction/integration-engine';
 import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
-import { ParseDerivedCollectionConfig, ExplodeCollection, DropConfiguredFields } from './DerivedCollections.js';
+import { ParseDerivedCollectionConfig, ExplodeCollection, DropConfiguredFields, type DerivedCollectionConfig } from './DerivedCollections.js';
 import { runIdWindowScan } from '@memberjunction/connector-id-window-scan';
+
+/** Accumulator for one derived child object's rows, filled during its parent's fetch. */
+interface DerivedRowBuffer {
+    /** ms timestamp of the last append — staleness guard. */
+    At: number;
+    /** Exploded child field-bags, in parent-walk order. */
+    Rows: Record<string, unknown>[];
+    /** True once the parent's walk returned HasMore=false with this buffer live. */
+    Complete: boolean;
+    /** True when the row cap was hit; the buffer is unusable and children fall back. */
+    Overflowed: boolean;
+}
 
 // ─── Constants ─────────────────────────────────────────────────────────
 const REST_ENDPOINT_SUFFIX = '/webservice/rest/server.php';
@@ -194,14 +206,21 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
     protected parentIDCache = new Map<string, { IDs: string[]; At: number }>();
 
     /**
-     * Short-lived cache of parent FETCH PAGES, keyed by (integration, parent object,
-     * cursor). Derived collections re-run their parent's fetch; when several derived
-     * objects share one parent (Enrolled Users carries roles AND groups) and sync in
-     * the same run, this serves the later walks from memory instead of re-reading the
-     * vendor. Deliberately small and short-TTL — it is an optimisation, never a
-     * correctness dependency: a miss is just a vendor read.
+     * Child rows accumulated FROM THE PARENT'S OWN FETCH, as the data comes in.
+     *
+     * While a parent object's sync walks the vendor, every configured derived child of
+     * that parent is exploded from each page ON ARRIVAL and buffered here. When the
+     * child object's own sync runs later in the same run, it drains the buffer — zero
+     * additional vendor calls. The buffer is complete only when the parent walk reached
+     * HasMore=false; an incomplete or missing buffer makes the child fall back to
+     * walking the parent itself (correct, just slower), so ordering is an optimisation,
+     * never a correctness dependency.
+     *
+     * Keyed by integrationID + child object name. Reset when the parent's walk starts
+     * from the top (empty cursor). Row-capped: past the cap the buffer is dropped and
+     * marked overflowed rather than growing without bound.
      */
-    protected derivedPageCache = new Map<string, { At: number; Result: FetchBatchResult }>();
+    protected derivedRowBuffers = new Map<string, DerivedRowBuffer>();
 
     // ── Identity + capabilities ──────────────────────────────────────
 
@@ -566,6 +585,8 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         ));
 
         const pagination = this.ExtractPaginationInfo(response.Body, obj.PaginationType as PaginationType, page, offset, pageSize);
+        // Derived children accumulate from this page AS IT ARRIVES — see derivedRowBuffers.
+        this.accumulateDerivedBuffers(obj, records, page <= 1 && offset === 0, !pagination.HasMore);
         return {
             Records: records,
             HasMore: pagination.HasMore,
@@ -987,6 +1008,8 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         // A parent held back for a retry is not covered, so the walk still has work even if the prefix reached
         // the end of the batch — otherwise a transient failure on the last parent would end the walk early.
         const hasMore = remaining.length > covered || carriedFails.size > 0 || carriedPartials.size > 0;
+        // Derived children accumulate from this page AS IT ARRIVES — see derivedRowBuffers.
+        this.accumulateDerivedBuffers(obj, out, !ctx.AfterKeyValue, !hasMore);
         return {
             Records: out,
             HasMore: hasMore,
@@ -1144,9 +1167,12 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             },
         });
 
+        const shaped = result.Records.map((raw) =>
+            this.buildExternalRecord(DropConfiguredFields(this.applyTransformPreservingKeys(raw, obj, fields), dropFields), ctx.ObjectName, pkFieldNames));
+        // Derived children accumulate from this page AS IT ARRIVES — see derivedRowBuffers.
+        this.accumulateDerivedBuffers(obj, shaped, !ctx.AfterKeyValue, !result.HasMore);
         return {
-            Records: result.Records.map((raw) =>
-                this.buildExternalRecord(DropConfiguredFields(this.applyTransformPreservingKeys(raw, obj, fields), dropFields), ctx.ObjectName, pkFieldNames)),
+            Records: shaped,
             HasMore: result.HasMore,
             ...(result.NextAfterKeyValue !== undefined ? { NextAfterKeyValue: result.NextAfterKeyValue } : {}),
             ...(result.Warnings ? { Warnings: result.Warnings } : {}),
@@ -1536,20 +1562,83 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
 
     // ── Derived collections — child objects exploded from a parent's arrays ──
 
-    /** TTL for cached parent fetch pages. Long enough to span sibling derived objects syncing
-     *  back-to-back in one run; short enough that a re-run always re-reads the vendor. */
-    private static readonly DERIVED_PAGE_CACHE_TTL_MS = 15 * 60_000;
-    /** Page cap. ~64 pages of 100-record parents bounds worst-case memory at a few tens of MB. */
-    private static readonly DERIVED_PAGE_CACHE_MAX = 64;
+    /** Staleness guard for buffered rows: a buffer older than this is ignored. Generous, because
+     *  a large parent walk (Enrolled Users) legitimately takes a long time to complete. */
+    private static readonly DERIVED_BUFFER_TTL_MS = 6 * 60 * 60_000;
+    /** Total buffered rows across all children of one integration. Past this, the newest buffer
+     *  overflows and its child falls back to walking the parent itself. */
+    private static readonly DERIVED_BUFFER_MAX_ROWS = 3_000_000;
+
+    private derivedBufferKey(integrationID: string, childObjectName: string): string {
+        return `${integrationID}\u0001${childObjectName}`;
+    }
 
     /**
-     * Serves a derived object's fetch by running its PARENT object's FetchChanges and exploding
-     * `Configuration.derivedCollection.collectionField` into child records. Pagination is entirely
-     * the parent's: HasMore / NextPage / NextOffset / NextAfterKeyValue pass through untouched, so
-     * the engine walks the parent's cursor exactly as the parent itself would — including
-     * parent-scoped budgets and keyset resume. Identity is the child object's DECLARED PK via the
-     * ordinary buildExternalRecord rule (declared-PK-else-content-hash), so during discovery
-     * sampling (no fields yet) children still get stable hash identities.
+     * Called from every parent fetch path with the page's SHAPED records (post-transform,
+     * post-dropFields — exactly what the parent's own sync sees). Explodes each configured
+     * derived child of this parent from the arriving page and appends to its buffer.
+     *
+     * `walkStarting` (empty cursor) resets the buffers; `walkComplete` (HasMore=false)
+     * seals them. A page retried by the engine appends twice — the drain path dedupes by
+     * ExternalID, and the writer upserts by key, so duplication cannot reach the tables.
+     */
+    private accumulateDerivedBuffers(
+        parentObj: MJIntegrationObjectEntity,
+        records: ReadonlyArray<ExternalRecord>,
+        walkStarting: boolean,
+        walkComplete: boolean,
+    ): void {
+        const children = this.derivedChildrenOf(parentObj);
+        if (children.length === 0) return;
+        let totalRows = 0;
+        for (const b of this.derivedRowBuffers.values()) totalRows += b.Rows.length;
+
+        for (const { childName, config } of children) {
+            const key = this.derivedBufferKey(parentObj.IntegrationID, childName);
+            let buf = this.derivedRowBuffers.get(key);
+            if (walkStarting || !buf) {
+                buf = { At: this.nowMs(), Rows: [], Complete: false, Overflowed: false };
+                this.derivedRowBuffers.set(key, buf);
+            }
+            if (!buf.Overflowed) {
+                const exploded = ExplodeCollection(records, config);
+                buf.Rows.push(...exploded.ChildFields);
+                totalRows += exploded.ChildFields.length;
+                if (totalRows > TotaraConnector.DERIVED_BUFFER_MAX_ROWS) {
+                    buf.Rows = [];
+                    buf.Overflowed = true;
+                }
+            }
+            buf.At = this.nowMs();
+            if (walkComplete) buf.Complete = true;
+        }
+    }
+
+    /** The derived children configured for a parent object, resolved from the engine's catalog. */
+    private derivedChildrenOf(parentObj: MJIntegrationObjectEntity): Array<{ childName: string; config: DerivedCollectionConfig }> {
+        const out: Array<{ childName: string; config: DerivedCollectionConfig }> = [];
+        for (const candidate of IntegrationEngineBase.Instance.GetIntegrationObjectsByIntegrationID(parentObj.IntegrationID)) {
+            const cfg = this.readIOConfig(candidate);
+            let parsed: DerivedCollectionConfig | null;
+            try {
+                parsed = ParseDerivedCollectionConfig((cfg as Record<string, unknown>)['derivedCollection']);
+            } catch {
+                continue; // a malformed child fails ITS OWN sync loudly; it must not break the parent's
+            }
+            if (parsed && parsed.parentObjectName === parentObj.Name) {
+                out.push({ childName: candidate.Name, config: parsed });
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Serves a derived object's fetch. Preferred path: drain the rows its parent's fetch
+     * already buffered — as the data came in, zero additional vendor calls — paged by
+     * ctx.CurrentOffset and deduped by ExternalID (page retries append twice; identity
+     * collapses them). Fallback when the buffer is missing, stale, incomplete or
+     * overflowed: walk the parent's fetch directly (same pagination and budgets; the
+     * cursor rides through), exploding page by page.
      */
     private async fetchDerivedCollection(
         obj: MJIntegrationObjectEntity,
@@ -1567,12 +1656,37 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             // enabled-and-empty object nobody can explain.
             throw new Error(`"${obj.Name}": derivedCollection.parentObjectName "${config.parentObjectName}" is not an integration object of this integration.`);
         }
-
-        const parentBatch = await this.fetchParentPageCached(parentObj.Name, ctx);
-        const exploded = ExplodeCollection(parentBatch.Records, config);
         const pkFieldNames = this.primaryKeyFieldNames(fields);
-        const records = exploded.ChildFields.map(f => this.buildExternalRecord(f, ctx.ObjectName, pkFieldNames));
 
+        const key = this.derivedBufferKey(parentObj.IntegrationID, obj.Name);
+        const buf = this.derivedRowBuffers.get(key);
+        const fresh = buf && (this.nowMs() - buf.At) < TotaraConnector.DERIVED_BUFFER_TTL_MS;
+        if (buf && fresh && buf.Complete && !buf.Overflowed) {
+            const pageSize = Math.max(1, ctx.BatchSize);
+            const offset = ctx.CurrentOffset ?? 0;
+            if (offset === 0) {
+                // Dedupe ONCE at drain start (page retries during accumulation append twice).
+                const seen = new Map<string, Record<string, unknown>>();
+                for (const row of buf.Rows) {
+                    const r = this.buildExternalRecord(row, obj.Name, pkFieldNames);
+                    seen.set(r.ExternalID, row);
+                }
+                buf.Rows = Array.from(seen.values());
+            }
+            const slice = buf.Rows.slice(offset, offset + pageSize);
+            const records = slice.map(row => this.buildExternalRecord(row, obj.Name, pkFieldNames));
+            const nextOffset = offset + slice.length;
+            return {
+                Records: records,
+                HasMore: nextOffset < buf.Rows.length,
+                NextOffset: nextOffset,
+            };
+        }
+
+        // Fallback: no usable buffer — walk the parent's own fetch and explode each page.
+        const parentBatch = await this.FetchChanges({ ...ctx, ObjectName: parentObj.Name });
+        const exploded = ExplodeCollection(parentBatch.Records, config);
+        const records = exploded.ChildFields.map(f => this.buildExternalRecord(f, obj.Name, pkFieldNames));
         const warnings = [...(parentBatch.Warnings ?? [])];
         if (exploded.ElementsSkipped > 0) {
             warnings.push({
@@ -1589,31 +1703,6 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             NextAfterKeyValue: parentBatch.NextAfterKeyValue,
             Warnings: warnings.length > 0 ? warnings : undefined,
         };
-    }
-
-    /**
-     * The parent's FetchChanges for one cursor position, served from the page cache when a
-     * sibling derived object (or the parent itself, run recently) already fetched it. Cache key
-     * is the full cursor — page, offset, keyset value — so a hit is exactly the same page.
-     */
-    private async fetchParentPageCached(parentObjectName: string, ctx: FetchContext): Promise<FetchBatchResult> {
-        const key = [
-            ctx.CompanyIntegration.IntegrationID, parentObjectName,
-            ctx.CurrentPage ?? '', ctx.CurrentOffset ?? '', ctx.AfterKeyValue ?? '',
-        ].join('\u0001');
-        const hit = this.derivedPageCache.get(key);
-        if (hit && (this.nowMs() - hit.At) < TotaraConnector.DERIVED_PAGE_CACHE_TTL_MS) {
-            return hit.Result;
-        }
-        const result = await this.FetchChanges({ ...ctx, ObjectName: parentObjectName });
-        this.derivedPageCache.set(key, { At: this.nowMs(), Result: result });
-        // FIFO eviction — insertion order is good enough for a sequential page walk.
-        while (this.derivedPageCache.size > TotaraConnector.DERIVED_PAGE_CACHE_MAX) {
-            const oldest = this.derivedPageCache.keys().next().value;
-            if (oldest === undefined) break;
-            this.derivedPageCache.delete(oldest);
-        }
-        return result;
     }
 
     /** Configuration.dropFields for this object, or null. Read once per shaping call. */
