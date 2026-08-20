@@ -589,20 +589,37 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
             : undefined;
         const records: ExternalRecord[] = raw.map(r => this.RawToExternalRecord(r, obj, ctx.ObjectName, watermarkField, 'Id'));
 
-        // Watermark advances ONLY on the final page (full-batch success), and only to the max seen.
+        /**
+         * Watermark advances on EVERY page, to the max value seen on that page.
+         *
+         * It used to advance only under `if (body.done)` — only when Salesforce reported the
+         * whole query complete. For an object too big to finish inside one run, `done` never
+         * arrives before the run is cancelled or dies, so NOTHING was ever recorded and every
+         * sync restarted from record zero. Measured live (ACR, 2026-08-20): NU__Transaction__c
+         * at 70,000 of 3,780,536 rows — an exact multiple of the 2,000-row page size, i.e.
+         * parked on a page boundary with a NULL watermark — while runs re-read ~25 records for
+         * every 1 written. The object could never finish, by construction: re-reading 3.6M
+         * stored rows takes longer than the run survives.
+         *
+         * Per-page advance is safe HERE because both halves of the contract already exist in
+         * BuildSOQL: results are `ORDER BY <watermarkField> ASC`, so the max of page N bounds
+         * everything on pages 1..N; and the filter is `>=` (not `>`), so the boundary instant
+         * is re-fetched next run and absorbed by engine dedupe. The engine keeps its own
+         * monotonic max per batch ("failures never hold it back") and persists it when a run
+         * ends or is cancelled — a killed run now resumes where it stopped instead of starting
+         * over.
+         */
         let newWatermark: string | undefined;
-        if (body.done) {
-            for (const r of raw) {
-                const mod = r[watermarkField];
-                if (typeof mod === 'string' && (!newWatermark || mod > newWatermark)) newWatermark = mod;
-            }
+        for (const r of raw) {
+            const mod = r[watermarkField];
+            if (typeof mod === 'string' && (!newWatermark || mod > newWatermark)) newWatermark = mod;
         }
 
         return {
             Records: records,
             HasMore: body.done === false,
             NextCursor: body.nextRecordsUrl,
-            NewWatermarkValue: body.done ? newWatermark : undefined,
+            NewWatermarkValue: newWatermark,
             Warnings: warnings,
         };
     }

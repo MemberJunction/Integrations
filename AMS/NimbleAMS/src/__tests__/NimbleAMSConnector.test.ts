@@ -46,6 +46,9 @@ class MockedNimbleAMSConnector extends NimbleAMSConnector {
     public CallIsNimbleScoped(name: string): boolean {
         return (this as unknown as { IsNimbleScopedObject(n: string): boolean }).IsNimbleScopedObject(name);
     }
+    public CallFetchSOQL(ctx: unknown, obj: unknown): Promise<{ Records: unknown[]; HasMore: boolean; NewWatermarkValue?: string }> {
+        return (this as unknown as { FetchSOQL(c: unknown, o: unknown): Promise<{ Records: unknown[]; HasMore: boolean; NewWatermarkValue?: string }> }).FetchSOQL(ctx, obj);
+    }
     public CallStripAttributes(raw: Record<string, unknown>): Record<string, unknown> {
         return (this as unknown as { TransformRecord(r: Record<string, unknown>, o: unknown, f: unknown): Record<string, unknown> }).TransformRecord(raw, {}, []);
     }
@@ -241,6 +244,45 @@ class CRUDTestConnector extends MockedNimbleAMSConnector {
 
 function ci() { return { IntegrationID: 'int-1', Configuration: null, CredentialID: null } as unknown; }
 function user() { return {} as unknown; }
+
+describe('NimbleAMSConnector — per-page watermark (a killed run must resume, not restart)', () => {
+    const page = (done: boolean, ids: string[], stamps: string[]) => ({
+        Status: 200, Headers: {},
+        Body: {
+            done, totalSize: ids.length,
+            nextRecordsUrl: done ? undefined : '/services/data/v59.0/query/01gNEXT',
+            records: ids.map((id, i) => ({ Id: id, LastModifiedDate: stamps[i] })),
+        },
+    });
+    const obj = { Name: 'NU__Transaction__c', IncrementalWatermarkField: 'LastModifiedDate' } as never;
+    const ctx = (cursor?: string) => ({ ObjectName: 'NU__Transaction__c', CurrentCursor: cursor, WatermarkValue: null, ContextUser: null, CompanyIntegration: {} }) as never;
+
+    it('a NON-final page emits NewWatermarkValue = max seen on that page', async () => {
+        // This is the fix: `done:false` used to emit undefined, so an object too big to finish
+        // in one run recorded NOTHING and every sync restarted from record zero (observed live:
+        // 70,000 of 3,780,536 rows — an exact multiple of the 2,000 page size — watermark NULL).
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push(page(false, ['001', '002'], ['2026-08-01T00:00:00.000+0000', '2026-08-02T09:30:00.000+0000']));
+        const out = await c.CallFetchSOQL(ctx('/services/data/v59.0/query/01gPAGE2'), obj);
+        expect(out.HasMore).toBe(true);
+        expect(out.NewWatermarkValue).toBe('2026-08-02T09:30:00.000+0000');
+    });
+
+    it('the final page still emits the max — behaviour there is unchanged', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push(page(true, ['003'], ['2026-08-03T12:00:00.000+0000']));
+        const out = await c.CallFetchSOQL(ctx('/services/data/v59.0/query/01gPAGE3'), obj);
+        expect(out.HasMore).toBe(false);
+        expect(out.NewWatermarkValue).toBe('2026-08-03T12:00:00.000+0000');
+    });
+
+    it('a page with no usable stamps emits undefined — never a fabricated value', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push({ Status: 200, Headers: {}, Body: { done: false, totalSize: 1, nextRecordsUrl: '/q/next', records: [{ Id: '004' }] } });
+        const out = await c.CallFetchSOQL(ctx('/q/page'), obj);
+        expect(out.NewWatermarkValue).toBeUndefined();
+    });
+});
 
 describe('NimbleAMSConnector — Salesforce REST sObject CRUD', () => {
     it('CreateRecord substitutes {apiVersion}+{ObjectName}, POSTs a flat body, extracts id', async () => {
