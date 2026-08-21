@@ -249,10 +249,19 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         return parsed.data;
     }
 
-    /** Determines the auth mode from explicit AuthFlow or the credential keys present. */
+    /**
+     * Determines the auth mode from explicit AuthFlow or the credential keys present.
+     *
+     * Inference prefers a COMPLETE TBA credential set over leftover OAuth2 fragments.
+     * Proven failure mode (2026-08): a stale BearerToken/AccessToken key — an earlier
+     * OAuth2 attempt, a copied credential template — silently flipped the mode to
+     * oauth2 and every request 401'd while all four TBA secrets sat valid and unused.
+     * An explicit AuthFlow always wins; set it to pin the mode unambiguously.
+     */
     private ResolveAuthMode(config: NetSuiteConfig): NSAuthMode {
         if (config.AuthFlow === 'oauth2') return 'oauth2';
         if (config.AuthFlow === 'oauth1-tba') return 'oauth1-tba';
+        if (config.ConsumerKey && config.ConsumerSecret && config.TokenID && config.TokenSecret) return 'oauth1-tba';
         if (config.BearerToken || config.AccessToken || config.RefreshToken) return 'oauth2';
         return 'oauth1-tba';
     }
@@ -407,6 +416,20 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         throw new Error(`NetSuite request failed after ${NS_MAX_RETRIES + 1} attempts: ${url}`);
     }
 
+    /**
+     * The `WWW-Authenticate` response header plus `o:errorDetails` name the PRECISE auth
+     * failure (token_rejected vs invalid_signature vs timestamp_refused ...). Without them
+     * a 401 is undiagnosable — operators were left comparing secrets by eye while the
+     * server had already said exactly what it rejected.
+     */
+    private AuthFailureDetail(response: RESTResponse): string {
+        const www = (response.Headers?.['www-authenticate'] ?? '').trim();
+        const body = response.Body as { 'o:errorDetails'?: Array<{ detail?: string }> } | undefined;
+        const detail = body?.['o:errorDetails']?.[0]?.detail ?? '';
+        const parts = [www ? `WWW-Authenticate: ${www}` : '', detail].filter(Boolean);
+        return parts.length ? ` — ${parts.join('; ')}` : '';
+    }
+
     private async BuildRESTResponse(response: Response): Promise<RESTResponse> {
         const hdrs: Record<string, string> = {};
         response.headers.forEach((v, k) => { hdrs[k.toLowerCase()] = v; });
@@ -504,7 +527,7 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
                 return { Success: true, Message: `Connected to NetSuite (${auth.Mode}); server time ${t}` };
             }
             if (response.Status === 401 || response.Status === 403) {
-                return { Success: false, Message: `NetSuite authentication failed: HTTP ${response.Status}` };
+                return { Success: false, Message: `NetSuite authentication failed: HTTP ${response.Status}${this.AuthFailureDetail(response)}` };
             }
             return { Success: false, Message: `NetSuite returned HTTP ${response.Status} from ${NS_SERVERTIME_PATH}` };
         } catch (err) {
@@ -536,7 +559,7 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         const headers = { ...this.BuildHeaders(auth), 'Accept': 'application/schema+json' };
         const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
         if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`NetSuite metadata-catalog returned HTTP ${response.Status} — cannot enumerate record types.`);
+            throw new Error(`NetSuite metadata-catalog returned HTTP ${response.Status}${this.AuthFailureDetail(response)} — cannot enumerate record types.`);
         }
         const slugs = this.ExtractCatalogNames(response.Body as NSCatalogResponse);
 
