@@ -4871,6 +4871,535 @@
             "lastModified": "2026-06-29T03:44:56.911Z",
             "checksum": "0127007d757c34854925fc243f5e64547015fdb12680e98e598f51f7031cb0d7"
           }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationRoundSubmission",
+            "DisplayName": "Application Round Submissions",
+            "Description": "OpenWater per-round submission state of an Application (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this submission belongs to. Injected by the connector from the access path (/v2/Applications/{applicationId} detail) rather than returned in the element body, so it is declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "9C281CA4-60CD-449F-8155-5CC7808B471D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round this submission belongs to. Declared String rather than Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "11581F42-B2CE-441A-B3D4-BDCEF0C31C12"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundName",
+                  "DisplayName": "Round Name",
+                  "Description": "Round name as denormalized on the submission.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A3B8ABD8-E494-40FA-8621-97A58E6E2030"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Submission status.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "43E0A806-5C33-4DEE-861C-483C71343E4D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "startedAtUtc",
+                  "DisplayName": "Started At Utc",
+                  "Description": "When the applicant started this round submission (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "65677BDB-30F3-4D8D-9236-B745FDF1E317"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedAtUtc",
+                  "DisplayName": "Updated At Utc",
+                  "Description": "Last update to this round submission (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CC319DA2-36BD-46CB-BAF1-D33F510AAF64"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedByUserAtUtc",
+                  "DisplayName": "Updated By User At Utc",
+                  "Description": "Last update made by the applicant (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D4223F1B-85EA-4B65-ABD9-AE4BA2F0A1B5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "finalizedAtUtc",
+                  "DisplayName": "Finalized At Utc",
+                  "Description": "When the submission was finalized (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5B250646-C1FD-44AA-9663-4FAC882A6A67"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "allowUserToMakeEdits",
+                  "DisplayName": "Allow User To Make Edits",
+                  "Description": "Whether the applicant may still edit this submission.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3613D8EF-2D39-431E-9CE7-1DEB50748CAC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isPaid",
+                  "DisplayName": "Is Paid",
+                  "Description": "Whether payment for this submission is complete.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "AE1DC9BD-DE4F-44C4-8D32-8ADBA02B2B73"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isWinner",
+                  "DisplayName": "Is Winner",
+                  "Description": "Whether this submission was marked a winner.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "600C17AB-7FE6-40E6-A133-B912086C825A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceId",
+                  "DisplayName": "Invoice Id",
+                  "Description": "Invoice attached to this submission, when any. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "C0B7B305-A98B-41AE-902D-55F1B0908491"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "1DFFCEA1-1B6B-4AD6-ACEC-4649A5D35EB6"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationFile",
+            "DisplayName": "Application Files",
+            "Description": "OpenWater file-upload field values across an Application round submissions (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[] -> fieldValues[] (elements carrying a mediaId).",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].fieldValues[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "fieldValues[]"
+                ],
+                "elementFilter": {
+                  "key": "mediaId",
+                  "exists": true
+                },
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "mediaId",
+                  "DisplayName": "Media Id",
+                  "Description": "Media id of the uploaded file (also this record identity). Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Media&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "78A20156-801E-408A-95D9-C4A9B3ECD8B9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this file belongs to. Injected by the connector from the access path (/v2/Applications/{applicationId} detail).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "0036DC50-6C4D-437D-9125-5D9E7A3AE9B9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alias",
+                  "DisplayName": "Alias",
+                  "Description": "Field alias the file was uploaded under.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E580B35C-C1E1-47C8-8B01-F45264A52AF7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "caption",
+                  "DisplayName": "Caption",
+                  "Description": "Caption entered for the uploaded file.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6874A594-7919-489E-9C1D-CF3731138ACF"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "F3AAE390-75DC-4D9F-BB59-6997378904B5"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Media",
+            "DisplayName": "Media",
+            "Description": "OpenWater media descriptor for uploaded files. Access: mediaIds harvested from Application details -> /v2/Media/{mediaId} (the detail response is the record).",
+            "APIPath": "/v2/Media/{mediaId}",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "parentSource": "detail-harvest",
+                "harvestDetailPath": "/v2/Applications/{applicationId}",
+                "harvestDetailParam": "applicationId",
+                "harvestSegments": [
+                  "roundSubmissions[]",
+                  "fieldValues[]"
+                ],
+                "harvestIdKey": "mediaId",
+                "entryPath": "/v2/Media/{mediaId}",
+                "parentParamName": "mediaId",
+                "extractionMode": "detail-object"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "mediaId",
+                  "DisplayName": "Media Id",
+                  "Description": "Media id. Injected by the connector from the access path (/v2/Media/{mediaId}) - the ids are harvested from Application details.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1FB33C79-4EE9-42AB-AA30-C02B0C9C146B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "url",
+                  "DisplayName": "Url",
+                  "Description": "Download URL of the file.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Length": 2048
+                },
+                "primaryKey": {
+                  "ID": "0F061F0D-9B9D-46F5-A9FF-1DDAA00105DC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "fileName",
+                  "DisplayName": "File Name",
+                  "Description": "Original file name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FB8A6F19-DAC0-4E5B-A4A2-EE098A1B8983"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "7AB4A0D8-D990-4E71-A55D-5A3528D70611"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationWinnerType",
+            "DisplayName": "Application Winner Types",
+            "Description": "OpenWater winner types configured on program rounds (embedded). Access: Programs -> rounds[] -> winnerTypes[].",
+            "APIPath": "(embedded in /v2/Programs rounds[].winnerTypes[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "nestingSegments": [
+                  "rounds[]",
+                  "winnerTypes[]"
+                ],
+                "extractionMode": "embedded-array"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Winner type id. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CF825A2F-F232-4B8B-9506-27AEE250C1FA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Winner type name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "821BE41B-B855-49A0-BB88-E7AB661C13DD"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "7D3F6794-4A3A-4C2F-9255-A27448CB4B50"
+          }
         }
       ]
     },

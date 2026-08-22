@@ -262,6 +262,80 @@
           "Description": "Primary key from source system"
         }
       ]
+    },
+    {
+      "TableName": "ApplicationRoundSubmission",
+      "PrimaryKey": [
+        {
+          "FieldName": "applicationId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "roundId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "applicationId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Application",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "roundId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Rounds",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "invoiceId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Invoice",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "ApplicationFile",
+      "PrimaryKey": [
+        {
+          "FieldName": "mediaId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "applicationId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Application",
+          "RelatedField": "id"
+        },
+        {
+          "FieldName": "mediaId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Media",
+          "RelatedField": "mediaId"
+        }
+      ]
+    },
+    {
+      "TableName": "Media",
+      "PrimaryKey": [
+        {
+          "FieldName": "mediaId",
+          "Description": "Primary key from source system"
+        }
+      ]
+    },
+    {
+      "TableName": "ApplicationWinnerType",
+      "PrimaryKey": [
+        {
+          "FieldName": "id",
+          "Description": "Primary key from source system"
+        }
+      ]
     }
   ]
 }
