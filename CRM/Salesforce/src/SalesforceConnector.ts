@@ -1245,9 +1245,14 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
     /**
      * Create the Bulk API 2.0 query job and hand its identity back as the cursor. The job runs
      * server-side; every subsequent engine call re-enters through FetchBulkQueryContinue.
-     * `queryAll` keeps soft-deleted rows, matching the REST path's behaviour. The SOQL carries
-     * NO ORDER BY — Bulk 2.0 rejects it, and job results need no ordering: the watermark
-     * advances per downloaded page to the max seen (the engine keeps it monotonic).
+     * `queryAll` keeps soft-deleted rows, matching the REST path's behaviour. The SOQL is
+     * stripped of its ORDER BY: Bulk 2.0 accepts the clause but it DISABLES PK Chunking, which
+     * is the whole reason the bulk path is fast — Salesforce's own guidance is to remove
+     * ORDER BY/LIMIT when a bulk query times out. Job results need no ordering anyway: the
+     * watermark advances per downloaded page to the max seen (the engine keeps it monotonic),
+     * and resumability comes from the job id + locator rather than from row order.
+     * Compound `address`/`location` fields are already excluded by GetQueryableFieldNames —
+     * Bulk 2.0 does not support them either.
      */
     private async FetchBulkQueryStart(
         auth: SalesforceAuthContext,
