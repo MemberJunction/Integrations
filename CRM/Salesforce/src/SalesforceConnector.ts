@@ -118,7 +118,7 @@ export interface SalesforceConnectionConfig {
 }
 
 /** Extended auth context carrying Salesforce credentials and cached token */
-interface SalesforceAuthContext extends RESTAuthContext {
+export interface SalesforceAuthContext extends RESTAuthContext {
     /** Salesforce instance URL (pod-specific, e.g., https://na1.salesforce.com) */
     InstanceUrl: string;
     /** API version string */
@@ -167,6 +167,18 @@ const BULK_QUERY_POLL_WAIT_MS = 15_000;
 // Rows requested per results download. SF caps and pages the download via Sforce-Locator
 // regardless; this bounds one batch's memory.
 const BULK_QUERY_RESULTS_PAGE = 10_000;
+
+// ─── Chunked SOQL projection (wide objects overflow the request line) ─────
+// Salesforce's REST edge rejects an over-long request line with HTTP 431 (the URI counts
+// against the header budget), and the projection travels in the query string — a wide object
+// (674 queryable fields measured live) fails batch 1 of every run. 12,000 chars of ENCODED
+// query leaves headroom under the ~16KB limit.
+const SOQL_URL_BUDGET = 12_000;
+// Pinned page size for chunked fetches: the ONLY batch size Salesforce guarantees to honor
+// exactly (it silently shrinks larger hints per row width — and the chunks have DIFFERENT
+// widths, so unequal shrink would misalign the pages).
+const SOQL_CHUNK_BATCH_SIZE = 200;
+const CHUNKED_CURSOR_PREFIX = 'chunks:';
 const DEFAULT_MIN_REQUEST_INTERVAL_MS = 100;
 const DEFAULT_BATCH_SIZE = 2000;
 
@@ -646,6 +658,10 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             if (String(ctx.CurrentCursor).startsWith(BULK_QUERY_CURSOR_PREFIX)) {
                 return this.FetchBulkQueryContinue(auth, String(ctx.CurrentCursor));
             }
+            if (String(ctx.CurrentCursor).startsWith(CHUNKED_CURSOR_PREFIX)) {
+                const st = JSON.parse(String(ctx.CurrentCursor).slice(CHUNKED_CURSOR_PREFIX.length)) as { o: string; ls: string[] };
+                return this.FetchChunkedPages(auth, st.ls.map(l => `${this.ApiBase(auth)}${l}`), st.o);
+            }
             return this.FetchNextPage(auth, ctx.CurrentCursor);
         }
 
@@ -682,8 +698,32 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         // Standard SObject (sobject) and Tooling (tooling) both use SOQL —
         // just against different endpoints.
         const fields = await this.GetQueryableFieldNames(auth, ctx.ObjectName, family);
-        const soql = this.BuildSOQLQuery(ctx.ObjectName, fields, ctx.WatermarkValue, batchSize, true);
+        const declaredWM = this.DeclaredWatermarkField(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
+
+        // Wide objects overflow the request line (HTTP 431) — split the projection into aligned
+        // chunks and reassemble whole rows by Id. Objects that fit take the exact path they take
+        // today (single chunk, no pinned page size, no extra header).
+        const chunks = this.ChunkSOQLFields(ctx.ObjectName, fields, ctx.WatermarkValue, declaredWM);
+        if (chunks.length > 1) {
+            const urls = chunks.map(chunkFields => {
+                const soql = this.BuildSOQLQuery(ctx.ObjectName, chunkFields, ctx.WatermarkValue, batchSize, true, declaredWM);
+                return `${this.SOQLEndpoint(auth, family, family !== 'tooling')}?q=${encodeURIComponent(soql)}`;
+            });
+            return this.FetchChunkedPages(auth, urls, ctx.ObjectName);
+        }
+
+        const soql = this.BuildSOQLQuery(ctx.ObjectName, fields, ctx.WatermarkValue, batchSize, true, declaredWM);
         return this.ExecuteSOQLQuery(auth, soql, ctx.ObjectName, family);
+    }
+
+    /** The object's declared IncrementalWatermarkField from the engine cache (null when absent). */
+    private DeclaredWatermarkField(integrationID: string, objectName: string): string | null {
+        try {
+            const obj = IntegrationEngineBase.Instance.GetIntegrationObject(integrationID, objectName);
+            return obj?.IncrementalWatermarkField?.trim() || null;
+        } catch {
+            return null;
+        }
     }
 
     /**
@@ -1359,17 +1399,132 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         });
     }
 
+    // ─── Chunked SOQL projection ──────────────────────────────────────
+
+    /**
+     * Split a projection so each chunk's ENCODED query fits SOQL_URL_BUDGET. Returns a single
+     * chunk (the whole field list) whenever it already fits. Each chunk always carries Id (the
+     * merge key) and the watermark column (ordering + per-page watermark).
+     */
+    private ChunkSOQLFields(
+        objectName: string,
+        fieldNames: string[],
+        watermarkValue: string | null,
+        declaredWatermarkField: string | null
+    ): string[][] {
+        const probe = (fields: string[]) =>
+            encodeURIComponent(this.BuildSOQLQuery(objectName, fields, watermarkValue, 0, true, declaredWatermarkField)).length;
+        if (probe(fieldNames) <= SOQL_URL_BUDGET) return [fieldNames];
+        const watermarkCol = this.ResolveWatermarkColumn(new Set(fieldNames), declaredWatermarkField);
+        const always = ['Id'];
+        if (watermarkCol && watermarkCol !== 'Id') always.push(watermarkCol);
+        const alwaysLower = new Set(always.map(a => a.toLowerCase()));
+        const rest = fieldNames.filter(f => !alwaysLower.has(f.toLowerCase()));
+        const chunks: string[][] = [];
+        let cur: string[] = [];
+        for (const fld of rest) {
+            if (cur.length && probe([...always, ...cur, fld]) > SOQL_URL_BUDGET) {
+                chunks.push([...always, ...cur]);
+                cur = [fld];
+            } else {
+                cur.push(fld);
+            }
+        }
+        if (cur.length) chunks.push([...always, ...cur]);
+        return chunks.length ? chunks : [fieldNames];
+    }
+
+    /**
+     * Fetch one page from EVERY chunk (identical WHERE/ORDER BY, pinned batch size so the pages
+     * stay aligned) and reassemble whole rows by Id. Misalignment THROWS rather than writing
+     * half-populated rows. The combined cursor is `chunks:{o, ls: [perChunkNextRecordsUrl]}`.
+     */
+    private async FetchChunkedPages(
+        auth: SalesforceAuthContext,
+        urls: string[],
+        objectName: string
+    ): Promise<FetchBatchResult> {
+        const headers = { ...this.BuildHeaders(auth), 'Sforce-Query-Options': `batchSize=${SOQL_CHUNK_BATCH_SIZE}` };
+        const bodies: SOQLQueryResponse[] = [];
+        for (const url of urls) {
+            const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
+            this.ValidateResponse(response, url);
+            bodies.push(response.Body as SOQLQueryResponse);
+        }
+        const merged = this.MergeChunkedRecords(objectName, bodies);
+        const hasMore = bodies.some(b => !b.done);
+        const result = this.ParseSOQLResponse({
+            totalSize: merged.length,
+            done: !hasMore,
+            records: merged,
+        }, objectName);
+        return {
+            ...result,
+            HasMore: hasMore,
+            NextCursor: hasMore
+                ? CHUNKED_CURSOR_PREFIX + JSON.stringify({ o: objectName, ls: bodies.map(b => b.nextRecordsUrl) })
+                : undefined,
+        };
+    }
+
+    /**
+     * Merge the per-chunk pages of the SAME rows into whole records, keyed by Id. A divergence
+     * would silently write half-populated rows, so it THROWS rather than guessing.
+     */
+    private MergeChunkedRecords(objectName: string, bodies: SOQLQueryResponse[]): Record<string, unknown>[] {
+        const merged = new Map<string, Record<string, unknown>>();
+        const seen: Set<string>[] = bodies.map(() => new Set());
+        bodies.forEach((body, i) => {
+            for (const r of (body.records ?? [])) {
+                const id = (r as Record<string, unknown>)['Id'] as string | undefined;
+                if (!id) continue;
+                seen[i].add(id);
+                const prior = merged.get(id);
+                if (prior) Object.assign(prior, r);
+                else merged.set(id, { ...r });
+            }
+        });
+        const counts = seen.map(x => x.size);
+        if (counts.some(c => c !== counts[0])) {
+            throw new Error(`Salesforce chunked SOQL for "${objectName}" returned misaligned pages (${counts.join('/')} rows per chunk) — refusing to write partially-populated records.`);
+        }
+        const complete = [...merged.values()].filter(r => seen.every(sset => sset.has(r['Id'] as string)));
+        if (complete.length !== counts[0]) {
+            throw new Error(`Salesforce chunked SOQL for "${objectName}" could not reassemble every row (${complete.length} of ${counts[0]}).`);
+        }
+        return complete;
+    }
+
     // ─── SOQL Query Engine ───────────────────────────────────────────
 
     /**
      * Builds a SOQL query string with optional watermark filter.
      */
+    /**
+     * The watermark/ordering column: an explicitly declared IncrementalWatermarkField always
+     * wins (the operator said so); otherwise the best available audit column. Objects with
+     * none are fetched in full each run — honest rather than incremental.
+     * Preference: declared > SystemModstamp > LastModifiedDate > CreatedDate > (none).
+     */
+    private ResolveWatermarkColumn(available: Set<string>, declared?: string | null): string | null {
+        const d = declared?.trim();
+        if (d) return d;
+        return available.has('SystemModstamp')
+            ? 'SystemModstamp'
+            : available.has('LastModifiedDate')
+                ? 'LastModifiedDate'
+                : available.has('CreatedDate')
+                    ? 'CreatedDate'
+                    : null;
+    }
+
     private BuildSOQLQuery(
         objectName: string,
         fields: string[],
         watermarkValue: string | null,
         batchSize: number,
-        includeDeleted: boolean
+        includeDeleted: boolean,
+        declaredWatermarkField?: string | null
     ): string {
         // Many SF system/tooling/meta objects lack one or more of the "standard"
         // audit fields (SystemModstamp, IsDeleted, LastModifiedById). Assuming
@@ -1379,15 +1534,7 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         const requiredPresent = REQUIRED_SOQL_FIELDS.filter(f => available.has(f));
         const dedupedFields = [...new Set([...requiredPresent, ...fields])];
 
-        // Pick the best available watermark/ordering column.
-        // Preference: SystemModstamp > LastModifiedDate > CreatedDate > (none)
-        const watermarkCol = available.has('SystemModstamp')
-            ? 'SystemModstamp'
-            : available.has('LastModifiedDate')
-                ? 'LastModifiedDate'
-                : available.has('CreatedDate')
-                    ? 'CreatedDate'
-                    : null;
+        const watermarkCol = this.ResolveWatermarkColumn(available, declaredWatermarkField);
 
         let soql = `SELECT ${dedupedFields.join(', ')} FROM ${objectName}`;
 
