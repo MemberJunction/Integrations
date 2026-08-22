@@ -109,6 +109,9 @@ interface OpenWaterAuthContext extends RESTAuthContext {
  * Per-IO access path (read from IntegrationObject.Configuration.AccessPath) describing how
  * to reach a nested object's records from a queryable door.
  */
+/** Cursor namespace for a bounded, resumable detail walk: the parent offset consumed so far. */
+const DETAIL_WALK_CURSOR_PREFIX = 'detail:';
+
 interface AccessPath {
     /** The door object name (e.g. "Program", "Fund"). */
     door: string;
@@ -750,7 +753,7 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         // response rather than a paginated list leaf — /v2/Applications/{id} carries
         // roundSubmissions[] and the file-upload field values; /v2/Media/{id} IS the record.
         if (accessPath.extractionMode === 'detail-embedded' || accessPath.extractionMode === 'detail-object') {
-            return this.FetchViaDetailWalk(obj, accessPath, auth, baseURL, doorRows, fields, pkFieldNames, warnings);
+            return this.FetchViaDetailWalk(ctx, obj, accessPath, auth, baseURL, doorRows, fields, pkFieldNames, warnings);
         }
         const parentIDs = this.DescendToParentIDs(doorRows, accessPath);
         if (parentIDs.length === 0) {
@@ -1023,15 +1026,47 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
      * filtered by elementFilter), tagging the parent id; `detail-object` emits each parent's
      * detail itself as ONE record, tagged with its id.
      */
-    private async FetchViaDetailWalk(obj: MJIntegrationObjectEntity, accessPath: AccessPath,
+    private async FetchViaDetailWalk(ctx: FetchContext, obj: MJIntegrationObjectEntity, accessPath: AccessPath,
         auth: OpenWaterAuthContext, baseURL: string, doorRows: Record<string, unknown>[],
         fields: MJIntegrationObjectFieldEntity[], pkFieldNames: string[],
         warnings: FetchWarning[]): Promise<FetchBatchResult> {
+        /**
+         * A detail walk is one HTTP call PER PARENT — for this tenant that is ~2,000 application
+         * details, and Media additionally resolves ~4,000 /v2/Media/{id} records. Doing all of
+         * that inside a single FetchChanges call made the walk UNBOUNDED and therefore
+         * un-stoppable: `DiscoverFieldsViaFetch` streams FetchChanges and stops at a record cap,
+         * but it can only stop BETWEEN batches, so field-sampling one detail object paid the
+         * entire walk and blew straight through the 5-minute discovery budget (measured: an
+         * apply/introspect that could not finish inside any gateway timeout).
+         *
+         * So the walk is now bounded by the caller's own batch size and resumable: parents are
+         * consumed from a cursor offset, records accumulate until the budget is met, and the
+         * remaining offset comes back as the cursor. Sampling asks for a handful of records and
+         * gets them after a handful of calls; a real sync passes a large batch size and still
+         * walks everything, just across resumable batches (which is also what makes a killed
+         * run cheap to resume).
+         */
+        const budget = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : 10_000;
+        const startAt = (() => {
+            const c = ctx.CurrentCursor;
+            if (!c || !String(c).startsWith(DETAIL_WALK_CURSOR_PREFIX)) return 0;
+            const n = Number(String(c).slice(DETAIL_WALK_CURSOR_PREFIX.length));
+            return Number.isFinite(n) && n > 0 ? n : 0;
+        })();
         let parentIDs: string[];
+        // Set when harvesting stopped early: `parentIDs` is then a PREFIX of the real parent set,
+        // so its length must NOT be read as the total (doing so reported HasMore:false with door
+        // rows still un-harvested, which would have silently dropped every later record).
+        let harvestTruncated = false;
         if (accessPath.parentSource === 'detail-harvest') {
             const doorIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: [] });
             const harvested = new Set<string>();
+            // Harvesting is itself one call per door row, so it stops as soon as it has enough
+            // ids to satisfy this batch (offset + budget). Ids are collected in door order, so
+            // the same prefix is produced on every call and the offset stays meaningful.
+            const needed = startAt + budget;
             for (const doorID of doorIDs) {
+                if (harvested.size >= needed) { harvestTruncated = true; break; }
                 const hPath = this.InjectParentID(accessPath.harvestDetailPath ?? '', doorID, {
                     ...accessPath, parentParamName: accessPath.harvestDetailParam ?? 'id', parentParamIn: 'path' });
                 if (hPath == null) continue;
@@ -1054,7 +1089,10 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         }
         const out: ExternalRecord[] = [];
         const filt = accessPath.elementFilter;
-        for (const parentID of parentIDs) {
+        let consumed = startAt;
+        for (const parentID of parentIDs.slice(startAt)) {
+            if (out.length >= budget) break;
+            consumed++;
             const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
             if (leafPath == null) continue;
             const detail = await this.FetchDetailCached(auth, baseURL, leafPath, warnings);
@@ -1079,12 +1117,18 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                 }
             }
         }
-        if (out.length === 0) {
+        if (out.length === 0 && startAt === 0) {
             warnings.push({ Code: 'ZERO_LEAVES',
                 Message: `"${obj.Name}" walked ${parentIDs.length} parent detail(s) and extracted no records.`,
                 Data: { object: obj.Name, parents: parentIDs.length } });
         }
-        return { Records: out, HasMore: false, Warnings: warnings };
+        const moreParents = consumed < parentIDs.length || harvestTruncated;
+        return {
+            Records: out,
+            HasMore: moreParents,
+            NextCursor: moreParents ? `${DETAIL_WALK_CURSOR_PREFIX}${consumed}` : undefined,
+            Warnings: warnings,
+        };
     }
 
     /** Additional full walks to union with the main AccessPath (empty when not declared). */
