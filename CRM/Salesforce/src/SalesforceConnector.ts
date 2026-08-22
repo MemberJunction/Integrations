@@ -1190,13 +1190,28 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
 
     // ─── Bulk API 2.0 fetch transport ─────────────────────────────────
 
-    /** DefaultQueryParams.fetch_transport for an object — 'bulk_query' routes backfills through a bulk job. */
+    /**
+     * How this object's backfill should be fetched — `'bulk_query'` routes it through a Bulk
+     * API 2.0 job. Read from `Configuration.FetchTransport` first: Configuration is the
+     * connector's own settings blob (the same place OpenWater keeps its AccessPath), which is
+     * what makes this operable — the field is writable by the existing per-object config
+     * tooling, whereas `DefaultQueryParams` is not. `DefaultQueryParams.fetch_transport` is
+     * still honored as a fallback for consistency with the `api_family` flag that already
+     * lives there.
+     */
     private ResolveFetchTransport(integrationID: string, objectName: string): string | null {
         try {
             const obj = IntegrationEngineBase.Instance.GetIntegrationObject(integrationID, objectName);
-            if (!obj || !obj.DefaultQueryParams) return null;
-            const parsed = JSON.parse(obj.DefaultQueryParams) as { fetch_transport?: string };
-            return parsed.fetch_transport ?? null;
+            if (!obj) return null;
+            if (obj.Configuration) {
+                const cfg = JSON.parse(obj.Configuration) as { FetchTransport?: string };
+                if (cfg.FetchTransport) return cfg.FetchTransport;
+            }
+            if (obj.DefaultQueryParams) {
+                const parsed = JSON.parse(obj.DefaultQueryParams) as { fetch_transport?: string };
+                return parsed.fetch_transport ?? null;
+            }
+            return null;
         } catch {
             return null;
         }
