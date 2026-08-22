@@ -796,3 +796,165 @@ describe('OpenWaterConnector — the read deadline outlives the fetch call', () 
         expect(signals[0]).not.toBe(signals[1]);
     });
 });
+
+// ─── Detail-walk extraction modes ────────────────────────────────────────
+
+describe('OpenWaterConnector — FetchChanges (detail-walk modes)', () => {
+    /** ApplicationRoundSubmission-shaped IO: detail-embedded over /v2/Applications/{applicationId}. */
+    function addRoundSubmissionIO(connector: MockedOpenWaterConnector): void {
+        connector.AddObject(
+            io({
+                ID: 'o-ars', Name: 'ApplicationRoundSubmission', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+    }
+
+    it('detail-embedded: extracts the nested array from each parent detail and tags the parent id', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addRoundSubmissionIO(connector);
+        connector.Responses = [
+            { match: '/v2/Applications/101', response: { Status: 200, Body: {
+                id: 101, roundSubmissions: [{ roundId: 55, status: 'Complete' }, { roundId: 56, status: 'Incomplete' }] }, Headers: {} } },
+            { match: '/v2/Applications/102', response: { Status: 200, Body: {
+                id: 102, roundSubmissions: [{ roundId: 55, status: 'Complete' }] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 101 }, { id: 102 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['101|55', '101|56', '102|55']);
+        // The parent id is injected — the elements themselves never carried applicationId.
+        expect(result.Records.every(r => r.Fields['applicationId'] != null)).toBe(true);
+    });
+
+    it('detail-embedded: a 404 parent detail is skipped without failing the object', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addRoundSubmissionIO(connector);
+        connector.Responses = [
+            { match: '/v2/Applications/101', response: { Status: 404, Body: null, Headers: {} } },
+            { match: '/v2/Applications/102', response: { Status: 200, Body: {
+                id: 102, roundSubmissions: [{ roundId: 57 }] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 101 }, { id: 102 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        expect(result.Records.map(r => r.ExternalID)).toEqual(['102|57']);
+    });
+
+    it('detail-embedded + elementFilter(exists): keeps only elements carrying the key (ApplicationFile)', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-af', Name: 'ApplicationFile', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}',
+                    nestingSegments: ['roundSubmissions[]', 'fieldValues[]'],
+                    elementFilter: { key: 'mediaId', exists: true },
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Applications/101', response: { Status: 200, Body: { id: 101, roundSubmissions: [
+                { roundId: 55, fieldValues: [
+                    { alias: 'essay', value: 'plain text' },                    // no mediaId → filtered
+                    { alias: 'headshot', mediaId: 9001, caption: 'portrait' },
+                    { alias: 'deck', mediaId: 9002 },
+                ] },
+            ] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 101 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationFile'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['9001', '9002']);
+    });
+
+    it('detail-object via detail-harvest: harvested ids are deduped and each detail IS the record (Media)', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-media', Name: 'Media', APIPath: '/v2/Media/{mediaId}',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications',
+                    parentSource: 'detail-harvest',
+                    harvestDetailPath: '/v2/Applications/{applicationId}', harvestDetailParam: 'applicationId',
+                    harvestSegments: ['roundSubmissions[]', 'fieldValues[]'], harvestIdKey: 'mediaId',
+                    entryPath: '/v2/Media/{mediaId}', parentParamName: 'mediaId',
+                    extractionMode: 'detail-object',
+                } }),
+            }),
+            [{ Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            // 9001 appears under BOTH applications: harvested once, fetched once.
+            { match: '/v2/Applications/101', response: { Status: 200, Body: { id: 101, roundSubmissions: [
+                { fieldValues: [{ mediaId: 9001 }] }] }, Headers: {} } },
+            { match: '/v2/Applications/102', response: { Status: 200, Body: { id: 102, roundSubmissions: [
+                { fieldValues: [{ mediaId: 9001 }, { mediaId: 9002 }] }] }, Headers: {} } },
+            { match: '/v2/Media/9001', response: { Status: 200, Body: { url: 'https://cdn.test/a.pdf', fileName: 'a.pdf' }, Headers: {} } },
+            { match: '/v2/Media/9002', response: { Status: 200, Body: { url: 'https://cdn.test/b.png', fileName: 'b.png' }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 101 }, { id: 102 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('Media'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['9001', '9002']);
+        // The detail body carried no mediaId — it was tagged from the walked id.
+        expect(result.Records.map(r => r.Fields['mediaId']).sort()).toEqual(['9001', '9002']);
+        expect(connector.Requests.filter(r => r.url.includes('/v2/Media/9001'))).toHaveLength(1);
+    });
+
+    it('the detail cache collapses sibling walks over the same parent details', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addRoundSubmissionIO(connector);
+        connector.Responses = [
+            { match: '/v2/Applications/101', response: { Status: 200, Body: {
+                id: 101, roundSubmissions: [{ roundId: 55 }] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 101 }] }, Headers: {} } },
+        ];
+
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        // Two full walks, ONE detail request: the second walk was served from the cache.
+        expect(connector.Requests.filter(r => r.url.includes('/v2/Applications/101'))).toHaveLength(1);
+    });
+
+    it('embedded-array descends two nested array levels (ApplicationWinnerType via rounds[].winnerTypes[])', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-awt', Name: 'ApplicationWinnerType', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs',
+                    nestingSegments: ['rounds[]', 'winnerTypes[]'], extractionMode: 'embedded-array',
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [
+                { id: 1, rounds: [{ id: 55, winnerTypes: [{ id: 7, name: 'Gold' }, { id: 8, name: 'Silver' }] }] },
+                { id: 2, rounds: [{ id: 56, winnerTypes: [{ id: 9, name: 'Honorable Mention' }] }] },
+            ] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationWinnerType'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['7', '8', '9']);
+    });
+});
