@@ -47,6 +47,7 @@
     "Platform/SQLServer",
     "Platform/SharePoint",
     "Platform/Snowflake",
+    "Platform/WordPress",
     "Platform/Zendesk"
   ],
   "hold": [
