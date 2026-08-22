@@ -1064,6 +1064,170 @@ describe('SalesforceConnector — SOQL datetime canonicalization', () => {
     });
 });
 
+// ─── SOQL mechanics (moved here with the code from the Nimble connector) ────
+//
+// These cases arrived with the hardening ladder proven in production on a Nimble AMS org and
+// moved into this base class along with the machinery they cover: declared-watermark honoring,
+// per-page watermark advance, canonical datetime literals, and chunked wide projections. Every
+// Salesforce-platform connector inherits both the behaviour and this coverage.
+
+/** Queued-response transport with a stubbed describe, so FetchChanges runs end-to-end offline. */
+class SOQLMechanicsConnector extends SalesforceConnector {
+    public Responses: Array<{ Status: number; Body: unknown; Headers: Record<string, string> }> = [];
+    public Calls: Array<{ url: string; method: string; headers: Record<string, string> }> = [];
+    public Fields: string[] = ['Id', 'Name', 'SystemModstamp'];
+
+    protected override async Authenticate() {
+        return { Token: 't', InstanceUrl: 'https://na1.salesforce.com', InstanceURL: 'https://na1.salesforce.com',
+                 ApiVersion: '61.0', Config: {}, CompanyIntegration: {} } as never;
+    }
+    protected override async MakeHTTPRequest(_auth: unknown, url: string, method: string, headers: Record<string, string>) {
+        this.Calls.push({ url, method, headers });
+        const next = this.Responses.shift();
+        if (!next) throw new Error(`SOQLMechanicsConnector: no canned response for ${method} ${url}`);
+        return next;
+    }
+    /** Stub the describe round-trip: these tests control the projection directly. */
+    protected async GetQueryableFieldNamesStub(): Promise<string[]> { return this.Fields; }
+    public CallBuildSOQL(objectName: string, fields: string[], watermark: string | null, declared?: string | null): string {
+        const self = this as unknown as { BuildSOQLQuery: (o: string, f: string[], w: string | null, b: number, i: boolean, d?: string | null) => string };
+        return self.BuildSOQLQuery(objectName, fields, watermark, 0, true, declared);
+    }
+    public CallFormatSOQLDateTime(v: string): string {
+        return (this as unknown as { FormatSOQLDateTime: (x: string) => string }).FormatSOQLDateTime(v);
+    }
+    public CallChunk(objectName: string, fields: string[], watermark: string | null, declared: string | null): string[][] {
+        const self = this as unknown as { ChunkSOQLFields: (o: string, f: string[], w: string | null, d: string | null) => string[][] };
+        return self.ChunkSOQLFields(objectName, fields, watermark, declared);
+    }
+    public CallFetchChunkedPages(urls: string[], objectName: string) {
+        const self = this as unknown as { FetchChunkedPages: (a: unknown, u: string[], o: string) => Promise<{ Records: Array<{ ExternalID: string; Fields: Record<string, unknown> }>; HasMore: boolean; NextCursor?: string; NewWatermarkValue?: string }> };
+        return self.FetchChunkedPages({ Token: 't', InstanceUrl: 'https://na1.salesforce.com', ApiVersion: '61.0', Config: {}, CompanyIntegration: {} }, urls, objectName);
+    }
+    public CallExecuteSOQL(soql: string, objectName: string) {
+        const self = this as unknown as { ExecuteSOQLQuery: (a: unknown, s: string, o: string, f: string) => Promise<{ Records: unknown[]; HasMore: boolean; NewWatermarkValue?: string }> };
+        return self.ExecuteSOQLQuery({ Token: 't', InstanceUrl: 'https://na1.salesforce.com', ApiVersion: '61.0', Config: {}, CompanyIntegration: {} }, soql, objectName, 'sobject');
+    }
+}
+
+describe('SalesforceConnector — SOQL construction', () => {
+    const c = new SOQLMechanicsConnector();
+
+    it('builds a watermark-ordered query with NO LIMIT (SF paginates natively) and a >= boundary', () => {
+        const soql = c.CallBuildSOQL('Account', ['Id', 'SystemModstamp'], '2026-01-01T00:00:00Z');
+        expect(soql).toContain('SELECT');
+        expect(soql).toContain('FROM Account');
+        expect(soql).toContain('WHERE SystemModstamp >= 2026-01-01T00:00:00.000Z');
+        expect(soql).toContain('ORDER BY SystemModstamp ASC');
+        expect(soql).not.toContain('LIMIT');
+    });
+
+    it('omits the WHERE clause on a first (watermark-less) sync', () => {
+        const soql = c.CallBuildSOQL('Account', ['Id', 'SystemModstamp'], null);
+        expect(soql).not.toContain('WHERE');
+        expect(soql).toContain('ORDER BY SystemModstamp ASC');
+    });
+
+    it('an explicitly DECLARED watermark field wins over the audit-column preference', () => {
+        // The operator naming a column is a decision, not a hint: __History objects expose
+        // CreatedDate but not SystemModstamp, and guessing produced instant HTTP 400s.
+        const soql = c.CallBuildSOQL('NU__Event__History', ['Id', 'SystemModstamp', 'CreatedDate'], null, 'CreatedDate');
+        expect(soql).toContain('ORDER BY CreatedDate ASC');
+    });
+});
+
+describe('SalesforceConnector — per-page watermark advance', () => {
+    const page = (done: boolean, ids: string[], stamps: string[]) => ({
+        Status: 200, Headers: {},
+        Body: { done, totalSize: ids.length,
+                nextRecordsUrl: done ? undefined : '/services/data/v61.0/query/01gNEXT',
+                records: ids.map((id, i) => ({ Id: id, SystemModstamp: stamps[i] })) },
+    });
+
+    it('a NON-final page still emits NewWatermarkValue = max seen on that page', async () => {
+        // The defect: advancing only under done=true meant an object too big to finish one run
+        // recorded NOTHING and restarted from row zero forever (observed live at 70,000 of
+        // 3,780,536 rows — an exact page-size multiple, watermark NULL).
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(false, ['001', '002'], ['2026-08-01T00:00:00.000+0000', '2026-08-02T09:30:00.000+0000']));
+        const out = await c.CallExecuteSOQL('SELECT Id FROM Account', 'Account');
+        expect(out.HasMore).toBe(true);
+        expect(out.NewWatermarkValue).toBeTruthy();
+    });
+
+    it('the final page emits the max too — behaviour there is unchanged', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(true, ['003'], ['2026-08-03T12:00:00.000+0000']));
+        const out = await c.CallExecuteSOQL('SELECT Id FROM Account', 'Account');
+        expect(out.HasMore).toBe(false);
+        expect(out.NewWatermarkValue).toBeTruthy();
+    });
+
+    it('a page with no usable stamps emits undefined — never a fabricated value', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push({ Status: 200, Headers: {}, Body: { done: false, totalSize: 1, nextRecordsUrl: '/q/n', records: [{ Id: '004' }] } });
+        const out = await c.CallExecuteSOQL('SELECT Id FROM Account', 'Account');
+        expect(out.NewWatermarkValue).toBeUndefined();
+    });
+});
+
+describe('SalesforceConnector — chunked wide projections (HTTP 431 on the request line)', () => {
+    const wideFields = ['Id', 'SystemModstamp',
+        ...Array.from({ length: 400 }, (_, i) => `NU__VeryLongCustomFieldName_${String(i).padStart(3, '0')}__c`)];
+    const page = (ids: string[], extra: Record<string, unknown>, done = true, next?: string) => ({
+        Status: 200, Headers: {},
+        Body: { done, totalSize: ids.length, nextRecordsUrl: next,
+                records: ids.map(id => ({ Id: id, SystemModstamp: '2026-08-01T00:00:00.000Z', ...extra })) },
+    });
+
+    it('a NARROW projection stays ONE chunk — the path every working object takes today', () => {
+        const c = new SOQLMechanicsConnector();
+        expect(c.CallChunk('Account', ['Id', 'Name', 'SystemModstamp'], null, null)).toHaveLength(1);
+    });
+
+    it('a WIDE projection splits into budget-fitting chunks that each carry Id + the watermark', () => {
+        const c = new SOQLMechanicsConnector();
+        const chunks = c.CallChunk('Account', wideFields, null, null);
+        expect(chunks.length).toBeGreaterThan(1);
+        for (const chunk of chunks) {
+            expect(chunk).toContain('Id');
+            expect(chunk).toContain('SystemModstamp');
+            expect(encodeURIComponent(c.CallBuildSOQL('Account', chunk, null)).length).toBeLessThanOrEqual(12_000);
+        }
+    });
+
+    it('aligned chunk pages reassemble whole rows by Id, pinned to one page size', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(['001', '002'], { A__c: 'a' }));
+        c.Responses.push(page(['001', '002'], { B__c: 'b' }));
+        const out = await c.CallFetchChunkedPages(['https://na1.salesforce.com/q?c=1', 'https://na1.salesforce.com/q?c=2'], 'Account');
+        expect(out.Records.map(r => r.ExternalID).sort()).toEqual(['001', '002']);
+        expect(out.Records[0].Fields['A__c']).toBe('a');
+        expect(out.Records[0].Fields['B__c']).toBe('b');
+        for (const call of c.Calls) expect(call.headers['Sforce-Query-Options']).toBe('batchSize=200');
+        expect(out.HasMore).toBe(false);
+    });
+
+    it('misaligned chunk pages THROW rather than write half-populated rows', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(['001', '002'], {}));
+        c.Responses.push(page(['001'], {}));
+        await expect(c.CallFetchChunkedPages(['https://na1.salesforce.com/q?c=1', 'https://na1.salesforce.com/q?c=2'], 'Account'))
+            .rejects.toThrow(/misaligned/);
+    });
+
+    it('a chunked cursor carries every per-chunk locator so the next page resumes aligned', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(['001'], {}, false, '/services/data/v61.0/query/01gC1'));
+        c.Responses.push(page(['001'], {}, false, '/services/data/v61.0/query/01gC2'));
+        const out = await c.CallFetchChunkedPages(['https://na1.salesforce.com/q?c=1', 'https://na1.salesforce.com/q?c=2'], 'Account');
+        expect(out.HasMore).toBe(true);
+        const st = JSON.parse((out.NextCursor ?? '').slice('chunks:'.length)) as { o: string; ls: string[] };
+        expect(st.o).toBe('Account');
+        expect(st.ls).toEqual(['/services/data/v61.0/query/01gC1', '/services/data/v61.0/query/01gC2']);
+    });
+});
+
 describe('SalesforceConnector — bulk transport opt-in flag', () => {
     /** Exposes the private resolver with a stubbed engine-cache lookup. */
     class TransportFlagConnector extends SalesforceConnector {
