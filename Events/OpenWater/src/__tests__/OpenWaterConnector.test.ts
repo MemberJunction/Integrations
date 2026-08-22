@@ -1179,3 +1179,90 @@ describe('OpenWaterConnector — a truncated harvest must not look finished', ()
         expect(seen.sort()).toEqual(['8000', '8001', '8002', '8003', '8004']);
     });
 });
+
+// ─── The door is paged by the DOOR's rules, not the child's ──────────────
+//
+// PaginateLeaf decides whether to page from `obj.SupportsPagination && obj.PaginationType !== 'None'`.
+// The door fetch used to pass the CHILD object, and a walked child declares neither (its APIPath is
+// "(embedded in /v2/Applications/{applicationId} …)") — so the door URL went out with no
+// pageIndex/pageSize and the vendor answered with its default page. Every detail walk was therefore
+// capped at one page of parents while honestly reporting HasMore:false, because it really had
+// consumed every parent it was given.
+//
+// Measured on a live tenant against 1,976 Applications: ApplicationRoundSubmission returned 10
+// records from 10 parents (target 1,935) and ApplicationFile 0 from 10 (target 4,001), while
+// ApplicationWinnerType was correct only because its door, /v2/Programs, has 5 rows and fits in one
+// default page.
+describe('OpenWaterConnector — the door is paged by the door object', () => {
+    /** Door with a 2-row page size, child declaring no pagination of its own. */
+    function addDoorAndChild(connector: MockedOpenWaterConnector): void {
+        connector.AddObject(
+            io({ ID: 'o-app', Name: 'Application', APIPath: '/v2/Applications', DefaultPageSize: 2 }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-ars2', Name: 'ApplicationRoundSubmission', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            // Details first — these must not be shadowed by the door matches below.
+            { match: '/v2/Applications/101', response: { Status: 200, Body: { id: 101, roundSubmissions: [{ roundId: 55 }] }, Headers: {} } },
+            { match: '/v2/Applications/102', response: { Status: 200, Body: { id: 102, roundSubmissions: [{ roundId: 55 }] }, Headers: {} } },
+            { match: '/v2/Applications/103', response: { Status: 200, Body: { id: 103, roundSubmissions: [{ roundId: 55 }] }, Headers: {} } },
+            // A full page, then a short one — the short page ends the walk.
+            { match: '/v2/Applications?pageIndex=0', response: { Status: 200, Body: { records: [{ id: 101 }, { id: 102 }] }, Headers: {} } },
+            { match: '/v2/Applications?pageIndex=1', response: { Status: 200, Body: { records: [{ id: 103 }] }, Headers: {} } },
+        ];
+    }
+
+    it('reaches parents beyond the first page', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addDoorAndChild(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        // 103 lives on page 2 — before the fix the walk never saw it.
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['101|55', '102|55', '103|55']);
+    });
+
+    it('issues the door request WITH paging parameters', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addDoorAndChild(connector);
+
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        const doorRequests = connector.Requests.filter(r => r.url.includes('/v2/Applications?'));
+        expect(doorRequests.length).toBeGreaterThan(1);
+        // The door's own page size, not the child's absent one.
+        expect(doorRequests[0].url).toContain('pageSize=2');
+        expect(doorRequests.some(r => r.url.includes('pageIndex=1'))).toBe(true);
+    });
+
+    it('falls back to the child when the door has no catalog row, rather than throwing mid-sync', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addDoorAndChild(connector);
+        // Re-register the child pointing at a door that was never seeded.
+        connector.AddObject(
+            io({
+                ID: 'o-ars3', Name: 'OrphanChild', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'NoSuchDoor', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+
+        await expect(connector.FetchChanges(fetchCtx('OrphanChild'))).resolves.toBeDefined();
+    });
+});

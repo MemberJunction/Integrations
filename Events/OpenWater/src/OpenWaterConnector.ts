@@ -726,7 +726,9 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         const warnings: FetchWarning[] = [];
 
         // Pull the door collection (paginated) and descend to the parent leaf values + the door rows.
-        const doorRows = await this.FetchDoorRows(auth, baseURL, accessPath.doorPath, obj);
+        // Page the door by the DOOR's own rules, not the child's — see FetchDoorRows.
+        const doorRows = await this.FetchDoorRows(
+            auth, baseURL, accessPath.doorPath, this.ResolveDoorObject(ctx, accessPath, obj));
         if (doorRows.length === 0) {
             warnings.push({
                 Code: 'ZERO_PARENTS',
@@ -871,13 +873,45 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     }
 
     /** Fetch all pages of a door collection (used to enumerate parent ids / embedded children). */
+    /**
+     * The IntegrationObject whose pagination rules govern the DOOR request.
+     *
+     * This used to be the child object, and that silently capped every detail walk at one page of
+     * parents. `PaginateLeaf` decides whether to page at all from
+     * `obj.SupportsPagination && obj.PaginationType !== 'None'` — and a walked child declares
+     * neither, because the child is not itself a paged collection (ApplicationFile's APIPath is
+     * "embedded in /v2/Applications/{applicationId} …"). So the door URL went out with no
+     * pageIndex/pageSize and OpenWater answered with its default page.
+     *
+     * Measured on a live tenant 2026-08-22, against 1,976 Applications:
+     *   ApplicationRoundSubmission  10 parents -> 10 records, hasMore:false   (target 1,935)
+     *   ApplicationFile             10 parents -> 0 records  (ZERO_LEAVES)    (target 4,001)
+     * and ApplicationWinnerType was CORRECT at 74 only because its door is /v2/Programs, which has
+     * 5 rows and therefore fits inside one default page. The walk reported HasMore:false honestly:
+     * it really had consumed every parent it was given. It was given ten.
+     *
+     * Falls back to the child when the door has no catalog row, which keeps a misdeclared
+     * AccessPath behaving as before rather than throwing mid-sync.
+     */
+    private ResolveDoorObject(
+        ctx: FetchContext,
+        accessPath: AccessPath,
+        child: MJIntegrationObjectEntity
+    ): MJIntegrationObjectEntity {
+        try {
+            return this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, accessPath.door);
+        } catch {
+            return child;
+        }
+    }
+
     private async FetchDoorRows(
         auth: OpenWaterAuthContext,
         baseURL: string,
         doorPath: string,
-        obj: MJIntegrationObjectEntity
+        doorObj: MJIntegrationObjectEntity
     ): Promise<Record<string, unknown>[]> {
-        const { records } = await this.PaginateLeaf(auth, baseURL, doorPath, obj, undefined, undefined, '', true);
+        const { records } = await this.PaginateLeaf(auth, baseURL, doorPath, doorObj, undefined, undefined, '', true);
         return records;
     }
 
