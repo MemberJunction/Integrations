@@ -22,3 +22,10 @@ One trap this closes explicitly: once the harvest stops early, the parent list i
 real parent set, so its length must not be read as the total. It was, which reported
 `HasMore: false` with door rows still un-harvested — silently dropping every later record. A
 regression test now drives a whole object through batch-sized calls and asserts nothing is lost.
+
+The per-parent detail cache is bounded too, oldest-first at 500 entries. Its previous
+20,000-entry ceiling was finite but not meaningfully bounded — each entry is a whole application
+detail — so a full walk could hold gigabytes alive, measured as repeated container SIGKILLs on a
+7GB host while an apply sampled these objects. The cache only needs to span one batch (siblings
+walking the same parents), and FIFO eviction keeps the entries actually being reused, where the
+old clear-everything threw out the in-flight batch's own cache.

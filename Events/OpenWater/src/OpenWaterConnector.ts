@@ -109,6 +109,12 @@ interface OpenWaterAuthContext extends RESTAuthContext {
  * Per-IO access path (read from IntegrationObject.Configuration.AccessPath) describing how
  * to reach a nested object's records from a queryable door.
  */
+/**
+ * How many per-parent detail payloads the cache may hold. Sized to span ONE batch (siblings
+ * walking the same parents), not the whole tenant — each entry is a full detail document.
+ */
+const DETAIL_CACHE_MAX_ENTRIES = 500;
+
 /** Cursor namespace for a bounded, resumable detail walk: the parent offset consumed so far. */
 const DETAIL_WALK_CURSOR_PREFIX = 'detail:';
 
@@ -1013,8 +1019,21 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         }
         const body = response.Body as Record<string, unknown>;
         this.detailCache.set(path, { at: now, body });
-        // Bounded: a full walk caches one entry per parent; cap well above that but finite.
-        if (this.detailCache.size > 20_000) this.detailCache.clear();
+        /**
+         * Evict oldest-first at a SMALL cap. The previous 20,000-entry ceiling was "finite" but
+         * not bounded in any useful sense: each entry is a whole application detail (round
+         * submissions, every field value), so a full walk could hold gigabytes of payload alive
+         * — measured as repeated container SIGKILLs on a 7GB host while an apply sampled these
+         * objects. The cache exists only so SIBLING objects walking the SAME parents in one
+         * batch pay each detail once, so it needs to span a batch, not the whole tenant.
+         * Clearing outright (the old behaviour) also threw away the entries still in use by the
+         * batch in flight; FIFO eviction keeps the recent ones, which are the ones being reused.
+         */
+        while (this.detailCache.size > DETAIL_CACHE_MAX_ENTRIES) {
+            const oldest = this.detailCache.keys().next();
+            if (oldest.done) break;
+            this.detailCache.delete(oldest.value);
+        }
         return body;
     }
 
