@@ -372,7 +372,7 @@
       ],
       "logo": "fa-solid fa-trophy",
       "navigationBaseURL": "https://api.getopenwater.com",
-      "objectCount": 25,
+      "objectCount": 30,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
       "version": "1.3.3",
@@ -462,10 +462,10 @@
       "objectCount": 205,
       "className": "@memberjunction/connector-netsuite",
       "npmPackage": "@memberjunction/connector-netsuite",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/NetSuite",
-      "installTag": "Finance-NetSuite@1.3.1"
+      "installTag": "Finance-NetSuite@1.3.2"
     },
     {
       "name": "QuickBooks",
@@ -651,10 +651,10 @@
       "objectCount": 1,
       "className": "@memberjunction/connector-propfuel",
       "npmPackage": "@memberjunction/connector-propfuel",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/PropFuel",
-      "installTag": "Marketing-PropFuel@1.2.1"
+      "installTag": "Marketing-PropFuel@1.2.2"
     },
     {
       "name": "rasa",
