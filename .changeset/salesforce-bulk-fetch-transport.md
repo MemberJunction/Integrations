@@ -8,6 +8,8 @@ Bulk API 2.0 as a fetch transport, and two hardening fixes ported from the Nimbl
   "bulk_query"`): backfills route through a Bulk API 2.0 query job — Salesforce materializes
   the export server-side and the connector downloads CSV pages via `Sforce-Locator`, so the
   serial REST cursor (seconds per page on wide objects) disappears from the big first pull.
+  The query is stripped of ORDER BY, which Bulk 2.0 accepts but which disables PK Chunking
+  (Salesforce's own remedy for bulk-query timeouts is to remove it).
   The cursor carries the whole job identity (`bulkq:{id, object, locator}`): mid-job restarts
   re-poll the same job, mid-download restarts resume at the locator. Failed/aborted jobs throw
   with the vendor errorMessage; a job created without an id throws rather than losing the job.
