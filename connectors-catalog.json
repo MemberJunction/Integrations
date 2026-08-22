@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 47,
+  "count": 48,
   "connectors": [
     {
       "name": "Fonteva",
@@ -936,6 +936,30 @@
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/SQLServer",
       "installTag": "Platform-SQLServer@1.0.2"
+    },
+    {
+      "name": "WordPress",
+      "displayName": "WordPress Connector",
+      "description": "WordPress self-hosted content and commerce platform connector — syncs core wp/v2 objects (posts, pages, media, taxonomies, users, comments) plus WooCommerce wc/v3 objects (orders, products, customers, coupons) from a per-tenant site URL.",
+      "category": "Platform",
+      "tags": [
+        "wordpress",
+        "woocommerce",
+        "cms",
+        "ecommerce",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-wordpress",
+      "navigationBaseURL": "{siteUrl}/wp-admin/",
+      "objectCount": 78,
+      "className": "WordPressConnector",
+      "npmPackage": "@memberjunction/connector-wordpress",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Platform/WordPress",
+      "installTag": "Platform-WordPress@1.0.0"
     },
     {
       "name": "zendesk",
