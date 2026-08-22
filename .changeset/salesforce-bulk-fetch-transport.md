@@ -4,8 +4,8 @@
 
 Bulk API 2.0 as a fetch transport, and two hardening fixes ported from the Nimble campaign.
 
-- **Bulk query fetch transport** (opt-in per object: `DefaultQueryParams.fetch_transport =
-  "bulk_query"`): backfills route through a Bulk API 2.0 query job — Salesforce materializes
+- **Bulk query fetch transport** (opt-in per object: `Configuration.FetchTransport =
+  "bulk_query"`, or `DefaultQueryParams.fetch_transport` as a fallback): backfills route through a Bulk API 2.0 query job — Salesforce materializes
   the export server-side and the connector downloads CSV pages via `Sforce-Locator`, so the
   serial REST cursor (seconds per page on wide objects) disappears from the big first pull.
   The query is stripped of ORDER BY, which Bulk 2.0 accepts but which disables PK Chunking

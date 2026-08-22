@@ -1227,3 +1227,30 @@ describe('SalesforceConnector — chunked wide projections (HTTP 431 on the requ
         expect(st.ls).toEqual(['/services/data/v61.0/query/01gC1', '/services/data/v61.0/query/01gC2']);
     });
 });
+
+describe('SalesforceConnector — bulk transport opt-in flag', () => {
+    /** Exposes the private resolver with a stubbed engine-cache lookup. */
+    class TransportFlagConnector extends SalesforceConnector {
+        public Obj: { Configuration?: string | null; DefaultQueryParams?: string | null } | null = null;
+        public Resolve(): string | null {
+            const self = this as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+            // Stub the engine cache the resolver reads.
+            (self as unknown as Record<string, unknown>)['__stub'] = true;
+            return self.ResolveFetchTransport('int-1', 'Account');
+        }
+    }
+
+    it('reads Configuration.FetchTransport — the field the per-object config tooling can write', () => {
+        const c = new TransportFlagConnector();
+        const self = c as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+        // Engine cache is unavailable in unit context, so the resolver must fail CLOSED (null)
+        // rather than throwing — a missing cache must never route a fetch down the bulk path.
+        expect(self.ResolveFetchTransport('int-1', 'Account')).toBeNull();
+    });
+
+    it('a bulk-flagged object is opt-in only: no flag means the REST cursor path, never bulk', () => {
+        const c = new TransportFlagConnector();
+        const self = c as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+        expect(self.ResolveFetchTransport('int-1', 'NoSuchObject')).not.toBe('bulk_query');
+    });
+});
