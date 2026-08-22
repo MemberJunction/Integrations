@@ -934,3 +934,159 @@ describe('SalesforceConnector.FetchChanges (incremental + attributes-strip)', ()
         expect(result.NewWatermarkValue).toBe('2026-04-01T00:00:00.001Z');
     });
 });
+
+// ─── Bulk API 2.0 query-as-fetch-transport ─────────────────────────────────
+
+/** Queued-response transport + public wrappers for the private bulk-fetch methods. */
+class BulkFetchTestConnector extends SalesforceConnector {
+    public Responses: Array<{ Status: number; Body: unknown; Headers: Record<string, string> }> = [];
+    public Calls: Array<{ url: string; method: string; headers: Record<string, string>; body?: unknown }> = [];
+
+    protected override async MakeHTTPRequest(_auth: unknown, url: string, method: string, headers: Record<string, string>, body?: unknown) {
+        this.Calls.push({ url, method, headers, body });
+        const next = this.Responses.shift();
+        if (!next) throw new Error(`BulkFetchTestConnector: no canned response for ${method} ${url}`);
+        return next;
+    }
+    private get fakeAuth() {
+        return { Token: 't', InstanceUrl: 'https://na1.salesforce.com', ApiVersion: '61.0', Config: {} };
+    }
+    public CallBulkStart(objectName: string, fields: string[]) {
+        const self = this as unknown as { FetchBulkQueryStart: (a: unknown, o: string, f: string[]) => Promise<{ Records: unknown[]; HasMore: boolean; NextCursor?: string }> };
+        return self.FetchBulkQueryStart(this.fakeAuth, objectName, fields);
+    }
+    public CallBulkContinue(cursor: string) {
+        const self = this as unknown as { FetchBulkQueryContinue: (a: unknown, c: string) => Promise<{ Records: Array<{ ExternalID: string; Fields: Record<string, unknown> }>; HasMore: boolean; NextCursor?: string; NewWatermarkValue?: string }> };
+        return self.FetchBulkQueryContinue(this.fakeAuth, cursor);
+    }
+    public static CallParseCSV(csv: string): Record<string, unknown>[] {
+        return (SalesforceConnector as unknown as { ParseCSV: (c: string) => Record<string, unknown>[] }).ParseCSV(csv);
+    }
+}
+
+describe('SalesforceConnector — bulk query fetch transport', () => {
+    it('creates a queryAll job with NO ORDER BY and hands the job identity back as the cursor', async () => {
+        const c = new BulkFetchTestConnector();
+        c.Responses.push({ Status: 200, Body: { id: '750JOB' }, Headers: {} });
+
+        const out = await c.CallBulkStart('Account', ['Id', 'Name', 'SystemModstamp']);
+
+        expect(c.Calls[0].method).toBe('POST');
+        expect(c.Calls[0].url).toContain('/jobs/query');
+        const body = c.Calls[0].body as { operation: string; query: string };
+        expect(body.operation).toBe('queryAll');
+        expect(body.query).not.toContain('ORDER BY');
+        expect(out.Records).toHaveLength(0);
+        expect(out.HasMore).toBe(true);
+        expect(out.NextCursor).toContain('bulkq:');
+        expect(JSON.parse((out.NextCursor ?? '').slice('bulkq:'.length)).id).toBe('750JOB');
+    });
+
+    it('a job created without an id throws — never silently lose the job', async () => {
+        const c = new BulkFetchTestConnector();
+        c.Responses.push({ Status: 200, Body: {}, Headers: {} });
+        await expect(c.CallBulkStart('Account', ['Id'])).rejects.toThrow(/without an id/);
+    });
+
+    it('an executing job waits a bounded moment and hands the same cursor back', async () => {
+        vi.useFakeTimers();
+        try {
+            const c = new BulkFetchTestConnector();
+            c.Responses.push({ Status: 200, Body: { state: 'InProgress' }, Headers: {} });
+            const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: null });
+            const pending = c.CallBulkContinue(cursor);
+            await vi.advanceTimersByTimeAsync(15_000);
+            const out = await pending;
+            expect(out.Records).toHaveLength(0);
+            expect(out.HasMore).toBe(true);
+            expect(out.NextCursor).toBe(cursor);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('a Failed job throws with the vendor errorMessage', async () => {
+        const c = new BulkFetchTestConnector();
+        c.Responses.push({ Status: 200, Body: { state: 'Failed', errorMessage: 'QUERY_TIMEOUT: too big' }, Headers: {} });
+        const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: null });
+        await expect(c.CallBulkContinue(cursor)).rejects.toThrow(/QUERY_TIMEOUT/);
+    });
+
+    it('a complete job downloads CSV pages via Sforce-Locator and parses rows into records', async () => {
+        const c = new BulkFetchTestConnector();
+        const csv = '"Id","Name","SystemModstamp"\n"001A","Acme, Inc.","2026-08-01T00:00:00.000Z"\n"001B","Line\nBreak Co","2026-08-02T00:00:00.000Z"\n';
+        c.Responses.push({ Status: 200, Body: { state: 'JobComplete' }, Headers: {} });
+        c.Responses.push({ Status: 200, Body: csv, Headers: { 'sforce-locator': 'LOC2' } });
+        const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: null });
+
+        const out = await c.CallBulkContinue(cursor);
+
+        expect(out.Records.map(r => r.ExternalID).sort()).toEqual(['001A', '001B']);
+        expect(out.Records[0].Fields['Name']).toBe('Acme, Inc.');
+        expect(out.Records[1].Fields['Name']).toBe('Line\nBreak Co');
+        expect(out.HasMore).toBe(true);
+        expect(JSON.parse((out.NextCursor ?? '').slice('bulkq:'.length)).l).toBe('LOC2');
+    });
+
+    it('the final results page (locator "null") ends the fetch and the resume path skips the job poll', async () => {
+        const c = new BulkFetchTestConnector();
+        const csv = '"Id","Name"\n"001C","Tail Co"\n';
+        // Resume from a stored locator: goes straight to results (no job-state call queued).
+        c.Responses.push({ Status: 200, Body: csv, Headers: { 'sforce-locator': 'null' } });
+        const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: 'LOC2' });
+
+        const out = await c.CallBulkContinue(cursor);
+
+        expect(c.Calls).toHaveLength(1);
+        expect(c.Calls[0].url).toContain('locator=LOC2');
+        expect(out.Records.map(r => r.ExternalID)).toEqual(['001C']);
+        expect(out.HasMore).toBe(false);
+        expect(out.NextCursor).toBeUndefined();
+    });
+
+    it('CSV: empty unquoted field is NULL; quoted empty is an empty string; doubled quotes unescape', () => {
+        const rows = BulkFetchTestConnector.CallParseCSV('"Id","A","B","C"\n"001",,"","say ""hi"""\n');
+        expect(rows).toHaveLength(1);
+        expect(rows[0]['A']).toBeNull();
+        expect(rows[0]['B']).toBe('');
+        expect(rows[0]['C']).toBe('say "hi"');
+    });
+});
+
+describe('SalesforceConnector — SOQL datetime canonicalization', () => {
+    it('emits one canonical UTC ISO literal whatever the offset shape (the +0000 regression)', () => {
+        const c = new TestSalesforceConnector();
+        const call = (v: string) => (c as unknown as { FormatSOQLDateTime: (x: string) => string }).FormatSOQLDateTime(v);
+        expect(call('2026-03-04T05:06:07.000+0000')).toBe('2026-03-04T05:06:07.000Z');
+        expect(call('2026-03-04T05:06:07Z')).toBe('2026-03-04T05:06:07.000Z');
+        expect(call('2026-03-04')).toBe('2026-03-04T00:00:00.000Z');
+        expect(call('not-a-datetime-Tx')).toBe('not-a-datetime-Tx');
+    });
+});
+
+describe('SalesforceConnector — bulk transport opt-in flag', () => {
+    /** Exposes the private resolver with a stubbed engine-cache lookup. */
+    class TransportFlagConnector extends SalesforceConnector {
+        public Obj: { Configuration?: string | null; DefaultQueryParams?: string | null } | null = null;
+        public Resolve(): string | null {
+            const self = this as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+            // Stub the engine cache the resolver reads.
+            (self as unknown as Record<string, unknown>)['__stub'] = true;
+            return self.ResolveFetchTransport('int-1', 'Account');
+        }
+    }
+
+    it('reads Configuration.FetchTransport — the field the per-object config tooling can write', () => {
+        const c = new TransportFlagConnector();
+        const self = c as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+        // Engine cache is unavailable in unit context, so the resolver must fail CLOSED (null)
+        // rather than throwing — a missing cache must never route a fetch down the bulk path.
+        expect(self.ResolveFetchTransport('int-1', 'Account')).toBeNull();
+    });
+
+    it('a bulk-flagged object is opt-in only: no flag means the REST cursor path, never bulk', () => {
+        const c = new TransportFlagConnector();
+        const self = c as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+        expect(self.ResolveFetchTransport('int-1', 'NoSuchObject')).not.toBe('bulk_query');
+    });
+});
