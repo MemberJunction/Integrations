@@ -958,3 +958,70 @@ describe('OpenWaterConnector — FetchChanges (detail-walk modes)', () => {
         expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['7', '8', '9']);
     });
 });
+
+// ─── Multi-door union walk (Judge) + pair-grain keys ─────────────────────
+
+describe('OpenWaterConnector — FetchChanges (alternativeAccessPaths union)', () => {
+    it('unions the round walk with embedded team rosters, deduplicating by primary key', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-judge', Name: 'Judge', APIPath: '/v2/JudgeAssignments/AssignedToRound',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({
+                    AccessPath: {
+                        door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                        parentParamName: 'roundId', entryPath: '/v2/JudgeAssignments/AssignedToRound',
+                        parentParamIn: 'query',
+                    },
+                    alternativeAccessPaths: [
+                        { door: 'JudgeTeam', doorPath: '/v2/JudgeTeams', nestingSegments: ['judges[]'], extractionMode: 'embedded-array' },
+                        { door: 'JudgeTeam', doorPath: '/v2/JudgeTeams', nestingSegments: ['managers[]'], extractionMode: 'embedded-array' },
+                    ],
+                }),
+            }),
+            [{ Name: 'userId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            // Round walk: judges 7 and 8 assigned to round 55.
+            { match: 'AssignedToRound?roundId=55', response: { Status: 200, Body: { records: [
+                { userId: 7, firstName: 'A' }, { userId: 8, firstName: 'B' }] }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 55 }] }] }, Headers: {} } },
+            // Team rosters: judge 8 again (dupe), judge 9 team-only, manager 10.
+            { match: '/v2/JudgeTeams', response: { Status: 200, Body: { records: [
+                { id: 300, judges: [{ userId: 8, firstName: 'B' }, { userId: 9, firstName: 'C' }],
+                  managers: [{ userId: 10, firstName: 'D' }] }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('Judge'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['10', '7', '8', '9']);
+        // The round-sourced row carries its walk tag; the first occurrence of 8 (round walk) wins.
+        const eight = result.Records.find(r => r.ExternalID === '8');
+        expect(eight?.Fields['roundId']).toBe('55');
+    });
+
+    it('a pair-grain key keeps one row per (round, judge) instead of collapsing per person', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-ja2', Name: 'JudgeAssignment', APIPath: '/v2/JudgeAssignments/AssignedToRound',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Program', doorPath: '/v2/Programs', parentParamName: 'roundId',
+                    nestingSegments: ['rounds[]'], entryPath: '/v2/JudgeAssignments/AssignedToRound', parentParamIn: 'query',
+                } }),
+            }),
+            [{ Name: 'userId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            // The same judge is assigned to BOTH rounds.
+            { match: 'AssignedToRound?roundId=55', response: { Status: 200, Body: { records: [{ userId: 7 }] }, Headers: {} } },
+            { match: 'AssignedToRound?roundId=56', response: { Status: 200, Body: { records: [{ userId: 7 }] }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 55 }, { id: 56 }] }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('JudgeAssignment'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['7|55', '7|56']);
+    });
+});
