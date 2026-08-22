@@ -1,7 +1,7 @@
 {
   "name": "@memberjunction/connector-quickbooks",
-  "version": "2.0.0",
-  "private": true,
+  "version": "2.0.1",
+  "private": false,
   "description": "MemberJunction QuickBooks connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "author": "MemberJunction.com",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "peerDependencies": {
     "@memberjunction/core": ">=5.42.0 <6.0.0",
     "@memberjunction/core-entities": ">=5.42.0 <6.0.0",

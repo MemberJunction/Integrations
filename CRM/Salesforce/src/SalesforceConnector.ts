@@ -148,7 +148,25 @@ interface GovernorLimitState {
 
 const DEFAULT_API_VERSION = '61.0';
 const DEFAULT_MAX_RETRIES = 5;
-const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+// 120s, raised from 30s, to match Salesforce's OWN server-side query timeout. 30s gave up long
+// before the vendor did: on a full org, describe and the first page of a large object
+// legitimately take more than half a minute, and every expiry degraded that object silently
+// (single-record field inference, no measured widths). Stopping when the vendor stops is the
+// honest deadline; `RequestTimeoutMs` in Configuration still overrides per connection.
+const DEFAULT_REQUEST_TIMEOUT_MS = 120000;
+
+// ─── Bulk API 2.0 query-as-fetch-transport ───────────────────────────────
+// Cursor namespace prefix for a fetch running through a Bulk API 2.0 query job. The cursor is
+// the ONLY state the engine round-trips, so it carries the whole job identity:
+//   bulkq:{"id":"<jobId>","o":"<objectName>","l":"<locator|null>"}
+const BULK_QUERY_CURSOR_PREFIX = 'bulkq:';
+// How long one FetchChanges call is willing to wait in-process for a job still executing,
+// before handing the cursor back to the engine to re-enter. Keeps each call bounded while
+// avoiding a hot poll loop.
+const BULK_QUERY_POLL_WAIT_MS = 15_000;
+// Rows requested per results download. SF caps and pages the download via Sforce-Locator
+// regardless; this bounds one batch's memory.
+const BULK_QUERY_RESULTS_PAGE = 10_000;
 const DEFAULT_MIN_REQUEST_INTERVAL_MS = 100;
 const DEFAULT_BATCH_SIZE = 2000;
 
@@ -625,7 +643,22 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         // the initial SOQL and produced duplicate first-page results until
         // the engine's duplicate-batch guard aborted the entity.
         if (ctx.CurrentCursor) {
+            if (String(ctx.CurrentCursor).startsWith(BULK_QUERY_CURSOR_PREFIX)) {
+                return this.FetchBulkQueryContinue(auth, String(ctx.CurrentCursor));
+            }
             return this.FetchNextPage(auth, ctx.CurrentCursor);
+        }
+
+        // Opt-in bulk fetch transport: for data-warehouse-scale backfills the REST cursor is
+        // the wall (a serial ~seconds-per-page walk), and Salesforce's own answer is a Bulk
+        // API 2.0 QUERY JOB — the org materializes the export server-side and we download CSV
+        // pages. Declared per object via DefaultQueryParams: {"fetch_transport": "bulk_query"}.
+        // Incremental trickle (a watermark exists) stays on the REST path: a bulk job per tiny
+        // delta would be all overhead; the transport is for the big first pull.
+        if (family === 'sobject' && !ctx.WatermarkValue
+            && this.ResolveFetchTransport(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName) === 'bulk_query') {
+            const bulkFields = await this.GetQueryableFieldNames(auth, ctx.ObjectName, family);
+            return this.FetchBulkQueryStart(auth, ctx.ObjectName, bulkFields);
         }
 
         if (family === 'analytics_report' || family === 'analytics_dashboard') {
@@ -1153,6 +1186,177 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
      */
     private ApiBase(auth: SalesforceAuthContext): string {
         return this.GetBaseURL(auth.CompanyIntegration, auth);
+    }
+
+    // ─── Bulk API 2.0 fetch transport ─────────────────────────────────
+
+    /**
+     * How this object's backfill should be fetched — `'bulk_query'` routes it through a Bulk
+     * API 2.0 job. Read from `Configuration.FetchTransport` first: Configuration is the
+     * connector's own settings blob (the same place OpenWater keeps its AccessPath), which is
+     * what makes this operable — the field is writable by the existing per-object config
+     * tooling, whereas `DefaultQueryParams` is not. `DefaultQueryParams.fetch_transport` is
+     * still honored as a fallback for consistency with the `api_family` flag that already
+     * lives there.
+     */
+    private ResolveFetchTransport(integrationID: string, objectName: string): string | null {
+        try {
+            const obj = IntegrationEngineBase.Instance.GetIntegrationObject(integrationID, objectName);
+            if (!obj) return null;
+            if (obj.Configuration) {
+                const cfg = JSON.parse(obj.Configuration) as { FetchTransport?: string };
+                if (cfg.FetchTransport) return cfg.FetchTransport;
+            }
+            if (obj.DefaultQueryParams) {
+                const parsed = JSON.parse(obj.DefaultQueryParams) as { fetch_transport?: string };
+                return parsed.fetch_transport ?? null;
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Create the Bulk API 2.0 query job and hand its identity back as the cursor. The job runs
+     * server-side; every subsequent engine call re-enters through FetchBulkQueryContinue.
+     * `queryAll` keeps soft-deleted rows, matching the REST path's behaviour. The SOQL is
+     * stripped of its ORDER BY: Bulk 2.0 accepts the clause but it DISABLES PK Chunking, which
+     * is the whole reason the bulk path is fast — Salesforce's own guidance is to remove
+     * ORDER BY/LIMIT when a bulk query times out. Job results need no ordering anyway: the
+     * watermark advances per downloaded page to the max seen (the engine keeps it monotonic),
+     * and resumability comes from the job id + locator rather than from row order.
+     * Compound `address`/`location` fields are already excluded by GetQueryableFieldNames —
+     * Bulk 2.0 does not support them either.
+     */
+    private async FetchBulkQueryStart(
+        auth: SalesforceAuthContext,
+        objectName: string,
+        fields: string[]
+    ): Promise<FetchBatchResult> {
+        const soql = this.BuildSOQLQuery(objectName, fields, null, 0, true)
+            .replace(/ ORDER BY .*$/, '');
+        const url = `${this.ApiBase(auth)}/services/data/v${auth.ApiVersion}/jobs/query`;
+        const headers = { ...this.BuildHeaders(auth), 'Content-Type': 'application/json' };
+        const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, {
+            operation: 'queryAll',
+            query: soql,
+        });
+        this.ValidateResponse(response, url);
+        const job = response.Body as { id?: string };
+        if (!job.id) {
+            throw new Error(`Salesforce bulk query job for "${objectName}" was created without an id — refusing to lose the job.`);
+        }
+        return {
+            Records: [],
+            HasMore: true,
+            NextCursor: BULK_QUERY_CURSOR_PREFIX + JSON.stringify({ id: job.id, o: objectName, l: null }),
+        };
+    }
+
+    /**
+     * Re-enter a bulk query job: poll while it executes (bounded in-process wait, then hand the
+     * cursor back), surface a failed job LOUDLY, and once complete download the results page by
+     * page via the Sforce-Locator header, parsing CSV rows into the same record pipeline the
+     * REST path uses.
+     */
+    private async FetchBulkQueryContinue(
+        auth: SalesforceAuthContext,
+        cursor: string
+    ): Promise<FetchBatchResult> {
+        const state = JSON.parse(cursor.slice(BULK_QUERY_CURSOR_PREFIX.length)) as { id: string; o: string; l: string | null };
+        const jobBase = `${this.ApiBase(auth)}/services/data/v${auth.ApiVersion}/jobs/query/${encodeURIComponent(state.id)}`;
+        const headers = this.BuildHeaders(auth);
+
+        if (!state.l) {
+            // Job phase: results have not started downloading yet — check the job state first.
+            const jr = await this.MakeHTTPRequest(auth, jobBase, 'GET', headers);
+            this.ValidateResponse(jr, jobBase);
+            const job = jr.Body as { state?: string; errorMessage?: string; numberRecordsProcessed?: number };
+            if (job.state === 'Failed' || job.state === 'Aborted') {
+                throw new Error(`Salesforce bulk query job ${state.id} for "${state.o}" ${job.state}: ${job.errorMessage ?? '(no errorMessage)'} — nothing was written.`);
+            }
+            if (job.state !== 'JobComplete') {
+                // Still executing. Wait a bounded moment in-process, then give the cursor back —
+                // the engine re-enters and we check again. Never a hot loop, never an open wait.
+                await new Promise(resolve => setTimeout(resolve, BULK_QUERY_POLL_WAIT_MS));
+                return { Records: [], HasMore: true, NextCursor: cursor };
+            }
+        }
+
+        // Download one results page. locator 'null' from SF means the final page was served.
+        const params = new URLSearchParams({ maxRecords: String(BULK_QUERY_RESULTS_PAGE) });
+        if (state.l) params.set('locator', state.l);
+        const resultsUrl = `${jobBase}/results?${params.toString()}`;
+        const rr = await this.MakeHTTPRequest(auth, resultsUrl, 'GET', { ...headers, Accept: 'text/csv' });
+        this.ValidateResponse(rr, resultsUrl);
+        const csv = typeof rr.Body === 'string' ? rr.Body : String(rr.Body ?? '');
+        const rows = SalesforceConnector.ParseCSV(csv);
+        const locatorHeader = (rr.Headers?.['sforce-locator'] ?? rr.Headers?.['Sforce-Locator']) as string | undefined;
+        const nextLocator = locatorHeader && locatorHeader !== 'null' ? locatorHeader : null;
+
+        // Reuse the REST path's record pipeline (Id dedupe, ExternalRecord shaping, per-batch
+        // watermark max) by presenting the CSV rows as a SOQL response page.
+        const result = this.ParseSOQLResponse({
+            totalSize: rows.length,
+            done: nextLocator == null,
+            records: rows,
+        }, state.o);
+        return {
+            ...result,
+            HasMore: nextLocator != null,
+            NextCursor: nextLocator != null
+                ? BULK_QUERY_CURSOR_PREFIX + JSON.stringify({ id: state.id, o: state.o, l: nextLocator })
+                : undefined,
+        };
+    }
+
+    /**
+     * Minimal RFC-4180 CSV parser for Bulk API results: quoted fields (embedded commas,
+     * newlines, doubled quotes), header row = field names. Bulk CSV represents SQL NULL as an
+     * EMPTY UNQUOTED field — those become null so absent values never write as empty strings.
+     */
+    private static ParseCSV(csv: string): Record<string, unknown>[] {
+        if (!csv || !csv.trim()) return [];
+        const rows: string[][] = [];
+        let field = '';
+        let row: string[] = [];
+        let inQuotes = false;
+        let fieldWasQuoted = false;
+        const pushField = (quoted: boolean) => { row.push(quoted ? field : field); field = ''; };
+        const nulls: boolean[][] = [];
+        let rowNulls: boolean[] = [];
+        for (let i = 0; i < csv.length; i++) {
+            const ch = csv[i];
+            if (inQuotes) {
+                if (ch === '"') {
+                    if (csv[i + 1] === '"') { field += '"'; i++; }
+                    else inQuotes = false;
+                } else field += ch;
+            } else if (ch === '"') {
+                inQuotes = true; fieldWasQuoted = true;
+            } else if (ch === ',') {
+                rowNulls.push(!fieldWasQuoted && field === ''); pushField(fieldWasQuoted); fieldWasQuoted = false;
+            } else if (ch === '\n' || ch === '\r') {
+                if (ch === '\r' && csv[i + 1] === '\n') i++;
+                rowNulls.push(!fieldWasQuoted && field === ''); pushField(fieldWasQuoted); fieldWasQuoted = false;
+                if (row.length > 1 || row[0] !== '') { rows.push(row); nulls.push(rowNulls); }
+                row = []; rowNulls = [];
+            } else field += ch;
+        }
+        if (field !== '' || row.length) {
+            rowNulls.push(!fieldWasQuoted && field === ''); pushField(fieldWasQuoted);
+            if (row.length > 1 || row[0] !== '') { rows.push(row); nulls.push(rowNulls); }
+        }
+        if (rows.length < 2) return [];
+        const header = rows[0];
+        return rows.slice(1).map((r, ri) => {
+            const rec: Record<string, unknown> = {};
+            header.forEach((h, ci) => {
+                rec[h] = nulls[ri + 1]?.[ci] ? null : (r[ci] ?? null);
+            });
+            return rec;
+        });
     }
 
     // ─── SOQL Query Engine ───────────────────────────────────────────
@@ -1837,10 +2041,16 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
      * Formats a watermark value as a SOQL datetime literal.
      */
     private FormatSOQLDateTime(value: string): string {
-        // If it's already in ISO 8601 format, it works directly in SOQL
-        // SOQL accepts: 2026-03-13T10:30:00.000Z or 2026-03-13T10:30:00.000+00:00
-        if (value.includes('T')) return value;
-        // If it's just a date, append time
+        // Salesforce EMITS offsets without a colon ('2026-03-13T10:30:00.000+0000') in record
+        // payloads, but SOQL datetime literal grammar requires 'Z' or '±hh:mm' — a verbatim
+        // pass-through of SF's own value is MALFORMED_QUERY. Emit the one canonical form SOQL
+        // always accepts (UTC ISO 'Z') for anything parseable; pass unparseable values through
+        // untouched rather than fabricating one.
+        if (value.includes('T')) {
+            const d = new Date(value);
+            return isNaN(d.getTime()) ? value : d.toISOString();
+        }
+        // A bare date gets the day-start instant.
         return `${value}T00:00:00.000Z`;
     }
 

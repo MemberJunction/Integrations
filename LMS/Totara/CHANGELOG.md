@@ -1,5 +1,22 @@
 # @memberjunction/connector-totara
 
+## 0.4.0
+
+### Minor Changes
+
+- 19e615f: Five derived child objects explode the embedded JSON arrays into first-class tables — `Enrolled User Roles`, `Enrolled User Groups`, `User Custom Fields`, `Course Content Modules`, `Cohort Member Users` — fed from the parent object's own fetch as the data comes in (zero additional vendor calls when maps run in order; automatic fallback walk otherwise). Also `Configuration.dropFields`: `preferences` (Moodle UI widget state) and `courseformatoptions` (course theming) stop being fetched — configuration, not data.
+
+## 0.3.2
+
+### Patch Changes
+
+- 6ee916d: Relicense to the Business Source License 1.1.
+
+  Metadata and documentation only: the `license` field moves to `BUSL-1.1` and the
+  repo gains a LICENSE file. No runtime behaviour, API surface, or dependency
+  changes. The bump exists so the new licence metadata reaches npm, since the
+  registry shows the licence of the latest published version.
+
 ## 0.3.1
 
 ### Patch Changes

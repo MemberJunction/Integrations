@@ -1,0 +1,154 @@
+# Write the prospect-facing line for connectors that reach the catalog without one.
+#
+# WHY THIS RUNS ON main
+# A connector becomes real to a client when it is published, which happens on main via the changesets
+# "Version Packages" merge. That is the moment a connector can appear on the overview pages with no
+# marketing copy behind it — everything else on those pages is derived, but the sentence a prospect
+# reads cannot be.
+#
+# WHY IT OPENS A PR RATHER THAN COMMITTING
+# protect-main and protect-next are PR-only rulesets with an empty bypass list: nothing pushes
+# directly to either branch, this workflow included. The PR targets `next`, because
+# docs/data/marketing-names.json is an input, next is where inputs live, and the overview pages
+# regenerate from next.
+#
+# WHY THE PAGES ARE NOT BUILT HERE
+# They render an honest read of what each connector has NOT proven, so they are not published from a
+# public repo. MemberJunction/integrations-overview (internal visibility, Entra-gated) checks this
+# repo out and runs the generator. What stays here is the copy itself, which is an input rather than
+# a rendered page.
+
+name: Marketing copy for new connectors
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: docs-overview-${{ github.ref }}
+  cancel-in-progress: false # never kill a half-finished back-merge
+
+permissions:
+  contents: write # push the copy branch (protected branches are never pushed to directly)
+  pull-requests: write # open the PR that carries the copy to next
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the back-merge needs real history, not a shallow clone
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Needed only by the copywriting step below — the generator itself is dependency-free.
+      - name: Install
+        run: npm ci
+
+      # React to what the merge actually changed. Everything structural (a new connector, a version
+      # bump, a new evidence tier, changed counts) the generator derives on its own; the one thing it
+      # cannot derive is the sentence a prospect reads, so a newly added connector would otherwise
+      # land engineer-jargon on the marketing page. This writes that line once and commits it to
+      # docs/data/marketing-names.json, which is what keeps regeneration byte-stable afterwards.
+      #
+      # Without ANTHROPIC_API_KEY the step is a no-op (exit 0) and the generator falls back to
+      # trimming the catalog description — worse copy, still a correct page.
+      - name: Write marketing copy for new connectors
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/ai-marketing-copy.mjs
+
+      # OPEN A PR — DO NOT PUSH.
+      #
+      # `protect-main` and `protect-next` are both PR-only rulesets with an EMPTY bypass list, so no
+      # actor can push directly to either branch — github-actions[bot] included. The previous version
+      # of this step pushed to main and failed the moment it actually had something to commit
+      # (Version Packages #183: a new connector arrived, copy was written, push rejected).
+      #
+      # The PR targets `next` rather than `main`: marketing-names.json is an input, next is where
+      # inputs live, and the overview pages regenerate from next. It reaches main on the next
+      # promotion like everything else.
+      #
+      # A review step is a feature here, not a tax — this is model-written prose that goes in front of
+      # prospects, and a human glancing at one sentence per new connector is cheap insurance.
+      - name: Open a PR if the copy changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          COPY="docs/data/marketing-names.json"
+          if git diff --quiet -- "$COPY"; then
+            echo "No change — every catalog connector already has marketing copy."
+            exit 0
+          fi
+
+          BRANCH="docs/marketing-copy-${GITHUB_RUN_ID}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Branch from next, carrying only the copy file: this run checked out main, and committing
+          # its whole tree onto next would drag unrelated release state along with the one file we mean.
+          git stash push -- "$COPY"
+          git fetch origin next
+          git checkout -B "$BRANCH" origin/next
+          git stash pop
+
+          if git diff --quiet -- "$COPY"; then
+            echo "next already has this copy — nothing to open."
+            exit 0
+          fi
+
+          # WHAT CHANGED SINCE THE LAST COPY UPDATE — not just this run's diff.
+          # A reviewer opening this PR sees one file of prose and no context for it. The useful
+          # question is "what has landed since anyone last looked at this page", which spans every
+          # release between the previous copy commit and now, not the single merge that triggered
+          # this run. Derived from the catalog, so it stays honest without a second source.
+          LAST=$(git log -1 --format=%H -- "$COPY" 2>/dev/null || true)
+          NOTE=""
+          if [ -n "$LAST" ]; then
+            NOTE=$(node -e '
+              const {execSync}=require("child_process");
+              const last=process.argv[1];
+              const read=(ref)=>{ try { return JSON.parse(execSync(`git show ${ref}:connectors-catalog.json`,{encoding:"utf8",maxBuffer:64e6})); } catch { return null; } };
+              const norm=(c)=>Object.fromEntries((Array.isArray(c)?c:(c.connectors||[])).map(x=>[x.name||x.slug||x.id,x.version||""]));
+              const before=read(last), after=read("HEAD");
+              if(!before||!after){ console.log(""); process.exit(0); }
+              const b=norm(before), a=norm(after);
+              const added=Object.keys(a).filter(k=>!(k in b));
+              const bumped=Object.keys(a).filter(k=>k in b && b[k]!==a[k]).map(k=>`${k} ${b[k]} → ${a[k]}`);
+              const lines=[];
+              if(added.length)  lines.push(`**New connectors (${added.length}):** ${added.join(", ")}`);
+              if(bumped.length) lines.push(`**Version changes (${bumped.length}):** ${bumped.join(", ")}`);
+              console.log(lines.join("\n\n"));
+            ' "$LAST" 2>/dev/null || true)
+          fi
+          if [ -n "$NOTE" ]; then
+            SINCE=$(git log -1 --format='%ad (%h)' --date=short "$LAST" 2>/dev/null || echo unknown)
+            NOTE=$(printf '## Changed since the last copy update — %s\n\n%s' "$SINCE" "$NOTE")
+          else
+            NOTE="_No catalog delta could be derived since the last copy update._"
+          fi
+
+          git add "$COPY"
+          git commit -m "docs: marketing copy for newly added connectors"
+          git push origin "$BRANCH"
+
+          gh pr create --base next --head "$BRANCH" \
+            --title "docs: marketing copy for newly added connectors" \
+            --body "$NOTE
+
+          One or more connectors reached the catalog without a prospect-facing line, so
+          \`scripts/ai-marketing-copy.mjs\` wrote one for each.
+
+          **Please read the sentences.** They are model-written and appear on the client-facing
+          overview page. Check they claim only what the connector does, name records in the words a
+          member would use, and avoid protocol or auth vocabulary.
+
+          Merging pins the copy: the pages generate from this file, so regeneration stays byte-stable
+          and the model is not consulted for these connectors again unless their source description
+          changes."

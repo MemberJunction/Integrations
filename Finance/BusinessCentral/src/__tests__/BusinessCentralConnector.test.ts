@@ -14,6 +14,7 @@ import type {
 } from '@memberjunction/core-entities';
 import {
     BusinessCentralConnector,
+    BUSINESS_CENTRAL_POST_ACTION,
     BuildBusinessCentralRootURL,
     BuildBusinessCentralCompanySegment,
     BuildBusinessCentralResourceURL,
@@ -1268,5 +1269,302 @@ describe('resume cursor round-trip', () => {
         expect(DecodeResumeCursor(undefined)).toBeNull();
         expect(DecodeResumeCursor('')).toBeNull();
         expect(DecodeResumeCursor('!!!not-base64-json!!!')).toBeNull();
+    });
+});
+
+/**
+ * Action generation is what makes the connector reachable by an agent or a flow rather than only by
+ * a sync or a direct IntegrationWriteRecord call. It was absent entirely: the base class returns an
+ * empty object list by default, which makes GetActionGeneratorConfig() return null, which means zero
+ * Business Central Actions were ever generated despite 83 declared objects.
+ */
+describe('action generation surface', () => {
+    const connector = new BusinessCentralConnector();
+
+    it('returns an empty catalog when the metadata cache is unseeded — never a baked list', () => {
+        // The catalog-in-code defect: a hardcoded fallback freezes the object universe to whatever was
+        // current when the list was written. With 83 objects declared, one serving a familiar handful
+        // still looks like it works, which is exactly why this is asserted rather than assumed.
+        const objects = connector.GetIntegrationObjects();
+        expect(Array.isArray(objects)).toBe(true);
+        expect(objects.length).toBe(0);
+    });
+
+    it('generates no config while the catalog is empty, rather than an empty-object config', () => {
+        expect(connector.GetActionGeneratorConfig()).toBeNull();
+    });
+
+    it('produces a config carrying the objects once the catalog resolves', () => {
+        const config = new SeededBusinessCentralConnector().GetActionGeneratorConfig();
+        expect(config).not.toBeNull();
+        expect(config?.IntegrationName).toBe('business-central');
+        expect(config?.Objects.map((o) => o.Name).sort()).toEqual(['accounts', 'journalLines', 'journals']);
+    });
+
+    it('stamps the Microsoft icon so generated Actions are identifiable in the UI', () => {
+        expect(new SeededBusinessCentralConnector().GetActionGeneratorConfig()?.IconClass).toBe('fa-brands fa-microsoft');
+    });
+
+    it('carries write capability through, so read-only objects cannot generate write Actions', () => {
+        const objects = new SeededBusinessCentralConnector().GetIntegrationObjects();
+        // `accounts` is read-only in Business Central: a journal entry posts TO an account, it never
+        // creates one. A Create Action here would be a broken Action that always fails at the vendor.
+        expect(objects.find((o) => o.Name === 'accounts')?.SupportsWrite).toBe(false);
+        expect(objects.find((o) => o.Name === 'journals')?.SupportsWrite).toBe(true);
+        expect(objects.find((o) => o.Name === 'journalLines')?.SupportsWrite).toBe(true);
+    });
+});
+
+/**
+ * Stands in for a populated IntegrationEngineBase cache. Overriding the object source — rather than
+ * stubbing the engine singleton — exercises the real base-class config assembly, which is what the
+ * connector's override contributes to. The three objects mirror the accounting path: pull the chart
+ * of accounts (A-UC6), then stage a journal batch and its lines (A-UC7).
+ */
+class SeededBusinessCentralConnector extends BusinessCentralConnector {
+    public override GetIntegrationObjects() {
+        const field = (Name: string, over: Record<string, unknown> = {}) => ({
+            Name,
+            DisplayName: Name,
+            Type: 'string',
+            IsRequired: false,
+            IsReadOnly: false,
+            IsPrimaryKey: false,
+            ...over,
+        });
+        return [
+            {
+                Name: 'accounts',
+                DisplayName: 'Accounts',
+                Description: 'General ledger accounts.',
+                SupportsWrite: false,
+                Fields: [field('id', { IsPrimaryKey: true, IsReadOnly: true }), field('number', { IsReadOnly: true })],
+            },
+            {
+                Name: 'journals',
+                DisplayName: 'Journals',
+                Description: 'Journal batches.',
+                SupportsWrite: true,
+                Fields: [field('id', { IsPrimaryKey: true, IsReadOnly: true }), field('code', { IsRequired: true })],
+            },
+            {
+                Name: 'journalLines',
+                DisplayName: 'Journal Lines',
+                Description: 'Lines within a journal batch.',
+                SupportsWrite: true,
+                Fields: [
+                    field('id', { IsPrimaryKey: true, IsReadOnly: true }),
+                    field('accountId'),
+                    field('amount', { Type: 'decimal' }),
+                ],
+            },
+        ];
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+/**
+ * Batch writes via OData `$batch`.
+ *
+ * The case this exists for is a journal batch: a header plus many lines. The inherited default loops
+ * single-record CreateRecord through the paced write chain, so 60 lines are 60 round trips plus 60
+ * pacing sleeps. One envelope replaces all of it.
+ *
+ * The failure modes here are quiet rather than loud, which is why they are pinned individually:
+ * matching responses positionally would attach one record's ID to a different record, and a dropped
+ * sub-response read as success becomes a duplicate create on the next sync.
+ */
+describe('batch writes ($batch)', () => {
+    const ciWrite = () => makeCI();
+    const batchCtx = (attributes: Record<string, unknown>, objectName = 'journalLines'): CreateRecordContext =>
+        ({ CompanyIntegration: ciWrite(), ContextUser: user, ObjectName: objectName, Attributes: attributes } as unknown as CreateRecordContext);
+
+    const lines = (n: number) =>
+        Array.from({ length: n }, (_, i) => batchCtx({ journalId: 'j-7', accountNumber: '1000', amount: i + 1 }));
+
+    it('declares batch-write support so the engine routes through the batch form', () => {
+        expect(connector.SupportsBatchWrite).toBe(true);
+    });
+
+    it('sends ONE request for many records, to the $batch endpoint', async () => {
+        connector.Responses.push(ok({
+            responses: [
+                { id: '0', status: 201, body: { id: 'jl-0' } },
+                { id: '1', status: 201, body: { id: 'jl-1' } },
+                { id: '2', status: 201, body: { id: 'jl-2' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(3));
+
+        expect(connector.Captured.length).toBe(1);
+        expect(connector.Captured[0].method).toBe('POST');
+        expect(connector.Captured[0].url).toBe(
+            `https://api.businesscentral.dynamics.com/v2.0/${TENANT}/Sandbox/api/v2.0/$batch`,
+        );
+        expect(results.map(r => r.ExternalID)).toEqual(['jl-0', 'jl-1', 'jl-2']);
+        expect(results.every(r => r.Success)).toBe(true);
+    });
+
+    it('sends relative urls inside the envelope, keyed by operation id', async () => {
+        connector.Responses.push(ok({ responses: [{ id: '0', status: 201, body: { id: 'jl-0' } }, { id: '1', status: 201, body: { id: 'jl-1' } }] }));
+        await connector.BatchCreateRecords(lines(2));
+
+        const body = connector.Captured[0].body as { requests: Array<{ id: string; method: string; url: string; body: unknown }> };
+        expect(body.requests).toHaveLength(2);
+        expect(body.requests[0].id).toBe('0');
+        expect(body.requests[0].method).toBe('POST');
+        // relative — replaces the `$batch` segment, so no scheme/host
+        expect(body.requests[0].url).toBe(`companies(${COMPANY_A})/journals(j-7)/journalLines`);
+        expect(body.requests[0].url.startsWith('http')).toBe(false);
+    });
+
+    it('matches responses by id, NOT by position', async () => {
+        // Microsoft does not guarantee response order. Returning them reversed must still attribute each
+        // created ID to the right record — positional matching would silently swap them.
+        connector.Responses.push(ok({
+            responses: [
+                { id: '2', status: 201, body: { id: 'jl-THIRD' } },
+                { id: '0', status: 201, body: { id: 'jl-FIRST' } },
+                { id: '1', status: 201, body: { id: 'jl-SECOND' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(3));
+        expect(results.map(r => r.ExternalID)).toEqual(['jl-FIRST', 'jl-SECOND', 'jl-THIRD']);
+    });
+
+    it('sends Isolation: snapshot so the batch is all-or-nothing', async () => {
+        connector.Responses.push(ok({ responses: [{ id: '0', status: 201, body: { id: 'jl-0' } }, { id: '1', status: 201, body: { id: 'jl-1' } }] }));
+        await connector.BatchCreateRecords(lines(2));
+        expect(connector.Captured[0].headers.Isolation).toBe('snapshot');
+    });
+
+    it('fails EVERY record when one operation fails — the batch was reverted', async () => {
+        // Under snapshot isolation Business Central still reports each operation's own status, so the
+        // two 201s below describe creates that were rolled back. Reporting them as successes would hand
+        // the caller an ExternalID for a record that does not exist, and the next sync would not recreate it.
+        connector.Responses.push(ok({
+            responses: [
+                { id: '0', status: 201, body: { id: 'jl-0' } },
+                { id: '1', status: 400, body: { error: { code: 'BadRequest', message: 'Posting date is not within your range of allowed posting dates.' } } },
+                { id: '2', status: 201, body: { id: 'jl-2' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(3));
+
+        expect(results.every(r => !r.Success)).toBe(true);
+        expect(results.every(r => r.ExternalID === undefined)).toBe(true);
+        expect(results[0].ErrorMessage).toContain('BATCH_ROLLED_BACK');
+        expect(results[0].ErrorMessage).toContain('allowed posting dates');
+        expect(results[2].ErrorMessage).toContain('reverted');
+    });
+
+    it('matches positionally when Business Central returns null ids', async () => {
+        // Microsoft's own transactional example returns `"id": null` for every operation. Failing every
+        // record on that technicality would be worse than reading them in order.
+        connector.Responses.push(ok({
+            responses: [
+                { id: null, status: 201, body: { id: 'jl-A' } },
+                { id: null, status: 201, body: { id: 'jl-B' } },
+            ],
+        }));
+        const results = await connector.BatchCreateRecords(lines(2));
+        expect(results.map(r => r.ExternalID)).toEqual(['jl-A', 'jl-B']);
+    });
+
+    it('treats a short response list as a whole-batch failure', async () => {
+        // Fewer responses than operations means the outcome of at least one create is unknown. Guessing
+        // success there is the duplicate-on-next-sync hazard; guessing per-record is worse under a
+        // transactional batch, where the unknown one may have reverted the rest.
+        connector.Responses.push(ok({ responses: [{ id: '0', status: 201, body: { id: 'jl-0' } }] }));
+        const results = await connector.BatchCreateRecords(lines(2));
+        expect(results.every(r => !r.Success)).toBe(true);
+        expect(results[0].ErrorMessage).toContain('BATCH_RESPONSE_MISSING');
+    });
+
+    it('attributes an envelope-level failure to every record in it', async () => {
+        // 400 rather than 429 deliberately: throttling statuses are retried with backoff by the transport,
+        // so using one here would exercise the retry path instead of the attribution this asserts.
+        connector.Responses.push(status(400, { error: { code: 'BadRequest', message: 'Batch request is malformed.' } }));
+        const results = await connector.BatchCreateRecords(lines(3));
+        expect(results).toHaveLength(3);
+        expect(results.every(r => !r.Success && r.StatusCode === 400)).toBe(true);
+        expect(results[2].ErrorMessage).toContain('malformed');
+    });
+
+    it('chunks at 100 operations — the documented Business Central ceiling', async () => {
+        connector.Responses.push(
+            ok({ responses: Array.from({ length: 100 }, (_, i) => ({ id: String(i), status: 201, body: { id: `jl-${i}` } })) }),
+            ok({ responses: Array.from({ length: 50 }, (_, i) => ({ id: String(100 + i), status: 201, body: { id: `jl-${100 + i}` } })) }),
+        );
+        const results = await connector.BatchCreateRecords(lines(150));
+
+        expect(connector.Captured.length).toBe(2);
+        expect((connector.Captured[0].body as { requests: unknown[] }).requests).toHaveLength(100);
+        expect((connector.Captured[1].body as { requests: unknown[] }).requests).toHaveLength(50);
+        expect(results).toHaveLength(150);
+        expect(results.every(r => r.Success)).toBe(true);
+        expect(results[149].ExternalID).toBe('jl-149');
+    });
+
+    it('does not pay the envelope cost for a single record', async () => {
+        connector.Responses.push({ Status: 201, Body: { id: 'jl-solo' }, Headers: {} });
+        const results = await connector.BatchCreateRecords(lines(1));
+        expect(connector.Captured[0].url).not.toContain('$batch');
+        expect(results[0].ExternalID).toBe('jl-solo');
+    });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+/**
+ * Posting a journal batch.
+ *
+ * Staged lines are invisible to the ledger until the batch is posted, so this is the step that makes
+ * A-UC7 real rather than a staging exercise. It is a bound action rather than a CRUD verb, which is
+ * why it is an explicit method and not a generated Action.
+ */
+describe('PostJournal (MOCK ONLY — no live endpoint, no mutation)', () => {
+    const ciWrite = () => makeCI();
+
+    it('posts to the case-sensitive bound action on the journal', async () => {
+        connector.Responses.push(status(204));
+        const result = await connector.PostJournal(ciWrite(), 'j-7', user);
+
+        expect(result.Success).toBe(true);
+        expect(result.StatusCode).toBe(204);
+        expect(result.ExternalID).toBe('j-7');
+        expect(connector.Captured[0].method).toBe('POST');
+        expect(connector.Captured[0].url).toBe(
+            `https://api.businesscentral.dynamics.com/v2.0/${TENANT}/Sandbox/api/v2.0/companies(${COMPANY_A})/journals(j-7)/Microsoft.NAV.post`,
+        );
+    });
+
+    it('uses the documented lower-case `post` action name', () => {
+        // Asserts the constant only. It does NOT establish anything about the capitalised form: live
+        // testing (2026-08-17) showed `Microsoft.NAV.Post` also posts, returning 204 — it is not a
+        // safe no-op, and an earlier name for this test wrongly claimed it 404s.
+        expect(BUSINESS_CENTRAL_POST_ACTION).toBe('Microsoft.NAV.post');
+        expect(BUSINESS_CENTRAL_POST_ACTION.endsWith('.post')).toBe(true);
+    });
+
+    it('rejects a missing journal id before touching the network', async () => {
+        const result = await connector.PostJournal(ciWrite(), '   ', user);
+        expect(result.Success).toBe(false);
+        expect(result.ErrorMessage).toContain('VALIDATION');
+        expect(connector.Captured).toHaveLength(0);
+    });
+
+    it('accepts a company override for a multi-company tenant', async () => {
+        connector.Responses.push(status(204));
+        await connector.PostJournal(ciWrite(), 'j-9', user, COMPANY_B);
+        expect(connector.Captured[0].url).toContain(`companies(${COMPANY_B})/journals(j-9)/`);
+    });
+
+    it('surfaces a vendor rejection rather than reporting a false success', async () => {
+        // The realistic failure: posting date outside the allowed range, or an unbalanced batch.
+        connector.Responses.push(status(400, { error: { code: 'BadRequest', message: 'The journal batch is not balanced.' } }));
+        const result = await connector.PostJournal(ciWrite(), 'j-7', user);
+        expect(result.Success).toBe(false);
+        expect(result.StatusCode).toBe(400);
+        expect(result.ErrorMessage).toContain('not balanced');
     });
 });

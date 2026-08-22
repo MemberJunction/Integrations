@@ -16,6 +16,8 @@ import {
     type RateLimitPolicy,
     type SourceSchemaInfo,
     type SourceObjectInfo,
+    type IntegrationObjectInfo,
+    type ActionGeneratorConfig,
     // NOTE: no auth-helper crypto imported — Stripe uses a static secret-key Bearer (no signing, no OAuth flow).
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
@@ -630,6 +632,50 @@ export class StripeConnector extends BaseRESTIntegrationConnector {
     /** Coerces a scalar (string/number/boolean) to its Stripe form value string. */
     private ScalarToString(value: string | number | boolean): string {
         return typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value);
+    }
+
+    // ── Action generation ────────────────────────────────────────────
+
+    /**
+     * Shapes the cached Declared catalog into the ActionMetadataGenerator's hint structure, so one
+     * MJ Action is generated per applicable object/verb. Without this the base class returns an empty
+     * array, `GetActionGeneratorConfig()` returns null, and **no Stripe Actions exist at all** — the
+     * connector is reachable by sync but not by an agent or a flow.
+     *
+     * Derived entirely from the runtime IntegrationObject / IntegrationObjectField cache, in keeping
+     * with this file's rule that the catalog is never baked into code. If the cache is not yet
+     * populated — action generation can run before the integration is seeded — this returns an empty
+     * array and generates nothing. It must never fall back to a hardcoded subset: that is precisely
+     * the `catalog-in-code` defect, which silently freezes the object universe to whatever was
+     * fashionable when the list was written.
+     */
+    public override GetIntegrationObjects(): IntegrationObjectInfo[] {
+        const engine = IntegrationEngineBase.Instance;
+        const integration = engine.Integrations.find(i => i.Name === this.IntegrationName);
+        if (!integration) return [];
+
+        return engine.GetActiveIntegrationObjects(integration.ID).map(obj => ({
+            Name: obj.Name,
+            DisplayName: obj.DisplayName ?? obj.Name,
+            Description: obj.Description ?? undefined,
+            SupportsWrite: obj.SupportsWrite,
+            Fields: engine.GetIntegrationObjectFields(obj.ID).map(f => ({
+                Name: f.Name,
+                DisplayName: f.DisplayName ?? f.Name,
+                Description: f.Description ?? undefined,
+                Type: f.Type ?? 'string',
+                IsRequired: f.IsRequired,
+                IsReadOnly: f.IsReadOnly,
+                IsPrimaryKey: f.IsPrimaryKey,
+            })),
+        }));
+    }
+
+    public override GetActionGeneratorConfig(): ActionGeneratorConfig | null {
+        const config = super.GetActionGeneratorConfig();
+        if (!config) return null;
+        config.IconClass = 'fa-brands fa-stripe';
+        return config;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

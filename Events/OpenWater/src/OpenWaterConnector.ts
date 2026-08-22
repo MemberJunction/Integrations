@@ -109,6 +109,15 @@ interface OpenWaterAuthContext extends RESTAuthContext {
  * Per-IO access path (read from IntegrationObject.Configuration.AccessPath) describing how
  * to reach a nested object's records from a queryable door.
  */
+/**
+ * How many per-parent detail payloads the cache may hold. Sized to span ONE batch (siblings
+ * walking the same parents), not the whole tenant — each entry is a full detail document.
+ */
+const DETAIL_CACHE_MAX_ENTRIES = 500;
+
+/** Cursor namespace for a bounded, resumable detail walk: the parent offset consumed so far. */
+const DETAIL_WALK_CURSOR_PREFIX = 'detail:';
+
 interface AccessPath {
     /** The door object name (e.g. "Program", "Fund"). */
     door: string;
@@ -122,10 +131,29 @@ interface AccessPath {
     nestingSegments?: string[];
     /** Where the parent id goes: 'query' → ?<parentParamName>=, otherwise the path template. */
     parentParamIn?: 'query' | 'path';
-    /** 'embedded-array' → records live inside the door payload; no second call. */
-    extractionMode?: 'embedded-array';
+    /**
+     * 'embedded-array' → records live inside the door payload; no second call.
+     * 'detail-embedded' → records are a nested array inside a PER-PARENT DETAIL response
+     *   (e.g. /v2/Applications/{id} → roundSubmissions[]); nestingSegments walk the detail.
+     * 'detail-object' → each parent's detail response IS one record (e.g. /v2/Media/{id}).
+     */
+    extractionMode?: 'embedded-array' | 'detail-embedded' | 'detail-object';
     /** Alternative entry paths to also fetch and union (e.g. JudgeReports + SessionReports). */
     alternativePaths?: string[];
+    /** detail modes: filter extracted elements — equality on `value`, or presence via `exists`. */
+    elementFilter?: { key: string; value?: unknown; exists?: boolean };
+    /** detail modes: override parent ids' source segments over the DOOR rows (default: door ids). */
+    parentIdSegments?: string[];
+    /** 'detail-harvest' → parents come from walking each door row's DETAIL (see harvest* below). */
+    parentSource?: 'detail-harvest';
+    /** detail-harvest: the per-door-row detail path template (e.g. /v2/Applications/{applicationId}). */
+    harvestDetailPath?: string;
+    /** detail-harvest: the template var name in harvestDetailPath filled with each door row id. */
+    harvestDetailParam?: string;
+    /** detail-harvest: segments walked over the detail to the elements carrying the harvested id. */
+    harvestSegments?: string[];
+    /** detail-harvest: the key read off each walked element (default 'id') — e.g. 'mediaId'. */
+    harvestIdKey?: string;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────
@@ -416,7 +444,30 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         }
 
         // Depth-N (nested): walk the access path from the door to the leaf records.
-        return this.FetchViaAccessPath(ctx, obj, accessPath);
+        // An object may declare `alternativeAccessPaths` (full AccessPath objects, not just
+        // alternative entry paths) when its records live behind MORE THAN ONE DOOR — e.g. Judge:
+        // judges assigned to rounds come from the Program->rounds[] walk, judges assigned only
+        // to judge teams come embedded in /v2/JudgeTeams rows. The walks are unioned and
+        // deduplicated by ExternalID (first occurrence wins).
+        const unionPaths = this.ParseAlternativeAccessPaths(obj);
+        if (unionPaths.length === 0) {
+            return this.FetchViaAccessPath(ctx, obj, accessPath);
+        }
+        const results: FetchBatchResult[] = [];
+        for (const path of [accessPath, ...unionPaths]) {
+            results.push(await this.FetchViaAccessPath(ctx, obj, path));
+        }
+        const byID = new Map<string, ExternalRecord>();
+        for (const r of results) {
+            for (const rec of r.Records) {
+                if (!byID.has(rec.ExternalID)) byID.set(rec.ExternalID, rec);
+            }
+        }
+        return {
+            Records: [...byID.values()],
+            HasMore: results.some(r => r.HasMore),
+            Warnings: results.flatMap(r => r.Warnings ?? []),
+        };
     }
 
     // ── Literal-create / literal-update overrides (RequiresLiveVerification) ──────────
@@ -704,6 +755,12 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             };
         }
 
+        // detail-embedded / detail-object: the records live in (or behind) a PER-PARENT DETAIL
+        // response rather than a paginated list leaf — /v2/Applications/{id} carries
+        // roundSubmissions[] and the file-upload field values; /v2/Media/{id} IS the record.
+        if (accessPath.extractionMode === 'detail-embedded' || accessPath.extractionMode === 'detail-object') {
+            return this.FetchViaDetailWalk(ctx, obj, accessPath, auth, baseURL, doorRows, fields, pkFieldNames, warnings);
+        }
         const parentIDs = this.DescendToParentIDs(doorRows, accessPath);
         if (parentIDs.length === 0) {
             warnings.push({
@@ -934,6 +991,176 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     // ── Access-path helpers ──────────────────────────────────────────
 
     /** Reads and validates AccessPath from the IO's Configuration JSON; null when absent. */
+    /** Short-lived cache for detail responses; see FetchDetailCached. */
+    private detailCache: Map<string, { at: number; body: unknown }> = new Map();
+
+    /**
+     * Fetch a DETAIL response (one object, not a list) with a short-lived per-connector cache.
+     * The cache exists because sibling IOs (ApplicationRoundSubmission, ApplicationFile, Media's
+     * id-harvest) walk the SAME /v2/Applications/{id} details in one sync — without it every
+     * sibling re-pays the full per-application call count against the vendor.
+     * 404 returns null (parent deleted between list and detail — skip, don't fail the object).
+     */
+    private async FetchDetailCached(auth: OpenWaterAuthContext, baseURL: string, path: string,
+        warnings: FetchWarning[]): Promise<Record<string, unknown> | null> {
+        const now = Date.now();
+        const hit = this.detailCache.get(path);
+        if (hit && (now - hit.at) < 600_000) return hit.body as Record<string, unknown> | null;
+        const response = await this.MakeHTTPRequest(auth, `${baseURL}${path}`, 'GET', this.BuildHeaders(auth));
+        if (response.Status === 404) {
+            this.detailCache.set(path, { at: now, body: null });
+            return null;
+        }
+        if (response.Status < 200 || response.Status >= 300) {
+            warnings.push({ Code: 'DETAIL_FETCH_FAILED',
+                Message: `Detail fetch ${path} returned HTTP ${response.Status}.`,
+                Data: { path, status: response.Status } });
+            return null;
+        }
+        const body = response.Body as Record<string, unknown>;
+        this.detailCache.set(path, { at: now, body });
+        /**
+         * Evict oldest-first at a SMALL cap. The previous 20,000-entry ceiling was "finite" but
+         * not bounded in any useful sense: each entry is a whole application detail (round
+         * submissions, every field value), so a full walk could hold gigabytes of payload alive
+         * — measured as repeated container SIGKILLs on a 7GB host while an apply sampled these
+         * objects. The cache exists only so SIBLING objects walking the SAME parents in one
+         * batch pay each detail once, so it needs to span a batch, not the whole tenant.
+         * Clearing outright (the old behaviour) also threw away the entries still in use by the
+         * batch in flight; FIFO eviction keeps the recent ones, which are the ones being reused.
+         */
+        while (this.detailCache.size > DETAIL_CACHE_MAX_ENTRIES) {
+            const oldest = this.detailCache.keys().next();
+            if (oldest.done) break;
+            this.detailCache.delete(oldest.value);
+        }
+        return body;
+    }
+
+    /**
+     * Detail-walk extraction. Parents default to the door rows' own ids; `parentSource:
+     * 'detail-harvest'` instead walks each door row's detail through harvestSegments and collects
+     * harvestIdKey values (Media: application details → fieldValues[].mediaId). Modes:
+     * `detail-embedded` extracts nestingSegments arrays from each parent's detail (optionally
+     * filtered by elementFilter), tagging the parent id; `detail-object` emits each parent's
+     * detail itself as ONE record, tagged with its id.
+     */
+    private async FetchViaDetailWalk(ctx: FetchContext, obj: MJIntegrationObjectEntity, accessPath: AccessPath,
+        auth: OpenWaterAuthContext, baseURL: string, doorRows: Record<string, unknown>[],
+        fields: MJIntegrationObjectFieldEntity[], pkFieldNames: string[],
+        warnings: FetchWarning[]): Promise<FetchBatchResult> {
+        /**
+         * A detail walk is one HTTP call PER PARENT — for this tenant that is ~2,000 application
+         * details, and Media additionally resolves ~4,000 /v2/Media/{id} records. Doing all of
+         * that inside a single FetchChanges call made the walk UNBOUNDED and therefore
+         * un-stoppable: `DiscoverFieldsViaFetch` streams FetchChanges and stops at a record cap,
+         * but it can only stop BETWEEN batches, so field-sampling one detail object paid the
+         * entire walk and blew straight through the 5-minute discovery budget (measured: an
+         * apply/introspect that could not finish inside any gateway timeout).
+         *
+         * So the walk is now bounded by the caller's own batch size and resumable: parents are
+         * consumed from a cursor offset, records accumulate until the budget is met, and the
+         * remaining offset comes back as the cursor. Sampling asks for a handful of records and
+         * gets them after a handful of calls; a real sync passes a large batch size and still
+         * walks everything, just across resumable batches (which is also what makes a killed
+         * run cheap to resume).
+         */
+        const budget = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : 10_000;
+        const startAt = (() => {
+            const c = ctx.CurrentCursor;
+            if (!c || !String(c).startsWith(DETAIL_WALK_CURSOR_PREFIX)) return 0;
+            const n = Number(String(c).slice(DETAIL_WALK_CURSOR_PREFIX.length));
+            return Number.isFinite(n) && n > 0 ? n : 0;
+        })();
+        let parentIDs: string[];
+        // Set when harvesting stopped early: `parentIDs` is then a PREFIX of the real parent set,
+        // so its length must NOT be read as the total (doing so reported HasMore:false with door
+        // rows still un-harvested, which would have silently dropped every later record).
+        let harvestTruncated = false;
+        if (accessPath.parentSource === 'detail-harvest') {
+            const doorIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: [] });
+            const harvested = new Set<string>();
+            // Harvesting is itself one call per door row, so it stops as soon as it has enough
+            // ids to satisfy this batch (offset + budget). Ids are collected in door order, so
+            // the same prefix is produced on every call and the offset stays meaningful.
+            const needed = startAt + budget;
+            for (const doorID of doorIDs) {
+                if (harvested.size >= needed) { harvestTruncated = true; break; }
+                const hPath = this.InjectParentID(accessPath.harvestDetailPath ?? '', doorID, {
+                    ...accessPath, parentParamName: accessPath.harvestDetailParam ?? 'id', parentParamIn: 'path' });
+                if (hPath == null) continue;
+                const detail = await this.FetchDetailCached(auth, baseURL, hPath, warnings);
+                if (!detail) continue;
+                for (const node of this.WalkSegments([detail], accessPath.harvestSegments ?? [])) {
+                    const v = (node as Record<string, unknown>)?.[accessPath.harvestIdKey ?? 'id'];
+                    if (v != null && String(v).length > 0) harvested.add(String(v));
+                }
+            }
+            parentIDs = [...harvested];
+        } else {
+            parentIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: accessPath.parentIdSegments ?? [] });
+        }
+        if (parentIDs.length === 0) {
+            warnings.push({ Code: 'ZERO_PARENTS',
+                Message: `No parent ids for "${obj.Name}" via ${accessPath.door} (${accessPath.parentSource ?? 'door-ids'}).`,
+                Data: { door: accessPath.door, parentSource: accessPath.parentSource ?? 'door-ids' } });
+            return { Records: [], HasMore: false, Warnings: warnings };
+        }
+        const out: ExternalRecord[] = [];
+        const filt = accessPath.elementFilter;
+        let consumed = startAt;
+        for (const parentID of parentIDs.slice(startAt)) {
+            if (out.length >= budget) break;
+            consumed++;
+            const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
+            if (leafPath == null) continue;
+            const detail = await this.FetchDetailCached(auth, baseURL, leafPath, warnings);
+            if (!detail) continue;
+            if (accessPath.extractionMode === 'detail-object') {
+                const rec: Record<string, unknown> = { ...detail };
+                if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
+                    rec[accessPath.parentParamName] = parentID;
+                out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
+            } else {
+                let elements = this.WalkSegments([detail], accessPath.nestingSegments ?? []) as Record<string, unknown>[];
+                if (filt && filt.key) {
+                    elements = elements.filter(e => e && (filt.exists
+                        ? e[filt.key] != null
+                        : String(e[filt.key]) === String(filt.value)));
+                }
+                for (const e of elements) {
+                    const rec: Record<string, unknown> = { ...e };
+                    if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
+                        rec[accessPath.parentParamName] = parentID;
+                    out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
+                }
+            }
+        }
+        if (out.length === 0 && startAt === 0) {
+            warnings.push({ Code: 'ZERO_LEAVES',
+                Message: `"${obj.Name}" walked ${parentIDs.length} parent detail(s) and extracted no records.`,
+                Data: { object: obj.Name, parents: parentIDs.length } });
+        }
+        const moreParents = consumed < parentIDs.length || harvestTruncated;
+        return {
+            Records: out,
+            HasMore: moreParents,
+            NextCursor: moreParents ? `${DETAIL_WALK_CURSOR_PREFIX}${consumed}` : undefined,
+            Warnings: warnings,
+        };
+    }
+
+    /** Additional full walks to union with the main AccessPath (empty when not declared). */
+    private ParseAlternativeAccessPaths(obj: MJIntegrationObjectEntity): AccessPath[] {
+        if (!obj.Configuration) return [];
+        try {
+            const parsed = JSON.parse(obj.Configuration) as { alternativeAccessPaths?: AccessPath[] };
+            return (parsed.alternativeAccessPaths ?? []).filter(ap => ap && ap.door && ap.doorPath);
+        } catch {
+            return [];
+        }
+    }
+
     private ParseAccessPath(obj: MJIntegrationObjectEntity): AccessPath | null {
         if (!obj.Configuration) return null;
         try {

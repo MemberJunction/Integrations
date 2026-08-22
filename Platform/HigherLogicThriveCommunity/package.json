@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-higher-logic-thrive-community",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": false,
   "description": "MemberJunction HigherLogicThriveCommunity connector.",
   "type": "module",
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "author": "MemberJunction.com",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "peerDependencies": {
     "@memberjunction/core": ">=5.43.0 <6.0.0",
     "@memberjunction/core-entities": ">=5.43.0 <6.0.0",
