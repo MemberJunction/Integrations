@@ -149,7 +149,35 @@ const FUSE_MAX_BYTES_PER_CALL = 3 * 1024 * 1024; // 3MB
 const TOKEN_REFRESH_BUFFER_MS = 60_000;
 const TOKEN_LIFETIME_MS = 3_600_000;
 const MAX_RETRIES = 3;
-const REQUEST_TIMEOUT_MS = 30_000;
+/**
+ * 120s, raised from 30s, to match Salesforce's OWN server-side query timeout.
+ *
+ * 30s gave up long before the vendor did. On a full org, `describe` and the first sampling
+ * page for large objects legitimately take more than half a minute, and every one that
+ * expired came back as
+ *
+ *   [DiscoverFieldsViaFetch] read-path discovery failed for "X" (Request timed out: …)
+ *
+ * and fell back to single-record field inference — so that object shipped with declared
+ * fields only: no measured widths, no data-proven key. Not a failure the customer sees,
+ * just quietly worse schema, on exactly the biggest tables.
+ *
+ * Matching Salesforce's limit means we now stop when IT stops, rather than inventing an
+ * earlier deadline of our own. The cost is that a slow object holds its concurrency slot
+ * longer, so discovery takes more wall-clock — which is the right trade: discovery of a
+ * large catalog is expected to be long, and being slow beats being wrong.
+ */
+/**
+ * Salesforce's REST edge rejects an over-long request line with HTTP 431 (it counts the URI
+ * against the header budget). The SOQL projection travels in the query string, so a WIDE object
+ * overflows it: an Account with 674 queryable fields 431'd on batch 1 of every run — 120k rows
+ * that could never sync — while Contact (212 fields) was always fine. 12,000 chars of ENCODED
+ * query leaves headroom under the ~16KB limit.
+ */
+const SOQL_URL_BUDGET = 12_000;
+/** Pinned page size for chunked fetches so every chunk paginates identically (see FetchSOQL). */
+const SOQL_CHUNK_BATCH_SIZE = 200;
+const REQUEST_TIMEOUT_MS = 120_000;
 const MIN_REQUEST_INTERVAL_MS = 50;
 
 // ─── Connector ──────────────────────────────────────────────────────────────
@@ -220,9 +248,17 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     /** Salesforce REST is monotonic when we ORDER BY the watermark column — narrow the next incremental. */
     public override get MonotonicWatermark(): boolean { return true; }
 
-    /** Every Nimble sObject carries the immutable 18-char `Id`; the LMS REST objects carry `id`. */
-    public override StableOrderingKey(objectName: string): string | null {
-        return objectName.startsWith('Lms') ? 'id' : 'Id';
+    /**
+     * null, deliberately — declaring one was silently defeating every watermark. The engine
+     * treats a stable ordering key as permission to run keyset pagination INSTEAD of the
+     * watermark filter, so every sync re-walked the object from row zero and the incremental
+     * path never engaged (measured live: a 3.8M-row object that could not finish a run, by
+     * construction). Salesforce already provides real cursor pagination (nextRecordsUrl) and a
+     * real watermark (ORDER BY <datetime> ASC + >= filter); a keyset on Id adds nothing here
+     * and costs everything. MUST NOT be re-declared without re-proving the watermark survives.
+     */
+    public override StableOrderingKey(_objectName: string): string | null {
+        return null;
     }
 
     /**
@@ -564,24 +600,137 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         return this.FetchSOQL(ctx, obj);
     }
 
+    /**
+     * The datetime column this object can actually be ordered and filtered by — or null when it has none.
+     *
+     * `LastModifiedDate` was assumed unconditionally, and that assumption is wrong for a large share of a
+     * real Salesforce org. `__History` objects are append-only and expose `CreatedDate` but NOT
+     * `LastModifiedDate`; `__mdt` custom-metadata objects expose neither. Every one of those produced an
+     * instant `HTTP 400 — No such column 'LastModifiedDate' on entity '<obj>'`, on the FETCH path — so the
+     * object could not sync at all, and discovery's sampler fell back to single-record field inference for
+     * it. On a full Nimble org those object types are the bulk of the catalog, so the bulk of the catalog
+     * was failing. Observed live: NU__Event__History, NU__Entity__History, NU__Engagement__History,
+     * NU__FieldMapping__mdt, NU__EventHandler__mdt, and many more.
+     *
+     * Resolution order, first one the object really has:
+     *   1. `IncrementalWatermarkField` — an explicit per-object override always wins.
+     *   2. `LastModifiedDate` — the correct answer for ordinary sObjects.
+     *   3. `SystemModstamp` — SF's own system-maintained mirror; present where LastModifiedDate is not.
+     *   4. `CreatedDate` — correct for append-only `__History`, where created IS modified.
+     *
+     * null means the object has no usable datetime column, so it is fetched unfiltered and unordered by
+     * date (see BuildSOQL). That is honest rather than incremental: it cannot be watermarked, and pretending
+     * otherwise is what produced the 400s.
+     */
+    private ResolveWatermarkField(obj: MJIntegrationObjectEntity, fieldNames: string[]): string | null {
+        const available = new Set(fieldNames.map(f => f.toLowerCase()));
+        const declared = obj.IncrementalWatermarkField?.trim();
+        if (declared) return declared;
+        for (const candidate of ['LastModifiedDate', 'SystemModstamp', 'CreatedDate']) {
+            if (available.has(candidate.toLowerCase())) return candidate;
+        }
+        return null;
+    }
+
+    /**
+     * Split a projection so each chunk's ENCODED query fits SOQL_URL_BUDGET. Returns a single
+     * chunk (the whole field list) whenever it already fits — so every object that works today
+     * takes the exact same code path it takes now. Each chunk carries Id (the merge key) and the
+     * watermark field (needed for ordering + the per-page watermark).
+     */
+    private ChunkSOQLFields(objectName: string, fieldNames: string[], watermarkField: string | null, watermarkValue: string | null): string[][] {
+        const probe = (fields: string[]) =>
+            encodeURIComponent(this.BuildSOQL(objectName, fields, watermarkField, watermarkValue)).length;
+        if (probe(fieldNames) <= SOQL_URL_BUDGET) return [fieldNames];
+        const always = ['Id'];
+        if (watermarkField && watermarkField !== 'Id') always.push(watermarkField);
+        const alwaysLower = new Set(always.map(a => a.toLowerCase()));
+        const rest = fieldNames.filter(f => !alwaysLower.has(f.toLowerCase()));
+        const chunks: string[][] = [];
+        let cur: string[] = [];
+        for (const fld of rest) {
+            if (cur.length && probe([...always, ...cur, fld]) > SOQL_URL_BUDGET) {
+                chunks.push([...always, ...cur]);
+                cur = [fld];
+            } else {
+                cur.push(fld);
+            }
+        }
+        if (cur.length) chunks.push([...always, ...cur]);
+        return chunks.length ? chunks : [fieldNames];
+    }
+
+    /**
+     * Merge the per-chunk pages of the SAME rows into whole records, keyed by Id. Every chunk
+     * ran an identical WHERE/ORDER BY with a pinned batchSize, so the pages hold the same Ids;
+     * a divergence would silently write half-populated rows, so it THROWS rather than guessing.
+     */
+    private MergeChunkedRecords(objectName: string, bodies: SFQueryResponse[]): Record<string, unknown>[] {
+        const merged = new Map<string, Record<string, unknown>>();
+        const seen: Set<string>[] = bodies.map(() => new Set());
+        bodies.forEach((body, i) => {
+            for (const r of (body.records ?? [])) {
+                const id = (r as Record<string, unknown>)['Id'] as string | undefined;
+                if (!id) continue;
+                seen[i].add(id);
+                const prior = merged.get(id);
+                if (prior) Object.assign(prior, r);
+                else merged.set(id, { ...r });
+            }
+        });
+        const counts = seen.map(x => x.size);
+        if (counts.some(c => c !== counts[0])) {
+            throw new Error(`Nimble AMS chunked SOQL for "${objectName}" returned misaligned pages (${counts.join('/')} rows per chunk) — refusing to write partially-populated records.`);
+        }
+        const complete = [...merged.values()].filter(r => seen.every(sset => sset.has(r['Id'] as string)));
+        if (complete.length !== counts[0]) {
+            throw new Error(`Nimble AMS chunked SOQL for "${objectName}" could not reassemble every row (${complete.length} of ${counts[0]}).`);
+        }
+        return complete;
+    }
+
     /** Salesforce REST SOQL fetch — cursor pagination via nextRecordsUrl + watermark-ordered incremental. */
     private async FetchSOQL(ctx: FetchContext, obj: MJIntegrationObjectEntity): Promise<FetchBatchResult> {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as NimbleAuthContext;
         const headers = this.BuildHeaders(auth);
-        const watermarkField = obj.IncrementalWatermarkField ?? 'LastModifiedDate';
-
-        // Follow the SF cursor when present; otherwise build the first SOQL page.
-        const url = ctx.CurrentCursor
-            ? `${this.GetBaseURL(ctx.CompanyIntegration, auth)}${ctx.CurrentCursor}`
-            : `${this.SFDataBase(auth)}/query?q=${encodeURIComponent(this.BuildSOQL(ctx.ObjectName, await this.GetSOQLFieldNames(auth, ctx.ObjectName), watermarkField, ctx.WatermarkValue ?? null))}`;
-
-        const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
-        if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`Nimble AMS SOQL error for "${ctx.ObjectName}": HTTP ${response.Status} — ${this.SafeBody(response)}`);
+        // Follow the SF cursor when present; otherwise build the first SOQL page. Field names
+        // are needed either way to resolve the watermark, and they are describe-cached.
+        const fieldNames = await this.GetSOQLFieldNames(auth, ctx.ObjectName);
+        const watermarkField = this.ResolveWatermarkField(obj, fieldNames);
+        /**
+         * Wide objects overflow the request line (see SOQL_URL_BUDGET) — HTTP 431. When the
+         * projection does not fit, the SAME row window is fetched as several narrower queries
+         * and reassembled by Id. Identical WHERE/ORDER BY plus a pinned batchSize keeps the
+         * pages aligned; MergeChunkedRecords throws rather than write a half-populated row. A
+         * chunked cursor is the JSON array of the per-chunk nextRecordsUrl values, so the
+         * engine's opaque-cursor contract is unchanged. Objects whose projection already fits
+         * take the original single-request path.
+         */
+        const chunks = this.ChunkSOQLFields(ctx.ObjectName, fieldNames, watermarkField, ctx.WatermarkValue ?? null);
+        const cursorList: string[] | null = (ctx.CurrentCursor && String(ctx.CurrentCursor).startsWith('['))
+            ? JSON.parse(ctx.CurrentCursor) as string[]
+            : null;
+        const chunked = chunks.length > 1 || cursorList != null;
+        const reqHeaders = chunked
+            ? { ...headers, 'Sforce-Query-Options': `batchSize=${SOQL_CHUNK_BATCH_SIZE}` }
+            : headers;
+        const urls = cursorList
+            ? cursorList.map(c => `${this.GetBaseURL(ctx.CompanyIntegration, auth)}${c}`)
+            : (ctx.CurrentCursor
+                ? [`${this.GetBaseURL(ctx.CompanyIntegration, auth)}${ctx.CurrentCursor}`]
+                : chunks.map(fields => `${this.SFDataBase(auth)}/query?q=${encodeURIComponent(this.BuildSOQL(ctx.ObjectName, fields, watermarkField, ctx.WatermarkValue ?? null))}`));
+        const bodies: SFQueryResponse[] = [];
+        for (const u of urls) {
+            const r = await this.MakeHTTPRequest(auth, u, 'GET', reqHeaders);
+            if (r.Status < 200 || r.Status >= 300) {
+                throw new Error(`Nimble AMS SOQL error for "${ctx.ObjectName}": HTTP ${r.Status} — ${this.SafeBody(r)}`);
+            }
+            bodies.push(r.Body as SFQueryResponse);
         }
-
-        const body = response.Body as SFQueryResponse;
-        const raw = body.records ?? [];
+        const body = bodies[0];
+        const raw = bodies.length > 1
+            ? this.MergeChunkedRecords(ctx.ObjectName, bodies)
+            : (body.records ?? []);
         // Defensive: the Fuse OUTBOUND door caps a single call at 50,000 records; SF native paging
         // (≤2000/page) keeps SOQL pages well under it, so a page at/over the cap signals a misconfig.
         const warnings = raw.length >= FUSE_MAX_RECORDS_PER_CALL
@@ -589,20 +738,46 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
             : undefined;
         const records: ExternalRecord[] = raw.map(r => this.RawToExternalRecord(r, obj, ctx.ObjectName, watermarkField, 'Id'));
 
-        // Watermark advances ONLY on the final page (full-batch success), and only to the max seen.
+        /**
+         * Watermark advances on EVERY page, to the max value seen on that page.
+         *
+         * It used to advance only under `if (body.done)` — only when Salesforce reported the
+         * whole query complete. For an object too big to finish inside one run, `done` never
+         * arrives before the run is cancelled or dies, so NOTHING was ever recorded and every
+         * sync restarted from record zero. Measured live (ACR, 2026-08-20): NU__Transaction__c
+         * at 70,000 of 3,780,536 rows — an exact multiple of the 2,000-row page size, i.e.
+         * parked on a page boundary with a NULL watermark — while runs re-read ~25 records for
+         * every 1 written. The object could never finish, by construction: re-reading 3.6M
+         * stored rows takes longer than the run survives.
+         *
+         * Per-page advance is safe HERE because both halves of the contract already exist in
+         * BuildSOQL: results are `ORDER BY <watermarkField> ASC`, so the max of page N bounds
+         * everything on pages 1..N; and the filter is `>=` (not `>`), so the boundary instant
+         * is re-fetched next run and absorbed by engine dedupe. The engine keeps its own
+         * monotonic max per batch ("failures never hold it back") and persists it when a run
+         * ends or is cancelled — a killed run now resumes where it stopped instead of starting
+         * over.
+         */
         let newWatermark: string | undefined;
-        if (body.done) {
+        // An object with no datetime column (see ResolveWatermarkField) cannot advance a watermark —
+        // there is nothing to read. It is fetched in full each run, which is the honest behaviour.
+        // When there IS one, it advances on EVERY page (not only under done=true), so a killed run
+        // resumes from the last persisted page instead of starting over.
+        if (watermarkField) {
             for (const r of raw) {
                 const mod = r[watermarkField];
                 if (typeof mod === 'string' && (!newWatermark || mod > newWatermark)) newWatermark = mod;
             }
         }
 
+        const hasMore = bodies.some(b => b.done === false);
         return {
             Records: records,
-            HasMore: body.done === false,
-            NextCursor: body.nextRecordsUrl,
-            NewWatermarkValue: body.done ? newWatermark : undefined,
+            HasMore: hasMore,
+            NextCursor: bodies.length > 1
+                ? (hasMore ? JSON.stringify(bodies.map(b => b.nextRecordsUrl)) : undefined)
+                : body.nextRecordsUrl,
+            NewWatermarkValue: newWatermark,
             Warnings: warnings,
         };
     }
@@ -614,20 +789,28 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
      * watermark past them next sync. Use `>=` (not `>`) so records at the exact watermark instant
      * aren't lost; engine dedupe absorbs the boundary re-fetch. ORDER BY the watermark for monotonicity.
      */
-    private BuildSOQL(objectName: string, fieldNames: string[], watermarkField: string, watermarkValue: string | null): string {
+    private BuildSOQL(objectName: string, fieldNames: string[], watermarkField: string | null, watermarkValue: string | null): string {
         // Explicit field list (NOT FIELDS(ALL)) — see GetSOQLFieldNames: FIELDS(ALL) forces LIMIT<=200,
         // incompatible with native nextRecordsUrl paging. An explicit SELECT has no LIMIT requirement.
         const cols = fieldNames.length ? fieldNames.join(', ') : 'Id';
         let soql = `SELECT ${cols} FROM ${objectName}`;
-        if (watermarkValue) soql += ` WHERE ${watermarkField} >= ${this.FormatSOQLDateTime(watermarkValue)}`;
-        soql += ` ORDER BY ${watermarkField} ASC`;
+        // Both clauses are conditional on the object HAVING a datetime column — naming one it does not
+        // have is a hard SOQL 400, not a degraded query. See ResolveWatermarkField.
+        if (watermarkField && watermarkValue) {
+            soql += ` WHERE ${watermarkField} >= ${this.FormatSOQLDateTime(watermarkValue)}`;
+        }
+        // Order by Id when there is no date column: paging is cursor-based (nextRecordsUrl) so ordering is
+        // not required for correctness, but a deterministic order still beats SF's unspecified default.
+        soql += ` ORDER BY ${watermarkField ?? 'Id'} ASC`;
         return soql;
     }
 
     /** SF SOQL datetime literals are unquoted ISO-8601 (e.g. 2026-01-01T00:00:00Z). */
     private FormatSOQLDateTime(value: string): string {
-        // Already an unquoted ISO literal → use verbatim; otherwise emit a UTC ISO string.
-        if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return value.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(value) ? value : `${value}Z`;
+        // Salesforce emits offsets WITHOUT a colon ('+0000'); the colon-only test above this
+        // rewrite appended a stray 'Z' on top ('...+0000Z') and every watermarked SOQL died with
+        // MALFORMED_QUERY (HTTP 400). Emit the one canonical form SF always accepts (UTC ISO
+        // 'Z') for anything parseable; pass unparseable values through untouched.
         const d = new Date(value);
         return isNaN(d.getTime()) ? value : d.toISOString();
     }
@@ -807,7 +990,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
      * declared in {@link ExcludedSourceKeys}. The PK field supplies ExternalID; the watermark field supplies
      * ModifiedAt. (FetchSOQL/FetchLMS override the base fetch, so we hand-build records here.)
      */
-    private RawToExternalRecord(raw: Record<string, unknown>, obj: MJIntegrationObjectEntity, objectType: string, watermarkField: string, pkField: string): ExternalRecord {
+    private RawToExternalRecord(raw: Record<string, unknown>, obj: MJIntegrationObjectEntity, objectType: string, watermarkField: string | null, pkField: string): ExternalRecord {
         const transformed = this.TransformRecord(raw, obj, this.GetCachedFields(obj.ID));
         const excluded = new Set(this.ExcludedSourceKeys(objectType));
         const fields: Record<string, unknown> = {};
@@ -815,7 +998,8 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
             if (excluded.has(key)) continue;
             fields[key] = value;
         }
-        const modRaw = raw[watermarkField];
+        // No datetime column on this object → no ModifiedAt to report, rather than reading `raw[null]`.
+        const modRaw = watermarkField ? raw[watermarkField] : undefined;
         return {
             ExternalID: String(raw[pkField] ?? ''),
             ObjectType: objectType,
