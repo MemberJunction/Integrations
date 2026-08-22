@@ -46,6 +46,13 @@ class MockedNimbleAMSConnector extends NimbleAMSConnector {
     public CallIsNimbleScoped(name: string): boolean {
         return (this as unknown as { IsNimbleScopedObject(n: string): boolean }).IsNimbleScopedObject(name);
     }
+    public CallFetchSOQL(ctx: unknown, obj: unknown): Promise<{ Records: unknown[]; HasMore: boolean; NewWatermarkValue?: string }> {
+        return (this as unknown as { FetchSOQL(c: unknown, o: unknown): Promise<{ Records: unknown[]; HasMore: boolean; NewWatermarkValue?: string }> }).FetchSOQL(ctx, obj);
+    }
+    /** Pre-seed the describe cache so FetchSOQL tests control the projection without a describe round-trip. */
+    public SeedFields(objectName: string, names: string[]): void {
+        (this as unknown as { soqlFieldCache: Map<string, string[]> }).soqlFieldCache.set(objectName, names);
+    }
     public CallStripAttributes(raw: Record<string, unknown>): Record<string, unknown> {
         return (this as unknown as { TransformRecord(r: Record<string, unknown>, o: unknown, f: unknown): Record<string, unknown> }).TransformRecord(raw, {}, []);
     }
@@ -65,8 +72,10 @@ describe('NimbleAMSConnector — identity', () => {
         expect(connector.SupportsDelete).toBe(true);
         expect(connector.MonotonicWatermark).toBe(true);
         expect(connector.DiscoveryIsAuthoritative).toBe(true);
-        expect(connector.StableOrderingKey('NU__Order__c')).toBe('Id');
-        expect(connector.StableOrderingKey('LmsProduct')).toBe('id');
+        // null, deliberately: declaring an ordering key made the engine run keyset pagination
+        // INSTEAD of the watermark filter — every sync re-walked from row zero.
+        expect(connector.StableOrderingKey('NU__Order__c')).toBeNull();
+        expect(connector.StableOrderingKey('LmsProduct')).toBeNull();
         expect(connector.RateLimitPolicy?.TokensPerSec).toBeGreaterThan(0);
     });
 });
@@ -120,7 +129,7 @@ describe('NimbleAMSConnector — SOQL construction', () => {
     it('builds a watermark-ordered query with NO LIMIT (SF native paging) and >= boundary', () => {
         const soql = c.CallBuildSOQL('NU__Order__c', ['Id', 'LastModifiedDate'], 'LastModifiedDate', '2026-01-01T00:00:00Z');
         expect(soql).toContain('SELECT Id, LastModifiedDate FROM NU__Order__c');
-        expect(soql).toContain('WHERE LastModifiedDate >= 2026-01-01T00:00:00Z');
+        expect(soql).toContain('WHERE LastModifiedDate >= 2026-01-01T00:00:00.000Z');
         expect(soql).toContain('ORDER BY LastModifiedDate ASC');
         expect(soql).not.toMatch(/LIMIT/i);
     });
@@ -131,9 +140,17 @@ describe('NimbleAMSConnector — SOQL construction', () => {
         expect(soql).toContain('ORDER BY LastModifiedDate ASC');
     });
 
-    it('emits SF SOQL datetime literals UNQUOTED and Z-suffixed', () => {
-        expect(c.CallFormatSOQLDateTime('2026-03-04T05:06:07Z')).toBe('2026-03-04T05:06:07Z');
-        expect(c.CallFormatSOQLDateTime('2026-03-04T05:06:07')).toBe('2026-03-04T05:06:07Z');
+    it('emits ONE canonical SF SOQL datetime literal (UTC ISO), whatever the input offset shape', () => {
+        // The regression this guards: Salesforce emits offsets WITHOUT a colon ('+0000'); the old
+        // colon-only test appended a stray 'Z' ('...+0000Z') and every watermarked SOQL died with
+        // MALFORMED_QUERY (HTTP 400).
+        expect(c.CallFormatSOQLDateTime('2026-03-04T05:06:07.000+0000')).toBe('2026-03-04T05:06:07.000Z');
+        expect(c.CallFormatSOQLDateTime('2026-03-04T05:06:07Z')).toBe('2026-03-04T05:06:07.000Z');
+        // A zoneless literal is interpreted in local time (JS Date semantics) — assert the SHAPE,
+        // not the instant: live values always carry a zone (SF emits '+0000').
+        expect(c.CallFormatSOQLDateTime('2026-03-04T05:06:07')).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        // Unparseable values pass through untouched — never fabricated.
+        expect(c.CallFormatSOQLDateTime('not-a-date')).toBe('not-a-date');
     });
 });
 
@@ -241,6 +258,48 @@ class CRUDTestConnector extends MockedNimbleAMSConnector {
 
 function ci() { return { IntegrationID: 'int-1', Configuration: null, CredentialID: null } as unknown; }
 function user() { return {} as unknown; }
+
+describe('NimbleAMSConnector — per-page watermark (a killed run must resume, not restart)', () => {
+    const page = (done: boolean, ids: string[], stamps: string[]) => ({
+        Status: 200, Headers: {},
+        Body: {
+            done, totalSize: ids.length,
+            nextRecordsUrl: done ? undefined : '/services/data/v59.0/query/01gNEXT',
+            records: ids.map((id, i) => ({ Id: id, LastModifiedDate: stamps[i] })),
+        },
+    });
+    const obj = { Name: 'NU__Transaction__c', IncrementalWatermarkField: 'LastModifiedDate' } as never;
+    const ctx = (cursor?: string) => ({ ObjectName: 'NU__Transaction__c', CurrentCursor: cursor, WatermarkValue: null, ContextUser: null, CompanyIntegration: {} }) as never;
+
+    it('a NON-final page emits NewWatermarkValue = max seen on that page', async () => {
+        // This is the fix: `done:false` used to emit undefined, so an object too big to finish
+        // in one run recorded NOTHING and every sync restarted from record zero (observed live:
+        // 70,000 of 3,780,536 rows — an exact multiple of the 2,000 page size — watermark NULL).
+        const c = new MockedNimbleAMSConnector();
+        c.SeedFields('NU__Transaction__c', ['Id', 'LastModifiedDate']);
+        c.Responses.push(page(false, ['001', '002'], ['2026-08-01T00:00:00.000+0000', '2026-08-02T09:30:00.000+0000']));
+        const out = await c.CallFetchSOQL(ctx('/services/data/v59.0/query/01gPAGE2'), obj);
+        expect(out.HasMore).toBe(true);
+        expect(out.NewWatermarkValue).toBe('2026-08-02T09:30:00.000+0000');
+    });
+
+    it('the final page still emits the max — behaviour there is unchanged', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.SeedFields('NU__Transaction__c', ['Id', 'LastModifiedDate']);
+        c.Responses.push(page(true, ['003'], ['2026-08-03T12:00:00.000+0000']));
+        const out = await c.CallFetchSOQL(ctx('/services/data/v59.0/query/01gPAGE3'), obj);
+        expect(out.HasMore).toBe(false);
+        expect(out.NewWatermarkValue).toBe('2026-08-03T12:00:00.000+0000');
+    });
+
+    it('a page with no usable stamps emits undefined — never a fabricated value', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.SeedFields('NU__Transaction__c', ['Id', 'LastModifiedDate']);
+        c.Responses.push({ Status: 200, Headers: {}, Body: { done: false, totalSize: 1, nextRecordsUrl: '/q/next', records: [{ Id: '004' }] } });
+        const out = await c.CallFetchSOQL(ctx('/q/page'), obj);
+        expect(out.NewWatermarkValue).toBeUndefined();
+    });
+});
 
 describe('NimbleAMSConnector — Salesforce REST sObject CRUD', () => {
     it('CreateRecord substitutes {apiVersion}+{ObjectName}, POSTs a flat body, extracts id', async () => {
@@ -356,5 +415,93 @@ describe('NimbleAMSConnector — Nimble Fuse inbound upsert', () => {
         const res = await c.CreateRecord({ CompanyIntegration: ci(), ContextUser: user(), ObjectName: 'Account', Attributes: {} } as never);
         expect(res.Success).toBe(false);
         expect(c.Calls).toHaveLength(0);
+    });
+});
+
+// ─── Chunked SOQL projection (wide objects 431 on the request line) ──────
+
+describe('NimbleAMSConnector — chunked SOQL projection (HTTP 431 on wide objects)', () => {
+    // Long field names so a few hundred overflow the 12,000-char encoded budget, like Account's
+    // 674 real fields did. 400 × ~30 chars ≈ 12k unencoded, well past the budget once encoded.
+    const wideFields = ['Id', 'LastModifiedDate',
+        ...Array.from({ length: 400 }, (_, i) => `NU__VeryLongCustomFieldName_${String(i).padStart(3, '0')}__c`)];
+    const obj = { Name: 'Account', IncrementalWatermarkField: 'LastModifiedDate' } as never;
+    const ctx = (cursor?: string) => ({ ObjectName: 'Account', CurrentCursor: cursor, WatermarkValue: null, ContextUser: null, CompanyIntegration: {} }) as never;
+    const page = (ids: string[], fields: Record<string, unknown>, done = true, next?: string) => ({
+        Status: 200, Headers: {},
+        Body: { done, totalSize: ids.length, nextRecordsUrl: next,
+                records: ids.map(id => ({ Id: id, LastModifiedDate: '2026-08-01T00:00:00.000+0000', ...fields })) },
+    });
+
+    it('a NARROW object takes the original single-request path — no chunk header, one call', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.SeedFields('Account', ['Id', 'LastModifiedDate', 'Name']);
+        c.Responses.push(page(['001'], { Name: 'Acme' }));
+        const out = await c.CallFetchSOQL(ctx(), obj);
+        expect(c.Calls.filter(k => k.url.includes('/query?q='))).toHaveLength(1);
+        expect(c.Calls[0].headers['Sforce-Query-Options']).toBeUndefined();
+        expect(out.Records).toHaveLength(1);
+    });
+
+    it('a WIDE object splits into aligned narrower queries and reassembles whole rows by Id', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.SeedFields('Account', wideFields);
+        // However many chunks ChunkSOQLFields makes, answer each with the same two Ids.
+        const probeChunks = (c as unknown as { ChunkSOQLFields(o: string, f: string[], w: string | null, v: string | null): string[][] })
+            .ChunkSOQLFields('Account', wideFields, 'LastModifiedDate', null);
+        expect(probeChunks.length).toBeGreaterThan(1);
+        // Every chunk must carry the merge key and the watermark field.
+        for (const chunk of probeChunks) {
+            expect(chunk).toContain('Id');
+            expect(chunk).toContain('LastModifiedDate');
+        }
+        probeChunks.forEach((chunk, i) => {
+            c.Responses.push(page(['001', '002'], { [`NU__VeryLongCustomFieldName_${String(i).padStart(3, '0')}__c`]: `v${i}` }));
+        });
+        const out = await c.CallFetchSOQL(ctx(), obj);
+        // One query per chunk, each pinned to the same page size so pages stay aligned.
+        const queryCalls = c.Calls.filter(k => k.url.includes('/query?q='));
+        expect(queryCalls).toHaveLength(probeChunks.length);
+        for (const call of queryCalls) {
+            expect(call.headers['Sforce-Query-Options']).toBe('batchSize=200');
+            // Each individual chunk fits the request-line budget.
+            expect(new URL(call.url).search.length).toBeLessThanOrEqual(12_100);
+        }
+        // Rows reassembled: 2 records, each carrying a field from EVERY chunk.
+        expect(out.Records).toHaveLength(2);
+    });
+
+    it('misaligned chunk pages THROW rather than write half-populated rows', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.SeedFields('Account', wideFields);
+        const probeChunks = (c as unknown as { ChunkSOQLFields(o: string, f: string[], w: string | null, v: string | null): string[][] })
+            .ChunkSOQLFields('Account', wideFields, 'LastModifiedDate', null);
+        // First chunk returns 2 rows, every other chunk returns 1 — a row would be half-populated.
+        probeChunks.forEach((_, i) => {
+            c.Responses.push(page(i === 0 ? ['001', '002'] : ['001'], {}));
+        });
+        await expect(c.CallFetchSOQL(ctx(), obj)).rejects.toThrow(/misaligned/);
+    });
+
+    it('a chunked cursor round-trips as a JSON array of per-chunk nextRecordsUrl values', async () => {
+        const c = new MockedNimbleAMSConnector();
+        c.SeedFields('Account', wideFields);
+        const probeChunks = (c as unknown as { ChunkSOQLFields(o: string, f: string[], w: string | null, v: string | null): string[][] })
+            .ChunkSOQLFields('Account', wideFields, 'LastModifiedDate', null);
+        probeChunks.forEach((_, i) => {
+            c.Responses.push(page(['001'], {}, false, `/services/data/v59.0/query/01gCHUNK${i}`));
+        });
+        const out = await c.CallFetchSOQL(ctx(), obj) as { HasMore: boolean; NextCursor?: string };
+        expect(out.HasMore).toBe(true);
+        const cursors = JSON.parse(out.NextCursor ?? '[]') as string[];
+        expect(cursors).toHaveLength(probeChunks.length);
+
+        // Resume from the chunked cursor: one request per stored cursor, still page-pinned.
+        const c2 = new MockedNimbleAMSConnector();
+        c2.SeedFields('Account', wideFields);
+        cursors.forEach(() => c2.Responses.push(page(['002'], {})));
+        const out2 = await c2.CallFetchSOQL(ctx(JSON.stringify(cursors)), obj);
+        expect(c2.Calls.filter(k => k.url.includes('/query/01gCHUNK'))).toHaveLength(cursors.length);
+        expect(out2.Records).toHaveLength(1);
     });
 });
