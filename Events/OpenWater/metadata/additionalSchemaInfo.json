@@ -336,6 +336,44 @@
           "Description": "Primary key from source system"
         }
       ]
+    },
+    {
+      "TableName": "Judge",
+      "PrimaryKey": [
+        {
+          "FieldName": "userId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "roundId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Rounds",
+          "RelatedField": "id"
+        }
+      ]
+    },
+    {
+      "TableName": "JudgeAssignment",
+      "PrimaryKey": [
+        {
+          "FieldName": "userId",
+          "Description": "Primary key from source system"
+        },
+        {
+          "FieldName": "roundId",
+          "Description": "Primary key from source system"
+        }
+      ],
+      "ForeignKeys": [
+        {
+          "FieldName": "roundId",
+          "SchemaName": "openwater",
+          "RelatedTable": "Rounds",
+          "RelatedField": "id"
+        }
+      ]
     }
   ]
 }

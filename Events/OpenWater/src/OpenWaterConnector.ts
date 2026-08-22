@@ -435,7 +435,30 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         }
 
         // Depth-N (nested): walk the access path from the door to the leaf records.
-        return this.FetchViaAccessPath(ctx, obj, accessPath);
+        // An object may declare `alternativeAccessPaths` (full AccessPath objects, not just
+        // alternative entry paths) when its records live behind MORE THAN ONE DOOR — e.g. Judge:
+        // judges assigned to rounds come from the Program->rounds[] walk, judges assigned only
+        // to judge teams come embedded in /v2/JudgeTeams rows. The walks are unioned and
+        // deduplicated by ExternalID (first occurrence wins).
+        const unionPaths = this.ParseAlternativeAccessPaths(obj);
+        if (unionPaths.length === 0) {
+            return this.FetchViaAccessPath(ctx, obj, accessPath);
+        }
+        const results: FetchBatchResult[] = [];
+        for (const path of [accessPath, ...unionPaths]) {
+            results.push(await this.FetchViaAccessPath(ctx, obj, path));
+        }
+        const byID = new Map<string, ExternalRecord>();
+        for (const r of results) {
+            for (const rec of r.Records) {
+                if (!byID.has(rec.ExternalID)) byID.set(rec.ExternalID, rec);
+            }
+        }
+        return {
+            Records: [...byID.values()],
+            HasMore: results.some(r => r.HasMore),
+            Warnings: results.flatMap(r => r.Warnings ?? []),
+        };
     }
 
     // ── Literal-create / literal-update overrides (RequiresLiveVerification) ──────────
@@ -1062,6 +1085,17 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                 Data: { object: obj.Name, parents: parentIDs.length } });
         }
         return { Records: out, HasMore: false, Warnings: warnings };
+    }
+
+    /** Additional full walks to union with the main AccessPath (empty when not declared). */
+    private ParseAlternativeAccessPaths(obj: MJIntegrationObjectEntity): AccessPath[] {
+        if (!obj.Configuration) return [];
+        try {
+            const parsed = JSON.parse(obj.Configuration) as { alternativeAccessPaths?: AccessPath[] };
+            return (parsed.alternativeAccessPaths ?? []).filter(ap => ap && ap.door && ap.doorPath);
+        } catch {
+            return [];
+        }
     }
 
     private ParseAccessPath(obj: MJIntegrationObjectEntity): AccessPath | null {
