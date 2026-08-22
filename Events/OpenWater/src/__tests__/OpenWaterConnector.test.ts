@@ -1025,3 +1025,157 @@ describe('OpenWaterConnector — FetchChanges (alternativeAccessPaths union)', (
         expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['7|55', '7|56']);
     });
 });
+
+// ─── Bounded, resumable detail walks (the sampling-cost defect) ──────────
+
+describe('OpenWaterConnector — a detail walk is bounded by the caller\'s batch size', () => {
+    /** Four applications, each detail carrying one round submission. */
+    function fourApplications(connector: MockedOpenWaterConnector): void {
+        connector.AddObject(
+            io({
+                ID: 'o-ars2', Name: 'ApplicationRoundSubmission', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            ...['101', '102', '103', '104'].map(id => ({
+                match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [{ roundId: 55 }] }, Headers: {} },
+            })),
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [
+                { id: 101 }, { id: 102 }, { id: 103 }, { id: 104 }] }, Headers: {} } },
+        ];
+    }
+
+    it('a small batch stops early instead of walking every parent — this is what makes SAMPLING cheap', async () => {
+        // The defect: the walk ran to completion inside one FetchChanges call, so
+        // DiscoverFieldsViaFetch (which can only stop BETWEEN batches) paid ~2,000 detail calls
+        // to infer fields for one object, blowing the discovery time budget.
+        const connector = new MockedOpenWaterConnector();
+        fourApplications(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', { BatchSize: 2 }));
+
+        expect(result.Records).toHaveLength(2);
+        expect(result.HasMore).toBe(true);
+        expect(result.NextCursor).toBe('detail:2');
+        // Only the parents needed for this batch were fetched — 103/104 were never touched.
+        expect(connector.Requests.some(r => r.url.includes('/v2/Applications/103'))).toBe(false);
+    });
+
+    it('resuming from the cursor continues at the offset and reports completion', async () => {
+        const connector = new MockedOpenWaterConnector();
+        fourApplications(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', { BatchSize: 2, CurrentCursor: 'detail:2' }));
+
+        expect(result.Records.map(r => r.ExternalID)).toEqual(['103|55', '104|55']);
+        expect(result.HasMore).toBe(false);
+        expect(result.NextCursor).toBeUndefined();
+        // The already-consumed parents are not re-fetched on the resume.
+        expect(connector.Requests.some(r => r.url.includes('/v2/Applications/101'))).toBe(false);
+    });
+
+    it('a large batch still walks everything in one call — real syncs are unchanged', async () => {
+        const connector = new MockedOpenWaterConnector();
+        fourApplications(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        expect(result.Records).toHaveLength(4);
+        expect(result.HasMore).toBe(false);
+    });
+
+    it('the harvest stops collecting ids once the batch is covered (Media: one call per door row)', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-media2', Name: 'Media', APIPath: '/v2/Media/{mediaId}',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications',
+                    parentSource: 'detail-harvest',
+                    harvestDetailPath: '/v2/Applications/{applicationId}', harvestDetailParam: 'applicationId',
+                    harvestSegments: ['roundSubmissions[]', 'fieldValues[]'], harvestIdKey: 'mediaId',
+                    entryPath: '/v2/Media/{mediaId}', parentParamName: 'mediaId',
+                    extractionMode: 'detail-object',
+                } }),
+            }),
+            [{ Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            ...['201', '202', '203', '204'].map((id, i) => ({
+                match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [{ fieldValues: [{ mediaId: 9000 + i }] }] }, Headers: {} },
+            })),
+            ...[0, 1, 2, 3].map(i => ({
+                match: `/v2/Media/${9000 + i}`,
+                response: { Status: 200, Body: { url: `https://cdn.test/${i}`, fileName: `f${i}` }, Headers: {} },
+            })),
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [
+                { id: 201 }, { id: 202 }, { id: 203 }, { id: 204 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('Media', { BatchSize: 1 }));
+
+        expect(result.Records).toHaveLength(1);
+        expect(result.HasMore).toBe(true);
+        // Harvesting stopped as soon as it had enough ids: the later applications were untouched.
+        expect(connector.Requests.some(r => r.url.includes('/v2/Applications/204'))).toBe(false);
+    });
+});
+
+describe('OpenWaterConnector — a truncated harvest must not look finished', () => {
+    it('walks EVERY media across resumable batches (the prefix-length trap)', async () => {
+        // Bounding the harvest makes parentIDs a PREFIX of the real parent set, so reading its
+        // length as the total reported HasMore:false with door rows still un-harvested — which
+        // would have silently dropped every later record. Drive the whole object through
+        // batch-sized calls and assert nothing is lost.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-media3', Name: 'Media', APIPath: '/v2/Media/{mediaId}',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications',
+                    parentSource: 'detail-harvest',
+                    harvestDetailPath: '/v2/Applications/{applicationId}', harvestDetailParam: 'applicationId',
+                    harvestSegments: ['roundSubmissions[]', 'fieldValues[]'], harvestIdKey: 'mediaId',
+                    entryPath: '/v2/Media/{mediaId}', parentParamName: 'mediaId',
+                    extractionMode: 'detail-object',
+                } }),
+            }),
+            [{ Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        const appIDs = ['301', '302', '303', '304', '305'];
+        connector.Responses = [
+            ...appIDs.map((id, i) => ({
+                match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [{ fieldValues: [{ mediaId: 8000 + i }] }] }, Headers: {} },
+            })),
+            ...appIDs.map((_, i) => ({
+                match: `/v2/Media/${8000 + i}`,
+                response: { Status: 200, Body: { url: `https://cdn.test/${i}`, fileName: `f${i}` }, Headers: {} },
+            })),
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: appIDs.map(id => ({ id })) }, Headers: {} } },
+        ];
+
+        const seen: string[] = [];
+        let cursor: string | undefined;
+        for (let call = 0; call < 10; call++) {
+            const r = await connector.FetchChanges(fetchCtx('Media', { BatchSize: 2, CurrentCursor: cursor }));
+            seen.push(...r.Records.map(x => x.ExternalID));
+            if (!r.HasMore) break;
+            cursor = r.NextCursor;
+            expect(cursor).toBeTruthy();
+        }
+
+        expect(seen.sort()).toEqual(['8000', '8001', '8002', '8003', '8004']);
+    });
+});
