@@ -117,6 +117,33 @@ const DETAIL_CACHE_MAX_ENTRIES = 500;
 
 /** Cursor namespace for a bounded, resumable detail walk: the parent offset consumed so far. */
 const DETAIL_WALK_CURSOR_PREFIX = 'detail:';
+/**
+ * Door enumerations cached per (integration, door, doorPath).
+ *
+ * The walk is resumable by parent offset, but every resumed call re-enumerated the door from page
+ * 0 — ~20 pages of 100 to list 1,976 Applications — before touching a single parent. OpenWater
+ * rate-limits that: measured live, `HTTP 429 at /v2/Applications?pageIndex=4&pageSize=100`, and the
+ * call then blew the engine's 30s FetchChanges timeout with nothing kept. Bounding parents per call
+ * cannot help, because the cost is paid before the parent loop runs.
+ *
+ * Totara already solves this the same way ("Parent-id lists per connection+parent function, so a
+ * resumed parent walk does not re-read them"). Enumerate once, walk in bounded batches.
+ */
+const DOOR_CACHE_MAX_ENTRIES = 20;
+/**
+ * Parent details walked in ONE FetchChanges call before the walk yields with a cursor.
+ *
+ * The record budget (ctx.BatchSize, engine default 200) bounds records EMITTED, not vendor calls
+ * made. A sparse child — most Applications carry no files — never reaches that budget, so the walk
+ * kept going until the parent set was exhausted: ~1,976 detail requests in one call, well past the
+ * engine's 30s FetchChanges timeout, and on timeout the whole batch is discarded. Measured live the
+ * moment the door began paging properly: ApplicationFile, Media and ApplicationRoundSubmission all
+ * died with "Operation 'FetchChanges(X)' timed out after 30000ms".
+ *
+ * Bounding the WORK as well as the output lets each call finish and hand back a cursor, so the
+ * engine simply calls again — the same resumability that already existed for the record budget.
+ */
+const MAX_PARENTS_PER_CALL = 100;
 
 interface AccessPath {
     /** The door object name (e.g. "Program", "Fund"). */
@@ -727,8 +754,53 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
 
         // Pull the door collection (paginated) and descend to the parent leaf values + the door rows.
         // Page the door by the DOOR's own rules, not the child's — see FetchDoorRows.
-        const doorRows = await this.FetchDoorRows(
-            auth, baseURL, accessPath.doorPath, this.ResolveDoorObject(ctx, accessPath, obj));
+        const doorObj = this.ResolveDoorObject(ctx, accessPath, obj);
+        // A resumed call reuses the door enumeration; a fresh walk (no cursor) re-reads it, so a new
+        // sync always sees new parents. Keyed by door + path, so objects sharing a door share the read.
+        const doorKey = `${ctx.CompanyIntegration.IntegrationID}|${accessPath.door}|${accessPath.doorPath}`;
+        let doorRows = ctx.CurrentCursor ? this.doorRowCache.get(doorKey) : undefined;
+        let doorComplete = doorRows !== undefined; // a cached enumeration is only ever a complete one
+        if (!doorRows) {
+            const door = await this.FetchDoorRows(auth, baseURL, accessPath.doorPath, doorObj, warnings);
+            doorRows = door.records;
+            doorComplete = door.complete;
+            // NEVER cache a truncated enumeration: it would be reused as the whole parent set and
+            // the walk would report success having seen a fraction of it.
+            if (doorComplete) {
+                this.doorRowCache.set(doorKey, doorRows);
+                while (this.doorRowCache.size > DOOR_CACHE_MAX_ENTRIES) {
+                    const oldest = this.doorRowCache.keys().next();
+                    if (oldest.done) break;
+                    this.doorRowCache.delete(oldest.value);
+                }
+            } else {
+                this.doorRowCache.delete(doorKey);
+                warnings.push({
+                    Code: 'DOOR_TRUNCATED',
+                    Message: `"${obj.Name}" door "${accessPath.door}" enumeration was cut short at`
+                        + ` ${doorRows.length} row(s); not cached, and the object stays incomplete so`
+                        + ` the next run re-reads it rather than treating this as the whole parent set.`,
+                    Data: { object: obj.Name, door: accessPath.door, doorRows: doorRows.length },
+                });
+            }
+        }
+        // A capped door is invisible downstream: the walk consumes every parent it was given and
+        // reports HasMore:false truthfully, so a short door reads as a complete one. Record what the
+        // door produced and under which pagination rules — counts and flags only, never data.
+        const doorPaged = !!doorObj.SupportsPagination && doorObj.PaginationType !== 'None';
+        warnings.push({
+            Code: 'DOOR_ROWS',
+            Message: `"${obj.Name}" door "${accessPath.door}" returned ${doorRows.length} row(s)`
+                + ` (paging ${doorPaged ? 'ON' : 'OFF'}, type ${doorObj.PaginationType ?? 'null'},`
+                + ` declared page size ${doorObj.DefaultPageSize ?? 'null'}).`,
+            Data: {
+                object: obj.Name, door: accessPath.door, doorRows: doorRows.length,
+                doorPaginated: doorPaged,
+                doorPaginationType: doorObj.PaginationType ?? null,
+                doorDeclaredPageSize: doorObj.DefaultPageSize ?? null,
+                doorObjectResolved: doorObj.Name,
+            },
+        });
         if (doorRows.length === 0) {
             warnings.push({
                 Code: 'ZERO_PARENTS',
@@ -752,7 +824,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             }
             return {
                 Records: records.map(r => this.BuildExternalRecord(r, obj, fields, pkFieldNames)),
-                HasMore: false,
+                // A truncated door enumeration is not a finished object — see DOOR_TRUNCATED.
+                HasMore: !doorComplete,
                 Warnings: warnings,
             };
         }
@@ -761,7 +834,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         // response rather than a paginated list leaf — /v2/Applications/{id} carries
         // roundSubmissions[] and the file-upload field values; /v2/Media/{id} IS the record.
         if (accessPath.extractionMode === 'detail-embedded' || accessPath.extractionMode === 'detail-object') {
-            return this.FetchViaDetailWalk(ctx, obj, accessPath, auth, baseURL, doorRows, fields, pkFieldNames, warnings);
+            return this.FetchViaDetailWalk(ctx, obj, accessPath, auth, baseURL, doorRows, fields,
+                pkFieldNames, warnings, doorComplete);
         }
         const parentIDs = this.DescendToParentIDs(doorRows, accessPath);
         if (parentIDs.length === 0) {
@@ -905,14 +979,26 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         }
     }
 
+    /**
+     * Enumerate the door.
+     *
+     * Returns `complete: false` when the enumeration was cut short — currently only by a rate limit
+     * (see RATE_LIMITED_PARTIAL). That flag MUST reach the caller: a truncated door returned as if
+     * whole is cached as whole, and the walk then finishes at `consumed === parentIDs.length` having
+     * seen a fraction of the parents, reporting success. That is the same shape as every other bug
+     * in this path — an incomplete read that looks authoritative — so the truncation is carried,
+     * never swallowed.
+     */
     private async FetchDoorRows(
         auth: OpenWaterAuthContext,
         baseURL: string,
         doorPath: string,
-        doorObj: MJIntegrationObjectEntity
-    ): Promise<Record<string, unknown>[]> {
-        const { records } = await this.PaginateLeaf(auth, baseURL, doorPath, doorObj, undefined, undefined, '', true);
-        return records;
+        doorObj: MJIntegrationObjectEntity,
+        warnings?: FetchWarning[]
+    ): Promise<{ records: Record<string, unknown>[]; complete: boolean }> {
+        const { records, hasMore } = await this.PaginateLeaf(
+            auth, baseURL, doorPath, doorObj, undefined, undefined, '', true, warnings);
+        return { records, complete: !hasMore };
     }
 
     /**
@@ -989,6 +1075,21 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                     return { records: all, newWatermark: undefined, hasMore: false, nextPage: page,
                              rejection: { status: response.Status, url, vendor: vendor ?? null, response } };
                 }
+                // A THROTTLE partway through an enumeration is not the object failing. Measured
+                // live: `HTTP 429 at /v2/Applications?pageIndex=4&pageSize=100` threw, which
+                // discarded the four pages already in hand and took the object to zero. Keep what
+                // the vendor did give and report the truncation — the walk is resumable, so the
+                // next call continues instead of starting over with nothing.
+                if (response.Status === 429 && all.length > 0) {
+                    warnings?.push({
+                        Code: 'RATE_LIMITED_PARTIAL',
+                        Message: `"${obj.Name}" was rate-limited at ${url} after ${all.length} record(s)`
+                            + ` over ${page + 1} page(s); keeping them and resuming later rather than`
+                            + ` discarding the enumeration.`,
+                        Data: { object: obj.Name, url, status: 429, recordsKept: all.length, pages: page + 1 },
+                    });
+                    return { records: all, newWatermark, hasMore: true, nextPage: page };
+                }
                 throw this.HttpError(
                     `OpenWater fetch failed for "${obj.Name}": HTTP ${response.Status} at ${url}`
                         + (vendor ? ` — ${vendor}` : ''),
@@ -1027,6 +1128,9 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     /** Reads and validates AccessPath from the IO's Configuration JSON; null when absent. */
     /** Short-lived cache for detail responses; see FetchDetailCached. */
     private detailCache: Map<string, { at: number; body: unknown }> = new Map();
+
+    /** Door rows per (integration|door|doorPath) — see DOOR_CACHE_MAX_ENTRIES. */
+    private doorRowCache: Map<string, Record<string, unknown>[]> = new Map();
 
     /**
      * Fetch a DETAIL response (one object, not a list) with a short-lived per-connector cache.
@@ -1082,7 +1186,7 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     private async FetchViaDetailWalk(ctx: FetchContext, obj: MJIntegrationObjectEntity, accessPath: AccessPath,
         auth: OpenWaterAuthContext, baseURL: string, doorRows: Record<string, unknown>[],
         fields: MJIntegrationObjectFieldEntity[], pkFieldNames: string[],
-        warnings: FetchWarning[]): Promise<FetchBatchResult> {
+        warnings: FetchWarning[], doorComplete = true): Promise<FetchBatchResult> {
         /**
          * A detail walk is one HTTP call PER PARENT — for this tenant that is ~2,000 application
          * details, and Media additionally resolves ~4,000 /v2/Media/{id} records. Doing all of
@@ -1111,6 +1215,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         // so its length must NOT be read as the total (doing so reported HasMore:false with door
         // rows still un-harvested, which would have silently dropped every later record).
         let harvestTruncated = false;
+        // Observed key names/types from the first harvested detail — see HARVEST_SHAPE.
+        let harvestShape: string | null = null;
         if (accessPath.parentSource === 'detail-harvest') {
             const doorIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: [] });
             const harvested = new Set<string>();
@@ -1118,13 +1224,19 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             // ids to satisfy this batch (offset + budget). Ids are collected in door order, so
             // the same prefix is produced on every call and the offset stays meaningful.
             const needed = startAt + budget;
+            let doorsWalked = 0;
             for (const doorID of doorIDs) {
                 if (harvested.size >= needed) { harvestTruncated = true; break; }
+                // Same reason as the parent loop: harvesting is one vendor call per door row, and a
+                // door whose rows rarely carry the harvested id would otherwise walk all of them.
+                if (doorsWalked >= MAX_PARENTS_PER_CALL) { harvestTruncated = true; break; }
+                doorsWalked++;
                 const hPath = this.InjectParentID(accessPath.harvestDetailPath ?? '', doorID, {
                     ...accessPath, parentParamName: accessPath.harvestDetailParam ?? 'id', parentParamIn: 'path' });
                 if (hPath == null) continue;
                 const detail = await this.FetchDetailCached(auth, baseURL, hPath, warnings);
                 if (!detail) continue;
+                if (harvestShape === null) harvestShape = this.ShapeAlong(detail, accessPath.harvestSegments ?? []);
                 for (const node of this.WalkSegments([detail], accessPath.harvestSegments ?? [])) {
                     const v = (node as Record<string, unknown>)?.[accessPath.harvestIdKey ?? 'id'];
                     if (v != null && String(v).length > 0) harvested.add(String(v));
@@ -1138,13 +1250,34 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             warnings.push({ Code: 'ZERO_PARENTS',
                 Message: `No parent ids for "${obj.Name}" via ${accessPath.door} (${accessPath.parentSource ?? 'door-ids'}).`,
                 Data: { door: accessPath.door, parentSource: accessPath.parentSource ?? 'door-ids' } });
+            // Say WHAT WAS THERE instead of only that nothing matched — a wrong declared path and a
+            // genuinely empty collection look identical from a zero, and need opposite responses.
+            if (harvestShape) {
+                warnings.push({
+                    Code: 'HARVEST_SHAPE',
+                    Message: `"${obj.Name}" harvest looked for "${accessPath.harvestIdKey ?? 'id'}" under`
+                        + ` ${(accessPath.harvestSegments ?? []).join('->') || '(root)'} of`
+                        + ` ${accessPath.harvestDetailPath ?? '(no detail path)'} and found none.`
+                        + ` Keys actually present — names and types only: ${harvestShape}`,
+                    Data: {
+                        object: obj.Name,
+                        harvestIdKey: accessPath.harvestIdKey ?? 'id',
+                        harvestSegments: accessPath.harvestSegments ?? [],
+                        observedShape: harvestShape,
+                    },
+                });
+            }
             return { Records: [], HasMore: false, Warnings: warnings };
         }
         const out: ExternalRecord[] = [];
         const filt = accessPath.elementFilter;
         let consumed = startAt;
+        // The nesting walk's counterpart to harvestShape: what the first parent detail actually held.
+        let nestShape: string | null = null;
         for (const parentID of parentIDs.slice(startAt)) {
             if (out.length >= budget) break;
+            // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL.
+            if (consumed - startAt >= MAX_PARENTS_PER_CALL) break;
             consumed++;
             const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
             if (leafPath == null) continue;
@@ -1156,6 +1289,7 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                     rec[accessPath.parentParamName] = parentID;
                 out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
             } else {
+                if (nestShape === null) nestShape = this.ShapeAlong(detail, accessPath.nestingSegments ?? []);
                 let elements = this.WalkSegments([detail], accessPath.nestingSegments ?? []) as Record<string, unknown>[];
                 if (filt && filt.key) {
                     elements = elements.filter(e => e && (filt.exists
@@ -1174,14 +1308,69 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             warnings.push({ Code: 'ZERO_LEAVES',
                 Message: `"${obj.Name}" walked ${parentIDs.length} parent detail(s) and extracted no records.`,
                 Data: { object: obj.Name, parents: parentIDs.length } });
+            // Same argument as HARVEST_SHAPE: a wrong declared segment and an empty collection both
+            // produce this zero, and only the observed key names separate them. ApplicationFile's
+            // ZERO_LEAVES was a misdeclared segment name for a full day without this.
+            if (nestShape) {
+                warnings.push({
+                    Code: 'NESTING_SHAPE',
+                    Message: `"${obj.Name}" descended ${(accessPath.nestingSegments ?? []).join('->') || '(root)'}`
+                        + ` of ${accessPath.entryPath} and found no entries.`
+                        + ` Keys actually present — names and types only: ${nestShape}`,
+                    Data: {
+                        object: obj.Name,
+                        nestingSegments: accessPath.nestingSegments ?? [],
+                        observedShape: nestShape,
+                    },
+                });
+            }
         }
-        const moreParents = consumed < parentIDs.length || harvestTruncated;
+        const moreParents = consumed < parentIDs.length || harvestTruncated || !doorComplete;
         return {
             Records: out,
             HasMore: moreParents,
             NextCursor: moreParents ? `${DETAIL_WALK_CURSOR_PREFIX}${consumed}` : undefined,
             Warnings: warnings,
         };
+    }
+
+    /**
+     * When a harvest or a nesting walk finds nothing, "found nothing" is not a diagnosis: the path
+     * may be wrong, or the collection may genuinely be empty, and those need opposite responses.
+     * This reports the shape actually present so a declared AccessPath can be corrected against
+     * observed structure instead of vendor documentation — the same rule the catalog is held to
+     * ("provably know, not guessed"). Names and types only, capped, so no member data is emitted.
+     */
+    private static ShapeOf(node: unknown, cap = 40): string[] {
+        if (node == null || typeof node !== 'object') return [];
+        const src = Array.isArray(node) ? node[0] : node;
+        if (src == null || typeof src !== 'object') return [];
+        const out: string[] = [];
+        for (const [k, v] of Object.entries(src as Record<string, unknown>)) {
+            const t = v === null ? 'null'
+                : Array.isArray(v) ? `array[${v.length}]`
+                : typeof v === 'object' ? 'object'
+                : typeof v;
+            out.push(`${k}:${t}`);
+            if (out.length >= cap) break;
+        }
+        return out.sort();
+    }
+
+    /**
+     * The root's shape plus the shape at each declared segment that actually resolves — enough to
+     * correct a declared path against the payload, and nothing more. The segment whose braces come
+     * back empty is the one that does not exist.
+     */
+    private ShapeAlong(detail: unknown, segments: string[]): string {
+        const parts = [`root{${OpenWaterConnector.ShapeOf(detail).join(', ')}}`];
+        let cursor: unknown[] = [detail];
+        for (const seg of segments) {
+            cursor = this.WalkSegments(cursor as Record<string, unknown>[], [seg]);
+            parts.push(`${seg}{${OpenWaterConnector.ShapeOf(cursor[0]).join(', ')}}`);
+            if (cursor.length === 0) break;
+        }
+        return parts.join(' | ');
     }
 
     /** Additional full walks to union with the main AccessPath (empty when not declared). */

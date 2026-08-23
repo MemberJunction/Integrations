@@ -5148,8 +5148,8 @@
           "fields": {
             "Name": "ApplicationFile",
             "DisplayName": "Application Files",
-            "Description": "OpenWater file-upload field values across an Application round submissions (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[] -> fieldValues[] (elements carrying a mediaId).",
-            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].fieldValues[])",
+            "Description": "OpenWater file-upload field values across an Application round submissions (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[] -> submissionFieldValues[] (elements carrying a mediaId).",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].submissionFieldValues[])",
             "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Configuration": {
@@ -5160,7 +5160,7 @@
                 "parentParamName": "applicationId",
                 "nestingSegments": [
                   "roundSubmissions[]",
-                  "fieldValues[]"
+                  "submissionFieldValues[]"
                 ],
                 "elementFilter": {
                   "key": "mediaId",
@@ -5274,7 +5274,7 @@
                 "harvestDetailParam": "applicationId",
                 "harvestSegments": [
                   "roundSubmissions[]",
-                  "fieldValues[]"
+                  "submissionFieldValues[]"
                 ],
                 "harvestIdKey": "mediaId",
                 "entryPath": "/v2/Media/{mediaId}",
