@@ -118,6 +118,14 @@ const DETAIL_CACHE_MAX_ENTRIES = 500;
 /** Cursor namespace for a bounded, resumable detail walk: the parent offset consumed so far. */
 const DETAIL_WALK_CURSOR_PREFIX = 'detail:';
 /**
+ * Union cursor: `union:<memberIndex>|[c<innerCursor>|p<innerPage>]`.
+ *
+ * An object with alternativeAccessPaths is several walks unioned. Running them all inside one call
+ * meant each member's own resumption state had nowhere to live, so the union reported HasMore and
+ * named no continuation. The member index plus that member's own cursor is the whole state.
+ */
+const UNION_CURSOR_PREFIX = 'union:';
+/**
  * Door enumerations cached per (integration, door, doorPath).
  *
  * The walk is resumable by parent offset, but every resumed call re-enumerated the door from page
@@ -508,20 +516,59 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         if (unionPaths.length === 0) {
             return this.FetchViaAccessPath(ctx, obj, accessPath);
         }
-        const results: FetchBatchResult[] = [];
-        for (const path of [accessPath, ...unionPaths]) {
-            results.push(await this.FetchViaAccessPath(ctx, obj, path));
-        }
-        const byID = new Map<string, ExternalRecord>();
-        for (const r of results) {
-            for (const rec of r.Records) {
-                if (!byID.has(rec.ExternalID)) byID.set(rec.ExternalID, rec);
+        /**
+         * ONE member per call, advancing through them on a cursor.
+         *
+         * The union used to run every member inside a single call and return
+         * `HasMore: results.some(...)` while DISCARDING each member's NextCursor and NextPage. Any
+         * member that is resumable — a bounded detail walk, or a leaf that hit the batch cap — then
+         * reported "there is more" with nothing saying where to continue from, so the engine either
+         * restarted that member from the beginning every call or dropped its remainder outright.
+         * That is invisible from the outside: the object simply lands short, or the run spins.
+         *
+         * Walking one member at a time keeps each member's own resumption state intact. Records are
+         * no longer de-duplicated ACROSS members inside one call, which does not matter — members
+         * are unioned by primary key at the write, so a record two paths both produce is upserted
+         * once either way.
+         */
+        const paths = [accessPath, ...unionPaths];
+        const cur = String(ctx.CurrentCursor ?? '');
+        let idx = 0;
+        let innerCursor: string | undefined;
+        let innerPage: number | undefined;
+        if (cur.startsWith(UNION_CURSOR_PREFIX)) {
+            const body = cur.slice(UNION_CURSOR_PREFIX.length);
+            const bar = body.indexOf('|');
+            const i = Number(bar < 0 ? body : body.slice(0, bar));
+            if (Number.isFinite(i) && i > 0) idx = Math.min(i, paths.length - 1);
+            const inner = bar < 0 ? '' : body.slice(bar + 1);
+            if (inner.startsWith('c')) innerCursor = inner.slice(1);
+            else if (inner.startsWith('p')) {
+                const pg = Number(inner.slice(1));
+                if (Number.isFinite(pg) && pg > 0) innerPage = pg;
             }
         }
+        const memberCtx = { ...ctx, CurrentCursor: innerCursor ?? null,
+                            CurrentPage: innerPage ?? ctx.CurrentPage } as FetchContext;
+        const r = await this.FetchViaAccessPath(memberCtx, obj, paths[idx]);
+
+        const memberMore = !!r.HasMore;
+        const nextIdx = memberMore ? idx : idx + 1;
+        const nextInner = memberMore
+            ? (r.NextCursor != null ? `c${r.NextCursor}`
+               : r.NextPage != null ? `p${r.NextPage}` : '')
+            : '';
+        // A member that claims HasMore but names no continuation would spin forever; treat it as
+        // finished and move on rather than re-reading it until the run is killed.
+        const memberResumable = memberMore && nextInner !== '';
+        const advanceTo = memberResumable ? idx : idx + 1;
+        const more = memberResumable || advanceTo < paths.length;
         return {
-            Records: [...byID.values()],
-            HasMore: results.some(r => r.HasMore),
-            Warnings: results.flatMap(r => r.Warnings ?? []),
+            Records: r.Records,
+            HasMore: more,
+            NextCursor: more ? `${UNION_CURSOR_PREFIX}${advanceTo}|${memberResumable ? nextInner : ''}` : undefined,
+            NewWatermarkValue: r.NewWatermarkValue,
+            Warnings: r.Warnings,
         };
     }
 

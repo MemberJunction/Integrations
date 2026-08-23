@@ -52,3 +52,13 @@ each call harvests a fresh window of door rows, and a window whose ids could not
 one call resumes at that same window rather than advancing past the remainder. An empty window
 advances the cursor instead of reporting the object exhausted — otherwise a 1,976-parent walk ends
 at door row 25.
+
+**6. The union discarded every member's resumption state.** An object with `alternativeAccessPaths`
+is several walks unioned, and the union ran them all inside one call while returning
+`HasMore: results.some(...)` — dropping each member's `NextCursor` and `NextPage`. Any resumable
+member (a bounded detail walk, or a leaf that hit the batch cap) therefore said "there is more" while
+naming no continuation, so the engine re-read that member from the start on every call or lost its
+remainder. The union now walks ONE member per call on a `union:<i>|c<cursor>` cursor, so each member
+keeps its own state; a member that claims `HasMore` with no continuation is treated as finished
+rather than re-read forever. Cross-member de-duplication inside a call is no longer needed — members
+are unioned by primary key at the write.

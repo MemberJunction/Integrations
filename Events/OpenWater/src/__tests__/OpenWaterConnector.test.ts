@@ -7,6 +7,7 @@ import type {
     UpdateRecordContext,
     DeleteRecordContext,
     FetchContext,
+    ExternalRecord,
 } from '@memberjunction/integration-engine';
 import type { MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity } from '@memberjunction/core-entities';
 import { OpenWaterConnector } from '../OpenWaterConnector.js';
@@ -995,12 +996,70 @@ describe('OpenWaterConnector — FetchChanges (alternativeAccessPaths union)', (
                   managers: [{ userId: 10, firstName: 'D' }] }] }, Headers: {} } },
         ];
 
-        const result = await connector.FetchChanges(fetchCtx('Judge'));
+        // The union walks ONE member per call so each member keeps its own resumption state; drive
+        // it to completion the way the engine does.
+        const all: ExternalRecord[] = [];
+        let cursor: string | undefined;
+        for (let call = 0; call < 8; call++) {
+            const r = await connector.FetchChanges(fetchCtx('Judge', { CurrentCursor: cursor }));
+            all.push(...r.Records);
+            if (!r.HasMore) break;
+            expect(r.NextCursor).toBeTruthy();
+            cursor = r.NextCursor;
+        }
 
-        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['10', '7', '8', '9']);
-        // The round-sourced row carries its walk tag; the first occurrence of 8 (round walk) wins.
-        const eight = result.Records.find(r => r.ExternalID === '8');
-        expect(eight?.Fields['roundId']).toBe('55');
+        expect([...new Set(all.map(r => r.ExternalID))].sort()).toEqual(['10', '7', '8', '9']);
+        // The round-sourced row carries its walk tag.
+        const eight = all.find(r => r.ExternalID === '8' && r.Fields['roundId'] === '55');
+        expect(eight).toBeDefined();
+    });
+
+    it('a union member that claims HasMore but names no continuation is not re-read forever', async () => {
+        // Dropping a member's cursor used to produce exactly this state — HasMore with nothing
+        // saying where to resume — and the engine then re-read that member until the run died.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({ ID: 'o-jt9', Name: 'JudgeTeam', APIPath: '/v2/JudgeTeams' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({ ID: 'o-prog9', Name: 'Program', APIPath: '/v2/Programs' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-judge9', Name: 'Judge', APIPath: '/v2/JudgeAssignments/AssignedToRound',
+                Configuration: JSON.stringify({
+                    AccessPath: { door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                        parentParamName: 'roundId', entryPath: '/v2/JudgeAssignments/AssignedToRound',
+                        parentParamIn: 'query' },
+                    alternativeAccessPaths: [
+                        { door: 'JudgeTeam', doorPath: '/v2/JudgeTeams', nestingSegments: ['judges[]'],
+                          extractionMode: 'embedded-array' },
+                    ],
+                }),
+            }),
+            [{ Name: 'userId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: 'AssignedToRound?roundId=55', response: { Status: 200, Body: { records: [{ userId: 7 }] }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 55 }] }] }, Headers: {} } },
+            { match: '/v2/JudgeTeams', response: { Status: 200, Body: { records: [{ id: 300, judges: [{ userId: 9 }] }] }, Headers: {} } },
+        ];
+
+        const seen: string[] = [];
+        let cursor: string | undefined;
+        let calls = 0;
+        for (; calls < 10; calls++) {
+            const r = await connector.FetchChanges(fetchCtx('Judge', { CurrentCursor: cursor }));
+            seen.push(...r.Records.map(x => x.ExternalID));
+            if (!r.HasMore) break;
+            cursor = r.NextCursor;
+        }
+
+        // Two members, so two calls plus the terminating one — bounded, not a spin.
+        expect(calls).toBeLessThan(4);
+        expect([...new Set(seen)].sort()).toEqual(['7', '9']);
     });
 
     it('a pair-grain key keeps one row per (round, judge) instead of collapsing per person', async () => {
