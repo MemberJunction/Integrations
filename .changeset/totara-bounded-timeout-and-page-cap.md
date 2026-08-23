@@ -22,4 +22,17 @@ Two boundedness gaps, both of which turned a misbehaving remote into an unrecove
   the walk finishes, and a `PARENT_PAGINATION_NOT_HONOURED` warning names the parents, the
   wsfunction, and why the cut-off data should not be trusted as complete.
 
-Tests 86 → 87 (the old "0 opts out — no signal" test now asserts the cap is armed instead).
+Also ported from the same production campaign:
+
+- **Discovery samples are honoured.** Field discovery streams FetchChanges and can only stop
+  BETWEEN batches, so the parent walk paid its entire budget to produce a handful of sample
+  records. The walk now reads the engine's sample markers (`IsDiscoverySample`,
+  `SampleTargetRecords`, `DeadlineMs`, present on engines >= 5.49 and structurally absent —
+  hence inert — on older ones) and ends the moment the target is met.
+- **A "no" is not re-confirmed once per parent.** Moodle answers `[accessexception]` (and
+  `[invalidparameter]`/`[invalidfunction]`) identically for every parent id; after three
+  identical refusals with zero successes the function's answer is taken as final. A partial
+  refusal pattern (any success first) never trips it. `[invalidrecord]` deliberately stays a
+  per-parent warning — "can not find data record" is about that parent's id.
+
+Tests 86 → 90 (the old "0 opts out — no signal" test now asserts the cap is armed instead).

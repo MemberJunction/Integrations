@@ -741,7 +741,26 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const paramName = this.readConfigString(parentScope, 'paramName');
         const parentIdField = this.readConfigString(parentScope, 'parentIdField') ?? 'id';
         const isArrayParam = this.readConfigString(parentScope, 'paramStyle') === 'array';
-        const budgetMs = this.readConfigNonNegativeInt(parentScope, 'budgetMs') ?? DEFAULT_PARENT_WALK_BUDGET_MS;
+        /**
+         * Honour the engine's discovery-sample markers when they are present.
+         *
+         * Field discovery streams FetchChanges and stops BETWEEN batches, so a parent walk that
+         * ignores the markers pays its entire configured budget to produce a handful of sample
+         * records — and a parent that will never yield anything pays it for zero. The engine
+         * (>=5.49) states both facts on the context: SampleTargetRecords is the PRIMARY stop
+         * (checked in the walk below the moment enough records exist), DeadlineMs the backstop
+         * for parents that never yield. On engines that predate the markers both fields are
+         * simply absent and behaviour is exactly as before — which is why they are read through
+         * a structural narrowing rather than a version bump of the peer range.
+         */
+        const sampleCtx = ctx as FetchContext & {
+            IsDiscoverySample?: boolean; SampleTargetRecords?: number; DeadlineMs?: number };
+        const sampleTarget = sampleCtx.IsDiscoverySample ? (sampleCtx.SampleTargetRecords ?? 0) : 0;
+        let sampleSatisfied = false;
+        const configuredBudgetMs = this.readConfigNonNegativeInt(parentScope, 'budgetMs') ?? DEFAULT_PARENT_WALK_BUDGET_MS;
+        const budgetMs = sampleCtx.DeadlineMs != null
+            ? Math.max(0, sampleCtx.DeadlineMs - this.nowMs())
+            : configuredBudgetMs;
         if (!parentWsFn || !paramName) {
             return { Records: [], HasMore: false, Warnings: [{ Code: 'PARENT_SCOPE_INCOMPLETE',
                 Message: `"${obj.Name}": Configuration.parentScope requires parentWsFunction + paramName.`, Data: { object: obj.Name } }] };
@@ -862,6 +881,21 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const abandoned: Array<{ id: string; attempts: number; message: string }> = [];
         /** Parents cut off at MAX_PAGES_PER_PARENT full pages — the source is ignoring the offset params. */
         const runaway: Array<{ id: string; pages: number; rows: number }> = [];
+        /**
+         * Stop RE-CONFIRMING a "no". Moodle answers a permission refusal (`[accessexception]`)
+         * and a malformed request (`[invalidparameter]`) IDENTICALLY for every parent id — the
+         * refusal is about the function or the request shape, never about the parent. Before
+         * this, an ungranted object burned its entire walk budget asking the same question of
+         * every parent, and a catalog with a dozen such objects turned discovery into a
+         * twenty-minute run of guaranteed nos. Three identical refusals with zero successes is
+         * taken as the function's answer; a PARTIAL refusal pattern (some parents readable)
+         * never trips it, because successes reset nothing — the threshold only fires while
+         * successes are still zero.
+         */
+        const PERMANENT_FAILURE_THRESHOLD = 3;
+        let permanentFailures = 0;
+        let successfulParents = 0;
+        let objectUngranted = false;
 
         const ordering = parentPageSize > 0 ? this.readOffsetOrdering(cfg) : undefined;
         const maxAttempts = this.readConfigNonNegativeInt(parentScope, 'maxParentAttempts') ?? DEFAULT_MAX_PARENT_ATTEMPTS;
@@ -881,6 +915,11 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             async ({ id: parentID, index }) => {
                 // Index 0 always runs: a call that skips every parent makes no progress and the engine would
                 // loop on the same cursor forever. Everything after it yields to the budget.
+                // The sample is complete — every remaining parent is work nobody asked for.
+                if (sampleSatisfied) return;
+                // The function (or the request shape) is refused for every parent alike —
+                // asking the rest would only re-confirm the same "no". See the threshold above.
+                if (objectUngranted) return;
                 if (index > 0 && outOfTime()) { skippedForBudget++; return; }
                 // Any parent may resume mid-way now — it reads its own offset rather than the one slot the
                 // cursor used to have. A parent with no recorded offset starts at its beginning.
@@ -925,6 +964,12 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                             }
                         }
                         ctx.RateLimitReport?.();
+                        // A discovery sample stops the moment it has enough records — the sampled
+                        // object's own children are untouched; they sample via their own call.
+                        if (sampleTarget > 0 && out.length >= sampleTarget) {
+                            sampleSatisfied = true;
+                            return;
+                        }
                         // Unpaged function, or a short page → this parent is exhausted.
                         if (parentPageSize === 0 || pageCount < parentPageSize) break;
                         // A source that never short-pages is not paginating — see MAX_PAGES_PER_PARENT.
@@ -937,6 +982,7 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                         if (outOfTime()) { partial.set(index, offset); return; }
                     }
                     examined.add(index);
+                    successfulParents++;
                 } catch (e) {
                     const msg = e instanceof Error ? e.message : String(e);
                     if (/429|rate.?limit|Retry-After/i.test(msg)) { ctx.RateLimitReport?.(e); throw e; }  // rate-limit → propagate for backoff
@@ -971,6 +1017,20 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                     if (/\[accessexception\]|\[requiredcapability\]|\[nopermission\]/i.test(msg)) {
                         forbidden.push(parentID);
                         forbiddenMessage ??= msg;
+                        if (++permanentFailures >= PERMANENT_FAILURE_THRESHOLD && successfulParents === 0) {
+                            objectUngranted = true;
+                        }
+                    } else if (/\[invalidparameter\]|\[invalidfunction\]/i.test(msg)) {
+                        // The REQUEST is wrong, not this parent — Moodle answers [invalidparameter]
+                        // and [invalidfunction] identically for every parent id, so they collapse
+                        // exactly like a permission refusal. [invalidrecord] is deliberately NOT
+                        // here: "can not find data record" is about THIS parent's id and stays a
+                        // per-parent PARENT_FETCH_ERROR (the walk continues past it).
+                        forbidden.push(parentID);
+                        forbiddenMessage ??= msg;
+                        if (++permanentFailures >= PERMANENT_FAILURE_THRESHOLD && successfulParents === 0) {
+                            objectUngranted = true;
+                        }
                     } else {
                         warnings.push({ Code: 'PARENT_FETCH_ERROR', Message: `"${obj.Name}" fetch for ${paramName}=${parentID}${offset ? ` (offset ${offset})` : ''}: ${msg}`, Data: { object: obj.Name, [paramName]: parentID, offset } });
                     }

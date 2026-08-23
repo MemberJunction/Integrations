@@ -722,6 +722,68 @@ describe('TotaraConnector — FetchChanges (Moodle REST-RPC read)', () => {
         expect(res.HasMore).toBe(false);          // the only course was read to the end
     });
 
+    it('PARENT-SCOPED: an ungranted function stops being asked after three identical refusals', async () => {
+        // Moodle answers [accessexception] identically for every parent — the refusal is about the
+        // function, never the parent. Before this, an ungranted object burned its whole walk budget
+        // re-confirming the same "no" once per parent; a dozen such objects turned discovery into a
+        // twenty-minute run of guaranteed refusals.
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_course_groups', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-gg1', Name: 'Groups', Configuration: cfg }), idPK());
+        const refusal = { exception: 'moodle_exception', errorcode: 'accessexception', message: 'Access control exception [accessexception]' };
+        c.queue(
+            Array.from({ length: 10 }, (_, i) => ({ id: i + 1 })),   // ten courses
+            refusal, refusal, refusal, refusal, refusal, refusal, refusal, refusal, refusal, refusal,
+        );
+
+        const res = await c.FetchChanges(fetchCtx('Groups'));
+
+        // three asks, then the function's answer is taken as final — not ten.
+        expect(c.Captured.filter(r => r.body?.WsFunction === 'core_group_get_course_groups')).toHaveLength(3);
+        expect(res.Records).toHaveLength(0);
+        expect(res.Warnings?.some(w => w.Code === 'LEAF_FORBIDDEN')).toBe(true);
+    });
+
+    it('PARENT-SCOPED: a PARTIAL refusal pattern never trips the early stop', async () => {
+        // "Some courses' groups are readable" is genuinely different from "this function is not
+        // granted" — one success before the threshold means every parent still gets its own ask.
+        const cfg = JSON.stringify({ wsfunction: 'core_group_get_course_groups', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-gg2', Name: 'Groups', Configuration: cfg }), idPK());
+        const refusal = { exception: 'moodle_exception', errorcode: 'accessexception', message: 'Access control exception [accessexception]' };
+        c.queue(
+            [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }],
+            [{ id: 100 }],                       // course 1 succeeds FIRST
+            refusal, refusal, refusal, refusal, refusal,   // then five refusals
+        );
+
+        const res = await c.FetchChanges(fetchCtx('Groups'));
+
+        expect(c.Captured.filter(r => r.body?.WsFunction === 'core_group_get_course_groups')).toHaveLength(6);
+        expect(res.Records).toHaveLength(1);
+    });
+
+    it('PARENT-SCOPED: a discovery sample stops the moment it has enough records', async () => {
+        // Field discovery streams FetchChanges and can only stop BETWEEN batches — so a walk that
+        // ignores the sample markers pays its entire budget to produce a handful of sample rows.
+        // With the markers honoured, the walk ends at the target and remaining parents are never asked.
+        const cfg = JSON.stringify({ wsfunction: 'core_enrol_get_enrolled_users', responseEnvelopeKey: null,
+            parentScope: { parentWsFunction: 'core_course_get_courses', paramName: 'courseid', parentIdField: 'id' } });
+        c.seedIO(makeIO({ ID: 'io-eu10', Name: 'Enrolled Users', Configuration: cfg }), idPK());
+        c.queue(
+            [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+            [{ id: 10 }, { id: 11 }],            // course 1: two records — target met here
+            [{ id: 12 }],                        // course 2: must never be fetched
+        );
+
+        const res = await c.FetchChanges({ ...fetchCtx('Enrolled Users'),
+            IsDiscoverySample: true, SampleTargetRecords: 2 } as never);
+
+        expect(res.Records).toHaveLength(2);
+        // only the parent list + course 1 were asked; courses 2-4 were work nobody asked for.
+        expect(c.Captured.filter(r => r.body?.WsFunction === 'core_enrol_get_enrolled_users')).toHaveLength(1);
+    });
+
     it('PARENT-SCOPED: a source that never short-pages is cut off at MAX_PAGES_PER_PARENT, loudly', async () => {
         // The paged loop's only exit is a SHORT page, which trusts the source to honour the offset
         // parameters. A wsfunction that ignores them returns the same full page forever: before the
