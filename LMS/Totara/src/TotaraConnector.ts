@@ -180,6 +180,28 @@ const DEFAULT_PARENT_LIST_CACHE_MS = 300000;
  * Override per connection with `requestTimeoutMs` in CompanyIntegration.Configuration; `0` disables it.
  */
 const DEFAULT_REQUEST_TIMEOUT_MS = 25000;
+/**
+ * The ceiling a "disabled" per-request deadline actually means.
+ *
+ * `RequestTimeoutMs: 0` used to mean NO AbortSignal at all. A wsfunction that accepts the
+ * request and never finishes the body then holds its call forever — and because the creation
+ * pipeline writes its result only from complete()/fail(), the run keeps a start event, no
+ * terminal event, and `isInFlight` stays true for good; no client can clear it. The opt-out
+ * survives — some functions on some sites genuinely run past 25s — it just cannot mean
+ * unbounded any more: a long deadline still terminates, and a terminating request produces an
+ * error the engine can retry and the run artifact can record.
+ */
+const ABSOLUTE_MAX_REQUEST_TIMEOUT_MS = 10 * 60000;
+/**
+ * How many FULL pages one parent may yield before the walk stops believing it is paginating.
+ *
+ * The paged loop's only exit is a SHORT page, which trusts the source to honour the offset
+ * parameters. A wsfunction that ignores them returns the same full page forever: the loop never
+ * breaks, duplicates pile up, and every turn issues another perfectly successful request —
+ * indistinguishable from a hang from outside, and unrecoverable because nothing returns.
+ * Deliberately high (2000 pages is millions of records at any realistic page size) but finite.
+ */
+const MAX_PAGES_PER_PARENT = 2000;
 
 /**
  * How many consecutive TRANSIENT failures one parent may cost before the walk abandons it and moves past.
@@ -393,8 +415,10 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         // The deadline covers the response BODY, not just the headers: a site that streams a header block
         // and then stalls mid-body hangs just as hard as one that never answers, so the same signal is
         // passed to fetch and held across the text() read.
-        const timeoutMs = (auth as TotaraAuthContext).RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-        const signal = timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined;
+        // `0` opts out of the 25s default, not out of ending — see ABSOLUTE_MAX_REQUEST_TIMEOUT_MS.
+        const configuredMs = (auth as TotaraAuthContext).RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+        const timeoutMs = configuredMs > 0 ? configuredMs : ABSOLUTE_MAX_REQUEST_TIMEOUT_MS;
+        const signal = AbortSignal.timeout(timeoutMs);
 
         let httpResponse: Response;
         let text: string;
@@ -836,6 +860,8 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const transientFails = new Map<number, number>();
         /** Parents abandoned because they have now failed transiently `maxParentAttempts` times in a row. */
         const abandoned: Array<{ id: string; attempts: number; message: string }> = [];
+        /** Parents cut off at MAX_PAGES_PER_PARENT full pages — the source is ignoring the offset params. */
+        const runaway: Array<{ id: string; pages: number; rows: number }> = [];
 
         const ordering = parentPageSize > 0 ? this.readOffsetOrdering(cfg) : undefined;
         const maxAttempts = this.readConfigNonNegativeInt(parentScope, 'maxParentAttempts') ?? DEFAULT_MAX_PARENT_ATTEMPTS;
@@ -860,6 +886,7 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                 // cursor used to have. A parent with no recorded offset starts at its beginning.
                 let offset = cursor.Partials.get(parentID) ?? 0;
                 let issuedRequest = false;
+                let fullPages = 0;
                 try {
                     for (;;) {
                         /**
@@ -900,6 +927,11 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                         ctx.RateLimitReport?.();
                         // Unpaged function, or a short page → this parent is exhausted.
                         if (parentPageSize === 0 || pageCount < parentPageSize) break;
+                        // A source that never short-pages is not paginating — see MAX_PAGES_PER_PARENT.
+                        if (++fullPages >= MAX_PAGES_PER_PARENT) {
+                            runaway.push({ id: parentID, pages: fullPages, rows: offset + pageCount });
+                            break;
+                        }
                         offset += pageCount;
                         // Mid-parent budget stop: record where to resume rather than dropping the rest.
                         if (outOfTime()) { partial.set(index, offset); return; }
@@ -945,6 +977,24 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                     examined.add(index);
                 }
             });
+
+        // A parent cut off at the page cap did its whole walk "successfully" — the failure is that it
+        // never short-paged, which means the source very likely ignored the offset parameters and the
+        // pages were the same records repeatedly. Silent trimming would read as a complete parent, and
+        // this is the exact class of bug (a wrong result behind a green run) the guard exists for.
+        if (runaway.length > 0) {
+            warnings.push({
+                Code: 'PARENT_PAGINATION_NOT_HONOURED',
+                Message: `"${obj.Name}": ${runaway.length} ${paramName} value(s) returned ${MAX_PAGES_PER_PARENT}`
+                    + ` consecutive FULL pages without ever returning a short one —`
+                    + ` ${runaway.slice(0, 5).map(r => r.id).join(', ')}. "${wsfunction}" is very likely`
+                    + ` ignoring the offset parameters, in which case those pages were the same records`
+                    + ` repeatedly and the parent's data is neither complete nor trustworthy. The walk cut`
+                    + ` them off so it could finish; before this guard it would not have returned at all.`,
+                Data: { object: obj.Name, wsfunction, maxPages: MAX_PAGES_PER_PARENT,
+                    sample: runaway.slice(0, 5).map(r => ({ [paramName]: r.id, pages: r.pages, rows: r.rows })) },
+            });
+        }
 
         // Every parent this call reached was refused on permissions, and nothing was read. That is a credential
         // scope limit stated as one fact — the same grain OpenWater's `LEAF_FORBIDDEN` uses — rather than N
