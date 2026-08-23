@@ -59,6 +59,8 @@ export interface ExplodeResult {
     ParentsWithoutCollection: number;
     /** Total elements skipped because their kind did not match the declaration. */
     ElementsSkipped: number;
+    /** Elements dropped as exact repeats of a row already produced — see ExplodeCollection. */
+    ElementsCollapsed: number;
 }
 
 /**
@@ -125,8 +127,18 @@ export function ExplodeCollection(
     config: DerivedCollectionConfig,
 ): ExplodeResult {
     const out: Record<string, unknown>[] = [];
+    const seen = new Set<string>();
     let parentsWithoutCollection = 0;
     let elementsSkipped = 0;
+    let elementsCollapsed = 0;
+
+    /** Byte-identical projection = one fact restated. Anything differing is kept. */
+    const emit = (row: Record<string, unknown>): void => {
+        const sig = JSON.stringify(row, Object.keys(row).sort());
+        if (seen.has(sig)) { elementsCollapsed++; return; }
+        seen.add(sig);
+        out.push(row);
+    };
 
     for (const parent of parentRecords) {
         const arr = parent.Fields?.[config.collectionField];
@@ -143,7 +155,7 @@ export function ExplodeCollection(
             if (el == null) { elementsSkipped++; continue; }
             if (config.elementKind === 'scalar') {
                 if (typeof el === 'object') { elementsSkipped++; continue; }
-                out.push({ ...parentKeys, [config.scalarFieldName as string]: el });
+                emit({ ...parentKeys, [config.scalarFieldName as string]: el });
             } else {
                 if (typeof el !== 'object' || Array.isArray(el)) { elementsSkipped++; continue; }
                 const child: Record<string, unknown> = { ...parentKeys };
@@ -154,11 +166,16 @@ export function ExplodeCollection(
                     if (name in parentKeys) { continue; }
                     child[name] = v;
                 }
-                out.push(child);
+                emit(child);
             }
         }
     }
-    return { ChildFields: out, ParentsWithoutCollection: parentsWithoutCollection, ElementsSkipped: elementsSkipped };
+    return {
+        ChildFields: out,
+        ParentsWithoutCollection: parentsWithoutCollection,
+        ElementsSkipped: elementsSkipped,
+        ElementsCollapsed: elementsCollapsed,
+    };
 }
 
 /**

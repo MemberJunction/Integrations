@@ -74,6 +74,8 @@ interface DerivedRowBuffer {
     Complete: boolean;
     /** True when the row cap was hit; the buffer is unusable and children fall back. */
     Overflowed: boolean;
+    /** Exact-repeat rows collapsed while filling — reported at drain, never silent. */
+    Collapsed: number;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────
@@ -1606,11 +1608,12 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             const key = this.derivedBufferKey(parentObj.IntegrationID, childName);
             let buf = this.derivedRowBuffers.get(key);
             if (walkStarting || !buf) {
-                buf = { At: this.nowMs(), Rows: [], Complete: false, Overflowed: false };
+                buf = { At: this.nowMs(), Rows: [], Complete: false, Overflowed: false, Collapsed: 0 };
                 this.derivedRowBuffers.set(key, buf);
             }
             if (!buf.Overflowed) {
                 const exploded = ExplodeCollection(records, config);
+                buf.Collapsed += exploded.ElementsCollapsed;
                 buf.Rows.push(...exploded.ChildFields);
                 totalRows += exploded.ChildFields.length;
                 if (totalRows > TotaraConnector.DERIVED_BUFFER_MAX_ROWS) {
@@ -1685,10 +1688,18 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             const slice = buf.Rows.slice(offset, offset + pageSize);
             const records = slice.map(row => this.buildExternalRecord(row, obj.Name, pkFieldNames));
             const nextOffset = offset + slice.length;
+            const warnings = offset === 0 && buf.Collapsed > 0
+                ? [{ Code: 'DERIVED_ELEMENTS_COLLAPSED',
+                     Message: `"${obj.Name}": ${buf.Collapsed} element(s) were exact repeats of a row already produced and were collapsed. `
+                            + `Identical on every captured field, so nothing is lost — but if a field that would distinguish them is undeclared `
+                            + `or removed by dropFields, that difference is being hidden.`,
+                     Data: { object: obj.Name, collapsed: buf.Collapsed } }]
+                : undefined;
             return {
                 Records: records,
                 HasMore: nextOffset < buf.Rows.length,
                 NextOffset: nextOffset,
+                Warnings: warnings,
             };
         }
 
@@ -1697,6 +1708,13 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const exploded = ExplodeCollection(parentBatch.Records, config);
         const records = exploded.ChildFields.map(f => this.buildExternalRecord(f, obj.Name, pkFieldNames));
         const warnings = [...(parentBatch.Warnings ?? [])];
+        if (exploded.ElementsCollapsed > 0) {
+            warnings.push({
+                Code: 'DERIVED_ELEMENTS_COLLAPSED',
+                Message: `"${obj.Name}": ${exploded.ElementsCollapsed} element(s) were exact repeats of a row already produced and were collapsed.`,
+                Data: { object: obj.Name, collapsed: exploded.ElementsCollapsed },
+            });
+        }
         if (exploded.ElementsSkipped > 0) {
             warnings.push({
                 Code: 'DERIVED_ELEMENTS_SKIPPED',

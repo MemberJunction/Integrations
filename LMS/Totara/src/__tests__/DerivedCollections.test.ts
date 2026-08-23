@@ -147,3 +147,63 @@ describe('DropConfiguredFields', () => {
         expect(out).toEqual({ id: 1, fullname: 'A' });
     });
 });
+
+describe('exact repeats collapse; differences never do', () => {
+    const cfg: DerivedCollectionConfig = {
+        parentObjectName: 'Enrolled Users', collectionField: 'roles',
+        parentKeyMap: { id: 'userid', courseid: 'courseid' }, elementKind: 'object',
+    };
+
+    it('the same element listed twice yields ONE row (measured live: Moodle repeats a role across contexts)', () => {
+        const out = ExplodeCollection([rec({
+            id: 7, courseid: 12,
+            roles: [
+                { roleid: 5, shortname: 'student', name: 'Learner', sortorder: 1 },
+                { roleid: 5, shortname: 'student', name: 'Learner', sortorder: 1 },
+            ],
+        })], cfg);
+        expect(out.ChildFields).toEqual([{ userid: 7, courseid: 12, roleid: 5, shortname: 'student', name: 'Learner', sortorder: 1 }]);
+        expect(out.ElementsCollapsed).toBe(1);
+    });
+
+    it('same key but ANY differing field keeps both rows — collapsing must never lose a fact', () => {
+        const out = ExplodeCollection([rec({
+            id: 7, courseid: 12,
+            roles: [
+                { roleid: 5, shortname: 'student', sortorder: 1 },
+                { roleid: 5, shortname: 'student', sortorder: 2 },
+            ],
+        })], cfg);
+        expect(out.ChildFields).toHaveLength(2);
+        expect(out.ElementsCollapsed).toBe(0);
+    });
+
+    it('key order does not affect identity (canonical signature)', () => {
+        const out = ExplodeCollection([rec({
+            id: 7, courseid: 12,
+            roles: [{ roleid: 5, shortname: 'student' }, { shortname: 'student', roleid: 5 }],
+        })], cfg);
+        expect(out.ChildFields).toHaveLength(1);
+        expect(out.ElementsCollapsed).toBe(1);
+    });
+
+    it('collapses across parents too — a re-read parent cannot re-add its rows', () => {
+        const parent = rec({ id: 7, courseid: 12, roles: [{ roleid: 5 }] });
+        const out = ExplodeCollection([parent, parent], cfg);
+        expect(out.ChildFields).toHaveLength(1);
+        expect(out.ElementsCollapsed).toBe(1);
+    });
+
+    it('scalar collections collapse the same way', () => {
+        const scalarCfg: DerivedCollectionConfig = {
+            parentObjectName: 'Cohort Members', collectionField: 'userids',
+            parentKeyMap: { cohortid: 'cohortid' }, elementKind: 'scalar', scalarFieldName: 'userid',
+        };
+        const out = ExplodeCollection(
+            [{ ExternalID: 'c1', ObjectType: 'Cohort Members', Fields: { cohortid: 10, userids: [7, 7, 8] } } as ExternalRecord],
+            scalarCfg,
+        );
+        expect(out.ChildFields).toEqual([{ cohortid: 10, userid: 7 }, { cohortid: 10, userid: 8 }]);
+        expect(out.ElementsCollapsed).toBe(1);
+    });
+});
