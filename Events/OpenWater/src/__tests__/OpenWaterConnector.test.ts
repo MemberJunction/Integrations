@@ -1727,3 +1727,75 @@ describe('OpenWaterConnector — the harvest yields on the clock, and an empty w
         }
     });
 });
+
+describe('OpenWaterConnector — an embedded leaf can carry its parent id', () => {
+    /** Two rounds that both declare winner type 9 — the shape that collapsed 89 pairs into 74 ids. */
+    function twoRoundsSharingAType(connector: MockedOpenWaterConnector, tag: boolean): void {
+        const ap: Record<string, unknown> = {
+            door: 'Program', doorPath: '/v2/Programs',
+            nestingSegments: ['rounds[]', 'winnerTypes[]'],
+            extractionMode: 'embedded-array',
+        };
+        if (tag) ap.embeddedParentTag = { sourceKey: 'id', asKey: 'roundId' };
+        connector.AddObject(
+            io({ ID: 'o-prog-wt', Name: 'Program', APIPath: '/v2/Programs' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-awt', Name: 'ApplicationWinnerType',
+                APIPath: '(embedded in /v2/Programs rounds[].winnerTypes[])',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: ap }),
+            }),
+            tag
+                ? [{ Name: 'roundId', IsPrimaryKey: true }, { Name: 'id', IsPrimaryKey: true }, { Name: 'name' }]
+                : [{ Name: 'id', IsPrimaryKey: true }, { Name: 'name' }]
+        );
+        connector.Responses = [
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [
+                { id: 1, rounds: [
+                    { id: 55, winnerTypes: [{ id: 9, name: 'Gold' }, { id: 10, name: 'Silver' }] },
+                    { id: 56, winnerTypes: [{ id: 9, name: 'Gold' }] },
+                ] },
+            ] }, Headers: {} } },
+        ];
+    }
+
+    it('without the tag, a type declared on two rounds is ONE row — the round is lost', async () => {
+        const connector = new MockedOpenWaterConnector();
+        twoRoundsSharingAType(connector, false);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationWinnerType'));
+
+        // Three (round, type) pairs exist; keyed on id alone they are two ExternalIDs.
+        expect(result.Records).toHaveLength(3);
+        expect([...new Set(result.Records.map(r => r.ExternalID))].sort()).toEqual(['10', '9']);
+        expect(result.Records[0].Fields['roundId']).toBeUndefined();
+    });
+
+    it('with the tag, each pair is its own keyed row and says which round it came from', async () => {
+        const connector = new MockedOpenWaterConnector();
+        twoRoundsSharingAType(connector, true);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationWinnerType'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['55|10', '55|9', '56|9']);
+        // The vendor's own type is preserved rather than stringified.
+        expect(result.Records.find(r => r.ExternalID === '56|9')?.Fields['roundId']).toBe(56);
+    });
+
+    it('a value the vendor already supplied under that name is never overwritten', async () => {
+        const connector = new MockedOpenWaterConnector();
+        twoRoundsSharingAType(connector, true);
+        connector.Responses = [
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [
+                { id: 1, rounds: [{ id: 55, winnerTypes: [{ id: 9, name: 'Gold', roundId: 99 }] }] },
+            ] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationWinnerType'));
+
+        expect(result.Records[0].Fields['roundId']).toBe(99);
+    });
+});

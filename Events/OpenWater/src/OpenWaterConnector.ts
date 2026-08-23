@@ -215,6 +215,11 @@ interface AccessPath {
     harvestDetailParam?: string;
     /** detail-harvest: segments walked over the detail to the elements carrying the harvested id. */
     harvestSegments?: string[];
+    /**
+     * embedded-array only: copy the immediate parent's `sourceKey` onto each leaf as `asKey`, so a
+     * leaf that is only unique within its parent can be keyed on the pair. See ExtractEmbedded.
+     */
+    embeddedParentTag?: { sourceKey?: string; asKey?: string };
     /** detail-harvest: the key read off each walked element (default 'id') — e.g. 'mediaId'. */
     harvestIdKey?: string;
 }
@@ -887,7 +892,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
 
         // embedded-array: records are already inside the door payload (e.g. Program.rounds[]).
         if (accessPath.extractionMode === 'embedded-array') {
-            const records = this.ExtractEmbedded(doorRows, accessPath.nestingSegments ?? []);
+            const records = this.ExtractEmbedded(doorRows, accessPath.nestingSegments ?? [],
+                accessPath.embeddedParentTag);
             if (records.length === 0) {
                 warnings.push({
                     Code: 'ZERO_LEAVES',
@@ -1576,8 +1582,39 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     }
 
     /** For embedded-array access paths: emit the nested records directly from the door payload. */
-    private ExtractEmbedded(doorRows: Record<string, unknown>[], segments: string[]): Record<string, unknown>[] {
-        return this.WalkSegments(doorRows, segments);
+    /**
+     * embedded-array extraction, optionally tagging each leaf with its IMMEDIATE parent's id.
+     *
+     * Without the tag the walk keeps only leaves, so an element arrives with no idea which parent
+     * produced it — and for a leaf whose identity is only unique WITHIN its parent, that loses rows.
+     * ApplicationWinnerType is the case: a winner type is `{id, name}` declared on a round, the same
+     * type id can be declared on several rounds, and the key was `id` alone. 89 (round, type) pairs
+     * therefore collapsed to 74 distinct ids, and the round association was gone from the row.
+     *
+     * `embeddedParentTag: { sourceKey, asKey }` copies the parent's `sourceKey` onto each leaf as
+     * `asKey`, so the pair can be keyed and the row can say where it came from. Absent — the
+     * default — behaviour is exactly as before.
+     */
+    private ExtractEmbedded(doorRows: Record<string, unknown>[], segments: string[],
+        tag?: { sourceKey?: string; asKey?: string }): Record<string, unknown>[] {
+        if (!tag?.asKey) return this.WalkSegments(doorRows, segments);
+        const sourceKey = tag.sourceKey ?? 'id';
+        const asKey = tag.asKey;
+        // Walk to the parents (all but the last segment), then take each parent's leaves itself so
+        // the parent is still in hand when its children are collected.
+        const parents = this.WalkSegments(doorRows, segments.slice(0, -1));
+        const lastSeg = segments[segments.length - 1];
+        const out: Record<string, unknown>[] = [];
+        for (const parent of parents) {
+            const parentValue = parent[sourceKey];
+            for (const leaf of this.WalkSegments([parent], [lastSeg])) {
+                // Never overwrite a value the vendor itself supplied under that name.
+                out.push(leaf[asKey] == null && parentValue != null
+                    ? { ...leaf, [asKey]: parentValue }
+                    : leaf);
+            }
+        }
+        return out;
     }
 
     /**

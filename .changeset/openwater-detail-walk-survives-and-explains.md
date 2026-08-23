@@ -62,3 +62,13 @@ remainder. The union now walks ONE member per call on a `union:<i>|c<cursor>` cu
 keeps its own state; a member that claims `HasMore` with no continuation is treated as finished
 rather than re-read forever. Cross-member de-duplication inside a call is no longer needed — members
 are unioned by primary key at the write.
+
+**7. An embedded leaf could not say which parent produced it.** `ApplicationWinnerType` reads
+`/v2/Programs -> rounds[] -> winnerTypes[]`, where a winner type is `{id, name}` and the SAME type
+id is declared on more than one round. The embedded-array walk kept only the leaf, so the round was
+absent from the row and the object was keyed on `id` alone — distinct (round, type) pairs collapsed
+into one row, 74 stored against a client target of 89. An AccessPath may now declare
+`embeddedParentTag: { sourceKey, asKey }`, which copies the immediate parent's id onto each leaf
+(never overwriting a value the vendor supplied under that name), and `roundId` is DECLARED as part
+of the key in `V202608230600` — declared rather than discovered, because MJ will not let a
+discovered field join the key of an object that already has a declared PK.
