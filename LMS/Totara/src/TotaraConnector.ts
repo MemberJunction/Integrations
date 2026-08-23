@@ -500,12 +500,21 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         contextUser: UserInfo,
     ): Promise<SourceSchemaInfo> {
         const info = await super.IntrospectSchema(companyIntegration, contextUser);
-        await Promise.all(info.Objects.map(async (obj) => {
+        // BOUNDED, not Promise.all. Sampling every object at once issues one live request per object
+        // simultaneously, honouring neither MaxConcurrency nor the rate limiter — while this same class
+        // runs its FetchChanges walk through runParentBounded precisely to avoid that. On a real catalog
+        // it is a burst from a single Node process: the event loop stops serving anything else, the
+        // platform's cheap reads time out, and its per-env circuit breaker reports the whole workspace
+        // unavailable. IntrospectSchema receives no FetchContext, so there is no MaxConcurrency to read
+        // here — 4 is a fixed ceiling: quick enough for discovery, low enough that it cannot starve the
+        // process. Ordering and best-effort semantics are unchanged.
+        const SAMPLE_CONCURRENCY = 4;
+        await this.runParentBounded(info.Objects, SAMPLE_CONCURRENCY, async (obj) => {
             try {
                 const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
                 obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
             } catch { /* best-effort — declared fields remain authoritative on a sampling failure */ }
-        }));
+        });
         return info;
     }
 

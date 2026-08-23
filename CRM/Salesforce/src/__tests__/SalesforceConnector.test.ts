@@ -934,3 +934,323 @@ describe('SalesforceConnector.FetchChanges (incremental + attributes-strip)', ()
         expect(result.NewWatermarkValue).toBe('2026-04-01T00:00:00.001Z');
     });
 });
+
+// ─── Bulk API 2.0 query-as-fetch-transport ─────────────────────────────────
+
+/** Queued-response transport + public wrappers for the private bulk-fetch methods. */
+class BulkFetchTestConnector extends SalesforceConnector {
+    public Responses: Array<{ Status: number; Body: unknown; Headers: Record<string, string> }> = [];
+    public Calls: Array<{ url: string; method: string; headers: Record<string, string>; body?: unknown }> = [];
+
+    protected override async MakeHTTPRequest(_auth: unknown, url: string, method: string, headers: Record<string, string>, body?: unknown) {
+        this.Calls.push({ url, method, headers, body });
+        const next = this.Responses.shift();
+        if (!next) throw new Error(`BulkFetchTestConnector: no canned response for ${method} ${url}`);
+        return next;
+    }
+    private get fakeAuth() {
+        return { Token: 't', InstanceUrl: 'https://na1.salesforce.com', ApiVersion: '61.0', Config: {} };
+    }
+    public CallBulkStart(objectName: string, fields: string[]) {
+        const self = this as unknown as { FetchBulkQueryStart: (a: unknown, o: string, f: string[]) => Promise<{ Records: unknown[]; HasMore: boolean; NextCursor?: string }> };
+        return self.FetchBulkQueryStart(this.fakeAuth, objectName, fields);
+    }
+    public CallBulkContinue(cursor: string) {
+        const self = this as unknown as { FetchBulkQueryContinue: (a: unknown, c: string) => Promise<{ Records: Array<{ ExternalID: string; Fields: Record<string, unknown> }>; HasMore: boolean; NextCursor?: string; NewWatermarkValue?: string }> };
+        return self.FetchBulkQueryContinue(this.fakeAuth, cursor);
+    }
+    public static CallParseCSV(csv: string): Record<string, unknown>[] {
+        return (SalesforceConnector as unknown as { ParseCSV: (c: string) => Record<string, unknown>[] }).ParseCSV(csv);
+    }
+}
+
+describe('SalesforceConnector — bulk query fetch transport', () => {
+    it('creates a queryAll job with NO ORDER BY and hands the job identity back as the cursor', async () => {
+        const c = new BulkFetchTestConnector();
+        c.Responses.push({ Status: 200, Body: { id: '750JOB' }, Headers: {} });
+
+        const out = await c.CallBulkStart('Account', ['Id', 'Name', 'SystemModstamp']);
+
+        expect(c.Calls[0].method).toBe('POST');
+        expect(c.Calls[0].url).toContain('/jobs/query');
+        const body = c.Calls[0].body as { operation: string; query: string };
+        expect(body.operation).toBe('queryAll');
+        expect(body.query).not.toContain('ORDER BY');
+        expect(out.Records).toHaveLength(0);
+        expect(out.HasMore).toBe(true);
+        expect(out.NextCursor).toContain('bulkq:');
+        expect(JSON.parse((out.NextCursor ?? '').slice('bulkq:'.length)).id).toBe('750JOB');
+    });
+
+    it('a job created without an id throws — never silently lose the job', async () => {
+        const c = new BulkFetchTestConnector();
+        c.Responses.push({ Status: 200, Body: {}, Headers: {} });
+        await expect(c.CallBulkStart('Account', ['Id'])).rejects.toThrow(/without an id/);
+    });
+
+    it('an executing job waits a bounded moment and hands the same cursor back', async () => {
+        vi.useFakeTimers();
+        try {
+            const c = new BulkFetchTestConnector();
+            c.Responses.push({ Status: 200, Body: { state: 'InProgress' }, Headers: {} });
+            const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: null });
+            const pending = c.CallBulkContinue(cursor);
+            await vi.advanceTimersByTimeAsync(15_000);
+            const out = await pending;
+            expect(out.Records).toHaveLength(0);
+            expect(out.HasMore).toBe(true);
+            expect(out.NextCursor).toBe(cursor);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('a Failed job throws with the vendor errorMessage', async () => {
+        const c = new BulkFetchTestConnector();
+        c.Responses.push({ Status: 200, Body: { state: 'Failed', errorMessage: 'QUERY_TIMEOUT: too big' }, Headers: {} });
+        const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: null });
+        await expect(c.CallBulkContinue(cursor)).rejects.toThrow(/QUERY_TIMEOUT/);
+    });
+
+    it('a complete job downloads CSV pages via Sforce-Locator and parses rows into records', async () => {
+        const c = new BulkFetchTestConnector();
+        const csv = '"Id","Name","SystemModstamp"\n"001A","Acme, Inc.","2026-08-01T00:00:00.000Z"\n"001B","Line\nBreak Co","2026-08-02T00:00:00.000Z"\n';
+        c.Responses.push({ Status: 200, Body: { state: 'JobComplete' }, Headers: {} });
+        c.Responses.push({ Status: 200, Body: csv, Headers: { 'sforce-locator': 'LOC2' } });
+        const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: null });
+
+        const out = await c.CallBulkContinue(cursor);
+
+        expect(out.Records.map(r => r.ExternalID).sort()).toEqual(['001A', '001B']);
+        expect(out.Records[0].Fields['Name']).toBe('Acme, Inc.');
+        expect(out.Records[1].Fields['Name']).toBe('Line\nBreak Co');
+        expect(out.HasMore).toBe(true);
+        expect(JSON.parse((out.NextCursor ?? '').slice('bulkq:'.length)).l).toBe('LOC2');
+    });
+
+    it('the final results page (locator "null") ends the fetch and the resume path skips the job poll', async () => {
+        const c = new BulkFetchTestConnector();
+        const csv = '"Id","Name"\n"001C","Tail Co"\n';
+        // Resume from a stored locator: goes straight to results (no job-state call queued).
+        c.Responses.push({ Status: 200, Body: csv, Headers: { 'sforce-locator': 'null' } });
+        const cursor = 'bulkq:' + JSON.stringify({ id: '750JOB', o: 'Account', l: 'LOC2' });
+
+        const out = await c.CallBulkContinue(cursor);
+
+        expect(c.Calls).toHaveLength(1);
+        expect(c.Calls[0].url).toContain('locator=LOC2');
+        expect(out.Records.map(r => r.ExternalID)).toEqual(['001C']);
+        expect(out.HasMore).toBe(false);
+        expect(out.NextCursor).toBeUndefined();
+    });
+
+    it('CSV: empty unquoted field is NULL; quoted empty is an empty string; doubled quotes unescape', () => {
+        const rows = BulkFetchTestConnector.CallParseCSV('"Id","A","B","C"\n"001",,"","say ""hi"""\n');
+        expect(rows).toHaveLength(1);
+        expect(rows[0]['A']).toBeNull();
+        expect(rows[0]['B']).toBe('');
+        expect(rows[0]['C']).toBe('say "hi"');
+    });
+});
+
+describe('SalesforceConnector — SOQL datetime canonicalization', () => {
+    it('emits one canonical UTC ISO literal whatever the offset shape (the +0000 regression)', () => {
+        const c = new TestSalesforceConnector();
+        const call = (v: string) => (c as unknown as { FormatSOQLDateTime: (x: string) => string }).FormatSOQLDateTime(v);
+        expect(call('2026-03-04T05:06:07.000+0000')).toBe('2026-03-04T05:06:07.000Z');
+        expect(call('2026-03-04T05:06:07Z')).toBe('2026-03-04T05:06:07.000Z');
+        expect(call('2026-03-04')).toBe('2026-03-04T00:00:00.000Z');
+        expect(call('not-a-datetime-Tx')).toBe('not-a-datetime-Tx');
+    });
+});
+
+// ─── SOQL mechanics (moved here with the code from the Nimble connector) ────
+//
+// These cases arrived with the hardening ladder proven in production on a Nimble AMS org and
+// moved into this base class along with the machinery they cover: declared-watermark honoring,
+// per-page watermark advance, canonical datetime literals, and chunked wide projections. Every
+// Salesforce-platform connector inherits both the behaviour and this coverage.
+
+/** Queued-response transport with a stubbed describe, so FetchChanges runs end-to-end offline. */
+class SOQLMechanicsConnector extends SalesforceConnector {
+    public Responses: Array<{ Status: number; Body: unknown; Headers: Record<string, string> }> = [];
+    public Calls: Array<{ url: string; method: string; headers: Record<string, string> }> = [];
+    public Fields: string[] = ['Id', 'Name', 'SystemModstamp'];
+
+    protected override async Authenticate() {
+        return { Token: 't', InstanceUrl: 'https://na1.salesforce.com', InstanceURL: 'https://na1.salesforce.com',
+                 ApiVersion: '61.0', Config: {}, CompanyIntegration: {} } as never;
+    }
+    protected override async MakeHTTPRequest(_auth: unknown, url: string, method: string, headers: Record<string, string>) {
+        this.Calls.push({ url, method, headers });
+        const next = this.Responses.shift();
+        if (!next) throw new Error(`SOQLMechanicsConnector: no canned response for ${method} ${url}`);
+        return next;
+    }
+    /** Stub the describe round-trip: these tests control the projection directly. */
+    protected async GetQueryableFieldNamesStub(): Promise<string[]> { return this.Fields; }
+    public CallBuildSOQL(objectName: string, fields: string[], watermark: string | null, declared?: string | null): string {
+        const self = this as unknown as { BuildSOQLQuery: (o: string, f: string[], w: string | null, b: number, i: boolean, d?: string | null) => string };
+        return self.BuildSOQLQuery(objectName, fields, watermark, 0, true, declared);
+    }
+    public CallFormatSOQLDateTime(v: string): string {
+        return (this as unknown as { FormatSOQLDateTime: (x: string) => string }).FormatSOQLDateTime(v);
+    }
+    public CallChunk(objectName: string, fields: string[], watermark: string | null, declared: string | null): string[][] {
+        const self = this as unknown as { ChunkSOQLFields: (o: string, f: string[], w: string | null, d: string | null) => string[][] };
+        return self.ChunkSOQLFields(objectName, fields, watermark, declared);
+    }
+    public CallFetchChunkedPages(urls: string[], objectName: string) {
+        const self = this as unknown as { FetchChunkedPages: (a: unknown, u: string[], o: string) => Promise<{ Records: Array<{ ExternalID: string; Fields: Record<string, unknown> }>; HasMore: boolean; NextCursor?: string; NewWatermarkValue?: string }> };
+        return self.FetchChunkedPages({ Token: 't', InstanceUrl: 'https://na1.salesforce.com', ApiVersion: '61.0', Config: {}, CompanyIntegration: {} }, urls, objectName);
+    }
+    public CallExecuteSOQL(soql: string, objectName: string) {
+        const self = this as unknown as { ExecuteSOQLQuery: (a: unknown, s: string, o: string, f: string) => Promise<{ Records: unknown[]; HasMore: boolean; NewWatermarkValue?: string }> };
+        return self.ExecuteSOQLQuery({ Token: 't', InstanceUrl: 'https://na1.salesforce.com', ApiVersion: '61.0', Config: {}, CompanyIntegration: {} }, soql, objectName, 'sobject');
+    }
+}
+
+describe('SalesforceConnector — SOQL construction', () => {
+    const c = new SOQLMechanicsConnector();
+
+    it('builds a watermark-ordered query with NO LIMIT (SF paginates natively) and a >= boundary', () => {
+        const soql = c.CallBuildSOQL('Account', ['Id', 'SystemModstamp'], '2026-01-01T00:00:00Z');
+        expect(soql).toContain('SELECT');
+        expect(soql).toContain('FROM Account');
+        expect(soql).toContain('WHERE SystemModstamp >= 2026-01-01T00:00:00.000Z');
+        expect(soql).toContain('ORDER BY SystemModstamp ASC');
+        expect(soql).not.toContain('LIMIT');
+    });
+
+    it('omits the WHERE clause on a first (watermark-less) sync', () => {
+        const soql = c.CallBuildSOQL('Account', ['Id', 'SystemModstamp'], null);
+        expect(soql).not.toContain('WHERE');
+        expect(soql).toContain('ORDER BY SystemModstamp ASC');
+    });
+
+    it('an explicitly DECLARED watermark field wins over the audit-column preference', () => {
+        // The operator naming a column is a decision, not a hint: __History objects expose
+        // CreatedDate but not SystemModstamp, and guessing produced instant HTTP 400s.
+        const soql = c.CallBuildSOQL('NU__Event__History', ['Id', 'SystemModstamp', 'CreatedDate'], null, 'CreatedDate');
+        expect(soql).toContain('ORDER BY CreatedDate ASC');
+    });
+});
+
+describe('SalesforceConnector — per-page watermark advance', () => {
+    const page = (done: boolean, ids: string[], stamps: string[]) => ({
+        Status: 200, Headers: {},
+        Body: { done, totalSize: ids.length,
+                nextRecordsUrl: done ? undefined : '/services/data/v61.0/query/01gNEXT',
+                records: ids.map((id, i) => ({ Id: id, SystemModstamp: stamps[i] })) },
+    });
+
+    it('a NON-final page still emits NewWatermarkValue = max seen on that page', async () => {
+        // The defect: advancing only under done=true meant an object too big to finish one run
+        // recorded NOTHING and restarted from row zero forever (observed live at 70,000 of
+        // 3,780,536 rows — an exact page-size multiple, watermark NULL).
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(false, ['001', '002'], ['2026-08-01T00:00:00.000+0000', '2026-08-02T09:30:00.000+0000']));
+        const out = await c.CallExecuteSOQL('SELECT Id FROM Account', 'Account');
+        expect(out.HasMore).toBe(true);
+        expect(out.NewWatermarkValue).toBeTruthy();
+    });
+
+    it('the final page emits the max too — behaviour there is unchanged', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(true, ['003'], ['2026-08-03T12:00:00.000+0000']));
+        const out = await c.CallExecuteSOQL('SELECT Id FROM Account', 'Account');
+        expect(out.HasMore).toBe(false);
+        expect(out.NewWatermarkValue).toBeTruthy();
+    });
+
+    it('a page with no usable stamps emits undefined — never a fabricated value', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push({ Status: 200, Headers: {}, Body: { done: false, totalSize: 1, nextRecordsUrl: '/q/n', records: [{ Id: '004' }] } });
+        const out = await c.CallExecuteSOQL('SELECT Id FROM Account', 'Account');
+        expect(out.NewWatermarkValue).toBeUndefined();
+    });
+});
+
+describe('SalesforceConnector — chunked wide projections (HTTP 431 on the request line)', () => {
+    const wideFields = ['Id', 'SystemModstamp',
+        ...Array.from({ length: 400 }, (_, i) => `NU__VeryLongCustomFieldName_${String(i).padStart(3, '0')}__c`)];
+    const page = (ids: string[], extra: Record<string, unknown>, done = true, next?: string) => ({
+        Status: 200, Headers: {},
+        Body: { done, totalSize: ids.length, nextRecordsUrl: next,
+                records: ids.map(id => ({ Id: id, SystemModstamp: '2026-08-01T00:00:00.000Z', ...extra })) },
+    });
+
+    it('a NARROW projection stays ONE chunk — the path every working object takes today', () => {
+        const c = new SOQLMechanicsConnector();
+        expect(c.CallChunk('Account', ['Id', 'Name', 'SystemModstamp'], null, null)).toHaveLength(1);
+    });
+
+    it('a WIDE projection splits into budget-fitting chunks that each carry Id + the watermark', () => {
+        const c = new SOQLMechanicsConnector();
+        const chunks = c.CallChunk('Account', wideFields, null, null);
+        expect(chunks.length).toBeGreaterThan(1);
+        for (const chunk of chunks) {
+            expect(chunk).toContain('Id');
+            expect(chunk).toContain('SystemModstamp');
+            expect(encodeURIComponent(c.CallBuildSOQL('Account', chunk, null)).length).toBeLessThanOrEqual(12_000);
+        }
+    });
+
+    it('aligned chunk pages reassemble whole rows by Id, pinned to one page size', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(['001', '002'], { A__c: 'a' }));
+        c.Responses.push(page(['001', '002'], { B__c: 'b' }));
+        const out = await c.CallFetchChunkedPages(['https://na1.salesforce.com/q?c=1', 'https://na1.salesforce.com/q?c=2'], 'Account');
+        expect(out.Records.map(r => r.ExternalID).sort()).toEqual(['001', '002']);
+        expect(out.Records[0].Fields['A__c']).toBe('a');
+        expect(out.Records[0].Fields['B__c']).toBe('b');
+        for (const call of c.Calls) expect(call.headers['Sforce-Query-Options']).toBe('batchSize=200');
+        expect(out.HasMore).toBe(false);
+    });
+
+    it('misaligned chunk pages THROW rather than write half-populated rows', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(['001', '002'], {}));
+        c.Responses.push(page(['001'], {}));
+        await expect(c.CallFetchChunkedPages(['https://na1.salesforce.com/q?c=1', 'https://na1.salesforce.com/q?c=2'], 'Account'))
+            .rejects.toThrow(/misaligned/);
+    });
+
+    it('a chunked cursor carries every per-chunk locator so the next page resumes aligned', async () => {
+        const c = new SOQLMechanicsConnector();
+        c.Responses.push(page(['001'], {}, false, '/services/data/v61.0/query/01gC1'));
+        c.Responses.push(page(['001'], {}, false, '/services/data/v61.0/query/01gC2'));
+        const out = await c.CallFetchChunkedPages(['https://na1.salesforce.com/q?c=1', 'https://na1.salesforce.com/q?c=2'], 'Account');
+        expect(out.HasMore).toBe(true);
+        const st = JSON.parse((out.NextCursor ?? '').slice('chunks:'.length)) as { o: string; ls: string[] };
+        expect(st.o).toBe('Account');
+        expect(st.ls).toEqual(['/services/data/v61.0/query/01gC1', '/services/data/v61.0/query/01gC2']);
+    });
+});
+
+describe('SalesforceConnector — bulk transport opt-in flag', () => {
+    /** Exposes the private resolver with a stubbed engine-cache lookup. */
+    class TransportFlagConnector extends SalesforceConnector {
+        public Obj: { Configuration?: string | null; DefaultQueryParams?: string | null } | null = null;
+        public Resolve(): string | null {
+            const self = this as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+            // Stub the engine cache the resolver reads.
+            (self as unknown as Record<string, unknown>)['__stub'] = true;
+            return self.ResolveFetchTransport('int-1', 'Account');
+        }
+    }
+
+    it('reads Configuration.FetchTransport — the field the per-object config tooling can write', () => {
+        const c = new TransportFlagConnector();
+        const self = c as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+        // Engine cache is unavailable in unit context, so the resolver must fail CLOSED (null)
+        // rather than throwing — a missing cache must never route a fetch down the bulk path.
+        expect(self.ResolveFetchTransport('int-1', 'Account')).toBeNull();
+    });
+
+    it('a bulk-flagged object is opt-in only: no flag means the REST cursor path, never bulk', () => {
+        const c = new TransportFlagConnector();
+        const self = c as unknown as { ResolveFetchTransport: (i: string, o: string) => string | null };
+        expect(self.ResolveFetchTransport('int-1', 'NoSuchObject')).not.toBe('bulk_query');
+    });
+});

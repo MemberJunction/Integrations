@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 47,
+  "count": 48,
   "connectors": [
     {
       "name": "Fonteva",
@@ -123,10 +123,10 @@
       "objectCount": 32,
       "className": "@memberjunction/connector-nimble-ams",
       "npmPackage": "@memberjunction/connector-nimble-ams",
-      "version": "1.3.3",
+      "version": "1.3.4",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NimbleAMS",
-      "installTag": "AMS-NimbleAMS@1.3.3"
+      "installTag": "AMS-NimbleAMS@1.3.4"
     },
     {
       "name": "Novi AMS",
@@ -312,10 +312,10 @@
       "objectCount": 1695,
       "className": "@memberjunction/connector-salesforce",
       "npmPackage": "@memberjunction/connector-salesforce",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/Salesforce",
-      "installTag": "CRM-Salesforce@1.3.1"
+      "installTag": "CRM-Salesforce@1.3.2"
     },
     {
       "name": "Cvent",
@@ -372,13 +372,13 @@
       ],
       "logo": "fa-solid fa-trophy",
       "navigationBaseURL": "https://api.getopenwater.com",
-      "objectCount": 25,
+      "objectCount": 30,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
-      "version": "1.3.3",
+      "version": "1.3.5",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/OpenWater",
-      "installTag": "Events-OpenWater@1.3.3"
+      "installTag": "Events-OpenWater@1.3.5"
     },
     {
       "name": "PheedLoop",
@@ -462,10 +462,10 @@
       "objectCount": 205,
       "className": "@memberjunction/connector-netsuite",
       "npmPackage": "@memberjunction/connector-netsuite",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/NetSuite",
-      "installTag": "Finance-NetSuite@1.3.1"
+      "installTag": "Finance-NetSuite@1.3.2"
     },
     {
       "name": "QuickBooks",
@@ -546,10 +546,10 @@
       "objectCount": 33,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.4.0"
+      "installTag": "LMS-Totara@0.4.1"
     },
     {
       "name": "constant-contact",
@@ -651,10 +651,10 @@
       "objectCount": 1,
       "className": "@memberjunction/connector-propfuel",
       "npmPackage": "@memberjunction/connector-propfuel",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/PropFuel",
-      "installTag": "Marketing-PropFuel@1.2.1"
+      "installTag": "Marketing-PropFuel@1.2.2"
     },
     {
       "name": "rasa",
@@ -936,6 +936,30 @@
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/SQLServer",
       "installTag": "Platform-SQLServer@1.0.2"
+    },
+    {
+      "name": "WordPress",
+      "displayName": "WordPress Connector",
+      "description": "WordPress self-hosted content and commerce platform connector — syncs core wp/v2 objects (posts, pages, media, taxonomies, users, comments) plus WooCommerce wc/v3 objects (orders, products, customers, coupons) from a per-tenant site URL.",
+      "category": "Platform",
+      "tags": [
+        "wordpress",
+        "woocommerce",
+        "cms",
+        "ecommerce",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-wordpress",
+      "navigationBaseURL": "{siteUrl}/wp-admin/",
+      "objectCount": 78,
+      "className": "WordPressConnector",
+      "npmPackage": "@memberjunction/connector-wordpress",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Platform/WordPress",
+      "installTag": "Platform-WordPress@1.0.0"
     },
     {
       "name": "zendesk",
