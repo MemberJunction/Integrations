@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "siteUrl": {
+      "type": "string",
+      "title": "Site URL",
+      "description": "Root URL of the WordPress site (e.g. https://example.com) — WordPress is self-hosted, so there is no vendor host and this is required per connection. Do NOT string-concatenate '/wp-json': the REST prefix is filterable (rest_get_url_prefix()) and sites without pretty permalinks are reached as /?rest_route=/wp/v2/posts. Derive the API root from the site's advertised REST URL — the 'Link: <...>; rel=\"https://api.w.org/\"' response header or the equivalent homepage <link> element — and fall back to {siteUrl}/wp-json/ then {siteUrl}/?rest_route=/.",
+      "format": "uri",
+      "isSecret": false,
+      "order": 0
+    },
+    "username": {
+      "type": "string",
+      "title": "Username",
+      "description": "WordPress user login that owns the Application Password. Sent as the HTTP Basic username (RFC 7617). The user's capabilities bound what the sync can read: many fields are exposed only for context=edit plus the matching capability, so an under-privileged user silently returns a thinner schema.",
+      "isSecret": false,
+      "order": 1
+    },
+    "applicationPassword": {
+      "type": "string",
+      "title": "Application Password",
+      "description": "WordPress Application Password (core since 5.6; wp-admin -> Users -> Edit User), sent as the HTTP Basic password over https://. This ONE credential authenticates BOTH wp/v2 and wc/v3, because wc/v3 routes are ordinary WP REST routes behind capability checks. Requires TLS: wp_is_application_passwords_supported() returns is_ssl() || 'local' === wp_get_environment_type(), and availability is further filterable via 'wp_is_application_passwords_available'.",
+      "isSecret": true,
+      "order": 2
+    },
+    "wooConsumerKey": {
+      "type": "string",
+      "title": "WooCommerce Consumer Key (optional)",
+      "description": "Optional WooCommerce REST API consumer key (ck_...). Needed only for deployments where an Application Password cannot be used or is not wanted: no TLS (Woo falls back to OAuth 1.0a one-legged), hosts that strip the Authorization header (Woo also accepts ?consumer_key=&consumer_secret=), least-privilege preference (a Woo key carries its own read|write|read_write scope enforced per HTTP method), or sites where Application Passwords are filtered off. WARNING: a Woo key CANNOT read wp/v2 at all — WC_REST_Authentication::is_request_to_rest_api() matches only URIs containing the REST prefix followed by 'wc/' or 'wc-'. A Woo-only connection therefore yields a PARTIAL (WooCommerce-only) object set and must raise an explicit capability warning, never an empty-but-green sync.",
+      "isSecret": true,
+      "order": 3
+    },
+    "wooConsumerSecret": {
+      "type": "string",
+      "title": "WooCommerce Consumer Secret (optional)",
+      "description": "Optional WooCommerce REST API consumer secret (cs_...). Supply together with wooConsumerKey; it is unused on its own.",
+      "isSecret": true,
+      "order": 4
+    }
+  },
+  "required": ["siteUrl"],
+  "anyOf": [
+    {
+      "title": "Application Password (preferred — reaches both wp/v2 and wc/v3)",
+      "required": ["username", "applicationPassword"]
+    },
+    {
+      "title": "WooCommerce consumer key/secret (WooCommerce-only object set)",
+      "required": ["wooConsumerKey", "wooConsumerSecret"]
+    }
+  ]
+}

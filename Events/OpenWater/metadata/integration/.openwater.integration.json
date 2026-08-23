@@ -4,7 +4,7 @@
       "Name": "OpenWater",
       "Icon": "fa-solid fa-trophy",
       "ClassName": "@memberjunction/connector-openwater",
-      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector — pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector \u2014 pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
       "ImportPath": "@memberjunction/connector-openwater",
       "NavigationBaseURL": "https://api.getopenwater.com",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API"
@@ -1454,7 +1454,7 @@
             "IntegrationID": "@parent:ID",
             "MetadataSource": "Declared",
             "Configuration": {
-              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId — generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
+              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId \u2014 generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
             }
           },
           "relatedEntities": {
@@ -3239,7 +3239,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3437,7 +3437,7 @@
                 "fields": {
                   "Name": "fundId",
                   "DisplayName": "Fund Id",
-                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3491,7 +3491,7 @@
                 "entryPath": "/v2/JudgeAssignments/AssignedToRound",
                 "parentParamIn": "query"
               },
-              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} — generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
+              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} \u2014 generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
             },
             "Status": "Active",
             "SupportsPagination": true,
@@ -3614,6 +3614,25 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:44:58.873Z",
                   "checksum": "61b75d370ba9cb408d3d7fc211009b122b8649d9372fb60756cea3cb75da9bc9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "The Round this assignment was walked under (/v2/JudgeAssignments/AssignedToRound?roundId=). PRIMARY KEY together with userId: with userId alone, a judge assigned to several rounds collapsed to one row per person, so the object silently held distinct judges instead of assignments. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "D0012814-B281-49DF-99B8-0B9618EB6DF4"
                 }
               }
             ]
@@ -3902,7 +3921,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4006,7 +4025,7 @@
                 "fields": {
                   "Name": "roundId",
                   "DisplayName": "Round Id",
-                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4161,7 +4180,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4339,7 +4358,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4394,7 +4413,7 @@
                 "parentParamName": "programId",
                 "entryPath": "/v2/Programs/{programId}/Scheduler/TimeSlots"
               },
-              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) — generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
+              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) \u2014 generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
               "LiteralUpdateReason": "Update UpdateRequest requires scheduleDayIds (array of int); read-side IOF is availableOnlyInDayIds. Generic flat body omits/misnames it -> 422. Connector overrides UpdateRecord to supply scheduleDayIds from availableOnlyInDayIds. Mirrors LiteralCreateReason."
             },
             "Status": "Active",
@@ -4540,7 +4559,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4750,7 +4769,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4847,7 +4866,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4870,6 +4889,701 @@
           "sync": {
             "lastModified": "2026-06-29T03:44:56.911Z",
             "checksum": "0127007d757c34854925fc243f5e64547015fdb12680e98e598f51f7031cb0d7"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationRoundSubmission",
+            "DisplayName": "Application Round Submissions",
+            "Description": "OpenWater per-round submission state of an Application (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this submission belongs to. Injected by the connector from the access path (/v2/Applications/{applicationId} detail) rather than returned in the element body, so it is declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "9C281CA4-60CD-449F-8155-5CC7808B471D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round this submission belongs to. Declared String rather than Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "11581F42-B2CE-441A-B3D4-BDCEF0C31C12"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundName",
+                  "DisplayName": "Round Name",
+                  "Description": "Round name as denormalized on the submission.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A3B8ABD8-E494-40FA-8621-97A58E6E2030"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Submission status.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "43E0A806-5C33-4DEE-861C-483C71343E4D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "startedAtUtc",
+                  "DisplayName": "Started At Utc",
+                  "Description": "When the applicant started this round submission (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "65677BDB-30F3-4D8D-9236-B745FDF1E317"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedAtUtc",
+                  "DisplayName": "Updated At Utc",
+                  "Description": "Last update to this round submission (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CC319DA2-36BD-46CB-BAF1-D33F510AAF64"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updatedByUserAtUtc",
+                  "DisplayName": "Updated By User At Utc",
+                  "Description": "Last update made by the applicant (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D4223F1B-85EA-4B65-ABD9-AE4BA2F0A1B5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "finalizedAtUtc",
+                  "DisplayName": "Finalized At Utc",
+                  "Description": "When the submission was finalized (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5B250646-C1FD-44AA-9663-4FAC882A6A67"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "allowUserToMakeEdits",
+                  "DisplayName": "Allow User To Make Edits",
+                  "Description": "Whether the applicant may still edit this submission.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3613D8EF-2D39-431E-9CE7-1DEB50748CAC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isPaid",
+                  "DisplayName": "Is Paid",
+                  "Description": "Whether payment for this submission is complete.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "AE1DC9BD-DE4F-44C4-8D32-8ADBA02B2B73"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isWinner",
+                  "DisplayName": "Is Winner",
+                  "Description": "Whether this submission was marked a winner.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "600C17AB-7FE6-40E6-A133-B912086C825A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "invoiceId",
+                  "DisplayName": "Invoice Id",
+                  "Description": "Invoice attached to this submission, when any. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "C0B7B305-A98B-41AE-902D-55F1B0908491"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "1DFFCEA1-1B6B-4AD6-ACEC-4649A5D35EB6"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationFile",
+            "DisplayName": "Application Files",
+            "Description": "OpenWater file-upload field values across an Application round submissions (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[] -> submissionFieldValues[] (elements carrying a mediaId).",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].submissionFieldValues[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "submissionFieldValues[]"
+                ],
+                "elementFilter": {
+                  "key": "mediaId",
+                  "exists": true
+                },
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "mediaId",
+                  "DisplayName": "Media Id",
+                  "Description": "Media id of the uploaded file (also this record identity). Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Media&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "78A20156-801E-408A-95D9-C4A9B3ECD8B9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this file belongs to. Injected by the connector from the access path (/v2/Applications/{applicationId} detail).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "0036DC50-6C4D-437D-9125-5D9E7A3AE9B9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alias",
+                  "DisplayName": "Alias",
+                  "Description": "Field alias the file was uploaded under.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E580B35C-C1E1-47C8-8B01-F45264A52AF7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "caption",
+                  "DisplayName": "Caption",
+                  "Description": "Caption entered for the uploaded file.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6874A594-7919-489E-9C1D-CF3731138ACF"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "F3AAE390-75DC-4D9F-BB59-6997378904B5"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Media",
+            "DisplayName": "Media",
+            "Description": "OpenWater media descriptor for uploaded files. Access: mediaIds harvested from Application details -> /v2/Media/{mediaId} (the detail response is the record).",
+            "APIPath": "/v2/Media/{mediaId}",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "parentSource": "detail-harvest",
+                "harvestDetailPath": "/v2/Applications/{applicationId}",
+                "harvestDetailParam": "applicationId",
+                "harvestSegments": [
+                  "roundSubmissions[]",
+                  "submissionFieldValues[]"
+                ],
+                "harvestIdKey": "mediaId",
+                "entryPath": "/v2/Media/{mediaId}",
+                "parentParamName": "mediaId",
+                "extractionMode": "detail-object"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "mediaId",
+                  "DisplayName": "Media Id",
+                  "Description": "Media id. Injected by the connector from the access path (/v2/Media/{mediaId}) - the ids are harvested from Application details.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1FB33C79-4EE9-42AB-AA30-C02B0C9C146B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "url",
+                  "DisplayName": "Url",
+                  "Description": "Download URL of the file.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Length": 2048
+                },
+                "primaryKey": {
+                  "ID": "0F061F0D-9B9D-46F5-A9FF-1DDAA00105DC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "fileName",
+                  "DisplayName": "File Name",
+                  "Description": "Original file name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FB8A6F19-DAC0-4E5B-A4A2-EE098A1B8983"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "7AB4A0D8-D990-4E71-A55D-5A3528D70611"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationWinnerType",
+            "DisplayName": "Application Winner Types",
+            "Description": "OpenWater winner types configured on program rounds (embedded). Access: Programs -> rounds[] -> winnerTypes[].",
+            "APIPath": "(embedded in /v2/Programs rounds[].winnerTypes[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "nestingSegments": [
+                  "rounds[]",
+                  "winnerTypes[]"
+                ],
+                "extractionMode": "embedded-array",
+                "embeddedParentTag": {
+                  "sourceKey": "id",
+                  "asKey": "roundId"
+                }
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "The Round this winner type is declared on (/v2/Programs rounds[].winnerTypes[]). Part of the key: the same winner type id is declared on more than one round, so keying on id alone collapsed distinct (round, type) pairs into a single row. Nullable: rows that predate the column keep NULL here until the next fullSync archives them.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Winner type id. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CF825A2F-F232-4B8B-9506-27AEE250C1FA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Winner type name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "821BE41B-B855-49A0-BB88-E7AB661C13DD"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "7D3F6794-4A3A-4C2F-9255-A27448CB4B50"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Judge",
+            "DisplayName": "Judges",
+            "Description": "OpenWater judges as persons - the userId-distinct union of judges assigned to rounds (/v2/JudgeAssignments/AssignedToRound walked from Program -> rounds[]) and judges or managers on judge teams (embedded in /v2/JudgeTeams rows). The API has no /v2/Judges list endpoint - this object exists only through the multi-door union walk.",
+            "APIPath": "/v2/JudgeAssignments/AssignedToRound",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Program",
+                "doorPath": "/v2/Programs",
+                "nestingSegments": [
+                  "rounds[]"
+                ],
+                "parentParamName": "roundId",
+                "entryPath": "/v2/JudgeAssignments/AssignedToRound",
+                "parentParamIn": "query"
+              },
+              "alternativeAccessPaths": [
+                {
+                  "door": "JudgeTeam",
+                  "doorPath": "/v2/JudgeTeams",
+                  "nestingSegments": [
+                    "judges[]"
+                  ],
+                  "extractionMode": "embedded-array"
+                },
+                {
+                  "door": "JudgeTeam",
+                  "doorPath": "/v2/JudgeTeams",
+                  "nestingSegments": [
+                    "managers[]"
+                  ],
+                  "extractionMode": "embedded-array"
+                }
+              ]
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "userId",
+                  "DisplayName": "User Id",
+                  "Description": "Judge user id. Declared String rather than Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "388A1FE5-3917-4542-BD63-56E1D79A7AB0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "Judge first name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D397DDF0-2DC2-4375-A048-B1ECA72B10F0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Judge last name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4CA26EE1-A6C4-4475-9982-0ADF19760AF0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Judge email.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "Length": 320
+                },
+                "primaryKey": {
+                  "ID": "51FFEDAB-DBED-41AB-8070-1F1C376E05AA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "The Round this judge was walked under. Present only on rows sourced from the AssignedToRound walk - team-sourced rows carry no round. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "MetadataSource": "Declared",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID"
+                },
+                "primaryKey": {
+                  "ID": "38DCBFE4-BDFF-4432-AD2C-A5123E9A846E"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "2B33BEA0-AC37-46EB-9190-3CE4B45571CC"
           }
         }
       ]

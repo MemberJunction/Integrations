@@ -86,7 +86,12 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
         contextUser: UserInfo
     ): Promise<PropFuelAuthContext> {
         const creds = await this.LoadCredentials(companyIntegration, contextUser);
-        return { Token: creds.Token, AccountID: creds.AccountID, BaseHost: creds.BaseHost };
+        return {
+            Token: creds.Token,
+            AccountID: creds.AccountID,
+            BaseHost: creds.BaseHost,
+            RequestTimeoutMs: creds.RequestTimeoutMs,
+        };
     }
 
     /** Static Bearer header. No crypto/signing is required for a static token, so no auth-helper is used. */
@@ -105,6 +110,17 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
     /**
      * Executes an HTTP request via fetch. Parses JSON when the response is JSON, else returns the
      * raw text body. The concrete connector owns the transport seam so tests can override it.
+     *
+     * EVERY request carries a deadline. Without one, a source that accepts the connection and then
+     * never answers hangs the caller forever, and nothing above this layer can recover: discovery
+     * runs inside the connector-creation pipeline, whose in-flight slot is only released when the
+     * stage settles — so one hung request leaves the connector unrefreshable until the API process
+     * restarts. A request that TERMINATES produces an error the engine can retry and the run
+     * artifact can record; a request that hangs produces silence.
+     *
+     * `requestTimeoutMs: 0` in Configuration opts out of the normal deadline, NOT out of ending:
+     * it falls back to {@link ABSOLUTE_MAX_REQUEST_TIMEOUT_MS}. Export downloads are the slow case
+     * (whole-file JSON), which is why the default is generous rather than tight.
      */
     protected async MakeHTTPRequest(
         _auth: PropFuelAuthContext,
@@ -113,11 +129,16 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
         headers: Record<string, string>,
         body?: unknown
     ): Promise<RESTResponse> {
-        const init: RequestInit = { method, headers };
+        const configured = _auth.RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+        const timeoutMs = configured > 0 ? configured : ABSOLUTE_MAX_REQUEST_TIMEOUT_MS;
+        const init: RequestInit = { method, headers, signal: AbortSignal.timeout(timeoutMs) };
         if (body !== undefined && method !== 'GET' && method !== 'HEAD') {
             init.body = typeof body === 'string' ? body : JSON.stringify(body);
             (init.headers as Record<string, string>)['Content-Type'] = 'application/json';
         }
+        // The deadline covers the response BODY, not just the headers: a source that streams headers
+        // and then stalls mid-body hangs exactly as hard as one that never answers, so the same
+        // signal is held across the text() read below.
         const response = await fetch(url, init);
         const responseHeaders: Record<string, string> = {};
         response.headers.forEach((value, key) => { responseHeaders[key.toLowerCase()] = value; });
@@ -272,11 +293,18 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
 
         const records: ExternalRecord[] = [];
         let maxMicrotime = cursor ?? '';
-        const batchLimit = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : Number.MAX_SAFE_INTEGER;
+        // An absent BatchSize used to mean Number.MAX_SAFE_INTEGER, i.e. "download the ENTIRE backlog
+        // for this data type in one call and hold every record in memory". On an append-only hourly
+        // feed the backlog only grows, so the first sync of a long-lived tenant was the worst case.
+        // The record cap bounds memory; the FILE cap bounds it even when a single file is enormous,
+        // because the record count is only checked between files. Both are resumable, not lossy:
+        // HasMore + the microtime cursor bring the engine straight back for the rest.
+        const batchLimit = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : DEFAULT_BATCH_RECORD_LIMIT;
         let filesProcessed = 0;
 
         for (const candidate of candidates) {
             if (records.length >= batchLimit) break;
+            if (filesProcessed >= MAX_FILES_PER_FETCH) break;
             const fileRecords = await this.DownloadFileRecords(auth, candidate.file);
             for (const raw of fileRecords) {
                 // Full-record pass-through: the COMPLETE source record reaches ExternalRecord.Fields
@@ -383,6 +411,7 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
         let token: string | undefined;
         let accountID: string | undefined;
         let baseHost: string | undefined;
+        let requestTimeoutMs: number | undefined;
 
         const credentialID = companyIntegration.CredentialID;
         if (credentialID) {
@@ -401,6 +430,7 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
                 token = token ?? fromConfig.Token;
                 accountID = accountID ?? fromConfig.AccountID;
                 baseHost = baseHost ?? fromConfig.BaseHost;
+                requestTimeoutMs = requestTimeoutMs ?? fromConfig.RequestTimeoutMs;
             }
         }
 
@@ -410,7 +440,7 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
         if (!accountID) {
             throw new Error('No PropFuel AccountID found — set "AccountID" on the credential or Configuration JSON (it is per-tenant, never hardcoded).');
         }
-        return { Token: token, AccountID: accountID, BaseHost: baseHost };
+        return { Token: token, AccountID: accountID, BaseHost: baseHost, RequestTimeoutMs: requestTimeoutMs };
     }
 
     /** Loads Token/AccountID from a Credential entity's Values JSON. */
@@ -432,7 +462,17 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
             const accountID = p.AccountID ?? p.accountId ?? p.accountID;
             if (!token && accountID == null) return null;
             const baseHost = p.apiBaseUrl ?? p.BaseURL;
-            return { Token: token ?? '', AccountID: accountID != null ? String(accountID) : '', BaseHost: baseHost } as PropFuelCredentials;
+            // A negative or non-finite value is not a deadline; treat it as unset so the default applies.
+            const rawTimeout = p.requestTimeoutMs ?? p.RequestTimeoutMs;
+            const requestTimeoutMs = typeof rawTimeout === 'number' && Number.isFinite(rawTimeout) && rawTimeout >= 0
+                ? rawTimeout
+                : undefined;
+            return {
+                Token: token ?? '',
+                AccountID: accountID != null ? String(accountID) : '',
+                BaseHost: baseHost,
+                RequestTimeoutMs: requestTimeoutMs,
+            } as PropFuelCredentials;
         } catch {
             return null;
         }
@@ -444,6 +484,32 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
 /** PropFuel host root. Tenant + endpoint are appended at runtime. */
 const PROPFUEL_HOST = 'https://app.propfuel.com';
 
+/**
+ * Deadline for a single PropFuel request. Generous because the download path transfers a whole
+ * export file, not a page. Override per connection with `requestTimeoutMs` in
+ * CompanyIntegration.Configuration; `0` means the absolute ceiling below, never "unbounded".
+ */
+const DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
+
+/**
+ * The deadline a request gets when the connection opted out of the normal one
+ * (`requestTimeoutMs: 0`). No request may ever lack an AbortSignal — see MakeHTTPRequest for why
+ * an unbounded request is unrecoverable rather than merely slow.
+ */
+const ABSOLUTE_MAX_REQUEST_TIMEOUT_MS = 10 * 60_000;
+
+/**
+ * Records one FetchChanges call may accumulate when the engine supplies no BatchSize. Bounds peak
+ * memory on a first sync, where the candidate list is the tenant's entire retained history.
+ */
+const DEFAULT_BATCH_RECORD_LIMIT = 50_000;
+
+/**
+ * Files one FetchChanges call may download. The record limit is only checked BETWEEN files, so a
+ * single unexpectedly large file can overshoot it; this caps the work regardless of file size.
+ */
+const MAX_FILES_PER_FETCH = 250;
+
 /** Stable ordering key name for keyset/no-watermark resume — the filename microtime prefix. */
 const MICROTIME_ORDERING_KEY = 'microtime';
 
@@ -453,6 +519,8 @@ interface PropFuelAuthContext extends RESTAuthContext {
     AccountID: string;
     /** Non-secret host override (e.g. a local mock for replay testing). Defaults to PROPFUEL_HOST. */
     BaseHost?: string;
+    /** Per-connection request deadline from Configuration.requestTimeoutMs. 0 = absolute ceiling. */
+    RequestTimeoutMs?: number;
 }
 
 /** Resolved PropFuel credentials. */
@@ -461,6 +529,8 @@ interface PropFuelCredentials {
     AccountID: string;
     /** Optional non-secret host override from Configuration (apiBaseUrl/BaseURL). */
     BaseHost?: string;
+    /** Optional per-connection request deadline (non-secret tuning knob). */
+    RequestTimeoutMs?: number;
 }
 
 /** Parsed `[microtime]-[datatype].json` filename. */
@@ -480,6 +550,8 @@ const PropFuelCredentialSchema = z.object({
     accountID: z.union([z.string(), z.number()]).optional(),
     apiBaseUrl: z.string().optional(),
     BaseURL: z.string().optional(),
+    requestTimeoutMs: z.number().optional(),
+    RequestTimeoutMs: z.number().optional(),
 }).passthrough();
 
 /** Narrows an unknown value to a plain record. */
