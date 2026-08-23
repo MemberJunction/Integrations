@@ -1,5 +1,96 @@
 # @memberjunction/connector-openwater
 
+## 1.3.5
+
+### Patch Changes
+
+- d0dda7e: Detail walks are bounded by the caller's batch size, and resumable.
+
+  A detail walk is one HTTP call per parent — on a real tenant that is ~2,000 application details,
+  and `Media` additionally resolves ~4,000 `/v2/Media/{id}` records. Running all of it inside a
+  single `FetchChanges` call made the walk unbounded and therefore un-stoppable:
+  `DiscoverFieldsViaFetch` streams `FetchChanges` and stops at a record cap, but it can only stop
+  BETWEEN batches, so field-sampling ONE detail object paid the entire walk and blew through the
+  5-minute discovery budget. Observed as an apply/introspect that could not finish inside any
+  gateway timeout.
+
+  The walk now consumes parents from a cursor offset (`detail:<n>`), accumulates until the caller's
+  `BatchSize` is met, and hands the remaining offset back. Sampling asks for a handful of records
+  and gets them after a handful of calls; a real sync passes a large batch size and still walks
+  everything, now across resumable batches — which also makes a killed run cheap to resume. The
+  `detail-harvest` id collection is bounded the same way.
+
+  One trap this closes explicitly: once the harvest stops early, the parent list is a PREFIX of the
+  real parent set, so its length must not be read as the total. It was, which reported
+  `HasMore: false` with door rows still un-harvested — silently dropping every later record. A
+  regression test now drives a whole object through batch-sized calls and asserts nothing is lost.
+
+  The per-parent detail cache is bounded too, oldest-first at 500 entries. Its previous
+  20,000-entry ceiling was finite but not meaningfully bounded — each entry is a whole application
+  detail — so a full walk could hold gigabytes alive, measured as repeated container SIGKILLs on a
+  7GB host while an apply sampled these objects. The cache only needs to span one batch (siblings
+  walking the same parents), and FIFO eviction keeps the entries actually being reused, where the
+  old clear-everything threw out the in-flight batch's own cache.
+
+## 1.3.4
+
+### Patch Changes
+
+- 0e0109a: Detail-walk extraction: reach objects that live behind the application detail.
+
+  The Public API v2 exposes an application's per-round state only inside
+  `/v2/Applications/{applicationId}` — the detail carries `roundSubmissions[]`, each element
+  carries `fieldValues[]`, and file-upload field values carry a `mediaId` resolvable at
+  `/v2/Media/{mediaId}`. None of that is reachable by the paginated-leaf walker, so three new
+  AccessPath extraction modes are added, plus a harvest parent source:
+
+  - `detail-embedded` — records are a nested array inside a per-parent detail response,
+    walked via `nestingSegments`, optionally filtered by `elementFilter` (equality or key
+    presence), and tagged with the parent id.
+  - `detail-object` — each parent's detail response IS one record, tagged with its id.
+  - `parentSource: 'detail-harvest'` — parent ids are harvested by walking each door row's
+    detail through `harvestSegments`, collecting `harvestIdKey` values (deduped).
+
+  Detail responses are cached per connector instance (10-minute TTL, bounded), so sibling
+  objects walking the same details in one sync — and the Media id-harvest — pay each
+  per-application call once. A 404 detail (parent deleted between list and detail) is
+  skipped, never failing the object.
+
+  Four objects ship on these modes, seeded by delta migration
+  `V202608211500__openwater__DetailWalkObjects` (SQL Server + Postgres):
+  `ApplicationRoundSubmission` (PK applicationId+roundId), `ApplicationFile` (file-upload
+  field values, PK mediaId), `Media` (PK mediaId), `ApplicationWinnerType` (embedded via
+  `Programs -> rounds[] -> winnerTypes[]`, which also exercises two-level embedded-array
+  descent). All id fields are declared unsized String per the V202608050910 sizing doctrine.
+
+- d68a3a2: The judge pair: a person-grain Judge object, and JudgeAssignment regains its pair grain.
+
+  - **`alternativeAccessPaths`** (new, general): an object may declare additional FULL walks —
+    complete AccessPath objects, not just alternative entry paths — when its records live behind
+    more than one door. The walks are unioned and deduplicated by primary key.
+  - **`Judge`** (new object, first union user): the API has no `/v2/Judges` list endpoint. Judges
+    assigned to rounds come from the `AssignedToRound` walk; judges/managers on judge teams come
+    embedded in `/v2/JudgeTeams` rows (`judges[]` / `managers[]`, identical JudgeInfo shape). A
+    team-only judge never appears in the round walk, so neither source alone is the population.
+  - **`JudgeAssignment` PK widened to (userId, roundId)**: with userId alone, a judge assigned to
+    several rounds collapsed to one row per person — the object silently held distinct judges
+    instead of assignments. The always-injected roundId walk tag joins the key, via delta
+    migration `V202608212210` (SQL Server + Postgres) handling both the promoted-field and
+    fresh-tenant populations per the V202608050910 precedent. Installed tenants should expect
+    re-keyed rows on the next sync; rows keyed under the old person-grain ExternalID are stale
+    and can be cleaned after the refill.
+
+## 1.3.3
+
+### Patch Changes
+
+- 6ee916d: Relicense to the Business Source License 1.1.
+
+  Metadata and documentation only: the `license` field moves to `BUSL-1.1` and the
+  repo gains a LICENSE file. No runtime behaviour, API surface, or dependency
+  changes. The bump exists so the new licence metadata reaches npm, since the
+  registry shows the licence of the latest published version.
+
 ## 1.3.2
 
 ### Patch Changes

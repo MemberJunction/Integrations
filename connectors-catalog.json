@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 47,
+  "count": 48,
   "connectors": [
     {
       "name": "Fonteva",
@@ -18,10 +18,10 @@
       "objectCount": 28,
       "className": "@memberjunction/connector-fonteva",
       "npmPackage": "@memberjunction/connector-fonteva",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/Fonteva",
-      "installTag": "AMS-Fonteva@1.2.2"
+      "installTag": "AMS-Fonteva@1.2.3"
     },
     {
       "name": "GrowthZone",
@@ -39,10 +39,10 @@
       "objectCount": 38,
       "className": "@memberjunction/connector-growthzone",
       "npmPackage": "@memberjunction/connector-growthzone",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/GrowthZone",
-      "installTag": "AMS-GrowthZone@1.3.0"
+      "installTag": "AMS-GrowthZone@1.3.1"
     },
     {
       "name": "iMIS",
@@ -60,10 +60,10 @@
       "objectCount": 216,
       "className": "@memberjunction/connector-imis",
       "npmPackage": "@memberjunction/connector-imis",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/iMIS",
-      "installTag": "AMS-iMIS@1.3.0"
+      "installTag": "AMS-iMIS@1.3.1"
     },
     {
       "name": "MemberSuite",
@@ -81,10 +81,10 @@
       "objectCount": 196,
       "className": "@memberjunction/connector-membersuite",
       "npmPackage": "@memberjunction/connector-membersuite",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/MemberSuite",
-      "installTag": "AMS-MemberSuite@1.2.0"
+      "installTag": "AMS-MemberSuite@1.2.1"
     },
     {
       "name": "NetForum Enterprise",
@@ -102,10 +102,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-netforum-enterprise",
       "npmPackage": "@memberjunction/connector-netforum-enterprise",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NetForum",
-      "installTag": "AMS-NetForum@1.3.1"
+      "installTag": "AMS-NetForum@1.3.2"
     },
     {
       "name": "Nimble AMS",
@@ -123,10 +123,10 @@
       "objectCount": 32,
       "className": "@memberjunction/connector-nimble-ams",
       "npmPackage": "@memberjunction/connector-nimble-ams",
-      "version": "1.3.2",
+      "version": "1.3.4",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NimbleAMS",
-      "installTag": "AMS-NimbleAMS@1.3.2"
+      "installTag": "AMS-NimbleAMS@1.3.4"
     },
     {
       "name": "Novi AMS",
@@ -144,10 +144,10 @@
       "objectCount": 32,
       "className": "@memberjunction/connector-novi-ams",
       "npmPackage": "@memberjunction/connector-novi-ams",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/Novi",
-      "installTag": "AMS-Novi@1.2.0"
+      "installTag": "AMS-Novi@1.2.1"
     },
     {
       "name": "re:Members AMS",
@@ -165,10 +165,10 @@
       "objectCount": 46,
       "className": "ImpexiumConnector",
       "npmPackage": "@memberjunction/connector-impexium",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "AMS/Impexium",
-      "installTag": "AMS-Impexium@1.0.1"
+      "installTag": "AMS-Impexium@1.0.2"
     },
     {
       "name": "Rhythm Software",
@@ -186,10 +186,10 @@
       "objectCount": 377,
       "className": "@memberjunction/connector-rhythm-software",
       "npmPackage": "@memberjunction/connector-rhythm-software",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/Rhythm",
-      "installTag": "AMS-Rhythm@1.2.0"
+      "installTag": "AMS-Rhythm@1.2.1"
     },
     {
       "name": "Wild Apricot",
@@ -207,10 +207,10 @@
       "objectCount": 25,
       "className": "@memberjunction/connector-wild-apricot",
       "npmPackage": "@memberjunction/connector-wild-apricot",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/WildApricot",
-      "installTag": "AMS-WildApricot@1.3.0"
+      "installTag": "AMS-WildApricot@1.3.1"
     },
     {
       "name": "blackbaud",
@@ -228,10 +228,10 @@
       "objectCount": 84,
       "className": "@memberjunction/connector-blackbaud",
       "npmPackage": "@memberjunction/connector-blackbaud",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/Blackbaud",
-      "installTag": "CRM-Blackbaud@1.2.1"
+      "installTag": "CRM-Blackbaud@1.2.2"
     },
     {
       "name": "HubSpot",
@@ -249,10 +249,10 @@
       "objectCount": 168,
       "className": "@memberjunction/connector-hubspot",
       "npmPackage": "@memberjunction/connector-hubspot",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/HubSpot",
-      "installTag": "CRM-HubSpot@1.1.2"
+      "installTag": "CRM-HubSpot@1.1.3"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
@@ -270,10 +270,10 @@
       "objectCount": 592,
       "className": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
       "npmPackage": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/DynamicsDataverse",
-      "installTag": "CRM-DynamicsDataverse@1.2.1"
+      "installTag": "CRM-DynamicsDataverse@1.2.2"
     },
     {
       "name": "Neon CRM",
@@ -291,10 +291,10 @@
       "objectCount": 119,
       "className": "@memberjunction/connector-neon-crm",
       "npmPackage": "@memberjunction/connector-neon-crm",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/NeonCRM",
-      "installTag": "CRM-NeonCRM@1.3.1"
+      "installTag": "CRM-NeonCRM@1.3.2"
     },
     {
       "name": "Salesforce",
@@ -312,10 +312,10 @@
       "objectCount": 1695,
       "className": "@memberjunction/connector-salesforce",
       "npmPackage": "@memberjunction/connector-salesforce",
-      "version": "1.3.0",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/Salesforce",
-      "installTag": "CRM-Salesforce@1.3.0"
+      "installTag": "CRM-Salesforce@1.3.2"
     },
     {
       "name": "Cvent",
@@ -333,10 +333,10 @@
       "objectCount": 179,
       "className": "@memberjunction/connector-cvent",
       "npmPackage": "@memberjunction/connector-cvent",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/Cvent",
-      "installTag": "Events-Cvent@1.2.1"
+      "installTag": "Events-Cvent@1.2.2"
     },
     {
       "name": "eventbrite",
@@ -354,10 +354,10 @@
       "objectCount": 33,
       "className": "@memberjunction/connector-eventbrite",
       "npmPackage": "@memberjunction/connector-eventbrite",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/Eventbrite",
-      "installTag": "Events-Eventbrite@2.0.2"
+      "installTag": "Events-Eventbrite@2.0.3"
     },
     {
       "name": "OpenWater",
@@ -372,13 +372,13 @@
       ],
       "logo": "fa-solid fa-trophy",
       "navigationBaseURL": "https://api.getopenwater.com",
-      "objectCount": 25,
+      "objectCount": 30,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
-      "version": "1.3.2",
+      "version": "1.3.5",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/OpenWater",
-      "installTag": "Events-OpenWater@1.3.2"
+      "installTag": "Events-OpenWater@1.3.5"
     },
     {
       "name": "PheedLoop",
@@ -396,10 +396,10 @@
       "objectCount": 28,
       "className": "@memberjunction/connector-pheedloop",
       "npmPackage": "@memberjunction/connector-pheedloop",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
-      "installTag": "Events-PheedLoop@1.4.1"
+      "installTag": "Events-PheedLoop@1.4.2"
     },
     {
       "name": "Bill.com",
@@ -417,10 +417,10 @@
       "objectCount": 3,
       "className": "@memberjunction/connector-bill-com",
       "npmPackage": "@memberjunction/connector-bill-com",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Finance/BillCom",
-      "installTag": "Finance-BillCom@0.2.0"
+      "installTag": "Finance-BillCom@0.2.1"
     },
     {
       "name": "business-central",
@@ -441,10 +441,10 @@
       "objectCount": 83,
       "className": "BusinessCentralConnector",
       "npmPackage": "@memberjunction/connector-business-central",
-      "version": "1.2.0",
+      "version": "2.0.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Finance/BusinessCentral",
-      "installTag": "Finance-BusinessCentral@1.2.0"
+      "installTag": "Finance-BusinessCentral@2.0.0"
     },
     {
       "name": "NetSuite",
@@ -462,10 +462,10 @@
       "objectCount": 205,
       "className": "@memberjunction/connector-netsuite",
       "npmPackage": "@memberjunction/connector-netsuite",
-      "version": "1.3.0",
+      "version": "1.3.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/NetSuite",
-      "installTag": "Finance-NetSuite@1.3.0"
+      "installTag": "Finance-NetSuite@1.3.2"
     },
     {
       "name": "QuickBooks",
@@ -483,10 +483,10 @@
       "objectCount": 39,
       "className": "QuickBooksConnector",
       "npmPackage": "@memberjunction/connector-quickbooks",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/QuickBooks",
-      "installTag": "Finance-QuickBooks@2.0.0"
+      "installTag": "Finance-QuickBooks@2.0.1"
     },
     {
       "name": "stripe",
@@ -504,10 +504,10 @@
       "objectCount": 63,
       "className": "@memberjunction/connector-stripe",
       "npmPackage": "@memberjunction/connector-stripe",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/Stripe",
-      "installTag": "Finance-Stripe@0.3.0"
+      "installTag": "Finance-Stripe@0.3.1"
     },
     {
       "name": "Path LMS",
@@ -525,10 +525,10 @@
       "objectCount": 84,
       "className": "@memberjunction/connector-path-lms",
       "npmPackage": "@memberjunction/connector-path-lms",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "LMS/PathLMS",
-      "installTag": "LMS-PathLMS@1.3.0"
+      "installTag": "LMS-PathLMS@1.3.1"
     },
     {
       "name": "totara",
@@ -543,13 +543,13 @@
       ],
       "logo": null,
       "navigationBaseURL": "{base_url}/webservice/rest/server.php",
-      "objectCount": 28,
+      "objectCount": 33,
       "className": "TotaraConnector",
       "npmPackage": "@memberjunction/connector-totara",
-      "version": "0.3.1",
+      "version": "0.4.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Totara",
-      "installTag": "LMS-Totara@0.3.1"
+      "installTag": "LMS-Totara@0.4.1"
     },
     {
       "name": "constant-contact",
@@ -567,10 +567,10 @@
       "objectCount": 65,
       "className": "ConstantContactConnector",
       "npmPackage": "@memberjunction/connector-constant-contact",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/ConstantContact",
-      "installTag": "Marketing-ConstantContact@2.0.0"
+      "installTag": "Marketing-ConstantContact@2.0.1"
     },
     {
       "name": "Google Analytics 4",
@@ -588,10 +588,10 @@
       "objectCount": 3,
       "className": "@memberjunction/connector-ga4",
       "npmPackage": "@memberjunction/connector-ga4",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Marketing/GA4",
-      "installTag": "Marketing-GA4@0.2.1"
+      "installTag": "Marketing-GA4@0.2.2"
     },
     {
       "name": "magnetmail",
@@ -609,10 +609,10 @@
       "objectCount": 47,
       "className": "@memberjunction/connector-magnetmail",
       "npmPackage": "@memberjunction/connector-magnetmail",
-      "version": "3.0.3",
+      "version": "3.0.4",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/MagnetMail",
-      "installTag": "Marketing-MagnetMail@3.0.3"
+      "installTag": "Marketing-MagnetMail@3.0.4"
     },
     {
       "name": "mailchimp",
@@ -630,10 +630,10 @@
       "objectCount": 76,
       "className": "MailchimpConnector",
       "npmPackage": "@memberjunction/connector-mailchimp",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/Mailchimp",
-      "installTag": "Marketing-Mailchimp@2.0.0"
+      "installTag": "Marketing-Mailchimp@2.0.1"
     },
     {
       "name": "PropFuel",
@@ -651,10 +651,10 @@
       "objectCount": 1,
       "className": "@memberjunction/connector-propfuel",
       "npmPackage": "@memberjunction/connector-propfuel",
-      "version": "1.2.0",
+      "version": "1.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/PropFuel",
-      "installTag": "Marketing-PropFuel@1.2.0"
+      "installTag": "Marketing-PropFuel@1.2.2"
     },
     {
       "name": "rasa",
@@ -672,10 +672,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-rasa-io",
       "npmPackage": "@memberjunction/connector-rasa-io",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Marketing/Rasa",
-      "installTag": "Marketing-Rasa@2.0.0"
+      "installTag": "Marketing-Rasa@2.0.1"
     },
     {
       "name": "Reply",
@@ -695,10 +695,10 @@
       "objectCount": 84,
       "className": "ReplyConnector",
       "npmPackage": "@memberjunction/connector-reply",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Marketing/Reply",
-      "installTag": "Marketing-Reply@1.0.0"
+      "installTag": "Marketing-Reply@1.0.1"
     },
     {
       "name": "higherlogic-thrive",
@@ -716,10 +716,10 @@
       "objectCount": 35,
       "className": "@memberjunction/connector-higher-logic-thrive-community",
       "npmPackage": "@memberjunction/connector-higher-logic-thrive-community",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Platform/HigherLogicThriveCommunity",
-      "installTag": "Platform-HigherLogicThriveCommunity@0.2.0"
+      "installTag": "Platform-HigherLogicThriveCommunity@0.2.1"
     },
     {
       "name": "higherlogic-vanilla",
@@ -737,10 +737,10 @@
       "objectCount": 65,
       "className": "@memberjunction/connector-higher-logic-vanilla",
       "npmPackage": "@memberjunction/connector-higher-logic-vanilla",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Platform/HigherLogicVanilla",
-      "installTag": "Platform-HigherLogicVanilla@0.2.1"
+      "installTag": "Platform-HigherLogicVanilla@0.2.2"
     },
     {
       "name": "Hivebrite",
@@ -758,10 +758,10 @@
       "objectCount": 98,
       "className": "@memberjunction/connector-hivebrite",
       "npmPackage": "@memberjunction/connector-hivebrite",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Platform/Hivebrite",
-      "installTag": "Platform-Hivebrite@1.2.1"
+      "installTag": "Platform-Hivebrite@1.2.2"
     },
     {
       "name": "MongoDB",
@@ -780,10 +780,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-mongodb",
       "npmPackage": "@memberjunction/connector-mongodb",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/MongoDB",
-      "installTag": "Platform-MongoDB@1.0.1"
+      "installTag": "Platform-MongoDB@1.0.2"
     },
     {
       "name": "MySQL",
@@ -802,10 +802,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-mysql",
       "npmPackage": "@memberjunction/connector-mysql",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/MySQL",
-      "installTag": "Platform-MySQL@1.0.1"
+      "installTag": "Platform-MySQL@1.0.2"
     },
     {
       "name": "Oracle Database",
@@ -824,10 +824,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-oracle",
       "npmPackage": "@memberjunction/connector-oracle",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/Oracle",
-      "installTag": "Platform-Oracle@1.0.1"
+      "installTag": "Platform-Oracle@1.0.2"
     },
     {
       "name": "ORCID",
@@ -845,10 +845,10 @@
       "objectCount": 12,
       "className": "@memberjunction/connector-orcid",
       "npmPackage": "@memberjunction/connector-orcid",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Platform/ORCID",
-      "installTag": "Platform-ORCID@1.2.0"
+      "installTag": "Platform-ORCID@1.2.1"
     },
     {
       "name": "PostgreSQL",
@@ -867,10 +867,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-postgresql",
       "npmPackage": "@memberjunction/connector-postgresql",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/PostgreSQL",
-      "installTag": "Platform-PostgreSQL@1.0.1"
+      "installTag": "Platform-PostgreSQL@1.0.2"
     },
     {
       "name": "SharePoint",
@@ -888,10 +888,10 @@
       "objectCount": 25,
       "className": "@memberjunction/connector-sharepoint",
       "npmPackage": "@memberjunction/connector-sharepoint",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Platform/SharePoint",
-      "installTag": "Platform-SharePoint@1.2.0"
+      "installTag": "Platform-SharePoint@1.2.1"
     },
     {
       "name": "Snowflake",
@@ -910,10 +910,10 @@
       "objectCount": null,
       "className": "@memberjunction/connector-snowflake",
       "npmPackage": "@memberjunction/connector-snowflake",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/Snowflake",
-      "installTag": "Platform-Snowflake@1.0.1"
+      "installTag": "Platform-Snowflake@1.0.2"
     },
     {
       "name": "SQL Server",
@@ -932,10 +932,34 @@
       "objectCount": null,
       "className": "@memberjunction/connector-sqlserver",
       "npmPackage": "@memberjunction/connector-sqlserver",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "mjVersionRange": ">=5.46.0 <6.0.0",
       "repoSubpath": "Platform/SQLServer",
-      "installTag": "Platform-SQLServer@1.0.1"
+      "installTag": "Platform-SQLServer@1.0.2"
+    },
+    {
+      "name": "WordPress",
+      "displayName": "WordPress Connector",
+      "description": "WordPress self-hosted content and commerce platform connector — syncs core wp/v2 objects (posts, pages, media, taxonomies, users, comments) plus WooCommerce wc/v3 objects (orders, products, customers, coupons) from a per-tenant site URL.",
+      "category": "Platform",
+      "tags": [
+        "wordpress",
+        "woocommerce",
+        "cms",
+        "ecommerce",
+        "platform",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-brands fa-wordpress",
+      "navigationBaseURL": "{siteUrl}/wp-admin/",
+      "objectCount": 78,
+      "className": "WordPressConnector",
+      "npmPackage": "@memberjunction/connector-wordpress",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Platform/WordPress",
+      "installTag": "Platform-WordPress@1.0.0"
     },
     {
       "name": "zendesk",
@@ -953,10 +977,10 @@
       "objectCount": 99,
       "className": "@memberjunction/connector-zendesk",
       "npmPackage": "@memberjunction/connector-zendesk",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "mjVersionRange": ">=5.45.0 <6.0.0",
       "repoSubpath": "Platform/Zendesk",
-      "installTag": "Platform-Zendesk@1.1.2"
+      "installTag": "Platform-Zendesk@1.1.3"
     },
     {
       "name": "Asana",
@@ -974,10 +998,10 @@
       "objectCount": 4,
       "className": "@memberjunction/connector-asana",
       "npmPackage": "@memberjunction/connector-asana",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "PM/Asana",
-      "installTag": "PM-Asana@0.2.0"
+      "installTag": "PM-Asana@0.2.1"
     },
     {
       "name": "Everhour",
@@ -995,10 +1019,10 @@
       "objectCount": 4,
       "className": "@memberjunction/connector-everhour",
       "npmPackage": "@memberjunction/connector-everhour",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "PM/Everhour",
-      "installTag": "PM-Everhour@0.2.0"
+      "installTag": "PM-Everhour@0.2.1"
     }
   ]
 }

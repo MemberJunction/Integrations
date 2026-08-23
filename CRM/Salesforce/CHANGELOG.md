@@ -1,5 +1,68 @@
 # @memberjunction/connector-salesforce
 
+## 1.3.2
+
+### Patch Changes
+
+- 5ca7755: Nimble AMS extends the Salesforce base connector instead of duplicating its Salesforce layer.
+
+  Nimble carried its own copy of the SOQL stack, which is how the hardening ladder proven on a
+  customer org existed in exactly one of the three Salesforce-platform connectors while Fonteva
+  and the base still had the defects. The duplicate is gone: `NimbleAMSConnector` now extends
+  `SalesforceConnector` and deletes ~230 lines of copied machinery (`FetchSOQL`, `BuildSOQL`,
+  `FormatSOQLDateTime`, `ResolveWatermarkField`, `ChunkSOQLFields`, `MergeChunkedRecords`).
+
+  What Nimble keeps is what is actually Nimble: the Fuse inbound/outbound doors, the LMS REST
+  family, `NU__`/`NUINT__` namespace scoping, its own OAuth token flow, and the literal-create
+  body shapes. Its `FetchChanges` routes those families itself and delegates the default door to
+  the base.
+
+  Moved INTO the base with this change (so Fonteva and every future Salesforce connector inherit
+  them, not just Nimble):
+
+  - **Chunked wide projections** — Salesforce's REST edge 431s an over-long request line; a
+    674-field object failed batch 1 of every run. Wide projections split into aligned chunks
+    (pinned to the one page size Salesforce honors exactly) and reassemble by Id; misalignment
+    throws rather than writing half-populated rows.
+  - **Declared-watermark honoring** — an explicit `IncrementalWatermarkField` now wins over the
+    audit-column preference, so objects that expose only `CreatedDate` stop 400-ing.
+
+  The SOQL-mechanics test coverage moved with the code: 11 cases now live in the base's suite
+  (construction, declared-watermark precedence, per-page watermark advance, chunk splitting,
+  aligned reassembly, misalignment throw, chunked-cursor round-trip) — base 59/59, Nimble 24/24,
+  Fonteva 62/62 unchanged.
+
+- 8f4efad: Bulk API 2.0 as a fetch transport, and two hardening fixes ported from the Nimble campaign.
+
+  - **Bulk query fetch transport** (opt-in per object: `Configuration.FetchTransport =
+"bulk_query"`, or `DefaultQueryParams.fetch_transport` as a fallback): backfills route through a Bulk API 2.0 query job — Salesforce materializes
+    the export server-side and the connector downloads CSV pages via `Sforce-Locator`, so the
+    serial REST cursor (seconds per page on wide objects) disappears from the big first pull.
+    The query is stripped of ORDER BY, which Bulk 2.0 accepts but which disables PK Chunking
+    (Salesforce's own remedy for bulk-query timeouts is to remove it).
+    The cursor carries the whole job identity (`bulkq:{id, object, locator}`): mid-job restarts
+    re-poll the same job, mid-download restarts resume at the locator. Failed/aborted jobs throw
+    with the vendor errorMessage; a job created without an id throws rather than losing the job.
+    Incremental trickle (a watermark exists) stays on the REST path where per-page watermark
+    advance already works. Applies to every Salesforce-platform connector that extends this
+    class (Fonteva today; Nimble AMS after its rebase).
+  - **SOQL datetime canonicalization**: Salesforce emits `+0000` offsets, which SOQL literal
+    grammar rejects; the previous pass-through made watermarked queries MALFORMED_QUERY. One
+    canonical UTC ISO form now.
+  - **Request timeout default 30s → 120s**, matching Salesforce's own server-side query timeout
+    (`RequestTimeoutMs` still overrides per connection).
+
+## 1.3.1
+
+### Patch Changes
+
+- 6ee916d: Relicense to the Business Source License 1.1.
+
+  Metadata and documentation only: the `license` field moves to `BUSL-1.1` and the
+  repo gains a LICENSE file. No runtime behaviour, API surface, or dependency
+  changes. The bump exists so the new licence metadata reaches npm, since the
+  registry shows the licence of the latest published version.
+
 ## 1.3.0
 
 ### Minor Changes

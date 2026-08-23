@@ -37,12 +37,6 @@ class MockedNimbleAMSConnector extends NimbleAMSConnector {
     public CallExtractPagination(raw: unknown): { HasMore: boolean; NextCursor?: string } {
         return (this as unknown as { ExtractPaginationInfo(b: unknown, p: PaginationType, a: number, c: number, d: number): { HasMore: boolean; NextCursor?: string } }).ExtractPaginationInfo(raw, 'Cursor', 0, 0, 200);
     }
-    public CallBuildSOQL(obj: string, fieldNames: string[], wmField: string, wm: string | null): string {
-        return (this as unknown as { BuildSOQL(o: string, f: string[], w: string, v: string | null): string }).BuildSOQL(obj, fieldNames, wmField, wm);
-    }
-    public CallFormatSOQLDateTime(v: string): string {
-        return (this as unknown as { FormatSOQLDateTime(v: string): string }).FormatSOQLDateTime(v);
-    }
     public CallIsNimbleScoped(name: string): boolean {
         return (this as unknown as { IsNimbleScopedObject(n: string): boolean }).IsNimbleScopedObject(name);
     }
@@ -65,8 +59,10 @@ describe('NimbleAMSConnector — identity', () => {
         expect(connector.SupportsDelete).toBe(true);
         expect(connector.MonotonicWatermark).toBe(true);
         expect(connector.DiscoveryIsAuthoritative).toBe(true);
-        expect(connector.StableOrderingKey('NU__Order__c')).toBe('Id');
-        expect(connector.StableOrderingKey('LmsProduct')).toBe('id');
+        // null, deliberately: declaring an ordering key made the engine run keyset pagination
+        // INSTEAD of the watermark filter — every sync re-walked from row zero.
+        expect(connector.StableOrderingKey('NU__Order__c')).toBeNull();
+        expect(connector.StableOrderingKey('LmsProduct')).toBeNull();
         expect(connector.RateLimitPolicy?.TokensPerSec).toBeGreaterThan(0);
     });
 });
@@ -114,28 +110,6 @@ describe('NimbleAMSConnector — ExtractPaginationInfo (Salesforce cursor)', () 
     });
 });
 
-describe('NimbleAMSConnector — SOQL construction', () => {
-    const c = new MockedNimbleAMSConnector();
-
-    it('builds a watermark-ordered query with NO LIMIT (SF native paging) and >= boundary', () => {
-        const soql = c.CallBuildSOQL('NU__Order__c', ['Id', 'LastModifiedDate'], 'LastModifiedDate', '2026-01-01T00:00:00Z');
-        expect(soql).toContain('SELECT Id, LastModifiedDate FROM NU__Order__c');
-        expect(soql).toContain('WHERE LastModifiedDate >= 2026-01-01T00:00:00Z');
-        expect(soql).toContain('ORDER BY LastModifiedDate ASC');
-        expect(soql).not.toMatch(/LIMIT/i);
-    });
-
-    it('omits the WHERE clause on a first (watermark-less) sync', () => {
-        const soql = c.CallBuildSOQL('Account', ['Id', 'LastModifiedDate'], 'LastModifiedDate', null);
-        expect(soql).not.toContain('WHERE');
-        expect(soql).toContain('ORDER BY LastModifiedDate ASC');
-    });
-
-    it('emits SF SOQL datetime literals UNQUOTED and Z-suffixed', () => {
-        expect(c.CallFormatSOQLDateTime('2026-03-04T05:06:07Z')).toBe('2026-03-04T05:06:07Z');
-        expect(c.CallFormatSOQLDateTime('2026-03-04T05:06:07')).toBe('2026-03-04T05:06:07Z');
-    });
-});
 
 describe('NimbleAMSConnector — namespace scoping', () => {
     const c = new MockedNimbleAMSConnector();
@@ -241,6 +215,7 @@ class CRUDTestConnector extends MockedNimbleAMSConnector {
 
 function ci() { return { IntegrationID: 'int-1', Configuration: null, CredentialID: null } as unknown; }
 function user() { return {} as unknown; }
+
 
 describe('NimbleAMSConnector — Salesforce REST sObject CRUD', () => {
     it('CreateRecord substitutes {apiVersion}+{ObjectName}, POSTs a flat body, extracts id', async () => {
@@ -358,3 +333,4 @@ describe('NimbleAMSConnector — Nimble Fuse inbound upsert', () => {
         expect(c.Calls).toHaveLength(0);
     });
 });
+

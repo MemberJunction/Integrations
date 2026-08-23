@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-impexium",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MemberJunction Impexium connector.",
   "type": "module",
   "main": "dist/index.js",

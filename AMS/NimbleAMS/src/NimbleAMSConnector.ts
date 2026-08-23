@@ -59,6 +59,7 @@ import {
     type SourceObjectInfo,
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
+import { SalesforceConnector, type SalesforceAuthContext } from '@memberjunction/connector-salesforce';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -76,10 +77,23 @@ export interface NimbleAMSConnectionConfig {
     ApiVersion: string;
 }
 
+/**
+ * Nimble's auth context. Deliberately NOT a subtype of the base's `SalesforceAuthContext`:
+ * the two carry incompatible `Config` shapes (Nimble authenticates with its own credential
+ * set, not the base's OAuth field names), which is exactly the kind of divergence structural
+ * typing should refuse to paper over. Every value that crosses the boundary is built by
+ * `BuildAuthContext`, which populates BOTH the base's `InstanceUrl` and Nimble's `InstanceURL`
+ * plus the `CompanyIntegration` the base needs for URL routing — so the two explicit casts
+ * (out of `Authenticate`, and back in `NimbleAuth`) are safe by construction, and there is
+ * exactly one place to audit that claim.
+ */
 interface NimbleAuthContext extends RESTAuthContext {
     Config: NimbleAMSConnectionConfig;
+    /** Nimble's helpers read this spelling; the base reads `InstanceUrl`. Both are populated. */
     InstanceURL: string;
+    InstanceUrl: string;
     ApiVersion: string;
+    CompanyIntegration?: MJCompanyIntegrationEntity;
 }
 
 interface CachedToken { AccessToken: string; InstanceURL: string; ExpiresAt: number; }
@@ -149,15 +163,44 @@ const FUSE_MAX_BYTES_PER_CALL = 3 * 1024 * 1024; // 3MB
 const TOKEN_REFRESH_BUFFER_MS = 60_000;
 const TOKEN_LIFETIME_MS = 3_600_000;
 const MAX_RETRIES = 3;
-const REQUEST_TIMEOUT_MS = 30_000;
+/**
+ * 120s, raised from 30s, to match Salesforce's OWN server-side query timeout.
+ *
+ * 30s gave up long before the vendor did. On a full org, `describe` and the first sampling
+ * page for large objects legitimately take more than half a minute, and every one that
+ * expired came back as
+ *
+ *   [DiscoverFieldsViaFetch] read-path discovery failed for "X" (Request timed out: …)
+ *
+ * and fell back to single-record field inference — so that object shipped with declared
+ * fields only: no measured widths, no data-proven key. Not a failure the customer sees,
+ * just quietly worse schema, on exactly the biggest tables.
+ *
+ * Matching Salesforce's limit means we now stop when IT stops, rather than inventing an
+ * earlier deadline of our own. The cost is that a slow object holds its concurrency slot
+ * longer, so discovery takes more wall-clock — which is the right trade: discovery of a
+ * large catalog is expected to be long, and being slow beats being wrong.
+ */
+/**
+ * Salesforce's REST edge rejects an over-long request line with HTTP 431 (it counts the URI
+ * against the header budget). The SOQL projection travels in the query string, so a WIDE object
+ * overflows it: an Account with 674 queryable fields 431'd on batch 1 of every run — 120k rows
+ * that could never sync — while Contact (212 fields) was always fine. 12,000 chars of ENCODED
+ * query leaves headroom under the ~16KB limit.
+ */
+const SOQL_URL_BUDGET = 12_000;
+/** Pinned page size for chunked fetches so every chunk paginates identically (see FetchSOQL). */
+const SOQL_CHUNK_BATCH_SIZE = 200;
+const REQUEST_TIMEOUT_MS = 120_000;
 const MIN_REQUEST_INTERVAL_MS = 50;
 
 // ─── Connector ──────────────────────────────────────────────────────────────
 
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-nimble-ams')
-export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
+export class NimbleAMSConnector extends SalesforceConnector {
     private tokenCache: CachedToken | null = null;
-    private lastRequestTime = 0;
+    /** Nimble-side throttle clock (the base keeps its own private one — distinct names, distinct fields). */
+    private nimbleLastRequestTime = 0;
 
     public override get IntegrationName(): string { return 'Nimble AMS'; }
 
@@ -220,9 +263,17 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     /** Salesforce REST is monotonic when we ORDER BY the watermark column — narrow the next incremental. */
     public override get MonotonicWatermark(): boolean { return true; }
 
-    /** Every Nimble sObject carries the immutable 18-char `Id`; the LMS REST objects carry `id`. */
-    public override StableOrderingKey(objectName: string): string | null {
-        return objectName.startsWith('Lms') ? 'id' : 'Id';
+    /**
+     * null, deliberately — declaring one was silently defeating every watermark. The engine
+     * treats a stable ordering key as permission to run keyset pagination INSTEAD of the
+     * watermark filter, so every sync re-walked the object from row zero and the incremental
+     * path never engaged (measured live: a 3.8M-row object that could not finish a run, by
+     * construction). Salesforce already provides real cursor pagination (nextRecordsUrl) and a
+     * real watermark (ORDER BY <datetime> ASC + >= filter); a keyset on Id adds nothing here
+     * and costs everything. MUST NOT be re-declared without re-proving the watermark survives.
+     */
+    public override StableOrderingKey(_objectName: string): string | null {
+        return null;
     }
 
     /**
@@ -250,7 +301,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     public override async DiscoverObjects(
         companyIntegration: MJCompanyIntegrationEntity, contextUser: UserInfo
     ): Promise<ExternalObjectSchema[]> {
-        const auth = await this.Authenticate(companyIntegration, contextUser) as NimbleAuthContext;
+        const auth = await this.Authenticate(companyIntegration, contextUser) as unknown as NimbleAuthContext;
         const url = `${this.SFDataBase(auth)}/sobjects/`;
         const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
         if (response.Status < 200 || response.Status >= 300) {
@@ -306,7 +357,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     public override async DiscoverFields(
         companyIntegration: MJCompanyIntegrationEntity, objectName: string, contextUser: UserInfo
     ): Promise<ExternalFieldSchema[]> {
-        const auth = await this.Authenticate(companyIntegration, contextUser) as NimbleAuthContext;
+        const auth = await this.Authenticate(companyIntegration, contextUser) as unknown as NimbleAuthContext;
         const url = `${this.SFDataBase(auth)}/sobjects/${encodeURIComponent(objectName)}/describe`;
         const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
         if (response.Status < 200 || response.Status >= 300) {
@@ -376,24 +427,31 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
 
     // ── Auth (Salesforce OAuth2 bearer) ──────────────────────────────────────
 
-    protected async Authenticate(companyIntegration: MJCompanyIntegrationEntity, contextUser: UserInfo): Promise<RESTAuthContext> {
+    protected override async Authenticate(companyIntegration: MJCompanyIntegrationEntity, contextUser: UserInfo): Promise<SalesforceAuthContext> {
         const config = await this.ParseConfig(companyIntegration, contextUser);
         if (this.tokenCache && this.tokenCache.ExpiresAt > Date.now() + TOKEN_REFRESH_BUFFER_MS) {
-            return this.BuildAuthContext(config, this.tokenCache.AccessToken, this.tokenCache.InstanceURL);
+            return this.BuildAuthContext(config, this.tokenCache.AccessToken, this.tokenCache.InstanceURL, companyIntegration) as unknown as SalesforceAuthContext;
         }
         const token = await this.ObtainToken(config);
         this.tokenCache = token;
-        return this.BuildAuthContext(config, token.AccessToken, token.InstanceURL);
+        return this.BuildAuthContext(config, token.AccessToken, token.InstanceURL, companyIntegration) as unknown as SalesforceAuthContext;
     }
 
-    private BuildAuthContext(config: NimbleAMSConnectionConfig, accessToken: string, instanceURL: string): NimbleAuthContext {
+    private BuildAuthContext(config: NimbleAMSConnectionConfig, accessToken: string, instanceURL: string,
+        companyIntegration?: MJCompanyIntegrationEntity): NimbleAuthContext {
         return {
+            // The base builds every API URL through GetBaseURL(auth.CompanyIntegration, auth) —
+            // carrying it here is what makes the inherited SOQL/bulk paths mock-testable.
+            CompanyIntegration: companyIntegration,
             Token: accessToken,
             TokenType: 'Bearer',
             Config: config,
             InstanceURL: instanceURL,
+            // The Salesforce base reads `InstanceUrl` (its casing) through GetBaseURL/ApiBase;
+            // Nimble's own helpers read `InstanceURL`. Carry both so NO code path needs a rewrite.
+            InstanceUrl: instanceURL,
             ApiVersion: config.ApiVersion,
-        } as NimbleAuthContext;
+        } as unknown as NimbleAuthContext;
     }
 
     private async ObtainToken(config: NimbleAMSConnectionConfig): Promise<CachedToken> {
@@ -483,7 +541,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
 
     public async TestConnection(companyIntegration: MJCompanyIntegrationEntity, contextUser: UserInfo): Promise<ConnectionTestResult> {
         try {
-            const auth = await this.Authenticate(companyIntegration, contextUser) as NimbleAuthContext;
+            const auth = await this.Authenticate(companyIntegration, contextUser) as unknown as NimbleAuthContext;
             const response = await this.MakeHTTPRequest(auth, `${this.SFDataBase(auth)}/sobjects/`, 'GET', this.BuildHeaders(auth));
             if (response.Status >= 200 && response.Status < 300) return { Success: true, Message: 'Connected to Nimble AMS (Salesforce)' };
             return { Success: false, Message: `Nimble AMS API returned HTTP ${response.Status}` };
@@ -495,7 +553,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     // ── URL / Response / Pagination ──────────────────────────────────────────
 
     protected GetBaseURL(_ci: MJCompanyIntegrationEntity, auth: RESTAuthContext): string {
-        return (auth as NimbleAuthContext).InstanceURL;
+        return (auth as unknown as NimbleAuthContext).InstanceURL;
     }
 
     /** The instance origin for all REST calls. Routes through GetBaseURL so a test harness can redirect. */
@@ -559,82 +617,22 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         if (family === 'LmsFamily') {
             return this.FetchLMS(ctx, obj);
         }
-        // Default door: Salesforce REST SOQL (also used by the Fuse outbound named-SOQL setting when one
-        // is configured — the SOQL path is the credential-free-verifiable common case).
-        return this.FetchSOQL(ctx, obj);
+        // Default door: Salesforce REST SOQL — inherited from the Salesforce base connector,
+        // which carries the whole hardening ladder (declared-watermark honoring, per-page
+        // watermark advance, canonical datetime literals, chunked wide projections) and the
+        // opt-in Bulk API 2.0 fetch transport.
+        return super.FetchChanges(ctx);
     }
 
-    /** Salesforce REST SOQL fetch — cursor pagination via nextRecordsUrl + watermark-ordered incremental. */
-    private async FetchSOQL(ctx: FetchContext, obj: MJIntegrationObjectEntity): Promise<FetchBatchResult> {
-        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as NimbleAuthContext;
-        const headers = this.BuildHeaders(auth);
-        const watermarkField = obj.IncrementalWatermarkField ?? 'LastModifiedDate';
 
-        // Follow the SF cursor when present; otherwise build the first SOQL page.
-        const url = ctx.CurrentCursor
-            ? `${this.GetBaseURL(ctx.CompanyIntegration, auth)}${ctx.CurrentCursor}`
-            : `${this.SFDataBase(auth)}/query?q=${encodeURIComponent(this.BuildSOQL(ctx.ObjectName, await this.GetSOQLFieldNames(auth, ctx.ObjectName), watermarkField, ctx.WatermarkValue ?? null))}`;
 
-        const response = await this.MakeHTTPRequest(auth, url, 'GET', headers);
-        if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`Nimble AMS SOQL error for "${ctx.ObjectName}": HTTP ${response.Status} — ${this.SafeBody(response)}`);
-        }
 
-        const body = response.Body as SFQueryResponse;
-        const raw = body.records ?? [];
-        // Defensive: the Fuse OUTBOUND door caps a single call at 50,000 records; SF native paging
-        // (≤2000/page) keeps SOQL pages well under it, so a page at/over the cap signals a misconfig.
-        const warnings = raw.length >= FUSE_MAX_RECORDS_PER_CALL
-            ? [{ Code: 'PAGE_AT_RECORD_CAP', Message: `"${ctx.ObjectName}" returned ${raw.length} records in one page — at/over the ${FUSE_MAX_RECORDS_PER_CALL}-record Fuse per-call cap.` }]
-            : undefined;
-        const records: ExternalRecord[] = raw.map(r => this.RawToExternalRecord(r, obj, ctx.ObjectName, watermarkField, 'Id'));
 
-        // Watermark advances ONLY on the final page (full-batch success), and only to the max seen.
-        let newWatermark: string | undefined;
-        if (body.done) {
-            for (const r of raw) {
-                const mod = r[watermarkField];
-                if (typeof mod === 'string' && (!newWatermark || mod > newWatermark)) newWatermark = mod;
-            }
-        }
 
-        return {
-            Records: records,
-            HasMore: body.done === false,
-            NextCursor: body.nextRecordsUrl,
-            NewWatermarkValue: body.done ? newWatermark : undefined,
-            Warnings: warnings,
-        };
-    }
-
-    /**
-     * Build the SOQL for the first page. CRITICAL: NO `LIMIT` — Salesforce natively paginates via
-     * done/nextRecordsUrl, so a SOQL LIMIT would cap the ENTIRE result set and SF would report
-     * done=true at that count, silently dropping every record past the limit AND advancing the
-     * watermark past them next sync. Use `>=` (not `>`) so records at the exact watermark instant
-     * aren't lost; engine dedupe absorbs the boundary re-fetch. ORDER BY the watermark for monotonicity.
-     */
-    private BuildSOQL(objectName: string, fieldNames: string[], watermarkField: string, watermarkValue: string | null): string {
-        // Explicit field list (NOT FIELDS(ALL)) — see GetSOQLFieldNames: FIELDS(ALL) forces LIMIT<=200,
-        // incompatible with native nextRecordsUrl paging. An explicit SELECT has no LIMIT requirement.
-        const cols = fieldNames.length ? fieldNames.join(', ') : 'Id';
-        let soql = `SELECT ${cols} FROM ${objectName}`;
-        if (watermarkValue) soql += ` WHERE ${watermarkField} >= ${this.FormatSOQLDateTime(watermarkValue)}`;
-        soql += ` ORDER BY ${watermarkField} ASC`;
-        return soql;
-    }
-
-    /** SF SOQL datetime literals are unquoted ISO-8601 (e.g. 2026-01-01T00:00:00Z). */
-    private FormatSOQLDateTime(value: string): string {
-        // Already an unquoted ISO literal → use verbatim; otherwise emit a UTC ISO string.
-        if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return value.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(value) ? value : `${value}Z`;
-        const d = new Date(value);
-        return isNaN(d.getTime()) ? value : d.toISOString();
-    }
 
     /** NAMS LMS REST fetch — GET with an optional `lastUpdated` incremental filter (no pagination). */
     private async FetchLMS(ctx: FetchContext, obj: MJIntegrationObjectEntity): Promise<FetchBatchResult> {
-        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as NimbleAuthContext;
+        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as unknown as NimbleAuthContext;
         const headers = this.BuildHeaders(auth);
         const watermarkField = obj.IncrementalWatermarkField ?? 'lastUpdated';
 
@@ -649,7 +647,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         }
 
         const raw = this.NormalizeResponse(response.Body, null);
-        const records = raw.map(r => this.RawToExternalRecord(r, obj, ctx.ObjectName, watermarkField, 'id'));
+        const records = raw.map(r => this.NimbleRawToExternalRecord(r, obj, ctx.ObjectName, watermarkField, 'id'));
 
         let newWatermark: string | undefined;
         for (const r of raw) {
@@ -689,7 +687,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
         if (!obj.DeleteAPIPath || !obj.DeleteMethod) {
             return { Success: false, StatusCode: 0, ErrorMessage: `DeleteRecord not supported for "${ctx.ObjectName}": Fuse is upsert-only; hard delete requires Salesforce REST sObject DELETE, which this object does not declare.` };
         }
-        const auth = await this.Authenticate(ci, ctx.ContextUser as UserInfo) as NimbleAuthContext;
+        const auth = await this.Authenticate(ci, ctx.ContextUser as UserInfo) as unknown as NimbleAuthContext;
         const url = this.ResolveSFRestPath(auth, obj.DeleteAPIPath, ctx.ObjectName, ctx.ExternalID);
         const response = await this.MakeHTTPRequest(auth, url, obj.DeleteMethod, this.BuildHeaders(auth));
         if (response.Status === 204 || (response.Status >= 200 && response.Status < 300)) {
@@ -700,7 +698,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
 
     /** Salesforce REST sObject create — POST `/sobjects/{ObjectName}` flat body, ID in response `id`. */
     private async SFRestCreate(contextUser: UserInfo, ci: MJCompanyIntegrationEntity, objectName: string, attributes: Record<string, unknown>, obj: MJIntegrationObjectEntity): Promise<CRUDResult> {
-        const auth = await this.Authenticate(ci, contextUser) as NimbleAuthContext;
+        const auth = await this.Authenticate(ci, contextUser) as unknown as NimbleAuthContext;
         const createPath = obj.CreateAPIPath ?? `/services/data/v{apiVersion}/sobjects/{ObjectName}/`;
         const url = this.ResolveSFRestPath(auth, createPath, objectName, undefined);
         const headers = { ...this.BuildHeaders(auth), 'Content-Type': 'application/json' };
@@ -715,7 +713,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
 
     /** Salesforce REST sObject update — PATCH `/sobjects/{ObjectName}/{Id}` flat body. */
     private async SFRestUpdate(contextUser: UserInfo, ci: MJCompanyIntegrationEntity, objectName: string, externalID: string, attributes: Record<string, unknown>, obj: MJIntegrationObjectEntity): Promise<CRUDResult> {
-        const auth = await this.Authenticate(ci, contextUser) as NimbleAuthContext;
+        const auth = await this.Authenticate(ci, contextUser) as unknown as NimbleAuthContext;
         const updatePath = obj.UpdateAPIPath ?? `/services/data/v{apiVersion}/sobjects/{ObjectName}/{Id}`;
         const url = this.ResolveSFRestPath(auth, updatePath, objectName, externalID);
         const headers = { ...this.BuildHeaders(auth), 'Content-Type': 'application/json' };
@@ -733,7 +731,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
      * BuildCreatedResult, and fails LOUDLY on an empty SalesforceId.
      */
     private async FuseUpsert(contextUser: UserInfo, ci: MJCompanyIntegrationEntity, obj: MJIntegrationObjectEntity, objectName: string, attributes: Record<string, unknown>, forUpdate: boolean): Promise<CRUDResult> {
-        const auth = await this.Authenticate(ci, contextUser) as NimbleAuthContext;
+        const auth = await this.Authenticate(ci, contextUser) as unknown as NimbleAuthContext;
         const cfg = this.ReadAccessConfig(obj);
         const settingName = cfg.InboundSettingName;
         if (!settingName) {
@@ -807,7 +805,7 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
      * declared in {@link ExcludedSourceKeys}. The PK field supplies ExternalID; the watermark field supplies
      * ModifiedAt. (FetchSOQL/FetchLMS override the base fetch, so we hand-build records here.)
      */
-    private RawToExternalRecord(raw: Record<string, unknown>, obj: MJIntegrationObjectEntity, objectType: string, watermarkField: string, pkField: string): ExternalRecord {
+    private NimbleRawToExternalRecord(raw: Record<string, unknown>, obj: MJIntegrationObjectEntity, objectType: string, watermarkField: string | null, pkField: string): ExternalRecord {
         const transformed = this.TransformRecord(raw, obj, this.GetCachedFields(obj.ID));
         const excluded = new Set(this.ExcludedSourceKeys(objectType));
         const fields: Record<string, unknown> = {};
@@ -815,7 +813,8 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
             if (excluded.has(key)) continue;
             fields[key] = value;
         }
-        const modRaw = raw[watermarkField];
+        // No datetime column on this object → no ModifiedAt to report, rather than reading `raw[null]`.
+        const modRaw = watermarkField ? raw[watermarkField] : undefined;
         return {
             ExternalID: String(raw[pkField] ?? ''),
             ObjectType: objectType,
@@ -845,22 +844,22 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     protected async MakeHTTPRequest(_auth: RESTAuthContext, url: string, method: string, headers: Record<string, string>, body?: unknown): Promise<RESTResponse> {
         await this.Throttle();
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-            const response = await this.FetchWithTimeout(url, method, headers, body);
-            this.lastRequestTime = Date.now();
+            const response = await this.NimbleFetchWithTimeout(url, method, headers, body);
+            this.nimbleLastRequestTime = Date.now();
             if (response.status === 401 && attempt === 0) { this.tokenCache = null; continue; }
             if (response.status === 429 && attempt < MAX_RETRIES) {
                 const ra = Number(response.headers.get('retry-after'));
                 const wait = !isNaN(ra) && ra > 0 ? ra * 1000 : Math.min(1000 * Math.pow(2, attempt) + Math.random() * 500, 60_000);
-                await this.Sleep(wait); continue;
+                await this.NimbleSleep(wait); continue;
             }
-            if (response.status >= 500 && attempt < MAX_RETRIES) { await this.Sleep(Math.min(1000 * Math.pow(2, attempt), 30_000)); continue; }
+            if (response.status >= 500 && attempt < MAX_RETRIES) { await this.NimbleSleep(Math.min(1000 * Math.pow(2, attempt), 30_000)); continue; }
             const parsed = await this.ParseBody(response);
             return this.ToRESTResponse(response, parsed);
         }
         throw new Error(`Nimble AMS request failed after ${MAX_RETRIES} retries: ${url}`);
     }
 
-    private async FetchWithTimeout(url: string, method: string, headers: Record<string, string>, body?: unknown): Promise<Response> {
+    private async NimbleFetchWithTimeout(url: string, method: string, headers: Record<string, string>, body?: unknown): Promise<Response> {
         const controller = new AbortController();
         const tid = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
         try {
@@ -899,11 +898,11 @@ export class NimbleAMSConnector extends BaseRESTIntegrationConnector {
     }
 
     private async Throttle(): Promise<void> {
-        const elapsed = Date.now() - this.lastRequestTime;
-        if (elapsed < MIN_REQUEST_INTERVAL_MS) await this.Sleep(MIN_REQUEST_INTERVAL_MS - elapsed);
+        const elapsed = Date.now() - this.nimbleLastRequestTime;
+        if (elapsed < MIN_REQUEST_INTERVAL_MS) await this.NimbleSleep(MIN_REQUEST_INTERVAL_MS - elapsed);
     }
 
-    private Sleep(ms: number): Promise<void> { return new Promise(resolve => setTimeout(resolve, ms)); }
+    private NimbleSleep(ms: number): Promise<void> { return new Promise(resolve => setTimeout(resolve, ms)); }
 }
 
 // Tree-shaking prevention — REQUIRED so @RegisterClass survives bundling.
