@@ -43,3 +43,12 @@ Also adds `DOOR_ROWS`, which reports each door's row count and the pagination ru
 — counts and flags only. A capped door is otherwise invisible: the walk consumes every parent it was
 given and truthfully reports `HasMore: false`, so a short door reads as a complete one. That is the
 shape of every bug in this path, and it is now visible from the run's own events.
+
+**5. The harvest resumed by the wrong thing.** Bounding the harvest by id count made `parentIDs` a
+prefix of the real parent set, and the walk then resumed by *parent* offset — so once the offset
+passed the number of ids that prefix could yield, the object emitted nothing, reported `HasMore`,
+and never advanced. The harvest cursor is now a **door-row** position (`detail:h<door>[:<id>]`):
+each call harvests a fresh window of door rows, and a window whose ids could not all be emitted in
+one call resumes at that same window rather than advancing past the remainder. An empty window
+advances the cursor instead of reporting the object exhausted — otherwise a 1,976-parent walk ends
+at door row 25.

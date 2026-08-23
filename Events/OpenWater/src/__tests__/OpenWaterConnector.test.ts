@@ -1094,7 +1094,7 @@ describe('OpenWaterConnector — a detail walk is bounded by the caller\'s batch
         expect(result.HasMore).toBe(false);
     });
 
-    it('the harvest stops collecting ids once the batch is covered (Media: one call per door row)', async () => {
+    it('a harvest window is bounded by DOOR ROWS, and an unfinished window resumes at its own id offset', async () => {
         const connector = new MockedOpenWaterConnector();
         connector.AddObject(
             io({
@@ -1128,8 +1128,15 @@ describe('OpenWaterConnector — a detail walk is bounded by the caller\'s batch
 
         expect(result.Records).toHaveLength(1);
         expect(result.HasMore).toBe(true);
-        // Harvesting stopped as soon as it had enough ids: the later applications were untouched.
-        expect(connector.Requests.some(r => r.url.includes('/v2/Applications/204'))).toBe(false);
+        // The window is not finished, so the cursor keeps the window's own start and records how
+        // many of its ids were emitted. Advancing the door offset here is what dropped records.
+        expect(result.NextCursor).toBe('detail:h0:1');
+
+        // Resuming rebuilds the same window and continues at that id — nothing is skipped, and the
+        // door offset only moves once every id from the window has been emitted.
+        const next = await connector.FetchChanges(fetchCtx('Media', { BatchSize: 1, CurrentCursor: result.NextCursor }));
+        expect(next.Records).toHaveLength(1);
+        expect(next.Records[0].ExternalID).not.toBe(result.Records[0].ExternalID);
     });
 });
 
@@ -1565,5 +1572,99 @@ describe('OpenWaterConnector — the walk bounds vendor CALLS, not only records 
 
         expect(result.Records.map(r => r.ExternalID)).toEqual(['849|55']);
         expect(result.HasMore).toBe(false);
+    });
+});
+
+describe('OpenWaterConnector — the harvest yields on the clock, and an empty window is not an empty object', () => {
+    /** `count` applications, only the LAST of which carries a media id. */
+    function sparseHarvest(connector: MockedOpenWaterConnector, count: number): number[] {
+        const appIDs = Array.from({ length: count }, (_, i) => 900 + i);
+        connector.AddObject(
+            io({
+                ID: 'o-media4', Name: 'Media', APIPath: '/v2/Media/{mediaId}',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications',
+                    parentSource: 'detail-harvest',
+                    harvestDetailPath: '/v2/Applications/{applicationId}', harvestDetailParam: 'applicationId',
+                    harvestSegments: ['roundSubmissions[]', 'submissionFieldValues[]'], harvestIdKey: 'mediaId',
+                    entryPath: '/v2/Media/{mediaId}', parentParamName: 'mediaId',
+                    extractionMode: 'detail-object',
+                } }),
+            }),
+            [{ Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            ...appIDs.map(id => ({
+                match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [{
+                    submissionFieldValues: id === appIDs[appIDs.length - 1] ? [{ mediaId: 7777 }] : [{ label: 'text' }],
+                }] }, Headers: {} },
+            })),
+            { match: '/v2/Media/7777', response: { Status: 200, Body: { url: 'https://cdn.test/x' }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: appIDs.map(id => ({ id })) }, Headers: {} } },
+        ];
+        return appIDs;
+    }
+
+    it('a window that yields no ids still advances the cursor instead of declaring the object empty', async () => {
+        // The trap: an empty window looks exactly like an exhausted object. Reporting ZERO_PARENTS
+        // and HasMore:false here ends a 1,976-parent walk at door row 25.
+        const connector = new MockedOpenWaterConnector();
+        sparseHarvest(connector, 60);
+
+        const first = await connector.FetchChanges(fetchCtx('Media'));
+
+        expect(first.Records).toHaveLength(0);
+        expect(first.HasMore).toBe(true);
+        expect(first.NextCursor).toBe('detail:h25');
+        // And it did NOT read past its window.
+        expect(connector.Requests.some(r => r.url.includes('/v2/Applications/950'))).toBe(false);
+    });
+
+    it('driven to the end, the sparse id is still found', async () => {
+        const connector = new MockedOpenWaterConnector();
+        sparseHarvest(connector, 60);
+
+        const seen: string[] = [];
+        let cursor: string | undefined;
+        for (let call = 0; call < 12; call++) {
+            const r = await connector.FetchChanges(fetchCtx('Media', { CurrentCursor: cursor }));
+            seen.push(...r.Records.map(x => x.ExternalID));
+            if (!r.HasMore) break;
+            cursor = r.NextCursor;
+        }
+
+        expect(seen).toEqual(['7777']);
+    });
+
+    it('the walk stops on the clock even when the door-row ceiling has not been reached', async () => {
+        // Counts are a proxy; the engine kills the batch at 30s and keeps nothing. Make each vendor
+        // call cost time and assert the walk hands back a cursor rather than running past the kill.
+        class SlowConnector extends MockedOpenWaterConnector {
+            public Now = 1_000_000;
+            protected override async MakeHTTPRequest(
+                auth: RESTAuthContext, url: string, method: string,
+                headers: Record<string, string>, body?: unknown
+            ): Promise<RESTResponse> {
+                this.Now += 4_000;   // 4s per vendor call: the 18s budget is spent after ~5
+                return super.MakeHTTPRequest(auth, url, method, headers, body);
+            }
+        }
+        const connector = new SlowConnector();
+        sparseHarvest(connector, 60);
+        const spy = vi.spyOn(Date, 'now').mockImplementation(() => connector.Now);
+        try {
+            const result = await connector.FetchChanges(fetchCtx('Media'));
+
+            expect(result.HasMore).toBe(true);
+            expect(result.NextCursor).toMatch(/^detail:h\d+/);
+            // Fewer door rows than the 25-row ceiling were read, because time ran out first.
+            const doorDetails = connector.Requests.filter(r => /\/v2\/Applications\/\d+/.test(r.url));
+            expect(doorDetails.length).toBeGreaterThan(0);
+            expect(doorDetails.length).toBeLessThan(25);
+        } finally {
+            spy.mockRestore();
+        }
     });
 });

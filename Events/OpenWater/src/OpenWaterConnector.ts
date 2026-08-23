@@ -144,6 +144,34 @@ const DOOR_CACHE_MAX_ENTRIES = 20;
  * engine simply calls again — the same resumability that already existed for the record budget.
  */
 const MAX_PARENTS_PER_CALL = 100;
+/**
+ * Door rows harvested in ONE call, and the wall-clock the whole walk gets before it yields.
+ *
+ * A count is only ever a PROXY for the thing that actually kills the batch, which is the engine's
+ * 30s `FetchChanges` timeout — and on timeout the batch is discarded entirely. A harvest costs two
+ * requests per door row (the parent detail, then each id's own entry path), and OpenWater is rate
+ * limited to 3/sec, so 100 door rows is ~60s of pure waiting: measured live as
+ * `Operation 'FetchChanges(Media)' timed out after 30000ms`, every batch, forever.
+ *
+ * So the walk is bounded by TIME as well, checked between requests, and yields its cursor when the
+ * budget is spent. The counts stay as ceilings; the clock is what makes the batch land.
+ */
+const HARVEST_DOORS_PER_CALL = 25;
+const WALK_TIME_BUDGET_MS = 18_000;
+/**
+ * Harvest-mode cursor: `detail:h<doorOffset>[:<idOffset>]`.
+ *
+ * Resuming a harvest by PARENT offset does not work, and fails in the worst way — silently. The
+ * harvest re-walks door rows from the start on every call and collects ids into a prefix; once the
+ * offset passes the number of ids that prefix can yield, `parentIDs.slice(startAt)` is empty, so
+ * the object emits nothing, reports HasMore, and never advances.
+ *
+ * The offset is therefore a DOOR-ROW position: each call harvests a fresh window of door rows and
+ * every id it finds is new work. `idOffset` covers the other half — a window whose ids could not
+ * all be emitted inside one call (record budget or clock) resumes at the same window and skips the
+ * ids already emitted, rather than advancing past them and dropping the remainder.
+ */
+const HARVEST_CURSOR_PREFIX = 'detail:h';
 
 interface AccessPath {
     /** The door object name (e.g. "Program", "Fund"). */
@@ -1204,12 +1232,30 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
          * run cheap to resume).
          */
         const budget = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : 10_000;
-        const startAt = (() => {
+        const cursorOffset = (prefix: string): number => {
             const c = ctx.CurrentCursor;
-            if (!c || !String(c).startsWith(DETAIL_WALK_CURSOR_PREFIX)) return 0;
-            const n = Number(String(c).slice(DETAIL_WALK_CURSOR_PREFIX.length));
+            if (!c || !String(c).startsWith(prefix)) return 0;
+            const n = Number(String(c).slice(prefix.length));
             return Number.isFinite(n) && n > 0 ? n : 0;
+        };
+        const harvestMode = accessPath.parentSource === 'detail-harvest';
+        // Harvest mode counts DOOR ROWS consumed (plus ids already emitted from the window it is
+        // resuming into); every other mode counts parents consumed.
+        const harvestCursor = (() => {
+            const c = String(ctx.CurrentCursor ?? '');
+            if (!harvestMode || !c.startsWith(HARVEST_CURSOR_PREFIX)) return { door: 0, id: 0 };
+            const [d, i] = c.slice(HARVEST_CURSOR_PREFIX.length).split(':');
+            const door = Number(d), id = Number(i);
+            return {
+                door: Number.isFinite(door) && door > 0 ? door : 0,
+                id: Number.isFinite(id) && id > 0 ? id : 0,
+            };
         })();
+        const harvestStartAt = harvestCursor.door;
+        const startAt = harvestMode ? harvestCursor.id : cursorOffset(DETAIL_WALK_CURSOR_PREFIX);
+        // Between-request wall clock. The engine kills the batch at 30s and keeps nothing, so the
+        // walk stops itself with time to spare and comes back with a cursor.
+        const deadline = Date.now() + WALK_TIME_BUDGET_MS;
         let parentIDs: string[];
         // Set when harvesting stopped early: `parentIDs` is then a PREFIX of the real parent set,
         // so its length must NOT be read as the total (doing so reported HasMore:false with door
@@ -1217,19 +1263,25 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         let harvestTruncated = false;
         // Observed key names/types from the first harvested detail — see HARVEST_SHAPE.
         let harvestShape: string | null = null;
-        if (accessPath.parentSource === 'detail-harvest') {
+        // Door rows consumed by this call's harvest window (harvest mode only).
+        let doorAt = harvestStartAt;
+        let doorTotal = 0;
+        if (harvestMode) {
             const doorIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: [] });
+            doorTotal = doorIDs.length;
+            // A WINDOW of door rows, not a prefix: every id found here is work this call will do,
+            // and the cursor advances past the window whether or not it yielded any ids.
             const harvested = new Set<string>();
-            // Harvesting is itself one call per door row, so it stops as soon as it has enough
-            // ids to satisfy this batch (offset + budget). Ids are collected in door order, so
-            // the same prefix is produced on every call and the offset stays meaningful.
-            const needed = startAt + budget;
             let doorsWalked = 0;
-            for (const doorID of doorIDs) {
-                if (harvested.size >= needed) { harvestTruncated = true; break; }
-                // Same reason as the parent loop: harvesting is one vendor call per door row, and a
-                // door whose rows rarely carry the harvested id would otherwise walk all of them.
-                if (doorsWalked >= MAX_PARENTS_PER_CALL) { harvestTruncated = true; break; }
+            // A resumed partial window must be rebuilt identically — the ids are collected in door
+            // order and Set preserves insertion order, so slicing by idOffset is exact.
+            while (doorAt < doorIDs.length) {
+                if (doorsWalked >= HARVEST_DOORS_PER_CALL || Date.now() > deadline) {
+                    harvestTruncated = true;
+                    break;
+                }
+                const doorID = doorIDs[doorAt];
+                doorAt++;
                 doorsWalked++;
                 const hPath = this.InjectParentID(accessPath.harvestDetailPath ?? '', doorID, {
                     ...accessPath, parentParamName: accessPath.harvestDetailParam ?? 'id', parentParamIn: 'path' });
@@ -1245,6 +1297,15 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             parentIDs = [...harvested];
         } else {
             parentIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: accessPath.parentIdSegments ?? [] });
+        }
+        if (parentIDs.length === 0 && harvestMode && doorAt < doorTotal) {
+            // An empty WINDOW is not an empty object: these door rows carried no ids, the next ones
+            // may. Advance the cursor and come back rather than declaring the object finished.
+            return {
+                Records: [], HasMore: true,
+                NextCursor: `${HARVEST_CURSOR_PREFIX}${doorAt}`,
+                Warnings: warnings,
+            };
         }
         if (parentIDs.length === 0) {
             warnings.push({ Code: 'ZERO_PARENTS',
@@ -1276,8 +1337,10 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         let nestShape: string | null = null;
         for (const parentID of parentIDs.slice(startAt)) {
             if (out.length >= budget) break;
-            // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL.
+            // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL —
+            // and stop on the clock, which is what the engine actually kills the batch on.
             if (consumed - startAt >= MAX_PARENTS_PER_CALL) break;
+            if (Date.now() > deadline) break;
             consumed++;
             const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
             if (leafPath == null) continue;
@@ -1325,11 +1388,22 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                 });
             }
         }
-        const moreParents = consumed < parentIDs.length || harvestTruncated || !doorComplete;
+        // Harvest mode resumes by door row, with an id offset when this window was not finished.
+        // Finishing the window is what allows the door offset to advance: advancing it with ids
+        // left over is exactly how records get dropped without any error.
+        const windowFinished = consumed >= parentIDs.length;
+        const moreParents = harvestMode
+            ? (!windowFinished || doorAt < doorTotal || !doorComplete)
+            : (consumed < parentIDs.length || harvestTruncated || !doorComplete);
+        const nextCursor = harvestMode
+            ? (windowFinished
+                ? `${HARVEST_CURSOR_PREFIX}${doorAt}`
+                : `${HARVEST_CURSOR_PREFIX}${harvestStartAt}:${consumed}`)
+            : `${DETAIL_WALK_CURSOR_PREFIX}${consumed}`;
         return {
             Records: out,
             HasMore: moreParents,
-            NextCursor: moreParents ? `${DETAIL_WALK_CURSOR_PREFIX}${consumed}` : undefined,
+            NextCursor: moreParents ? nextCursor : undefined,
             Warnings: warnings,
         };
     }
