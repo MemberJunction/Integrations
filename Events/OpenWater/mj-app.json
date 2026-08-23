@@ -4,7 +4,7 @@
   "name": "connector-openwater",
   "displayName": "OpenWater Connector",
   "description": "OpenWater awards/grants/abstracts/fellowship platform connector — pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "license": "ISC",
   "icon": "fa-solid fa-trophy",
   "publisher": {
