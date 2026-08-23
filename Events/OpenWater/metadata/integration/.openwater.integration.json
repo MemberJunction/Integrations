@@ -4,7 +4,7 @@
       "Name": "OpenWater",
       "Icon": "fa-solid fa-trophy",
       "ClassName": "@memberjunction/connector-openwater",
-      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector — pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector \u2014 pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
       "ImportPath": "@memberjunction/connector-openwater",
       "NavigationBaseURL": "https://api.getopenwater.com",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API"
@@ -1454,7 +1454,7 @@
             "IntegrationID": "@parent:ID",
             "MetadataSource": "Declared",
             "Configuration": {
-              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId — generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
+              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId \u2014 generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
             }
           },
           "relatedEntities": {
@@ -3239,7 +3239,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3437,7 +3437,7 @@
                 "fields": {
                   "Name": "fundId",
                   "DisplayName": "Fund Id",
-                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3491,7 +3491,7 @@
                 "entryPath": "/v2/JudgeAssignments/AssignedToRound",
                 "parentParamIn": "query"
               },
-              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} — generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
+              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} \u2014 generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
             },
             "Status": "Active",
             "SupportsPagination": true,
@@ -3921,7 +3921,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4025,7 +4025,7 @@
                 "fields": {
                   "Name": "roundId",
                   "DisplayName": "Round Id",
-                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4180,7 +4180,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4358,7 +4358,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4413,7 +4413,7 @@
                 "parentParamName": "programId",
                 "entryPath": "/v2/Programs/{programId}/Scheduler/TimeSlots"
               },
-              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) — generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
+              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) \u2014 generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
               "LiteralUpdateReason": "Update UpdateRequest requires scheduleDayIds (array of int); read-side IOF is availableOnlyInDayIds. Generic flat body omits/misnames it -> 422. Connector overrides UpdateRecord to supply scheduleDayIds from availableOnlyInDayIds. Mirrors LiteralCreateReason."
             },
             "Status": "Active",
@@ -4559,7 +4559,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4769,7 +4769,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4866,7 +4866,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -5148,8 +5148,8 @@
           "fields": {
             "Name": "ApplicationFile",
             "DisplayName": "Application Files",
-            "Description": "OpenWater file-upload field values across an Application round submissions (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[] -> fieldValues[] (elements carrying a mediaId).",
-            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].fieldValues[])",
+            "Description": "OpenWater file-upload field values across an Application round submissions (embedded in the application detail). Access: Applications -> /v2/Applications/{applicationId} -> roundSubmissions[] -> submissionFieldValues[] (elements carrying a mediaId).",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].submissionFieldValues[])",
             "SupportsWrite": false,
             "SupportsIncrementalSync": false,
             "Configuration": {
@@ -5160,7 +5160,7 @@
                 "parentParamName": "applicationId",
                 "nestingSegments": [
                   "roundSubmissions[]",
-                  "fieldValues[]"
+                  "submissionFieldValues[]"
                 ],
                 "elementFilter": {
                   "key": "mediaId",
@@ -5274,7 +5274,7 @@
                 "harvestDetailParam": "applicationId",
                 "harvestSegments": [
                   "roundSubmissions[]",
-                  "fieldValues[]"
+                  "submissionFieldValues[]"
                 ],
                 "harvestIdKey": "mediaId",
                 "entryPath": "/v2/Media/{mediaId}",
@@ -5367,7 +5367,11 @@
                   "rounds[]",
                   "winnerTypes[]"
                 ],
-                "extractionMode": "embedded-array"
+                "extractionMode": "embedded-array",
+                "embeddedParentTag": {
+                  "sourceKey": "id",
+                  "asKey": "roundId"
+                }
               }
             },
             "Status": "Active",
@@ -5380,6 +5384,24 @@
             "MJ: Integration Object Fields": [
               {
                 "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "The Round this winner type is declared on (/v2/Programs rounds[].winnerTypes[]). Part of the key: the same winner type id is declared on more than one round, so keying on id alone collapsed distinct (round, type) pairs into a single row. Nullable: rows that predate the column keep NULL here until the next fullSync archives them.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsForeignKey": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                }
+              },
+              {
+                "fields": {
                   "Name": "id",
                   "DisplayName": "Id",
                   "Description": "Winner type id. Declared String - see V202608050910 for the sizing rationale.",
@@ -5387,7 +5409,7 @@
                   "IsRequired": true,
                   "IsReadOnly": false,
                   "IsPrimaryKey": true,
-                  "IsUniqueKey": true,
+                  "IsUniqueKey": false,
                   "Status": "Active",
                   "IntegrationObjectID": "@parent:ID",
                   "MetadataSource": "Declared"

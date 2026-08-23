@@ -117,6 +117,69 @@ const DETAIL_CACHE_MAX_ENTRIES = 500;
 
 /** Cursor namespace for a bounded, resumable detail walk: the parent offset consumed so far. */
 const DETAIL_WALK_CURSOR_PREFIX = 'detail:';
+/**
+ * Union cursor: `union:<memberIndex>|[c<innerCursor>|p<innerPage>]`.
+ *
+ * An object with alternativeAccessPaths is several walks unioned. Running them all inside one call
+ * meant each member's own resumption state had nowhere to live, so the union reported HasMore and
+ * named no continuation. The member index plus that member's own cursor is the whole state.
+ */
+const UNION_CURSOR_PREFIX = 'union:';
+/**
+ * Door enumerations cached per (integration, door, doorPath).
+ *
+ * The walk is resumable by parent offset, but every resumed call re-enumerated the door from page
+ * 0 — ~20 pages of 100 to list 1,976 Applications — before touching a single parent. OpenWater
+ * rate-limits that: measured live, `HTTP 429 at /v2/Applications?pageIndex=4&pageSize=100`, and the
+ * call then blew the engine's 30s FetchChanges timeout with nothing kept. Bounding parents per call
+ * cannot help, because the cost is paid before the parent loop runs.
+ *
+ * Totara already solves this the same way ("Parent-id lists per connection+parent function, so a
+ * resumed parent walk does not re-read them"). Enumerate once, walk in bounded batches.
+ */
+const DOOR_CACHE_MAX_ENTRIES = 20;
+/**
+ * Parent details walked in ONE FetchChanges call before the walk yields with a cursor.
+ *
+ * The record budget (ctx.BatchSize, engine default 200) bounds records EMITTED, not vendor calls
+ * made. A sparse child — most Applications carry no files — never reaches that budget, so the walk
+ * kept going until the parent set was exhausted: ~1,976 detail requests in one call, well past the
+ * engine's 30s FetchChanges timeout, and on timeout the whole batch is discarded. Measured live the
+ * moment the door began paging properly: ApplicationFile, Media and ApplicationRoundSubmission all
+ * died with "Operation 'FetchChanges(X)' timed out after 30000ms".
+ *
+ * Bounding the WORK as well as the output lets each call finish and hand back a cursor, so the
+ * engine simply calls again — the same resumability that already existed for the record budget.
+ */
+const MAX_PARENTS_PER_CALL = 100;
+/**
+ * Door rows harvested in ONE call, and the wall-clock the whole walk gets before it yields.
+ *
+ * A count is only ever a PROXY for the thing that actually kills the batch, which is the engine's
+ * 30s `FetchChanges` timeout — and on timeout the batch is discarded entirely. A harvest costs two
+ * requests per door row (the parent detail, then each id's own entry path), and OpenWater is rate
+ * limited to 3/sec, so 100 door rows is ~60s of pure waiting: measured live as
+ * `Operation 'FetchChanges(Media)' timed out after 30000ms`, every batch, forever.
+ *
+ * So the walk is bounded by TIME as well, checked between requests, and yields its cursor when the
+ * budget is spent. The counts stay as ceilings; the clock is what makes the batch land.
+ */
+const HARVEST_DOORS_PER_CALL = 25;
+const WALK_TIME_BUDGET_MS = 18_000;
+/**
+ * Harvest-mode cursor: `detail:h<doorOffset>[:<idOffset>]`.
+ *
+ * Resuming a harvest by PARENT offset does not work, and fails in the worst way — silently. The
+ * harvest re-walks door rows from the start on every call and collects ids into a prefix; once the
+ * offset passes the number of ids that prefix can yield, `parentIDs.slice(startAt)` is empty, so
+ * the object emits nothing, reports HasMore, and never advances.
+ *
+ * The offset is therefore a DOOR-ROW position: each call harvests a fresh window of door rows and
+ * every id it finds is new work. `idOffset` covers the other half — a window whose ids could not
+ * all be emitted inside one call (record budget or clock) resumes at the same window and skips the
+ * ids already emitted, rather than advancing past them and dropping the remainder.
+ */
+const HARVEST_CURSOR_PREFIX = 'detail:h';
 
 interface AccessPath {
     /** The door object name (e.g. "Program", "Fund"). */
@@ -152,6 +215,11 @@ interface AccessPath {
     harvestDetailParam?: string;
     /** detail-harvest: segments walked over the detail to the elements carrying the harvested id. */
     harvestSegments?: string[];
+    /**
+     * embedded-array only: copy the immediate parent's `sourceKey` onto each leaf as `asKey`, so a
+     * leaf that is only unique within its parent can be keyed on the pair. See ExtractEmbedded.
+     */
+    embeddedParentTag?: { sourceKey?: string; asKey?: string };
     /** detail-harvest: the key read off each walked element (default 'id') — e.g. 'mediaId'. */
     harvestIdKey?: string;
 }
@@ -453,20 +521,59 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         if (unionPaths.length === 0) {
             return this.FetchViaAccessPath(ctx, obj, accessPath);
         }
-        const results: FetchBatchResult[] = [];
-        for (const path of [accessPath, ...unionPaths]) {
-            results.push(await this.FetchViaAccessPath(ctx, obj, path));
-        }
-        const byID = new Map<string, ExternalRecord>();
-        for (const r of results) {
-            for (const rec of r.Records) {
-                if (!byID.has(rec.ExternalID)) byID.set(rec.ExternalID, rec);
+        /**
+         * ONE member per call, advancing through them on a cursor.
+         *
+         * The union used to run every member inside a single call and return
+         * `HasMore: results.some(...)` while DISCARDING each member's NextCursor and NextPage. Any
+         * member that is resumable — a bounded detail walk, or a leaf that hit the batch cap — then
+         * reported "there is more" with nothing saying where to continue from, so the engine either
+         * restarted that member from the beginning every call or dropped its remainder outright.
+         * That is invisible from the outside: the object simply lands short, or the run spins.
+         *
+         * Walking one member at a time keeps each member's own resumption state intact. Records are
+         * no longer de-duplicated ACROSS members inside one call, which does not matter — members
+         * are unioned by primary key at the write, so a record two paths both produce is upserted
+         * once either way.
+         */
+        const paths = [accessPath, ...unionPaths];
+        const cur = String(ctx.CurrentCursor ?? '');
+        let idx = 0;
+        let innerCursor: string | undefined;
+        let innerPage: number | undefined;
+        if (cur.startsWith(UNION_CURSOR_PREFIX)) {
+            const body = cur.slice(UNION_CURSOR_PREFIX.length);
+            const bar = body.indexOf('|');
+            const i = Number(bar < 0 ? body : body.slice(0, bar));
+            if (Number.isFinite(i) && i > 0) idx = Math.min(i, paths.length - 1);
+            const inner = bar < 0 ? '' : body.slice(bar + 1);
+            if (inner.startsWith('c')) innerCursor = inner.slice(1);
+            else if (inner.startsWith('p')) {
+                const pg = Number(inner.slice(1));
+                if (Number.isFinite(pg) && pg > 0) innerPage = pg;
             }
         }
+        const memberCtx = { ...ctx, CurrentCursor: innerCursor ?? null,
+                            CurrentPage: innerPage ?? ctx.CurrentPage } as FetchContext;
+        const r = await this.FetchViaAccessPath(memberCtx, obj, paths[idx]);
+
+        const memberMore = !!r.HasMore;
+        const nextIdx = memberMore ? idx : idx + 1;
+        const nextInner = memberMore
+            ? (r.NextCursor != null ? `c${r.NextCursor}`
+               : r.NextPage != null ? `p${r.NextPage}` : '')
+            : '';
+        // A member that claims HasMore but names no continuation would spin forever; treat it as
+        // finished and move on rather than re-reading it until the run is killed.
+        const memberResumable = memberMore && nextInner !== '';
+        const advanceTo = memberResumable ? idx : idx + 1;
+        const more = memberResumable || advanceTo < paths.length;
         return {
-            Records: [...byID.values()],
-            HasMore: results.some(r => r.HasMore),
-            Warnings: results.flatMap(r => r.Warnings ?? []),
+            Records: r.Records,
+            HasMore: more,
+            NextCursor: more ? `${UNION_CURSOR_PREFIX}${advanceTo}|${memberResumable ? nextInner : ''}` : undefined,
+            NewWatermarkValue: r.NewWatermarkValue,
+            Warnings: r.Warnings,
         };
     }
 
@@ -726,7 +833,54 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         const warnings: FetchWarning[] = [];
 
         // Pull the door collection (paginated) and descend to the parent leaf values + the door rows.
-        const doorRows = await this.FetchDoorRows(auth, baseURL, accessPath.doorPath, obj);
+        // Page the door by the DOOR's own rules, not the child's — see FetchDoorRows.
+        const doorObj = this.ResolveDoorObject(ctx, accessPath, obj);
+        // A resumed call reuses the door enumeration; a fresh walk (no cursor) re-reads it, so a new
+        // sync always sees new parents. Keyed by door + path, so objects sharing a door share the read.
+        const doorKey = `${ctx.CompanyIntegration.IntegrationID}|${accessPath.door}|${accessPath.doorPath}`;
+        let doorRows = ctx.CurrentCursor ? this.doorRowCache.get(doorKey) : undefined;
+        let doorComplete = doorRows !== undefined; // a cached enumeration is only ever a complete one
+        if (!doorRows) {
+            const door = await this.FetchDoorRows(auth, baseURL, accessPath.doorPath, doorObj, warnings);
+            doorRows = door.records;
+            doorComplete = door.complete;
+            // NEVER cache a truncated enumeration: it would be reused as the whole parent set and
+            // the walk would report success having seen a fraction of it.
+            if (doorComplete) {
+                this.doorRowCache.set(doorKey, doorRows);
+                while (this.doorRowCache.size > DOOR_CACHE_MAX_ENTRIES) {
+                    const oldest = this.doorRowCache.keys().next();
+                    if (oldest.done) break;
+                    this.doorRowCache.delete(oldest.value);
+                }
+            } else {
+                this.doorRowCache.delete(doorKey);
+                warnings.push({
+                    Code: 'DOOR_TRUNCATED',
+                    Message: `"${obj.Name}" door "${accessPath.door}" enumeration was cut short at`
+                        + ` ${doorRows.length} row(s); not cached, and the object stays incomplete so`
+                        + ` the next run re-reads it rather than treating this as the whole parent set.`,
+                    Data: { object: obj.Name, door: accessPath.door, doorRows: doorRows.length },
+                });
+            }
+        }
+        // A capped door is invisible downstream: the walk consumes every parent it was given and
+        // reports HasMore:false truthfully, so a short door reads as a complete one. Record what the
+        // door produced and under which pagination rules — counts and flags only, never data.
+        const doorPaged = !!doorObj.SupportsPagination && doorObj.PaginationType !== 'None';
+        warnings.push({
+            Code: 'DOOR_ROWS',
+            Message: `"${obj.Name}" door "${accessPath.door}" returned ${doorRows.length} row(s)`
+                + ` (paging ${doorPaged ? 'ON' : 'OFF'}, type ${doorObj.PaginationType ?? 'null'},`
+                + ` declared page size ${doorObj.DefaultPageSize ?? 'null'}).`,
+            Data: {
+                object: obj.Name, door: accessPath.door, doorRows: doorRows.length,
+                doorPaginated: doorPaged,
+                doorPaginationType: doorObj.PaginationType ?? null,
+                doorDeclaredPageSize: doorObj.DefaultPageSize ?? null,
+                doorObjectResolved: doorObj.Name,
+            },
+        });
         if (doorRows.length === 0) {
             warnings.push({
                 Code: 'ZERO_PARENTS',
@@ -738,7 +892,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
 
         // embedded-array: records are already inside the door payload (e.g. Program.rounds[]).
         if (accessPath.extractionMode === 'embedded-array') {
-            const records = this.ExtractEmbedded(doorRows, accessPath.nestingSegments ?? []);
+            const records = this.ExtractEmbedded(doorRows, accessPath.nestingSegments ?? [],
+                accessPath.embeddedParentTag);
             if (records.length === 0) {
                 warnings.push({
                     Code: 'ZERO_LEAVES',
@@ -750,7 +905,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             }
             return {
                 Records: records.map(r => this.BuildExternalRecord(r, obj, fields, pkFieldNames)),
-                HasMore: false,
+                // A truncated door enumeration is not a finished object — see DOOR_TRUNCATED.
+                HasMore: !doorComplete,
                 Warnings: warnings,
             };
         }
@@ -759,7 +915,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         // response rather than a paginated list leaf — /v2/Applications/{id} carries
         // roundSubmissions[] and the file-upload field values; /v2/Media/{id} IS the record.
         if (accessPath.extractionMode === 'detail-embedded' || accessPath.extractionMode === 'detail-object') {
-            return this.FetchViaDetailWalk(ctx, obj, accessPath, auth, baseURL, doorRows, fields, pkFieldNames, warnings);
+            return this.FetchViaDetailWalk(ctx, obj, accessPath, auth, baseURL, doorRows, fields,
+                pkFieldNames, warnings, doorComplete);
         }
         const parentIDs = this.DescendToParentIDs(doorRows, accessPath);
         if (parentIDs.length === 0) {
@@ -871,14 +1028,58 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     }
 
     /** Fetch all pages of a door collection (used to enumerate parent ids / embedded children). */
+    /**
+     * The IntegrationObject whose pagination rules govern the DOOR request.
+     *
+     * This used to be the child object, and that silently capped every detail walk at one page of
+     * parents. `PaginateLeaf` decides whether to page at all from
+     * `obj.SupportsPagination && obj.PaginationType !== 'None'` — and a walked child declares
+     * neither, because the child is not itself a paged collection (ApplicationFile's APIPath is
+     * "embedded in /v2/Applications/{applicationId} …"). So the door URL went out with no
+     * pageIndex/pageSize and OpenWater answered with its default page.
+     *
+     * Measured on a live tenant 2026-08-22, against 1,976 Applications:
+     *   ApplicationRoundSubmission  10 parents -> 10 records, hasMore:false   (target 1,935)
+     *   ApplicationFile             10 parents -> 0 records  (ZERO_LEAVES)    (target 4,001)
+     * and ApplicationWinnerType was CORRECT at 74 only because its door is /v2/Programs, which has
+     * 5 rows and therefore fits inside one default page. The walk reported HasMore:false honestly:
+     * it really had consumed every parent it was given. It was given ten.
+     *
+     * Falls back to the child when the door has no catalog row, which keeps a misdeclared
+     * AccessPath behaving as before rather than throwing mid-sync.
+     */
+    private ResolveDoorObject(
+        ctx: FetchContext,
+        accessPath: AccessPath,
+        child: MJIntegrationObjectEntity
+    ): MJIntegrationObjectEntity {
+        try {
+            return this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, accessPath.door);
+        } catch {
+            return child;
+        }
+    }
+
+    /**
+     * Enumerate the door.
+     *
+     * Returns `complete: false` when the enumeration was cut short — currently only by a rate limit
+     * (see RATE_LIMITED_PARTIAL). That flag MUST reach the caller: a truncated door returned as if
+     * whole is cached as whole, and the walk then finishes at `consumed === parentIDs.length` having
+     * seen a fraction of the parents, reporting success. That is the same shape as every other bug
+     * in this path — an incomplete read that looks authoritative — so the truncation is carried,
+     * never swallowed.
+     */
     private async FetchDoorRows(
         auth: OpenWaterAuthContext,
         baseURL: string,
         doorPath: string,
-        obj: MJIntegrationObjectEntity
-    ): Promise<Record<string, unknown>[]> {
-        const { records } = await this.PaginateLeaf(auth, baseURL, doorPath, obj, undefined, undefined, '', true);
-        return records;
+        doorObj: MJIntegrationObjectEntity,
+        warnings?: FetchWarning[]
+    ): Promise<{ records: Record<string, unknown>[]; complete: boolean }> {
+        const { records, hasMore } = await this.PaginateLeaf(
+            auth, baseURL, doorPath, doorObj, undefined, undefined, '', true, warnings);
+        return { records, complete: !hasMore };
     }
 
     /**
@@ -955,6 +1156,21 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                     return { records: all, newWatermark: undefined, hasMore: false, nextPage: page,
                              rejection: { status: response.Status, url, vendor: vendor ?? null, response } };
                 }
+                // A THROTTLE partway through an enumeration is not the object failing. Measured
+                // live: `HTTP 429 at /v2/Applications?pageIndex=4&pageSize=100` threw, which
+                // discarded the four pages already in hand and took the object to zero. Keep what
+                // the vendor did give and report the truncation — the walk is resumable, so the
+                // next call continues instead of starting over with nothing.
+                if (response.Status === 429 && all.length > 0) {
+                    warnings?.push({
+                        Code: 'RATE_LIMITED_PARTIAL',
+                        Message: `"${obj.Name}" was rate-limited at ${url} after ${all.length} record(s)`
+                            + ` over ${page + 1} page(s); keeping them and resuming later rather than`
+                            + ` discarding the enumeration.`,
+                        Data: { object: obj.Name, url, status: 429, recordsKept: all.length, pages: page + 1 },
+                    });
+                    return { records: all, newWatermark, hasMore: true, nextPage: page };
+                }
                 throw this.HttpError(
                     `OpenWater fetch failed for "${obj.Name}": HTTP ${response.Status} at ${url}`
                         + (vendor ? ` — ${vendor}` : ''),
@@ -993,6 +1209,9 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     /** Reads and validates AccessPath from the IO's Configuration JSON; null when absent. */
     /** Short-lived cache for detail responses; see FetchDetailCached. */
     private detailCache: Map<string, { at: number; body: unknown }> = new Map();
+
+    /** Door rows per (integration|door|doorPath) — see DOOR_CACHE_MAX_ENTRIES. */
+    private doorRowCache: Map<string, Record<string, unknown>[]> = new Map();
 
     /**
      * Fetch a DETAIL response (one object, not a list) with a short-lived per-connector cache.
@@ -1048,7 +1267,7 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     private async FetchViaDetailWalk(ctx: FetchContext, obj: MJIntegrationObjectEntity, accessPath: AccessPath,
         auth: OpenWaterAuthContext, baseURL: string, doorRows: Record<string, unknown>[],
         fields: MJIntegrationObjectFieldEntity[], pkFieldNames: string[],
-        warnings: FetchWarning[]): Promise<FetchBatchResult> {
+        warnings: FetchWarning[], doorComplete = true): Promise<FetchBatchResult> {
         /**
          * A detail walk is one HTTP call PER PARENT — for this tenant that is ~2,000 application
          * details, and Media additionally resolves ~4,000 /v2/Media/{id} records. Doing all of
@@ -1066,31 +1285,63 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
          * run cheap to resume).
          */
         const budget = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : 10_000;
-        const startAt = (() => {
+        const cursorOffset = (prefix: string): number => {
             const c = ctx.CurrentCursor;
-            if (!c || !String(c).startsWith(DETAIL_WALK_CURSOR_PREFIX)) return 0;
-            const n = Number(String(c).slice(DETAIL_WALK_CURSOR_PREFIX.length));
+            if (!c || !String(c).startsWith(prefix)) return 0;
+            const n = Number(String(c).slice(prefix.length));
             return Number.isFinite(n) && n > 0 ? n : 0;
+        };
+        const harvestMode = accessPath.parentSource === 'detail-harvest';
+        // Harvest mode counts DOOR ROWS consumed (plus ids already emitted from the window it is
+        // resuming into); every other mode counts parents consumed.
+        const harvestCursor = (() => {
+            const c = String(ctx.CurrentCursor ?? '');
+            if (!harvestMode || !c.startsWith(HARVEST_CURSOR_PREFIX)) return { door: 0, id: 0 };
+            const [d, i] = c.slice(HARVEST_CURSOR_PREFIX.length).split(':');
+            const door = Number(d), id = Number(i);
+            return {
+                door: Number.isFinite(door) && door > 0 ? door : 0,
+                id: Number.isFinite(id) && id > 0 ? id : 0,
+            };
         })();
+        const harvestStartAt = harvestCursor.door;
+        const startAt = harvestMode ? harvestCursor.id : cursorOffset(DETAIL_WALK_CURSOR_PREFIX);
+        // Between-request wall clock. The engine kills the batch at 30s and keeps nothing, so the
+        // walk stops itself with time to spare and comes back with a cursor.
+        const deadline = Date.now() + WALK_TIME_BUDGET_MS;
         let parentIDs: string[];
         // Set when harvesting stopped early: `parentIDs` is then a PREFIX of the real parent set,
         // so its length must NOT be read as the total (doing so reported HasMore:false with door
         // rows still un-harvested, which would have silently dropped every later record).
         let harvestTruncated = false;
-        if (accessPath.parentSource === 'detail-harvest') {
+        // Observed key names/types from the first harvested detail — see HARVEST_SHAPE.
+        let harvestShape: string | null = null;
+        // Door rows consumed by this call's harvest window (harvest mode only).
+        let doorAt = harvestStartAt;
+        let doorTotal = 0;
+        if (harvestMode) {
             const doorIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: [] });
+            doorTotal = doorIDs.length;
+            // A WINDOW of door rows, not a prefix: every id found here is work this call will do,
+            // and the cursor advances past the window whether or not it yielded any ids.
             const harvested = new Set<string>();
-            // Harvesting is itself one call per door row, so it stops as soon as it has enough
-            // ids to satisfy this batch (offset + budget). Ids are collected in door order, so
-            // the same prefix is produced on every call and the offset stays meaningful.
-            const needed = startAt + budget;
-            for (const doorID of doorIDs) {
-                if (harvested.size >= needed) { harvestTruncated = true; break; }
+            let doorsWalked = 0;
+            // A resumed partial window must be rebuilt identically — the ids are collected in door
+            // order and Set preserves insertion order, so slicing by idOffset is exact.
+            while (doorAt < doorIDs.length) {
+                if (doorsWalked >= HARVEST_DOORS_PER_CALL || Date.now() > deadline) {
+                    harvestTruncated = true;
+                    break;
+                }
+                const doorID = doorIDs[doorAt];
+                doorAt++;
+                doorsWalked++;
                 const hPath = this.InjectParentID(accessPath.harvestDetailPath ?? '', doorID, {
                     ...accessPath, parentParamName: accessPath.harvestDetailParam ?? 'id', parentParamIn: 'path' });
                 if (hPath == null) continue;
                 const detail = await this.FetchDetailCached(auth, baseURL, hPath, warnings);
                 if (!detail) continue;
+                if (harvestShape === null) harvestShape = this.ShapeAlong(detail, accessPath.harvestSegments ?? []);
                 for (const node of this.WalkSegments([detail], accessPath.harvestSegments ?? [])) {
                     const v = (node as Record<string, unknown>)?.[accessPath.harvestIdKey ?? 'id'];
                     if (v != null && String(v).length > 0) harvested.add(String(v));
@@ -1100,17 +1351,49 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         } else {
             parentIDs = this.DescendToParentIDs(doorRows, { ...accessPath, nestingSegments: accessPath.parentIdSegments ?? [] });
         }
+        if (parentIDs.length === 0 && harvestMode && doorAt < doorTotal) {
+            // An empty WINDOW is not an empty object: these door rows carried no ids, the next ones
+            // may. Advance the cursor and come back rather than declaring the object finished.
+            return {
+                Records: [], HasMore: true,
+                NextCursor: `${HARVEST_CURSOR_PREFIX}${doorAt}`,
+                Warnings: warnings,
+            };
+        }
         if (parentIDs.length === 0) {
             warnings.push({ Code: 'ZERO_PARENTS',
                 Message: `No parent ids for "${obj.Name}" via ${accessPath.door} (${accessPath.parentSource ?? 'door-ids'}).`,
                 Data: { door: accessPath.door, parentSource: accessPath.parentSource ?? 'door-ids' } });
+            // Say WHAT WAS THERE instead of only that nothing matched — a wrong declared path and a
+            // genuinely empty collection look identical from a zero, and need opposite responses.
+            if (harvestShape) {
+                warnings.push({
+                    Code: 'HARVEST_SHAPE',
+                    Message: `"${obj.Name}" harvest looked for "${accessPath.harvestIdKey ?? 'id'}" under`
+                        + ` ${(accessPath.harvestSegments ?? []).join('->') || '(root)'} of`
+                        + ` ${accessPath.harvestDetailPath ?? '(no detail path)'} and found none.`
+                        + ` Keys actually present — names and types only: ${harvestShape}`,
+                    Data: {
+                        object: obj.Name,
+                        harvestIdKey: accessPath.harvestIdKey ?? 'id',
+                        harvestSegments: accessPath.harvestSegments ?? [],
+                        observedShape: harvestShape,
+                    },
+                });
+            }
             return { Records: [], HasMore: false, Warnings: warnings };
         }
         const out: ExternalRecord[] = [];
         const filt = accessPath.elementFilter;
         let consumed = startAt;
+        // The nesting walk's counterpart to harvestShape: what the first parent detail actually held.
+        let nestShape: string | null = null;
         for (const parentID of parentIDs.slice(startAt)) {
             if (out.length >= budget) break;
+            // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL —
+            // and stop on the clock, which is what the engine actually kills the batch on.
+            if (consumed - startAt >= MAX_PARENTS_PER_CALL) break;
+            if (Date.now() > deadline) break;
             consumed++;
             const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
             if (leafPath == null) continue;
@@ -1122,6 +1405,7 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                     rec[accessPath.parentParamName] = parentID;
                 out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
             } else {
+                if (nestShape === null) nestShape = this.ShapeAlong(detail, accessPath.nestingSegments ?? []);
                 let elements = this.WalkSegments([detail], accessPath.nestingSegments ?? []) as Record<string, unknown>[];
                 if (filt && filt.key) {
                     elements = elements.filter(e => e && (filt.exists
@@ -1140,14 +1424,80 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             warnings.push({ Code: 'ZERO_LEAVES',
                 Message: `"${obj.Name}" walked ${parentIDs.length} parent detail(s) and extracted no records.`,
                 Data: { object: obj.Name, parents: parentIDs.length } });
+            // Same argument as HARVEST_SHAPE: a wrong declared segment and an empty collection both
+            // produce this zero, and only the observed key names separate them. ApplicationFile's
+            // ZERO_LEAVES was a misdeclared segment name for a full day without this.
+            if (nestShape) {
+                warnings.push({
+                    Code: 'NESTING_SHAPE',
+                    Message: `"${obj.Name}" descended ${(accessPath.nestingSegments ?? []).join('->') || '(root)'}`
+                        + ` of ${accessPath.entryPath} and found no entries.`
+                        + ` Keys actually present — names and types only: ${nestShape}`,
+                    Data: {
+                        object: obj.Name,
+                        nestingSegments: accessPath.nestingSegments ?? [],
+                        observedShape: nestShape,
+                    },
+                });
+            }
         }
-        const moreParents = consumed < parentIDs.length || harvestTruncated;
+        // Harvest mode resumes by door row, with an id offset when this window was not finished.
+        // Finishing the window is what allows the door offset to advance: advancing it with ids
+        // left over is exactly how records get dropped without any error.
+        const windowFinished = consumed >= parentIDs.length;
+        const moreParents = harvestMode
+            ? (!windowFinished || doorAt < doorTotal || !doorComplete)
+            : (consumed < parentIDs.length || harvestTruncated || !doorComplete);
+        const nextCursor = harvestMode
+            ? (windowFinished
+                ? `${HARVEST_CURSOR_PREFIX}${doorAt}`
+                : `${HARVEST_CURSOR_PREFIX}${harvestStartAt}:${consumed}`)
+            : `${DETAIL_WALK_CURSOR_PREFIX}${consumed}`;
         return {
             Records: out,
             HasMore: moreParents,
-            NextCursor: moreParents ? `${DETAIL_WALK_CURSOR_PREFIX}${consumed}` : undefined,
+            NextCursor: moreParents ? nextCursor : undefined,
             Warnings: warnings,
         };
+    }
+
+    /**
+     * When a harvest or a nesting walk finds nothing, "found nothing" is not a diagnosis: the path
+     * may be wrong, or the collection may genuinely be empty, and those need opposite responses.
+     * This reports the shape actually present so a declared AccessPath can be corrected against
+     * observed structure instead of vendor documentation — the same rule the catalog is held to
+     * ("provably know, not guessed"). Names and types only, capped, so no member data is emitted.
+     */
+    private static ShapeOf(node: unknown, cap = 40): string[] {
+        if (node == null || typeof node !== 'object') return [];
+        const src = Array.isArray(node) ? node[0] : node;
+        if (src == null || typeof src !== 'object') return [];
+        const out: string[] = [];
+        for (const [k, v] of Object.entries(src as Record<string, unknown>)) {
+            const t = v === null ? 'null'
+                : Array.isArray(v) ? `array[${v.length}]`
+                : typeof v === 'object' ? 'object'
+                : typeof v;
+            out.push(`${k}:${t}`);
+            if (out.length >= cap) break;
+        }
+        return out.sort();
+    }
+
+    /**
+     * The root's shape plus the shape at each declared segment that actually resolves — enough to
+     * correct a declared path against the payload, and nothing more. The segment whose braces come
+     * back empty is the one that does not exist.
+     */
+    private ShapeAlong(detail: unknown, segments: string[]): string {
+        const parts = [`root{${OpenWaterConnector.ShapeOf(detail).join(', ')}}`];
+        let cursor: unknown[] = [detail];
+        for (const seg of segments) {
+            cursor = this.WalkSegments(cursor as Record<string, unknown>[], [seg]);
+            parts.push(`${seg}{${OpenWaterConnector.ShapeOf(cursor[0]).join(', ')}}`);
+            if (cursor.length === 0) break;
+        }
+        return parts.join(' | ');
     }
 
     /** Additional full walks to union with the main AccessPath (empty when not declared). */
@@ -1232,8 +1582,39 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
     }
 
     /** For embedded-array access paths: emit the nested records directly from the door payload. */
-    private ExtractEmbedded(doorRows: Record<string, unknown>[], segments: string[]): Record<string, unknown>[] {
-        return this.WalkSegments(doorRows, segments);
+    /**
+     * embedded-array extraction, optionally tagging each leaf with its IMMEDIATE parent's id.
+     *
+     * Without the tag the walk keeps only leaves, so an element arrives with no idea which parent
+     * produced it — and for a leaf whose identity is only unique WITHIN its parent, that loses rows.
+     * ApplicationWinnerType is the case: a winner type is `{id, name}` declared on a round, the same
+     * type id can be declared on several rounds, and the key was `id` alone. 89 (round, type) pairs
+     * therefore collapsed to 74 distinct ids, and the round association was gone from the row.
+     *
+     * `embeddedParentTag: { sourceKey, asKey }` copies the parent's `sourceKey` onto each leaf as
+     * `asKey`, so the pair can be keyed and the row can say where it came from. Absent — the
+     * default — behaviour is exactly as before.
+     */
+    private ExtractEmbedded(doorRows: Record<string, unknown>[], segments: string[],
+        tag?: { sourceKey?: string; asKey?: string }): Record<string, unknown>[] {
+        if (!tag?.asKey) return this.WalkSegments(doorRows, segments);
+        const sourceKey = tag.sourceKey ?? 'id';
+        const asKey = tag.asKey;
+        // Walk to the parents (all but the last segment), then take each parent's leaves itself so
+        // the parent is still in hand when its children are collected.
+        const parents = this.WalkSegments(doorRows, segments.slice(0, -1));
+        const lastSeg = segments[segments.length - 1];
+        const out: Record<string, unknown>[] = [];
+        for (const parent of parents) {
+            const parentValue = parent[sourceKey];
+            for (const leaf of this.WalkSegments([parent], [lastSeg])) {
+                // Never overwrite a value the vendor itself supplied under that name.
+                out.push(leaf[asKey] == null && parentValue != null
+                    ? { ...leaf, [asKey]: parentValue }
+                    : leaf);
+            }
+        }
+        return out;
     }
 
     /**
