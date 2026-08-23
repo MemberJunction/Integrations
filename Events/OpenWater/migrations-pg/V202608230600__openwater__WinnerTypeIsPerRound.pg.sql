@@ -26,7 +26,7 @@ INSERT INTO "__mj"."IntegrationObjectField"
 SELECT '9C1E7B24-3F86-5A41-B7D2-58C0E1A4F933'::uuid, o."ID", 'roundId', 'Round Id',
        'The Round this winner type is declared on (/v2/Programs rounds[].winnerTypes[]). Part of the key: the same winner type id is declared on more than one round, so keying on id alone collapsed distinct (round, type) pairs into a single row.',
        'String', 50,
-       false, true, false, true, true,
+       true, true, false, true, false,
        p."ID", 0, 'Active', false, 'Declared'
 FROM "__mj"."Integration" i
 JOIN "__mj"."IntegrationObject" o ON o."IntegrationID" = i."ID" AND o."Name" = 'ApplicationWinnerType'

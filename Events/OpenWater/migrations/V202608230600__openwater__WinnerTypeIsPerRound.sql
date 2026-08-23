@@ -17,15 +17,17 @@
 -- Length 50 is explicit. A declared String with no Length lands NVARCHAR(MAX), which cannot carry
 -- an index — and with two key columns the pair must also stay inside the 900-byte index limit.
 --
+-- roundId is declared NULLABLE, which is deliberate. The rows a tenant already has predate the
+-- column, so adding it as NOT NULL would fail outright on a populated table — and a key component
+-- that is NULL only ever describes those legacy rows, every freshly walked row carries its round.
+-- The next fullSync archives them by delete-detection, so nothing has to be deleted by hand.
+--
 -- APPLYING THIS TO A TENANT THAT ALREADY HAS ROWS — the order matters:
---   1. run this migration (catalog only; nothing is dropped)
---   2. clear openwater.ApplicationWinnerType's existing rows, or run the object's next sync as a
---      fullSync. The 74 stored rows predate the column, so their roundId is NULL, and a key that
---      includes a NULL column cannot have its unique index built. This is the only destructive
---      step and it is recoverable in one sync: every row is re-fetched from /v2/Programs.
---   3. restart the API. The engine caches the IntegrationObject catalog at PROCESS START, so
+--   1. run this migration (catalog only; nothing is dropped, nothing is deleted)
+--   2. restart the API. The engine caches the IntegrationObject catalog at PROCESS START, so
 --      neither the new field nor the AccessPath change is visible to a run started before it.
---   4. sync. The row count becomes the number of (round, winnerType) pairs.
+--   3. run the object's next sync as a fullSync. The stale rows (roundId NULL) are archived by
+--      delete-detection and the row count becomes the number of (round, winnerType) pairs.
 
 -- ── 1. Declare roundId as part of the key ────────────────────────────────────────────────────────
 
@@ -35,8 +37,8 @@ INSERT INTO [__mj].IntegrationObjectField
      MetadataSource)
 SELECT '9C1E7B24-3F86-5A41-B7D2-58C0E1A4F933', o.ID, N'roundId', N'Round Id',
        N'The Round this winner type is declared on (/v2/Programs rounds[].winnerTypes[]). Part of the key: the same winner type id is declared on more than one round, so keying on id alone collapsed distinct (round, type) pairs into a single row.',
-       N'String', 50, 0, 1,
-       0, 1, 1, p.ID, 0, N'Active', 0,
+       N'String', 50, 1, 1,
+       0, 1, 0, p.ID, 0, N'Active', 0,
        N'Declared'
 FROM [__mj].Integration i
 JOIN [__mj].IntegrationObject o ON o.IntegrationID = i.ID AND o.Name = N'ApplicationWinnerType'

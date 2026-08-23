@@ -5386,10 +5386,10 @@
                 "fields": {
                   "Name": "roundId",
                   "DisplayName": "Round Id",
-                  "Description": "The Round this winner type is declared on (/v2/Programs rounds[].winnerTypes[]). Part of the key: the same winner type id is declared on more than one round, so keying on id alone collapsed distinct (round, type) pairs into a single row.",
+                  "Description": "The Round this winner type is declared on (/v2/Programs rounds[].winnerTypes[]). Part of the key: the same winner type id is declared on more than one round, so keying on id alone collapsed distinct (round, type) pairs into a single row. Nullable: rows that predate the column keep NULL here until the next fullSync archives them.",
                   "Type": "String",
                   "Length": 50,
-                  "IsRequired": true,
+                  "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": true,
                   "IsUniqueKey": false,
