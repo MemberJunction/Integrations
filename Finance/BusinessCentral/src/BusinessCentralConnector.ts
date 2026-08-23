@@ -1239,12 +1239,12 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
             : null;
         const merged: Record<string, unknown> = { ...(fromConfig ?? {}), ...(fromCredential ?? {}) };
 
-        const clientId = firstString(merged, ['ClientId', 'clientId', 'ClientID', 'client_id'])
+        const clientId = firstString(merged, ['ClientId', 'clientId', 'ClientID', 'client_id', 'azureClientId'])
             ?? companyIntegration.ClientID ?? '';
-        const clientSecret = firstString(merged, ['ClientSecret', 'clientSecret', 'client_secret'])
+        const clientSecret = firstString(merged, ['ClientSecret', 'clientSecret', 'client_secret', 'azureClientSecret'])
             ?? companyIntegration.ClientSecret ?? '';
         // §2.2 overload: the legacy CompanyIntegration.APIKey column carries the AZURE TENANT ID.
-        const tenantId = firstString(merged, ['TenantId', 'tenantId', 'TenantID', 'tenant_id', 'AzureTenantId'])
+        const tenantId = firstString(merged, ['TenantId', 'tenantId', 'TenantID', 'tenant_id', 'AzureTenantId', 'azureTenantId'])
             ?? companyIntegration.APIKey ?? '';
         // §2.2 overload: the legacy CompanyIntegration.ExternalSystemID column carries the BC COMPANY GUID.
         const companyId = firstString(merged, ['CompanyId', 'companyId', 'CompanyID', 'company_id', 'BusinessCentralCompanyId'])
