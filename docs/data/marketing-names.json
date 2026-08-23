@@ -273,6 +273,11 @@
       "section": "databases",
       "marketingDescription": "Microsoft SQL Server and Azure SQL, with schema discovered when you connect."
     },
+    "Platform/WordPress": {
+      "marketingDescription": "Posts, pages, media, site users and comments, plus store orders, products, customers and coupons.",
+      "generated": true,
+      "sourceHash": "9589a0d72a8fa2f7"
+    },
     "Platform/Zendesk": {
       "marketingName": "Zendesk",
       "section": "community",
