@@ -1,5 +1,122 @@
 # @memberjunction/connector-openwater
 
+## 1.3.6
+
+### Patch Changes
+
+- e5b989b: Make a detail walk survivable, and make its zeros say what was actually there
+
+  Once the door paged properly, three defects that the one-page cap had been hiding all surfaced in
+  the same run — and every one of them ended in a _successful_ batch that was wrong.
+
+  **1. The declared field-value segment did not exist.** `ApplicationFile` and `Media` descended
+  `roundSubmissions[] -> fieldValues[]`. The payload names that array `submissionFieldValues`. The
+  walk paged the door to 1,976 rows, fetched every parent detail, descended into a key that is absent,
+  and reported success with zero records: ApplicationFile 0 of 4,001, Media 0 of 4,001. The segment
+  was taken from vendor documentation rather than an observed response — the thing the catalog rule
+  ("provably know, not guessed") exists to prevent. Corrected in the metadata and in a delta
+  migration (`V202608230150`), so an already-seeded tenant is repaired rather than only new ones.
+
+  **2. A zero could not be told from a wrong path.** `ZERO_LEAVES`/`ZERO_PARENTS` said nothing
+  matched, which is the same message for "this tenant has no files" and "the declared key is
+  misspelled" — opposite problems. Both paths now attach the shape actually present at each declared
+  segment (`HARVEST_SHAPE`, `NESTING_SHAPE`): key **names and types only**, capped, so no member data
+  is ever emitted. That diagnostic is what identified defect 1, in one run.
+
+  **3. The walk bounded records emitted, not vendor calls made.** `ctx.BatchSize` (engine default 200) stops the walk when enough _records_ accumulate. A sparse child — most Applications carry no
+  files — never reaches it, so the walk kept going to the end of the parent set: ~1,976 detail
+  requests inside one `FetchChanges`, well past the engine's 30s timeout, and on timeout the entire
+  batch is discarded. Live, the moment the door began paging: ApplicationFile, Media and
+  ApplicationRoundSubmission all died with `Operation 'FetchChanges(X)' timed out after 30000ms`.
+  Parents (and harvest door rows) are now bounded at 100 per call and the walk yields its cursor, so
+  each call finishes and the engine simply calls again.
+
+  **4. Re-enumerating the door on every resumed batch drew a rate limit.** A resumed call re-read the
+  door from page 0 — ~20 pages of 100 — before touching a single parent; measured live as
+  `HTTP 429 at /v2/Applications?pageIndex=4&pageSize=100`, which then threw, discarding the four pages
+  already in hand and taking the object to zero. Door enumerations are now cached per
+  (integration, door, path) for resumed calls (a fresh walk still re-reads, so new parents appear),
+  a mid-enumeration 429 keeps the pages it has and reports `HasMore` (`RATE_LIMITED_PARTIAL`), and a
+  truncated enumeration is **never cached** and leaves the object incomplete (`DOOR_TRUNCATED`) so it
+  cannot be mistaken for the whole parent set.
+
+  Also adds `DOOR_ROWS`, which reports each door's row count and the pagination rules actually applied
+  — counts and flags only. A capped door is otherwise invisible: the walk consumes every parent it was
+  given and truthfully reports `HasMore: false`, so a short door reads as a complete one. That is the
+  shape of every bug in this path, and it is now visible from the run's own events.
+
+  **5. The harvest resumed by the wrong thing.** Bounding the harvest by id count made `parentIDs` a
+  prefix of the real parent set, and the walk then resumed by _parent_ offset — so once the offset
+  passed the number of ids that prefix could yield, the object emitted nothing, reported `HasMore`,
+  and never advanced. The harvest cursor is now a **door-row** position (`detail:h<door>[:<id>]`):
+  each call harvests a fresh window of door rows, and a window whose ids could not all be emitted in
+  one call resumes at that same window rather than advancing past the remainder. An empty window
+  advances the cursor instead of reporting the object exhausted — otherwise a 1,976-parent walk ends
+  at door row 25.
+
+  **6. The union discarded every member's resumption state.** An object with `alternativeAccessPaths`
+  is several walks unioned, and the union ran them all inside one call while returning
+  `HasMore: results.some(...)` — dropping each member's `NextCursor` and `NextPage`. Any resumable
+  member (a bounded detail walk, or a leaf that hit the batch cap) therefore said "there is more" while
+  naming no continuation, so the engine re-read that member from the start on every call or lost its
+  remainder. The union now walks ONE member per call on a `union:<i>|c<cursor>` cursor, so each member
+  keeps its own state; a member that claims `HasMore` with no continuation is treated as finished
+  rather than re-read forever. Cross-member de-duplication inside a call is no longer needed — members
+  are unioned by primary key at the write.
+
+  **7. An embedded leaf could not say which parent produced it.** `ApplicationWinnerType` reads
+  `/v2/Programs -> rounds[] -> winnerTypes[]`, where a winner type is `{id, name}` and the SAME type
+  id is declared on more than one round. The embedded-array walk kept only the leaf, so the round was
+  absent from the row and the object was keyed on `id` alone — distinct (round, type) pairs collapsed
+  into one row, 74 stored against a client target of 89. An AccessPath may now declare
+  `embeddedParentTag: { sourceKey, asKey }`, which copies the immediate parent's id onto each leaf
+  (never overwriting a value the vendor supplied under that name), and `roundId` is DECLARED as part
+  of the key in `V202608230600` — declared rather than discovered, because MJ will not let a
+  discovered field join the key of an object that already has a declared PK.
+
+- e5b989b: Page a detail walk's door by the DOOR object's rules, not the child's
+
+  `PaginateLeaf` decides whether to page from `obj.SupportsPagination && obj.PaginationType !== 'None'`.
+  The door fetch passed the **child** object, and a walked child declares neither — its APIPath is
+  literally "(embedded in /v2/Applications/{applicationId} …)". So the door request went out with no
+  `pageIndex`/`pageSize` and the vendor answered with its default page. Every detail walk was capped
+  at one page of parents, while honestly reporting `HasMore: false`, because it really had consumed
+  every parent it was given. It was given ten.
+
+  Measured on a live tenant with 1,976 Applications:
+
+  | object                     | result                                      | target |
+  | -------------------------- | ------------------------------------------- | ------ |
+  | ApplicationRoundSubmission | 10 records from 10 parents, `hasMore:false` | 1,935  |
+  | ApplicationFile            | 0 records from 10 parents (`ZERO_LEAVES`)   | 4,001  |
+  | ApplicationWinnerType      | 74 — correct                                | 89     |
+
+  ApplicationWinnerType was right only because its door, `/v2/Programs`, has 5 rows and fits inside a
+  single default page — which is what made the cap look like a per-object extraction problem rather
+  than one shared defect.
+
+  The door object is now resolved from the catalog by `AccessPath.door` and its pagination governs the
+  door request. When the door has no catalog row we fall back to the child, so a misdeclared AccessPath
+  behaves as it did before rather than throwing mid-sync.
+
+- e704e04: A field promoted to PRIMARY KEY by a migration must also be relabelled Declared
+
+  V202608212210 completed JudgeAssignment's key into the (userId, roundId) pair. On tenants where
+  `roundId` already existed it did that through an UPDATE rather than the INSERT, and that UPDATE set
+  IsPrimaryKey/IsRequired/AllowsNull but left `MetadataSource` alone — leaving a PRIMARY KEY still
+  labelled `Discovered`.
+
+  The engine's overlay then does exactly what it is designed to do: `decidePKPromotion` forbids a
+  _Discovered_ field from being part of the key of an object that has a declared PK, so the next
+  schema refresh demotes it. Observed on a live tenant, the catalog went from
+  `declared=roundId,userId` back to `declared=userId` — the person-grain collapse V202608212210
+  existed to fix, where a judge assigned to several rounds folds to one row per person. The self-heal
+  was correct; the row was mislabelled.
+
+  V202608222100 re-asserts `IsPrimaryKey` and sets `MetadataSource = 'Declared'` for that field,
+  matched by object + field name because the row needing repair is the pre-existing promoted one
+  whose ID differs per tenant. Idempotent, and a no-op on tenants that took the INSERT path.
+
 ## 1.3.5
 
 ### Patch Changes

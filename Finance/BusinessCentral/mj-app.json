@@ -4,7 +4,7 @@
   "name": "connector-business-central",
   "displayName": "Business Central Connector",
   "description": "Microsoft Dynamics 365 Business Central connector — REST/OData v4 API v2.0 across finance, sales, purchasing, inventory and master-data objects, with OAuth 2.0 client-credentials (S2S) auth against Microsoft Entra ID and additive runtime $metadata (EDMX) discovery of the tenant's own entity sets and published web-service pages.",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "license": "ISC",
   "icon": "fa-brands fa-microsoft",
   "color": "#0078d4",
