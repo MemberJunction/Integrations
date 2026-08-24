@@ -1,5 +1,58 @@
 # @memberjunction/connector-totara
 
+## 0.4.2
+
+### Patch Changes
+
+- 7dbda41: Every Totara request now ENDS, and a source that never short-pages is cut off loudly
+
+  Two boundedness gaps, both of which turned a misbehaving remote into an unrecoverable hang:
+
+  - **`RequestTimeoutMs: 0` meant no AbortSignal at all.** The opt-out exists because some
+    wsfunctions on some sites genuinely run past the 25s default — but a request that never
+    finishes its body then held its call forever, and because the creation pipeline writes its
+    result only from complete()/fail(), the run kept a start event, no terminal event, and
+    `isInFlight` stayed true for good, unclearable by any client. `0` now opts out of the
+    default, not out of ending: an absolute ten-minute deadline stays armed, and a terminating
+    request produces an error the engine can retry and the run artifact can record.
+
+  - **A wsfunction that ignores the offset parameters returned the same full page forever.** The
+    per-parent paged loop's only exit was a SHORT page, which trusts the source to honour
+    `limitfrom`/`limitnumber`. When it doesn't, the loop never breaks, duplicates pile up, and
+    every turn issues another perfectly successful request — indistinguishable from a hang from
+    outside. Parents are now cut off after `MAX_PAGES_PER_PARENT` (2000) consecutive full pages,
+    the walk finishes, and a `PARENT_PAGINATION_NOT_HONOURED` warning names the parents, the
+    wsfunction, and why the cut-off data should not be trusted as complete.
+
+  Also ported from the same production campaign:
+
+  - **Discovery samples are honoured.** Field discovery streams FetchChanges and can only stop
+    BETWEEN batches, so the parent walk paid its entire budget to produce a handful of sample
+    records. The walk now reads the engine's sample markers (`IsDiscoverySample`,
+    `SampleTargetRecords`, `DeadlineMs`, present on engines >= 5.49 and structurally absent —
+    hence inert — on older ones) and ends the moment the target is met.
+  - **A "no" is not re-confirmed once per parent.** Moodle answers `[accessexception]` (and
+    `[invalidparameter]`/`[invalidfunction]`) identically for every parent id; after three
+    identical refusals with zero successes the function's answer is taken as final. A partial
+    refusal pattern (any success first) never trips it. `[invalidrecord]` deliberately stays a
+    per-parent warning — "can not find data record" is about that parent's id.
+
+  Tests 86 → 90 (the old "0 opts out — no signal" test now asserts the cap is armed instead).
+
+- d3c15a1: Collapse exact-repeat elements when exploding a derived collection.
+
+  Measured on a live tenant: `Enrolled_User_Roles` held 54,119 rows for 42,519 distinct keys —
+  11,632 excess. All 11,200 duplicate key groups were byte-identical on every captured column and
+  were written within the same second, i.e. the source listed the same `roleid` twice for one
+  enrolment (the same role held in more than one context) inside a single batch. No cross-batch
+  identity check can catch that, and the rows re-inserted on every sync, so the excess grew each run.
+
+  A child row is a projection of (parent key + element), so two byte-identical projections are one
+  fact restated. `ExplodeCollection` now emits a set: identical rows collapse, and a row differing in
+  ANY field is kept, so a genuinely distinct fact can never be lost. The collapsed count is reported
+  as a `DERIVED_ELEMENTS_COLLAPSED` warning rather than being silent — if a field that would
+  distinguish two elements is undeclared or removed by `dropFields`, that warning is the signal.
+
 ## 0.4.1
 
 ### Patch Changes
