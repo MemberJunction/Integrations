@@ -15,8 +15,9 @@
 --   untouched and applied, and this file carries only the difference — the same shape as
 --   V202607280900__pheedloop__WritablePK.sql.
 --
---   Every statement is keyed by the seeded row ID and is therefore idempotent: a re-run sets the
---   same values, and the INSERT is guarded on its own ID.
+--   Every statement is keyed and idempotent: the fifteen UPDATEs by seeded row ID, and the new
+--   field by (IntegrationObjectID, Name) — the unique constraint's own key, so it upserts rather
+--   than colliding with a copy discovery already created. See section 2.
 --
 -- WHY Length BECOMES NULL, NOT -1 OR 0
 --   NULL is what a fresh install of this metadata produces. The generator declares
@@ -55,12 +56,39 @@ UPDATE [__mj].[IntegrationObjectField] SET [Type] = N'text', [Length] = NULL WHE
 UPDATE [__mj].[IntegrationObjectField] SET [Type] = N'text', [Length] = NULL WHERE [ID] = '05A8A9AB-5418-4980-B11E-AF2EF94582C7'; -- Tickets.description
 
 -- ── 2. Speakers.sessions_information ──────────────────────────────────────────────────────────
--- A plain guarded INSERT rather than spCreateIntegrationObjectField: every column this row does
--- not name has a table default (AllowsNull, IsPrimaryKey, IsUniqueKey, IsRequired, Sequence,
--- Status, IsCustom, MetadataSource, and both audit timestamps), so the sproc adds nothing here —
--- and the DECLARE/EXEC form it requires does not survive translation to PostgreSQL.
+-- UPSERT, keyed on (IntegrationObjectID, Name) — the unique constraint's own key.
+--
+-- An earlier revision guarded a plain INSERT on [ID] alone. That is the wrong key: the field
+-- already exists on any tenant whose discovery has run, created by DISCOVERY under an ID this
+-- migration never chose. The ID guard therefore matched nothing, the INSERT ran, and the database
+-- rejected it:
+--
+--     duplicate key value violates unique constraint "UQ_IntegrationObjectField_Name"
+--
+-- which failed the whole migration (PostgreSQL runs each one transactionally, so the fifteen
+-- UPDATEs above rolled back with it). Guard on the key the constraint actually uses.
+--
+-- The UPDATE is also the correct INTENT, not merely a collision dodge. A discovered field carries
+-- MetadataSource='Discovered' and whatever width sampling inferred. Declaring it means saying so:
+-- Type text, no Length, and MetadataSource='Declared' — the same rule as the OpenWater change
+-- where a field promoted by a migration must be relabelled Declared rather than left looking
+-- inferred. Description is set too, since the declaration is where the vendor semantics live.
+--
+-- ID is deliberately NOT rewritten when a row already exists. IntegrationObjectField.ID is
+-- referenced by field maps and, on a keyed object, by IsKeyField wiring; re-pointing it to this
+-- migration's UUID would orphan those. The row's identity is its (object, name) pair — which is
+-- what the constraint says too.
 
-IF NOT EXISTS (SELECT 1 FROM [__mj].[IntegrationObjectField] WHERE [ID] = '62D7A579-90CC-48C2-9E30-C89FEC3B2D17')
+UPDATE [__mj].[IntegrationObjectField]
+   SET [Type]           = N'text',
+       [Length]         = NULL,
+       [IsReadOnly]     = 1,
+       [MetadataSource] = N'Declared',
+       [Description]    = N'Expanded detail for the sessions this speaker is attached to. Returned by GET /events/{eventCode}/speakers/ alongside the `sessions` code list. Unbounded prose — a single speaker with several sessions runs well past any sampled width.'
+ WHERE [IntegrationObjectID] = 'E397FE85-9B83-40CE-A922-32525081EC4D'
+   AND [Name] = N'sessions_information';
+
+IF NOT EXISTS (SELECT 1 FROM [__mj].[IntegrationObjectField] WHERE [IntegrationObjectID] = 'E397FE85-9B83-40CE-A922-32525081EC4D' AND [Name] = N'sessions_information')
   INSERT INTO [__mj].[IntegrationObjectField]
     ([ID], [IntegrationObjectID], [Name], [Description], [Type], [IsReadOnly], [Sequence], [Status], [IsCustom], [MetadataSource])
   VALUES ('62D7A579-90CC-48C2-9E30-C89FEC3B2D17', 'E397FE85-9B83-40CE-A922-32525081EC4D', N'sessions_information', N'Expanded detail for the sessions this speaker is attached to. Returned by GET /events/{eventCode}/speakers/ alongside the `sessions` code list. Unbounded prose — a single speaker with several sessions runs well past any sampled width.', N'text', 1, 0, N'Active', 0, N'Declared');
