@@ -7,6 +7,7 @@ import type {
     UpdateRecordContext,
     DeleteRecordContext,
     FetchContext,
+    ExternalRecord,
 } from '@memberjunction/integration-engine';
 import type { MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity } from '@memberjunction/core-entities';
 import { OpenWaterConnector } from '../OpenWaterConnector.js';
@@ -356,7 +357,9 @@ describe('OpenWaterConnector — FetchChanges (nested access-path walk)', () => 
         const result = await connector.FetchChanges(fetchCtx('FundTransaction'));
 
         expect(result.Records).toHaveLength(0);
-        expect(result.Warnings?.[0]?.Code).toBe('ZERO_PARENTS');
+        // Order is not the assertion — DOOR_ROWS now reports every door enumeration, including an
+        // empty one, and precedes it.
+        expect(result.Warnings?.map(w => w.Code)).toContain('ZERO_PARENTS');
     });
 
     it('a 401/403 leaf is reported as LEAF_FORBIDDEN, not swallowed into a silent zero', async () => {
@@ -993,12 +996,70 @@ describe('OpenWaterConnector — FetchChanges (alternativeAccessPaths union)', (
                   managers: [{ userId: 10, firstName: 'D' }] }] }, Headers: {} } },
         ];
 
-        const result = await connector.FetchChanges(fetchCtx('Judge'));
+        // The union walks ONE member per call so each member keeps its own resumption state; drive
+        // it to completion the way the engine does.
+        const all: ExternalRecord[] = [];
+        let cursor: string | undefined;
+        for (let call = 0; call < 8; call++) {
+            const r = await connector.FetchChanges(fetchCtx('Judge', { CurrentCursor: cursor }));
+            all.push(...r.Records);
+            if (!r.HasMore) break;
+            expect(r.NextCursor).toBeTruthy();
+            cursor = r.NextCursor;
+        }
 
-        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['10', '7', '8', '9']);
-        // The round-sourced row carries its walk tag; the first occurrence of 8 (round walk) wins.
-        const eight = result.Records.find(r => r.ExternalID === '8');
-        expect(eight?.Fields['roundId']).toBe('55');
+        expect([...new Set(all.map(r => r.ExternalID))].sort()).toEqual(['10', '7', '8', '9']);
+        // The round-sourced row carries its walk tag.
+        const eight = all.find(r => r.ExternalID === '8' && r.Fields['roundId'] === '55');
+        expect(eight).toBeDefined();
+    });
+
+    it('a union member that claims HasMore but names no continuation is not re-read forever', async () => {
+        // Dropping a member's cursor used to produce exactly this state — HasMore with nothing
+        // saying where to resume — and the engine then re-read that member until the run died.
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({ ID: 'o-jt9', Name: 'JudgeTeam', APIPath: '/v2/JudgeTeams' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({ ID: 'o-prog9', Name: 'Program', APIPath: '/v2/Programs' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-judge9', Name: 'Judge', APIPath: '/v2/JudgeAssignments/AssignedToRound',
+                Configuration: JSON.stringify({
+                    AccessPath: { door: 'Program', doorPath: '/v2/Programs', nestingSegments: ['rounds[]'],
+                        parentParamName: 'roundId', entryPath: '/v2/JudgeAssignments/AssignedToRound',
+                        parentParamIn: 'query' },
+                    alternativeAccessPaths: [
+                        { door: 'JudgeTeam', doorPath: '/v2/JudgeTeams', nestingSegments: ['judges[]'],
+                          extractionMode: 'embedded-array' },
+                    ],
+                }),
+            }),
+            [{ Name: 'userId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: 'AssignedToRound?roundId=55', response: { Status: 200, Body: { records: [{ userId: 7 }] }, Headers: {} } },
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [{ id: 1, rounds: [{ id: 55 }] }] }, Headers: {} } },
+            { match: '/v2/JudgeTeams', response: { Status: 200, Body: { records: [{ id: 300, judges: [{ userId: 9 }] }] }, Headers: {} } },
+        ];
+
+        const seen: string[] = [];
+        let cursor: string | undefined;
+        let calls = 0;
+        for (; calls < 10; calls++) {
+            const r = await connector.FetchChanges(fetchCtx('Judge', { CurrentCursor: cursor }));
+            seen.push(...r.Records.map(x => x.ExternalID));
+            if (!r.HasMore) break;
+            cursor = r.NextCursor;
+        }
+
+        // Two members, so two calls plus the terminating one — bounded, not a spin.
+        expect(calls).toBeLessThan(4);
+        expect([...new Set(seen)].sort()).toEqual(['7', '9']);
     });
 
     it('a pair-grain key keeps one row per (round, judge) instead of collapsing per person', async () => {
@@ -1092,7 +1153,7 @@ describe('OpenWaterConnector — a detail walk is bounded by the caller\'s batch
         expect(result.HasMore).toBe(false);
     });
 
-    it('the harvest stops collecting ids once the batch is covered (Media: one call per door row)', async () => {
+    it('a harvest window is bounded by DOOR ROWS, and an unfinished window resumes at its own id offset', async () => {
         const connector = new MockedOpenWaterConnector();
         connector.AddObject(
             io({
@@ -1126,8 +1187,15 @@ describe('OpenWaterConnector — a detail walk is bounded by the caller\'s batch
 
         expect(result.Records).toHaveLength(1);
         expect(result.HasMore).toBe(true);
-        // Harvesting stopped as soon as it had enough ids: the later applications were untouched.
-        expect(connector.Requests.some(r => r.url.includes('/v2/Applications/204'))).toBe(false);
+        // The window is not finished, so the cursor keeps the window's own start and records how
+        // many of its ids were emitted. Advancing the door offset here is what dropped records.
+        expect(result.NextCursor).toBe('detail:h0:1');
+
+        // Resuming rebuilds the same window and continues at that id — nothing is skipped, and the
+        // door offset only moves once every id from the window has been emitted.
+        const next = await connector.FetchChanges(fetchCtx('Media', { BatchSize: 1, CurrentCursor: result.NextCursor }));
+        expect(next.Records).toHaveLength(1);
+        expect(next.Records[0].ExternalID).not.toBe(result.Records[0].ExternalID);
     });
 });
 
@@ -1177,5 +1245,557 @@ describe('OpenWaterConnector — a truncated harvest must not look finished', ()
         }
 
         expect(seen.sort()).toEqual(['8000', '8001', '8002', '8003', '8004']);
+    });
+});
+
+// ─── The door is paged by the DOOR's rules, not the child's ──────────────
+//
+// PaginateLeaf decides whether to page from `obj.SupportsPagination && obj.PaginationType !== 'None'`.
+// The door fetch used to pass the CHILD object, and a walked child declares neither (its APIPath is
+// "(embedded in /v2/Applications/{applicationId} …)") — so the door URL went out with no
+// pageIndex/pageSize and the vendor answered with its default page. Every detail walk was therefore
+// capped at one page of parents while honestly reporting HasMore:false, because it really had
+// consumed every parent it was given.
+//
+// Measured on a live tenant against 1,976 Applications: ApplicationRoundSubmission returned 10
+// records from 10 parents (target 1,935) and ApplicationFile 0 from 10 (target 4,001), while
+// ApplicationWinnerType was correct only because its door, /v2/Programs, has 5 rows and fits in one
+// default page.
+describe('OpenWaterConnector — the door is paged by the door object', () => {
+    /** Door with a 2-row page size, child declaring no pagination of its own. */
+    function addDoorAndChild(connector: MockedOpenWaterConnector): void {
+        connector.AddObject(
+            io({ ID: 'o-app', Name: 'Application', APIPath: '/v2/Applications', DefaultPageSize: 2 }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-ars2', Name: 'ApplicationRoundSubmission', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            // Details first — these must not be shadowed by the door matches below.
+            { match: '/v2/Applications/101', response: { Status: 200, Body: { id: 101, roundSubmissions: [{ roundId: 55 }] }, Headers: {} } },
+            { match: '/v2/Applications/102', response: { Status: 200, Body: { id: 102, roundSubmissions: [{ roundId: 55 }] }, Headers: {} } },
+            { match: '/v2/Applications/103', response: { Status: 200, Body: { id: 103, roundSubmissions: [{ roundId: 55 }] }, Headers: {} } },
+            // A full page, then a short one — the short page ends the walk.
+            { match: '/v2/Applications?pageIndex=0', response: { Status: 200, Body: { records: [{ id: 101 }, { id: 102 }] }, Headers: {} } },
+            { match: '/v2/Applications?pageIndex=1', response: { Status: 200, Body: { records: [{ id: 103 }] }, Headers: {} } },
+        ];
+    }
+
+    it('reaches parents beyond the first page', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addDoorAndChild(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        // 103 lives on page 2 — before the fix the walk never saw it.
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['101|55', '102|55', '103|55']);
+    });
+
+    it('issues the door request WITH paging parameters', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addDoorAndChild(connector);
+
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        const doorRequests = connector.Requests.filter(r => r.url.includes('/v2/Applications?'));
+        expect(doorRequests.length).toBeGreaterThan(1);
+        // The door's own page size, not the child's absent one.
+        expect(doorRequests[0].url).toContain('pageSize=2');
+        expect(doorRequests.some(r => r.url.includes('pageIndex=1'))).toBe(true);
+    });
+
+    it('falls back to the child when the door has no catalog row, rather than throwing mid-sync', async () => {
+        const connector = new MockedOpenWaterConnector();
+        addDoorAndChild(connector);
+        // Re-register the child pointing at a door that was never seeded.
+        connector.AddObject(
+            io({
+                ID: 'o-ars3', Name: 'OrphanChild', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'NoSuchDoor', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+
+        await expect(connector.FetchChanges(fetchCtx('OrphanChild'))).resolves.toBeDefined();
+    });
+});
+
+describe('OpenWaterConnector — the door enumeration is read once, not once per resumed batch', () => {
+    /** 3 door pages of one row each, and a detail per parent. */
+    function pagedDoor(connector: MockedOpenWaterConnector, opts: { doorPageSize?: number } = {}): void {
+        connector.AddObject(
+            io({ ID: 'o-appdoor2', Name: 'Application', APIPath: '/v2/Applications',
+                 DefaultPageSize: opts.doorPageSize ?? 1 }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-ars4', Name: 'ApplicationRoundSubmission', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            ...['301', '302', '303'].map(id => ({
+                match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [{ roundId: 55 }] }, Headers: {} },
+            })),
+            { match: '/v2/Applications?pageIndex=0', response: { Status: 200, Body: { records: [{ id: 301 }] }, Headers: {} } },
+            { match: '/v2/Applications?pageIndex=1', response: { Status: 200, Body: { records: [{ id: 302 }] }, Headers: {} } },
+            { match: '/v2/Applications?pageIndex=2', response: { Status: 200, Body: { records: [{ id: 303 }] }, Headers: {} } },
+            { match: '/v2/Applications?pageIndex=3', response: { Status: 200, Body: { records: [] }, Headers: {} } },
+        ];
+    }
+
+    it('a resumed call reuses the cached enumeration instead of re-paging the door', async () => {
+        // The cost that mattered: ~20 door pages re-read before touching a single parent on every
+        // resumed batch, which is what drew `HTTP 429 at pageIndex=4`.
+        const connector = new MockedOpenWaterConnector();
+        pagedDoor(connector);
+
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', { BatchSize: 1 }));
+        const doorPagesFirstCall = connector.Requests.filter(r => r.url.includes('/v2/Applications?')).length;
+        connector.Requests = [];
+
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', { BatchSize: 1, CurrentCursor: 'detail:1' }));
+
+        expect(doorPagesFirstCall).toBeGreaterThan(1);
+        expect(connector.Requests.filter(r => r.url.includes('/v2/Applications?'))).toHaveLength(0);
+    });
+
+    it('a FRESH walk re-reads the door, so a new sync sees new parents', async () => {
+        const connector = new MockedOpenWaterConnector();
+        pagedDoor(connector);
+
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', { BatchSize: 1 }));
+        connector.Requests = [];
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', { BatchSize: 1 }));
+
+        expect(connector.Requests.filter(r => r.url.includes('/v2/Applications?')).length).toBeGreaterThan(0);
+    });
+
+    it('reports what the door produced and under which pagination rules (DOOR_ROWS)', async () => {
+        // A capped door is invisible downstream: the walk consumes every parent it was given and
+        // honestly reports HasMore:false, so a short door reads as a complete one.
+        const connector = new MockedOpenWaterConnector();
+        pagedDoor(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        const door = result.Warnings?.find(w => w.Code === 'DOOR_ROWS');
+        expect(door).toBeDefined();
+        expect(door?.Data).toMatchObject({
+            door: 'Application', doorRows: 3, doorPaginated: true,
+            doorPaginationType: 'PageNumber', doorObjectResolved: 'Application',
+        });
+    });
+});
+
+describe('OpenWaterConnector — a throttle mid-enumeration keeps the pages already fetched', () => {
+    function doorThrottledOnPage2(connector: MockedOpenWaterConnector): void {
+        connector.AddObject(
+            io({ ID: 'o-appdoor3', Name: 'Application', APIPath: '/v2/Applications', DefaultPageSize: 1 }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-ars5', Name: 'ApplicationRoundSubmission', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            ...['401', '402'].map(id => ({
+                match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [{ roundId: 55 }] }, Headers: {} },
+            })),
+            { match: '/v2/Applications?pageIndex=0', response: { Status: 200, Body: { records: [{ id: 401 }] }, Headers: {} } },
+            { match: '/v2/Applications?pageIndex=1', response: { Status: 200, Body: { records: [{ id: 402 }] }, Headers: {} } },
+            { match: '/v2/Applications?pageIndex=2', response: { Status: 429, Body: { message: 'slow down' }, Headers: {} } },
+        ];
+    }
+
+    it('keeps the records already in hand rather than throwing the object to zero', async () => {
+        const connector = new MockedOpenWaterConnector();
+        doorThrottledOnPage2(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['401|55', '402|55']);
+        expect(result.Warnings?.map(w => w.Code)).toContain('RATE_LIMITED_PARTIAL');
+    });
+
+    it('a truncated enumeration is NOT cached and the object stays incomplete', async () => {
+        // A truncated door returned as if whole is cached as whole, and the walk then finishes at
+        // consumed === parentIDs.length having seen a fraction of the parents — reporting success.
+        const connector = new MockedOpenWaterConnector();
+        doorThrottledOnPage2(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        expect(result.HasMore).toBe(true);
+        expect(result.Warnings?.map(w => w.Code)).toContain('DOOR_TRUNCATED');
+
+        // Not cached: the next call re-reads the door instead of trusting the short enumeration.
+        connector.Requests = [];
+        await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', { CurrentCursor: 'detail:1' }));
+        expect(connector.Requests.filter(r => r.url.includes('/v2/Applications?')).length).toBeGreaterThan(0);
+    });
+});
+
+describe('OpenWaterConnector — a zero says what WAS there, not only that nothing matched', () => {
+    /**
+     * The declared segment was `fieldValues[]`; the payload names it `submissionFieldValues[]`.
+     * Both objects therefore did their whole walk correctly and reported success with zero records
+     * and no error — a wrong path and an empty collection are the same zero without this.
+     */
+    it('HARVEST_SHAPE names the keys actually present when the harvest segment is wrong', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-media3', Name: 'Media', APIPath: '/v2/Media/{mediaId}',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications',
+                    parentSource: 'detail-harvest',
+                    harvestDetailPath: '/v2/Applications/{applicationId}', harvestDetailParam: 'applicationId',
+                    harvestSegments: ['roundSubmissions[]', 'fieldValues[]'], harvestIdKey: 'mediaId',
+                    entryPath: '/v2/Media/{mediaId}', parentParamName: 'mediaId',
+                    extractionMode: 'detail-object',
+                } }),
+            }),
+            [{ Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Applications/501', response: { Status: 200, Body: {
+                id: 501, roundSubmissions: [{ roundId: 55, submissionFieldValues: [{ mediaId: 9100 }] }] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 501 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('Media'));
+
+        expect(result.Records).toHaveLength(0);
+        const shape = result.Warnings?.find(w => w.Code === 'HARVEST_SHAPE');
+        expect(shape).toBeDefined();
+        // The real key is named, and the declared one comes back with empty braces.
+        expect(String(shape?.Data?.observedShape)).toContain('submissionFieldValues:array[1]');
+        expect(String(shape?.Data?.observedShape)).toContain('fieldValues[]{}');
+        // Names and types only — no member VALUES are ever emitted.
+        expect(String(shape?.Data?.observedShape)).not.toContain('9100');
+    });
+
+    it('NESTING_SHAPE does the same for a detail-embedded walk', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-appfile2', Name: 'ApplicationFile', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}',
+                    nestingSegments: ['roundSubmissions[]', 'fieldValues[]'],
+                    elementFilter: { key: 'mediaId', exists: true },
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Applications/601', response: { Status: 200, Body: {
+                id: 601, roundSubmissions: [{ roundId: 55, submissionFieldValues: [{ mediaId: 9200 }] }] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 601 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationFile'));
+
+        expect(result.Records).toHaveLength(0);
+        const shape = result.Warnings?.find(w => w.Code === 'NESTING_SHAPE');
+        expect(shape).toBeDefined();
+        expect(String(shape?.Data?.observedShape)).toContain('submissionFieldValues:array[1]');
+        expect(String(shape?.Data?.observedShape)).not.toContain('9200');
+    });
+
+    it('the corrected segment extracts the records — the declared name was the only defect', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-appfile3', Name: 'ApplicationFile', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}',
+                    nestingSegments: ['roundSubmissions[]', 'submissionFieldValues[]'],
+                    elementFilter: { key: 'mediaId', exists: true },
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Applications/601', response: { Status: 200, Body: { id: 601, roundSubmissions: [
+                { roundId: 55, submissionFieldValues: [{ mediaId: 9200 }, { mediaId: 9201 }, { label: 'no file' }] }] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 601 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationFile'));
+
+        // Two of the three field values carry a mediaId; elementFilter drops the third.
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['601|9200', '601|9201']);
+        expect(result.Warnings?.map(w => w.Code)).not.toContain('NESTING_SHAPE');
+    });
+});
+
+describe('OpenWaterConnector — the walk bounds vendor CALLS, not only records emitted', () => {
+    it('yields with a cursor after MAX_PARENTS_PER_CALL parents even when nothing is extracted', async () => {
+        // A sparse child never reaches the record budget, so the walk ran until the parent set was
+        // exhausted — ~1,976 detail requests in one call, past the engine's 30s FetchChanges
+        // timeout, and on timeout the whole batch is discarded.
+        const connector = new MockedOpenWaterConnector();
+        const ids = Array.from({ length: 150 }, (_, i) => 700 + i);
+        connector.AddObject(
+            io({
+                ID: 'o-sparse', Name: 'SparseChild', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            // Every detail is EMPTY: no records are ever emitted, so only the call bound can stop it.
+            ...ids.map(id => ({ match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [] }, Headers: {} } })),
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: ids.map(id => ({ id })) }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('SparseChild'));
+
+        expect(result.Records).toHaveLength(0);
+        expect(result.HasMore).toBe(true);
+        expect(result.NextCursor).toBe('detail:100');
+        const detailCalls = connector.Requests.filter(r => /\/v2\/Applications\/\d+/.test(r.url));
+        expect(detailCalls).toHaveLength(100);
+    });
+
+    it('the next call continues from the cursor and finishes the parent set', async () => {
+        const connector = new MockedOpenWaterConnector();
+        const ids = Array.from({ length: 150 }, (_, i) => 700 + i);
+        connector.AddObject(
+            io({
+                ID: 'o-sparse2', Name: 'SparseChild', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}', nestingSegments: ['roundSubmissions[]'],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            // The last parent is the only one carrying anything — the tail must be reached.
+            ...ids.map(id => ({ match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: id === 849 ? [{ roundId: 55 }] : [] }, Headers: {} } })),
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: ids.map(id => ({ id })) }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('SparseChild', { CurrentCursor: 'detail:100' }));
+
+        expect(result.Records.map(r => r.ExternalID)).toEqual(['849|55']);
+        expect(result.HasMore).toBe(false);
+    });
+});
+
+describe('OpenWaterConnector — the harvest yields on the clock, and an empty window is not an empty object', () => {
+    /** `count` applications, only the LAST of which carries a media id. */
+    function sparseHarvest(connector: MockedOpenWaterConnector, count: number): number[] {
+        const appIDs = Array.from({ length: count }, (_, i) => 900 + i);
+        connector.AddObject(
+            io({
+                ID: 'o-media4', Name: 'Media', APIPath: '/v2/Media/{mediaId}',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications',
+                    parentSource: 'detail-harvest',
+                    harvestDetailPath: '/v2/Applications/{applicationId}', harvestDetailParam: 'applicationId',
+                    harvestSegments: ['roundSubmissions[]', 'submissionFieldValues[]'], harvestIdKey: 'mediaId',
+                    entryPath: '/v2/Media/{mediaId}', parentParamName: 'mediaId',
+                    extractionMode: 'detail-object',
+                } }),
+            }),
+            [{ Name: 'mediaId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            ...appIDs.map(id => ({
+                match: `/v2/Applications/${id}`,
+                response: { Status: 200, Body: { id, roundSubmissions: [{
+                    submissionFieldValues: id === appIDs[appIDs.length - 1] ? [{ mediaId: 7777 }] : [{ label: 'text' }],
+                }] }, Headers: {} },
+            })),
+            { match: '/v2/Media/7777', response: { Status: 200, Body: { url: 'https://cdn.test/x' }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: appIDs.map(id => ({ id })) }, Headers: {} } },
+        ];
+        return appIDs;
+    }
+
+    it('a window that yields no ids still advances the cursor instead of declaring the object empty', async () => {
+        // The trap: an empty window looks exactly like an exhausted object. Reporting ZERO_PARENTS
+        // and HasMore:false here ends a 1,976-parent walk at door row 25.
+        const connector = new MockedOpenWaterConnector();
+        sparseHarvest(connector, 60);
+
+        const first = await connector.FetchChanges(fetchCtx('Media'));
+
+        expect(first.Records).toHaveLength(0);
+        expect(first.HasMore).toBe(true);
+        expect(first.NextCursor).toBe('detail:h25');
+        // And it did NOT read past its window.
+        expect(connector.Requests.some(r => r.url.includes('/v2/Applications/950'))).toBe(false);
+    });
+
+    it('driven to the end, the sparse id is still found', async () => {
+        const connector = new MockedOpenWaterConnector();
+        sparseHarvest(connector, 60);
+
+        const seen: string[] = [];
+        let cursor: string | undefined;
+        for (let call = 0; call < 12; call++) {
+            const r = await connector.FetchChanges(fetchCtx('Media', { CurrentCursor: cursor }));
+            seen.push(...r.Records.map(x => x.ExternalID));
+            if (!r.HasMore) break;
+            cursor = r.NextCursor;
+        }
+
+        expect(seen).toEqual(['7777']);
+    });
+
+    it('the walk stops on the clock even when the door-row ceiling has not been reached', async () => {
+        // Counts are a proxy; the engine kills the batch at 30s and keeps nothing. Make each vendor
+        // call cost time and assert the walk hands back a cursor rather than running past the kill.
+        class SlowConnector extends MockedOpenWaterConnector {
+            public Now = 1_000_000;
+            protected override async MakeHTTPRequest(
+                auth: RESTAuthContext, url: string, method: string,
+                headers: Record<string, string>, body?: unknown
+            ): Promise<RESTResponse> {
+                this.Now += 4_000;   // 4s per vendor call: the 18s budget is spent after ~5
+                return super.MakeHTTPRequest(auth, url, method, headers, body);
+            }
+        }
+        const connector = new SlowConnector();
+        sparseHarvest(connector, 60);
+        const spy = vi.spyOn(Date, 'now').mockImplementation(() => connector.Now);
+        try {
+            const result = await connector.FetchChanges(fetchCtx('Media'));
+
+            expect(result.HasMore).toBe(true);
+            expect(result.NextCursor).toMatch(/^detail:h\d+/);
+            // Fewer door rows than the 25-row ceiling were read, because time ran out first.
+            const doorDetails = connector.Requests.filter(r => /\/v2\/Applications\/\d+/.test(r.url));
+            expect(doorDetails.length).toBeGreaterThan(0);
+            expect(doorDetails.length).toBeLessThan(25);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+});
+
+describe('OpenWaterConnector — an embedded leaf can carry its parent id', () => {
+    /** Two rounds that both declare winner type 9 — the shape that collapsed 89 pairs into 74 ids. */
+    function twoRoundsSharingAType(connector: MockedOpenWaterConnector, tag: boolean): void {
+        const ap: Record<string, unknown> = {
+            door: 'Program', doorPath: '/v2/Programs',
+            nestingSegments: ['rounds[]', 'winnerTypes[]'],
+            extractionMode: 'embedded-array',
+        };
+        if (tag) ap.embeddedParentTag = { sourceKey: 'id', asKey: 'roundId' };
+        connector.AddObject(
+            io({ ID: 'o-prog-wt', Name: 'Program', APIPath: '/v2/Programs' }),
+            [{ Name: 'id', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({
+                ID: 'o-awt', Name: 'ApplicationWinnerType',
+                APIPath: '(embedded in /v2/Programs rounds[].winnerTypes[])',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: ap }),
+            }),
+            tag
+                ? [{ Name: 'roundId', IsPrimaryKey: true }, { Name: 'id', IsPrimaryKey: true }, { Name: 'name' }]
+                : [{ Name: 'id', IsPrimaryKey: true }, { Name: 'name' }]
+        );
+        connector.Responses = [
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [
+                { id: 1, rounds: [
+                    { id: 55, winnerTypes: [{ id: 9, name: 'Gold' }, { id: 10, name: 'Silver' }] },
+                    { id: 56, winnerTypes: [{ id: 9, name: 'Gold' }] },
+                ] },
+            ] }, Headers: {} } },
+        ];
+    }
+
+    it('without the tag, a type declared on two rounds is ONE row — the round is lost', async () => {
+        const connector = new MockedOpenWaterConnector();
+        twoRoundsSharingAType(connector, false);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationWinnerType'));
+
+        // Three (round, type) pairs exist; keyed on id alone they are two ExternalIDs.
+        expect(result.Records).toHaveLength(3);
+        expect([...new Set(result.Records.map(r => r.ExternalID))].sort()).toEqual(['10', '9']);
+        expect(result.Records[0].Fields['roundId']).toBeUndefined();
+    });
+
+    it('with the tag, each pair is its own keyed row and says which round it came from', async () => {
+        const connector = new MockedOpenWaterConnector();
+        twoRoundsSharingAType(connector, true);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationWinnerType'));
+
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['55|10', '55|9', '56|9']);
+        // The vendor's own type is preserved rather than stringified.
+        expect(result.Records.find(r => r.ExternalID === '56|9')?.Fields['roundId']).toBe(56);
+    });
+
+    it('a value the vendor already supplied under that name is never overwritten', async () => {
+        const connector = new MockedOpenWaterConnector();
+        twoRoundsSharingAType(connector, true);
+        connector.Responses = [
+            { match: '/v2/Programs', response: { Status: 200, Body: { records: [
+                { id: 1, rounds: [{ id: 55, winnerTypes: [{ id: 9, name: 'Gold', roundId: 99 }] }] },
+            ] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationWinnerType'));
+
+        expect(result.Records[0].Fields['roundId']).toBe(99);
     });
 });

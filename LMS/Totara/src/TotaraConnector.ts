@@ -74,6 +74,8 @@ interface DerivedRowBuffer {
     Complete: boolean;
     /** True when the row cap was hit; the buffer is unusable and children fall back. */
     Overflowed: boolean;
+    /** Exact-repeat rows collapsed while filling — reported at drain, never silent. */
+    Collapsed: number;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────
@@ -180,6 +182,28 @@ const DEFAULT_PARENT_LIST_CACHE_MS = 300000;
  * Override per connection with `requestTimeoutMs` in CompanyIntegration.Configuration; `0` disables it.
  */
 const DEFAULT_REQUEST_TIMEOUT_MS = 25000;
+/**
+ * The ceiling a "disabled" per-request deadline actually means.
+ *
+ * `RequestTimeoutMs: 0` used to mean NO AbortSignal at all. A wsfunction that accepts the
+ * request and never finishes the body then holds its call forever — and because the creation
+ * pipeline writes its result only from complete()/fail(), the run keeps a start event, no
+ * terminal event, and `isInFlight` stays true for good; no client can clear it. The opt-out
+ * survives — some functions on some sites genuinely run past 25s — it just cannot mean
+ * unbounded any more: a long deadline still terminates, and a terminating request produces an
+ * error the engine can retry and the run artifact can record.
+ */
+const ABSOLUTE_MAX_REQUEST_TIMEOUT_MS = 10 * 60000;
+/**
+ * How many FULL pages one parent may yield before the walk stops believing it is paginating.
+ *
+ * The paged loop's only exit is a SHORT page, which trusts the source to honour the offset
+ * parameters. A wsfunction that ignores them returns the same full page forever: the loop never
+ * breaks, duplicates pile up, and every turn issues another perfectly successful request —
+ * indistinguishable from a hang from outside, and unrecoverable because nothing returns.
+ * Deliberately high (2000 pages is millions of records at any realistic page size) but finite.
+ */
+const MAX_PAGES_PER_PARENT = 2000;
 
 /**
  * How many consecutive TRANSIENT failures one parent may cost before the walk abandons it and moves past.
@@ -393,8 +417,10 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         // The deadline covers the response BODY, not just the headers: a site that streams a header block
         // and then stalls mid-body hangs just as hard as one that never answers, so the same signal is
         // passed to fetch and held across the text() read.
-        const timeoutMs = (auth as TotaraAuthContext).RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-        const signal = timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined;
+        // `0` opts out of the 25s default, not out of ending — see ABSOLUTE_MAX_REQUEST_TIMEOUT_MS.
+        const configuredMs = (auth as TotaraAuthContext).RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+        const timeoutMs = configuredMs > 0 ? configuredMs : ABSOLUTE_MAX_REQUEST_TIMEOUT_MS;
+        const signal = AbortSignal.timeout(timeoutMs);
 
         let httpResponse: Response;
         let text: string;
@@ -717,7 +743,26 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const paramName = this.readConfigString(parentScope, 'paramName');
         const parentIdField = this.readConfigString(parentScope, 'parentIdField') ?? 'id';
         const isArrayParam = this.readConfigString(parentScope, 'paramStyle') === 'array';
-        const budgetMs = this.readConfigNonNegativeInt(parentScope, 'budgetMs') ?? DEFAULT_PARENT_WALK_BUDGET_MS;
+        /**
+         * Honour the engine's discovery-sample markers when they are present.
+         *
+         * Field discovery streams FetchChanges and stops BETWEEN batches, so a parent walk that
+         * ignores the markers pays its entire configured budget to produce a handful of sample
+         * records — and a parent that will never yield anything pays it for zero. The engine
+         * (>=5.49) states both facts on the context: SampleTargetRecords is the PRIMARY stop
+         * (checked in the walk below the moment enough records exist), DeadlineMs the backstop
+         * for parents that never yield. On engines that predate the markers both fields are
+         * simply absent and behaviour is exactly as before — which is why they are read through
+         * a structural narrowing rather than a version bump of the peer range.
+         */
+        const sampleCtx = ctx as FetchContext & {
+            IsDiscoverySample?: boolean; SampleTargetRecords?: number; DeadlineMs?: number };
+        const sampleTarget = sampleCtx.IsDiscoverySample ? (sampleCtx.SampleTargetRecords ?? 0) : 0;
+        let sampleSatisfied = false;
+        const configuredBudgetMs = this.readConfigNonNegativeInt(parentScope, 'budgetMs') ?? DEFAULT_PARENT_WALK_BUDGET_MS;
+        const budgetMs = sampleCtx.DeadlineMs != null
+            ? Math.max(0, sampleCtx.DeadlineMs - this.nowMs())
+            : configuredBudgetMs;
         if (!parentWsFn || !paramName) {
             return { Records: [], HasMore: false, Warnings: [{ Code: 'PARENT_SCOPE_INCOMPLETE',
                 Message: `"${obj.Name}": Configuration.parentScope requires parentWsFunction + paramName.`, Data: { object: obj.Name } }] };
@@ -836,6 +881,23 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const transientFails = new Map<number, number>();
         /** Parents abandoned because they have now failed transiently `maxParentAttempts` times in a row. */
         const abandoned: Array<{ id: string; attempts: number; message: string }> = [];
+        /** Parents cut off at MAX_PAGES_PER_PARENT full pages — the source is ignoring the offset params. */
+        const runaway: Array<{ id: string; pages: number; rows: number }> = [];
+        /**
+         * Stop RE-CONFIRMING a "no". Moodle answers a permission refusal (`[accessexception]`)
+         * and a malformed request (`[invalidparameter]`) IDENTICALLY for every parent id — the
+         * refusal is about the function or the request shape, never about the parent. Before
+         * this, an ungranted object burned its entire walk budget asking the same question of
+         * every parent, and a catalog with a dozen such objects turned discovery into a
+         * twenty-minute run of guaranteed nos. Three identical refusals with zero successes is
+         * taken as the function's answer; a PARTIAL refusal pattern (some parents readable)
+         * never trips it, because successes reset nothing — the threshold only fires while
+         * successes are still zero.
+         */
+        const PERMANENT_FAILURE_THRESHOLD = 3;
+        let permanentFailures = 0;
+        let successfulParents = 0;
+        let objectUngranted = false;
 
         const ordering = parentPageSize > 0 ? this.readOffsetOrdering(cfg) : undefined;
         const maxAttempts = this.readConfigNonNegativeInt(parentScope, 'maxParentAttempts') ?? DEFAULT_MAX_PARENT_ATTEMPTS;
@@ -855,11 +917,17 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             async ({ id: parentID, index }) => {
                 // Index 0 always runs: a call that skips every parent makes no progress and the engine would
                 // loop on the same cursor forever. Everything after it yields to the budget.
+                // The sample is complete — every remaining parent is work nobody asked for.
+                if (sampleSatisfied) return;
+                // The function (or the request shape) is refused for every parent alike —
+                // asking the rest would only re-confirm the same "no". See the threshold above.
+                if (objectUngranted) return;
                 if (index > 0 && outOfTime()) { skippedForBudget++; return; }
                 // Any parent may resume mid-way now — it reads its own offset rather than the one slot the
                 // cursor used to have. A parent with no recorded offset starts at its beginning.
                 let offset = cursor.Partials.get(parentID) ?? 0;
                 let issuedRequest = false;
+                let fullPages = 0;
                 try {
                     for (;;) {
                         /**
@@ -898,13 +966,25 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                             }
                         }
                         ctx.RateLimitReport?.();
+                        // A discovery sample stops the moment it has enough records — the sampled
+                        // object's own children are untouched; they sample via their own call.
+                        if (sampleTarget > 0 && out.length >= sampleTarget) {
+                            sampleSatisfied = true;
+                            return;
+                        }
                         // Unpaged function, or a short page → this parent is exhausted.
                         if (parentPageSize === 0 || pageCount < parentPageSize) break;
+                        // A source that never short-pages is not paginating — see MAX_PAGES_PER_PARENT.
+                        if (++fullPages >= MAX_PAGES_PER_PARENT) {
+                            runaway.push({ id: parentID, pages: fullPages, rows: offset + pageCount });
+                            break;
+                        }
                         offset += pageCount;
                         // Mid-parent budget stop: record where to resume rather than dropping the rest.
                         if (outOfTime()) { partial.set(index, offset); return; }
                     }
                     examined.add(index);
+                    successfulParents++;
                 } catch (e) {
                     const msg = e instanceof Error ? e.message : String(e);
                     if (/429|rate.?limit|Retry-After/i.test(msg)) { ctx.RateLimitReport?.(e); throw e; }  // rate-limit → propagate for backoff
@@ -939,12 +1019,44 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
                     if (/\[accessexception\]|\[requiredcapability\]|\[nopermission\]/i.test(msg)) {
                         forbidden.push(parentID);
                         forbiddenMessage ??= msg;
+                        if (++permanentFailures >= PERMANENT_FAILURE_THRESHOLD && successfulParents === 0) {
+                            objectUngranted = true;
+                        }
+                    } else if (/\[invalidparameter\]|\[invalidfunction\]/i.test(msg)) {
+                        // The REQUEST is wrong, not this parent — Moodle answers [invalidparameter]
+                        // and [invalidfunction] identically for every parent id, so they collapse
+                        // exactly like a permission refusal. [invalidrecord] is deliberately NOT
+                        // here: "can not find data record" is about THIS parent's id and stays a
+                        // per-parent PARENT_FETCH_ERROR (the walk continues past it).
+                        forbidden.push(parentID);
+                        forbiddenMessage ??= msg;
+                        if (++permanentFailures >= PERMANENT_FAILURE_THRESHOLD && successfulParents === 0) {
+                            objectUngranted = true;
+                        }
                     } else {
                         warnings.push({ Code: 'PARENT_FETCH_ERROR', Message: `"${obj.Name}" fetch for ${paramName}=${parentID}${offset ? ` (offset ${offset})` : ''}: ${msg}`, Data: { object: obj.Name, [paramName]: parentID, offset } });
                     }
                     examined.add(index);
                 }
             });
+
+        // A parent cut off at the page cap did its whole walk "successfully" — the failure is that it
+        // never short-paged, which means the source very likely ignored the offset parameters and the
+        // pages were the same records repeatedly. Silent trimming would read as a complete parent, and
+        // this is the exact class of bug (a wrong result behind a green run) the guard exists for.
+        if (runaway.length > 0) {
+            warnings.push({
+                Code: 'PARENT_PAGINATION_NOT_HONOURED',
+                Message: `"${obj.Name}": ${runaway.length} ${paramName} value(s) returned ${MAX_PAGES_PER_PARENT}`
+                    + ` consecutive FULL pages without ever returning a short one —`
+                    + ` ${runaway.slice(0, 5).map(r => r.id).join(', ')}. "${wsfunction}" is very likely`
+                    + ` ignoring the offset parameters, in which case those pages were the same records`
+                    + ` repeatedly and the parent's data is neither complete nor trustworthy. The walk cut`
+                    + ` them off so it could finish; before this guard it would not have returned at all.`,
+                Data: { object: obj.Name, wsfunction, maxPages: MAX_PAGES_PER_PARENT,
+                    sample: runaway.slice(0, 5).map(r => ({ [paramName]: r.id, pages: r.pages, rows: r.rows })) },
+            });
+        }
 
         // Every parent this call reached was refused on permissions, and nothing was read. That is a credential
         // scope limit stated as one fact — the same grain OpenWater's `LEAF_FORBIDDEN` uses — rather than N
@@ -1606,11 +1718,12 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             const key = this.derivedBufferKey(parentObj.IntegrationID, childName);
             let buf = this.derivedRowBuffers.get(key);
             if (walkStarting || !buf) {
-                buf = { At: this.nowMs(), Rows: [], Complete: false, Overflowed: false };
+                buf = { At: this.nowMs(), Rows: [], Complete: false, Overflowed: false, Collapsed: 0 };
                 this.derivedRowBuffers.set(key, buf);
             }
             if (!buf.Overflowed) {
                 const exploded = ExplodeCollection(records, config);
+                buf.Collapsed += exploded.ElementsCollapsed;
                 buf.Rows.push(...exploded.ChildFields);
                 totalRows += exploded.ChildFields.length;
                 if (totalRows > TotaraConnector.DERIVED_BUFFER_MAX_ROWS) {
@@ -1685,10 +1798,18 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
             const slice = buf.Rows.slice(offset, offset + pageSize);
             const records = slice.map(row => this.buildExternalRecord(row, obj.Name, pkFieldNames));
             const nextOffset = offset + slice.length;
+            const warnings = offset === 0 && buf.Collapsed > 0
+                ? [{ Code: 'DERIVED_ELEMENTS_COLLAPSED',
+                     Message: `"${obj.Name}": ${buf.Collapsed} element(s) were exact repeats of a row already produced and were collapsed. `
+                            + `Identical on every captured field, so nothing is lost — but if a field that would distinguish them is undeclared `
+                            + `or removed by dropFields, that difference is being hidden.`,
+                     Data: { object: obj.Name, collapsed: buf.Collapsed } }]
+                : undefined;
             return {
                 Records: records,
                 HasMore: nextOffset < buf.Rows.length,
                 NextOffset: nextOffset,
+                Warnings: warnings,
             };
         }
 
@@ -1697,6 +1818,13 @@ export class TotaraConnector extends BaseRESTIntegrationConnector {
         const exploded = ExplodeCollection(parentBatch.Records, config);
         const records = exploded.ChildFields.map(f => this.buildExternalRecord(f, obj.Name, pkFieldNames));
         const warnings = [...(parentBatch.Warnings ?? [])];
+        if (exploded.ElementsCollapsed > 0) {
+            warnings.push({
+                Code: 'DERIVED_ELEMENTS_COLLAPSED',
+                Message: `"${obj.Name}": ${exploded.ElementsCollapsed} element(s) were exact repeats of a row already produced and were collapsed.`,
+                Data: { object: obj.Name, collapsed: exploded.ElementsCollapsed },
+            });
+        }
         if (exploded.ElementsSkipped > 0) {
             warnings.push({
                 Code: 'DERIVED_ELEMENTS_SKIPPED',
