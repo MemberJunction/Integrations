@@ -13,6 +13,7 @@ import {
     type CRUDResult,
     type SourceSchemaInfo,
     type SourceObjectInfo,
+    type RateLimitPolicy,
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
 import { z } from 'zod';
@@ -55,6 +56,62 @@ export class PheedLoopConnector extends BaseRESTIntegrationConnector {
     public override get SupportsCreate(): boolean { return true; }
     public override get SupportsUpdate(): boolean { return true; }
     public override get SupportsDelete(): boolean { return true; }
+
+    // ── Rate limiting ────────────────────────────────────────────────
+
+    /**
+     * PheedLoop throttles aggressively, and some of its objects are inherently request-heavy: a
+     * second-layer object nested under two path variables (e.g. session attendance, which is
+     * `/events/{eventCode}/sessions/{sessionCode}/attendance/`) issues one request PER PARENT, so a
+     * modest event with 128 sessions across 5 events is ~640 requests where a flat object needs one.
+     *
+     * Without a declared policy the engine falls back to its generic default, which is well above
+     * what this API tolerates — observed live as `HTTP 429 {"detail":"Request was throttled.
+     * Expected available in 1 second."}` on the very first page of such a walk, ending the object
+     * with zero records on every run.
+     *
+     * 4/sec sustained with no burst above it is deliberately conservative: the cost of being slightly
+     * slow is a longer sync, while the cost of being slightly fast is an object that never syncs at
+     * all. Recovery is slow (`SuccessRampPerCall` ≈ 1/10th) because this API stays cross for a while
+     * after a throttle, and the floor keeps a heavily-throttled walk making forward progress rather
+     * than stalling completely.
+     */
+    public override get RateLimitPolicy(): RateLimitPolicy {
+        return {
+            TokensPerSec: 4,
+            Burst: 4,
+            ThrottleBackoffFactor: 0.5,
+            SuccessRampPerCall: 0.4,
+            MinTokensPerSec: 1,
+        };
+    }
+
+    /**
+     * PheedLoop states its own wait in the throttle body — `{"detail":"Request was throttled.
+     * Expected available in 1 second."}` — and may also send a standard `Retry-After` header. Parsing
+     * either lets the engine wait exactly as long as the source asked instead of guessing with
+     * exponential backoff, which is the difference between one clean retry and burning every attempt.
+     *
+     * Returns `undefined` for anything that is not a throttle, so non-429 errors keep their normal
+     * retry behaviour.
+     */
+    public override ExtractRetryAfterMs(error: unknown): number | undefined {
+        const text = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+        if (!text) return undefined;
+        if (!/\b429\b|throttl/i.test(text)) return undefined;
+
+        // "Expected available in 1 second." / "... in 30 seconds."
+        const detail = /available in\s+(\d+(?:\.\d+)?)\s*second/i.exec(text);
+        if (detail) return Math.ceil(parseFloat(detail[1]) * 1000);
+
+        // `Retry-After: <seconds>`, when the header made it into the error text.
+        const header = /retry-?after["'\s:]+(\d+(?:\.\d+)?)/i.exec(text);
+        if (header) return Math.ceil(parseFloat(header[1]) * 1000);
+
+        // A throttle with no stated wait still deserves a real pause rather than the engine's
+        // sub-second first backoff — this API's own guidance is measured in seconds.
+        return 1000;
+    }
 
     // ── Auth + transport (BaseRESTIntegrationConnector abstracts) ─────
 
