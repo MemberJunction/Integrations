@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-blackbaud",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": false,
   "description": "MemberJunction Blackbaud connector.",
   "type": "module",
@@ -14,7 +14,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "author": "MemberJunction.com",
-  "license": "ISC",
+  "license": "BUSL-1.1",
   "peerDependencies": {
     "@memberjunction/core": ">=5.42.0 <6.0.0",
     "@memberjunction/core-entities": ">=5.42.0 <6.0.0",

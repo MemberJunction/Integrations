@@ -1,5 +1,76 @@
 # @memberjunction/connector-nimble-ams
 
+## 1.3.4
+
+### Patch Changes
+
+- 5ca7755: Nimble AMS extends the Salesforce base connector instead of duplicating its Salesforce layer.
+
+  Nimble carried its own copy of the SOQL stack, which is how the hardening ladder proven on a
+  customer org existed in exactly one of the three Salesforce-platform connectors while Fonteva
+  and the base still had the defects. The duplicate is gone: `NimbleAMSConnector` now extends
+  `SalesforceConnector` and deletes ~230 lines of copied machinery (`FetchSOQL`, `BuildSOQL`,
+  `FormatSOQLDateTime`, `ResolveWatermarkField`, `ChunkSOQLFields`, `MergeChunkedRecords`).
+
+  What Nimble keeps is what is actually Nimble: the Fuse inbound/outbound doors, the LMS REST
+  family, `NU__`/`NUINT__` namespace scoping, its own OAuth token flow, and the literal-create
+  body shapes. Its `FetchChanges` routes those families itself and delegates the default door to
+  the base.
+
+  Moved INTO the base with this change (so Fonteva and every future Salesforce connector inherit
+  them, not just Nimble):
+
+  - **Chunked wide projections** — Salesforce's REST edge 431s an over-long request line; a
+    674-field object failed batch 1 of every run. Wide projections split into aligned chunks
+    (pinned to the one page size Salesforce honors exactly) and reassemble by Id; misalignment
+    throws rather than writing half-populated rows.
+  - **Declared-watermark honoring** — an explicit `IncrementalWatermarkField` now wins over the
+    audit-column preference, so objects that expose only `CreatedDate` stop 400-ing.
+
+  The SOQL-mechanics test coverage moved with the code: 11 cases now live in the base's suite
+  (construction, declared-watermark precedence, per-page watermark advance, chunk splitting,
+  aligned reassembly, misalignment throw, chunked-cursor round-trip) — base 59/59, Nimble 24/24,
+  Fonteva 62/62 unchanged.
+
+- 4c5b32b: Salesforce sync hardening: the five defects that kept a real org from ever finishing a sync.
+
+  - **Chunked SOQL projection** — Salesforce's REST edge rejects an over-long request line with
+    HTTP 431 (the URI counts against the header budget), so a wide object (Account: 674 queryable
+    fields) failed batch 1 of every run. When the encoded projection exceeds 12,000 chars, the
+    SAME row window is fetched as several narrower queries (each always carrying Id + the
+    watermark field), pinned to one page size (`Sforce-Query-Options: batchSize=200`) so pages
+    stay aligned, and reassembled by Id — misalignment THROWS rather than writing half-populated
+    rows. A chunked cursor is the JSON array of per-chunk nextRecordsUrl values; narrow objects
+    take the exact single-request path they take today.
+  - **Per-page watermark advance** — the watermark only recorded under `done=true`, so an object
+    too big to finish one run recorded nothing and restarted from row zero forever (subsumes the
+    standalone per-page PR).
+  - **Watermark resolution against real fields** + the 120s discovery deadline (subsumes the
+    nimble half of the watermark/sampler PR).
+  - **`StableOrderingKey` → null** — declaring one made the engine run keyset pagination INSTEAD
+    of the watermark filter; every sync re-walked from row zero.
+  - **SOQL datetime literals canonicalized** — Salesforce emits offsets without a colon
+    (`+0000`); the colon-only test appended a stray `Z` and every watermarked query died with
+    MALFORMED_QUERY (HTTP 400). One canonical form now: UTC ISO `Z`.
+
+  All five ran in production for a week as instance patches: the measured result on one org was
+  ~250 → ~20,000 rows/min sustained and a 3.87M-row object reaching source parity.
+
+- Updated dependencies [5ca7755]
+- Updated dependencies [8f4efad]
+  - @memberjunction/connector-salesforce@1.3.2
+
+## 1.3.3
+
+### Patch Changes
+
+- 6ee916d: Relicense to the Business Source License 1.1.
+
+  Metadata and documentation only: the `license` field moves to `BUSL-1.1` and the
+  repo gains a LICENSE file. No runtime behaviour, API surface, or dependency
+  changes. The bump exists so the new licence metadata reaches npm, since the
+  registry shows the licence of the latest published version.
+
 ## 1.3.2
 
 ### Patch Changes

@@ -117,9 +117,13 @@ export const BUSINESS_CENTRAL_BATCH_LIMIT = 100;
 /**
  * The bound action that posts a journal batch to the general ledger.
  *
- * Case sensitive, and asymmetrically so: the namespace is capitalised but the action's first word must
- * be lower case. `Microsoft.NAV.Post` returns 404 — which reads as "no such journal" and sends you
- * looking at the ID rather than the verb.
+ * Microsoft documents the action as `Microsoft.NAV.post`, and that is the form used here.
+ *
+ * DO NOT treat the capitalised `Microsoft.NAV.Post` as a safe no-op. An earlier revision of this file
+ * claimed it returns 404; that was never verified and is FALSE. Live testing against a real tenant
+ * (2026-08-17) showed `Microsoft.NAV.Post` returning 204 and POSTING the journal to the general ledger.
+ * Both casings post, and posting is irreversible — a posted journal is corrected with a reversing
+ * entry, never un-posted. Treat every casing of this action as a live ledger mutation.
  */
 export const BUSINESS_CENTRAL_POST_ACTION = 'Microsoft.NAV.post';
 
@@ -1103,8 +1107,8 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
         }
 
         const root = BuildBusinessCentralRootURL('webapi', this.urlParts(auth.Config, resolvedCompany));
-        // `Microsoft.NAV.post` is CASE SENSITIVE — Business Central requires the action's first word in
-        // lower case. `Microsoft.NAV.Post` 404s, which reads as "no such journal" rather than "wrong verb".
+        // Microsoft documents the lower-case `post`; that is what we send. NOTE: the capitalised
+        // `Microsoft.NAV.Post` is NOT a safe no-op — it posts too (verified live 2026-08-17).
         const url = `${root}/companies(${encodeURIComponent(resolvedCompany)})/journals(${encodeURIComponent(journalId)})/${BUSINESS_CENTRAL_POST_ACTION}`;
 
         const response = await this.PacedRequest(() =>
@@ -1235,12 +1239,12 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
             : null;
         const merged: Record<string, unknown> = { ...(fromConfig ?? {}), ...(fromCredential ?? {}) };
 
-        const clientId = firstString(merged, ['ClientId', 'clientId', 'ClientID', 'client_id'])
+        const clientId = firstString(merged, ['ClientId', 'clientId', 'ClientID', 'client_id', 'azureClientId'])
             ?? companyIntegration.ClientID ?? '';
-        const clientSecret = firstString(merged, ['ClientSecret', 'clientSecret', 'client_secret'])
+        const clientSecret = firstString(merged, ['ClientSecret', 'clientSecret', 'client_secret', 'azureClientSecret'])
             ?? companyIntegration.ClientSecret ?? '';
         // §2.2 overload: the legacy CompanyIntegration.APIKey column carries the AZURE TENANT ID.
-        const tenantId = firstString(merged, ['TenantId', 'tenantId', 'TenantID', 'tenant_id', 'AzureTenantId'])
+        const tenantId = firstString(merged, ['TenantId', 'tenantId', 'TenantID', 'tenant_id', 'AzureTenantId', 'azureTenantId'])
             ?? companyIntegration.APIKey ?? '';
         // §2.2 overload: the legacy CompanyIntegration.ExternalSystemID column carries the BC COMPANY GUID.
         const companyId = firstString(merged, ['CompanyId', 'companyId', 'CompanyID', 'company_id', 'BusinessCentralCompanyId'])

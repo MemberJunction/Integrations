@@ -84,6 +84,7 @@ jobs:
       # (version + mjVersionRange) via scripts/sync-manifest-versions.mjs. The <pkg>@<version> tags are what
       # `mj app install .../<Category>/<Connector> --version X.Y.Z` resolves (scoped-tag resolution).
       - name: Create Release PR or Publish
+        id: changesets
         uses: changesets/action@v1
         with:
           version: npm run version-packages
@@ -93,3 +94,63 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # BACK-MERGE main -> next, AUTOMATICALLY.
+      #
+      # The release commit lands on `main` ONLY: Version Packages bumps versions, writes CHANGELOGs and
+      # regenerates connectors-catalog.json there. `next` sends changes up and nothing comes back down, so
+      # the instant a publish completes `next` is stale by exactly that commit. Three consequences, all
+      # observed rather than theoretical:
+      #
+      #   1. catalog-freshness fails — it compares next's package.json against the newest tag. It failed
+      #      every day from 2026-08-15 until someone reconciled Business Central by hand.
+      #   2. The overview pages advertise the wrong version — they generate from `next`, so a connector
+      #      shows the previous release while npm serves the new one.
+      #   3. The next promotion conflicts, and the gap widens per release until a human resolves it. Four
+      #      back-merge PRs were opened this way in twelve days (#147, #178, #186, #191) and only the last
+      #      was merged.
+      #
+      # Opens a PR rather than pushing: protect-next is a PR-only ruleset with an empty bypass list, so
+      # nothing — this workflow included — pushes to `next` directly.
+      - name: Back-merge the release into next
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin next main
+          if git merge-base --is-ancestor origin/main origin/next; then
+            echo "next already contains main — nothing to back-merge."
+            exit 0
+          fi
+
+          BRANCH="chore/backmerge-release-${GITHUB_RUN_ID}"
+          git checkout -B "$BRANCH" origin/next
+
+          # A conflict here is a real divergence a human must look at, not something to force through.
+          if ! git merge origin/main --no-edit; then
+            git merge --abort || true
+            echo "::warning::main does not merge cleanly into next — open the back-merge by hand."
+            exit 0
+          fi
+
+          if git diff --quiet origin/next -- .; then
+            echo "merge produced no change — nothing to open."
+            exit 0
+          fi
+
+          git push origin "$BRANCH"
+          gh pr create --base next --head "$BRANCH" \
+            --title "chore: back-merge the release into next" \
+            --body "Automatic back-merge of \`main\` into \`next\` after a publish.
+
+          The release commit lands on \`main\` only — Version Packages bumps versions, writes CHANGELOGs and
+          regenerates \`connectors-catalog.json\` there. Without this, \`next\` is stale by exactly that commit,
+          which makes \`catalog-freshness\` fail, makes the overview pages advertise the previous version, and
+          widens the gap until the next promotion conflicts.
+
+          Merged automatically by nothing — a human still reviews and merges. If it conflicts, the workflow
+          leaves it alone and warns instead."
