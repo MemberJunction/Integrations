@@ -202,9 +202,8 @@
               {
                 "fields": {
                   "Name": "about",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "60733B81-31D0-438C-B55D-01A7CEDEE8AF"
@@ -727,9 +726,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "B9EFA2E4-1FC6-4D89-9ED8-8C4D4E0CDDF5"
@@ -2011,9 +2009,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "05A8A9AB-5418-4980-B11E-AF2EF94582C7"
@@ -3479,9 +3476,8 @@
               {
                 "fields": {
                   "Name": "about",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "F13417CE-51C8-4C81-85B1-2E3C34A3B111"
@@ -4093,9 +4089,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "02BBB68D-C516-4D90-B9D2-A9651F845DC9"
@@ -4744,9 +4739,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "590D8BBA-59AC-4C38-8B00-5AFC26CDDEE6"
@@ -5234,12 +5228,27 @@
               {
                 "fields": {
                   "Name": "about",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "4EAAA47A-A40F-41DF-9AA6-C8973748F1FF"
+                },
+                "sync": {
+                  "lastModified": "2026-07-04T02:04:28.117Z",
+                  "checksum": "1a667a5d7f063b6bb897eb715570bf2f90a7793908ced0d24e4f869554a58852"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sessions_information",
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID",
+                  "IsReadOnly": true,
+                  "Description": "Expanded detail for the sessions this speaker is attached to. Returned by GET /events/{eventCode}/speakers/ alongside the `sessions` code list. Unbounded prose — a single speaker with several sessions runs well past any sampled width."
+                },
+                "primaryKey": {
+                  "ID": "7C4A1E92-6B0D-4F53-9E1C-2D8B5A0F3E47"
                 },
                 "sync": {
                   "lastModified": "2026-07-04T02:04:28.117Z",
@@ -5462,9 +5471,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "EF90D75B-32D5-4BBE-BF61-656002FD7BB8"
@@ -5937,9 +5945,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "F26F574C-63F4-4130-B82E-A62538C68142"
@@ -6038,9 +6045,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "B6281EF3-5BD7-4D1F-88A5-49D302930652"
@@ -6181,9 +6187,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "56F68D18-9A26-4E10-9CFB-91497EE89EDB"
@@ -6318,9 +6323,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "AFE195E1-D67F-4215-8AD8-95CDAAD8F1CC"
@@ -6553,9 +6557,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "DD2B41D7-7104-48FD-8DBB-86E9DE99BEDC"
@@ -6817,9 +6820,8 @@
               {
                 "fields": {
                   "Name": "about",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "DCBF12AE-7F2C-48FA-8D93-CF9284A96DA4"
@@ -7201,9 +7203,8 @@
               {
                 "fields": {
                   "Name": "description",
-                  "Type": "string",
-                  "IntegrationObjectID": "@parent:ID",
-                  "Length": 4000
+                  "Type": "text",
+                  "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "B8F95B30-9C7D-4169-AE81-B8DB2CFEF59E"
