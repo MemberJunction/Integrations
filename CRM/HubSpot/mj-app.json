@@ -4,7 +4,7 @@
   "name": "connector-hubspot",
   "displayName": "HubSpot Connector",
   "description": "HubSpot CRM connector for MemberJunction — sync contacts, companies, deals, and activities, with the full curated object catalog.",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "license": "ISC",
   "icon": "fa-brands fa-hubspot",
   "color": "#ff7a59",
