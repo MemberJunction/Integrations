@@ -9990,6 +9990,506 @@
         },
         {
           "fields": {
+            "Name": "journalLineDimensionSetLines",
+            "DisplayName": "Journal Line Dimension Set Lines",
+            "Description": "Dimension set lines addressed under a JOURNAL LINE. Business Central navigates dimensionSetLines from 24 parent types; the sibling `dimensionSetLines` object covers the sales-order parent and this one covers the journal line, so dimensions can be written to a journal entry. Same resource, different access path — `parentType` distinguishes them on the wire.",
+            "APIPath": "/companies({id})/journals({id})/journalLines({id})/dimensionSetLines",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": false,
+            "Category": "journalLine children",
+            "ResponseDataKey": "value",
+            "PaginationType": "Cursor",
+            "DefaultPageSize": null,
+            "SupportsPagination": true,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": true,
+            "CreateAPIPath": "/companies({id})/journals({id})/journalLines({id})/dimensionSetLines",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateBodyKey": null,
+            "CreateIDLocation": "body",
+            "SupportsUpdate": true,
+            "UpdateAPIPath": "/companies({id})/journals({id})/journalLines({id})/dimensionSetLines({id})",
+            "UpdateMethod": "PATCH",
+            "UpdateBodyShape": "flat",
+            "UpdateBodyKey": null,
+            "UpdateIDLocation": "path",
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/companies({id})/journals({id})/journalLines({id})/dimensionSetLines({id})",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "id",
+            "Sequence": 71,
+            "Status": "Active",
+            "IntegrationID": "@parent:ID",
+            "Configuration": {
+              "resourceType": "dimensionSetLine",
+              "entitySet": "dimensionSetLines",
+              "companyScoped": true,
+              "accessPath": {
+                "door": "companies",
+                "nesting": "companies[] → journals[] → journalLines[] → dimensionSetLines[]",
+                "doorArgs": [
+                  "companies({companyId}) path segment, or ?company=<companyGuid> query param"
+                ],
+                "depth": 3
+              },
+              "nestedAlternatePaths": [
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesShipments({id})/dimensionSetLines({id})",
+                "/companies({id})/salesShipmentLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseReceipts({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseReceiptLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})"
+              ],
+              "documentedPaths": [
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesShipments({id})/dimensionSetLines({id})",
+                "/companies({id})/salesShipmentLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseReceipts({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseReceiptLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/journalLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesOrderLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuotes({id})/dimensionSetLines({id})",
+                "/companies({id})/salesQuoteLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemos({id})/dimensionSetLines({id})",
+                "/companies({id})/salesCreditMemoLines({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/salesInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoices({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseInvoiceLines({id})/dimensionSetLines({id})",
+                "/companies({id})/generalLedgerEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/timeRegistrationEntries({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrders({id})/dimensionSetLines({id})",
+                "/companies({id})/purchaseOrderLines({id})/dimensionSetLines({id})"
+              ],
+              "boundActions": [],
+              "isMutable": true,
+              "isAppendOnly": false,
+              "paging": {
+                "mechanism": "server-driven (continuation token)",
+                "maxPageSizeOnline": 20000,
+                "clientHint": "Prefer: odata.maxpagesize=<n>"
+              },
+              "watermarkFilterForm": null,
+              "concurrencyHeader": "If-Match (ETag) required on PATCH/DELETE per OData concurrency; see resource operation pages",
+              "sourceEvidence": {
+                "resourcePage": "packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_dimensionSetLine.md",
+                "operationPages": [
+                  "packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/api/dynamics_dimensionsetline_get.md",
+                  "packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/api/dynamics_dimensionsetline_delete.md",
+                  "packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/api/dynamics_dimensionsetline_create.md",
+                  "packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/api/dynamics_dimensionsetline_update.md"
+                ]
+              }
+            }
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "The unique ID of the dimension set line. Non-editable.",
+                  "Type": "uuid",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "GUID"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "7126C681-6102-4BF8-A9DE-40A830BFC6C4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.289Z",
+                  "checksum": "5508cb3a5b3cf1943e383415245c64c110b3fead07ef7746b93bec5115a768d0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "The code of the dimension set line.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "string"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "99823511-D6B6-42B8-B685-7A21CA401988"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.311Z",
+                  "checksum": "ac828f91a858f82e26f5a5dfa473b3a358b1cabcecaace9ddb745a8a63416007"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "consolidationCode",
+                  "DisplayName": "Consolidation Code",
+                  "Description": "consolidationCode (string) on the dimensionSetLine resource. Microsoft's Properties table leaves the description cell blank.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "string"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "F9EBFF5D-3787-4A1E-9D6E-E4EF9D3ABBE0"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.356Z",
+                  "checksum": "5c26d5614e5750de2b5dc7602e1d89b7326a4576581a1038ee4224a9d646c82b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "parentId",
+                  "DisplayName": "Parent Id",
+                  "Description": "The ID of the parent entity.",
+                  "Type": "uuid",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "GUID"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "74D75B1B-4450-4623-B8D4-D3DB112BD783"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.380Z",
+                  "checksum": "211e2d8b45e3c5571ee1f43cbe1bc2cf96abb00f055ecd282b5dc49be9d9f30c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "parentType",
+                  "DisplayName": "Parent Type",
+                  "Description": "The type of the parent document of the dimension set line. It can be \" \", \"Journal Line\", \"Sales Order\", \"Sales Order Line\", \"Sales Quote\", \"Sales Quote Line\", \"Sales Credit Memo\", \"Sales Credit Memo Line\", \"Sales Invoice\", \"Sales Invoice Line\",...",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "NAV.dimensionSetEntryBufferParentType",
+                    "enumType": "NAV.dimensionSetEntryBufferParentType",
+                    "enumValues": [
+                      " ",
+                      "Journal Line",
+                      "Sales Order",
+                      "Sales Order Line",
+                      "Sales Quote",
+                      "Sales Quote Line",
+                      "Sales Credit Memo",
+                      "Sales Credit Memo Line",
+                      "Sales Invoice",
+                      "Sales Invoice Line",
+                      "Purchase Invoice",
+                      "Purchase Invoice Line",
+                      "General Ledger Entry",
+                      "Time Registration Entry"
+                    ]
+                  }
+                },
+                "primaryKey": {
+                  "ID": "72165800-9487-49DD-8551-200278629D8D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.401Z",
+                  "checksum": "e02b69c368a0fbe4259cb4126737cda7d6475516e00c777ab11b4751fc6ac8bf"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "displayName",
+                  "DisplayName": "Display Name",
+                  "Description": "Specifies the dimension set line's name. This name will appear on all sales documents for the dimension set line.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "string"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "EBB14E59-5D5F-42AC-998A-FB7040B994D3"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.420Z",
+                  "checksum": "a5f209b05d320ff637e24c7fb2abf5b7620d22d8723850a5340cf4fdc42b13b0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "valueId",
+                  "DisplayName": "Value Id",
+                  "Description": "The unique ID of the value of the dimension.",
+                  "Type": "uuid",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "GUID"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "FBBC8990-0547-455D-BD4B-82AFCA95BB31"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.443Z",
+                  "checksum": "5d0c17038033c9f6167c65aefd3f6277892f97d80788f2248845aa8c260164f3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "valueCode",
+                  "DisplayName": "Value Code",
+                  "Description": "The code of the value of the dimension.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "string"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "01EB31DB-24F9-4FCF-B312-E55CFC3A3A37"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.468Z",
+                  "checksum": "3756d963e78fd748ad674ba10fedd2cafc20a76d62e49d81441c90270770ead3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "valueConsolidationCode",
+                  "DisplayName": "Value Consolidation Code",
+                  "Description": "valueConsolidationCode (string) on the dimensionSetLine resource. Microsoft's Properties table leaves the description cell blank.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "string"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "EE1EF287-B867-4650-A68D-2935EB1FDAF0"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.484Z",
+                  "checksum": "bbe5f5f6e0bcd8d53ec9b3975c00736ad484b8d395dc97c924ab65212f8c1aca"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "valueDisplayName",
+                  "DisplayName": "Value Display Name",
+                  "Description": "The display name of the value of the dimension. Read-Only.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "string"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "15352988-531F-4379-8AAA-CA3E0572F183"
+                },
+                "sync": {
+                  "lastModified": "2026-08-04T23:22:51.520Z",
+                  "checksum": "c5c6db3aef5b0d3ce4ed8d76b5ebb359d544b6b9da3220fdb85c3adbaa9fbf2b"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "19C6B047-700D-4CF4-B20E-8C8CF0AA7B64"
+          },
+          "sync": {
+            "lastModified": "2026-08-04T23:22:45.521Z",
+            "checksum": "4e945a3de8d58860aba12aa0fd139affec2cde6e8ebde569f9bcec02e292e336"
+          }
+        },
+        {
+          "fields": {
             "Name": "dimensionValues",
             "DisplayName": "Dimension Values",
             "Description": "Dimension value — Business Central API v2.0 resource 'dimensionValue'. Source: packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/resources/dynamics_dimensionvalue.md.",

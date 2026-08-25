@@ -438,7 +438,7 @@
       ],
       "logo": "fa-brands fa-microsoft",
       "navigationBaseURL": null,
-      "objectCount": 83,
+      "objectCount": 84,
       "className": "BusinessCentralConnector",
       "npmPackage": "@memberjunction/connector-business-central",
       "version": "2.0.1",
