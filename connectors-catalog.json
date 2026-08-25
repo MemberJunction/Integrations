@@ -249,10 +249,10 @@
       "objectCount": 168,
       "className": "@memberjunction/connector-hubspot",
       "npmPackage": "@memberjunction/connector-hubspot",
-      "version": "1.1.3",
+      "version": "1.1.4",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "CRM/HubSpot",
-      "installTag": "CRM-HubSpot@1.1.3"
+      "installTag": "CRM-HubSpot@1.1.4"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
@@ -396,10 +396,10 @@
       "objectCount": 28,
       "className": "@memberjunction/connector-pheedloop",
       "npmPackage": "@memberjunction/connector-pheedloop",
-      "version": "1.4.4",
+      "version": "1.4.5",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
-      "installTag": "Events-PheedLoop@1.4.4"
+      "installTag": "Events-PheedLoop@1.4.5"
     },
     {
       "name": "Bill.com",
