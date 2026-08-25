@@ -1,0 +1,1025 @@
+[
+  {
+    "fields": {
+      "Name": "Bill.com - Get Invoices",
+      "Description": "Retrieves a single Invoices record from Bill.com by its external ID",
+      "Type": "Custom",
+      "Status": "Active",
+      "DriverClass": "IntegrationActionExecutor",
+      "CategoryID": "@lookup:MJ: Action Categories.Name=Bill.com",
+      "Config": {
+        "IntegrationName": "Bill.com",
+        "ObjectName": "invoices",
+        "Verb": "Get"
+      },
+      "IconClass": "fa-solid fa-file-invoice-dollar"
+    },
+    "relatedEntities": {
+      "MJ: Action Params": [
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "ExternalID",
+            "Type": "Both",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": true,
+            "Description": "The unique ID of the Invoices record to retrieve"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "CompanyIntegrationID",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Optional: specific CompanyIntegration to use"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "Record",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "The retrieved Invoices record with all fields"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "id",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the invoice. The value begins with `00e`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "archived",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Set as `true` if the invoice is archived"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "recordStatus",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Record Status value from the retrieved record"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceNumber",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "User-generated invoice number. This value can be your chosen number scheme.\n\nIf you do not set this field, `invoiceNumber` is auto-generated."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceDate",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice creation date. This value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `invoiceDate` is set as the date when the invoice is created."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "dueDate",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice due date. The value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `dueDate` is set as the date when the invoice is created."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "paymentTermId",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Payment Term Id value from the retrieved record"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "customerId",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the customer. The value begins with `0cu`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "totalAmount",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice total amount"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "dueAmount",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice due amount. The value is calculated by subtracting any applied credits (`creditAmount`), scheduled payment (`scheduledAmount`), and cleared payment from `totalAmount`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "scheduledAmount",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice scheduled amount. The value is set as the customer payment amount that is pending clearance."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "creditAmount",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Credit amount applied to the invoice.\n\nWhen a credit amount is applied to an invoice, the invoice `status` is set as `PARTIAL_PAYMENT` or `PAID_IN_FULL` depending on the invoice `totalAmount`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "status",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Status value from the retrieved record"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "exchangeRate",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice exchange rate"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "createdBy",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the user that created the invoice. The value begins with `006`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "createdTime",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice created time"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "updatedTime",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice updated time"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceLineItems",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice line item information"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "payToChartOfAccountId",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the chart of accounts for the invoice payment. The value begins with `0ca`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "payments",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice payments information"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "classifications",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Classifications value from the retrieved record"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxItemId",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the `SALES_TAX` item. The value begins with `0ii`. The tax rate is applied to all the invoice line items set as taxable."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxTotal",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice sales tax amount. The value is set based on `salesTaxItemId`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxPercentage",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice sales tax percentage. The value is set based on `salesTaxItemId`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "enableCardPayment",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Set as `true` if the card payment option is enabled for the invoice"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "convenienceFee",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Convenience Fee value from the retrieved record"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoicePdfId",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the invoice PDF. The value begins with `att`.\n\nThe invoice PDF is sent as an email attachment when you send an invoice to a customer. The invoice PDF also appears when the customer clicks the invoice payment link to complete the in..."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "customer",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Customer the invoice is issued to, as an InvoiceCustomer object — {\"id\":\"0cu…\"}, NOT a bare ID string. Write-only: BILL returns the same value flattened to `customerId` on read."
+          }
+        }
+      ],
+      "MJ: Action Result Codes": [
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "SUCCESS",
+            "IsSuccess": true,
+            "Description": "Get operation completed successfully"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "EXECUTOR_ERROR",
+            "IsSuccess": false,
+            "Description": "Internal executor error"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "NOT_FOUND",
+            "IsSuccess": false,
+            "Description": "Record not found"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "fields": {
+      "Name": "Bill.com - Create Invoices",
+      "Description": "Creates a new Invoices record in Bill.com",
+      "Type": "Custom",
+      "Status": "Active",
+      "DriverClass": "IntegrationActionExecutor",
+      "CategoryID": "@lookup:MJ: Action Categories.Name=Bill.com",
+      "Config": {
+        "IntegrationName": "Bill.com",
+        "ObjectName": "invoices",
+        "Verb": "Create"
+      },
+      "IconClass": "fa-solid fa-file-invoice-dollar"
+    },
+    "relatedEntities": {
+      "MJ: Action Params": [
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "CompanyIntegrationID",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Optional: specific CompanyIntegration to use"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "archived",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Set as `true` if the invoice is archived"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "recordStatus",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Record Status field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceNumber",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "User-generated invoice number. This value can be your chosen number scheme.\n\nIf you do not set this field, `invoiceNumber` is auto-generated."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceDate",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice creation date. This value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `invoiceDate` is set as the date when the invoice is created."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "dueDate",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice due date. The value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `dueDate` is set as the date when the invoice is created."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "paymentTermId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Payment Term Id field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "scheduledAmount",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice scheduled amount. The value is set as the customer payment amount that is pending clearance."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "creditAmount",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Credit amount applied to the invoice.\n\nWhen a credit amount is applied to an invoice, the invoice `status` is set as `PARTIAL_PAYMENT` or `PAID_IN_FULL` depending on the invoice `totalAmount`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "status",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Status field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "exchangeRate",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice exchange rate"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "createdBy",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the user that created the invoice. The value begins with `006`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceLineItems",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice line item information"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "payToChartOfAccountId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the chart of accounts for the invoice payment. The value begins with `0ca`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "payments",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice payments information"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "classifications",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Classifications field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxItemId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the `SALES_TAX` item. The value begins with `0ii`. The tax rate is applied to all the invoice line items set as taxable."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxTotal",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice sales tax amount. The value is set based on `salesTaxItemId`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxPercentage",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice sales tax percentage. The value is set based on `salesTaxItemId`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "enableCardPayment",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Set as `true` if the card payment option is enabled for the invoice"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "convenienceFee",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Convenience Fee field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoicePdfId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the invoice PDF. The value begins with `att`.\n\nThe invoice PDF is sent as an email attachment when you send an invoice to a customer. The invoice PDF also appears when the customer clicks the invoice payment link to complete the in..."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "customer",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": true,
+            "Description": "Customer the invoice is issued to, as an InvoiceCustomer object — {\"id\":\"0cu…\"}, NOT a bare ID string. Write-only: BILL returns the same value flattened to `customerId` on read."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "ExternalID",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "The external ID of the newly created Invoices record"
+          }
+        }
+      ],
+      "MJ: Action Result Codes": [
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "SUCCESS",
+            "IsSuccess": true,
+            "Description": "Create operation completed successfully"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "EXECUTOR_ERROR",
+            "IsSuccess": false,
+            "Description": "Internal executor error"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "CREATE_FAILED",
+            "IsSuccess": false,
+            "Description": "Create operation failed"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "NOT_SUPPORTED",
+            "IsSuccess": false,
+            "Description": "Create not supported by this connector"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "fields": {
+      "Name": "Bill.com - Update Invoices",
+      "Description": "Updates an existing Invoices record in Bill.com. Only provided fields are changed.",
+      "Type": "Custom",
+      "Status": "Active",
+      "DriverClass": "IntegrationActionExecutor",
+      "CategoryID": "@lookup:MJ: Action Categories.Name=Bill.com",
+      "Config": {
+        "IntegrationName": "Bill.com",
+        "ObjectName": "invoices",
+        "Verb": "Update"
+      },
+      "IconClass": "fa-solid fa-file-invoice-dollar"
+    },
+    "relatedEntities": {
+      "MJ: Action Params": [
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "ExternalID",
+            "Type": "Both",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": true,
+            "Description": "The external ID of the Invoices record to update"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "CompanyIntegrationID",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Optional: specific CompanyIntegration to use"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "archived",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Set as `true` if the invoice is archived"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "recordStatus",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Record Status field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceNumber",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "User-generated invoice number. This value can be your chosen number scheme.\n\nIf you do not set this field, `invoiceNumber` is auto-generated."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceDate",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice creation date. This value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `invoiceDate` is set as the date when the invoice is created."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "dueDate",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice due date. The value is in the `yyyy-MM-dd` format.\n\nIf you do not set this field, `dueDate` is set as the date when the invoice is created."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "paymentTermId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Payment Term Id field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "scheduledAmount",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice scheduled amount. The value is set as the customer payment amount that is pending clearance."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "creditAmount",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Credit amount applied to the invoice.\n\nWhen a credit amount is applied to an invoice, the invoice `status` is set as `PARTIAL_PAYMENT` or `PAID_IN_FULL` depending on the invoice `totalAmount`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "status",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Status field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "exchangeRate",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice exchange rate"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "createdBy",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the user that created the invoice. The value begins with `006`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoiceLineItems",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice line item information"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "payToChartOfAccountId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the chart of accounts for the invoice payment. The value begins with `0ca`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "payments",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice payments information"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "classifications",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Classifications field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxItemId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the `SALES_TAX` item. The value begins with `0ii`. The tax rate is applied to all the invoice line items set as taxable."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxTotal",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice sales tax amount. The value is set based on `salesTaxItemId`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "salesTaxPercentage",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Invoice sales tax percentage. The value is set based on `salesTaxItemId`."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "enableCardPayment",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Set as `true` if the card payment option is enabled for the invoice"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "convenienceFee",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Convenience Fee field"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "invoicePdfId",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "BILL-generated ID of the invoice PDF. The value begins with `att`.\n\nThe invoice PDF is sent as an email attachment when you send an invoice to a customer. The invoice PDF also appears when the customer clicks the invoice payment link to complete the in..."
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "customer",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Customer the invoice is issued to, as an InvoiceCustomer object — {\"id\":\"0cu…\"}, NOT a bare ID string. Write-only: BILL returns the same value flattened to `customerId` on read."
+          }
+        }
+      ],
+      "MJ: Action Result Codes": [
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "SUCCESS",
+            "IsSuccess": true,
+            "Description": "Update operation completed successfully"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "EXECUTOR_ERROR",
+            "IsSuccess": false,
+            "Description": "Internal executor error"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "UPDATE_FAILED",
+            "IsSuccess": false,
+            "Description": "Update operation failed"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "ResultCode": "NOT_SUPPORTED",
+            "IsSuccess": false,
+            "Description": "Update not supported by this connector"
+          }
+        }
+      ]
+    }
+  }
+]
