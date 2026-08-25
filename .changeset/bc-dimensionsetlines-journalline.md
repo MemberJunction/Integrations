@@ -21,6 +21,15 @@ navigates to it from **24** EntityTypes and `parentType` distinguishes them on t
 one parent that blocks journal-entry export. The other 22 remain uncatalogued; covering them generally is a
 modelling decision rather than a path correction.
 
-Delta migration `V202608251200__business-central__JournalLineDimensionSetLines` inserts the object and its
-ten fields, every guard keyed on the unique constraint's own columns rather than on `ID` — the mistake that
-broke `V202608240630__pheedloop__UnboundedText`.
+Delta migration `V202608251200__business-central__JournalLineDimensionSetLines` seeds the object and its ten
+fields through `spCreateIntegrationObject` / `spCreateIntegrationObjectField` — the same calls the original
+`V202608041723` seed emits — rather than raw `INSERT`s, so the row goes through the same defaulting and
+validation as the 83 around it. A delta migration is the only safe shape here: regenerating the seed would
+supersede the published `V202608041723` and change its Flyway checksum on every tenant that has already run
+it.
+
+The object and field IDs in the migration are the same GUIDs the metadata catalog carries. That parity was
+missing in the first draft of this change: the catalog entry had been copied from the sibling
+`dimensionSetLines` object and kept **its** primary keys, so the catalog declared two objects sharing one ID
+and ten field IDs. A `mj sync push` would have written each pair twice and silently collapsed the two objects
+into one. Fixed here, and the file now carries 84 distinct object IDs and 1,332 distinct field IDs.
