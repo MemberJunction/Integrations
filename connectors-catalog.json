@@ -396,10 +396,10 @@
       "objectCount": 28,
       "className": "@memberjunction/connector-pheedloop",
       "npmPackage": "@memberjunction/connector-pheedloop",
-      "version": "1.4.3",
+      "version": "1.4.4",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
-      "installTag": "Events-PheedLoop@1.4.3"
+      "installTag": "Events-PheedLoop@1.4.4"
     },
     {
       "name": "Bill.com",
@@ -417,10 +417,10 @@
       "objectCount": 3,
       "className": "@memberjunction/connector-bill-com",
       "npmPackage": "@memberjunction/connector-bill-com",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Finance/BillCom",
-      "installTag": "Finance-BillCom@0.2.1"
+      "installTag": "Finance-BillCom@0.3.0"
     },
     {
       "name": "business-central",
