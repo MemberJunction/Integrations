@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-pheedloop",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "MemberJunction PheedLoop connector.",
   "type": "module",
   "main": "dist/index.js",
