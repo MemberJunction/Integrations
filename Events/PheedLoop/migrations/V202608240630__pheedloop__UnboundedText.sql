@@ -60,7 +60,15 @@ UPDATE [__mj].[IntegrationObjectField] SET [Type] = N'text', [Length] = NULL WHE
 -- Status, IsCustom, MetadataSource, and both audit timestamps), so the sproc adds nothing here —
 -- and the DECLARE/EXEC form it requires does not survive translation to PostgreSQL.
 
-IF NOT EXISTS (SELECT 1 FROM [__mj].[IntegrationObjectField] WHERE [ID] = '62D7A579-90CC-48C2-9E30-C89FEC3B2D17')
+-- Guard on the UNIQUE CONSTRAINT, not on the ID. UQ_IntegrationObjectField_Name is on
+-- (IntegrationObjectID, Name): where discovery reached this object first it already created
+-- 'sessions_information' under a DIFFERENT ID, so an ID guard passes and the INSERT then
+-- violates the constraint — failing this migration, and with it every LATER migration in the
+-- chain, permanently. Guarding on the same columns the constraint covers makes the statement
+-- idempotent regardless of which side created the row.
+IF NOT EXISTS (SELECT 1 FROM [__mj].[IntegrationObjectField]
+               WHERE [IntegrationObjectID] = 'E397FE85-9B83-40CE-A922-32525081EC4D'
+                 AND [Name] = N'sessions_information')
   INSERT INTO [__mj].[IntegrationObjectField]
     ([ID], [IntegrationObjectID], [Name], [Description], [Type], [IsReadOnly], [Sequence], [Status], [IsCustom], [MetadataSource])
   VALUES ('62D7A579-90CC-48C2-9E30-C89FEC3B2D17', 'E397FE85-9B83-40CE-A922-32525081EC4D', N'sessions_information', N'Expanded detail for the sessions this speaker is attached to. Returned by GET /events/{eventCode}/speakers/ alongside the `sessions` code list. Unbounded prose — a single speaker with several sessions runs well past any sampled width.', N'text', 1, 0, N'Active', 0, N'Declared');

@@ -63,7 +63,14 @@ UPDATE __mj."IntegrationObjectField" SET "Type" = 'text', "Length" = NULL WHERE 
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM __mj."IntegrationObjectField" WHERE "ID" = '62D7A579-90CC-48C2-9E30-C89FEC3B2D17'
+        -- Guard on the UNIQUE CONSTRAINT, not on the ID. UQ_IntegrationObjectField_Name is on
+        -- (IntegrationObjectID, Name): where discovery reached this object first it already
+        -- created 'sessions_information' under a DIFFERENT ID, so an ID guard passes and the
+        -- INSERT then violates the constraint — failing this migration, and with it every
+        -- LATER migration in the chain, permanently.
+        SELECT 1 FROM __mj."IntegrationObjectField"
+         WHERE "IntegrationObjectID" = 'E397FE85-9B83-40CE-A922-32525081EC4D'
+           AND "Name" = 'sessions_information'
     ) THEN
         INSERT INTO __mj."IntegrationObjectField"
         ("ID", "IntegrationObjectID", "Name", "Description", "Type", "IsReadOnly", "Sequence", "Status", "IsCustom", "MetadataSource")
