@@ -396,10 +396,10 @@
       "objectCount": 28,
       "className": "@memberjunction/connector-pheedloop",
       "npmPackage": "@memberjunction/connector-pheedloop",
-      "version": "1.4.2",
+      "version": "1.4.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/PheedLoop",
-      "installTag": "Events-PheedLoop@1.4.2"
+      "installTag": "Events-PheedLoop@1.4.3"
     },
     {
       "name": "Bill.com",
