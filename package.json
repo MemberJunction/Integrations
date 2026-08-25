@@ -32,7 +32,8 @@
     "migrations:pg": "node scripts/build-pg-migrations.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs && node scripts/build-connectors-catalog.mjs",
-    "release": "turbo run build && changeset publish && node scripts/tag-apps.mjs"
+    "release": "turbo run build && changeset publish && node scripts/tag-apps.mjs",
+    "lint:version-range": "node scripts/lint-manifest-version-range.mjs"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
