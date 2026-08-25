@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-business-central",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "MemberJunction Microsoft Dynamics 365 Business Central connector.",
   "type": "module",
   "main": "dist/index.js",
