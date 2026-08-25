@@ -96,6 +96,15 @@ jobs:
       - name: Connector catalog up to date
         run: node scripts/build-connectors-catalog.mjs --check
 
+      # mj-app.json.mjVersionRange and the @memberjunction/core peer range are two statements of one
+      # fact: which MJ majors the connector supports. npm enforces the peer range at install; MJ reads
+      # mjVersionRange to gate `mjdev app register`. When they disagree the connector is installable by
+      # one rule and rejected by the other, and it surfaces on a customer's host rather than here —
+      # Business Central advertised MJ 6.x in its peers while its manifest still capped at <6.0.0, so
+      # registering it on a 6.1.0 instance failed (#208).
+      - name: Manifest MJ version range matches peers
+        run: node scripts/lint-manifest-version-range.mjs
+
       # The fleet overview pages are generated FROM the per-connector docs/SUPPORT.md files, whose
       # rigid format the generator parses (and refuses to guess at — an unparseable evidence doc
       # would otherwise render as "no evidence", understating real proof). This checks only that
