@@ -36,44 +36,40 @@ Releases are cut + tagged on `main`, but the version-bump commit is often never 
   highest semver tag; fails on any lag. Modes: `--report` (never fail), `--public-only`, `--json`.
 - `.github/workflows/catalog-freshness.yml` — daily `schedule` + `workflow_dispatch`. Deliberately a
   **branch-state** check, not a per-PR gate (the recurrence never arrives via a `next` PR, and
-  per-PR gating would block unrelated PRs on pre-existing drift). **It is RED until the merge-back
-  sweep lands — that red run is the tracked signal for the debt below.**
+  per-PR gating would block unrelated PRs on pre-existing drift).
 
-### Deferred: the merge-back sweep
+### Status: the merge-back sweep landed
 
-15 public (installable) connectors lag their newest tag. For every one, the tag differs from `next`
-**only** in `package.json` + `mj-app.json` version and `CHANGELOG.md` — `next` already has the code;
-only the version-bump never merged back. Worklist (regenerate with
-`node scripts/check-catalog-freshness.mjs --json --public-only`):
+**Updated 2026-08-26.** The 15-connector worklist this section used to carry is **done** — every
+connector on it now matches its newest tag. Current state
+(`node scripts/check-catalog-freshness.mjs --json`):
 
 | Connector | next | newest tag |
 |---|---|---|
-| AMS/Impexium | 0.1.0 | 1.0.0 |
-| AMS/WildApricot | 1.2.0 | 1.2.1 |
-| CRM/HubSpot | 1.1.0 | 1.1.1 |
-| Events/Eventbrite | 2.0.0 | 2.0.1 |
-| Finance/Stripe | 0.2.1 | 0.2.2 |
-| Marketing/MagnetMail | 3.0.0 | 3.0.2 |
-| Platform/HigherLogicThriveCommunity | 0.1.0 | 0.2.0 |
-| Platform/HigherLogicVanilla | 0.1.0 | 0.2.1 |
-| Platform/MongoDB | 1.0.0 | 1.0.1 |
-| Platform/MySQL | 1.0.0 | 1.0.1 |
-| Platform/Oracle | 1.0.0 | 1.0.1 |
-| Platform/PostgreSQL | 1.0.0 | 1.0.1 |
-| Platform/SQLServer | 1.0.0 | 1.0.1 |
-| Platform/Snowflake | 1.0.0 | 1.0.1 |
-| Platform/Zendesk | 1.1.0 | 1.1.2 |
+| LMS/Elevate | 0.1.0 | 0.2.0 |
 
-(10 more **private/held** connectors also lag; they are not in the catalog. Use the script without
-`--public-only` to see all 25.)
+**1 of 56** lagging (1 of 49 public; the 7 private/held connectors are all current). The daily
+workflow is therefore still RED, but for a *different and much smaller* reason than the text here
+previously claimed — do not read a red run as evidence that the old sweep is outstanding.
 
-**Why not bump-back in this PR:** these are *not* trivially safe under this repo's changeset
-machinery. A version-only bump-back on `next` trips `scripts/require-changeset.mjs` (the target
-version is already on npm ⇒ "already-published connector changed with no covering changeset"), and
-adding a changeset would **double-bump** on the next `next → main` release. The correct reconciliation
-is a `main → next` merge-back of each release's version commit (or a `git checkout <tag> -- <conn>`
-of just the version/changelog files, committed without a new changeset), verified against the
-changeset/publish flow — which needs the publish pipeline this PR can't run. Tracked as follow-up.
+`LMS/Elevate` is the one live case, and the original caution still applies to it: a version-only
+bump-back on `next` trips `scripts/require-changeset.mjs` (the target version is already on npm ⇒
+"already-published connector changed with no covering changeset"), and adding a changeset would
+**double-bump** on the next `next → main` release. The correct reconciliation is a `main → next`
+merge-back of that release's version commit (or a `git checkout <tag> -- LMS/Elevate` of just the
+version/changelog files, committed without a new changeset), verified against the changeset/publish
+flow.
+
+### Scope limit: A9 says nothing about vendor-surface freshness
+
+A9 compares a **package version to a git tag**. It is silent on whether a connector's declared
+object catalog still matches the vendor API it was derived from — a connector can be perfectly
+tag-current and declared against a two-year-old spec. That second kind of freshness lives in each
+connector's `Configuration.DeclaredAgainst` block, and as of 2026-08-26 only **3 of 56** connectors
+carry one at all (`AMS/NetForum`, `Platform/WordPress`, `LMS/Elevate`). The remaining 53 record no
+fetch date, no source hash and no pinned vendor version, so nothing distinguishes "declared last
+month" from "declared against a spec nobody has re-read since". Backfilling those pins requires a
+real source fetch per connector and cannot be inferred from the repo. Untracked debt, no guard.
 
 ---
 
