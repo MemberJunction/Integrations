@@ -186,6 +186,11 @@
       "marketingName": "Stripe",
       "marketingDescription": "Payments, billing, subscriptions and Connect platform data from Stripe."
     },
+    "LMS/Elevate": {
+      "marketingDescription": "Learners, courses and products, registrations, earned credits and accounting codes.",
+      "generated": true,
+      "sourceHash": "7cffdc66f3581508"
+    },
     "LMS/PathLMS": {
       "marketingName": "Path LMS (Blue Sky eLearn)",
       "marketingDescription": "Learner, course and engagement analytics across 16 Path LMS reporting surfaces."
