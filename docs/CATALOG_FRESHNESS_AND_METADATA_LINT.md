@@ -1,7 +1,13 @@
-# Catalog freshness (A9) & metadata-field lint (A11)
+# Catalog freshness (A9 / A9b) & metadata-field lint (A11)
 
-Two CI guards + their standing tech-debt. Both target the same failure mode: **a declaration
-on `next` that no tenant / no install actually sees**, so a green check confirms a fiction.
+Three CI guards + their standing tech-debt, all against one failure mode: **a declaration nobody
+can check**, so a green run confirms a fiction. Each guards a different way that happens —
+
+| | The declaration | What goes unchecked |
+|---|---|---|
+| **A9** | a connector version on `next` | the tag an install actually resolves has moved past it |
+| **A9b** | a declared object catalog | *what vendor artifact it was derived from, and when* |
+| **A11** | a metadata `fields.*` key | `SetLocal` drops it on push, so it reaches no tenant |
 
 ---
 
@@ -60,16 +66,56 @@ merge-back of that release's version commit (or a `git checkout <tag> -- LMS/Ele
 version/changelog files, committed without a new changeset), verified against the changeset/publish
 flow.
 
-### Scope limit: A9 says nothing about vendor-surface freshness
+## A9b — Catalog-freshness pin (declared-against)
 
-A9 compares a **package version to a git tag**. It is silent on whether a connector's declared
-object catalog still matches the vendor API it was derived from — a connector can be perfectly
-tag-current and declared against a two-year-old spec. That second kind of freshness lives in each
-connector's `Configuration.DeclaredAgainst` block, and as of 2026-08-26 only **3 of 56** connectors
-carry one at all (`AMS/NetForum`, `Platform/WordPress`, `LMS/Elevate`). The remaining 53 record no
-fetch date, no source hash and no pinned vendor version, so nothing distinguishes "declared last
-month" from "declared against a spec nobody has re-read since". Backfilling those pins requires a
-real source fetch per connector and cannot be inferred from the repo. Untracked debt, no guard.
+### The bug class
+
+A9 above compares a **package version to a git tag**. It is silent on whether a connector's
+declared object catalog still matches the vendor API it was derived from — a connector can be
+perfectly tag-current and declared against a two-year-old spec.
+
+The catalog is derived from a vendor artifact: an OpenAPI doc, a WSDL, a plugin's PHP source, a
+support-site article. That artifact moves; the catalog does not. With no record of **which**
+artifact was read and **when**, a stale catalog is indistinguishable from a current one — a
+missing object could mean the connector is wrong or the vendor moved after we looked, and nothing
+says which. The declaration reads as settled fact because the gap was never written down.
+
+### The guard
+
+- `scripts/lint-catalog-freshness-pin.mjs` — every connector's
+  `metadata/integration/*.integration.json` must carry `fields.Configuration.DeclaredAgainst`
+  containing, at any depth, **at least one source URL** (what was read) and **at least one ISO
+  date** (when). Modes: `--report` (never fail), `--json`.
+- Wired into `pr.yml` and `release.yml` as **Catalog freshness pin declared**.
+
+The bar is deliberately low — URL + date, nothing more. The richer pins in the tree are what make
+a pin genuinely useful, and they are **documented best practice, not enforced**; a bar high enough
+to be ignored guards nothing. The worked examples:
+
+| | `Platform/WordPress` | `AMS/NetForum` |
+|---|---|---|
+| artifact hash | zip `sha256` for WP + Woo | **absent** — recorded as a gap |
+| vendor version | `wp 7.1` / `woocommerce 11.0.1` | **absent** — recorded as a gap |
+| source vs edit date | — | `accessedAt` + `catalogLastEditedAt` |
+
+netFORUM is the instructive one: its block records what it *cannot* prove as explicitly as what it
+can. An unrecorded gap reads as a settled fact, so "no sha256 was captured" is itself worth
+declaring.
+
+### Standing debt: the 53 grandfathered connectors
+
+Only **3 of 56** connectors pinned at the time the guard landed (`AMS/NetForum`,
+`Platform/WordPress`, `LMS/Elevate`). The other 53 are listed in `GRANDFATHERED` in the linter, so
+it is green on day one and a **new connector must pin from day one**.
+
+Backfilling those 53 is *not* scheduled as a campaign: each needs a real source fetch, cannot be
+inferred from the repo, and a fabricated pin is worse than no pin. The intended path is
+opportunistic — a grandfathered connector gains its pin whenever someone next touches that
+connector's metadata for other reasons.
+
+The exemption is checked in **both directions**: once a grandfathered connector gains a valid pin,
+the linter fails until its entry is deleted. The debt list can only shrink, and can never quietly
+rot into a list of connectors that are actually fine.
 
 ---
 

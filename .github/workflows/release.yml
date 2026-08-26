@@ -54,6 +54,12 @@ jobs:
       - name: Metadata fields on allowlist
         run: node scripts/lint-metadata-fields.mjs
 
+      # Every connector must record what its catalog was declared against and when — a source
+      # URL + an ISO date in Configuration.DeclaredAgainst (concern A9b). Grandfathered list
+      # can only shrink.
+      - name: Catalog freshness pin declared
+        run: node scripts/lint-catalog-freshness-pin.mjs
+
       # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
       # pr.yml has always run this; release.yml did not, so a migration-shape defect that entered
       # `main` by any path other than a PR (back-merge, hotfix, admin push) reached publish unchecked.
