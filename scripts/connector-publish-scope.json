@@ -25,6 +25,7 @@
     "Finance/NetSuite",
     "Finance/QuickBooks",
     "Finance/Stripe",
+    "LMS/Elevate",
     "LMS/PathLMS",
     "LMS/Totara",
     "Marketing/ConstantContact",
