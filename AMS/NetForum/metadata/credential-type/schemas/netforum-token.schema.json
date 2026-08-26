@@ -5,20 +5,20 @@
     "BaseURL": {
       "type": "string",
       "title": "Base URL",
-      "description": "Customer's NetForum Enterprise base URL (e.g., https://customer.netforum.example.com). The connector calls /xWeb/JSON/Authenticate at this host to obtain a Bearer token.",
+      "description": "Customer's netFORUM Enterprise base URL (e.g., https://customer.netforum.example.com). The connector appends the xWeb SOAP path /xweb/secure/netForumXML.asmx and POSTs a SOAP Authenticate envelope there to obtain the session token.",
       "format": "uri",
       "order": 0
     },
     "Username": {
       "type": "string",
       "title": "Username",
-      "description": "NetForum xWeb API username.",
+      "description": "netFORUM xWeb API username. Sent as the userName element in the SOAP Authenticate envelope body.",
       "order": 1
     },
     "Password": {
       "type": "string",
       "title": "Password",
-      "description": "NetForum xWeb API password. Used with Basic auth on the /xWeb/JSON/Authenticate endpoint to mint the Bearer token.",
+      "description": "netFORUM xWeb API password. Sent as the password element in the SOAP Authenticate envelope body — not HTTP Basic — to mint the session token.",
       "isSecret": true,
       "order": 2
     }

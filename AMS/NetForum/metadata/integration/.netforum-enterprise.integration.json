@@ -11,11 +11,11 @@
       "BatchRequestWaitTime": -1,
       "Configuration": {
         "AuthFlow": "two-step",
-        "AuthFlowNote": "NetForum Enterprise xWeb uses a two-step token auth model. Step 1: POST to <tenantBaseURL>/xWeb/JSON/Authenticate with HTTP Basic auth (Base64-encoded username:password in Authorization header). The response returns a Bearer token in the WWW-Authenticate response header (format: \"Bearer token = <guid>\") and/or as a JSON body field. Step 2: All subsequent xWeb JSON calls carry the token as \"Authorization: Bearer <token>\". The SOAP mode alternative uses a SOAP AuthorizationToken header element (<AuthorizationToken><Token>...</Token></AuthorizationToken>). Source: connector source code (NetForumConnector.ts:326-357) + credential type schema (netforum-token.schema.json). WSDL evidence: Authenticate operation in WSDL (SOAPAction http://www.avectra.com/2005/Authenticate). Note: token validity window not documented publicly; connector defaults to 1-hour TTL (ExpiresAt = Date.now() + 3600*1000).",
-        "AuthHeaderPattern": "Authorization: Bearer <token>",
-        "AuthHeaderPatternNote": "JSON-over-xWeb mode: the Bearer token obtained from /xWeb/JSON/Authenticate is passed on every subsequent call as \"Authorization: Bearer <token>\". SOAP xWeb mode: token is in the SOAP AuthorizationToken header element, NOT an HTTP header. Source: WSDL (AuthorizationToken defined in XSD), connector code BuildHeaders(), netforum-token.schema.json.",
-        "TransportMode": "soap_with_json_shim",
-        "TransportModeNote": "The canonical xWeb transport is SOAP 1.1/1.2 over HTTPS (netFORUMXML.asmx). A JSON shim (/xWeb/JSON/<MethodName>) wraps the same SOAP methods in a JSON envelope. The MJ connector uses the JSON shim (simpler HTTP + Bearer token). The SOAP mode is the authoritative contract — the WSDL is the machine-readable spec. Source: WSDL (netForumXML_asm.wsdl, 5.9 MB, 277 ops, Tier-1 ExplicitStatement) and connector code.",
+        "AuthFlowNote": "netFORUM Enterprise xWeb uses a two-step SOAP session-token model. Step 1 (bootstrap): POST a SOAP Authenticate(userName, password) envelope to <tenantBaseURL>/xweb/secure/netForumXML.asmx with SOAPAction http://www.avectra.com/2005/Authenticate. The credentials travel as ELEMENTS IN THE SOAP BODY — there is no HTTP Basic Authorization header on this call — and the envelope deliberately carries no AuthorizationToken header, because it is the bootstrap. The token is the string in the AuthenticateResult element of the response body. Step 2: every subsequent xWeb call carries that token in a SOAP <AuthorizationToken><Token> HEADER ELEMENT. CORRECTED 2026-08-26: this note previously described a JSON shim at /xWeb/JSON/Authenticate using HTTP Basic to mint an Authorization: Bearer token. The connector has never done that on this code path and its own header comment states the opposite verbatim ('Auth (TWO-STEP, SOAP — NOT HTTP Basic / WWW-Authenticate / Bearer)'). Do not restore the Basic/Bearer wording. Source: connector code — NetForumConnector.Authenticate(), BuildSoapEnvelope(), SoapHeaders() (cited by SYMBOL, not line number: the previous note cited 'NetForumConnector.ts:326-357', which drifted onto unrelated code). Token validity window is not published by the vendor; the connector assumes a 1-hour TTL (TOKEN_TTL_MS) and re-authenticates on 401.",
+        "AuthHeaderPattern": "<AuthorizationToken xmlns=\"http://www.avectra.com/2005/\"><Token>{token}</Token></AuthorizationToken>",
+        "AuthHeaderPatternNote": "NOT an HTTP header. The session token is a SOAP HEADER ELEMENT inside <soap:Header>, namespaced to http://www.avectra.com/2005/. The only HTTP headers the connector sets are Content-Type: text/xml; charset=utf-8 and SOAPAction: http://www.avectra.com/2005/<MethodName>. CORRECTED 2026-08-26 from 'Authorization: Bearer <token>', which described a transport this connector does not use. Source: connector code — NetForumConnector.Authenticate(), BuildSoapEnvelope(), SoapHeaders() (cited by SYMBOL, not line number: the previous note cited 'NetForumConnector.ts:326-357', which drifted onto unrelated code).",
+        "TransportMode": "soap",
+        "TransportModeNote": "The connector speaks SOAP 1.1 over HTTPS to netFORUMXML.asmx exclusively — one endpoint path (/xweb/secure/netForumXML.asmx, DEFAULT_SOAP_PATH), overridable per object via IntegrationObject.Configuration.soapEndpoint. The WSDL is the authoritative contract. CORRECTED 2026-08-26 from 'soap_with_json_shim': a JSON shim at /xWeb/JSON/<MethodName> is described in vendor-adjacent material, but this connector does not call it and its existence has NOT been verified against a live tenant from this repo — so the declared TransportMode now states what the code actually does rather than an unexercised alternative. Source: connector code — NetForumConnector.Authenticate(), BuildSoapEnvelope(), SoapHeaders() (cited by SYMBOL, not line number: the previous note cited 'NetForumConnector.ts:326-357', which drifted onto unrelated code).",
         "SOAPNamespace": "http://www.avectra.com/2005/",
         "SOAPNamespaceNote": "Avectra-era namespace retained by Community Brands. All WSDL operations and DataObjectType schemas use this namespace. Source: WSDL namespace declaration confirmed on both ASM (myasm.asm.org) and APCO (apconetforum.org) public instances.",
         "NavigationBaseURLNote": "The xWeb endpoint is per-tenant. There is no single canonical host. The shape is: <tenantHost>/xWeb/secure/netFORUMXML.asmx (SOAP) or <tenantHost>/xWeb/JSON/<MethodName> (JSON shim). The BaseURL is stored in the per-CompanyIntegration credential (netforum-token.schema.json.BaseURL field). Source: credential schema + connector code ParseConfig() method + public WSDL endpoints (myasm.asm.org/xweb/secure/netforumxml.asmx, apconetforum.org/xweb/secure/netFORUMXML.asmx) confirming the path shape.",
@@ -121,9 +121,34 @@
           "coverableLeaves": 34,
           "informationalLeaves": 9,
           "wsdlSizeBytes": 5944192,
-          "primaryWSDLSource": "https://myasm.asm.org/xweb/secure/netforumxml.asmx?WSDL",
-          "crossVerifiedSource": "https://apconetforum.org/xweb/secure/netFORUMXML.asmx?WSDL",
-          "accessedAt": "2026-06-20"
+          "provenance": "See Configuration.DeclaredAgainst for the source URLs, fetch date and freshness gaps these counts were measured from."
+        },
+        "DeclaredAgainst": {
+          "wsdlPrimary": {
+            "url": "https://myasm.asm.org/xweb/secure/netforumxml.asmx?WSDL",
+            "accessedAt": "2026-06-20",
+            "sizeBytes": 5944192,
+            "sha256": null,
+            "sha256Gap": "NOT CAPTURED at fetch time. Without it a refetch cannot be diffed against the WSDL this catalog was actually declared from, so 'unchanged since 2026-06-20' is unprovable. The only comparable is totalUniqueOperations (277) — a bare count that can collide across genuinely different WSDLs (an op removed and another added nets to zero). Capture a sha256 on the next refetch and fill this in; treat the absence as a known blind spot, not as evidence of stability."
+          },
+          "wsdlCrossVerified": {
+            "url": "https://apconetforum.org/xweb/secure/netFORUMXML.asmx?WSDL",
+            "accessedAt": "2026-06-20",
+            "sha256": null,
+            "role": "A second, independent tenant instance. Used to confirm the SOAP namespace and the endpoint path shape are vendor-wide rather than site-local — NOT to establish the object catalog, which comes from the primary WSDL."
+          },
+          "docSites": [
+            "https://documentation.abila.com/netforum-enterprise/2017.1/Content/xWeb/XWeb_Overview.htm",
+            "https://documentation.abila.com/netforum-enterprise/2017.1/Content/xWeb/Methods/GetQuery.htm"
+          ],
+          "docSetVersion": "Abila netFORUM Enterprise 2017.1",
+          "docSitesFetchedAt": null,
+          "docSitesGap": "The Abila doc pages are cited throughout this Configuration (GetQuery @TOP semantics, the DataGrid row-limit behaviour, xWeb overview) but were never date-stamped — only the WSDL got an accessedAt. Any claim sourced to those pages therefore has no freshness evidence behind it.",
+          "tenantReleaseVersion": null,
+          "versionSkewGap": "UNRESOLVED AND LOAD-BEARING. The declared catalog is derived from two LIVE tenant WSDLs whose netFORUM release version is unknown and not discoverable without credentials, while the prose evidence is the 2017.1 doc set. Nothing here pins a product version, so a later 'missing' object CANNOT be attributed: it may mean the catalog is wrong, or that the tenant runs an older release than myasm.asm.org did on 2026-06-20. Contrast Platform/WordPress, which pins wp 7.1 / woocommerce 11.0.1 with zip sha256s precisely so that attribution stays possible.",
+          "catalogLastEditedAt": "2026-07-27",
+          "catalogLastEditedNote": "migrations/V202607280915__netforum-enterprise__WritablePK.sql withdrew write from five field-less placeholder objects. That edit was reasoned from the SAME 2026-06-20 WSDL read — no refetch occurred — so the accessedAt pin above still describes the evidence base. This field exists because 'source fetched' and 'catalog edited' are different dates: without both, a reader cannot tell whether a post-pin edit was evidence-backed or freehand.",
+          "note": "Freshness record for the DECLARED object catalog. Distinct from the repo-wide A9 check (scripts/check-catalog-freshness.mjs), which compares package version to git tag and says nothing about whether the vendor surface still looks like this."
         }
       },
       "Description": "NetForum Enterprise integration connector for MemberJunction",
