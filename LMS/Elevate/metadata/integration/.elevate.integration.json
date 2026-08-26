@@ -1,0 +1,2084 @@
+[
+  {
+    "fields": {
+      "Name": "elevate",
+      "ClassName": "ElevateConnector",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=API Key with Endpoint",
+      "NavigationBaseURL": "https://elevate.support.gocadmium.com/support/solutions/articles/16000139296-report-api",
+      "BatchMaxRequestCount": null,
+      "BatchRequestWaitTime": null,
+      "Configuration": {
+        "universalPK": null,
+        "universalPKNote": "NOT asserted -- evidence is INCONSISTENT across resources, not merely thin. `product` and `accountCode|accountingCode` both show an integer `id` field in worked examples (vendor-article-16000139296-report-api). `user` never shows an `id` field in any example -- its only evidenced identity field is `member_id` (string). `productRegistration` shows NO id-shaped field in ANY worked example anywhere in the corpus (only transaction_at/pricing/dot-path selectors). A vendor-wide 'id' convention would be wrong for at least 2 of 4 evidenced resources. Per-object PK stays a per-IO decision (ioiof-extractor declared marker, or runtime D4 SoftPKClassifier) -- do not assume 'id' project-wide.",
+        "AuthFlow": "api-key",
+        "AuthFlowNote": "A single static per-client `api_key` string, issued out-of-band by the client's Project Manager (vendor's own words, vendor-article-16000139296-report-api worked-example annotation: \"The key shown is for the demo account. For your specific client key, as your Project Manager.\"). NOT OAuth -- no authorize/token endpoint, no scopes, no expiry documented anywhere. The SAME key value is reused across all three operations (read, create, cancel) -- Registration API doc, cancel section, verbatim: \"The API KEY is the same used for registrations.\"",
+        "AuthCredentialParamLocation": "body",
+        "AuthCredentialParamName": "api_key",
+        "AuthHeaderPattern": null,
+        "AuthHeaderPatternNote": "Deliberately null, not omitted-by-oversight -- Elevate's credential does NOT travel in an HTTP header or a query string on any of the 3 documented POST operations (/api/reports, /api/registrations, /registrations/cancel). It is a JSON BODY field named `api_key` on every request. See AuthCredentialParamLocation/AuthCredentialParamName and Configuration.ReadContract.envelope. A code-builder reaching for the generic Bearer/Basic header-injection path for this vendor is wrong.",
+        "PaginationDefaults": null,
+        "PaginationDefaultsNote": "UNPROVEN, left NULL deliberately -- do NOT default to Offset/PageNumber/Cursor on the reasonable-sounding assumption that an extract API must paginate. Pagination is documented NOWHERE across the full corpus checked: both first-party Report API copies (no page/offset/cursor param, no response envelope shown at all -- the 200 response body shape is itself UNDOCUMENTED), all 59 release-notes articles (the 5 'pagination' hits found are ALL admin-UI screens -- Registrant Report, Podcast/News/Product-feed widgets, Menu Groups admin page, quiz-question rendering -- never the Report or Registration API), all 34 Reports-folder documentation articles, and both third-party integration guides. This is an exhaustively-checked negative, not an unfetched gap. RealityProbe HAS NOW DECIDED THIS EMPIRICALLY and the documented negative HOLDS. PROBED AND DECIDED NEGATIVE AT VOLUME, 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs). One unfiltered POST for resource='productRegistration' returned 29,003 rows. The SAME query partitioned into 15 consecutive non-overlapping yearly windows (2013..2027) summed to EXACTLY 29,003 — every window HTTP 200 (2013:0, 2014:254, 2015:46, 2016:208, 2017:314, 2018:72, 2019:558, 2020:309, 2021:5608, 2022:8458, 2023:12334, 2024:283, 2025:296, 2026:263, 2027:0). windowedSum == unfilteredCount => NO silent cap at 29k rows. Corroborated independently on all five probed resources by the door's own total: response.count == response.items.length on earnedCredit 3395/3395, product 1985/1985, user 6818/6818, accountingCode 7/7, productRegistration 29003/29003. Five parameters were tried in the request envelope (limit, offset, page, per_page, page_size) and NONE changed the row count — the envelope exposes no pagination control at all, so there is nothing to declare. The GrowthZone silent-one-page-cap defect class does NOT apply to this vendor at this volume. NOT a claim of unlimited results: 29,003 rows is the ceiling actually PROBED; above it, behaviour is unmeasured, which is exactly why the date-window chunking obligation below stays in force. METHOD CAVEAT (recorded so this is never re-derived unsoundly): an earlier pass of this same adapter at 1.1s pacing produced a FALSE cap-negative (windowedSum 28,161 < 29,003) purely because its last 4 windows came back 429 rate-limited and were counted as 0. That pass was discarded and the probe re-paced to 3.4s. A sum-vs-unfiltered comparison is sound ONLY when every window returns HTTP 200 — otherwise a rate limit masquerades as missing data and a healthy API is condemned as silently truncating. Consequently PaginationDefaults, PaginationType and SupportsPagination are left EXACTLY as declared (null/null/false) — no cursor/offset scheme has been invented, and no 'unlimited' claim has been substituted for the measured one.",
+        "IncrementalSyncCapability": {
+          "supported": true,
+          "scope": "PER-RESOURCE, not vendor-wide. Only productRegistration has evidenced incremental capability: `transaction_at` (insert/transaction timestamp, filterable via the standard filters envelope) and `modified_at` (the update watermark -- ADDED in Release 2025.02, verbatim: \"Added the 'modified_at' field to the Report API's 'productRegistration' resource.\" -- absent from BOTH first-party API-doc copies despite each claiming a later \"Last modified\" portal date than the release; see Configuration.DeclaredAgainst). Every other resource (product, user, accountCode|accountingCode, category, assetAccess) has NO documented timestamp/watermark field anywhere in the corpus -- NULL/unsupported for those, not silently assumed absent.",
+          "filterOperators": [
+            ">=",
+            "<=",
+            ">"
+          ],
+          "dateRangeShortcut": {
+            "syntax": "{\"date\":[from, to]}",
+            "note": "Either endpoint (from/to) is nullable for an open range. Evidenced in worked examples on both Report API operators (revenue/registration-summary queries use {\"products.productRegistrations.transaction_at\":{\">=\":\"...\", \"<=\":\"...\"}} and the equivalent date-array shortcut)."
+          },
+          "watermarkFieldsByResource": {
+            "productRegistration": [
+              "transaction_at",
+              "modified_at"
+            ]
+          }
+        },
+        "WebhooksAvailable": false,
+        "WebhooksNote": "No webhook subscription/management endpoint (register/list/delete) is documented anywhere in the corpus. The vendor's own single authoritative breadth article (vendor-article-16000150626-integration-options, which names EVERY integration surface in one place -- SSO, Registration API, Report API, Custom Data Push, Warpwire, Education Harvester/Eventscribe) has no 'Webhooks' entry. The closest real analog is Custom Data Push (see OutOfScopeObjectFamilies) -- but that is a fixed per-client CUSTOM-BUILT endpoint Elevate calls on 4 hardcoded trigger events, configured per-client out-of-band, not a self-service webhook subscription API. Recorded false as the honest, exhaustively-checked default.",
+        "BulkOperationsAvailable": false,
+        "BulkOperationsNote": "No batch/bulk endpoint is documented anywhere -- both first-party Report API copies describe exactly one request pattern (POST one JSON query, get one report result back); the Registration/Cancellation write endpoints are single-record POSTs with no array/batch request shape shown in any worked example. One query per request.",
+        "AsyncExecutionModel": "synchronous",
+        "AsyncExecutionModelNote": "The Report API POST returns the report body directly in the same HTTP response (vendor-article-16000139296-report-api, verbatim: \"you post a JSON request data to it, and receive a response with the data defined in the JSON request\") -- no job/poll/callback pattern is documented for reads. Registration create/cancel are likewise synchronous request/response (create returns product_url + registration_id inline; cancel's 200 response body is undocumented but no async/job-id pattern is ever shown).",
+        "APIVersioningStrategy": null,
+        "APIVersioningNote": "UNDOCUMENTED -- no version path segment, header, or query param appears on any of the 3 documented endpoints (/api/reports/, /api/registrations, /registrations/cancel are all unversioned). No mention of a versioning scheme anywhere in the corpus (API docs, 59 release notes, Reports-folder articles).",
+        "TokenRefreshStrategy": null,
+        "TokenRefreshStrategyNote": "N/A, not merely unproven -- auth is a static per-client `api_key` issued out-of-band by the client's Project Manager (see AuthFlowNote), not an OAuth access/refresh token pair. No expiry, rotation, or refresh mechanism of any kind is documented.",
+        "ErrorResponseShape": {
+          "surfaceSplit": "CORRECTED 2026-08-25 (RealityProbe amendment round 1): the read door and the write endpoints do NOT share an error envelope. A connector that error-handles on the declared write shape alone will not recognise a single read failure. Both shapes are recorded per-surface below.",
+          "read": {
+            "surface": "POST /api/reports (the Report API read door)",
+            "shape": "{ \"error\": { \"message\": \"<message>\" } }",
+            "statusCodeObserved": 500,
+            "statusCodeDocumented": false,
+            "provenance": "OBSERVED, not documented — the Report API's error envelope is shown in NO source. RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: unknown-resource probe -> HTTP 500, 44B, top-level keys = [\"error\"]; same shape returned for an unknown FIELD (\"Field registration_id doesn't exist\"). Key names only are recorded here; no response values were copied into metadata.",
+            "retrySemanticsWarning": "The read door returns HTTP 500 for CLIENT-SIDE errors (wrong resource name, non-existent field) — not only for transient server faults. A 500 from this door MUST NOT be blind-retried/backed off as transient: parse error.message first and fail fast on the resource/field class, or the connector will burn its rate-limit budget replaying a request that can never succeed."
+          },
+          "write": {
+            "surface": "POST /api/registrations, POST /registrations/cancel",
+            "shape": "{ \"error_messages\": { \"<field>\": \"<message>\" } }",
+            "example": "{ \"error_messages\": { \"product\": \"The requested product could not be found.\" } }",
+            "statusCodeDocumented": false,
+            "statusCodeNote": "No HTTP status code is ever shown alongside the error_messages example on either copy.",
+            "provenance": "DOCUMENTED (unchanged, and NOT contradicted by this probe — the read-only probe never touched a write endpoint). Evidenced ONLY for the Registration create + Cancellation write endpoints, verbatim and byte-identical on both first-party copies. The Report API's response envelope (success OR error) is UNDOCUMENTED anywhere in the corpus -- no example of a Report API error response exists.",
+            "verificationStatus": "unverified — write endpoints were never called; existence only (see WriteSurfaceProbe)"
+          }
+        },
+        "CustomObjectMarkerPattern": null,
+        "CustomObjectMarkerPatternNote": "No customer-custom-OBJECT concept is documented at all -- Elevate's Report API resource catalog is a small, fixed, vendor-defined set (product, productRegistration, user, accountCode|accountingCode, category, assetAccess, + the discovered earnedCredit). Nothing analogous to HubSpot's dynamically-named custom-object family exists in any source checked.",
+        "CustomFieldMarkerPattern": null,
+        "CustomFieldMarkerPatternNote": "No naming/prefix CONVENTION is documented, but per-tenant custom fields do exist as a concept: Tier-2 evidence confirms site-configurable custom PROFILE fields on `user` (vendor-report-16000127479, \"Product Progress Report -- User Profile Fields\") and a dedicated \"User Custom Fields Report\" was added in Release 2026.08 (vendor-article-16000239613). Neither source names the fields or a naming pattern distinguishing them from fixed fields. Ties to DeclaredCapabilityLimits[3] (undocumented-field-sets) -- the per-tenant remainder is reached by runtime DiscoverFields, never guessed from a prefix pattern that was never evidenced.",
+        "WriteCapability": {
+          "supported": true,
+          "scope": "productRegistration ONLY. Create (POST /api/registrations) + a domain-specific Cancel (POST /registrations/cancel). NO update endpoint exists for productRegistration or for ANY other resource. NO write surface of any kind (create/update/delete) for product, user, accountCode|accountingCode, category, assetAccess, or the discovered earnedCredit.",
+          "create": "Yes -- productRegistration, POST /api/registrations, flat JSON body. Required: api_key, remote_user_id, firstname, lastname, email, remote_product_id. Optional: amount_paid, send_email, explanation (Tier-2, added per Release 2024.07). Response: { product_url, registration_id } -- registration_id is the ONLY handle for the Cancellation call and must be persisted by the caller.",
+          "update": "No update endpoint is documented for any resource anywhere in the corpus.",
+          "delete": "No generic/hard-delete endpoint exists. The closest operation is POST /registrations/cancel -- a domain-specific state-change on a SPECIFIC productRegistration (identified by registration_id), not a generic DELETE verb, and not reflected as any documented field/flag on the Report-API read side. See DeleteSemantics.",
+          "sourceUrls": [
+            "https://elevate.support.gocadmium.com/support/solutions/articles/16000139233-registration-api",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000236776-elevate-registration-api"
+          ]
+        },
+        "ConcurrencyControl": "none",
+        "ConcurrencyControlNote": "No ETag, If-Match, If-Unmodified-Since header, or a version/revision field is documented on any of the 3 write operations or anywhere else in the corpus. Conflict resolution for productRegistration create must be treated as fire-and-forget / snapshot-3-way only -- do not recommend MostRecent.",
+        "DeleteSemantics": "none",
+        "DeleteSemanticsDetail": "Cancellation (POST /registrations/cancel) is a WRITE the CLIENT initiates against a specific registration_id -- it is not a readable tombstone, not a soft-delete flag, and no documented Report-API field on productRegistration ever shows a cancelled/status value in any worked example (the cancel call's own 200 response body is itself undocumented). Nothing in the Report API surfaces deletions of ANY kind for ANY resource. See DeclaredCapabilityLimits[1] (no-deleted-records-feed) -- deletion/cancellation reconciliation needs a periodic key sweep, not a delete-detection claim.",
+        "DefaultSyncDirection": "Pull",
+        "DefaultSyncDirectionNote": "Read-only default for every object, including productRegistration despite its documented (narrow) write surface -- per the read-first/bidirectional-opt-in discipline, write against a client's real Elevate site must be validated against a sandbox first. See BidirectionalPreconditions.",
+        "DefaultConflictResolution": "DestWins",
+        "DefaultConflictResolutionReason": "ConcurrencyControl=none (no ETag/version/If-Match documented anywhere) rules out MostRecent as a safe default -- MostRecent requires a reliable revision/timestamp-of-write signal to arbitrate conflicts, which Elevate does not expose on any write path. DestWins is the conservative default if/when productRegistration create is ever enabled for bidirectional sync -- it overwrites the MJ destination with Elevate's source-of-truth on pull, avoiding silent conflict-loss until a real concurrency signal is discovered.",
+        "BidirectionalPreconditions": [
+          "Obtain a live/sandbox Elevate credential (a real per-client api_key against a real or sandbox Elevate site -- the published demo host is a read-only RealityProbe target under operator consent, never a stand-in for a write-capable sandbox) and empirically confirm the actual request/response shape of POST /api/registrations and POST /registrations/cancel, including the UNDOCUMENTED cancel response body and the UNDOCUMENTED HTTP status codes for both success and error.",
+          "[CLOSED 2026-08-25 by RealityProbe amendment round 1] The accountCode/accountingCode resource-naming contradiction is RESOLVED: 'accountingCode' (what every worked example POSTs, and what resourceWireValue declares) is accepted; 'accountCode' (the vendor's prose enumeration) is rejected with HTTP 500 \"Wrong resource name.\" RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST resource='accountingCode' -> HTTP 200, 443B, 7 rows at $.response.items ; POST resource='accountCode' -> HTTP 500, 44B, {\"error\":{\"message\":\"Wrong resource name.\"}}. No precondition remains on this point.",
+          "Confirm whether registration_id's wire type on the CANCEL request is a string or integer (the create response returns it as a JSON integer; the cancel worked example shows a placeholder STRING) -- a silent type mismatch on a write path is a live-probe-only question.",
+          "Quantify the Report-API rate limit (Release 2025.02 confirms it EXISTS; no number is documented anywhere) so write-retry/backoff logic can be tuned instead of guessed.",
+          "Validate write behavior (create + cancel) against a sandbox/test Elevate site before any bidirectional EntityMap touches a client's real registration data -- per the read-first, bidirectional-opt-in discipline, this must never be turned on by default."
+        ],
+        "RateLimitPolicy": {
+          "exists": true,
+          "quantified": false,
+          "tokensPerSec": null,
+          "windowSeconds": null,
+          "callsPerWindow": null,
+          "retryAfterHeaderDocumented": false,
+          "note": "Release 2025.02 (elevate.support.gocadmium.com/.../16000207169, Tier-1, verbatim): \"Introduced rate limiting for Report API requests.\" (the SAME release also added request logging: \"Implemented logging for Report API requests.\") No numeric ceiling, time window, burst allowance, or Retry-After header format is documented ANYWHERE -- both first-party API-doc copies are PROVEN STALE against this exact release (neither mentions rate limiting, logging, or the modified_at field at all, despite each claiming a LATER 'Last modified' portal date -- see Configuration.DeclaredAgainst). Do NOT invent a number and do NOT record 'none documented' (that is what the stale operator copy would suggest, and it is false -- limiting IS documented as present, just unquantified). The connector MUST honour HTTP 429 + Retry-After adaptively rather than assume headroom.",
+          "unrelatedRateLimitWarning": "Release 2026.02 (elevate.support.gocadmium.com/.../16000232890, Tier-1, verbatim): \"A rate limit is now in place to prevent automated or excessive account creation, allowing up to 100 us[ers]...\" is a DIFFERENT rate limit -- self-service USER/ACCOUNT CREATION in the Elevate UI/SSO signup path, not the Report API. Recorded distinctly here so the two are never conflated into one number; the '100' figure must NEVER be applied to Report API request pacing."
+        },
+        "APIBaseURLMode": "per-connection",
+        "APIBaseURLDerivationRule": "The client's OWN Elevate site URL (captured at CompanyIntegration/connection setup -- there is NO vendor-hosted shared API host) plus one of three FIXED path suffixes depending on operation: '/api/reports' (the single read endpoint, POST -- CANONICAL no-slash form; the doc's '/api/reports/' 301-redirects, see ReadContract.endpointCanonicalizationNote), '/api/registrations' (create), '/registrations/cancel' (cancel). Evidenced verbatim, Report API doc (both first-party copies, identical): \"The URL of the API, where you will post your JSON data, is https://YourElevateSite.tld/api/reports/\". Evidenced verbatim, Registration API doc PHP sample: curl_init('https:// CLIENT_ELEVATE_DOMAIN_NAME_HERE /api/registrations'). Evidenced verbatim, Cancellation section: \"The URL is https://CLIENT_ELEVATE_DOMAIN/registrations/cancel\". NEVER derive from, default to, or fall back on the vendor's published demo host -- see DemoHostWarning.",
+        "DemoHostWarning": "https://demo.lv8test.commpartners.com is the vendor's OWN published demo/test-account host (vendor-article-16000139296-report-api, verbatim: \"We've set up a demo account and loaded it with a lot of test orders... The URL of the API for that demo account is: https://demo.lv8test.commpartners.com/api/reports/\", with a companion manual test form at /api/reports/form). It is a PROBE target ONLY -- used by this build's RealityProbe stage under explicit operator consent (packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/OPERATOR_CONSENT.md), read-only, verdicts-only. It is shared public vendor infrastructure other developers also use for testing. It must NEVER be baked into connector code as a fallback/default base URL, and must NEVER be written into a real CompanyIntegration record's connection configuration.",
+        "ReadContract": {
+          "endpoint": "/api/reports",
+          "method": "POST",
+          "summary": "The ONLY read endpoint Elevate exposes. Object selection happens via the BODY field `resource`, NOT the URL path -- the generic REST list/GET-by-path CRUD pattern this framework otherwise assumes does NOT apply to this vendor's reads.",
+          "envelope": {
+            "api_key": "string, required. Per-client credential. Travels in the JSON BODY -- not a header, not a query param (see AuthCredentialParamLocation).",
+            "format": "string, optional, one of 'json' | 'csv', defaults to 'json'. See csvLimitation.",
+            "resource": "string, required. Selects the object. Wire values evidenced in worked examples: 'product', 'productRegistration', 'user', 'accountingCode' (see resourceNamingAmbiguity), 'category', 'assetAccess'. The vendor's own enumeration sentence is HEDGED ('Available resources include...', not 'are') -- earnedCredit is a 7th, undeclared resource discovered only via a Release 2024.03 release note, direct proof the 6-name enumeration is a floor, not a ceiling.",
+            "fields": "object, required for a useful result. Dot-path field-selector map, e.g. {\"product.title\": true, \"user.member_id\": true}. Every observed example uses the literal value `true` -- no other value shape is evidenced.",
+            "filters": "object, optional. SQL-WHERE-like constraint map. Operators evidenced: \">=\", \"<=\", \">\". Date-range shortcut: {\"date\": [from, to]} with either bound nullable for an open range."
+          },
+          "resourceNamingAmbiguity": "RESOLVED 2026-08-25 by RealityProbe amendment round 1 — IN THE DECLARED METADATA'S FAVOUR. The contradiction was real and is reproduced identically on BOTH independent first-party doc copies: the resource-enumeration PROSE names it \"accountCode\" while EVERY worked example (both copies, 2 each) POSTs \"resource\":\"accountingCode\". The door decides it: RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST resource='accountingCode' -> HTTP 200, 443B, 7 rows at $.response.items ; POST resource='accountCode' -> HTTP 500, 44B, {\"error\":{\"message\":\"Wrong resource name.\"}}. The two spellings are NOT aliases and the API exposes no alias for this resource — 'accountCode' is rejected as an unknown resource name. resourceWireValue stays 'accountingCode' (unchanged). The vendor's prose enumeration sentence is simply wrong on this one name; do not 'fix' the wire value to match the prose.",
+          "formats": [
+            "json",
+            "csv"
+          ],
+          "csvLimitation": "CSV is flat -- only top-level values survive, so any query using dot-path sub-resource selection MUST use json. Vendor's own words (verbatim, both copies): \"CSV, being a 'flat' data format, is limited to only the values in the top-most layer of the API response, so if your request includes complex data, CSV will not really work for you.\" The vendor copy additionally notes dot-path sub-fields can be requested AS flattened top-level keys to work around this for CSV -- the operator copy omits that workaround note.",
+          "responseEnvelope": "OBSERVED 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs) — key names only, no response values copied into metadata. The Report API envelope is { response: { labels: {...}, items: [...], count: N } }. Rows are the array at $.response.items, so ResponseDataKey MUST be 'response.items'; it was declared null, which would have made NormalizeResponse return ZERO rows forever no matter how correct every other slot was. 'response.count' is the vendor's own total for the query (the basis of the completeness/no-silent-cap verdicts). 'response.labels' is a per-resource field-name-to-label dictionary returned on EVERY call, enumerating the resource's full retrievable field set regardless of which fields were requested (the product call returned 38 label keys while only 2 fields were asked for) — that is a RUNTIME DiscoverFields surface for the per-tenant remainder, NOT a licence to declare those field names here: nothing from response content has been added to this metadata. This supersedes the prior 'responseEnvelope: UNDOCUMENTED' recorded from the corpus sweep; the corpus finding was accurate (no source documents it) — the shape is now known by observation.",
+          "differsFromGenericCRUD": "The generic REST GET-list CRUD path does NOT apply: exactly ONE endpoint serves every object, the HTTP method is POST (not GET), object selection is a BODY field rather than a URL path segment or query param, and column selection is an explicit `fields` allow-list rather than the vendor returning a fixed row shape by default.",
+          "endpointDocumentedForm": "/api/reports/",
+          "endpointCanonicalizationNote": "The vendor doc (elevate.support.gocadmium.com article 16000139296, verbatim: \"The URL of the API, where you will post your JSON data, is https://YourElevateSite.tld/api/reports/\") documents the TRAILING-SLASH form, and both first-party copies agree. The live door does not serve it: it answers 301 and names '/api/reports' in its own Location header. RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST /api/reports/ -> HTTP 301, 257B, Location: https://demo.lv8test.commpartners.com/api/reports ; POST /api/reports -> HTTP 200, 93033B. The corrected value is the server's OWN canonical redirect target, not an invented path. A POST that follows a 301 is downgraded to GET (or loses its body) in most HTTP clients, so the declared trailing-slash form would have produced an empty/failed read on every object. CORRECTED by RealityProbe amendment round 1 (2026-08-25). Do not 'restore' the documented slash form — it is a doc defect the server itself contradicts.",
+          "resourceEnumProseDefect": "The vendor's own resource enumeration (\"Available resources include \\\"product\\\", \\\"productRegistration\\\", \\\"user\\\", \\\"accountCode\\\", \\\"category\\\", \\\"assetAccess\\\"\") contains a PROVEN-WRONG name: 'accountCode' is rejected by the door with HTTP 500 \"Wrong resource name.\" The enumeration is already known to be a FLOOR rather than a ceiling (it is hedged 'include', and earnedCredit is a 7th undeclared resource found only in a release note); this amendment additionally proves it is not even accurate on the names it does list. Treat the worked examples, never the prose enum, as the wire-value source of truth.",
+          "responseDataKey": "response.items",
+          "responseCountKey": "response.count",
+          "responseLabelsKey": "response.labels"
+        },
+        "DeclaredAgainst": {
+          "docSites": [
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000236778-elevate-report-api",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000236776-elevate-registration-api",
+            "https://elevate.support.gocadmium.com/support/solutions/articles/16000139296-report-api",
+            "https://elevate.support.gocadmium.com/support/solutions/articles/16000139233-registration-api",
+            "https://elevate.support.gocadmium.com/support/solutions/articles/16000150626-elevate-lms-integration-options",
+            "https://elevate.support.gocadmium.com/support/solutions/folders/16000099168 (release-notes index, 59 articles, 2019-05 through 2026-08)",
+            "https://elevate.support.gocadmium.com/support/solutions/folders/16000099117 (Reports documentation index, 34 articles)"
+          ],
+          "dualDeriveFinding": "Both first-party API-doc copies claim a 'Last modified' date AFTER Release 2025.02 (operator copy: Apr 17 2026; vendor copy: Sep 25-26 2025) yet NEITHER documents any of that release's three Report API changes (modified_at field, request logging, rate limiting). 'Last modified' on these pages is proven NOT to be a currency proxy -- do not infer doc freshness from it.",
+          "releaseNotesSweptThrough": "Release 2026.08 (article 16000239613, 'Cadmium Payments in Elevate' announcement + User Custom Fields Report) -- the newest of 59 release-note articles swept, spanning 2019-05 through 2026-08, 0 fetch failures, 14 of 59 carrying genuine Report/Registration API findings.",
+          "fetchedAt": "2026-08-25"
+        },
+        "OutOfScopeObjectFamilies": [
+          {
+            "family": "Single Sign-On (SSO)",
+            "kind": "first-party-integration",
+            "reason": "an AUTHENTICATION mechanism, not a record surface. It shares the remote_user_id identity with the Registration API (which is why that identity must match the SSO setup), so it is recorded here as context — but it exposes no listable durable records and nothing to sync."
+          },
+          {
+            "family": "Custom Data Push / credit write-back",
+            "kind": "first-party-integration",
+            "reason": "REAL and important (it is the credit/completion write-back path: Elevate pushes to the AMS in real time on four trigger events), but it is OUTBOUND vendor→client and per-client CUSTOM BUILT — the vendor calls you, there is no pullable endpoint and no published payload schema. A pull connector structurally cannot cover it. Clients needing credit writeback need Data Push, NOT this connector: state that plainly rather than letting the gap look like coverage."
+          },
+          {
+            "family": "Education Harvester / Eventscribe integration",
+            "kind": "first-party-integration",
+            "reason": "imports sessions/speakers/content from Eventscribe conference events INTO Elevate as products. The imported results surface as ordinary `product` records this connector already reads, so modelling the harvester separately would double-count the same records."
+          },
+          {
+            "family": "Warpwire video integration",
+            "kind": "first-party-integration",
+            "reason": "embeds a sibling Cadmium product's video functionality inside Elevate components/widgets. Media delivery, not a record collection; Warpwire has its own API and its own connector surface."
+          },
+          {
+            "family": "Cadmium sibling products (EthosCE, Eventscribe, Warpwire)",
+            "kind": "sibling-product-apis",
+            "reason": "separate products with separate APIs and separate documentation folders under the same Cadmium help centre (EthosCE is also an LMS). Each is its own connector; conflating them into an \"Elevate\" connector would emit objects no Elevate site has."
+          },
+          {
+            "family": "Report API aggregate/summary fields",
+            "kind": "computed-not-records",
+            "reason": "revenue, number_registrations, total_revenue, total_number_registrations are COMPUTED over the filter window supplied in the request — every documented example calculates them inside a date filter. They are query outputs, not durable record columns: synced without their window they are meaningless, and re-derivable from productRegistration rows anyway. Excluded from the record model deliberately, not overlooked."
+          },
+          {
+            "family": "Cadmium Payments",
+            "kind": "announced-not-yet-live-platform",
+            "reason": "RECONCILED ADDITION (not in the task's supplied family list; found by cross-checking elevate-surfaces-universe.derived.json's own x-out-of-scope-note and SOURCE_STUDY.md §1/§2 against BrandResearch's out-of-scope catalog). A NEW centralized payment-collection platform for credit-card processing, announced in Release 2026.08 (Tier-1, elevate.support.gocadmium.com article 16000239613, verbatim: \"Cadmium Payments in Elevate — a centralized platform... for credit card processing... Starting August 18, 2026... all accounts must be activated by October 27, 2026\"). This postdates BOTH first-party API-doc copies' displayed 'Last modified' dates by 4-11 months and carries ZERO field-level or endpoint-level evidence anywhere in the swept corpus (both API docs, all 59 release notes, all 34 Reports-folder articles, both third-party guides) — a payment-processing subsystem orthogonal to the Report/Registration API, not evidenced as part of either surface. Modelling it as a schema would be fabrication; recorded here so the gap stays visible instead of silently absent."
+          }
+        ],
+        "DeclaredCapabilityLimits": [
+          {
+            "scope": "pagination-absent-proven-to-29k-rows",
+            "reason": "No pagination is documented anywhere for the Report API across every source checked: both first-party API-doc copies, all 59 release notes, all 34 Reports-folder documentation articles, and both third-party integration guides. That documented negative has now been CONFIRMED EMPIRICALLY rather than left unproven. PROBED AND DECIDED NEGATIVE AT VOLUME, 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs). One unfiltered POST for resource='productRegistration' returned 29,003 rows. The SAME query partitioned into 15 consecutive non-overlapping yearly windows (2013..2027) summed to EXACTLY 29,003 — every window HTTP 200 (2013:0, 2014:254, 2015:46, 2016:208, 2017:314, 2018:72, 2019:558, 2020:309, 2021:5608, 2022:8458, 2023:12334, 2024:283, 2025:296, 2026:263, 2027:0). windowedSum == unfilteredCount => NO silent cap at 29k rows. Corroborated independently on all five probed resources by the door's own total: response.count == response.items.length on earnedCredit 3395/3395, product 1985/1985, user 6818/6818, accountingCode 7/7, productRegistration 29003/29003. Five parameters were tried in the request envelope (limit, offset, page, per_page, page_size) and NONE changed the row count — the envelope exposes no pagination control at all, so there is nothing to declare. The GrowthZone silent-one-page-cap defect class does NOT apply to this vendor at this volume. NOT a claim of unlimited results: 29,003 rows is the ceiling actually PROBED; above it, behaviour is unmeasured, which is exactly why the date-window chunking obligation below stays in force. METHOD CAVEAT (recorded so this is never re-derived unsoundly): an earlier pass of this same adapter at 1.1s pacing produced a FALSE cap-negative (windowedSum 28,161 < 29,003) purely because its last 4 windows came back 429 rate-limited and were counted as 0. That pass was discarded and the probe re-paced to 3.4s. A sum-vs-unfiltered comparison is sound ONLY when every window returns HTTP 200 — otherwise a rate limit masquerades as missing data and a healthy API is condemned as silently truncating.",
+            "consequence": "The door returns the complete result set for a query in one response, and completeness is verifiable per call: the connector MUST compare response.count against the length of response.items on EVERY read and raise a FetchWarning when they diverge — that comparison is the silent-truncation tripwire, and it is the only protection that survives above the 29,003-row volume actually probed. Because there is no page/offset/cursor control to fall back on, bulk extraction above that volume is bounded by DATE WINDOWS via the filters envelope (transaction_at / modified_at date-range shortcut), not by pages. Do not add a pagination parameter: five were tried and none is honoured."
+          },
+          {
+            "scope": "no-deleted-records-feed",
+            "reason": "Nothing in the Report API surfaces deletions; cancellation (POST /registrations/cancel) is a WRITE the client initiates against a specific productRegistration, not a readable tombstone stream, and no Report-API-readable field reflects cancelled/deleted state.",
+            "consequence": "Deletion reconciliation needs a periodic key sweep, which the connector declares rather than pretends to detect."
+          },
+          {
+            "scope": "write-surface-is-registrations-only",
+            "reason": "Create + cancel on productRegistration only; NO update endpoint anywhere; NO write surface for product, user, category, or assetAccess (or accountCode|accountingCode, or earnedCredit).",
+            "consequence": "The connector must not present itself as bidirectional for those objects."
+          },
+          {
+            "scope": "undocumented-field-sets",
+            "reason": "Resource field sets are not published for every resource (category and assetAccess have ZERO evidenced fields anywhere in the corpus) and there is NO describe endpoint.",
+            "consequence": "The declared field set is a documented FLOOR and the per-tenant remainder is reached by runtime DiscoverFields; field ABSENCE at runtime proves nothing about the vendor. RUNTIME DISCOVERY SURFACE IDENTIFIED (RealityProbe amendment round 1): every Report API response carries a 'response.labels' dictionary keying the resource's full retrievable field set to its display label, returned irrespective of which fields the request asked for. That is the connector's runtime DiscoverFields hook for the per-tenant remainder — per connection, never seeded here as Declared vendor-wide metadata."
+          },
+          {
+            "scope": "rate-limited-unquantified",
+            "reason": "Rate limiting exists (Release 2025.02) but its numbers do not — no ceiling, window, or Retry-After format is documented.",
+            "consequence": "The connector paces itself and honours 429/Retry-After rather than assuming headroom."
+          },
+          {
+            "scope": "aggregate-fields-are-query-outputs",
+            "reason": "revenue/number_registrations/total_* are computed over the request's filter window, not durable record columns.",
+            "consequence": "They are not synced as record columns."
+          }
+        ],
+        "DiscoveryAuthoritativeness": {
+          "objectLevel": "no-describe-endpoint",
+          "fieldLevel": "no-describe-endpoint",
+          "deactivationPermitted": false
+        },
+        "DiscoveryIsAuthoritative": false,
+        "DiscoveryIsAuthoritativeRationale": "Proven-negative, three independent ways (SOURCES.json provenNegative / SOURCE_STUDY.md §0): (1) unauthenticated GET against 9 conventional machine-schema paths on the vendor's own published demo host (openapi.json, swagger.json, api-docs, v3/api-docs, api/openapi.json, api/swagger.json, api/docs, docs, graphql) all returned 404; (2) the operator's parent Freshdesk category structurally lists exactly 2 articles under 'Elevate APIs' -- confirmed by fetching the category page, not inferred; (3) the shared enumerate-catalog.mjs run directly on the raw article HTML returns { format:'unrecognized', count:0, confidence:'low' }. With no authoritative enumeration at either the object or field level, absence at runtime proves nothing -- permitting deactivation on a thin query result would silently delete real, tenant-visible objects/fields. deactivationPermitted stays false.",
+        "RealityProbeAmendment": {
+          "round": 1,
+          "date": "2026-08-25",
+          "mode": "vendor-demo-readonly",
+          "probeTarget": "https://demo.lv8test.commpartners.com",
+          "probeTargetProvenance": "vendor-published-demo (see Configuration.DemoHostWarning + OPERATOR_CONSENT.md)",
+          "adapter": "packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs",
+          "preAmendMetadataSha256": "7a29e9a779ab446ba3af1770886ec5ad5ebc7b8d2a46bc48c47232ebdaff91ff",
+          "metadataDelta": false,
+          "metadataDeltaNote": "FALSE and deliberately so. Every edit in this amendment CORRECTS AN ALREADY-DECLARED CLAIM using the vendor docs re-read + the probe's verdict on that claim. No object, field, path, type or constraint was sourced from response CONTENT: the demo's response.labels dictionary enumerates far more fields than are declared here and NOT ONE of them was added — that remainder belongs to the connector's per-tenant runtime DiscoverFields. Only KEY NAMES of the envelope (response.items / response.count / response.labels) were recorded, never values.",
+          "correctionsApplied": [
+            "path: APIPath '/api/reports/' -> '/api/reports' on all 5 objects (server's own 301 Location target; documented slash form preserved as endpointDocumentedForm)",
+            "responseEnvelope: ResponseDataKey null -> 'response.items' on all 5 objects (declared null would have returned zero rows forever)",
+            "errorShape: single declared { error_messages } -> per-surface split; read door observed as { error: { message } } at HTTP 500 with a do-not-blind-retry warning",
+            "resourceSpelling: ambiguity RESOLVED in the metadata's favour — 'accountingCode' accepted, 'accountCode' rejected, not aliases; no wire value changed",
+            "pk: User.member_id demoted (6454/6818 populated) -> content-hash identity",
+            "pk: AccountingCode.id demoted (6/7 populated) -> content-hash identity",
+            "pk: ProductRegistration.registration_id FALSIFIED as a read field -> content-hash identity; field retained as write-only and excluded from the read field selector"
+          ],
+          "declarationsDeliberatelyLeftUNCHANGED": [
+            "SupportsPagination=false / PaginationType=null / PaginationDefaults=null — probe DECIDED NEGATIVE and proven at volume (29,003 unfiltered == sum of 15 all-HTTP-200 yearly windows; none of limit/offset/page/per_page/page_size changed behaviour). Numbers recorded; no scheme invented; no 'unlimited' asserted.",
+            "resourceWireValue='accountingCode' — confirmed correct by the door.",
+            "Product.id PK — confirmed populated 1985/1985.",
+            "ProductRegistration watermarks modified_at + transaction_at — both confirmed accepted as filters.",
+            "RateLimitPolicy (exists=true, quantified=false, retryAfterHeaderDocumented=false) — the limit was never tripped at 3.4s pacing in the pass of record and no RateLimit-*/Retry-After header was observed, so the claim is UNVERIFIED, not falsified. An unverified claim is not licence to change a declaration.",
+            "WriteCapability / CreateAPIPath '/api/registrations' / DeleteAPIPath '/registrations/cancel' — existence-only evidence (OPTIONS/GET route, no Allow header advertised); no write was ever sent, so POST support stays DOCUMENTED-not-proven. Unchanged.",
+            "ProductRegistration.remote_user_id / remote_product_id / amount_paid / explanation — not probed this round; left declared and flagged unverified in readFieldSelectorNote."
+          ],
+          "ignoredAsArtefacts": "The 5 pinned-script verdicts noted 'pinned-script-get-probe-not-applicable-to-post-read-api' were IGNORED. They come from the pinned GET/OPTIONS finder pointed at a POST-only read API: a GET 301/404/405 on the reports door is not evidence the declared read path is wrong. The path correction applied above rests solely on the POST-vs-POST comparison in the read adapter (301 on the slash form, 200 on the canonical form), never on a GET result.",
+          "escalations": [
+            {
+              "id": "F-flattened-dot-path-field-names",
+              "status": "UNRESOLVED — ESCALATING. Discovered by the round-1 confirmation re-probe; NOT corrected, because it is outside the six claims this round was mandated to amend and every renamed field needs its own verdict.",
+              "severity": "BLOCKING for reads of any object whose declared fields include a flattened sub-resource selector — Elevate's `fields` allow-list is ALL-OR-NOTHING, so one unrecognised name returns HTTP 500 for the WHOLE query, not just that column.",
+              "finding": "The extractor FLATTENED the vendor's dot-path sub-resource selectors into underscore names (product.title -> product_title, payment.card_partial -> payment_card_partial, user.member_id -> user_member_id, ...). The door does not accept the flattened form.",
+              "evidence": "Read-only re-probe against the vendor demo host, 2026-08-25, POST /api/reports: (1) the vendor's VERBATIM dot-path worked example from article 16000139296 ({product.title, product.remote_accounting_code, transaction_at, price_before_discount, amount_discounted, price_after_discount, user.member_id, user.firstname, user.lastname, user.email, payment.payment_method, payment.card_type, payment.card_partial, payment.transaction_id}) -> HTTP 200, 13,525,618B, 29,003 rows (response.count == response.items.length == 29003). (2) the 19-field selector built from the declared non-write-only field names -> HTTP 500, {\"error\":{\"message\":\"Field payment_card_partial doesn't exist\"}}. (3) flattened names probed solo, each in isolation: 'payment_card_type' -> HTTP 500 \"Field payment_card_type doesn't exist\"; 'product_title' -> HTTP 500 \"Field product_title doesn't exist\". Systemic, not per-field: the dot-path form is accepted and the flattened form is rejected.",
+              "docBasisForTheFix": "The correction is doc-sourced and needs no invention — vendor article 16000139296 writes these selectors in dot-path form in EVERY worked example. The vendor separately notes a flattening facility (\"There is syntax to request sub-element fields as top-level fields\") for CSV output, which is the likely origin of the extractor's mistaken flattening; whatever that syntax is, it is NOT the underscore substitution used here, and it is not evidenced anywhere in the corpus.",
+              "affectedDeclaredFields": {
+                "ProductRegistration": [
+                  "product_title",
+                  "product_remote_accounting_code",
+                  "user_member_id",
+                  "user_firstname",
+                  "user_lastname",
+                  "user_email",
+                  "payment_payment_method",
+                  "payment_card_type",
+                  "payment_card_partial",
+                  "payment_transaction_id"
+                ],
+                "note": "Only ProductRegistration was probed for this defect. Other objects' declared field names have NOT been checked for the same flattening and must be swept in the next round before this is called closed."
+              },
+              "nextRoundAction": "Rename each affected declared field to the vendor's dot-path form and re-probe the full per-object selector for HTTP 200. Do NOT change the field set (nothing is added or removed) — this is a wire-NAME correction only. Until it is done, any connector built from this metadata will fail EVERY ProductRegistration read.",
+              "discoveredBy": "packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-probeamend-confirm.mjs"
+            }
+          ],
+          "confirmationReProbe": {
+            "adapter": "packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-probeamend-confirm.mjs",
+            "verdictsArtifact": "packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/verdicts.probeamend-confirm.json",
+            "correctionsReProbed": 8,
+            "correctionsResolved": 7,
+            "result": "All SIX falsified claims this round was mandated to amend re-probed CONFIRMED and are marked resolved=true; the pagination declaration (deliberately left unset) was re-corroborated at 29,003 rows. The eighth re-probe — a downstream consequence check on the corrected read field selector — returned WRONG and surfaced escalations[0], which is NOT corrected here."
+          }
+        }
+      },
+      "ImportPath": "@memberjunction/connector-elevate"
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "Name": "EarnedCredit",
+            "DisplayName": "Earned Credit",
+            "Description": "Elevate Report-API resource `earnedCredit`, read through the single POST door /api/reports/ with {\"resource\":\"earnedCredit\"}. 2 field(s) emitted from the derived spec plus the raw worked-example field selectors. Aggregate/summary outputs (revenue, number_registrations, total_revenue, total_number_registrations…) are deliberately excluded — they are computed over the request's filter window, not durable record columns.",
+            "APIPath": "/api/reports",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Category": "Report API Resource",
+            "ResponseDataKey": "response.items",
+            "PaginationType": null,
+            "DefaultPageSize": null,
+            "SupportsPagination": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": null,
+            "Status": "Active",
+            "Configuration": {
+              "resourceWireValue": "earnedCredit",
+              "derivedSpecSchema": "EarnedCredit",
+              "readContract": {
+                "door": "/api/reports",
+                "method": "POST",
+                "bodySelector": "resource",
+                "fieldsSelectorSyntax": "dot-path allow-list map, every observed value is literal `true`",
+                "filterOperators": [
+                  ">=",
+                  "<=",
+                  ">"
+                ],
+                "dateRangeShortcut": "{\"date\":[from,to]} — either bound nullable for an open range",
+                "responseEnvelope": "OBSERVED 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs) — key names only, no response values copied into metadata. The Report API envelope is { response: { labels: {...}, items: [...], count: N } }. Rows are the array at $.response.items, so ResponseDataKey MUST be 'response.items'; it was declared null, which would have made NormalizeResponse return ZERO rows forever no matter how correct every other slot was. 'response.count' is the vendor's own total for the query (the basis of the completeness/no-silent-cap verdicts). 'response.labels' is a per-resource field-name-to-label dictionary returned on EVERY call, enumerating the resource's full retrievable field set regardless of which fields were requested (the product call returned 38 label keys while only 2 fields were asked for) — that is a RUNTIME DiscoverFields surface for the per-tenant remainder, NOT a licence to declare those field names here: nothing from response content has been added to this metadata. This supersedes the prior 'responseEnvelope: UNDOCUMENTED' recorded from the corpus sweep; the corpus finding was accurate (no source documents it) — the shape is now known by observation.",
+                "noteOnGETAssumption": "APIPath is the READ path but the method is POST, not GET. Any tooling that assumes `GET <APIPath>` will mis-describe this vendor: Elevate exposes exactly one read endpoint and it is POST-only.",
+                "doorDocumentedForm": "/api/reports/",
+                "doorCanonicalizationNote": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST /api/reports/ -> HTTP 301, 257B, Location: https://demo.lv8test.commpartners.com/api/reports ; POST /api/reports -> HTTP 200, 93033B. The corrected value is the server's OWN canonical redirect target, not an invented path. A POST that follows a 301 is downgraded to GET (or loses its body) in most HTTP clients, so the declared trailing-slash form would have produced an empty/failed read on every object. The declared APIPath was corrected from '/api/reports/' to '/api/reports' on every object in RealityProbe amendment round 1 (2026-08-25).",
+                "responseCountKey": "response.count",
+                "completenessCheck": "Compare response.count (the door's own total for the query) against response.items.length on EVERY read; divergence is silent truncation and must raise a FetchWarning. Confirmed equal on all five probed resources at volumes up to 29,003 rows."
+              },
+              "accessPaths": [
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "earnedCredit"
+                  },
+                  "nesting": [],
+                  "depth": 0
+                }
+              ],
+              "childCollections": [],
+              "deferredRelationships": [],
+              "paginationProvenNegative": "Pagination is documented NOWHERE for this API: no page/offset/cursor parameter and no response envelope in either first-party API-doc copy, zero genuine hits across all 59 release notes (the 5 \"pagination\" hits are all admin-UI screens), none in the Reports-folder articles, none in either third-party guide. SupportsPagination=false is a PROVEN negative, not an unchecked default; bulk extraction is bounded by DATE WINDOWS via the filters envelope. PROBED AND DECIDED NEGATIVE AT VOLUME, 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs). One unfiltered POST for resource='productRegistration' returned 29,003 rows. The SAME query partitioned into 15 consecutive non-overlapping yearly windows (2013..2027) summed to EXACTLY 29,003 — every window HTTP 200 (2013:0, 2014:254, 2015:46, 2016:208, 2017:314, 2018:72, 2019:558, 2020:309, 2021:5608, 2022:8458, 2023:12334, 2024:283, 2025:296, 2026:263, 2027:0). windowedSum == unfilteredCount => NO silent cap at 29k rows. Corroborated independently on all five probed resources by the door's own total: response.count == response.items.length on earnedCredit 3395/3395, product 1985/1985, user 6818/6818, accountingCode 7/7, productRegistration 29003/29003. Five parameters were tried in the request envelope (limit, offset, page, per_page, page_size) and NONE changed the row count — the envelope exposes no pagination control at all, so there is nothing to declare. The GrowthZone silent-one-page-cap defect class does NOT apply to this vendor at this volume. NOT a claim of unlimited results: 29,003 rows is the ceiling actually PROBED; above it, behaviour is unmeasured, which is exactly why the date-window chunking obligation below stays in force. METHOD CAVEAT (recorded so this is never re-derived unsoundly): an earlier pass of this same adapter at 1.1s pacing produced a FALSE cap-negative (windowedSum 28,161 < 29,003) purely because its last 4 windows came back 429 rate-limited and were counted as 0. That pass was discarded and the probe re-paced to 3.4s. A sum-vs-unfiltered comparison is sound ONLY when every window returns HTTP 200 — otherwise a rate limit masquerades as missing data and a healthy API is condemned as silently truncating.",
+              "aggregateFieldsExcluded": [
+                "number_registrations",
+                "revenue",
+                "total_number_registrations",
+                "total_revenue"
+              ],
+              "watermarkProvenNegative": "Watermark-shaped column `updated_at` IS emitted as an ordinary field row, but INCREMENTAL CAPABILITY is WITHHELD: filters-envelope reachability is UNPROVEN — resource \"earnedCredit\" is absent from the door's documented resource enum [product, productRegistration, user, accountingCode, category, assetAccess], the only surface on which the >=/<= filters envelope is documented and exercised, so the column's evidence (release-note / report prose) describes a REPORT COLUMN, not a filterable API parameter; the object carries no PK/unique key, so a watermark delta has no identity to dedupe against. Falls to the FullPullHashDiff rung with ContentHashApplicable=true.",
+              "traversalOrder": 1,
+              "extractedBy": "packages/Integration/connectors-registry/elevate/scripts/extract-io-iof.ts"
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "earning_method",
+                  "DisplayName": "Earning Method",
+                  "Description": "Verbatim enum from the release note. Documented value set: User Earned | Admin Granted | Unknown.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 0,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "earning_method",
+                    "responsePath": [
+                      "earning_method"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-surfaces-universe.derived.json"
+                    ],
+                    "enumValues": [
+                      "User Earned",
+                      "Admin Granted",
+                      "Unknown"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9EE7D08A-ACA1-4345-B888-4D6C5A21630B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.858Z",
+                  "checksum": "2ed3ecc6b27104b0c83540b4e5f98849f47d31db29a9b0d448ea570b4543e3f9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "updated_at",
+                  "DisplayName": "Updated At",
+                  "Description": "Release note: \"The Last Edited field should show the updated_at date if it is different than the created_at, otherwise it will show N/A.\" Implies a created_at field also exists (not independently confirmed).",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "updated_at",
+                    "responsePath": [
+                      "updated_at"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-surfaces-universe.derived.json"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3B8A78DB-7128-4A69-A4D0-7CDCB354053F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.875Z",
+                  "checksum": "0c981558198d32f5042ae4fd2a9d98642e2c0ab3f7d2da86ba05c3ba4f092e3a"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "8C74F301-4FBD-4E8A-ABAD-472081B16666"
+          },
+          "sync": {
+            "lastModified": "2026-08-25T23:49:42.714Z",
+            "checksum": "5af917b1a60a7fb85e09b7d83f4888709861c957e4776e26799fec5564281188"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Product",
+            "DisplayName": "Product",
+            "Description": "Elevate Report-API resource `product`, read through the single POST door /api/reports/ with {\"resource\":\"product\"}. 3 field(s) emitted from the derived spec plus the raw worked-example field selectors. Aggregate/summary outputs (revenue, number_registrations, total_revenue, total_number_registrations…) are deliberately excluded — they are computed over the request's filter window, not durable record columns.",
+            "APIPath": "/api/reports",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Category": "Report API Resource",
+            "ResponseDataKey": "response.items",
+            "PaginationType": null,
+            "DefaultPageSize": null,
+            "SupportsPagination": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "id",
+            "Status": "Active",
+            "Configuration": {
+              "resourceWireValue": "product",
+              "derivedSpecSchema": "Product",
+              "readContract": {
+                "door": "/api/reports",
+                "method": "POST",
+                "bodySelector": "resource",
+                "fieldsSelectorSyntax": "dot-path allow-list map, every observed value is literal `true`",
+                "filterOperators": [
+                  ">=",
+                  "<=",
+                  ">"
+                ],
+                "dateRangeShortcut": "{\"date\":[from,to]} — either bound nullable for an open range",
+                "responseEnvelope": "OBSERVED 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs) — key names only, no response values copied into metadata. The Report API envelope is { response: { labels: {...}, items: [...], count: N } }. Rows are the array at $.response.items, so ResponseDataKey MUST be 'response.items'; it was declared null, which would have made NormalizeResponse return ZERO rows forever no matter how correct every other slot was. 'response.count' is the vendor's own total for the query (the basis of the completeness/no-silent-cap verdicts). 'response.labels' is a per-resource field-name-to-label dictionary returned on EVERY call, enumerating the resource's full retrievable field set regardless of which fields were requested (the product call returned 38 label keys while only 2 fields were asked for) — that is a RUNTIME DiscoverFields surface for the per-tenant remainder, NOT a licence to declare those field names here: nothing from response content has been added to this metadata. This supersedes the prior 'responseEnvelope: UNDOCUMENTED' recorded from the corpus sweep; the corpus finding was accurate (no source documents it) — the shape is now known by observation.",
+                "noteOnGETAssumption": "APIPath is the READ path but the method is POST, not GET. Any tooling that assumes `GET <APIPath>` will mis-describe this vendor: Elevate exposes exactly one read endpoint and it is POST-only.",
+                "doorDocumentedForm": "/api/reports/",
+                "doorCanonicalizationNote": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST /api/reports/ -> HTTP 301, 257B, Location: https://demo.lv8test.commpartners.com/api/reports ; POST /api/reports -> HTTP 200, 93033B. The corrected value is the server's OWN canonical redirect target, not an invented path. A POST that follows a 301 is downgraded to GET (or loses its body) in most HTTP clients, so the declared trailing-slash form would have produced an empty/failed read on every object. The declared APIPath was corrected from '/api/reports/' to '/api/reports' on every object in RealityProbe amendment round 1 (2026-08-25).",
+                "responseCountKey": "response.count",
+                "completenessCheck": "Compare response.count (the door's own total for the query) against response.items.length on EVERY read; divergence is silent truncation and must raise a FetchWarning. Confirmed equal on all five probed resources at volumes up to 29,003 rows."
+              },
+              "accessPaths": [
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "product"
+                  },
+                  "nesting": [],
+                  "depth": 0
+                },
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "accountingCode"
+                  },
+                  "nesting": [
+                    "products[]"
+                  ],
+                  "depth": 1
+                }
+              ],
+              "childCollections": [],
+              "deferredRelationships": [],
+              "paginationProvenNegative": "Pagination is documented NOWHERE for this API: no page/offset/cursor parameter and no response envelope in either first-party API-doc copy, zero genuine hits across all 59 release notes (the 5 \"pagination\" hits are all admin-UI screens), none in the Reports-folder articles, none in either third-party guide. SupportsPagination=false is a PROVEN negative, not an unchecked default; bulk extraction is bounded by DATE WINDOWS via the filters envelope. PROBED AND DECIDED NEGATIVE AT VOLUME, 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs). One unfiltered POST for resource='productRegistration' returned 29,003 rows. The SAME query partitioned into 15 consecutive non-overlapping yearly windows (2013..2027) summed to EXACTLY 29,003 — every window HTTP 200 (2013:0, 2014:254, 2015:46, 2016:208, 2017:314, 2018:72, 2019:558, 2020:309, 2021:5608, 2022:8458, 2023:12334, 2024:283, 2025:296, 2026:263, 2027:0). windowedSum == unfilteredCount => NO silent cap at 29k rows. Corroborated independently on all five probed resources by the door's own total: response.count == response.items.length on earnedCredit 3395/3395, product 1985/1985, user 6818/6818, accountingCode 7/7, productRegistration 29003/29003. Five parameters were tried in the request envelope (limit, offset, page, per_page, page_size) and NONE changed the row count — the envelope exposes no pagination control at all, so there is nothing to declare. The GrowthZone silent-one-page-cap defect class does NOT apply to this vendor at this volume. NOT a claim of unlimited results: 29,003 rows is the ceiling actually PROBED; above it, behaviour is unmeasured, which is exactly why the date-window chunking obligation below stays in force. METHOD CAVEAT (recorded so this is never re-derived unsoundly): an earlier pass of this same adapter at 1.1s pacing produced a FALSE cap-negative (windowedSum 28,161 < 29,003) purely because its last 4 windows came back 429 rate-limited and were counted as 0. That pass was discarded and the probe re-paced to 3.4s. A sum-vs-unfiltered comparison is sound ONLY when every window returns HTTP 200 — otherwise a rate limit masquerades as missing data and a healthy API is condemned as silently truncating.",
+              "aggregateFieldsExcluded": [
+                "number_registrations",
+                "revenue",
+                "total_number_registrations",
+                "total_revenue"
+              ],
+              "traversalOrder": 2,
+              "extractedBy": "packages/Integration/connectors-registry/elevate/scripts/extract-io-iof.ts"
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "PK — SOFT key, Convergent (2+ Tier-2): naming-convention @ packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json#/components/schemas/Product/properties/id | cross-resource-id-convention @ raw worked examples: resource in [product, accountingCode] each select \"id\".",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": false,
+                  "Category": "Identity",
+                  "Sequence": 0,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "id",
+                    "responsePath": [
+                      "id"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "97D824FD-E0C3-410E-B238-1ED346672D1A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.893Z",
+                  "checksum": "67dff2ca2385d581c8c89e9743a2903c43f51070a3cc3eac6cccea39b117b4b2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "remote_accounting_code",
+                  "DisplayName": "Remote Accounting Code",
+                  "Description": "The client's own reference code for GL/accounting mapping. Also reachable as the dot-path \"product.remote_accounting_code\" from productRegistration.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "remote_accounting_code",
+                    "responsePath": [
+                      "remote_accounting_code"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C767AB11-2751-41D5-9090-CF81E29E054B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.910Z",
+                  "checksum": "e5a53e60e93d68ccf2fd35877b4294ddcd54569b4cbfdc50e7521f1b2d139d60"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "title",
+                  "DisplayName": "Title",
+                  "Description": "Evidenced field on the `product` Report-API resource.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "title",
+                    "responsePath": [
+                      "title"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "38310746-2610-4186-8905-DDE653D58DA5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.925Z",
+                  "checksum": "781eb54ca29ed2275e7969fc88b9ce9da65c71598e9265b40861ca7dc783a58e"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E30E5D07-8DF2-47C1-8F86-A476B65DEF0A"
+          },
+          "sync": {
+            "lastModified": "2026-08-25T23:49:42.736Z",
+            "checksum": "a4ca991f1a6a1c0213ae3c42d12635559b2940abac5da6c3cc21d04ed58f0dd5"
+          }
+        },
+        {
+          "fields": {
+            "Name": "User",
+            "DisplayName": "User",
+            "Description": "Elevate Report-API resource `user`, read through the single POST door /api/reports/ with {\"resource\":\"user\"}. 4 field(s) emitted from the derived spec plus the raw worked-example field selectors. Aggregate/summary outputs (revenue, number_registrations, total_revenue, total_number_registrations…) are deliberately excluded — they are computed over the request's filter window, not durable record columns.",
+            "APIPath": "/api/reports",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Category": "Report API Resource",
+            "ResponseDataKey": "response.items",
+            "PaginationType": null,
+            "DefaultPageSize": null,
+            "SupportsPagination": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": null,
+            "Status": "Active",
+            "Configuration": {
+              "resourceWireValue": "user",
+              "derivedSpecSchema": "User",
+              "readContract": {
+                "door": "/api/reports",
+                "method": "POST",
+                "bodySelector": "resource",
+                "fieldsSelectorSyntax": "dot-path allow-list map, every observed value is literal `true`",
+                "filterOperators": [
+                  ">=",
+                  "<=",
+                  ">"
+                ],
+                "dateRangeShortcut": "{\"date\":[from,to]} — either bound nullable for an open range",
+                "responseEnvelope": "OBSERVED 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs) — key names only, no response values copied into metadata. The Report API envelope is { response: { labels: {...}, items: [...], count: N } }. Rows are the array at $.response.items, so ResponseDataKey MUST be 'response.items'; it was declared null, which would have made NormalizeResponse return ZERO rows forever no matter how correct every other slot was. 'response.count' is the vendor's own total for the query (the basis of the completeness/no-silent-cap verdicts). 'response.labels' is a per-resource field-name-to-label dictionary returned on EVERY call, enumerating the resource's full retrievable field set regardless of which fields were requested (the product call returned 38 label keys while only 2 fields were asked for) — that is a RUNTIME DiscoverFields surface for the per-tenant remainder, NOT a licence to declare those field names here: nothing from response content has been added to this metadata. This supersedes the prior 'responseEnvelope: UNDOCUMENTED' recorded from the corpus sweep; the corpus finding was accurate (no source documents it) — the shape is now known by observation.",
+                "noteOnGETAssumption": "APIPath is the READ path but the method is POST, not GET. Any tooling that assumes `GET <APIPath>` will mis-describe this vendor: Elevate exposes exactly one read endpoint and it is POST-only.",
+                "doorDocumentedForm": "/api/reports/",
+                "doorCanonicalizationNote": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST /api/reports/ -> HTTP 301, 257B, Location: https://demo.lv8test.commpartners.com/api/reports ; POST /api/reports -> HTTP 200, 93033B. The corrected value is the server's OWN canonical redirect target, not an invented path. A POST that follows a 301 is downgraded to GET (or loses its body) in most HTTP clients, so the declared trailing-slash form would have produced an empty/failed read on every object. The declared APIPath was corrected from '/api/reports/' to '/api/reports' on every object in RealityProbe amendment round 1 (2026-08-25).",
+                "responseCountKey": "response.count",
+                "completenessCheck": "Compare response.count (the door's own total for the query) against response.items.length on EVERY read; divergence is silent truncation and must raise a FetchWarning. Confirmed equal on all five probed resources at volumes up to 29,003 rows."
+              },
+              "accessPaths": [
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "user"
+                  },
+                  "nesting": [],
+                  "depth": 0
+                }
+              ],
+              "childCollections": [
+                "ProductRegistration"
+              ],
+              "deferredRelationships": [],
+              "paginationProvenNegative": "Pagination is documented NOWHERE for this API: no page/offset/cursor parameter and no response envelope in either first-party API-doc copy, zero genuine hits across all 59 release notes (the 5 \"pagination\" hits are all admin-UI screens), none in the Reports-folder articles, none in either third-party guide. SupportsPagination=false is a PROVEN negative, not an unchecked default; bulk extraction is bounded by DATE WINDOWS via the filters envelope. PROBED AND DECIDED NEGATIVE AT VOLUME, 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs). One unfiltered POST for resource='productRegistration' returned 29,003 rows. The SAME query partitioned into 15 consecutive non-overlapping yearly windows (2013..2027) summed to EXACTLY 29,003 — every window HTTP 200 (2013:0, 2014:254, 2015:46, 2016:208, 2017:314, 2018:72, 2019:558, 2020:309, 2021:5608, 2022:8458, 2023:12334, 2024:283, 2025:296, 2026:263, 2027:0). windowedSum == unfilteredCount => NO silent cap at 29k rows. Corroborated independently on all five probed resources by the door's own total: response.count == response.items.length on earnedCredit 3395/3395, product 1985/1985, user 6818/6818, accountingCode 7/7, productRegistration 29003/29003. Five parameters were tried in the request envelope (limit, offset, page, per_page, page_size) and NONE changed the row count — the envelope exposes no pagination control at all, so there is nothing to declare. The GrowthZone silent-one-page-cap defect class does NOT apply to this vendor at this volume. NOT a claim of unlimited results: 29,003 rows is the ceiling actually PROBED; above it, behaviour is unmeasured, which is exactly why the date-window chunking obligation below stays in force. METHOD CAVEAT (recorded so this is never re-derived unsoundly): an earlier pass of this same adapter at 1.1s pacing produced a FALSE cap-negative (windowedSum 28,161 < 29,003) purely because its last 4 windows came back 429 rate-limited and were counted as 0. That pass was discarded and the probe re-paced to 3.4s. A sum-vs-unfiltered comparison is sound ONLY when every window returns HTTP 200 — otherwise a rate limit masquerades as missing data and a healthy API is condemned as silently truncating.",
+              "aggregateFieldsExcluded": [
+                "number_registrations",
+                "revenue",
+                "total_number_registrations",
+                "total_revenue"
+              ],
+              "traversalOrder": 3,
+              "extractedBy": "packages/Integration/connectors-registry/elevate/scripts/extract-io-iof.ts",
+              "stableOrderingKeyWithdrawn": "StableOrderingKey was 'member_id'; withdrawn in RealityProbe amendment round 1 because that column is not populated on every record (resource 'user', declared PK 'member_id' populated on 6454/6818 records (0/6818 key-absent) — 364 records (5.3%) carry a null/empty member_id.). A null-bearing column is not a stable, monotonic keyset-resume cursor — a resume from it would skip or re-read the null-keyed records. null here means keyset resume is simply UNAVAILABLE for this object, which is not an error.",
+              "identityDemotedByProbe": {
+                "declaredPrimaryKey": "member_id",
+                "verdict": "wrong",
+                "evidence": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs (amendment round 1, 2026-08-25): resource 'user', declared PK 'member_id' populated on 6454/6818 records (0/6818 key-absent) — 364 records (5.3%) carry a null/empty member_id.",
+                "resolution": "content-hash identity",
+                "alternativePrimaryKeySearched": "No alternative identity column is documented for this resource anywhere in the swept corpus, and none was invented. Configuration.universalPK is null precisely because the vendor has no cross-resource id convention. A column the demo host happens to return but no vendor doc names is NOT eligible to be declared here (that is per-tenant runtime DiscoverFields territory), so the honest resolution is content-hash identity, not a substituted guess."
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Evidenced field on the `user` Report-API resource.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 0,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "email",
+                    "responsePath": [
+                      "email"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "18910986-A520-4675-99FE-E5C751F264D2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.942Z",
+                  "checksum": "32a8943a7c345f5a064d75a24722afacfd39c45601ac323df00a834aecce8eb6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstname",
+                  "DisplayName": "Firstname",
+                  "Description": "Evidenced field on the `user` Report-API resource.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "firstname",
+                    "responsePath": [
+                      "firstname"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2F6BE140-5378-41A2-8F32-26AC9BE23D9B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.958Z",
+                  "checksum": "d17ae83c9c733cb3f9e7474a07bbba32a83d365fae427d6940b03602960f48df"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastname",
+                  "DisplayName": "Lastname",
+                  "Description": "Evidenced field on the `user` Report-API resource.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "lastname",
+                    "responsePath": [
+                      "lastname"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "071A3DA6-D353-449D-AC09-F5CBBF19A4CB"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.977Z",
+                  "checksum": "3fef1640726ca7b0b1744c2e8aed542bad0b41fcf99ffdf99878fd6ea5892ebe"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "member_id",
+                  "DisplayName": "Member ID",
+                  "Description": "PK — SOFT key, Convergent (2+ Tier-2): naming-convention @ packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json#/components/schemas/User/properties/member_id | cross-io-join-projection @ raw worked example selector \"user.member_id\" — a sibling resource projects this column as its handle to User. PK DEMOTED — probe-falsified. RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs (amendment round 1, 2026-08-25): resource 'user', declared PK 'member_id' populated on 6454/6818 records (0/6818 key-absent) — 364 records (5.3%) carry a null/empty member_id. The declared PK is null/empty on real records, so it cannot serve as the record-matching identity: every null-keyed record would collapse onto the same match. IsUniqueKey is cleared for the same reason (a null-bearing unique key silently merges rows), and AllowsNull is opened to true so the null-bearing minority still lands. The field itself is REAL and doc-evidenced and is retained in full as an ordinary column — only its identity role is withdrawn. Identity for this object is now the engine's content hash (ContentHashApplicable=true). PKs are SOFT: no DB constraint was ever emitted, so this demotion cannot reject a row; it prevents a wrong merge. Runtime D4 / pickPrimaryKeyFromStats may promote a better identity from live tenant data.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Identity",
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "member_id",
+                    "responsePath": [
+                      "member_id"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "39B30D90-F410-4BED-8D2F-6296D75C7DAB"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:42.997Z",
+                  "checksum": "f2d842790690ca437ebac94bcc5cf12bfd709e46948657602827fb8432fb7470"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "6A2C1061-D0CA-43EC-BB52-445531ABBF73"
+          },
+          "sync": {
+            "lastModified": "2026-08-25T23:49:42.758Z",
+            "checksum": "987d7453e204eebdc52d682b50e3593651ca261abe07be93456d17a29b805568"
+          }
+        },
+        {
+          "fields": {
+            "Name": "AccountingCode",
+            "DisplayName": "Accounting Code",
+            "Description": "Elevate Report-API resource `accountingCode`, read through the single POST door /api/reports/ with {\"resource\":\"accountingCode\"}. 1 field(s) emitted from the derived spec schema `AccountCodeAccountingCode` plus the raw worked-example field selectors. Aggregate/summary outputs (revenue, number_registrations, total_revenue, total_number_registrations…) are deliberately excluded — they are computed over the request's filter window, not durable record columns.",
+            "APIPath": "/api/reports",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Category": "Report API Resource",
+            "ResponseDataKey": "response.items",
+            "PaginationType": null,
+            "DefaultPageSize": null,
+            "SupportsPagination": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": null,
+            "Status": "Active",
+            "Configuration": {
+              "resourceWireValue": "accountingCode",
+              "derivedSpecSchema": "AccountCodeAccountingCode",
+              "readContract": {
+                "door": "/api/reports",
+                "method": "POST",
+                "bodySelector": "resource",
+                "fieldsSelectorSyntax": "dot-path allow-list map, every observed value is literal `true`",
+                "filterOperators": [
+                  ">=",
+                  "<=",
+                  ">"
+                ],
+                "dateRangeShortcut": "{\"date\":[from,to]} — either bound nullable for an open range",
+                "responseEnvelope": "OBSERVED 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs) — key names only, no response values copied into metadata. The Report API envelope is { response: { labels: {...}, items: [...], count: N } }. Rows are the array at $.response.items, so ResponseDataKey MUST be 'response.items'; it was declared null, which would have made NormalizeResponse return ZERO rows forever no matter how correct every other slot was. 'response.count' is the vendor's own total for the query (the basis of the completeness/no-silent-cap verdicts). 'response.labels' is a per-resource field-name-to-label dictionary returned on EVERY call, enumerating the resource's full retrievable field set regardless of which fields were requested (the product call returned 38 label keys while only 2 fields were asked for) — that is a RUNTIME DiscoverFields surface for the per-tenant remainder, NOT a licence to declare those field names here: nothing from response content has been added to this metadata. This supersedes the prior 'responseEnvelope: UNDOCUMENTED' recorded from the corpus sweep; the corpus finding was accurate (no source documents it) — the shape is now known by observation.",
+                "noteOnGETAssumption": "APIPath is the READ path but the method is POST, not GET. Any tooling that assumes `GET <APIPath>` will mis-describe this vendor: Elevate exposes exactly one read endpoint and it is POST-only.",
+                "doorDocumentedForm": "/api/reports/",
+                "doorCanonicalizationNote": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST /api/reports/ -> HTTP 301, 257B, Location: https://demo.lv8test.commpartners.com/api/reports ; POST /api/reports -> HTTP 200, 93033B. The corrected value is the server's OWN canonical redirect target, not an invented path. A POST that follows a 301 is downgraded to GET (or loses its body) in most HTTP clients, so the declared trailing-slash form would have produced an empty/failed read on every object. The declared APIPath was corrected from '/api/reports/' to '/api/reports' on every object in RealityProbe amendment round 1 (2026-08-25).",
+                "responseCountKey": "response.count",
+                "completenessCheck": "Compare response.count (the door's own total for the query) against response.items.length on EVERY read; divergence is silent truncation and must raise a FetchWarning. Confirmed equal on all five probed resources at volumes up to 29,003 rows."
+              },
+              "accessPaths": [
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "accountingCode"
+                  },
+                  "nesting": [],
+                  "depth": 0
+                }
+              ],
+              "childCollections": [
+                "Product"
+              ],
+              "deferredRelationships": [],
+              "paginationProvenNegative": "Pagination is documented NOWHERE for this API: no page/offset/cursor parameter and no response envelope in either first-party API-doc copy, zero genuine hits across all 59 release notes (the 5 \"pagination\" hits are all admin-UI screens), none in the Reports-folder articles, none in either third-party guide. SupportsPagination=false is a PROVEN negative, not an unchecked default; bulk extraction is bounded by DATE WINDOWS via the filters envelope. PROBED AND DECIDED NEGATIVE AT VOLUME, 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs). One unfiltered POST for resource='productRegistration' returned 29,003 rows. The SAME query partitioned into 15 consecutive non-overlapping yearly windows (2013..2027) summed to EXACTLY 29,003 — every window HTTP 200 (2013:0, 2014:254, 2015:46, 2016:208, 2017:314, 2018:72, 2019:558, 2020:309, 2021:5608, 2022:8458, 2023:12334, 2024:283, 2025:296, 2026:263, 2027:0). windowedSum == unfilteredCount => NO silent cap at 29k rows. Corroborated independently on all five probed resources by the door's own total: response.count == response.items.length on earnedCredit 3395/3395, product 1985/1985, user 6818/6818, accountingCode 7/7, productRegistration 29003/29003. Five parameters were tried in the request envelope (limit, offset, page, per_page, page_size) and NONE changed the row count — the envelope exposes no pagination control at all, so there is nothing to declare. The GrowthZone silent-one-page-cap defect class does NOT apply to this vendor at this volume. NOT a claim of unlimited results: 29,003 rows is the ceiling actually PROBED; above it, behaviour is unmeasured, which is exactly why the date-window chunking obligation below stays in force. METHOD CAVEAT (recorded so this is never re-derived unsoundly): an earlier pass of this same adapter at 1.1s pacing produced a FALSE cap-negative (windowedSum 28,161 < 29,003) purely because its last 4 windows came back 429 rate-limited and were counted as 0. That pass was discarded and the probe re-paced to 3.4s. A sum-vs-unfiltered comparison is sound ONLY when every window returns HTTP 200 — otherwise a rate limit masquerades as missing data and a healthy API is condemned as silently truncating.",
+              "aggregateFieldsExcluded": [
+                "number_registrations",
+                "revenue",
+                "total_number_registrations",
+                "total_revenue"
+              ],
+              "wireNameNote": "RESOLVED 2026-08-25 (RealityProbe amendment round 1) IN THIS METADATA'S FAVOUR — the contradiction that was carried here unresolved is now decided by the door. RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST resource='accountingCode' -> HTTP 200, 443B, 7 rows at $.response.items ; POST resource='accountCode' -> HTTP 500, 44B, {\"error\":{\"message\":\"Wrong resource name.\"}}. resourceWireValue stays 'accountingCode' (UNCHANGED). 'accountCode' is NOT an alias — it is rejected as an unknown resource name — so it is recorded below as a rejected spelling, never as a fallback to try.",
+              "traversalOrder": 0,
+              "extractedBy": "packages/Integration/connectors-registry/elevate/scripts/extract-io-iof.ts",
+              "rejectedResourceSpelling": {
+                "value": "accountCode",
+                "appearsIn": "the vendor's prose resource enumeration on BOTH first-party doc copies (elevate.support.gocadmium.com 16000139296 and integrationservices.freshdesk.com 16000236778)",
+                "doorResponse": "HTTP 500, 44B — {\"error\":{\"message\":\"Wrong resource name.\"}}",
+                "isAlias": false,
+                "note": "Never send this spelling and never fall back to it. It is a defect in the vendor's prose enum."
+              },
+              "stableOrderingKeyWithdrawn": "StableOrderingKey was 'id'; withdrawn in RealityProbe amendment round 1 because that column is not populated on every record (resource 'accountingCode', declared PK 'id' populated on 6/7 records (0/7 key-absent) — 1 of the 7 records carries a null/empty id.). A null-bearing column is not a stable, monotonic keyset-resume cursor — a resume from it would skip or re-read the null-keyed records. null here means keyset resume is simply UNAVAILABLE for this object, which is not an error.",
+              "identityDemotedByProbe": {
+                "declaredPrimaryKey": "id",
+                "verdict": "wrong",
+                "evidence": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs (amendment round 1, 2026-08-25): resource 'accountingCode', declared PK 'id' populated on 6/7 records (0/7 key-absent) — 1 of the 7 records carries a null/empty id.",
+                "resolution": "content-hash identity",
+                "alternativePrimaryKeySearched": "No alternative identity column is documented for this resource anywhere in the swept corpus, and none was invented. Configuration.universalPK is null precisely because the vendor has no cross-resource id convention. A column the demo host happens to return but no vendor doc names is NOT eligible to be declared here (that is per-tenant runtime DiscoverFields territory), so the honest resolution is content-hash identity, not a substituted guess."
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Represents a GL account code, \"to one of which each product should be assigned\" per source prose. Optional per-site: the Product Summary & Details Report UI notes \"If your site does not use accounting codes, you may skip this step\" (https://elevate.support.gocadmium.com/support/solutions/articles/16000124590-product-summary-details-report, Tier-2). PK — SOFT key, Convergent (2+ Tier-2): naming-convention @ packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json#/components/schemas/AccountCodeAccountingCode/properties/id | cross-resource-id-convention @ raw worked examples: resource in [product, accountingCode] each select \"id\". PK DEMOTED — probe-falsified. RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs (amendment round 1, 2026-08-25): resource 'accountingCode', declared PK 'id' populated on 6/7 records (0/7 key-absent) — 1 of the 7 records carries a null/empty id. The declared PK is null/empty on real records, so it cannot serve as the record-matching identity: every null-keyed record would collapse onto the same match. IsUniqueKey is cleared for the same reason (a null-bearing unique key silently merges rows), and AllowsNull is opened to true so the null-bearing minority still lands. The field itself is REAL and doc-evidenced and is retained in full as an ordinary column — only its identity role is withdrawn. Identity for this object is now the engine's content hash (ContentHashApplicable=true). PKs are SOFT: no DB constraint was ever emitted, so this demotion cannot reject a row; it prevents a wrong merge. Runtime D4 / pickPrimaryKeyFromStats may promote a better identity from live tenant data.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Identity",
+                  "Sequence": 0,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "id",
+                    "responsePath": [
+                      "id"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "63CF40DB-FF87-4352-8324-DDA9086C9E98"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.011Z",
+                  "checksum": "6f5b506a437a5be55a7acef590751e0cdaf75c797b4ad719443ab71461f6cb9a"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "5D7BDC7A-C5C7-4F52-AF2C-4FCE785326C4"
+          },
+          "sync": {
+            "lastModified": "2026-08-25T23:49:42.781Z",
+            "checksum": "8a6c4d4322eba19f247cdc6a8a4f64f815dd3f7004fd56559c45dbec9a261091"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ProductRegistration",
+            "DisplayName": "Product Registration",
+            "Description": "Elevate Report-API resource `productRegistration`, read through the single POST door /api/reports/ with {\"resource\":\"productRegistration\"}. 20 field(s) emitted from the derived spec plus the raw worked-example field selectors. Aggregate/summary outputs (revenue, number_registrations, total_revenue, total_number_registrations…) are deliberately excluded — they are computed over the request's filter window, not durable record columns.",
+            "APIPath": "/api/reports",
+            "SupportsWrite": true,
+            "SupportsIncrementalSync": true,
+            "Category": "Report API Resource",
+            "ResponseDataKey": "response.items",
+            "PaginationType": null,
+            "DefaultPageSize": null,
+            "SupportsPagination": false,
+            "IncrementalWatermarkField": "modified_at",
+            "SupportsCreate": true,
+            "SupportsUpdate": false,
+            "SupportsDelete": true,
+            "SyncStrategy": "WatermarkIncremental",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": null,
+            "Status": "Active",
+            "CreateAPIPath": "/api/registrations",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateBodyKey": null,
+            "CreateIDLocation": "body",
+            "DeleteAPIPath": "/registrations/cancel",
+            "DeleteMethod": "POST",
+            "DeleteIDLocation": "body",
+            "Configuration": {
+              "resourceWireValue": "productRegistration",
+              "derivedSpecSchema": "ProductRegistration",
+              "readContract": {
+                "door": "/api/reports",
+                "method": "POST",
+                "bodySelector": "resource",
+                "fieldsSelectorSyntax": "dot-path allow-list map, every observed value is literal `true`",
+                "filterOperators": [
+                  ">=",
+                  "<=",
+                  ">"
+                ],
+                "dateRangeShortcut": "{\"date\":[from,to]} — either bound nullable for an open range",
+                "responseEnvelope": "OBSERVED 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs) — key names only, no response values copied into metadata. The Report API envelope is { response: { labels: {...}, items: [...], count: N } }. Rows are the array at $.response.items, so ResponseDataKey MUST be 'response.items'; it was declared null, which would have made NormalizeResponse return ZERO rows forever no matter how correct every other slot was. 'response.count' is the vendor's own total for the query (the basis of the completeness/no-silent-cap verdicts). 'response.labels' is a per-resource field-name-to-label dictionary returned on EVERY call, enumerating the resource's full retrievable field set regardless of which fields were requested (the product call returned 38 label keys while only 2 fields were asked for) — that is a RUNTIME DiscoverFields surface for the per-tenant remainder, NOT a licence to declare those field names here: nothing from response content has been added to this metadata. This supersedes the prior 'responseEnvelope: UNDOCUMENTED' recorded from the corpus sweep; the corpus finding was accurate (no source documents it) — the shape is now known by observation.",
+                "noteOnGETAssumption": "APIPath is the READ path but the method is POST, not GET. Any tooling that assumes `GET <APIPath>` will mis-describe this vendor: Elevate exposes exactly one read endpoint and it is POST-only.",
+                "doorDocumentedForm": "/api/reports/",
+                "doorCanonicalizationNote": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs: POST /api/reports/ -> HTTP 301, 257B, Location: https://demo.lv8test.commpartners.com/api/reports ; POST /api/reports -> HTTP 200, 93033B. The corrected value is the server's OWN canonical redirect target, not an invented path. A POST that follows a 301 is downgraded to GET (or loses its body) in most HTTP clients, so the declared trailing-slash form would have produced an empty/failed read on every object. The declared APIPath was corrected from '/api/reports/' to '/api/reports' on every object in RealityProbe amendment round 1 (2026-08-25).",
+                "responseCountKey": "response.count",
+                "completenessCheck": "Compare response.count (the door's own total for the query) against response.items.length on EVERY read; divergence is silent truncation and must raise a FetchWarning. Confirmed equal on all five probed resources at volumes up to 29,003 rows."
+              },
+              "accessPaths": [
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "productRegistration"
+                  },
+                  "nesting": [],
+                  "depth": 0
+                },
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "user"
+                  },
+                  "nesting": [
+                    "productRegistrations[]"
+                  ],
+                  "depth": 1
+                },
+                {
+                  "door": "/api/reports",
+                  "method": "POST",
+                  "body": {
+                    "resource": "products"
+                  },
+                  "nesting": [
+                    "productRegistrations[]"
+                  ],
+                  "depth": 1
+                }
+              ],
+              "childCollections": [],
+              "deferredRelationships": [
+                {
+                  "target": "Product",
+                  "evidence": "dot-path projection \"product.remote_accounting_code\" descends into the related `Product` record, and the vendor's own prose states the relationship",
+                  "whyDeferred": "the projected column \"remote_accounting_code\" is NOT Product's primary key (\"id\") — no worked example anywhere selects product.id, so the FK CARRIER column is unevidenced. Relationship proven, carrier deferred (a wrong carrier mis-orders the sync DAG)."
+                },
+                {
+                  "target": "Product",
+                  "evidence": "dot-path projection \"product.title\" descends into the related `Product` record, and the vendor's own prose states the relationship",
+                  "whyDeferred": "the projected column \"title\" is NOT Product's primary key (\"id\") — no worked example anywhere selects product.id, so the FK CARRIER column is unevidenced. Relationship proven, carrier deferred (a wrong carrier mis-orders the sync DAG)."
+                },
+                {
+                  "target": "User",
+                  "evidence": "dot-path projection \"user.email\" descends into the related `User` record, and the vendor's own prose states the relationship",
+                  "whyDeferred": "the projected column \"email\" is NOT User's primary key (\"member_id\") — no worked example anywhere selects user.member_id, so the FK CARRIER column is unevidenced. Relationship proven, carrier deferred (a wrong carrier mis-orders the sync DAG)."
+                },
+                {
+                  "target": "User",
+                  "evidence": "dot-path projection \"user.firstname\" descends into the related `User` record, and the vendor's own prose states the relationship",
+                  "whyDeferred": "the projected column \"firstname\" is NOT User's primary key (\"member_id\") — no worked example anywhere selects user.member_id, so the FK CARRIER column is unevidenced. Relationship proven, carrier deferred (a wrong carrier mis-orders the sync DAG)."
+                },
+                {
+                  "target": "User",
+                  "evidence": "dot-path projection \"user.lastname\" descends into the related `User` record, and the vendor's own prose states the relationship",
+                  "whyDeferred": "the projected column \"lastname\" is NOT User's primary key (\"member_id\") — no worked example anywhere selects user.member_id, so the FK CARRIER column is unevidenced. Relationship proven, carrier deferred (a wrong carrier mis-orders the sync DAG)."
+                }
+              ],
+              "paginationProvenNegative": "Pagination is documented NOWHERE for this API: no page/offset/cursor parameter and no response envelope in either first-party API-doc copy, zero genuine hits across all 59 release notes (the 5 \"pagination\" hits are all admin-UI screens), none in the Reports-folder articles, none in either third-party guide. SupportsPagination=false is a PROVEN negative, not an unchecked default; bulk extraction is bounded by DATE WINDOWS via the filters envelope. PROBED AND DECIDED NEGATIVE AT VOLUME, 2026-08-25 (RealityProbe amendment round 1, packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs). One unfiltered POST for resource='productRegistration' returned 29,003 rows. The SAME query partitioned into 15 consecutive non-overlapping yearly windows (2013..2027) summed to EXACTLY 29,003 — every window HTTP 200 (2013:0, 2014:254, 2015:46, 2016:208, 2017:314, 2018:72, 2019:558, 2020:309, 2021:5608, 2022:8458, 2023:12334, 2024:283, 2025:296, 2026:263, 2027:0). windowedSum == unfilteredCount => NO silent cap at 29k rows. Corroborated independently on all five probed resources by the door's own total: response.count == response.items.length on earnedCredit 3395/3395, product 1985/1985, user 6818/6818, accountingCode 7/7, productRegistration 29003/29003. Five parameters were tried in the request envelope (limit, offset, page, per_page, page_size) and NONE changed the row count — the envelope exposes no pagination control at all, so there is nothing to declare. The GrowthZone silent-one-page-cap defect class does NOT apply to this vendor at this volume. NOT a claim of unlimited results: 29,003 rows is the ceiling actually PROBED; above it, behaviour is unmeasured, which is exactly why the date-window chunking obligation below stays in force. METHOD CAVEAT (recorded so this is never re-derived unsoundly): an earlier pass of this same adapter at 1.1s pacing produced a FALSE cap-negative (windowedSum 28,161 < 29,003) purely because its last 4 windows came back 429 rate-limited and were counted as 0. That pass was discarded and the probe re-paced to 3.4s. A sum-vs-unfiltered comparison is sound ONLY when every window returns HTTP 200 — otherwise a rate limit masquerades as missing data and a healthy API is condemned as silently truncating.",
+              "aggregateFieldsExcluded": [
+                "number_registrations",
+                "revenue",
+                "total_number_registrations",
+                "total_revenue"
+              ],
+              "createBody": {
+                "path": "/api/registrations",
+                "required": [
+                  "api_key",
+                  "remote_user_id",
+                  "firstname",
+                  "lastname",
+                  "email",
+                  "remote_product_id"
+                ],
+                "properties": {
+                  "api_key": {
+                    "type": "string",
+                    "required": true,
+                    "role": "auth-credential (NOT a record column — supplied by the connection credential)",
+                    "mapsFromColumn": null
+                  },
+                  "remote_user_id": {
+                    "type": "string",
+                    "required": true,
+                    "role": "record data",
+                    "mapsFromColumn": "remote_user_id"
+                  },
+                  "firstname": {
+                    "type": "string",
+                    "required": true,
+                    "role": "record data",
+                    "mapsFromColumn": "user_firstname"
+                  },
+                  "lastname": {
+                    "type": "string",
+                    "required": true,
+                    "role": "record data",
+                    "mapsFromColumn": "user_lastname"
+                  },
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "role": "record data",
+                    "mapsFromColumn": "user_email"
+                  },
+                  "remote_product_id": {
+                    "type": "string",
+                    "required": true,
+                    "role": "record data",
+                    "mapsFromColumn": "remote_product_id"
+                  },
+                  "amount_paid": {
+                    "type": "string",
+                    "required": false,
+                    "role": "record data",
+                    "mapsFromColumn": "amount_paid"
+                  },
+                  "send_email": {
+                    "type": "boolean",
+                    "required": false,
+                    "role": "request behaviour flag (NOT a record column — a per-call side-effect switch)",
+                    "mapsFromColumn": null
+                  },
+                  "explanation": {
+                    "type": "string",
+                    "required": false,
+                    "role": "record data",
+                    "mapsFromColumn": "explanation"
+                  }
+                },
+                "response": {
+                  "shape": "flat JSON body (same shape family as the request — CreateBodyShape=flat)",
+                  "properties": {
+                    "product_url": {
+                      "type": "string",
+                      "role": "vendor-hosted registration confirmation URL"
+                    },
+                    "registration_id": {
+                      "type": "integer",
+                      "role": "the ONLY handle for the Cancellation call; MUST be persisted by the caller as this record's ExternalID."
+                    }
+                  },
+                  "createIDLocationFieldNameNote": "IntegrationObject.CreateIDLocation is a location-only enum ('body'|'header'|'n/a'|'path' — CHECK constraint CK_IntegrationObject_CreateIDLocation on __mj.IntegrationObject) and CANNOT carry a JSON key name; it was previously mis-populated with the dotted value 'body.registration_id', which violates that constraint and fails `mj sync push`. Corrected to 'body'. The actual response key name is preserved here, verbatim, as 'registration_id' (see response.properties above) so nothing is silently dropped: the generic engine's ExtractIDFromResponse (packages/Integration/engine/src/BaseRESTIntegrationConnector.ts) default body-location field-name search list is ['id','ID','Id','externalID','ExternalID'] and does NOT include 'registration_id' — the ElevateConnector MUST override ExtractIDFromResponse for this object (or an equivalent per-object field-name hook) to read 'registration_id' from the create response body."
+                }
+              },
+              "cancelBody": {
+                "path": "/registrations/cancel",
+                "required": [
+                  "api_key",
+                  "registration_id"
+                ],
+                "properties": {
+                  "api_key": {
+                    "type": "string",
+                    "required": true,
+                    "role": "auth-credential (NOT a record column)"
+                  },
+                  "registration_id": {
+                    "type": "string",
+                    "required": true,
+                    "role": "record data — the target record's ExternalID. IntegrationObject.DeleteIDLocation='body' means this travels in the JSON request body under this exact key name (not the URL path — DeleteAPIPath '/registrations/cancel' has no {ID} placeholder). DeleteIDLocation is a location-only enum ('body'|'header'|'n/a'|'path') and cannot itself carry this key name, which is why it is preserved here verbatim. The generic engine's DeleteRecord (packages/Integration/engine/src/BaseRESTIntegrationConnector.ts) does not build a request body for delete at all — the ElevateConnector MUST override DeleteRecord to POST { api_key, registration_id: ctx.ExternalID, ... } to DeleteAPIPath."
+                  },
+                  "cancellations_email": {
+                    "type": "string",
+                    "required": false,
+                    "role": "notification/behaviour param (NOT a record column)"
+                  },
+                  "cancellation_explanation": {
+                    "type": "string",
+                    "required": false,
+                    "role": "notification/behaviour param (NOT a record column)"
+                  },
+                  "notify_cancelled_user": {
+                    "type": "boolean",
+                    "required": false,
+                    "role": "notification/behaviour param (NOT a record column)"
+                  },
+                  "cancellation_explanation_for_user": {
+                    "type": "string",
+                    "required": false,
+                    "role": "notification/behaviour param (NOT a record column)"
+                  }
+                },
+                "semantics": "Domain-specific CANCEL, not a generic hard DELETE. No Report-API-readable field reflects cancelled state, so cancellation is write-only and delete-detection needs a periodic key sweep."
+              },
+              "traversalOrder": 4,
+              "extractedBy": "packages/Integration/connectors-registry/elevate/scripts/extract-io-iof.ts",
+              "identityDemotedByProbe": {
+                "declaredPrimaryKey": "registration_id",
+                "verdict": "wrong — FALSIFIED (field does not exist on the read resource), not merely null",
+                "evidence": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs (amendment round 1, 2026-08-25): the read door REJECTS a request for this field on resource 'productRegistration' — POST fields={registration_id:true} -> HTTP 500, 59B, {\"error\":{\"message\":\"Field registration_id doesn't exist\"}}. This is a FALSIFIED PK, not a null one: no retrievable identity column of this name exists on the read resource.",
+                "resolution": "content-hash identity",
+                "alternativePrimaryKeySearched": "Deliberately NOT substituted. Configuration.universalPKNote already records the corpus finding that productRegistration shows NO id-shaped field in ANY worked example anywhere (only transaction_at/pricing/dot-path selectors). payment_transaction_id is the only id-shaped documented column and is NOT an identity: it is the PAYMENT processor's transaction id, absent on free registrations and shared across the registrations of one multi-item order. No doc-named identity column exists, and a column found only in demo response content is not eligible for Declared metadata.",
+                "watermarkUnaffected": "SyncStrategy stays WatermarkIncremental — the identity demotion does not touch the fetch strategy. Both watermarks were probe-CONFIRMED as accepted filters on this resource: 'modified_at' (HTTP 200, 29 rows in the probed window) and 'transaction_at' (HTTP 200, 29,003 rows). ContentHashApplicable is now true as well: the watermark decides WHICH rows are fetched, the content hash decides WHICH RECORD each fetched row IS.",
+                "primaryKeyReinstated": {
+                  "on": "2026-08-25",
+                  "verdict": "PARTIALLY SUPERSEDED — the READ falsification stands, the PK demotion does not.",
+                  "whatStands": "registration_id is NOT retrievable through the Report API `fields` allow-list (HTTP 500, \"Field registration_id doesn't exist\"). surface='write-only' and excludeFromReadFieldSelector=true are unchanged, and the connector's read selector is built from those flags alone — reinstating the PK cannot regress a read.",
+                  "whatWasOverCorrected": "\"Not projectable through the read door\" and \"not the record key\" are different claims. Only the first was probed. The second is affirmatively PROVEN in the other direction by ADDRESSING: the Cancellation API accepts registration_id as its sole, required record selector, and the vendor's prose says the value identifies the order. Writing IsPrimaryKey=false asserted the unproven stronger claim and left a writable object keyless.",
+                  "resolutionNow": "IsPrimaryKey=true (SOFT key — no DB constraint is ever emitted) with the read-surface exclusion intact. The 'content-hash identity' resolution recorded above is NOT withdrawn: it remains the RUNTIME mechanism by which the connector derives a stable ExternalID for read-sourced rows, and ElevateConnector.ToElevateRecord back-fills that identity into this single declared PK column so the persisted row is addressable. Field Type was widened Integer -> String so the column can hold both provenances of that identity (vendor integer on create, sha256 identity on read).",
+                  "whyNotAnotherColumn": "No alternative was substituted, for the reason already recorded in alternativePrimaryKeySearched: payment_transaction_id is the payment processor's id — absent on free registrations and shared across the registrations of one multi-item order — and no other doc-named identity column exists on this resource."
+                }
+              },
+              "readFieldSelectorNote": "Elevate reads require an EXPLICIT `fields` allow-list and the door returns HTTP 500 for any field it does not recognise on the resource — a single bad name fails the WHOLE query, not just that column. This IO's declared field list mixes read columns with Registration/Cancellation write-contract fields; the connector MUST build its read selector from read-surface fields only. registration_id is proven write-only (Configuration.surface='write-only', excludeFromReadFieldSelector=true). remote_user_id, remote_product_id, amount_paid and explanation are documented ONLY in the Registration API create body and were NOT probed this round — they remain DECLARED AS-IS and UNVERIFIED as read columns; do not assume either way without a verdict.",
+              "probeAmendUnresolvedFinding": {
+                "ref": "Configuration.RealityProbeAmendment.escalations[0] — F-flattened-dot-path-field-names",
+                "impact": "BLOCKING: the declared read field selector for this object is rejected by the door (HTTP 500 on the whole query). Reads of this object cannot work until the flattened field names are restored to the vendor's dot-path form. Left declared and marked, never silently renamed."
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "amount_discounted",
+                  "DisplayName": "Amount Discounted",
+                  "Description": "Evidenced field on the `productRegistration` Report-API resource.",
+                  "Type": "Decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 0,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "amount_discounted",
+                    "responsePath": [
+                      "amount_discounted"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6112045F-4474-41B7-AB21-C87E2E0DD89D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.037Z",
+                  "checksum": "faf4c97b26c4c84b984d42bcfe9709f053cf31de6a7b6d7aa05c6c1f2b887568"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "modified_at",
+                  "DisplayName": "Modified At",
+                  "Description": "ADDED in Elevate Release 2025.02 (https://elevate.support.gocadmium.com/support/solutions/articles/16000207169-elevate-release-2025-02: \"Added the 'modified_at' field to the Report API's 'productRegistration' resource\"). Absent from both first-party API-doc copies despite each claiming a later \"Last modified\" date than the release — see SOURCE_STUDY.md \"Modified-date is not a currency proxy\" finding.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "modified_at",
+                    "responsePath": [
+                      "modified_at"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CBCF5F2A-B26B-4323-B693-7BA90BD96F24"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.053Z",
+                  "checksum": "4ff29927c965910634a7c658a19a1d178989a576aa57bc68afed31497a407bfd"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "payment_card_partial",
+                  "DisplayName": "Payment Card Partial",
+                  "Description": "Dot-path selection into the embedded payment sub-object. Report-API dot-path selector \"payment.card_partial\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"payment_card_partial\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "EmbeddedProjection",
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "payment.card_partial",
+                    "responsePath": [
+                      "payment",
+                      "card_partial"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4CD1AB83-54F9-4818-AFD2-9013ADC922D4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.069Z",
+                  "checksum": "5d3ec7139e8b56147537f9b602742ec0b6310290dd2fa41c585f349a4fa5be2f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "payment_card_type",
+                  "DisplayName": "Payment Card Type",
+                  "Description": "Dot-path selection into the embedded payment sub-object. Report-API dot-path selector \"payment.card_type\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"payment_card_type\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "EmbeddedProjection",
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "payment.card_type",
+                    "responsePath": [
+                      "payment",
+                      "card_type"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4C2EAFE9-10AA-4B25-9F2B-A62E27C22BCF"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.085Z",
+                  "checksum": "2fc1250ccbe39a7a56be19f231fe8df01b2c375a3ec86a550a084568a19da74d"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "payment_payment_method",
+                  "DisplayName": "Payment Payment Method",
+                  "Description": "Dot-path selection into the embedded payment sub-object. Report-API dot-path selector \"payment.payment_method\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"payment_payment_method\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "EmbeddedProjection",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "payment.payment_method",
+                    "responsePath": [
+                      "payment",
+                      "payment_method"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "29A8C82C-446D-4DE8-AEE2-0D280EF36F53"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.101Z",
+                  "checksum": "c3dcbacf2cd3611109e5dadc57b29a1102e7722a71fda7949fe373182bd4230c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "payment_transaction_id",
+                  "DisplayName": "Payment Transaction ID",
+                  "Description": "Dot-path selection into the embedded payment sub-object. A UI report column also names a \"Transaction ID\" on the Registration & Revenue Details Report (https://elevate.support.gocadmium.com/support/solutions/articles/16000148478-registration-revenue-details-report-added-transaction-id, Tier-2) — plausibly but not provably the same value. Report-API dot-path selector \"payment.transaction_id\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"payment_transaction_id\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "EmbeddedProjection",
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "payment.transaction_id",
+                    "responsePath": [
+                      "payment",
+                      "transaction_id"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3BDF09F4-78AA-4384-A3B0-5CD65903559B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.117Z",
+                  "checksum": "b135cdf5b4f115e05961d6b7328b27098aa9c8fe96e173c8458950e37741f59c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "price_after_discount",
+                  "DisplayName": "Price After Discount",
+                  "Description": "Evidenced field on the `productRegistration` Report-API resource.",
+                  "Type": "Decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "price_after_discount",
+                    "responsePath": [
+                      "price_after_discount"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7527CDCB-4224-41D6-8B6C-901E5899629F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.133Z",
+                  "checksum": "2a8ab22214ed01f3e327ce03a8cda0703e9bc1cd96a53f9fcaed2c64e8855787"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "price_before_discount",
+                  "DisplayName": "Price Before Discount",
+                  "Description": "Evidenced field on the `productRegistration` Report-API resource.",
+                  "Type": "Decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "price_before_discount",
+                    "responsePath": [
+                      "price_before_discount"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C2746B73-2752-446F-9436-24ABC7A291AE"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.150Z",
+                  "checksum": "bedd64ce9aa602198b552eb67e4eee26f926e998bd355792fb1effae0142303c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "product_remote_accounting_code",
+                  "DisplayName": "Product Remote Accounting Code",
+                  "Description": "Dot-path selection into the related product. Report-API dot-path selector \"product.remote_accounting_code\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"product_remote_accounting_code\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "RelatedProjection",
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "product.remote_accounting_code",
+                    "responsePath": [
+                      "product",
+                      "remote_accounting_code"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "060EA9E3-5E7D-44B2-BDD6-E8D8434FCA31"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.169Z",
+                  "checksum": "e5ee178927cef57d85de2fc6757c584abcff998e2b0e929865f81cf422e79254"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "product_title",
+                  "DisplayName": "Product Title",
+                  "Description": "Dot-path selection into the related product. Report-API dot-path selector \"product.title\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"product_title\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "RelatedProjection",
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "product.title",
+                    "responsePath": [
+                      "product",
+                      "title"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "42E3CB4B-9D14-4ECB-9666-6B6B86F81A03"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.184Z",
+                  "checksum": "bda2498dd23e327f2fca0a0781cf4b39ecf48754c8991a46d9db9f2decfa4e31"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registration_id",
+                  "DisplayName": "Registration ID",
+                  "Description": "Store this — it is the only handle for the Cancellation API. PK — SOFT key, Tier-1 (definitive): addressing-proof @ packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json#/components/schemas/RegistrationCreateResponse/properties/registration_id + required[] of RegistrationCancelRequest. WRITE-SURFACE field: proven on the registration write body only; its read-side visibility through the Report API is UNPROVEN in every source checked, so it is nullable on read. PK FALSIFIED AND SURFACE CORRECTED — this field is WRITE-SIDE ONLY. RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs (amendment round 1, 2026-08-25): the read door REJECTS a request for this field on resource 'productRegistration' — POST fields={registration_id:true} -> HTTP 500, 59B, {\"error\":{\"message\":\"Field registration_id doesn't exist\"}}. This is a FALSIFIED PK, not a null one: no retrievable identity column of this name exists on the read resource. Doc re-read confirms the probe and explains the original error: vendor-article-16000139233-registration-api documents registration_id ONLY as (a) a value RETURNED by the Registration API create response ({ product_url, registration_id }) and (b) a value the caller POSTs to the Cancellation API — verbatim, \"registration_id, which is the ID of the registration on this end, which can be used later if you plan to use the Cancellation API\" and \"This ID identifies the order in Elevate, and this will need to be stored in your system to use the Cancellation API later.\" It is NEVER named as a Report API read field in ANY source. Declaring it as the read PK conflated the write handle with a read column. The field is RETAINED (it is a real, doc-evidenced write-contract handle the connector must persist from the create response to make cancel possible) but marked Configuration.surface='write-only'. CRITICAL: it MUST be excluded from the read `fields` allow-list — Elevate reads require an explicit field selector, so including it would return HTTP 500 and fail EVERY productRegistration read, not just one column. PK REINSTATED AS THE RECORD KEY, READ EXCLUSION UNCHANGED (2026-08-25). The probe above falsified exactly ONE claim — that this column is RETRIEVABLE through the Report API `fields` allow-list — and that claim stays falsified: Configuration.surface='write-only' and Configuration.excludeFromReadFieldSelector=true remain in force, and ElevateConnector.ReadColumnsFor drops the column on those two flags alone (never on IsPrimaryKey), so not one byte of any read selector changes. What the probe did NOT test, and therefore did not falsify, is the separate claim that this value IDENTIFIES a registration — which the vendor states outright (\"This ID identifies the order in Elevate\") and which the Cancellation API proves by ADDRESSING: registration_id is a required member of RegistrationCancelRequest and is the SOLE record selector that endpoint accepts. Encoding \"not read-projectable\" as IsPrimaryKey=false asserted the strictly stronger \"this object has no record key\", which the evidence does not support and which left a WRITABLE object (SupportsCreate + SupportsDelete, and the delete is keyed on THIS value) with no key for MJ to address a row by — the empty-record-identifier save failure that scripts/lint-writable-pk.mjs guards. Type widened Integer -> String in the same change and for the same reason: this column carries the record's EXTERNAL IDENTITY from either provenance — the vendor's integer registration_id for rows this connector CREATED, and the connector's minted content-hash identity for rows the READ door returned (ElevateConnector.ToElevateRecord back-fills the single declared PK whenever the source cannot supply it, which for this object is always, because the door has no such column). An INT column cannot hold a 64-character sha256, so keeping Type=Integer would have traded a missing key for a conversion failure on every read-sourced save. The engine's own runtime path already types integration identity columns this way (IntegrationSchemaSync.MapSourceType maps integer -> nvarchar, \"stored as nvarchar in integration schemas\"). The key stays SOFT: applySoftPKFKConfig sets the entity METADATA PK only and DDLGenerator emits NO PRIMARY KEY and NO UNIQUE constraint for it, so a wrong inference can never reject a valid row.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Identity",
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "Configuration": {
+                    "surface": "write-only",
+                    "producedBy": "POST /api/registrations response body",
+                    "consumedBy": "POST /registrations/cancel request body",
+                    "excludeFromReadFieldSelector": true,
+                    "probeVerdict": "wrong — field does not exist on the read resource",
+                    "evidence": "RealityProbe packages/Integration/connectors-registry/elevate/runs/connector-elevate-1787634178034-39f0b3cc/output/elevate-read-probe.mjs (amendment round 1, 2026-08-25): the read door REJECTS a request for this field on resource 'productRegistration' — POST fields={registration_id:true} -> HTTP 500, 59B, {\"error\":{\"message\":\"Field registration_id doesn't exist\"}}. This is a FALSIFIED PK, not a null one: no retrievable identity column of this name exists on the read resource."
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3690C1E6-34C6-4DFD-B14F-4D6BF3AA2B3B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.213Z",
+                  "checksum": "dc59f7ef5c1cf7020c2977a61e1bcd371e6aaa3de59966f6a7cf0262e2dafbb7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "transaction_at",
+                  "DisplayName": "Transaction At",
+                  "Description": "Evidenced field on the `productRegistration` Report-API resource.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "Core",
+                  "Sequence": 11,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "transaction_at",
+                    "responsePath": [
+                      "transaction_at"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8AA8E002-ACDF-42A6-8C09-2375C3D149CD"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.232Z",
+                  "checksum": "5af028776d55212c1b97ba436ed93c141c99f5ea371979925e1748049220edb5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_email",
+                  "DisplayName": "User Email",
+                  "Description": "Dot-path selection into the related user. Report-API dot-path selector \"user.email\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"user_email\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "RelatedProjection",
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "user.email",
+                    "responsePath": [
+                      "user",
+                      "email"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6C5CF007-6CCB-48DE-B2C0-A8EF9F920DB6"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.256Z",
+                  "checksum": "f407deb01bd5ce9e4a1d4f27d1f045a14a8b8bf964883bd4b50eaf5feb6d3bdd"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_firstname",
+                  "DisplayName": "User Firstname",
+                  "Description": "Dot-path selection into the related user. Report-API dot-path selector \"user.firstname\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"user_firstname\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "RelatedProjection",
+                  "Sequence": 13,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "user.firstname",
+                    "responsePath": [
+                      "user",
+                      "firstname"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "651AB9BC-72DE-4F15-B7B1-40B81A83CCC7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.278Z",
+                  "checksum": "92de42f4e72bc130a91bfb8c328729cc11ea676efd13f771693ec3df65788b31"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_lastname",
+                  "DisplayName": "User Lastname",
+                  "Description": "Dot-path selection into the related user. Report-API dot-path selector \"user.lastname\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"user_lastname\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "RelatedProjection",
+                  "Sequence": 14,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "user.lastname",
+                    "responsePath": [
+                      "user",
+                      "lastname"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "398C3615-E971-41E8-AF82-A8D6B0FFEC98"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.299Z",
+                  "checksum": "bb509f6edd283b64fe59dfe756a96ff50c834de2e8319c5674b387a5fd35b17a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_member_id",
+                  "DisplayName": "User Member ID",
+                  "Description": "Dot-path selection into the related user. Report-API dot-path selector \"user.member_id\" — requested VERBATIM as the fields-selector key; the column name is flattened to \"user_member_id\" because a dot is not a legal bare SQL identifier (the exact wire selector + response path are preserved in Configuration). FK — the dot-path prefix \"user\" resolves to the emitted IO `User` and the projected column \"member_id\" IS that IO's emitted primary key (nested typed reference + cross-IO PK match), corroborated by the vendor's own relationship prose.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "member_id",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "ForeignKey",
+                  "Sequence": 15,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "user.member_id",
+                    "responsePath": [
+                      "user",
+                      "member_id"
+                    ],
+                    "evidenceSources": [
+                      "packages/Integration/connectors-registry/elevate/sources/elevate-report-api.derived.json",
+                      "raw-worked-example"
+                    ],
+                    "ReferencedType": "User"
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DB5AE749-8F9D-4A50-B1F0-DD8E86E3C9F4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.323Z",
+                  "checksum": "408eedbead197d220adcebdaeb633e9def872e3911b1e29e404b3ed43b260258"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "remote_user_id",
+                  "DisplayName": "Remote User ID",
+                  "Description": "Must equal the Unique User ID used in the SSO setup for this same user — identity is matched/created on this value. WRITE-SURFACE field on the POST /api/registrations body (documented REQUIRED on that call). Read-side visibility through the Report API is UNPROVEN in every source checked, so the column is nullable.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "WriteSurface",
+                  "Sequence": 16,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "remote_user_id",
+                    "surface": "write-only",
+                    "operation": "POST /api/registrations",
+                    "evidenceSources": [
+                      "/api/registrations"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F8D09ACE-EE81-49B9-9525-A84731980707"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.346Z",
+                  "checksum": "895dcaa1f5a9a2e6b14bf724e5336ad1de97c9302cbf7d9cc26d73c50793cd88"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "remote_product_id",
+                  "DisplayName": "Remote Product ID",
+                  "Description": "Must match the Remote Product ID configured on the Elevate product. WRITE-SURFACE field on the POST /api/registrations body (documented REQUIRED on that call). Read-side visibility through the Report API is UNPROVEN in every source checked, so the column is nullable.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "WriteSurface",
+                  "Sequence": 17,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "remote_product_id",
+                    "surface": "write-only",
+                    "operation": "POST /api/registrations",
+                    "evidenceSources": [
+                      "/api/registrations"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1E0FBFFE-5444-4B8D-A53A-37F17370CF33"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.365Z",
+                  "checksum": "0c9dd28d6f2845283431fbc83aab41f87551282e650aa34840c43a2ef3f93daf"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "amount_paid",
+                  "DisplayName": "Amount Paid",
+                  "Description": "Numeric (integer or decimal) as a string in every observed example, e.g. \"0\". WRITE-SURFACE field on the POST /api/registrations body (documented optional). Read-side visibility through the Report API is UNPROVEN in every source checked, so the column is nullable.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "WriteSurface",
+                  "Sequence": 18,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "amount_paid",
+                    "surface": "write-only",
+                    "operation": "POST /api/registrations",
+                    "evidenceSources": [
+                      "/api/registrations"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0D8F03DA-6418-4192-8A7E-406183858710"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.385Z",
+                  "checksum": "e5d1763a8501ae994d7217df2f2dd45000de42b44f70c40c09b77f49bc147782"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "explanation",
+                  "DisplayName": "Explanation",
+                  "Description": "TIER-2 evidence only (not shown in either API-doc worked example): Release 2024.07 fixed \"an issue which caused registrations inserted via API to fail if the call was made without including the optional field, explanation\" (https://elevate.support.gocadmium.com/support/solutions/articles/16000191925-elevate-release-2024-07). Documented as optional; whether it round-trips to a Report-API-readable productRegistration field is UNPROVEN — see ResidualDoubts. WRITE-SURFACE field on the POST /api/registrations body (documented optional). Read-side visibility through the Report API is UNPROVEN in every source checked, so the column is nullable.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "DefaultValue": null,
+                  "AllowsNull": true,
+                  "Category": "WriteSurface",
+                  "Sequence": 19,
+                  "Status": "Active",
+                  "Configuration": {
+                    "wireSelector": "explanation",
+                    "surface": "write-only",
+                    "operation": "POST /api/registrations",
+                    "evidenceSources": [
+                      "/api/registrations"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "284CB771-CA67-4932-BE5D-672363A56CCE"
+                },
+                "sync": {
+                  "lastModified": "2026-08-25T23:49:43.400Z",
+                  "checksum": "d1a8782d653781eb42af22d8122bc1737928ea4a7e4a1d75ff0ebe64bd9e781a"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "0C640A45-DB60-458C-8A18-ADDF26120B02"
+          },
+          "sync": {
+            "lastModified": "2026-08-25T23:49:42.801Z",
+            "checksum": "430be18593c4c0d691026577f326ae0a2836d4b34d79539e5c0c9e42aee9fca3"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "8E759602-0DB6-49F3-AB6A-E287A959A927"
+    },
+    "sync": {
+      "lastModified": "2026-08-25T23:49:42.666Z",
+      "checksum": "50e965418527513fa110bf4081738c66ca25795e6bc91ef81e2cb088d7d823b5"
+    }
+  }
+]
