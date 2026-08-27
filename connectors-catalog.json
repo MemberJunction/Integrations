@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 49,
+  "count": 50,
   "connectors": [
     {
       "name": "Fonteva",
@@ -358,6 +358,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Events/Eventbrite",
       "installTag": "Events-Eventbrite@2.0.3"
+    },
+    {
+      "name": "eventscribe",
+      "displayName": "Eventscribe Connector",
+      "description": "Eventscribe connector for MemberJunction — full curated object catalog.",
+      "category": "Events",
+      "tags": [
+        "eventscribe",
+        "events",
+        "connector",
+        "integration"
+      ],
+      "logo": null,
+      "navigationBaseURL": "https://www.gocadmium.com",
+      "objectCount": 38,
+      "className": "EventscribeConnector",
+      "npmPackage": "@memberjunction/connector-eventscribe",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "Events/Eventscribe",
+      "installTag": "Events-Eventscribe@0.1.0"
     },
     {
       "name": "OpenWater",
