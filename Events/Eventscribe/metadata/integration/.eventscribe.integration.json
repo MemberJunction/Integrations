@@ -806,6 +806,38 @@
               "note": "Vendor's own Change Log (Education Harvester Freshdesk article) states verbatim: 'The following methods were deprecated in March 2026: getUploads getUploadsCount Upload DeleteUpload.' All 4 of Upload's dedicated operations carry deprecated:true in the derived OpenAPI spec. This object has NOT yet been emitted as an IntegrationObject row (absent from the current 22-IO list) -- ioiof-extractor should treat this as a documented-but-deprecated object, not build new sync against it."
             }
           }
+        },
+        "DeclaredAgainst": {
+          "docSites": [
+            "https://integrationservices.freshdesk.com/support/solutions/folders/16000097505 (Cadmium Integrations Freshdesk folder — AUTH-GATED; the 11 PDFs + 1 XLSX below are the operator's export of it, and are the primary derivation source)",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000137652-eventscribe-rest-api-overview",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000137499-eventscribe-website-mobile-app-attendees-api",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000153690-guide-for-pushing-to-the-eventscribe-api",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000137500-scorecard-api",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000137497-asset-api",
+            "https://integrationservices.freshdesk.com/support/solutions/articles/16000141069-registration-api (EdgeReg — declared OUT OF SCOPE)",
+            "https://eventscribe.support.gocadmium.com/support/solutions/articles/16000195090-developer-kit-api-overview-technical-documentation",
+            "https://integrationservices.freshdesk.com/support/solutions/16000061722 (Cadmium Integrations solutions index)",
+            "https://www.gocadmium.com/eventscribe (product/brand)"
+          ],
+          "primaryArtifacts": [
+            "Eventscribe REST API Overview - Cadmium Integrations.pdf (2pp)",
+            "Eventscribe Website_Mobile App (Attendees) API - Cadmium Integrations.pdf (6pp)",
+            "eventScribe Website and Mobile App API Doc.pdf (16pp)",
+            "Guide for Pushing to the Eventscribe Website_Mobile App (Attendees) API.pdf (3pp)",
+            "Login & Customer Support Instructions for the Eventscribe Website_Mobile App (Attendees) API.pdf (4pp)",
+            "Eventscribe Registration - Member API - Cadmium Integrations.pdf (4pp)",
+            "Eventscribe Registration HTML API Doc (1).pdf (18pp)",
+            "Eventscribe Education Harvester (Speakers & Presentations) API.pdf (4pp)",
+            "eventScribe Asset API.pdf (6pp)",
+            "Abstract Scorecard API Doc.pdf (35pp)",
+            "Expo Harvester API Doc.pdf (21pp)",
+            "Cadmium Member API_States.xlsx (3 sheets)"
+          ],
+          "dualDeriveFinding": "The catalog was derived from the operator's export of an AUTH-GATED Freshdesk folder, then reconciled against independent public discovery — the two are NOT substitutes. Public discovery established breadth the export does not state (four distinct product hosts; the Developer Kit API, which the export omits entirely). The export established specifics public pages do not carry (per-field response shapes, the APIKey query-parameter auth form, the 1-req/sec vs 1-req/min rate split). Absence from the export was explicitly NOT treated as absence from the platform.",
+          "residualDoubts": "Education Harvester API doc returned 404 on public fetch; Registration API Swagger UI returned 403 — neither could be verified against a live first-party page, so both rest on the PDF export alone. No Cadmium endpoint returning an authoritative object list was found, so Configuration.DiscoveryIsAuthoritative=false and nothing may ever be deactivated on the basis of discovery. Two endpoint URLs in the Attendees and Education Harvester articles are TRUNCATED mid-string in the PDF text layer and were recovered from the PDF originals.",
+          "releaseNotesSweptThrough": "No Eventscribe release-notes index was located during discovery — unlike Elevate, this product exposes no public release-note folder. Currency therefore rests on the operator export's capture date, NOT on a swept release stream.",
+          "fetchedAt": "2026-08-26"
         }
       },
       "NavigationBaseURL": "https://www.gocadmium.com",
@@ -23851,10 +23883,6 @@
     },
     "primaryKey": {
       "ID": "406072E0-ED6F-4B9B-B130-BF09ED41E448"
-    },
-    "sync": {
-      "lastModified": "2026-08-27T16:53:18.956Z",
-      "checksum": "d297bb6bc0110861abaff5dd1bea4aeecc75afa5795b91928254f34acd6c15e6"
     }
   }
 ]
