@@ -82,6 +82,16 @@ jobs:
       - name: Metadata fields on allowlist
         run: node scripts/lint-metadata-fields.mjs --audit
 
+      # Every connector must record WHAT vendor artifact its catalog was declared against and
+      # WHEN it was read (Configuration.DeclaredAgainst: a source URL + an ISO date). Without
+      # that, a stale catalog is indistinguishable from a current one — a missing object could
+      # mean the connector is wrong or the vendor moved after we looked, and nothing says which
+      # (concern A9b). Distinct from the A9 tag check, which compares versions and is silent on
+      # the vendor surface. 53 connectors predate the rule and are grandfathered; the list can
+      # only shrink — a grandfathered connector that gains a pin fails until it leaves the list.
+      - name: Catalog freshness pin declared
+        run: node scripts/lint-catalog-freshness-pin.mjs
+
       # Migrations: Flyway-named, monotonic per connector, and each has its converted PG variant.
       - name: Validate migrations
         run: node scripts/validate-migrations.mjs
