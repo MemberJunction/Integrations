@@ -98,10 +98,14 @@ so a future build knows exactly what activating it would gain.
 5. **7 primary keys withdrawn as unevidenced** — e.g. `Handout.Pdf` and `Slide.Pdf` (CDN file URLs),
    `ERPurchase.BillingID` (the vendor's own sample shows `888888` twice, disproving uniqueness). Those
    objects sync without an idempotent identity until evidence exists.
-6. **`NoExplicitTypeError` on MJAPI boot.** Running `mj codegen` against a database holding the
-   eventscribe entities generates GraphQL resolver classes that break MJAPI startup on
-   `eventscribeAbstract_.SubmissionID`. Worked around during testing by restoring
-   `packages/MJAPI/src/generated/generated.ts`. **Resolve before deploying to a live instance.**
+6. **`NoExplicitTypeError` on MJAPI boot — NOT specific to this connector.** Running a full
+   `mj codegen` against a database holding *any* connector's entities generates GraphQL resolver
+   classes into `packages/MJAPI/src/generated/generated.ts` that fail to bind. The MJ hybrid-e2e
+   runbook documents this as a known condition and names `salesforceAccount_`, `propfuel*`, `orcid`,
+   `openwater`, `path_lms` and `growthzone` as hitting it; the prescribed remedy is to restore that
+   generated file to HEAD, which is what was done here. Recorded for completeness only — it is a
+   property of the shared CodeGen/MJAPI boundary, not a defect in this connector, and it is not a
+   deployment blocker any more than it is for the connectors already shipped.
 
 ## Verification performed
 
