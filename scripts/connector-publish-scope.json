@@ -18,6 +18,7 @@
     "CRM/Salesforce",
     "Events/Cvent",
     "Events/Eventbrite",
+    "Events/Eventscribe",
     "Events/OpenWater",
     "Events/PheedLoop",
     "Finance/BillCom",
