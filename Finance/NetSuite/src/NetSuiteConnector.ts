@@ -35,8 +35,11 @@
  *   override is needed or written.
  *
  * ── Pagination ─────────────────────────────────────────────────────────────────────────────────
- *   Offset/limit (default 1000). Responses carry the HATEOAS envelope { items, count, totalResults,
- *   hasMore, offset, links:[{rel:'next',href}] } — surfaced in NormalizeResponse + ExtractPaginationInfo.
+ *   SuiteQL reads use KEYSET (seek) paging: `WHERE id > <last seen> ORDER BY id`, limit=100 —
+ *   every page reads only frontier rows (offset paging re-skips N rows per page, O(n²) walks) and
+ *   the position round-trips through the engine's AfterKeyValue for durable resume + prefetch.
+ *   Generic REST GETs still carry the HATEOAS envelope { items, count, totalResults, hasMore,
+ *   offset, links:[{rel:'next',href}] } — surfaced in NormalizeResponse + ExtractPaginationInfo.
  *
  * ── Incremental ────────────────────────────────────────────────────────────────────────────────
  *   lastModifiedDate watermark (via WatermarkService in the engine; the connector applies the IO's
@@ -82,7 +85,13 @@ import { z } from 'zod';
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
-const NS_DEFAULT_PAGE_SIZE = 1000;
+// SuiteQL page size. NetSuite serves many object types in pages well below a large requested
+// limit (pages of 100-200 against limit=1000, observed live), and on a CONCURRENCY-governed API a
+// long-running request holds one of the account's few concurrent slots for its whole duration.
+// Requesting 100 matches what the server actually serves, keeps each request short so slots
+// recycle quickly, and costs nothing under keyset paging (every page seeks, none re-skips).
+// Per-object DefaultPageSize / config defaultPageSize still override.
+const NS_DEFAULT_PAGE_SIZE = 100;
 const NS_MAX_RETRIES = 3;
 const NS_REQUEST_TIMEOUT_MS = 90_000;
 const NS_RECORD_BASE_PATH = '/services/rest/record/v1';
@@ -91,8 +100,11 @@ const NS_METADATA_CATALOG_PATH = '/services/rest/record/v1/metadata-catalog';
 const NS_SERVERTIME_PATH = '/services/rest/system/v1/serverTime';
 // NetSuite REST media type for record bodies (per docs: application/vnd.oracle.resource+json).
 const NS_RECORD_MEDIA_TYPE = 'application/vnd.oracle.resource+json';
-// Concurrency-governed API (no RPS); the smallest documented tier is 5 concurrent. Stay well under it.
-const NS_MAX_CONCURRENCY = 4;
+// Concurrency-governed API (no RPS); the smallest documented tier grants 5 concurrent requests.
+// Declare the grant itself: the engine's adaptive fetch gate starts at this ceiling and halves on
+// any detected throttle, so it converges downward if the account's real grant is lower — sitting
+// below the grant permanently would just waste slots on accounts that have them.
+const NS_MAX_CONCURRENCY = 5;
 
 // ─── Config (typed via Zod) ─────────────────────────────────────────────────
 
@@ -375,7 +387,8 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         url: string,
         method: string,
         headers: Record<string, string>,
-        body?: unknown
+        body?: unknown,
+        onThrottle?: (err: unknown) => void
     ): Promise<RESTResponse> {
         const nsAuth = auth as NSAuthContext;
         const effectiveHeaders: Record<string, string> = { ...headers, 'Authorization': this.BuildAuthorizationHeader(nsAuth, url, method) };
@@ -407,6 +420,19 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
             // Concurrency-limit rejection (429) or transient 5xx — back off + retry within budget.
             if ((response.status === 429 || response.status >= 500) && attempt < NS_MAX_RETRIES) {
                 const retryAfter = this.ParseRetryAfterHeader(response);
+                if (response.status === 429) {
+                    // Surface the throttle BEFORE absorbing it. This retry makes a 429 invisible
+                    // to the engine — the fetch ultimately "succeeds" — so without this report the
+                    // engine's adaptive limiter and fetch-concurrency gate would keep firing at a
+                    // rate the account just rejected, and the backoff below would repeat forever
+                    // instead of the in-flight cap coming down. The message carries Retry-After in
+                    // seconds because ExtractRetryAfterMs parses exactly that shape.
+                    onThrottle?.(new Error(
+                        retryAfter !== undefined
+                            ? `NetSuite 429 concurrency limit — Retry-After: ${Math.ceil(retryAfter / 1000)}`
+                            : 'NetSuite 429 concurrency limit rejected the request'
+                    ));
+                }
                 await this.Sleep(retryAfter ?? this.BackoffDelay(attempt));
                 continue;
             }
@@ -775,15 +801,24 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         const offset = ctx.CurrentOffset ?? 0;
         const pageSize = obj.DefaultPageSize ?? cfg.defaultPageSize ?? NS_DEFAULT_PAGE_SIZE;
 
-        const sql = this.BuildSuiteQL(table, watermarkField, ctx.WatermarkValue);
-        const url = `${auth.HostBaseURL}${NS_SUITEQL_PATH}?limit=${pageSize}&offset=${offset}`;
+        // Keyset (seek) paging instead of OFFSET. `?offset=N` makes NetSuite re-evaluate and SKIP
+        // N rows on every page, so a full walk costs O(n²) and each successive page is slower than
+        // the last. `id` is NetSuite's universal monotonic key (declared via StableOrderingKey),
+        // so seeking `WHERE id > <last seen>` reads only frontier rows — every page costs the
+        // same. The engine feeds the position back as ctx.AfterKeyValue.
+        const afterKey = ctx.AfterKeyValue ?? null;
+        const sql = this.BuildSuiteQL(table, watermarkField, ctx.WatermarkValue, afterKey);
+        const url = `${auth.HostBaseURL}${NS_SUITEQL_PATH}?limit=${pageSize}`;
         // SuiteQL bodies are plain JSON and REQUIRE the `Prefer: transient` header.
         const headers = {
             ...this.BuildHeaders(auth),
             'Content-Type': 'application/json',
             'Prefer': 'transient',
         };
-        const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, { q: sql });
+        // A 429 the retry loop absorbs still reaches the engine through RateLimitReport, so its
+        // adaptive concurrency cap learns the account's real grant instead of re-hitting it.
+        const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, { q: sql },
+            (err) => ctx.RateLimitReport?.(err));
         if (response.Status < 200 || response.Status >= 300) {
             throw new Error(
                 `NetSuite SuiteQL read failed for "${ctx.ObjectName}": HTTP ${response.Status} — ${this.PreviewBody(response.Body)}`
@@ -798,24 +833,53 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         );
 
         const hasMore = body.hasMore ?? (rawRecords.length >= pageSize);
+        // Return the keyset position AND a cursor. Two engine features are dark for a keyset
+        // connector that returns only NextOffset:
+        //
+        //   * Durable resume. StableOrderingKey('id') makes the engine treat this as a KEYSET
+        //     connector, which disables its watermark-save branch — but with no NextAfterKeyValue
+        //     the keyset branch has nothing to save either, so no position persists by either
+        //     route and every run restarts from zero.
+        //   * Prefetch pipelining, gated on `HasMore === true && NextCursor` — page N+1 never
+        //     downloads while page N is being processed.
+        //
+        // Rows come back ORDER BY id, so the LAST row's id is the frontier. Both fields carry it:
+        // NextAfterKeyValue is what the engine persists, NextCursor is what arms the prefetch.
+        const lastRaw = rawRecords.length > 0 ? rawRecords[rawRecords.length - 1] : undefined;
+        const nextKey = lastRaw !== undefined && lastRaw !== null ? lastRaw['id'] : undefined;
+        const nextAfterKey = hasMore && nextKey !== undefined && nextKey !== null ? String(nextKey) : undefined;
         // Track the max watermark and persist it ONLY when the full result set has been drained
-        // (partial-failure semantics: a mid-iteration stop leaves the watermark unchanged).
+        // (partial-failure semantics: a mid-iteration stop leaves the watermark unchanged). For a
+        // keyset connector the engine resumes from the key above and ignores this anyway.
         const newWatermark = !hasMore ? this.MaxWatermark(rawRecords, watermarkField) : undefined;
 
         return {
             Records: records,
             HasMore: hasMore,
             NextOffset: offset + rawRecords.length,
+            NextAfterKeyValue: nextAfterKey,
+            NextCursor: nextAfterKey,
             NewWatermarkValue: newWatermark,
         };
     }
 
-    /** Builds the SuiteQL SELECT, applying the incremental watermark predicate when a watermark exists. */
-    private BuildSuiteQL(table: string, watermarkField: string, watermark: string | null): string {
-        const where = watermark
-            ? ` WHERE ${watermarkField} > ${this.QuoteSuiteQLDate(watermark)}`
-            : '';
-        return `SELECT * FROM ${table}${where} ORDER BY ${watermarkField}`;
+    /**
+     * Builds the SuiteQL SELECT: incremental watermark predicate + keyset seek predicate,
+     * ORDER BY id. Ordering by `id` (not the watermark) is what makes the seek exact: id is
+     * unique, so no tie-break is needed and no row can be skipped or repeated at a page
+     * boundary — a timestamp cannot promise that, since rows sharing a modstamp straddle pages.
+     * The watermark predicate still narrows an incremental run; the seek walks within it.
+     */
+    private BuildSuiteQL(table: string, watermarkField: string, watermark: string | null, afterKey: string | null): string {
+        const clauses: string[] = [];
+        if (watermark) clauses.push(`${watermarkField} > ${this.QuoteSuiteQLDate(watermark)}`);
+        // Numeric-only: a non-numeric key would be a SuiteQL injection vector and cannot be a
+        // NetSuite id. Falls back to an unseeked page rather than emitting bad SQL.
+        if (afterKey !== undefined && afterKey !== null && /^\d+$/.test(String(afterKey))) {
+            clauses.push(`id > ${String(afterKey)}`);
+        }
+        const where = clauses.length > 0 ? ` WHERE ${clauses.join(' AND ')}` : '';
+        return `SELECT * FROM ${table}${where} ORDER BY id`;
     }
 
     /** Quotes a watermark value for SuiteQL — wraps a NetSuite datetime in TO_DATE/quotes, escaping quotes. */
