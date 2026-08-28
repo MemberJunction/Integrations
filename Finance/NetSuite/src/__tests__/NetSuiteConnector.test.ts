@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type {
     RESTResponse,
     RESTAuthContext,
@@ -358,7 +358,7 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         return { Status: 200, Body: { items, hasMore, count: items.length }, Headers: {} };
     }
 
-    it('first sync (no watermark): full SuiteQL SELECT, ORDER BY watermark, Prefer: transient header', async () => {
+    it('first sync (no watermark): full SuiteQL SELECT, ORDER BY id (keyset), Prefer: transient header', async () => {
         const c = new MockedNetSuiteConnector();
         c.Responses = [suiteQLResponse([{ id: '107', lastModifiedDate: '2026-03-01T10:00:00Z' }], false)];
         const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
@@ -367,9 +367,10 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         const call = c.Calls[0];
         expect(call.method).toBe('POST');
         expect(call.url).toContain('/services/rest/query/v1/suiteql');
-        expect(call.url).toContain('limit=1000');
+        expect(call.url).toContain('limit=100');
+        expect(call.url).not.toContain('offset='); // keyset paging — the seek predicate replaces offset
         expect(call.headers['Prefer']).toBe('transient');
-        expect((call.body as { q: string }).q).toBe('SELECT * FROM event ORDER BY lastModifiedDate');
+        expect((call.body as { q: string }).q).toBe('SELECT * FROM event ORDER BY id');
         expect(result.Records).toHaveLength(1);
         expect(result.Records[0].ExternalID).toBe('107');
         // Full record passed through.
@@ -385,7 +386,7 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         await c.FetchChanges(ctx);
         const q = (c.Calls[0].body as { q: string }).q;
         expect(q).toContain("WHERE lastModifiedDate > '2026-03-01T10:00:00Z'");
-        expect(q).toContain('ORDER BY lastModifiedDate');
+        expect(q).toContain('ORDER BY id'); // seek order — unique key, exact page boundaries
     });
 
     it('out-of-order batch: persists the MAX watermark seen, not the last record', async () => {
@@ -399,7 +400,7 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         expect(result.NewWatermarkValue).toBe('2026-04-10T00:00:00Z');
     });
 
-    it('partial batch (hasMore=true): watermark NOT persisted; offset advances for resume', async () => {
+    it('partial batch (hasMore=true): watermark NOT persisted; keyset position + cursor advance for resume', async () => {
         const c = new MockedNetSuiteConnector();
         c.Responses = [suiteQLResponse([{ id: '1', lastModifiedDate: '2026-04-01T00:00:00Z' }], true)];
         const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER, CurrentOffset: 0 };
@@ -407,6 +408,41 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         expect(result.HasMore).toBe(true);
         expect(result.NewWatermarkValue).toBeUndefined();
         expect(result.NextOffset).toBe(1);
+        // The frontier id rides BOTH fields: NextAfterKeyValue is what the engine persists for
+        // durable resume, NextCursor is what arms its prefetch pipeline.
+        expect(result.NextAfterKeyValue).toBe('1');
+        expect(result.NextCursor).toBe('1');
+    });
+
+    it('seek page: AfterKeyValue becomes a numeric id > predicate ANDed with the watermark', async () => {
+        const c = new MockedNetSuiteConnector();
+        c.Responses = [suiteQLResponse([{ id: '250', lastModifiedDate: '2026-04-02T00:00:00Z' }], false)];
+        const ctx: FetchContext = {
+            CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event',
+            WatermarkValue: '2026-03-01T10:00:00Z', BatchSize: 1000, ContextUser: USER,
+            AfterKeyValue: '200',
+        };
+        const result = await c.FetchChanges(ctx);
+        const q = (c.Calls[0].body as { q: string }).q;
+        expect(q).toContain("WHERE lastModifiedDate > '2026-03-01T10:00:00Z' AND id > 200");
+        expect(q).toContain('ORDER BY id');
+        // Terminal page (hasMore=false): no further position emitted.
+        expect(result.NextAfterKeyValue).toBeUndefined();
+        expect(result.NextCursor).toBeUndefined();
+    });
+
+    it('a NON-numeric AfterKeyValue never reaches the SQL (SuiteQL injection guard)', async () => {
+        const c = new MockedNetSuiteConnector();
+        c.Responses = [suiteQLResponse([], false)];
+        const ctx: FetchContext = {
+            CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event',
+            WatermarkValue: null, BatchSize: 1000, ContextUser: USER,
+            AfterKeyValue: "1 OR '1'='1",
+        };
+        await c.FetchChanges(ctx);
+        const q = (c.Calls[0].body as { q: string }).q;
+        expect(q).not.toContain("OR '1'='1");
+        expect(q).toBe('SELECT * FROM event ORDER BY id'); // falls back to an unseeked page
     });
 
     it('non-2xx SuiteQL response throws (so the engine leaves the watermark unchanged)', async () => {
@@ -414,6 +450,56 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         c.Responses = [{ Status: 400, Body: { 'o:errorDetails': [{ detail: 'bad query' }] }, Headers: {} }];
         const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
         await expect(c.FetchChanges(ctx)).rejects.toThrow(/SuiteQL read failed/);
+    });
+});
+
+// ─── Throttle surfacing: the internal 429 retry must not hide the throttle ──────────────────
+
+describe('NetSuiteConnector — MakeHTTPRequest surfaces absorbed 429s via onThrottle', () => {
+    class ProbeConnector extends NetSuiteConnector {
+        public Probe(auth: RESTAuthContext, url: string, onThrottle?: (e: unknown) => void) {
+            return this.MakeHTTPRequest(auth, url, 'GET', {}, undefined, onThrottle);
+        }
+    }
+    const oauth2Auth = { Mode: 'oauth2', BearerToken: 't', HostBaseURL: 'https://acct.example.test', Config: {} } as unknown as RESTAuthContext;
+
+    it('reports each absorbed 429 (with Retry-After in ExtractRetryAfterMs-parseable shape), then succeeds', async () => {
+        const responses = [
+            new Response('{}', { status: 429, headers: { 'Retry-After': '0', 'Content-Type': 'application/json' } }),
+            new Response('{"items":[]}', { status: 200, headers: { 'Content-Type': 'application/json' } }),
+        ];
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
+        try {
+            const reported: unknown[] = [];
+            const c = new ProbeConnector();
+            const res = await c.Probe(oauth2Auth, 'https://acct.example.test/services/rest/query/v1/suiteql', (e) => reported.push(e));
+            expect(res.Status).toBe(200); // the retry absorbed the 429 — invisible to the caller...
+            expect(reported).toHaveLength(1); // ...but NOT to the engine
+            const msg = (reported[0] as Error).message;
+            expect(msg).toContain('429');
+            // The message round-trips through the connector's own Retry-After parser, so the
+            // engine's backoff honors the server's hint precisely.
+            expect(c.ExtractRetryAfterMs(reported[0])).toBe(0);
+        } finally {
+            fetchSpy.mockRestore();
+        }
+    });
+
+    it('a transient 5xx retry does NOT report a throttle', async () => {
+        const responses = [
+            new Response('oops', { status: 503, headers: { 'Retry-After': '0' } }),
+            new Response('{"items":[]}', { status: 200, headers: { 'Content-Type': 'application/json' } }),
+        ];
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
+        try {
+            const reported: unknown[] = [];
+            const c = new ProbeConnector();
+            const res = await c.Probe(oauth2Auth, 'https://acct.example.test/x', (e) => reported.push(e));
+            expect(res.Status).toBe(200);
+            expect(reported).toHaveLength(0); // a 503 is not a concurrency rejection
+        } finally {
+            fetchSpy.mockRestore();
+        }
     });
 });
 
