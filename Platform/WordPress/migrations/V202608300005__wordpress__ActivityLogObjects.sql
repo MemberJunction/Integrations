@@ -13,73 +13,73 @@
 -- Do not hand-edit; the statements below are the generator's own output, sliced to the new records.
 
 -- Save MJ: Integration Objects (core SP call only)
-DECLARE @ID_7201745e UNIQUEIDENTIFIER,
-@IntegrationID_7201745e UNIQUEIDENTIFIER,
-@Name_7201745e NVARCHAR(255),
-@DisplayName_7201745e NVARCHAR(255),
-@Description_7201745e NVARCHAR(MAX),
-@Category_7201745e NVARCHAR(100),
-@APIPath_7201745e NVARCHAR(500),
-@ResponseDataKey_7201745e NVARCHAR(255),
-@DefaultPageSize_7201745e INT,
-@SupportsPagination_7201745e BIT,
-@PaginationType_7201745e NVARCHAR(20),
-@SupportsIncrementalSync_7201745e BIT,
-@SupportsWrite_7201745e BIT,
-@DefaultQueryParams_7201745e NVARCHAR(MAX),
-@Configuration_7201745e NVARCHAR(MAX),
-@Sequence_7201745e INT,
-@Status_7201745e NVARCHAR(25),
-@WriteAPIPath_7201745e NVARCHAR(500),
-@WriteMethod_7201745e NVARCHAR(10),
-@DeleteMethod_7201745e NVARCHAR(10),
-@IsCustom_7201745e BIT,
-@CreateAPIPath_7201745e NVARCHAR(MAX),
-@CreateMethod_7201745e NVARCHAR(20),
-@CreateBodyShape_7201745e NVARCHAR(50),
-@CreateBodyKey_7201745e NVARCHAR(100),
-@CreateIDLocation_7201745e NVARCHAR(20),
-@UpdateAPIPath_7201745e NVARCHAR(MAX),
-@UpdateMethod_7201745e NVARCHAR(20),
-@UpdateBodyShape_7201745e NVARCHAR(50),
-@UpdateBodyKey_7201745e NVARCHAR(100),
-@UpdateIDLocation_7201745e NVARCHAR(20),
-@DeleteAPIPath_7201745e NVARCHAR(MAX),
-@DeleteIDLocation_7201745e NVARCHAR(20),
-@IncrementalWatermarkField_7201745e NVARCHAR(255),
-@MetadataSource_7201745e NVARCHAR(20),
-@SupportsCreate_7201745e BIT,
-@SupportsUpdate_7201745e BIT,
-@SupportsDelete_7201745e BIT,
-@SyncStrategy_7201745e NVARCHAR(50),
-@ContentHashApplicable_7201745e BIT,
-@StableOrderingKey_7201745e NVARCHAR(255)
+DECLARE @ID_1567f3bc UNIQUEIDENTIFIER,
+@IntegrationID_1567f3bc UNIQUEIDENTIFIER,
+@Name_1567f3bc NVARCHAR(255),
+@DisplayName_1567f3bc NVARCHAR(255),
+@Description_1567f3bc NVARCHAR(MAX),
+@Category_1567f3bc NVARCHAR(100),
+@APIPath_1567f3bc NVARCHAR(500),
+@ResponseDataKey_1567f3bc NVARCHAR(255),
+@DefaultPageSize_1567f3bc INT,
+@SupportsPagination_1567f3bc BIT,
+@PaginationType_1567f3bc NVARCHAR(20),
+@SupportsIncrementalSync_1567f3bc BIT,
+@SupportsWrite_1567f3bc BIT,
+@DefaultQueryParams_1567f3bc NVARCHAR(MAX),
+@Configuration_1567f3bc NVARCHAR(MAX),
+@Sequence_1567f3bc INT,
+@Status_1567f3bc NVARCHAR(25),
+@WriteAPIPath_1567f3bc NVARCHAR(500),
+@WriteMethod_1567f3bc NVARCHAR(10),
+@DeleteMethod_1567f3bc NVARCHAR(10),
+@IsCustom_1567f3bc BIT,
+@CreateAPIPath_1567f3bc NVARCHAR(MAX),
+@CreateMethod_1567f3bc NVARCHAR(20),
+@CreateBodyShape_1567f3bc NVARCHAR(50),
+@CreateBodyKey_1567f3bc NVARCHAR(100),
+@CreateIDLocation_1567f3bc NVARCHAR(20),
+@UpdateAPIPath_1567f3bc NVARCHAR(MAX),
+@UpdateMethod_1567f3bc NVARCHAR(20),
+@UpdateBodyShape_1567f3bc NVARCHAR(50),
+@UpdateBodyKey_1567f3bc NVARCHAR(100),
+@UpdateIDLocation_1567f3bc NVARCHAR(20),
+@DeleteAPIPath_1567f3bc NVARCHAR(MAX),
+@DeleteIDLocation_1567f3bc NVARCHAR(20),
+@IncrementalWatermarkField_1567f3bc NVARCHAR(255),
+@MetadataSource_1567f3bc NVARCHAR(20),
+@SupportsCreate_1567f3bc BIT,
+@SupportsUpdate_1567f3bc BIT,
+@SupportsDelete_1567f3bc BIT,
+@SyncStrategy_1567f3bc NVARCHAR(50),
+@ContentHashApplicable_1567f3bc BIT,
+@StableOrderingKey_1567f3bc NVARCHAR(255)
 SET
-  @ID_7201745e = '1b6aaa3c-002c-4e1a-8c82-0900d33fe02a'
+  @ID_1567f3bc = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @IntegrationID_7201745e = '301B572A-FE48-4600-A8A2-8D5E92646048'
+  @IntegrationID_1567f3bc = '301B572A-FE48-4600-A8A2-8D5E92646048'
 SET
-  @Name_7201745e = N'ActivityLogEvent'
+  @Name_1567f3bc = N'ActivityLogEvent'
 SET
-  @DisplayName_7201745e = N'Activity Log Event'
+  @DisplayName_1567f3bc = N'Activity Log Event'
 SET
-  @Description_7201745e = N'WP Activity Log events, flattened one row per logged event with its metadata pivoted in. Served by the MJ bridge plugin at mj-wsal/v1, because WP Activity Log itself registers no REST routes.'
+  @Description_1567f3bc = N'WP Activity Log events, flattened one row per logged event with its metadata pivoted in. Served by the MJ bridge plugin at mj-wsal/v1, because WP Activity Log itself registers no REST routes.'
 SET
-  @Category_7201745e = N'WP Activity Log'
+  @Category_1567f3bc = N'WP Activity Log'
 SET
-  @APIPath_7201745e = N'/mj-wsal/v1/events'
+  @APIPath_1567f3bc = N'/mj-wsal/v1/events'
 SET
-  @DefaultPageSize_7201745e = 100
+  @DefaultPageSize_1567f3bc = 100
 SET
-  @SupportsPagination_7201745e = 1
+  @SupportsPagination_1567f3bc = 1
 SET
-  @PaginationType_7201745e = N'PageNumber'
+  @PaginationType_1567f3bc = N'PageNumber'
 SET
-  @SupportsIncrementalSync_7201745e = 1
+  @SupportsIncrementalSync_1567f3bc = 1
 SET
-  @SupportsWrite_7201745e = 0
+  @SupportsWrite_1567f3bc = 0
 SET
-  @Configuration_7201745e = N'{
+  @Configuration_1567f3bc = N'{
   "namespace": "mj-wsal/v1",
   "listPath": "/mj-wsal/v1/events",
   "getOnePath": null,
@@ -119,157 +119,157 @@ SET
   }
 }'
 SET
-  @Sequence_7201745e = 0
+  @Sequence_1567f3bc = 0
 SET
-  @Status_7201745e = N'Active'
+  @Status_1567f3bc = N'Active'
 SET
-  @WriteMethod_7201745e = N'POST'
+  @WriteMethod_1567f3bc = N'POST'
 SET
-  @DeleteMethod_7201745e = N'DELETE'
+  @DeleteMethod_1567f3bc = N'DELETE'
 SET
-  @IsCustom_7201745e = 0
+  @IsCustom_1567f3bc = 0
 SET
-  @IncrementalWatermarkField_7201745e = N'created_at'
+  @IncrementalWatermarkField_1567f3bc = N'created_at'
 SET
-  @MetadataSource_7201745e = N'Declared'
+  @MetadataSource_1567f3bc = N'Declared'
 SET
-  @SupportsCreate_7201745e = 0
+  @SupportsCreate_1567f3bc = 0
 SET
-  @SupportsUpdate_7201745e = 0
+  @SupportsUpdate_1567f3bc = 0
 SET
-  @SupportsDelete_7201745e = 0
+  @SupportsDelete_1567f3bc = 0
 SET
-  @SyncStrategy_7201745e = N'WatermarkIncremental'
+  @SyncStrategy_1567f3bc = N'WatermarkIncremental'
 SET
-  @ContentHashApplicable_7201745e = 0
+  @ContentHashApplicable_1567f3bc = 0
 SET
-  @StableOrderingKey_7201745e = N'id' EXEC [__mj].spCreateIntegrationObject @ID = @ID_7201745e,
-  @IntegrationID = @IntegrationID_7201745e,
-  @Name = @Name_7201745e,
-  @DisplayName = @DisplayName_7201745e,
-  @Description = @Description_7201745e,
-  @Category = @Category_7201745e,
-  @APIPath = @APIPath_7201745e,
-  @ResponseDataKey = @ResponseDataKey_7201745e,
+  @StableOrderingKey_1567f3bc = N'id' EXEC [__mj].spCreateIntegrationObject @ID = @ID_1567f3bc,
+  @IntegrationID = @IntegrationID_1567f3bc,
+  @Name = @Name_1567f3bc,
+  @DisplayName = @DisplayName_1567f3bc,
+  @Description = @Description_1567f3bc,
+  @Category = @Category_1567f3bc,
+  @APIPath = @APIPath_1567f3bc,
+  @ResponseDataKey = @ResponseDataKey_1567f3bc,
   @ResponseDataKey_Clear = 1,
-  @DefaultPageSize = @DefaultPageSize_7201745e,
-  @SupportsPagination = @SupportsPagination_7201745e,
-  @PaginationType = @PaginationType_7201745e,
-  @SupportsIncrementalSync = @SupportsIncrementalSync_7201745e,
-  @SupportsWrite = @SupportsWrite_7201745e,
-  @DefaultQueryParams = @DefaultQueryParams_7201745e,
+  @DefaultPageSize = @DefaultPageSize_1567f3bc,
+  @SupportsPagination = @SupportsPagination_1567f3bc,
+  @PaginationType = @PaginationType_1567f3bc,
+  @SupportsIncrementalSync = @SupportsIncrementalSync_1567f3bc,
+  @SupportsWrite = @SupportsWrite_1567f3bc,
+  @DefaultQueryParams = @DefaultQueryParams_1567f3bc,
   @DefaultQueryParams_Clear = 1,
-  @Configuration = @Configuration_7201745e,
-  @Sequence = @Sequence_7201745e,
-  @Status = @Status_7201745e,
-  @WriteAPIPath = @WriteAPIPath_7201745e,
+  @Configuration = @Configuration_1567f3bc,
+  @Sequence = @Sequence_1567f3bc,
+  @Status = @Status_1567f3bc,
+  @WriteAPIPath = @WriteAPIPath_1567f3bc,
   @WriteAPIPath_Clear = 1,
-  @WriteMethod = @WriteMethod_7201745e,
-  @DeleteMethod = @DeleteMethod_7201745e,
-  @IsCustom = @IsCustom_7201745e,
-  @CreateAPIPath = @CreateAPIPath_7201745e,
+  @WriteMethod = @WriteMethod_1567f3bc,
+  @DeleteMethod = @DeleteMethod_1567f3bc,
+  @IsCustom = @IsCustom_1567f3bc,
+  @CreateAPIPath = @CreateAPIPath_1567f3bc,
   @CreateAPIPath_Clear = 1,
-  @CreateMethod = @CreateMethod_7201745e,
+  @CreateMethod = @CreateMethod_1567f3bc,
   @CreateMethod_Clear = 1,
-  @CreateBodyShape = @CreateBodyShape_7201745e,
+  @CreateBodyShape = @CreateBodyShape_1567f3bc,
   @CreateBodyShape_Clear = 1,
-  @CreateBodyKey = @CreateBodyKey_7201745e,
+  @CreateBodyKey = @CreateBodyKey_1567f3bc,
   @CreateBodyKey_Clear = 1,
-  @CreateIDLocation = @CreateIDLocation_7201745e,
+  @CreateIDLocation = @CreateIDLocation_1567f3bc,
   @CreateIDLocation_Clear = 1,
-  @UpdateAPIPath = @UpdateAPIPath_7201745e,
+  @UpdateAPIPath = @UpdateAPIPath_1567f3bc,
   @UpdateAPIPath_Clear = 1,
-  @UpdateMethod = @UpdateMethod_7201745e,
+  @UpdateMethod = @UpdateMethod_1567f3bc,
   @UpdateMethod_Clear = 1,
-  @UpdateBodyShape = @UpdateBodyShape_7201745e,
+  @UpdateBodyShape = @UpdateBodyShape_1567f3bc,
   @UpdateBodyShape_Clear = 1,
-  @UpdateBodyKey = @UpdateBodyKey_7201745e,
+  @UpdateBodyKey = @UpdateBodyKey_1567f3bc,
   @UpdateBodyKey_Clear = 1,
-  @UpdateIDLocation = @UpdateIDLocation_7201745e,
+  @UpdateIDLocation = @UpdateIDLocation_1567f3bc,
   @UpdateIDLocation_Clear = 1,
-  @DeleteAPIPath = @DeleteAPIPath_7201745e,
+  @DeleteAPIPath = @DeleteAPIPath_1567f3bc,
   @DeleteAPIPath_Clear = 1,
-  @DeleteIDLocation = @DeleteIDLocation_7201745e,
+  @DeleteIDLocation = @DeleteIDLocation_1567f3bc,
   @DeleteIDLocation_Clear = 1,
-  @IncrementalWatermarkField = @IncrementalWatermarkField_7201745e,
-  @MetadataSource = @MetadataSource_7201745e,
-  @SupportsCreate = @SupportsCreate_7201745e,
-  @SupportsUpdate = @SupportsUpdate_7201745e,
-  @SupportsDelete = @SupportsDelete_7201745e,
-  @SyncStrategy = @SyncStrategy_7201745e,
-  @ContentHashApplicable = @ContentHashApplicable_7201745e,
-  @StableOrderingKey = @StableOrderingKey_7201745e;
+  @IncrementalWatermarkField = @IncrementalWatermarkField_1567f3bc,
+  @MetadataSource = @MetadataSource_1567f3bc,
+  @SupportsCreate = @SupportsCreate_1567f3bc,
+  @SupportsUpdate = @SupportsUpdate_1567f3bc,
+  @SupportsDelete = @SupportsDelete_1567f3bc,
+  @SyncStrategy = @SyncStrategy_1567f3bc,
+  @ContentHashApplicable = @ContentHashApplicable_1567f3bc,
+  @StableOrderingKey = @StableOrderingKey_1567f3bc;
 
 GO
 
 -- Save MJ: Integration Objects (core SP call only)
-DECLARE @ID_50aca4a9 UNIQUEIDENTIFIER,
-@IntegrationID_50aca4a9 UNIQUEIDENTIFIER,
-@Name_50aca4a9 NVARCHAR(255),
-@DisplayName_50aca4a9 NVARCHAR(255),
-@Description_50aca4a9 NVARCHAR(MAX),
-@Category_50aca4a9 NVARCHAR(100),
-@APIPath_50aca4a9 NVARCHAR(500),
-@ResponseDataKey_50aca4a9 NVARCHAR(255),
-@DefaultPageSize_50aca4a9 INT,
-@SupportsPagination_50aca4a9 BIT,
-@PaginationType_50aca4a9 NVARCHAR(20),
-@SupportsIncrementalSync_50aca4a9 BIT,
-@SupportsWrite_50aca4a9 BIT,
-@DefaultQueryParams_50aca4a9 NVARCHAR(MAX),
-@Configuration_50aca4a9 NVARCHAR(MAX),
-@Sequence_50aca4a9 INT,
-@Status_50aca4a9 NVARCHAR(25),
-@WriteAPIPath_50aca4a9 NVARCHAR(500),
-@WriteMethod_50aca4a9 NVARCHAR(10),
-@DeleteMethod_50aca4a9 NVARCHAR(10),
-@IsCustom_50aca4a9 BIT,
-@CreateAPIPath_50aca4a9 NVARCHAR(MAX),
-@CreateMethod_50aca4a9 NVARCHAR(20),
-@CreateBodyShape_50aca4a9 NVARCHAR(50),
-@CreateBodyKey_50aca4a9 NVARCHAR(100),
-@CreateIDLocation_50aca4a9 NVARCHAR(20),
-@UpdateAPIPath_50aca4a9 NVARCHAR(MAX),
-@UpdateMethod_50aca4a9 NVARCHAR(20),
-@UpdateBodyShape_50aca4a9 NVARCHAR(50),
-@UpdateBodyKey_50aca4a9 NVARCHAR(100),
-@UpdateIDLocation_50aca4a9 NVARCHAR(20),
-@DeleteAPIPath_50aca4a9 NVARCHAR(MAX),
-@DeleteIDLocation_50aca4a9 NVARCHAR(20),
-@IncrementalWatermarkField_50aca4a9 NVARCHAR(255),
-@MetadataSource_50aca4a9 NVARCHAR(20),
-@SupportsCreate_50aca4a9 BIT,
-@SupportsUpdate_50aca4a9 BIT,
-@SupportsDelete_50aca4a9 BIT,
-@SyncStrategy_50aca4a9 NVARCHAR(50),
-@ContentHashApplicable_50aca4a9 BIT,
-@StableOrderingKey_50aca4a9 NVARCHAR(255)
+DECLARE @ID_c821642f UNIQUEIDENTIFIER,
+@IntegrationID_c821642f UNIQUEIDENTIFIER,
+@Name_c821642f NVARCHAR(255),
+@DisplayName_c821642f NVARCHAR(255),
+@Description_c821642f NVARCHAR(MAX),
+@Category_c821642f NVARCHAR(100),
+@APIPath_c821642f NVARCHAR(500),
+@ResponseDataKey_c821642f NVARCHAR(255),
+@DefaultPageSize_c821642f INT,
+@SupportsPagination_c821642f BIT,
+@PaginationType_c821642f NVARCHAR(20),
+@SupportsIncrementalSync_c821642f BIT,
+@SupportsWrite_c821642f BIT,
+@DefaultQueryParams_c821642f NVARCHAR(MAX),
+@Configuration_c821642f NVARCHAR(MAX),
+@Sequence_c821642f INT,
+@Status_c821642f NVARCHAR(25),
+@WriteAPIPath_c821642f NVARCHAR(500),
+@WriteMethod_c821642f NVARCHAR(10),
+@DeleteMethod_c821642f NVARCHAR(10),
+@IsCustom_c821642f BIT,
+@CreateAPIPath_c821642f NVARCHAR(MAX),
+@CreateMethod_c821642f NVARCHAR(20),
+@CreateBodyShape_c821642f NVARCHAR(50),
+@CreateBodyKey_c821642f NVARCHAR(100),
+@CreateIDLocation_c821642f NVARCHAR(20),
+@UpdateAPIPath_c821642f NVARCHAR(MAX),
+@UpdateMethod_c821642f NVARCHAR(20),
+@UpdateBodyShape_c821642f NVARCHAR(50),
+@UpdateBodyKey_c821642f NVARCHAR(100),
+@UpdateIDLocation_c821642f NVARCHAR(20),
+@DeleteAPIPath_c821642f NVARCHAR(MAX),
+@DeleteIDLocation_c821642f NVARCHAR(20),
+@IncrementalWatermarkField_c821642f NVARCHAR(255),
+@MetadataSource_c821642f NVARCHAR(20),
+@SupportsCreate_c821642f BIT,
+@SupportsUpdate_c821642f BIT,
+@SupportsDelete_c821642f BIT,
+@SyncStrategy_c821642f NVARCHAR(50),
+@ContentHashApplicable_c821642f BIT,
+@StableOrderingKey_c821642f NVARCHAR(255)
 SET
-  @ID_50aca4a9 = 'fb9e1b85-6b87-4561-b332-c264ecf2d87b'
+  @ID_c821642f = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @IntegrationID_50aca4a9 = '301B572A-FE48-4600-A8A2-8D5E92646048'
+  @IntegrationID_c821642f = '301B572A-FE48-4600-A8A2-8D5E92646048'
 SET
-  @Name_50aca4a9 = N'ActivityLogEventType'
+  @Name_c821642f = N'ActivityLogEventType'
 SET
-  @DisplayName_50aca4a9 = N'Activity Log Event Type'
+  @DisplayName_c821642f = N'Activity Log Event Type'
 SET
-  @Description_50aca4a9 = N'The activity log event-type catalog: every event ID the installed plugin set can emit, with its label, severity and category. A slow-moving dimension for interpreting ActivityLogEvent.alert_id.'
+  @Description_c821642f = N'The activity log event-type catalog: every event ID the installed plugin set can emit, with its label, severity and category. A slow-moving dimension for interpreting ActivityLogEvent.alert_id.'
 SET
-  @Category_50aca4a9 = N'WP Activity Log'
+  @Category_c821642f = N'WP Activity Log'
 SET
-  @APIPath_50aca4a9 = N'/mj-wsal/v1/event-types'
+  @APIPath_c821642f = N'/mj-wsal/v1/event-types'
 SET
-  @DefaultPageSize_50aca4a9 = 100
+  @DefaultPageSize_c821642f = 100
 SET
-  @SupportsPagination_50aca4a9 = 1
+  @SupportsPagination_c821642f = 1
 SET
-  @PaginationType_50aca4a9 = N'PageNumber'
+  @PaginationType_c821642f = N'PageNumber'
 SET
-  @SupportsIncrementalSync_50aca4a9 = 0
+  @SupportsIncrementalSync_c821642f = 0
 SET
-  @SupportsWrite_50aca4a9 = 0
+  @SupportsWrite_c821642f = 0
 SET
-  @Configuration_50aca4a9 = N'{
+  @Configuration_c821642f = N'{
   "namespace": "mj-wsal/v1",
   "listPath": "/mj-wsal/v1/event-types",
   "getOnePath": null,
@@ -300,2660 +300,2661 @@ SET
   }
 }'
 SET
-  @Sequence_50aca4a9 = 0
+  @Sequence_c821642f = 0
 SET
-  @Status_50aca4a9 = N'Active'
+  @Status_c821642f = N'Active'
 SET
-  @WriteMethod_50aca4a9 = N'POST'
+  @WriteMethod_c821642f = N'POST'
 SET
-  @DeleteMethod_50aca4a9 = N'DELETE'
+  @DeleteMethod_c821642f = N'DELETE'
 SET
-  @IsCustom_50aca4a9 = 0
+  @IsCustom_c821642f = 0
 SET
-  @MetadataSource_50aca4a9 = N'Declared'
+  @MetadataSource_c821642f = N'Declared'
 SET
-  @SupportsCreate_50aca4a9 = 0
+  @SupportsCreate_c821642f = 0
 SET
-  @SupportsUpdate_50aca4a9 = 0
+  @SupportsUpdate_c821642f = 0
 SET
-  @SupportsDelete_50aca4a9 = 0
+  @SupportsDelete_c821642f = 0
 SET
-  @SyncStrategy_50aca4a9 = N'FullPullHashDiff'
+  @SyncStrategy_c821642f = N'FullPullHashDiff'
 SET
-  @ContentHashApplicable_50aca4a9 = 1
+  @ContentHashApplicable_c821642f = 1
 SET
-  @StableOrderingKey_50aca4a9 = N'alert_id' EXEC [__mj].spCreateIntegrationObject @ID = @ID_50aca4a9,
-  @IntegrationID = @IntegrationID_50aca4a9,
-  @Name = @Name_50aca4a9,
-  @DisplayName = @DisplayName_50aca4a9,
-  @Description = @Description_50aca4a9,
-  @Category = @Category_50aca4a9,
-  @APIPath = @APIPath_50aca4a9,
-  @ResponseDataKey = @ResponseDataKey_50aca4a9,
+  @StableOrderingKey_c821642f = N'alert_id' EXEC [__mj].spCreateIntegrationObject @ID = @ID_c821642f,
+  @IntegrationID = @IntegrationID_c821642f,
+  @Name = @Name_c821642f,
+  @DisplayName = @DisplayName_c821642f,
+  @Description = @Description_c821642f,
+  @Category = @Category_c821642f,
+  @APIPath = @APIPath_c821642f,
+  @ResponseDataKey = @ResponseDataKey_c821642f,
   @ResponseDataKey_Clear = 1,
-  @DefaultPageSize = @DefaultPageSize_50aca4a9,
-  @SupportsPagination = @SupportsPagination_50aca4a9,
-  @PaginationType = @PaginationType_50aca4a9,
-  @SupportsIncrementalSync = @SupportsIncrementalSync_50aca4a9,
-  @SupportsWrite = @SupportsWrite_50aca4a9,
-  @DefaultQueryParams = @DefaultQueryParams_50aca4a9,
+  @DefaultPageSize = @DefaultPageSize_c821642f,
+  @SupportsPagination = @SupportsPagination_c821642f,
+  @PaginationType = @PaginationType_c821642f,
+  @SupportsIncrementalSync = @SupportsIncrementalSync_c821642f,
+  @SupportsWrite = @SupportsWrite_c821642f,
+  @DefaultQueryParams = @DefaultQueryParams_c821642f,
   @DefaultQueryParams_Clear = 1,
-  @Configuration = @Configuration_50aca4a9,
-  @Sequence = @Sequence_50aca4a9,
-  @Status = @Status_50aca4a9,
-  @WriteAPIPath = @WriteAPIPath_50aca4a9,
+  @Configuration = @Configuration_c821642f,
+  @Sequence = @Sequence_c821642f,
+  @Status = @Status_c821642f,
+  @WriteAPIPath = @WriteAPIPath_c821642f,
   @WriteAPIPath_Clear = 1,
-  @WriteMethod = @WriteMethod_50aca4a9,
-  @DeleteMethod = @DeleteMethod_50aca4a9,
-  @IsCustom = @IsCustom_50aca4a9,
-  @CreateAPIPath = @CreateAPIPath_50aca4a9,
+  @WriteMethod = @WriteMethod_c821642f,
+  @DeleteMethod = @DeleteMethod_c821642f,
+  @IsCustom = @IsCustom_c821642f,
+  @CreateAPIPath = @CreateAPIPath_c821642f,
   @CreateAPIPath_Clear = 1,
-  @CreateMethod = @CreateMethod_50aca4a9,
+  @CreateMethod = @CreateMethod_c821642f,
   @CreateMethod_Clear = 1,
-  @CreateBodyShape = @CreateBodyShape_50aca4a9,
+  @CreateBodyShape = @CreateBodyShape_c821642f,
   @CreateBodyShape_Clear = 1,
-  @CreateBodyKey = @CreateBodyKey_50aca4a9,
+  @CreateBodyKey = @CreateBodyKey_c821642f,
   @CreateBodyKey_Clear = 1,
-  @CreateIDLocation = @CreateIDLocation_50aca4a9,
+  @CreateIDLocation = @CreateIDLocation_c821642f,
   @CreateIDLocation_Clear = 1,
-  @UpdateAPIPath = @UpdateAPIPath_50aca4a9,
+  @UpdateAPIPath = @UpdateAPIPath_c821642f,
   @UpdateAPIPath_Clear = 1,
-  @UpdateMethod = @UpdateMethod_50aca4a9,
+  @UpdateMethod = @UpdateMethod_c821642f,
   @UpdateMethod_Clear = 1,
-  @UpdateBodyShape = @UpdateBodyShape_50aca4a9,
+  @UpdateBodyShape = @UpdateBodyShape_c821642f,
   @UpdateBodyShape_Clear = 1,
-  @UpdateBodyKey = @UpdateBodyKey_50aca4a9,
+  @UpdateBodyKey = @UpdateBodyKey_c821642f,
   @UpdateBodyKey_Clear = 1,
-  @UpdateIDLocation = @UpdateIDLocation_50aca4a9,
+  @UpdateIDLocation = @UpdateIDLocation_c821642f,
   @UpdateIDLocation_Clear = 1,
-  @DeleteAPIPath = @DeleteAPIPath_50aca4a9,
+  @DeleteAPIPath = @DeleteAPIPath_c821642f,
   @DeleteAPIPath_Clear = 1,
-  @DeleteIDLocation = @DeleteIDLocation_50aca4a9,
+  @DeleteIDLocation = @DeleteIDLocation_c821642f,
   @DeleteIDLocation_Clear = 1,
-  @IncrementalWatermarkField = @IncrementalWatermarkField_50aca4a9,
+  @IncrementalWatermarkField = @IncrementalWatermarkField_c821642f,
   @IncrementalWatermarkField_Clear = 1,
-  @MetadataSource = @MetadataSource_50aca4a9,
-  @SupportsCreate = @SupportsCreate_50aca4a9,
-  @SupportsUpdate = @SupportsUpdate_50aca4a9,
-  @SupportsDelete = @SupportsDelete_50aca4a9,
-  @SyncStrategy = @SyncStrategy_50aca4a9,
-  @ContentHashApplicable = @ContentHashApplicable_50aca4a9,
-  @StableOrderingKey = @StableOrderingKey_50aca4a9;
+  @MetadataSource = @MetadataSource_c821642f,
+  @SupportsCreate = @SupportsCreate_c821642f,
+  @SupportsUpdate = @SupportsUpdate_c821642f,
+  @SupportsDelete = @SupportsDelete_c821642f,
+  @SyncStrategy = @SyncStrategy_c821642f,
+  @ContentHashApplicable = @ContentHashApplicable_c821642f,
+  @StableOrderingKey = @StableOrderingKey_c821642f;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_23e809dd UNIQUEIDENTIFIER,
-@IntegrationObjectID_23e809dd UNIQUEIDENTIFIER,
-@Name_23e809dd NVARCHAR(255),
-@DisplayName_23e809dd NVARCHAR(255),
-@Description_23e809dd NVARCHAR(MAX),
-@Category_23e809dd NVARCHAR(100),
-@Type_23e809dd NVARCHAR(100),
-@Length_23e809dd INT,
-@Precision_23e809dd INT,
-@Scale_23e809dd INT,
-@AllowsNull_23e809dd BIT,
-@DefaultValue_23e809dd NVARCHAR(255),
-@IsPrimaryKey_23e809dd BIT,
-@IsUniqueKey_23e809dd BIT,
-@IsReadOnly_23e809dd BIT,
-@IsRequired_23e809dd BIT,
-@RelatedIntegrationObjectID_23e809dd UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_23e809dd NVARCHAR(255),
-@Sequence_23e809dd INT,
-@Configuration_23e809dd NVARCHAR(MAX),
-@Status_23e809dd NVARCHAR(25),
-@IsCustom_23e809dd BIT,
-@MetadataSource_23e809dd NVARCHAR(20)
+DECLARE @ID_87431f7f UNIQUEIDENTIFIER,
+@IntegrationObjectID_87431f7f UNIQUEIDENTIFIER,
+@Name_87431f7f NVARCHAR(255),
+@DisplayName_87431f7f NVARCHAR(255),
+@Description_87431f7f NVARCHAR(MAX),
+@Category_87431f7f NVARCHAR(100),
+@Type_87431f7f NVARCHAR(100),
+@Length_87431f7f INT,
+@Precision_87431f7f INT,
+@Scale_87431f7f INT,
+@AllowsNull_87431f7f BIT,
+@DefaultValue_87431f7f NVARCHAR(255),
+@IsPrimaryKey_87431f7f BIT,
+@IsUniqueKey_87431f7f BIT,
+@IsReadOnly_87431f7f BIT,
+@IsRequired_87431f7f BIT,
+@RelatedIntegrationObjectID_87431f7f UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_87431f7f NVARCHAR(255),
+@Sequence_87431f7f INT,
+@Configuration_87431f7f NVARCHAR(MAX),
+@Status_87431f7f NVARCHAR(25),
+@IsCustom_87431f7f BIT,
+@MetadataSource_87431f7f NVARCHAR(20)
 SET
-  @ID_23e809dd = 'b9664c40-3ab1-4cda-bf25-d4c326d2fc49'
+  @ID_87431f7f = 'B9664C40-3AB1-4CDA-BF25-D4C326D2FC49'
 SET
-  @IntegrationObjectID_23e809dd = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_87431f7f = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_23e809dd = N'id'
+  @Name_87431f7f = N'id'
 SET
-  @DisplayName_23e809dd = N'ID'
+  @DisplayName_87431f7f = N'ID'
 SET
-  @Description_23e809dd = N'Unique event identifier. Primary key.'
+  @Description_87431f7f = N'Unique event identifier. Primary key.'
 SET
-  @Type_23e809dd = N'Integer'
+  @Type_87431f7f = N'Integer'
 SET
-  @AllowsNull_23e809dd = 0
+  @AllowsNull_87431f7f = 0
 SET
-  @IsPrimaryKey_23e809dd = 1
+  @IsPrimaryKey_87431f7f = 1
 SET
-  @IsUniqueKey_23e809dd = 1
+  @IsUniqueKey_87431f7f = 1
 SET
-  @IsReadOnly_23e809dd = 1
+  @IsReadOnly_87431f7f = 1
 SET
-  @IsRequired_23e809dd = 1
+  @IsRequired_87431f7f = 1
 SET
-  @Sequence_23e809dd = 0
+  @Sequence_87431f7f = 0
 SET
-  @Configuration_23e809dd = N'{
+  @Configuration_87431f7f = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_23e809dd = N'Active'
+  @Status_87431f7f = N'Active'
 SET
-  @IsCustom_23e809dd = 0
+  @IsCustom_87431f7f = 0
 SET
-  @MetadataSource_23e809dd = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_23e809dd,
-  @IntegrationObjectID = @IntegrationObjectID_23e809dd,
-  @Name = @Name_23e809dd,
-  @DisplayName = @DisplayName_23e809dd,
-  @Description = @Description_23e809dd,
-  @Category = @Category_23e809dd,
+  @MetadataSource_87431f7f = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_87431f7f,
+  @IntegrationObjectID = @IntegrationObjectID_87431f7f,
+  @Name = @Name_87431f7f,
+  @DisplayName = @DisplayName_87431f7f,
+  @Description = @Description_87431f7f,
+  @Category = @Category_87431f7f,
   @Category_Clear = 1,
-  @Type = @Type_23e809dd,
-  @Length = @Length_23e809dd,
+  @Type = @Type_87431f7f,
+  @Length = @Length_87431f7f,
   @Length_Clear = 1,
-  @Precision = @Precision_23e809dd,
+  @Precision = @Precision_87431f7f,
   @Precision_Clear = 1,
-  @Scale = @Scale_23e809dd,
+  @Scale = @Scale_87431f7f,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_23e809dd,
-  @DefaultValue = @DefaultValue_23e809dd,
+  @AllowsNull = @AllowsNull_87431f7f,
+  @DefaultValue = @DefaultValue_87431f7f,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_23e809dd,
-  @IsUniqueKey = @IsUniqueKey_23e809dd,
-  @IsReadOnly = @IsReadOnly_23e809dd,
-  @IsRequired = @IsRequired_23e809dd,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_23e809dd,
+  @IsPrimaryKey = @IsPrimaryKey_87431f7f,
+  @IsUniqueKey = @IsUniqueKey_87431f7f,
+  @IsReadOnly = @IsReadOnly_87431f7f,
+  @IsRequired = @IsRequired_87431f7f,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_87431f7f,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_23e809dd,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_87431f7f,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_23e809dd,
-  @Configuration = @Configuration_23e809dd,
-  @Status = @Status_23e809dd,
-  @IsCustom = @IsCustom_23e809dd,
-  @MetadataSource = @MetadataSource_23e809dd;
+  @Sequence = @Sequence_87431f7f,
+  @Configuration = @Configuration_87431f7f,
+  @Status = @Status_87431f7f,
+  @IsCustom = @IsCustom_87431f7f,
+  @MetadataSource = @MetadataSource_87431f7f;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_eb4c7113 UNIQUEIDENTIFIER,
-@IntegrationObjectID_eb4c7113 UNIQUEIDENTIFIER,
-@Name_eb4c7113 NVARCHAR(255),
-@DisplayName_eb4c7113 NVARCHAR(255),
-@Description_eb4c7113 NVARCHAR(MAX),
-@Category_eb4c7113 NVARCHAR(100),
-@Type_eb4c7113 NVARCHAR(100),
-@Length_eb4c7113 INT,
-@Precision_eb4c7113 INT,
-@Scale_eb4c7113 INT,
-@AllowsNull_eb4c7113 BIT,
-@DefaultValue_eb4c7113 NVARCHAR(255),
-@IsPrimaryKey_eb4c7113 BIT,
-@IsUniqueKey_eb4c7113 BIT,
-@IsReadOnly_eb4c7113 BIT,
-@IsRequired_eb4c7113 BIT,
-@RelatedIntegrationObjectID_eb4c7113 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_eb4c7113 NVARCHAR(255),
-@Sequence_eb4c7113 INT,
-@Configuration_eb4c7113 NVARCHAR(MAX),
-@Status_eb4c7113 NVARCHAR(25),
-@IsCustom_eb4c7113 BIT,
-@MetadataSource_eb4c7113 NVARCHAR(20)
+DECLARE @ID_cec44b6d UNIQUEIDENTIFIER,
+@IntegrationObjectID_cec44b6d UNIQUEIDENTIFIER,
+@Name_cec44b6d NVARCHAR(255),
+@DisplayName_cec44b6d NVARCHAR(255),
+@Description_cec44b6d NVARCHAR(MAX),
+@Category_cec44b6d NVARCHAR(100),
+@Type_cec44b6d NVARCHAR(100),
+@Length_cec44b6d INT,
+@Precision_cec44b6d INT,
+@Scale_cec44b6d INT,
+@AllowsNull_cec44b6d BIT,
+@DefaultValue_cec44b6d NVARCHAR(255),
+@IsPrimaryKey_cec44b6d BIT,
+@IsUniqueKey_cec44b6d BIT,
+@IsReadOnly_cec44b6d BIT,
+@IsRequired_cec44b6d BIT,
+@RelatedIntegrationObjectID_cec44b6d UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_cec44b6d NVARCHAR(255),
+@Sequence_cec44b6d INT,
+@Configuration_cec44b6d NVARCHAR(MAX),
+@Status_cec44b6d NVARCHAR(25),
+@IsCustom_cec44b6d BIT,
+@MetadataSource_cec44b6d NVARCHAR(20)
 SET
-  @ID_eb4c7113 = 'c8ad08c3-7312-4805-846e-e4e2bcbc61b5'
+  @ID_cec44b6d = 'C8AD08C3-7312-4805-846E-E4E2BCBC61B5'
 SET
-  @IntegrationObjectID_eb4c7113 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_cec44b6d = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_eb4c7113 = N'site_id'
+  @Name_cec44b6d = N'site_id'
 SET
-  @DisplayName_eb4c7113 = N'Site ID'
+  @DisplayName_cec44b6d = N'Site ID'
 SET
-  @Description_eb4c7113 = N'Multisite network site ID; 1 on a single-site install.'
+  @Description_cec44b6d = N'Multisite network site ID; 1 on a single-site install.'
 SET
-  @Type_eb4c7113 = N'Integer'
+  @Type_cec44b6d = N'Integer'
 SET
-  @AllowsNull_eb4c7113 = 0
+  @AllowsNull_cec44b6d = 0
 SET
-  @IsPrimaryKey_eb4c7113 = 0
+  @IsPrimaryKey_cec44b6d = 0
 SET
-  @IsUniqueKey_eb4c7113 = 0
+  @IsUniqueKey_cec44b6d = 0
 SET
-  @IsReadOnly_eb4c7113 = 1
+  @IsReadOnly_cec44b6d = 1
 SET
-  @IsRequired_eb4c7113 = 0
+  @IsRequired_cec44b6d = 0
 SET
-  @Sequence_eb4c7113 = 1
+  @Sequence_cec44b6d = 1
 SET
-  @Configuration_eb4c7113 = N'{
+  @Configuration_cec44b6d = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_eb4c7113 = N'Active'
+  @Status_cec44b6d = N'Active'
 SET
-  @IsCustom_eb4c7113 = 0
+  @IsCustom_cec44b6d = 0
 SET
-  @MetadataSource_eb4c7113 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_eb4c7113,
-  @IntegrationObjectID = @IntegrationObjectID_eb4c7113,
-  @Name = @Name_eb4c7113,
-  @DisplayName = @DisplayName_eb4c7113,
-  @Description = @Description_eb4c7113,
-  @Category = @Category_eb4c7113,
+  @MetadataSource_cec44b6d = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_cec44b6d,
+  @IntegrationObjectID = @IntegrationObjectID_cec44b6d,
+  @Name = @Name_cec44b6d,
+  @DisplayName = @DisplayName_cec44b6d,
+  @Description = @Description_cec44b6d,
+  @Category = @Category_cec44b6d,
   @Category_Clear = 1,
-  @Type = @Type_eb4c7113,
-  @Length = @Length_eb4c7113,
+  @Type = @Type_cec44b6d,
+  @Length = @Length_cec44b6d,
   @Length_Clear = 1,
-  @Precision = @Precision_eb4c7113,
+  @Precision = @Precision_cec44b6d,
   @Precision_Clear = 1,
-  @Scale = @Scale_eb4c7113,
+  @Scale = @Scale_cec44b6d,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_eb4c7113,
-  @DefaultValue = @DefaultValue_eb4c7113,
+  @AllowsNull = @AllowsNull_cec44b6d,
+  @DefaultValue = @DefaultValue_cec44b6d,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_eb4c7113,
-  @IsUniqueKey = @IsUniqueKey_eb4c7113,
-  @IsReadOnly = @IsReadOnly_eb4c7113,
-  @IsRequired = @IsRequired_eb4c7113,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_eb4c7113,
+  @IsPrimaryKey = @IsPrimaryKey_cec44b6d,
+  @IsUniqueKey = @IsUniqueKey_cec44b6d,
+  @IsReadOnly = @IsReadOnly_cec44b6d,
+  @IsRequired = @IsRequired_cec44b6d,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_cec44b6d,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_eb4c7113,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_cec44b6d,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_eb4c7113,
-  @Configuration = @Configuration_eb4c7113,
-  @Status = @Status_eb4c7113,
-  @IsCustom = @IsCustom_eb4c7113,
-  @MetadataSource = @MetadataSource_eb4c7113;
+  @Sequence = @Sequence_cec44b6d,
+  @Configuration = @Configuration_cec44b6d,
+  @Status = @Status_cec44b6d,
+  @IsCustom = @IsCustom_cec44b6d,
+  @MetadataSource = @MetadataSource_cec44b6d;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_f130f541 UNIQUEIDENTIFIER,
-@IntegrationObjectID_f130f541 UNIQUEIDENTIFIER,
-@Name_f130f541 NVARCHAR(255),
-@DisplayName_f130f541 NVARCHAR(255),
-@Description_f130f541 NVARCHAR(MAX),
-@Category_f130f541 NVARCHAR(100),
-@Type_f130f541 NVARCHAR(100),
-@Length_f130f541 INT,
-@Precision_f130f541 INT,
-@Scale_f130f541 INT,
-@AllowsNull_f130f541 BIT,
-@DefaultValue_f130f541 NVARCHAR(255),
-@IsPrimaryKey_f130f541 BIT,
-@IsUniqueKey_f130f541 BIT,
-@IsReadOnly_f130f541 BIT,
-@IsRequired_f130f541 BIT,
-@RelatedIntegrationObjectID_f130f541 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_f130f541 NVARCHAR(255),
-@Sequence_f130f541 INT,
-@Configuration_f130f541 NVARCHAR(MAX),
-@Status_f130f541 NVARCHAR(25),
-@IsCustom_f130f541 BIT,
-@MetadataSource_f130f541 NVARCHAR(20)
+DECLARE @ID_b9e071aa UNIQUEIDENTIFIER,
+@IntegrationObjectID_b9e071aa UNIQUEIDENTIFIER,
+@Name_b9e071aa NVARCHAR(255),
+@DisplayName_b9e071aa NVARCHAR(255),
+@Description_b9e071aa NVARCHAR(MAX),
+@Category_b9e071aa NVARCHAR(100),
+@Type_b9e071aa NVARCHAR(100),
+@Length_b9e071aa INT,
+@Precision_b9e071aa INT,
+@Scale_b9e071aa INT,
+@AllowsNull_b9e071aa BIT,
+@DefaultValue_b9e071aa NVARCHAR(255),
+@IsPrimaryKey_b9e071aa BIT,
+@IsUniqueKey_b9e071aa BIT,
+@IsReadOnly_b9e071aa BIT,
+@IsRequired_b9e071aa BIT,
+@RelatedIntegrationObjectID_b9e071aa UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_b9e071aa NVARCHAR(255),
+@Sequence_b9e071aa INT,
+@Configuration_b9e071aa NVARCHAR(MAX),
+@Status_b9e071aa NVARCHAR(25),
+@IsCustom_b9e071aa BIT,
+@MetadataSource_b9e071aa NVARCHAR(20)
 SET
-  @ID_f130f541 = 'a9a1a083-81b5-4c39-8670-f19183fe3751'
+  @ID_b9e071aa = 'A9A1A083-81B5-4C39-8670-F19183FE3751'
 SET
-  @IntegrationObjectID_f130f541 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_b9e071aa = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_f130f541 = N'alert_id'
+  @Name_b9e071aa = N'alert_id'
 SET
-  @DisplayName_f130f541 = N'Alert ID'
+  @DisplayName_b9e071aa = N'Alert ID'
 SET
-  @Description_f130f541 = N'WP Activity Log event type ID. Joins to ActivityLogEventType.alert_id.'
+  @Description_b9e071aa = N'WP Activity Log event type ID. Joins to ActivityLogEventType.alert_id.'
 SET
-  @Type_f130f541 = N'Integer'
+  @Type_b9e071aa = N'Integer'
 SET
-  @AllowsNull_f130f541 = 0
+  @AllowsNull_b9e071aa = 0
 SET
-  @IsPrimaryKey_f130f541 = 0
+  @IsPrimaryKey_b9e071aa = 0
 SET
-  @IsUniqueKey_f130f541 = 0
+  @IsUniqueKey_b9e071aa = 0
 SET
-  @IsReadOnly_f130f541 = 1
+  @IsReadOnly_b9e071aa = 1
 SET
-  @IsRequired_f130f541 = 0
+  @IsRequired_b9e071aa = 0
 SET
-  @Sequence_f130f541 = 2
+  @Sequence_b9e071aa = 2
 SET
-  @Configuration_f130f541 = N'{
+  @Configuration_b9e071aa = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_f130f541 = N'Active'
+  @Status_b9e071aa = N'Active'
 SET
-  @IsCustom_f130f541 = 0
+  @IsCustom_b9e071aa = 0
 SET
-  @MetadataSource_f130f541 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_f130f541,
-  @IntegrationObjectID = @IntegrationObjectID_f130f541,
-  @Name = @Name_f130f541,
-  @DisplayName = @DisplayName_f130f541,
-  @Description = @Description_f130f541,
-  @Category = @Category_f130f541,
+  @MetadataSource_b9e071aa = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_b9e071aa,
+  @IntegrationObjectID = @IntegrationObjectID_b9e071aa,
+  @Name = @Name_b9e071aa,
+  @DisplayName = @DisplayName_b9e071aa,
+  @Description = @Description_b9e071aa,
+  @Category = @Category_b9e071aa,
   @Category_Clear = 1,
-  @Type = @Type_f130f541,
-  @Length = @Length_f130f541,
+  @Type = @Type_b9e071aa,
+  @Length = @Length_b9e071aa,
   @Length_Clear = 1,
-  @Precision = @Precision_f130f541,
+  @Precision = @Precision_b9e071aa,
   @Precision_Clear = 1,
-  @Scale = @Scale_f130f541,
+  @Scale = @Scale_b9e071aa,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_f130f541,
-  @DefaultValue = @DefaultValue_f130f541,
+  @AllowsNull = @AllowsNull_b9e071aa,
+  @DefaultValue = @DefaultValue_b9e071aa,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_f130f541,
-  @IsUniqueKey = @IsUniqueKey_f130f541,
-  @IsReadOnly = @IsReadOnly_f130f541,
-  @IsRequired = @IsRequired_f130f541,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_f130f541,
+  @IsPrimaryKey = @IsPrimaryKey_b9e071aa,
+  @IsUniqueKey = @IsUniqueKey_b9e071aa,
+  @IsReadOnly = @IsReadOnly_b9e071aa,
+  @IsRequired = @IsRequired_b9e071aa,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_b9e071aa,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_f130f541,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_b9e071aa,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_f130f541,
-  @Configuration = @Configuration_f130f541,
-  @Status = @Status_f130f541,
-  @IsCustom = @IsCustom_f130f541,
-  @MetadataSource = @MetadataSource_f130f541;
+  @Sequence = @Sequence_b9e071aa,
+  @Configuration = @Configuration_b9e071aa,
+  @Status = @Status_b9e071aa,
+  @IsCustom = @IsCustom_b9e071aa,
+  @MetadataSource = @MetadataSource_b9e071aa;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_b0232fb9 UNIQUEIDENTIFIER,
-@IntegrationObjectID_b0232fb9 UNIQUEIDENTIFIER,
-@Name_b0232fb9 NVARCHAR(255),
-@DisplayName_b0232fb9 NVARCHAR(255),
-@Description_b0232fb9 NVARCHAR(MAX),
-@Category_b0232fb9 NVARCHAR(100),
-@Type_b0232fb9 NVARCHAR(100),
-@Length_b0232fb9 INT,
-@Precision_b0232fb9 INT,
-@Scale_b0232fb9 INT,
-@AllowsNull_b0232fb9 BIT,
-@DefaultValue_b0232fb9 NVARCHAR(255),
-@IsPrimaryKey_b0232fb9 BIT,
-@IsUniqueKey_b0232fb9 BIT,
-@IsReadOnly_b0232fb9 BIT,
-@IsRequired_b0232fb9 BIT,
-@RelatedIntegrationObjectID_b0232fb9 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_b0232fb9 NVARCHAR(255),
-@Sequence_b0232fb9 INT,
-@Configuration_b0232fb9 NVARCHAR(MAX),
-@Status_b0232fb9 NVARCHAR(25),
-@IsCustom_b0232fb9 BIT,
-@MetadataSource_b0232fb9 NVARCHAR(20)
+DECLARE @ID_94f154ed UNIQUEIDENTIFIER,
+@IntegrationObjectID_94f154ed UNIQUEIDENTIFIER,
+@Name_94f154ed NVARCHAR(255),
+@DisplayName_94f154ed NVARCHAR(255),
+@Description_94f154ed NVARCHAR(MAX),
+@Category_94f154ed NVARCHAR(100),
+@Type_94f154ed NVARCHAR(100),
+@Length_94f154ed INT,
+@Precision_94f154ed INT,
+@Scale_94f154ed INT,
+@AllowsNull_94f154ed BIT,
+@DefaultValue_94f154ed NVARCHAR(255),
+@IsPrimaryKey_94f154ed BIT,
+@IsUniqueKey_94f154ed BIT,
+@IsReadOnly_94f154ed BIT,
+@IsRequired_94f154ed BIT,
+@RelatedIntegrationObjectID_94f154ed UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_94f154ed NVARCHAR(255),
+@Sequence_94f154ed INT,
+@Configuration_94f154ed NVARCHAR(MAX),
+@Status_94f154ed NVARCHAR(25),
+@IsCustom_94f154ed BIT,
+@MetadataSource_94f154ed NVARCHAR(20)
 SET
-  @ID_b0232fb9 = '69198ae8-53d7-417a-8610-9729f17655b5'
+  @ID_94f154ed = '69198AE8-53D7-417A-8610-9729F17655B5'
 SET
-  @IntegrationObjectID_b0232fb9 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_94f154ed = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_b0232fb9 = N'alert_label'
+  @Name_94f154ed = N'alert_label'
 SET
-  @DisplayName_b0232fb9 = N'Alert Label'
+  @DisplayName_94f154ed = N'Alert Label'
 SET
-  @Description_b0232fb9 = N'Human-readable name of the event type, resolved from the installed plugin set.'
+  @Description_94f154ed = N'Human-readable name of the event type, resolved from the installed plugin set.'
 SET
-  @Type_b0232fb9 = N'String'
+  @Type_94f154ed = N'String'
 SET
-  @AllowsNull_b0232fb9 = 1
+  @AllowsNull_94f154ed = 1
 SET
-  @IsPrimaryKey_b0232fb9 = 0
+  @IsPrimaryKey_94f154ed = 0
 SET
-  @IsUniqueKey_b0232fb9 = 0
+  @IsUniqueKey_94f154ed = 0
 SET
-  @IsReadOnly_b0232fb9 = 1
+  @IsReadOnly_94f154ed = 1
 SET
-  @IsRequired_b0232fb9 = 0
+  @IsRequired_94f154ed = 0
 SET
-  @Sequence_b0232fb9 = 3
+  @Sequence_94f154ed = 3
 SET
-  @Configuration_b0232fb9 = N'{
+  @Configuration_94f154ed = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_b0232fb9 = N'Active'
+  @Status_94f154ed = N'Active'
 SET
-  @IsCustom_b0232fb9 = 0
+  @IsCustom_94f154ed = 0
 SET
-  @MetadataSource_b0232fb9 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_b0232fb9,
-  @IntegrationObjectID = @IntegrationObjectID_b0232fb9,
-  @Name = @Name_b0232fb9,
-  @DisplayName = @DisplayName_b0232fb9,
-  @Description = @Description_b0232fb9,
-  @Category = @Category_b0232fb9,
+  @MetadataSource_94f154ed = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_94f154ed,
+  @IntegrationObjectID = @IntegrationObjectID_94f154ed,
+  @Name = @Name_94f154ed,
+  @DisplayName = @DisplayName_94f154ed,
+  @Description = @Description_94f154ed,
+  @Category = @Category_94f154ed,
   @Category_Clear = 1,
-  @Type = @Type_b0232fb9,
-  @Length = @Length_b0232fb9,
+  @Type = @Type_94f154ed,
+  @Length = @Length_94f154ed,
   @Length_Clear = 1,
-  @Precision = @Precision_b0232fb9,
+  @Precision = @Precision_94f154ed,
   @Precision_Clear = 1,
-  @Scale = @Scale_b0232fb9,
+  @Scale = @Scale_94f154ed,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_b0232fb9,
-  @DefaultValue = @DefaultValue_b0232fb9,
+  @AllowsNull = @AllowsNull_94f154ed,
+  @DefaultValue = @DefaultValue_94f154ed,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_b0232fb9,
-  @IsUniqueKey = @IsUniqueKey_b0232fb9,
-  @IsReadOnly = @IsReadOnly_b0232fb9,
-  @IsRequired = @IsRequired_b0232fb9,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_b0232fb9,
+  @IsPrimaryKey = @IsPrimaryKey_94f154ed,
+  @IsUniqueKey = @IsUniqueKey_94f154ed,
+  @IsReadOnly = @IsReadOnly_94f154ed,
+  @IsRequired = @IsRequired_94f154ed,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_94f154ed,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_b0232fb9,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_94f154ed,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_b0232fb9,
-  @Configuration = @Configuration_b0232fb9,
-  @Status = @Status_b0232fb9,
-  @IsCustom = @IsCustom_b0232fb9,
-  @MetadataSource = @MetadataSource_b0232fb9;
+  @Sequence = @Sequence_94f154ed,
+  @Configuration = @Configuration_94f154ed,
+  @Status = @Status_94f154ed,
+  @IsCustom = @IsCustom_94f154ed,
+  @MetadataSource = @MetadataSource_94f154ed;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_45141675 UNIQUEIDENTIFIER,
-@IntegrationObjectID_45141675 UNIQUEIDENTIFIER,
-@Name_45141675 NVARCHAR(255),
-@DisplayName_45141675 NVARCHAR(255),
-@Description_45141675 NVARCHAR(MAX),
-@Category_45141675 NVARCHAR(100),
-@Type_45141675 NVARCHAR(100),
-@Length_45141675 INT,
-@Precision_45141675 INT,
-@Scale_45141675 INT,
-@AllowsNull_45141675 BIT,
-@DefaultValue_45141675 NVARCHAR(255),
-@IsPrimaryKey_45141675 BIT,
-@IsUniqueKey_45141675 BIT,
-@IsReadOnly_45141675 BIT,
-@IsRequired_45141675 BIT,
-@RelatedIntegrationObjectID_45141675 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_45141675 NVARCHAR(255),
-@Sequence_45141675 INT,
-@Configuration_45141675 NVARCHAR(MAX),
-@Status_45141675 NVARCHAR(25),
-@IsCustom_45141675 BIT,
-@MetadataSource_45141675 NVARCHAR(20)
+DECLARE @ID_3ff8d976 UNIQUEIDENTIFIER,
+@IntegrationObjectID_3ff8d976 UNIQUEIDENTIFIER,
+@Name_3ff8d976 NVARCHAR(255),
+@DisplayName_3ff8d976 NVARCHAR(255),
+@Description_3ff8d976 NVARCHAR(MAX),
+@Category_3ff8d976 NVARCHAR(100),
+@Type_3ff8d976 NVARCHAR(100),
+@Length_3ff8d976 INT,
+@Precision_3ff8d976 INT,
+@Scale_3ff8d976 INT,
+@AllowsNull_3ff8d976 BIT,
+@DefaultValue_3ff8d976 NVARCHAR(255),
+@IsPrimaryKey_3ff8d976 BIT,
+@IsUniqueKey_3ff8d976 BIT,
+@IsReadOnly_3ff8d976 BIT,
+@IsRequired_3ff8d976 BIT,
+@RelatedIntegrationObjectID_3ff8d976 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_3ff8d976 NVARCHAR(255),
+@Sequence_3ff8d976 INT,
+@Configuration_3ff8d976 NVARCHAR(MAX),
+@Status_3ff8d976 NVARCHAR(25),
+@IsCustom_3ff8d976 BIT,
+@MetadataSource_3ff8d976 NVARCHAR(20)
 SET
-  @ID_45141675 = '0a82633b-3811-46b9-9b88-515fa3ddf9c4'
+  @ID_3ff8d976 = '0A82633B-3811-46B9-9B88-515FA3DDF9C4'
 SET
-  @IntegrationObjectID_45141675 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_3ff8d976 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_45141675 = N'created_on'
+  @Name_3ff8d976 = N'created_on'
 SET
-  @DisplayName_45141675 = N'Created On (Epoch)'
+  @DisplayName_3ff8d976 = N'Created On (Epoch)'
 SET
-  @Description_45141675 = N'Raw Unix timestamp in SECONDS with sub-second precision, exactly as WP Activity Log stores it.'
+  @Description_3ff8d976 = N'Raw Unix timestamp in SECONDS with sub-second precision, exactly as WP Activity Log stores it.'
 SET
-  @Type_45141675 = N'Decimal'
+  @Type_3ff8d976 = N'Decimal'
 SET
-  @AllowsNull_45141675 = 0
+  @AllowsNull_3ff8d976 = 0
 SET
-  @IsPrimaryKey_45141675 = 0
+  @IsPrimaryKey_3ff8d976 = 0
 SET
-  @IsUniqueKey_45141675 = 0
+  @IsUniqueKey_3ff8d976 = 0
 SET
-  @IsReadOnly_45141675 = 1
+  @IsReadOnly_3ff8d976 = 1
 SET
-  @IsRequired_45141675 = 0
+  @IsRequired_3ff8d976 = 0
 SET
-  @Sequence_45141675 = 4
+  @Sequence_3ff8d976 = 4
 SET
-  @Configuration_45141675 = N'{
+  @Configuration_3ff8d976 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_45141675 = N'Active'
+  @Status_3ff8d976 = N'Active'
 SET
-  @IsCustom_45141675 = 0
+  @IsCustom_3ff8d976 = 0
 SET
-  @MetadataSource_45141675 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_45141675,
-  @IntegrationObjectID = @IntegrationObjectID_45141675,
-  @Name = @Name_45141675,
-  @DisplayName = @DisplayName_45141675,
-  @Description = @Description_45141675,
-  @Category = @Category_45141675,
+  @MetadataSource_3ff8d976 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_3ff8d976,
+  @IntegrationObjectID = @IntegrationObjectID_3ff8d976,
+  @Name = @Name_3ff8d976,
+  @DisplayName = @DisplayName_3ff8d976,
+  @Description = @Description_3ff8d976,
+  @Category = @Category_3ff8d976,
   @Category_Clear = 1,
-  @Type = @Type_45141675,
-  @Length = @Length_45141675,
+  @Type = @Type_3ff8d976,
+  @Length = @Length_3ff8d976,
   @Length_Clear = 1,
-  @Precision = @Precision_45141675,
+  @Precision = @Precision_3ff8d976,
   @Precision_Clear = 1,
-  @Scale = @Scale_45141675,
+  @Scale = @Scale_3ff8d976,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_45141675,
-  @DefaultValue = @DefaultValue_45141675,
+  @AllowsNull = @AllowsNull_3ff8d976,
+  @DefaultValue = @DefaultValue_3ff8d976,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_45141675,
-  @IsUniqueKey = @IsUniqueKey_45141675,
-  @IsReadOnly = @IsReadOnly_45141675,
-  @IsRequired = @IsRequired_45141675,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_45141675,
+  @IsPrimaryKey = @IsPrimaryKey_3ff8d976,
+  @IsUniqueKey = @IsUniqueKey_3ff8d976,
+  @IsReadOnly = @IsReadOnly_3ff8d976,
+  @IsRequired = @IsRequired_3ff8d976,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_3ff8d976,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_45141675,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_3ff8d976,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_45141675,
-  @Configuration = @Configuration_45141675,
-  @Status = @Status_45141675,
-  @IsCustom = @IsCustom_45141675,
-  @MetadataSource = @MetadataSource_45141675;
+  @Sequence = @Sequence_3ff8d976,
+  @Configuration = @Configuration_3ff8d976,
+  @Status = @Status_3ff8d976,
+  @IsCustom = @IsCustom_3ff8d976,
+  @MetadataSource = @MetadataSource_3ff8d976;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_ae134fd5 UNIQUEIDENTIFIER,
-@IntegrationObjectID_ae134fd5 UNIQUEIDENTIFIER,
-@Name_ae134fd5 NVARCHAR(255),
-@DisplayName_ae134fd5 NVARCHAR(255),
-@Description_ae134fd5 NVARCHAR(MAX),
-@Category_ae134fd5 NVARCHAR(100),
-@Type_ae134fd5 NVARCHAR(100),
-@Length_ae134fd5 INT,
-@Precision_ae134fd5 INT,
-@Scale_ae134fd5 INT,
-@AllowsNull_ae134fd5 BIT,
-@DefaultValue_ae134fd5 NVARCHAR(255),
-@IsPrimaryKey_ae134fd5 BIT,
-@IsUniqueKey_ae134fd5 BIT,
-@IsReadOnly_ae134fd5 BIT,
-@IsRequired_ae134fd5 BIT,
-@RelatedIntegrationObjectID_ae134fd5 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_ae134fd5 NVARCHAR(255),
-@Sequence_ae134fd5 INT,
-@Configuration_ae134fd5 NVARCHAR(MAX),
-@Status_ae134fd5 NVARCHAR(25),
-@IsCustom_ae134fd5 BIT,
-@MetadataSource_ae134fd5 NVARCHAR(20)
+DECLARE @ID_27a183a6 UNIQUEIDENTIFIER,
+@IntegrationObjectID_27a183a6 UNIQUEIDENTIFIER,
+@Name_27a183a6 NVARCHAR(255),
+@DisplayName_27a183a6 NVARCHAR(255),
+@Description_27a183a6 NVARCHAR(MAX),
+@Category_27a183a6 NVARCHAR(100),
+@Type_27a183a6 NVARCHAR(100),
+@Length_27a183a6 INT,
+@Precision_27a183a6 INT,
+@Scale_27a183a6 INT,
+@AllowsNull_27a183a6 BIT,
+@DefaultValue_27a183a6 NVARCHAR(255),
+@IsPrimaryKey_27a183a6 BIT,
+@IsUniqueKey_27a183a6 BIT,
+@IsReadOnly_27a183a6 BIT,
+@IsRequired_27a183a6 BIT,
+@RelatedIntegrationObjectID_27a183a6 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_27a183a6 NVARCHAR(255),
+@Sequence_27a183a6 INT,
+@Configuration_27a183a6 NVARCHAR(MAX),
+@Status_27a183a6 NVARCHAR(25),
+@IsCustom_27a183a6 BIT,
+@MetadataSource_27a183a6 NVARCHAR(20)
 SET
-  @ID_ae134fd5 = '2150206a-4215-4d16-aa64-cc18734c98ef'
+  @ID_27a183a6 = '2150206A-4215-4D16-AA64-CC18734C98EF'
 SET
-  @IntegrationObjectID_ae134fd5 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_27a183a6 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_ae134fd5 = N'created_at'
+  @Name_27a183a6 = N'created_at'
 SET
-  @DisplayName_ae134fd5 = N'Created At'
+  @DisplayName_27a183a6 = N'Created At'
 SET
-  @Description_ae134fd5 = N'The same instant as an ISO-8601 UTC datetime. This is the incremental watermark field.'
+  @Description_27a183a6 = N'The same instant as an ISO-8601 UTC datetime. This is the incremental watermark field.'
 SET
-  @Type_ae134fd5 = N'Datetime'
+  @Type_27a183a6 = N'Datetime'
 SET
-  @AllowsNull_ae134fd5 = 0
+  @AllowsNull_27a183a6 = 0
 SET
-  @IsPrimaryKey_ae134fd5 = 0
+  @IsPrimaryKey_27a183a6 = 0
 SET
-  @IsUniqueKey_ae134fd5 = 0
+  @IsUniqueKey_27a183a6 = 0
 SET
-  @IsReadOnly_ae134fd5 = 1
+  @IsReadOnly_27a183a6 = 1
 SET
-  @IsRequired_ae134fd5 = 0
+  @IsRequired_27a183a6 = 0
 SET
-  @Sequence_ae134fd5 = 5
+  @Sequence_27a183a6 = 5
 SET
-  @Configuration_ae134fd5 = N'{
+  @Configuration_27a183a6 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_ae134fd5 = N'Active'
+  @Status_27a183a6 = N'Active'
 SET
-  @IsCustom_ae134fd5 = 0
+  @IsCustom_27a183a6 = 0
 SET
-  @MetadataSource_ae134fd5 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_ae134fd5,
-  @IntegrationObjectID = @IntegrationObjectID_ae134fd5,
-  @Name = @Name_ae134fd5,
-  @DisplayName = @DisplayName_ae134fd5,
-  @Description = @Description_ae134fd5,
-  @Category = @Category_ae134fd5,
+  @MetadataSource_27a183a6 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_27a183a6,
+  @IntegrationObjectID = @IntegrationObjectID_27a183a6,
+  @Name = @Name_27a183a6,
+  @DisplayName = @DisplayName_27a183a6,
+  @Description = @Description_27a183a6,
+  @Category = @Category_27a183a6,
   @Category_Clear = 1,
-  @Type = @Type_ae134fd5,
-  @Length = @Length_ae134fd5,
+  @Type = @Type_27a183a6,
+  @Length = @Length_27a183a6,
   @Length_Clear = 1,
-  @Precision = @Precision_ae134fd5,
+  @Precision = @Precision_27a183a6,
   @Precision_Clear = 1,
-  @Scale = @Scale_ae134fd5,
+  @Scale = @Scale_27a183a6,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_ae134fd5,
-  @DefaultValue = @DefaultValue_ae134fd5,
+  @AllowsNull = @AllowsNull_27a183a6,
+  @DefaultValue = @DefaultValue_27a183a6,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_ae134fd5,
-  @IsUniqueKey = @IsUniqueKey_ae134fd5,
-  @IsReadOnly = @IsReadOnly_ae134fd5,
-  @IsRequired = @IsRequired_ae134fd5,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_ae134fd5,
+  @IsPrimaryKey = @IsPrimaryKey_27a183a6,
+  @IsUniqueKey = @IsUniqueKey_27a183a6,
+  @IsReadOnly = @IsReadOnly_27a183a6,
+  @IsRequired = @IsRequired_27a183a6,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_27a183a6,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_ae134fd5,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_27a183a6,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_ae134fd5,
-  @Configuration = @Configuration_ae134fd5,
-  @Status = @Status_ae134fd5,
-  @IsCustom = @IsCustom_ae134fd5,
-  @MetadataSource = @MetadataSource_ae134fd5;
+  @Sequence = @Sequence_27a183a6,
+  @Configuration = @Configuration_27a183a6,
+  @Status = @Status_27a183a6,
+  @IsCustom = @IsCustom_27a183a6,
+  @MetadataSource = @MetadataSource_27a183a6;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_1342c895 UNIQUEIDENTIFIER,
-@IntegrationObjectID_1342c895 UNIQUEIDENTIFIER,
-@Name_1342c895 NVARCHAR(255),
-@DisplayName_1342c895 NVARCHAR(255),
-@Description_1342c895 NVARCHAR(MAX),
-@Category_1342c895 NVARCHAR(100),
-@Type_1342c895 NVARCHAR(100),
-@Length_1342c895 INT,
-@Precision_1342c895 INT,
-@Scale_1342c895 INT,
-@AllowsNull_1342c895 BIT,
-@DefaultValue_1342c895 NVARCHAR(255),
-@IsPrimaryKey_1342c895 BIT,
-@IsUniqueKey_1342c895 BIT,
-@IsReadOnly_1342c895 BIT,
-@IsRequired_1342c895 BIT,
-@RelatedIntegrationObjectID_1342c895 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_1342c895 NVARCHAR(255),
-@Sequence_1342c895 INT,
-@Configuration_1342c895 NVARCHAR(MAX),
-@Status_1342c895 NVARCHAR(25),
-@IsCustom_1342c895 BIT,
-@MetadataSource_1342c895 NVARCHAR(20)
+DECLARE @ID_bc61171c UNIQUEIDENTIFIER,
+@IntegrationObjectID_bc61171c UNIQUEIDENTIFIER,
+@Name_bc61171c NVARCHAR(255),
+@DisplayName_bc61171c NVARCHAR(255),
+@Description_bc61171c NVARCHAR(MAX),
+@Category_bc61171c NVARCHAR(100),
+@Type_bc61171c NVARCHAR(100),
+@Length_bc61171c INT,
+@Precision_bc61171c INT,
+@Scale_bc61171c INT,
+@AllowsNull_bc61171c BIT,
+@DefaultValue_bc61171c NVARCHAR(255),
+@IsPrimaryKey_bc61171c BIT,
+@IsUniqueKey_bc61171c BIT,
+@IsReadOnly_bc61171c BIT,
+@IsRequired_bc61171c BIT,
+@RelatedIntegrationObjectID_bc61171c UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_bc61171c NVARCHAR(255),
+@Sequence_bc61171c INT,
+@Configuration_bc61171c NVARCHAR(MAX),
+@Status_bc61171c NVARCHAR(25),
+@IsCustom_bc61171c BIT,
+@MetadataSource_bc61171c NVARCHAR(20)
 SET
-  @ID_1342c895 = '275d0167-d5cf-4983-a38f-0e3aa6009a39'
+  @ID_bc61171c = '275D0167-D5CF-4983-A38F-0E3AA6009A39'
 SET
-  @IntegrationObjectID_1342c895 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_bc61171c = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_1342c895 = N'severity'
+  @Name_bc61171c = N'severity'
 SET
-  @DisplayName_1342c895 = N'Severity'
+  @DisplayName_bc61171c = N'Severity'
 SET
-  @Description_1342c895 = N'Raw numeric severity level as stored by the plugin: 500, 400, 300, 250 or 200.'
+  @Description_bc61171c = N'Raw numeric severity level as stored by the plugin: 500, 400, 300, 250 or 200.'
 SET
-  @Type_1342c895 = N'String'
+  @Type_bc61171c = N'String'
 SET
-  @AllowsNull_1342c895 = 1
+  @AllowsNull_bc61171c = 1
 SET
-  @IsPrimaryKey_1342c895 = 0
+  @IsPrimaryKey_bc61171c = 0
 SET
-  @IsUniqueKey_1342c895 = 0
+  @IsUniqueKey_bc61171c = 0
 SET
-  @IsReadOnly_1342c895 = 1
+  @IsReadOnly_bc61171c = 1
 SET
-  @IsRequired_1342c895 = 0
+  @IsRequired_bc61171c = 0
 SET
-  @Sequence_1342c895 = 6
+  @Sequence_bc61171c = 6
 SET
-  @Configuration_1342c895 = N'{
+  @Configuration_bc61171c = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_1342c895 = N'Active'
+  @Status_bc61171c = N'Active'
 SET
-  @IsCustom_1342c895 = 0
+  @IsCustom_bc61171c = 0
 SET
-  @MetadataSource_1342c895 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_1342c895,
-  @IntegrationObjectID = @IntegrationObjectID_1342c895,
-  @Name = @Name_1342c895,
-  @DisplayName = @DisplayName_1342c895,
-  @Description = @Description_1342c895,
-  @Category = @Category_1342c895,
+  @MetadataSource_bc61171c = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_bc61171c,
+  @IntegrationObjectID = @IntegrationObjectID_bc61171c,
+  @Name = @Name_bc61171c,
+  @DisplayName = @DisplayName_bc61171c,
+  @Description = @Description_bc61171c,
+  @Category = @Category_bc61171c,
   @Category_Clear = 1,
-  @Type = @Type_1342c895,
-  @Length = @Length_1342c895,
+  @Type = @Type_bc61171c,
+  @Length = @Length_bc61171c,
   @Length_Clear = 1,
-  @Precision = @Precision_1342c895,
+  @Precision = @Precision_bc61171c,
   @Precision_Clear = 1,
-  @Scale = @Scale_1342c895,
+  @Scale = @Scale_bc61171c,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_1342c895,
-  @DefaultValue = @DefaultValue_1342c895,
+  @AllowsNull = @AllowsNull_bc61171c,
+  @DefaultValue = @DefaultValue_bc61171c,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_1342c895,
-  @IsUniqueKey = @IsUniqueKey_1342c895,
-  @IsReadOnly = @IsReadOnly_1342c895,
-  @IsRequired = @IsRequired_1342c895,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_1342c895,
+  @IsPrimaryKey = @IsPrimaryKey_bc61171c,
+  @IsUniqueKey = @IsUniqueKey_bc61171c,
+  @IsReadOnly = @IsReadOnly_bc61171c,
+  @IsRequired = @IsRequired_bc61171c,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_bc61171c,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_1342c895,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_bc61171c,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_1342c895,
-  @Configuration = @Configuration_1342c895,
-  @Status = @Status_1342c895,
-  @IsCustom = @IsCustom_1342c895,
-  @MetadataSource = @MetadataSource_1342c895;
+  @Sequence = @Sequence_bc61171c,
+  @Configuration = @Configuration_bc61171c,
+  @Status = @Status_bc61171c,
+  @IsCustom = @IsCustom_bc61171c,
+  @MetadataSource = @MetadataSource_bc61171c;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_9bc2705c UNIQUEIDENTIFIER,
-@IntegrationObjectID_9bc2705c UNIQUEIDENTIFIER,
-@Name_9bc2705c NVARCHAR(255),
-@DisplayName_9bc2705c NVARCHAR(255),
-@Description_9bc2705c NVARCHAR(MAX),
-@Category_9bc2705c NVARCHAR(100),
-@Type_9bc2705c NVARCHAR(100),
-@Length_9bc2705c INT,
-@Precision_9bc2705c INT,
-@Scale_9bc2705c INT,
-@AllowsNull_9bc2705c BIT,
-@DefaultValue_9bc2705c NVARCHAR(255),
-@IsPrimaryKey_9bc2705c BIT,
-@IsUniqueKey_9bc2705c BIT,
-@IsReadOnly_9bc2705c BIT,
-@IsRequired_9bc2705c BIT,
-@RelatedIntegrationObjectID_9bc2705c UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_9bc2705c NVARCHAR(255),
-@Sequence_9bc2705c INT,
-@Configuration_9bc2705c NVARCHAR(MAX),
-@Status_9bc2705c NVARCHAR(25),
-@IsCustom_9bc2705c BIT,
-@MetadataSource_9bc2705c NVARCHAR(20)
+DECLARE @ID_0c2863f3 UNIQUEIDENTIFIER,
+@IntegrationObjectID_0c2863f3 UNIQUEIDENTIFIER,
+@Name_0c2863f3 NVARCHAR(255),
+@DisplayName_0c2863f3 NVARCHAR(255),
+@Description_0c2863f3 NVARCHAR(MAX),
+@Category_0c2863f3 NVARCHAR(100),
+@Type_0c2863f3 NVARCHAR(100),
+@Length_0c2863f3 INT,
+@Precision_0c2863f3 INT,
+@Scale_0c2863f3 INT,
+@AllowsNull_0c2863f3 BIT,
+@DefaultValue_0c2863f3 NVARCHAR(255),
+@IsPrimaryKey_0c2863f3 BIT,
+@IsUniqueKey_0c2863f3 BIT,
+@IsReadOnly_0c2863f3 BIT,
+@IsRequired_0c2863f3 BIT,
+@RelatedIntegrationObjectID_0c2863f3 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_0c2863f3 NVARCHAR(255),
+@Sequence_0c2863f3 INT,
+@Configuration_0c2863f3 NVARCHAR(MAX),
+@Status_0c2863f3 NVARCHAR(25),
+@IsCustom_0c2863f3 BIT,
+@MetadataSource_0c2863f3 NVARCHAR(20)
 SET
-  @ID_9bc2705c = '62640cd4-25fb-4399-85c7-d5c9da821b10'
+  @ID_0c2863f3 = '62640CD4-25FB-4399-85C7-D5C9DA821B10'
 SET
-  @IntegrationObjectID_9bc2705c = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_0c2863f3 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_9bc2705c = N'severity_label'
+  @Name_0c2863f3 = N'severity_label'
 SET
-  @DisplayName_9bc2705c = N'Severity Label'
+  @DisplayName_0c2863f3 = N'Severity Label'
 SET
-  @Description_9bc2705c = N'Severity resolved to a name: Critical, High, Medium, Low, Informational or Unknown.'
+  @Description_0c2863f3 = N'Severity resolved to a name: Critical, High, Medium, Low, Informational or Unknown.'
 SET
-  @Type_9bc2705c = N'String'
+  @Type_0c2863f3 = N'String'
 SET
-  @AllowsNull_9bc2705c = 1
+  @AllowsNull_0c2863f3 = 1
 SET
-  @IsPrimaryKey_9bc2705c = 0
+  @IsPrimaryKey_0c2863f3 = 0
 SET
-  @IsUniqueKey_9bc2705c = 0
+  @IsUniqueKey_0c2863f3 = 0
 SET
-  @IsReadOnly_9bc2705c = 1
+  @IsReadOnly_0c2863f3 = 1
 SET
-  @IsRequired_9bc2705c = 0
+  @IsRequired_0c2863f3 = 0
 SET
-  @Sequence_9bc2705c = 7
+  @Sequence_0c2863f3 = 7
 SET
-  @Configuration_9bc2705c = N'{
+  @Configuration_0c2863f3 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_9bc2705c = N'Active'
+  @Status_0c2863f3 = N'Active'
 SET
-  @IsCustom_9bc2705c = 0
+  @IsCustom_0c2863f3 = 0
 SET
-  @MetadataSource_9bc2705c = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_9bc2705c,
-  @IntegrationObjectID = @IntegrationObjectID_9bc2705c,
-  @Name = @Name_9bc2705c,
-  @DisplayName = @DisplayName_9bc2705c,
-  @Description = @Description_9bc2705c,
-  @Category = @Category_9bc2705c,
+  @MetadataSource_0c2863f3 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_0c2863f3,
+  @IntegrationObjectID = @IntegrationObjectID_0c2863f3,
+  @Name = @Name_0c2863f3,
+  @DisplayName = @DisplayName_0c2863f3,
+  @Description = @Description_0c2863f3,
+  @Category = @Category_0c2863f3,
   @Category_Clear = 1,
-  @Type = @Type_9bc2705c,
-  @Length = @Length_9bc2705c,
+  @Type = @Type_0c2863f3,
+  @Length = @Length_0c2863f3,
   @Length_Clear = 1,
-  @Precision = @Precision_9bc2705c,
+  @Precision = @Precision_0c2863f3,
   @Precision_Clear = 1,
-  @Scale = @Scale_9bc2705c,
+  @Scale = @Scale_0c2863f3,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_9bc2705c,
-  @DefaultValue = @DefaultValue_9bc2705c,
+  @AllowsNull = @AllowsNull_0c2863f3,
+  @DefaultValue = @DefaultValue_0c2863f3,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_9bc2705c,
-  @IsUniqueKey = @IsUniqueKey_9bc2705c,
-  @IsReadOnly = @IsReadOnly_9bc2705c,
-  @IsRequired = @IsRequired_9bc2705c,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_9bc2705c,
+  @IsPrimaryKey = @IsPrimaryKey_0c2863f3,
+  @IsUniqueKey = @IsUniqueKey_0c2863f3,
+  @IsReadOnly = @IsReadOnly_0c2863f3,
+  @IsRequired = @IsRequired_0c2863f3,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_0c2863f3,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_9bc2705c,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_0c2863f3,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_9bc2705c,
-  @Configuration = @Configuration_9bc2705c,
-  @Status = @Status_9bc2705c,
-  @IsCustom = @IsCustom_9bc2705c,
-  @MetadataSource = @MetadataSource_9bc2705c;
+  @Sequence = @Sequence_0c2863f3,
+  @Configuration = @Configuration_0c2863f3,
+  @Status = @Status_0c2863f3,
+  @IsCustom = @IsCustom_0c2863f3,
+  @MetadataSource = @MetadataSource_0c2863f3;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_093d6c52 UNIQUEIDENTIFIER,
-@IntegrationObjectID_093d6c52 UNIQUEIDENTIFIER,
-@Name_093d6c52 NVARCHAR(255),
-@DisplayName_093d6c52 NVARCHAR(255),
-@Description_093d6c52 NVARCHAR(MAX),
-@Category_093d6c52 NVARCHAR(100),
-@Type_093d6c52 NVARCHAR(100),
-@Length_093d6c52 INT,
-@Precision_093d6c52 INT,
-@Scale_093d6c52 INT,
-@AllowsNull_093d6c52 BIT,
-@DefaultValue_093d6c52 NVARCHAR(255),
-@IsPrimaryKey_093d6c52 BIT,
-@IsUniqueKey_093d6c52 BIT,
-@IsReadOnly_093d6c52 BIT,
-@IsRequired_093d6c52 BIT,
-@RelatedIntegrationObjectID_093d6c52 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_093d6c52 NVARCHAR(255),
-@Sequence_093d6c52 INT,
-@Configuration_093d6c52 NVARCHAR(MAX),
-@Status_093d6c52 NVARCHAR(25),
-@IsCustom_093d6c52 BIT,
-@MetadataSource_093d6c52 NVARCHAR(20)
+DECLARE @ID_40ca04b1 UNIQUEIDENTIFIER,
+@IntegrationObjectID_40ca04b1 UNIQUEIDENTIFIER,
+@Name_40ca04b1 NVARCHAR(255),
+@DisplayName_40ca04b1 NVARCHAR(255),
+@Description_40ca04b1 NVARCHAR(MAX),
+@Category_40ca04b1 NVARCHAR(100),
+@Type_40ca04b1 NVARCHAR(100),
+@Length_40ca04b1 INT,
+@Precision_40ca04b1 INT,
+@Scale_40ca04b1 INT,
+@AllowsNull_40ca04b1 BIT,
+@DefaultValue_40ca04b1 NVARCHAR(255),
+@IsPrimaryKey_40ca04b1 BIT,
+@IsUniqueKey_40ca04b1 BIT,
+@IsReadOnly_40ca04b1 BIT,
+@IsRequired_40ca04b1 BIT,
+@RelatedIntegrationObjectID_40ca04b1 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_40ca04b1 NVARCHAR(255),
+@Sequence_40ca04b1 INT,
+@Configuration_40ca04b1 NVARCHAR(MAX),
+@Status_40ca04b1 NVARCHAR(25),
+@IsCustom_40ca04b1 BIT,
+@MetadataSource_40ca04b1 NVARCHAR(20)
 SET
-  @ID_093d6c52 = 'd2ec5b7f-2495-4087-bcf0-c87347ac9810'
+  @ID_40ca04b1 = 'D2EC5B7F-2495-4087-BCF0-C87347AC9810'
 SET
-  @IntegrationObjectID_093d6c52 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_40ca04b1 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_093d6c52 = N'object'
+  @Name_40ca04b1 = N'object'
 SET
-  @DisplayName_093d6c52 = N'Object'
+  @DisplayName_40ca04b1 = N'Object'
 SET
-  @Description_093d6c52 = N'Subject of the activity, e.g. user, post or plugin.'
+  @Description_40ca04b1 = N'Subject of the activity, e.g. user, post or plugin.'
 SET
-  @Type_093d6c52 = N'String'
+  @Type_40ca04b1 = N'String'
 SET
-  @AllowsNull_093d6c52 = 1
+  @AllowsNull_40ca04b1 = 1
 SET
-  @IsPrimaryKey_093d6c52 = 0
+  @IsPrimaryKey_40ca04b1 = 0
 SET
-  @IsUniqueKey_093d6c52 = 0
+  @IsUniqueKey_40ca04b1 = 0
 SET
-  @IsReadOnly_093d6c52 = 1
+  @IsReadOnly_40ca04b1 = 1
 SET
-  @IsRequired_093d6c52 = 0
+  @IsRequired_40ca04b1 = 0
 SET
-  @Sequence_093d6c52 = 8
+  @Sequence_40ca04b1 = 8
 SET
-  @Configuration_093d6c52 = N'{
+  @Configuration_40ca04b1 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_093d6c52 = N'Active'
+  @Status_40ca04b1 = N'Active'
 SET
-  @IsCustom_093d6c52 = 0
+  @IsCustom_40ca04b1 = 0
 SET
-  @MetadataSource_093d6c52 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_093d6c52,
-  @IntegrationObjectID = @IntegrationObjectID_093d6c52,
-  @Name = @Name_093d6c52,
-  @DisplayName = @DisplayName_093d6c52,
-  @Description = @Description_093d6c52,
-  @Category = @Category_093d6c52,
+  @MetadataSource_40ca04b1 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_40ca04b1,
+  @IntegrationObjectID = @IntegrationObjectID_40ca04b1,
+  @Name = @Name_40ca04b1,
+  @DisplayName = @DisplayName_40ca04b1,
+  @Description = @Description_40ca04b1,
+  @Category = @Category_40ca04b1,
   @Category_Clear = 1,
-  @Type = @Type_093d6c52,
-  @Length = @Length_093d6c52,
+  @Type = @Type_40ca04b1,
+  @Length = @Length_40ca04b1,
   @Length_Clear = 1,
-  @Precision = @Precision_093d6c52,
+  @Precision = @Precision_40ca04b1,
   @Precision_Clear = 1,
-  @Scale = @Scale_093d6c52,
+  @Scale = @Scale_40ca04b1,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_093d6c52,
-  @DefaultValue = @DefaultValue_093d6c52,
+  @AllowsNull = @AllowsNull_40ca04b1,
+  @DefaultValue = @DefaultValue_40ca04b1,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_093d6c52,
-  @IsUniqueKey = @IsUniqueKey_093d6c52,
-  @IsReadOnly = @IsReadOnly_093d6c52,
-  @IsRequired = @IsRequired_093d6c52,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_093d6c52,
+  @IsPrimaryKey = @IsPrimaryKey_40ca04b1,
+  @IsUniqueKey = @IsUniqueKey_40ca04b1,
+  @IsReadOnly = @IsReadOnly_40ca04b1,
+  @IsRequired = @IsRequired_40ca04b1,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_40ca04b1,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_093d6c52,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_40ca04b1,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_093d6c52,
-  @Configuration = @Configuration_093d6c52,
-  @Status = @Status_093d6c52,
-  @IsCustom = @IsCustom_093d6c52,
-  @MetadataSource = @MetadataSource_093d6c52;
+  @Sequence = @Sequence_40ca04b1,
+  @Configuration = @Configuration_40ca04b1,
+  @Status = @Status_40ca04b1,
+  @IsCustom = @IsCustom_40ca04b1,
+  @MetadataSource = @MetadataSource_40ca04b1;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_56f5e53d UNIQUEIDENTIFIER,
-@IntegrationObjectID_56f5e53d UNIQUEIDENTIFIER,
-@Name_56f5e53d NVARCHAR(255),
-@DisplayName_56f5e53d NVARCHAR(255),
-@Description_56f5e53d NVARCHAR(MAX),
-@Category_56f5e53d NVARCHAR(100),
-@Type_56f5e53d NVARCHAR(100),
-@Length_56f5e53d INT,
-@Precision_56f5e53d INT,
-@Scale_56f5e53d INT,
-@AllowsNull_56f5e53d BIT,
-@DefaultValue_56f5e53d NVARCHAR(255),
-@IsPrimaryKey_56f5e53d BIT,
-@IsUniqueKey_56f5e53d BIT,
-@IsReadOnly_56f5e53d BIT,
-@IsRequired_56f5e53d BIT,
-@RelatedIntegrationObjectID_56f5e53d UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_56f5e53d NVARCHAR(255),
-@Sequence_56f5e53d INT,
-@Configuration_56f5e53d NVARCHAR(MAX),
-@Status_56f5e53d NVARCHAR(25),
-@IsCustom_56f5e53d BIT,
-@MetadataSource_56f5e53d NVARCHAR(20)
+DECLARE @ID_9b1aa014 UNIQUEIDENTIFIER,
+@IntegrationObjectID_9b1aa014 UNIQUEIDENTIFIER,
+@Name_9b1aa014 NVARCHAR(255),
+@DisplayName_9b1aa014 NVARCHAR(255),
+@Description_9b1aa014 NVARCHAR(MAX),
+@Category_9b1aa014 NVARCHAR(100),
+@Type_9b1aa014 NVARCHAR(100),
+@Length_9b1aa014 INT,
+@Precision_9b1aa014 INT,
+@Scale_9b1aa014 INT,
+@AllowsNull_9b1aa014 BIT,
+@DefaultValue_9b1aa014 NVARCHAR(255),
+@IsPrimaryKey_9b1aa014 BIT,
+@IsUniqueKey_9b1aa014 BIT,
+@IsReadOnly_9b1aa014 BIT,
+@IsRequired_9b1aa014 BIT,
+@RelatedIntegrationObjectID_9b1aa014 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_9b1aa014 NVARCHAR(255),
+@Sequence_9b1aa014 INT,
+@Configuration_9b1aa014 NVARCHAR(MAX),
+@Status_9b1aa014 NVARCHAR(25),
+@IsCustom_9b1aa014 BIT,
+@MetadataSource_9b1aa014 NVARCHAR(20)
 SET
-  @ID_56f5e53d = 'ba435b7d-340c-4038-8f19-6ed068dcfbf9'
+  @ID_9b1aa014 = 'BA435B7D-340C-4038-8F19-6ED068DCFBF9'
 SET
-  @IntegrationObjectID_56f5e53d = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_9b1aa014 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_56f5e53d = N'event_type'
+  @Name_9b1aa014 = N'event_type'
 SET
-  @DisplayName_56f5e53d = N'Event Type'
+  @DisplayName_9b1aa014 = N'Event Type'
 SET
-  @Description_56f5e53d = N'Classification of the activity, e.g. login, modified or deleted.'
+  @Description_9b1aa014 = N'Classification of the activity, e.g. login, modified or deleted.'
 SET
-  @Type_56f5e53d = N'String'
+  @Type_9b1aa014 = N'String'
 SET
-  @AllowsNull_56f5e53d = 1
+  @AllowsNull_9b1aa014 = 1
 SET
-  @IsPrimaryKey_56f5e53d = 0
+  @IsPrimaryKey_9b1aa014 = 0
 SET
-  @IsUniqueKey_56f5e53d = 0
+  @IsUniqueKey_9b1aa014 = 0
 SET
-  @IsReadOnly_56f5e53d = 1
+  @IsReadOnly_9b1aa014 = 1
 SET
-  @IsRequired_56f5e53d = 0
+  @IsRequired_9b1aa014 = 0
 SET
-  @Sequence_56f5e53d = 9
+  @Sequence_9b1aa014 = 9
 SET
-  @Configuration_56f5e53d = N'{
+  @Configuration_9b1aa014 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_56f5e53d = N'Active'
+  @Status_9b1aa014 = N'Active'
 SET
-  @IsCustom_56f5e53d = 0
+  @IsCustom_9b1aa014 = 0
 SET
-  @MetadataSource_56f5e53d = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_56f5e53d,
-  @IntegrationObjectID = @IntegrationObjectID_56f5e53d,
-  @Name = @Name_56f5e53d,
-  @DisplayName = @DisplayName_56f5e53d,
-  @Description = @Description_56f5e53d,
-  @Category = @Category_56f5e53d,
+  @MetadataSource_9b1aa014 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_9b1aa014,
+  @IntegrationObjectID = @IntegrationObjectID_9b1aa014,
+  @Name = @Name_9b1aa014,
+  @DisplayName = @DisplayName_9b1aa014,
+  @Description = @Description_9b1aa014,
+  @Category = @Category_9b1aa014,
   @Category_Clear = 1,
-  @Type = @Type_56f5e53d,
-  @Length = @Length_56f5e53d,
+  @Type = @Type_9b1aa014,
+  @Length = @Length_9b1aa014,
   @Length_Clear = 1,
-  @Precision = @Precision_56f5e53d,
+  @Precision = @Precision_9b1aa014,
   @Precision_Clear = 1,
-  @Scale = @Scale_56f5e53d,
+  @Scale = @Scale_9b1aa014,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_56f5e53d,
-  @DefaultValue = @DefaultValue_56f5e53d,
+  @AllowsNull = @AllowsNull_9b1aa014,
+  @DefaultValue = @DefaultValue_9b1aa014,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_56f5e53d,
-  @IsUniqueKey = @IsUniqueKey_56f5e53d,
-  @IsReadOnly = @IsReadOnly_56f5e53d,
-  @IsRequired = @IsRequired_56f5e53d,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_56f5e53d,
+  @IsPrimaryKey = @IsPrimaryKey_9b1aa014,
+  @IsUniqueKey = @IsUniqueKey_9b1aa014,
+  @IsReadOnly = @IsReadOnly_9b1aa014,
+  @IsRequired = @IsRequired_9b1aa014,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_9b1aa014,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_56f5e53d,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_9b1aa014,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_56f5e53d,
-  @Configuration = @Configuration_56f5e53d,
-  @Status = @Status_56f5e53d,
-  @IsCustom = @IsCustom_56f5e53d,
-  @MetadataSource = @MetadataSource_56f5e53d;
+  @Sequence = @Sequence_9b1aa014,
+  @Configuration = @Configuration_9b1aa014,
+  @Status = @Status_9b1aa014,
+  @IsCustom = @IsCustom_9b1aa014,
+  @MetadataSource = @MetadataSource_9b1aa014;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_f58d9cf3 UNIQUEIDENTIFIER,
-@IntegrationObjectID_f58d9cf3 UNIQUEIDENTIFIER,
-@Name_f58d9cf3 NVARCHAR(255),
-@DisplayName_f58d9cf3 NVARCHAR(255),
-@Description_f58d9cf3 NVARCHAR(MAX),
-@Category_f58d9cf3 NVARCHAR(100),
-@Type_f58d9cf3 NVARCHAR(100),
-@Length_f58d9cf3 INT,
-@Precision_f58d9cf3 INT,
-@Scale_f58d9cf3 INT,
-@AllowsNull_f58d9cf3 BIT,
-@DefaultValue_f58d9cf3 NVARCHAR(255),
-@IsPrimaryKey_f58d9cf3 BIT,
-@IsUniqueKey_f58d9cf3 BIT,
-@IsReadOnly_f58d9cf3 BIT,
-@IsRequired_f58d9cf3 BIT,
-@RelatedIntegrationObjectID_f58d9cf3 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_f58d9cf3 NVARCHAR(255),
-@Sequence_f58d9cf3 INT,
-@Configuration_f58d9cf3 NVARCHAR(MAX),
-@Status_f58d9cf3 NVARCHAR(25),
-@IsCustom_f58d9cf3 BIT,
-@MetadataSource_f58d9cf3 NVARCHAR(20)
+DECLARE @ID_86a43cc4 UNIQUEIDENTIFIER,
+@IntegrationObjectID_86a43cc4 UNIQUEIDENTIFIER,
+@Name_86a43cc4 NVARCHAR(255),
+@DisplayName_86a43cc4 NVARCHAR(255),
+@Description_86a43cc4 NVARCHAR(MAX),
+@Category_86a43cc4 NVARCHAR(100),
+@Type_86a43cc4 NVARCHAR(100),
+@Length_86a43cc4 INT,
+@Precision_86a43cc4 INT,
+@Scale_86a43cc4 INT,
+@AllowsNull_86a43cc4 BIT,
+@DefaultValue_86a43cc4 NVARCHAR(255),
+@IsPrimaryKey_86a43cc4 BIT,
+@IsUniqueKey_86a43cc4 BIT,
+@IsReadOnly_86a43cc4 BIT,
+@IsRequired_86a43cc4 BIT,
+@RelatedIntegrationObjectID_86a43cc4 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_86a43cc4 NVARCHAR(255),
+@Sequence_86a43cc4 INT,
+@Configuration_86a43cc4 NVARCHAR(MAX),
+@Status_86a43cc4 NVARCHAR(25),
+@IsCustom_86a43cc4 BIT,
+@MetadataSource_86a43cc4 NVARCHAR(20)
 SET
-  @ID_f58d9cf3 = 'cc4e4400-b43d-4b3d-bcdb-2641e8520389'
+  @ID_86a43cc4 = 'CC4E4400-B43D-4B3D-BCDB-2641E8520389'
 SET
-  @IntegrationObjectID_f58d9cf3 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_86a43cc4 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_f58d9cf3 = N'username'
+  @Name_86a43cc4 = N'username'
 SET
-  @DisplayName_f58d9cf3 = N'Username'
+  @DisplayName_86a43cc4 = N'Username'
 SET
-  @Description_f58d9cf3 = N'WordPress username responsible for the event.'
+  @Description_86a43cc4 = N'WordPress username responsible for the event.'
 SET
-  @Type_f58d9cf3 = N'String'
+  @Type_86a43cc4 = N'String'
 SET
-  @AllowsNull_f58d9cf3 = 1
+  @AllowsNull_86a43cc4 = 1
 SET
-  @IsPrimaryKey_f58d9cf3 = 0
+  @IsPrimaryKey_86a43cc4 = 0
 SET
-  @IsUniqueKey_f58d9cf3 = 0
+  @IsUniqueKey_86a43cc4 = 0
 SET
-  @IsReadOnly_f58d9cf3 = 1
+  @IsReadOnly_86a43cc4 = 1
 SET
-  @IsRequired_f58d9cf3 = 0
+  @IsRequired_86a43cc4 = 0
 SET
-  @Sequence_f58d9cf3 = 10
+  @Sequence_86a43cc4 = 10
 SET
-  @Configuration_f58d9cf3 = N'{
+  @Configuration_86a43cc4 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_f58d9cf3 = N'Active'
+  @Status_86a43cc4 = N'Active'
 SET
-  @IsCustom_f58d9cf3 = 0
+  @IsCustom_86a43cc4 = 0
 SET
-  @MetadataSource_f58d9cf3 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_f58d9cf3,
-  @IntegrationObjectID = @IntegrationObjectID_f58d9cf3,
-  @Name = @Name_f58d9cf3,
-  @DisplayName = @DisplayName_f58d9cf3,
-  @Description = @Description_f58d9cf3,
-  @Category = @Category_f58d9cf3,
+  @MetadataSource_86a43cc4 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_86a43cc4,
+  @IntegrationObjectID = @IntegrationObjectID_86a43cc4,
+  @Name = @Name_86a43cc4,
+  @DisplayName = @DisplayName_86a43cc4,
+  @Description = @Description_86a43cc4,
+  @Category = @Category_86a43cc4,
   @Category_Clear = 1,
-  @Type = @Type_f58d9cf3,
-  @Length = @Length_f58d9cf3,
+  @Type = @Type_86a43cc4,
+  @Length = @Length_86a43cc4,
   @Length_Clear = 1,
-  @Precision = @Precision_f58d9cf3,
+  @Precision = @Precision_86a43cc4,
   @Precision_Clear = 1,
-  @Scale = @Scale_f58d9cf3,
+  @Scale = @Scale_86a43cc4,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_f58d9cf3,
-  @DefaultValue = @DefaultValue_f58d9cf3,
+  @AllowsNull = @AllowsNull_86a43cc4,
+  @DefaultValue = @DefaultValue_86a43cc4,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_f58d9cf3,
-  @IsUniqueKey = @IsUniqueKey_f58d9cf3,
-  @IsReadOnly = @IsReadOnly_f58d9cf3,
-  @IsRequired = @IsRequired_f58d9cf3,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_f58d9cf3,
+  @IsPrimaryKey = @IsPrimaryKey_86a43cc4,
+  @IsUniqueKey = @IsUniqueKey_86a43cc4,
+  @IsReadOnly = @IsReadOnly_86a43cc4,
+  @IsRequired = @IsRequired_86a43cc4,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_86a43cc4,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_f58d9cf3,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_86a43cc4,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_f58d9cf3,
-  @Configuration = @Configuration_f58d9cf3,
-  @Status = @Status_f58d9cf3,
-  @IsCustom = @IsCustom_f58d9cf3,
-  @MetadataSource = @MetadataSource_f58d9cf3;
+  @Sequence = @Sequence_86a43cc4,
+  @Configuration = @Configuration_86a43cc4,
+  @Status = @Status_86a43cc4,
+  @IsCustom = @IsCustom_86a43cc4,
+  @MetadataSource = @MetadataSource_86a43cc4;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_0673d2a6 UNIQUEIDENTIFIER,
-@IntegrationObjectID_0673d2a6 UNIQUEIDENTIFIER,
-@Name_0673d2a6 NVARCHAR(255),
-@DisplayName_0673d2a6 NVARCHAR(255),
-@Description_0673d2a6 NVARCHAR(MAX),
-@Category_0673d2a6 NVARCHAR(100),
-@Type_0673d2a6 NVARCHAR(100),
-@Length_0673d2a6 INT,
-@Precision_0673d2a6 INT,
-@Scale_0673d2a6 INT,
-@AllowsNull_0673d2a6 BIT,
-@DefaultValue_0673d2a6 NVARCHAR(255),
-@IsPrimaryKey_0673d2a6 BIT,
-@IsUniqueKey_0673d2a6 BIT,
-@IsReadOnly_0673d2a6 BIT,
-@IsRequired_0673d2a6 BIT,
-@RelatedIntegrationObjectID_0673d2a6 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_0673d2a6 NVARCHAR(255),
-@Sequence_0673d2a6 INT,
-@Configuration_0673d2a6 NVARCHAR(MAX),
-@Status_0673d2a6 NVARCHAR(25),
-@IsCustom_0673d2a6 BIT,
-@MetadataSource_0673d2a6 NVARCHAR(20)
+DECLARE @ID_d5fee1dc UNIQUEIDENTIFIER,
+@IntegrationObjectID_d5fee1dc UNIQUEIDENTIFIER,
+@Name_d5fee1dc NVARCHAR(255),
+@DisplayName_d5fee1dc NVARCHAR(255),
+@Description_d5fee1dc NVARCHAR(MAX),
+@Category_d5fee1dc NVARCHAR(100),
+@Type_d5fee1dc NVARCHAR(100),
+@Length_d5fee1dc INT,
+@Precision_d5fee1dc INT,
+@Scale_d5fee1dc INT,
+@AllowsNull_d5fee1dc BIT,
+@DefaultValue_d5fee1dc NVARCHAR(255),
+@IsPrimaryKey_d5fee1dc BIT,
+@IsUniqueKey_d5fee1dc BIT,
+@IsReadOnly_d5fee1dc BIT,
+@IsRequired_d5fee1dc BIT,
+@RelatedIntegrationObjectID_d5fee1dc UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_d5fee1dc NVARCHAR(255),
+@Sequence_d5fee1dc INT,
+@Configuration_d5fee1dc NVARCHAR(MAX),
+@Status_d5fee1dc NVARCHAR(25),
+@IsCustom_d5fee1dc BIT,
+@MetadataSource_d5fee1dc NVARCHAR(20)
 SET
-  @ID_0673d2a6 = '3d14316e-4350-415d-af2c-642545d2e304'
+  @ID_d5fee1dc = '3D14316E-4350-415D-AF2C-642545D2E304'
 SET
-  @IntegrationObjectID_0673d2a6 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_d5fee1dc = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_0673d2a6 = N'user_id'
+  @Name_d5fee1dc = N'user_id'
 SET
-  @DisplayName_0673d2a6 = N'User ID'
+  @DisplayName_d5fee1dc = N'User ID'
 SET
-  @Description_0673d2a6 = N'WordPress user ID responsible for the event; null for anonymous events.'
+  @Description_d5fee1dc = N'WordPress user ID responsible for the event; null for anonymous events.'
 SET
-  @Type_0673d2a6 = N'Integer'
+  @Type_d5fee1dc = N'Integer'
 SET
-  @AllowsNull_0673d2a6 = 1
+  @AllowsNull_d5fee1dc = 1
 SET
-  @IsPrimaryKey_0673d2a6 = 0
+  @IsPrimaryKey_d5fee1dc = 0
 SET
-  @IsUniqueKey_0673d2a6 = 0
+  @IsUniqueKey_d5fee1dc = 0
 SET
-  @IsReadOnly_0673d2a6 = 1
+  @IsReadOnly_d5fee1dc = 1
 SET
-  @IsRequired_0673d2a6 = 0
+  @IsRequired_d5fee1dc = 0
 SET
-  @Sequence_0673d2a6 = 11
+  @Sequence_d5fee1dc = 11
 SET
-  @Configuration_0673d2a6 = N'{
+  @Configuration_d5fee1dc = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_0673d2a6 = N'Active'
+  @Status_d5fee1dc = N'Active'
 SET
-  @IsCustom_0673d2a6 = 0
+  @IsCustom_d5fee1dc = 0
 SET
-  @MetadataSource_0673d2a6 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_0673d2a6,
-  @IntegrationObjectID = @IntegrationObjectID_0673d2a6,
-  @Name = @Name_0673d2a6,
-  @DisplayName = @DisplayName_0673d2a6,
-  @Description = @Description_0673d2a6,
-  @Category = @Category_0673d2a6,
+  @MetadataSource_d5fee1dc = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_d5fee1dc,
+  @IntegrationObjectID = @IntegrationObjectID_d5fee1dc,
+  @Name = @Name_d5fee1dc,
+  @DisplayName = @DisplayName_d5fee1dc,
+  @Description = @Description_d5fee1dc,
+  @Category = @Category_d5fee1dc,
   @Category_Clear = 1,
-  @Type = @Type_0673d2a6,
-  @Length = @Length_0673d2a6,
+  @Type = @Type_d5fee1dc,
+  @Length = @Length_d5fee1dc,
   @Length_Clear = 1,
-  @Precision = @Precision_0673d2a6,
+  @Precision = @Precision_d5fee1dc,
   @Precision_Clear = 1,
-  @Scale = @Scale_0673d2a6,
+  @Scale = @Scale_d5fee1dc,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_0673d2a6,
-  @DefaultValue = @DefaultValue_0673d2a6,
+  @AllowsNull = @AllowsNull_d5fee1dc,
+  @DefaultValue = @DefaultValue_d5fee1dc,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_0673d2a6,
-  @IsUniqueKey = @IsUniqueKey_0673d2a6,
-  @IsReadOnly = @IsReadOnly_0673d2a6,
-  @IsRequired = @IsRequired_0673d2a6,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_0673d2a6,
+  @IsPrimaryKey = @IsPrimaryKey_d5fee1dc,
+  @IsUniqueKey = @IsUniqueKey_d5fee1dc,
+  @IsReadOnly = @IsReadOnly_d5fee1dc,
+  @IsRequired = @IsRequired_d5fee1dc,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_d5fee1dc,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_0673d2a6,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_d5fee1dc,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_0673d2a6,
-  @Configuration = @Configuration_0673d2a6,
-  @Status = @Status_0673d2a6,
-  @IsCustom = @IsCustom_0673d2a6,
-  @MetadataSource = @MetadataSource_0673d2a6;
+  @Sequence = @Sequence_d5fee1dc,
+  @Configuration = @Configuration_d5fee1dc,
+  @Status = @Status_d5fee1dc,
+  @IsCustom = @IsCustom_d5fee1dc,
+  @MetadataSource = @MetadataSource_d5fee1dc;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_74812ea2 UNIQUEIDENTIFIER,
-@IntegrationObjectID_74812ea2 UNIQUEIDENTIFIER,
-@Name_74812ea2 NVARCHAR(255),
-@DisplayName_74812ea2 NVARCHAR(255),
-@Description_74812ea2 NVARCHAR(MAX),
-@Category_74812ea2 NVARCHAR(100),
-@Type_74812ea2 NVARCHAR(100),
-@Length_74812ea2 INT,
-@Precision_74812ea2 INT,
-@Scale_74812ea2 INT,
-@AllowsNull_74812ea2 BIT,
-@DefaultValue_74812ea2 NVARCHAR(255),
-@IsPrimaryKey_74812ea2 BIT,
-@IsUniqueKey_74812ea2 BIT,
-@IsReadOnly_74812ea2 BIT,
-@IsRequired_74812ea2 BIT,
-@RelatedIntegrationObjectID_74812ea2 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_74812ea2 NVARCHAR(255),
-@Sequence_74812ea2 INT,
-@Configuration_74812ea2 NVARCHAR(MAX),
-@Status_74812ea2 NVARCHAR(25),
-@IsCustom_74812ea2 BIT,
-@MetadataSource_74812ea2 NVARCHAR(20)
+DECLARE @ID_015a44f9 UNIQUEIDENTIFIER,
+@IntegrationObjectID_015a44f9 UNIQUEIDENTIFIER,
+@Name_015a44f9 NVARCHAR(255),
+@DisplayName_015a44f9 NVARCHAR(255),
+@Description_015a44f9 NVARCHAR(MAX),
+@Category_015a44f9 NVARCHAR(100),
+@Type_015a44f9 NVARCHAR(100),
+@Length_015a44f9 INT,
+@Precision_015a44f9 INT,
+@Scale_015a44f9 INT,
+@AllowsNull_015a44f9 BIT,
+@DefaultValue_015a44f9 NVARCHAR(255),
+@IsPrimaryKey_015a44f9 BIT,
+@IsUniqueKey_015a44f9 BIT,
+@IsReadOnly_015a44f9 BIT,
+@IsRequired_015a44f9 BIT,
+@RelatedIntegrationObjectID_015a44f9 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_015a44f9 NVARCHAR(255),
+@Sequence_015a44f9 INT,
+@Configuration_015a44f9 NVARCHAR(MAX),
+@Status_015a44f9 NVARCHAR(25),
+@IsCustom_015a44f9 BIT,
+@MetadataSource_015a44f9 NVARCHAR(20)
 SET
-  @ID_74812ea2 = '48a99ef2-4665-4bd7-959b-306c65bf5930'
+  @ID_015a44f9 = '48A99EF2-4665-4BD7-959B-306C65BF5930'
 SET
-  @IntegrationObjectID_74812ea2 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_015a44f9 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_74812ea2 = N'user_roles'
+  @Name_015a44f9 = N'user_roles'
 SET
-  @DisplayName_74812ea2 = N'User Roles'
+  @DisplayName_015a44f9 = N'User Roles'
 SET
-  @Description_74812ea2 = N'Roles held by the user at the time of the event.'
+  @Description_015a44f9 = N'Roles held by the user at the time of the event.'
 SET
-  @Type_74812ea2 = N'String'
+  @Type_015a44f9 = N'String'
 SET
-  @AllowsNull_74812ea2 = 1
+  @AllowsNull_015a44f9 = 1
 SET
-  @IsPrimaryKey_74812ea2 = 0
+  @IsPrimaryKey_015a44f9 = 0
 SET
-  @IsUniqueKey_74812ea2 = 0
+  @IsUniqueKey_015a44f9 = 0
 SET
-  @IsReadOnly_74812ea2 = 1
+  @IsReadOnly_015a44f9 = 1
 SET
-  @IsRequired_74812ea2 = 0
+  @IsRequired_015a44f9 = 0
 SET
-  @Sequence_74812ea2 = 12
+  @Sequence_015a44f9 = 12
 SET
-  @Configuration_74812ea2 = N'{
+  @Configuration_015a44f9 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_74812ea2 = N'Active'
+  @Status_015a44f9 = N'Active'
 SET
-  @IsCustom_74812ea2 = 0
+  @IsCustom_015a44f9 = 0
 SET
-  @MetadataSource_74812ea2 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_74812ea2,
-  @IntegrationObjectID = @IntegrationObjectID_74812ea2,
-  @Name = @Name_74812ea2,
-  @DisplayName = @DisplayName_74812ea2,
-  @Description = @Description_74812ea2,
-  @Category = @Category_74812ea2,
+  @MetadataSource_015a44f9 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_015a44f9,
+  @IntegrationObjectID = @IntegrationObjectID_015a44f9,
+  @Name = @Name_015a44f9,
+  @DisplayName = @DisplayName_015a44f9,
+  @Description = @Description_015a44f9,
+  @Category = @Category_015a44f9,
   @Category_Clear = 1,
-  @Type = @Type_74812ea2,
-  @Length = @Length_74812ea2,
+  @Type = @Type_015a44f9,
+  @Length = @Length_015a44f9,
   @Length_Clear = 1,
-  @Precision = @Precision_74812ea2,
+  @Precision = @Precision_015a44f9,
   @Precision_Clear = 1,
-  @Scale = @Scale_74812ea2,
+  @Scale = @Scale_015a44f9,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_74812ea2,
-  @DefaultValue = @DefaultValue_74812ea2,
+  @AllowsNull = @AllowsNull_015a44f9,
+  @DefaultValue = @DefaultValue_015a44f9,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_74812ea2,
-  @IsUniqueKey = @IsUniqueKey_74812ea2,
-  @IsReadOnly = @IsReadOnly_74812ea2,
-  @IsRequired = @IsRequired_74812ea2,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_74812ea2,
+  @IsPrimaryKey = @IsPrimaryKey_015a44f9,
+  @IsUniqueKey = @IsUniqueKey_015a44f9,
+  @IsReadOnly = @IsReadOnly_015a44f9,
+  @IsRequired = @IsRequired_015a44f9,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_015a44f9,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_74812ea2,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_015a44f9,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_74812ea2,
-  @Configuration = @Configuration_74812ea2,
-  @Status = @Status_74812ea2,
-  @IsCustom = @IsCustom_74812ea2,
-  @MetadataSource = @MetadataSource_74812ea2;
+  @Sequence = @Sequence_015a44f9,
+  @Configuration = @Configuration_015a44f9,
+  @Status = @Status_015a44f9,
+  @IsCustom = @IsCustom_015a44f9,
+  @MetadataSource = @MetadataSource_015a44f9;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_65d10fe2 UNIQUEIDENTIFIER,
-@IntegrationObjectID_65d10fe2 UNIQUEIDENTIFIER,
-@Name_65d10fe2 NVARCHAR(255),
-@DisplayName_65d10fe2 NVARCHAR(255),
-@Description_65d10fe2 NVARCHAR(MAX),
-@Category_65d10fe2 NVARCHAR(100),
-@Type_65d10fe2 NVARCHAR(100),
-@Length_65d10fe2 INT,
-@Precision_65d10fe2 INT,
-@Scale_65d10fe2 INT,
-@AllowsNull_65d10fe2 BIT,
-@DefaultValue_65d10fe2 NVARCHAR(255),
-@IsPrimaryKey_65d10fe2 BIT,
-@IsUniqueKey_65d10fe2 BIT,
-@IsReadOnly_65d10fe2 BIT,
-@IsRequired_65d10fe2 BIT,
-@RelatedIntegrationObjectID_65d10fe2 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_65d10fe2 NVARCHAR(255),
-@Sequence_65d10fe2 INT,
-@Configuration_65d10fe2 NVARCHAR(MAX),
-@Status_65d10fe2 NVARCHAR(25),
-@IsCustom_65d10fe2 BIT,
-@MetadataSource_65d10fe2 NVARCHAR(20)
+DECLARE @ID_509d216f UNIQUEIDENTIFIER,
+@IntegrationObjectID_509d216f UNIQUEIDENTIFIER,
+@Name_509d216f NVARCHAR(255),
+@DisplayName_509d216f NVARCHAR(255),
+@Description_509d216f NVARCHAR(MAX),
+@Category_509d216f NVARCHAR(100),
+@Type_509d216f NVARCHAR(100),
+@Length_509d216f INT,
+@Precision_509d216f INT,
+@Scale_509d216f INT,
+@AllowsNull_509d216f BIT,
+@DefaultValue_509d216f NVARCHAR(255),
+@IsPrimaryKey_509d216f BIT,
+@IsUniqueKey_509d216f BIT,
+@IsReadOnly_509d216f BIT,
+@IsRequired_509d216f BIT,
+@RelatedIntegrationObjectID_509d216f UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_509d216f NVARCHAR(255),
+@Sequence_509d216f INT,
+@Configuration_509d216f NVARCHAR(MAX),
+@Status_509d216f NVARCHAR(25),
+@IsCustom_509d216f BIT,
+@MetadataSource_509d216f NVARCHAR(20)
 SET
-  @ID_65d10fe2 = '01b518b3-7af1-4d8f-b63b-307aacdb82f4'
+  @ID_509d216f = '01B518B3-7AF1-4D8F-B63B-307AACDB82F4'
 SET
-  @IntegrationObjectID_65d10fe2 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_509d216f = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_65d10fe2 = N'client_ip'
+  @Name_509d216f = N'client_ip'
 SET
-  @DisplayName_65d10fe2 = N'Client IP'
+  @DisplayName_509d216f = N'Client IP'
 SET
-  @Description_65d10fe2 = N'Source IP address the activity originated from.'
+  @Description_509d216f = N'Source IP address the activity originated from.'
 SET
-  @Type_65d10fe2 = N'String'
+  @Type_509d216f = N'String'
 SET
-  @AllowsNull_65d10fe2 = 1
+  @AllowsNull_509d216f = 1
 SET
-  @IsPrimaryKey_65d10fe2 = 0
+  @IsPrimaryKey_509d216f = 0
 SET
-  @IsUniqueKey_65d10fe2 = 0
+  @IsUniqueKey_509d216f = 0
 SET
-  @IsReadOnly_65d10fe2 = 1
+  @IsReadOnly_509d216f = 1
 SET
-  @IsRequired_65d10fe2 = 0
+  @IsRequired_509d216f = 0
 SET
-  @Sequence_65d10fe2 = 13
+  @Sequence_509d216f = 13
 SET
-  @Configuration_65d10fe2 = N'{
+  @Configuration_509d216f = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_65d10fe2 = N'Active'
+  @Status_509d216f = N'Active'
 SET
-  @IsCustom_65d10fe2 = 0
+  @IsCustom_509d216f = 0
 SET
-  @MetadataSource_65d10fe2 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_65d10fe2,
-  @IntegrationObjectID = @IntegrationObjectID_65d10fe2,
-  @Name = @Name_65d10fe2,
-  @DisplayName = @DisplayName_65d10fe2,
-  @Description = @Description_65d10fe2,
-  @Category = @Category_65d10fe2,
+  @MetadataSource_509d216f = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_509d216f,
+  @IntegrationObjectID = @IntegrationObjectID_509d216f,
+  @Name = @Name_509d216f,
+  @DisplayName = @DisplayName_509d216f,
+  @Description = @Description_509d216f,
+  @Category = @Category_509d216f,
   @Category_Clear = 1,
-  @Type = @Type_65d10fe2,
-  @Length = @Length_65d10fe2,
+  @Type = @Type_509d216f,
+  @Length = @Length_509d216f,
   @Length_Clear = 1,
-  @Precision = @Precision_65d10fe2,
+  @Precision = @Precision_509d216f,
   @Precision_Clear = 1,
-  @Scale = @Scale_65d10fe2,
+  @Scale = @Scale_509d216f,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_65d10fe2,
-  @DefaultValue = @DefaultValue_65d10fe2,
+  @AllowsNull = @AllowsNull_509d216f,
+  @DefaultValue = @DefaultValue_509d216f,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_65d10fe2,
-  @IsUniqueKey = @IsUniqueKey_65d10fe2,
-  @IsReadOnly = @IsReadOnly_65d10fe2,
-  @IsRequired = @IsRequired_65d10fe2,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_65d10fe2,
+  @IsPrimaryKey = @IsPrimaryKey_509d216f,
+  @IsUniqueKey = @IsUniqueKey_509d216f,
+  @IsReadOnly = @IsReadOnly_509d216f,
+  @IsRequired = @IsRequired_509d216f,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_509d216f,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_65d10fe2,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_509d216f,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_65d10fe2,
-  @Configuration = @Configuration_65d10fe2,
-  @Status = @Status_65d10fe2,
-  @IsCustom = @IsCustom_65d10fe2,
-  @MetadataSource = @MetadataSource_65d10fe2;
+  @Sequence = @Sequence_509d216f,
+  @Configuration = @Configuration_509d216f,
+  @Status = @Status_509d216f,
+  @IsCustom = @IsCustom_509d216f,
+  @MetadataSource = @MetadataSource_509d216f;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_50e6c733 UNIQUEIDENTIFIER,
-@IntegrationObjectID_50e6c733 UNIQUEIDENTIFIER,
-@Name_50e6c733 NVARCHAR(255),
-@DisplayName_50e6c733 NVARCHAR(255),
-@Description_50e6c733 NVARCHAR(MAX),
-@Category_50e6c733 NVARCHAR(100),
-@Type_50e6c733 NVARCHAR(100),
-@Length_50e6c733 INT,
-@Precision_50e6c733 INT,
-@Scale_50e6c733 INT,
-@AllowsNull_50e6c733 BIT,
-@DefaultValue_50e6c733 NVARCHAR(255),
-@IsPrimaryKey_50e6c733 BIT,
-@IsUniqueKey_50e6c733 BIT,
-@IsReadOnly_50e6c733 BIT,
-@IsRequired_50e6c733 BIT,
-@RelatedIntegrationObjectID_50e6c733 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_50e6c733 NVARCHAR(255),
-@Sequence_50e6c733 INT,
-@Configuration_50e6c733 NVARCHAR(MAX),
-@Status_50e6c733 NVARCHAR(25),
-@IsCustom_50e6c733 BIT,
-@MetadataSource_50e6c733 NVARCHAR(20)
+DECLARE @ID_80d3faa8 UNIQUEIDENTIFIER,
+@IntegrationObjectID_80d3faa8 UNIQUEIDENTIFIER,
+@Name_80d3faa8 NVARCHAR(255),
+@DisplayName_80d3faa8 NVARCHAR(255),
+@Description_80d3faa8 NVARCHAR(MAX),
+@Category_80d3faa8 NVARCHAR(100),
+@Type_80d3faa8 NVARCHAR(100),
+@Length_80d3faa8 INT,
+@Precision_80d3faa8 INT,
+@Scale_80d3faa8 INT,
+@AllowsNull_80d3faa8 BIT,
+@DefaultValue_80d3faa8 NVARCHAR(255),
+@IsPrimaryKey_80d3faa8 BIT,
+@IsUniqueKey_80d3faa8 BIT,
+@IsReadOnly_80d3faa8 BIT,
+@IsRequired_80d3faa8 BIT,
+@RelatedIntegrationObjectID_80d3faa8 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_80d3faa8 NVARCHAR(255),
+@Sequence_80d3faa8 INT,
+@Configuration_80d3faa8 NVARCHAR(MAX),
+@Status_80d3faa8 NVARCHAR(25),
+@IsCustom_80d3faa8 BIT,
+@MetadataSource_80d3faa8 NVARCHAR(20)
 SET
-  @ID_50e6c733 = 'a5d041c3-a044-452c-84cc-b2f154dfe48e'
+  @ID_80d3faa8 = 'A5D041C3-A044-452C-84CC-B2F154DFE48E'
 SET
-  @IntegrationObjectID_50e6c733 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_80d3faa8 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_50e6c733 = N'user_agent'
+  @Name_80d3faa8 = N'user_agent'
 SET
-  @DisplayName_50e6c733 = N'User Agent'
+  @DisplayName_80d3faa8 = N'User Agent'
 SET
-  @Description_50e6c733 = N'Browser user agent string captured with the event.'
+  @Description_80d3faa8 = N'Browser user agent string captured with the event.'
 SET
-  @Type_50e6c733 = N'String'
+  @Type_80d3faa8 = N'String'
 SET
-  @AllowsNull_50e6c733 = 1
+  @AllowsNull_80d3faa8 = 1
 SET
-  @IsPrimaryKey_50e6c733 = 0
+  @IsPrimaryKey_80d3faa8 = 0
 SET
-  @IsUniqueKey_50e6c733 = 0
+  @IsUniqueKey_80d3faa8 = 0
 SET
-  @IsReadOnly_50e6c733 = 1
+  @IsReadOnly_80d3faa8 = 1
 SET
-  @IsRequired_50e6c733 = 0
+  @IsRequired_80d3faa8 = 0
 SET
-  @Sequence_50e6c733 = 14
+  @Sequence_80d3faa8 = 14
 SET
-  @Configuration_50e6c733 = N'{
+  @Configuration_80d3faa8 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_50e6c733 = N'Active'
+  @Status_80d3faa8 = N'Active'
 SET
-  @IsCustom_50e6c733 = 0
+  @IsCustom_80d3faa8 = 0
 SET
-  @MetadataSource_50e6c733 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_50e6c733,
-  @IntegrationObjectID = @IntegrationObjectID_50e6c733,
-  @Name = @Name_50e6c733,
-  @DisplayName = @DisplayName_50e6c733,
-  @Description = @Description_50e6c733,
-  @Category = @Category_50e6c733,
+  @MetadataSource_80d3faa8 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_80d3faa8,
+  @IntegrationObjectID = @IntegrationObjectID_80d3faa8,
+  @Name = @Name_80d3faa8,
+  @DisplayName = @DisplayName_80d3faa8,
+  @Description = @Description_80d3faa8,
+  @Category = @Category_80d3faa8,
   @Category_Clear = 1,
-  @Type = @Type_50e6c733,
-  @Length = @Length_50e6c733,
+  @Type = @Type_80d3faa8,
+  @Length = @Length_80d3faa8,
   @Length_Clear = 1,
-  @Precision = @Precision_50e6c733,
+  @Precision = @Precision_80d3faa8,
   @Precision_Clear = 1,
-  @Scale = @Scale_50e6c733,
+  @Scale = @Scale_80d3faa8,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_50e6c733,
-  @DefaultValue = @DefaultValue_50e6c733,
+  @AllowsNull = @AllowsNull_80d3faa8,
+  @DefaultValue = @DefaultValue_80d3faa8,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_50e6c733,
-  @IsUniqueKey = @IsUniqueKey_50e6c733,
-  @IsReadOnly = @IsReadOnly_50e6c733,
-  @IsRequired = @IsRequired_50e6c733,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_50e6c733,
+  @IsPrimaryKey = @IsPrimaryKey_80d3faa8,
+  @IsUniqueKey = @IsUniqueKey_80d3faa8,
+  @IsReadOnly = @IsReadOnly_80d3faa8,
+  @IsRequired = @IsRequired_80d3faa8,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_80d3faa8,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_50e6c733,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_80d3faa8,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_50e6c733,
-  @Configuration = @Configuration_50e6c733,
-  @Status = @Status_50e6c733,
-  @IsCustom = @IsCustom_50e6c733,
-  @MetadataSource = @MetadataSource_50e6c733;
+  @Sequence = @Sequence_80d3faa8,
+  @Configuration = @Configuration_80d3faa8,
+  @Status = @Status_80d3faa8,
+  @IsCustom = @IsCustom_80d3faa8,
+  @MetadataSource = @MetadataSource_80d3faa8;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_c634e516 UNIQUEIDENTIFIER,
-@IntegrationObjectID_c634e516 UNIQUEIDENTIFIER,
-@Name_c634e516 NVARCHAR(255),
-@DisplayName_c634e516 NVARCHAR(255),
-@Description_c634e516 NVARCHAR(MAX),
-@Category_c634e516 NVARCHAR(100),
-@Type_c634e516 NVARCHAR(100),
-@Length_c634e516 INT,
-@Precision_c634e516 INT,
-@Scale_c634e516 INT,
-@AllowsNull_c634e516 BIT,
-@DefaultValue_c634e516 NVARCHAR(255),
-@IsPrimaryKey_c634e516 BIT,
-@IsUniqueKey_c634e516 BIT,
-@IsReadOnly_c634e516 BIT,
-@IsRequired_c634e516 BIT,
-@RelatedIntegrationObjectID_c634e516 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_c634e516 NVARCHAR(255),
-@Sequence_c634e516 INT,
-@Configuration_c634e516 NVARCHAR(MAX),
-@Status_c634e516 NVARCHAR(25),
-@IsCustom_c634e516 BIT,
-@MetadataSource_c634e516 NVARCHAR(20)
+DECLARE @ID_812ba870 UNIQUEIDENTIFIER,
+@IntegrationObjectID_812ba870 UNIQUEIDENTIFIER,
+@Name_812ba870 NVARCHAR(255),
+@DisplayName_812ba870 NVARCHAR(255),
+@Description_812ba870 NVARCHAR(MAX),
+@Category_812ba870 NVARCHAR(100),
+@Type_812ba870 NVARCHAR(100),
+@Length_812ba870 INT,
+@Precision_812ba870 INT,
+@Scale_812ba870 INT,
+@AllowsNull_812ba870 BIT,
+@DefaultValue_812ba870 NVARCHAR(255),
+@IsPrimaryKey_812ba870 BIT,
+@IsUniqueKey_812ba870 BIT,
+@IsReadOnly_812ba870 BIT,
+@IsRequired_812ba870 BIT,
+@RelatedIntegrationObjectID_812ba870 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_812ba870 NVARCHAR(255),
+@Sequence_812ba870 INT,
+@Configuration_812ba870 NVARCHAR(MAX),
+@Status_812ba870 NVARCHAR(25),
+@IsCustom_812ba870 BIT,
+@MetadataSource_812ba870 NVARCHAR(20)
 SET
-  @ID_c634e516 = '1b9e12a3-4ca9-4c0f-96de-f05d3ce76416'
+  @ID_812ba870 = '1B9E12A3-4CA9-4C0F-96DE-F05D3CE76416'
 SET
-  @IntegrationObjectID_c634e516 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_812ba870 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_c634e516 = N'session_id'
+  @Name_812ba870 = N'session_id'
 SET
-  @DisplayName_c634e516 = N'Session ID'
+  @DisplayName_812ba870 = N'Session ID'
 SET
-  @Description_c634e516 = N'Identifier of the session the event belongs to.'
+  @Description_812ba870 = N'Identifier of the session the event belongs to.'
 SET
-  @Type_c634e516 = N'String'
+  @Type_812ba870 = N'String'
 SET
-  @AllowsNull_c634e516 = 1
+  @AllowsNull_812ba870 = 1
 SET
-  @IsPrimaryKey_c634e516 = 0
+  @IsPrimaryKey_812ba870 = 0
 SET
-  @IsUniqueKey_c634e516 = 0
+  @IsUniqueKey_812ba870 = 0
 SET
-  @IsReadOnly_c634e516 = 1
+  @IsReadOnly_812ba870 = 1
 SET
-  @IsRequired_c634e516 = 0
+  @IsRequired_812ba870 = 0
 SET
-  @Sequence_c634e516 = 15
+  @Sequence_812ba870 = 15
 SET
-  @Configuration_c634e516 = N'{
+  @Configuration_812ba870 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_c634e516 = N'Active'
+  @Status_812ba870 = N'Active'
 SET
-  @IsCustom_c634e516 = 0
+  @IsCustom_812ba870 = 0
 SET
-  @MetadataSource_c634e516 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_c634e516,
-  @IntegrationObjectID = @IntegrationObjectID_c634e516,
-  @Name = @Name_c634e516,
-  @DisplayName = @DisplayName_c634e516,
-  @Description = @Description_c634e516,
-  @Category = @Category_c634e516,
+  @MetadataSource_812ba870 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_812ba870,
+  @IntegrationObjectID = @IntegrationObjectID_812ba870,
+  @Name = @Name_812ba870,
+  @DisplayName = @DisplayName_812ba870,
+  @Description = @Description_812ba870,
+  @Category = @Category_812ba870,
   @Category_Clear = 1,
-  @Type = @Type_c634e516,
-  @Length = @Length_c634e516,
+  @Type = @Type_812ba870,
+  @Length = @Length_812ba870,
   @Length_Clear = 1,
-  @Precision = @Precision_c634e516,
+  @Precision = @Precision_812ba870,
   @Precision_Clear = 1,
-  @Scale = @Scale_c634e516,
+  @Scale = @Scale_812ba870,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_c634e516,
-  @DefaultValue = @DefaultValue_c634e516,
+  @AllowsNull = @AllowsNull_812ba870,
+  @DefaultValue = @DefaultValue_812ba870,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_c634e516,
-  @IsUniqueKey = @IsUniqueKey_c634e516,
-  @IsReadOnly = @IsReadOnly_c634e516,
-  @IsRequired = @IsRequired_c634e516,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_c634e516,
+  @IsPrimaryKey = @IsPrimaryKey_812ba870,
+  @IsUniqueKey = @IsUniqueKey_812ba870,
+  @IsReadOnly = @IsReadOnly_812ba870,
+  @IsRequired = @IsRequired_812ba870,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_812ba870,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_c634e516,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_812ba870,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_c634e516,
-  @Configuration = @Configuration_c634e516,
-  @Status = @Status_c634e516,
-  @IsCustom = @IsCustom_c634e516,
-  @MetadataSource = @MetadataSource_c634e516;
+  @Sequence = @Sequence_812ba870,
+  @Configuration = @Configuration_812ba870,
+  @Status = @Status_812ba870,
+  @IsCustom = @IsCustom_812ba870,
+  @MetadataSource = @MetadataSource_812ba870;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_ead7ec5a UNIQUEIDENTIFIER,
-@IntegrationObjectID_ead7ec5a UNIQUEIDENTIFIER,
-@Name_ead7ec5a NVARCHAR(255),
-@DisplayName_ead7ec5a NVARCHAR(255),
-@Description_ead7ec5a NVARCHAR(MAX),
-@Category_ead7ec5a NVARCHAR(100),
-@Type_ead7ec5a NVARCHAR(100),
-@Length_ead7ec5a INT,
-@Precision_ead7ec5a INT,
-@Scale_ead7ec5a INT,
-@AllowsNull_ead7ec5a BIT,
-@DefaultValue_ead7ec5a NVARCHAR(255),
-@IsPrimaryKey_ead7ec5a BIT,
-@IsUniqueKey_ead7ec5a BIT,
-@IsReadOnly_ead7ec5a BIT,
-@IsRequired_ead7ec5a BIT,
-@RelatedIntegrationObjectID_ead7ec5a UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_ead7ec5a NVARCHAR(255),
-@Sequence_ead7ec5a INT,
-@Configuration_ead7ec5a NVARCHAR(MAX),
-@Status_ead7ec5a NVARCHAR(25),
-@IsCustom_ead7ec5a BIT,
-@MetadataSource_ead7ec5a NVARCHAR(20)
+DECLARE @ID_39eb628d UNIQUEIDENTIFIER,
+@IntegrationObjectID_39eb628d UNIQUEIDENTIFIER,
+@Name_39eb628d NVARCHAR(255),
+@DisplayName_39eb628d NVARCHAR(255),
+@Description_39eb628d NVARCHAR(MAX),
+@Category_39eb628d NVARCHAR(100),
+@Type_39eb628d NVARCHAR(100),
+@Length_39eb628d INT,
+@Precision_39eb628d INT,
+@Scale_39eb628d INT,
+@AllowsNull_39eb628d BIT,
+@DefaultValue_39eb628d NVARCHAR(255),
+@IsPrimaryKey_39eb628d BIT,
+@IsUniqueKey_39eb628d BIT,
+@IsReadOnly_39eb628d BIT,
+@IsRequired_39eb628d BIT,
+@RelatedIntegrationObjectID_39eb628d UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_39eb628d NVARCHAR(255),
+@Sequence_39eb628d INT,
+@Configuration_39eb628d NVARCHAR(MAX),
+@Status_39eb628d NVARCHAR(25),
+@IsCustom_39eb628d BIT,
+@MetadataSource_39eb628d NVARCHAR(20)
 SET
-  @ID_ead7ec5a = 'db762596-31df-4a51-b278-d40558d5aaf5'
+  @ID_39eb628d = 'DB762596-31DF-4A51-B278-D40558D5AAF5'
 SET
-  @IntegrationObjectID_ead7ec5a = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_39eb628d = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_ead7ec5a = N'post_id'
+  @Name_39eb628d = N'post_id'
 SET
-  @DisplayName_ead7ec5a = N'Post ID'
+  @DisplayName_39eb628d = N'Post ID'
 SET
-  @Description_ead7ec5a = N'Associated post ID; 0 when the event is not post-related.'
+  @Description_39eb628d = N'Associated post ID; 0 when the event is not post-related.'
 SET
-  @Type_ead7ec5a = N'Integer'
+  @Type_39eb628d = N'Integer'
 SET
-  @AllowsNull_ead7ec5a = 1
+  @AllowsNull_39eb628d = 1
 SET
-  @IsPrimaryKey_ead7ec5a = 0
+  @IsPrimaryKey_39eb628d = 0
 SET
-  @IsUniqueKey_ead7ec5a = 0
+  @IsUniqueKey_39eb628d = 0
 SET
-  @IsReadOnly_ead7ec5a = 1
+  @IsReadOnly_39eb628d = 1
 SET
-  @IsRequired_ead7ec5a = 0
+  @IsRequired_39eb628d = 0
 SET
-  @Sequence_ead7ec5a = 16
+  @Sequence_39eb628d = 16
 SET
-  @Configuration_ead7ec5a = N'{
+  @Configuration_39eb628d = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_ead7ec5a = N'Active'
+  @Status_39eb628d = N'Active'
 SET
-  @IsCustom_ead7ec5a = 0
+  @IsCustom_39eb628d = 0
 SET
-  @MetadataSource_ead7ec5a = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_ead7ec5a,
-  @IntegrationObjectID = @IntegrationObjectID_ead7ec5a,
-  @Name = @Name_ead7ec5a,
-  @DisplayName = @DisplayName_ead7ec5a,
-  @Description = @Description_ead7ec5a,
-  @Category = @Category_ead7ec5a,
+  @MetadataSource_39eb628d = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_39eb628d,
+  @IntegrationObjectID = @IntegrationObjectID_39eb628d,
+  @Name = @Name_39eb628d,
+  @DisplayName = @DisplayName_39eb628d,
+  @Description = @Description_39eb628d,
+  @Category = @Category_39eb628d,
   @Category_Clear = 1,
-  @Type = @Type_ead7ec5a,
-  @Length = @Length_ead7ec5a,
+  @Type = @Type_39eb628d,
+  @Length = @Length_39eb628d,
   @Length_Clear = 1,
-  @Precision = @Precision_ead7ec5a,
+  @Precision = @Precision_39eb628d,
   @Precision_Clear = 1,
-  @Scale = @Scale_ead7ec5a,
+  @Scale = @Scale_39eb628d,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_ead7ec5a,
-  @DefaultValue = @DefaultValue_ead7ec5a,
+  @AllowsNull = @AllowsNull_39eb628d,
+  @DefaultValue = @DefaultValue_39eb628d,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_ead7ec5a,
-  @IsUniqueKey = @IsUniqueKey_ead7ec5a,
-  @IsReadOnly = @IsReadOnly_ead7ec5a,
-  @IsRequired = @IsRequired_ead7ec5a,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_ead7ec5a,
+  @IsPrimaryKey = @IsPrimaryKey_39eb628d,
+  @IsUniqueKey = @IsUniqueKey_39eb628d,
+  @IsReadOnly = @IsReadOnly_39eb628d,
+  @IsRequired = @IsRequired_39eb628d,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_39eb628d,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_ead7ec5a,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_39eb628d,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_ead7ec5a,
-  @Configuration = @Configuration_ead7ec5a,
-  @Status = @Status_ead7ec5a,
-  @IsCustom = @IsCustom_ead7ec5a,
-  @MetadataSource = @MetadataSource_ead7ec5a;
+  @Sequence = @Sequence_39eb628d,
+  @Configuration = @Configuration_39eb628d,
+  @Status = @Status_39eb628d,
+  @IsCustom = @IsCustom_39eb628d,
+  @MetadataSource = @MetadataSource_39eb628d;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_d96d94c5 UNIQUEIDENTIFIER,
-@IntegrationObjectID_d96d94c5 UNIQUEIDENTIFIER,
-@Name_d96d94c5 NVARCHAR(255),
-@DisplayName_d96d94c5 NVARCHAR(255),
-@Description_d96d94c5 NVARCHAR(MAX),
-@Category_d96d94c5 NVARCHAR(100),
-@Type_d96d94c5 NVARCHAR(100),
-@Length_d96d94c5 INT,
-@Precision_d96d94c5 INT,
-@Scale_d96d94c5 INT,
-@AllowsNull_d96d94c5 BIT,
-@DefaultValue_d96d94c5 NVARCHAR(255),
-@IsPrimaryKey_d96d94c5 BIT,
-@IsUniqueKey_d96d94c5 BIT,
-@IsReadOnly_d96d94c5 BIT,
-@IsRequired_d96d94c5 BIT,
-@RelatedIntegrationObjectID_d96d94c5 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_d96d94c5 NVARCHAR(255),
-@Sequence_d96d94c5 INT,
-@Configuration_d96d94c5 NVARCHAR(MAX),
-@Status_d96d94c5 NVARCHAR(25),
-@IsCustom_d96d94c5 BIT,
-@MetadataSource_d96d94c5 NVARCHAR(20)
+DECLARE @ID_5fe93507 UNIQUEIDENTIFIER,
+@IntegrationObjectID_5fe93507 UNIQUEIDENTIFIER,
+@Name_5fe93507 NVARCHAR(255),
+@DisplayName_5fe93507 NVARCHAR(255),
+@Description_5fe93507 NVARCHAR(MAX),
+@Category_5fe93507 NVARCHAR(100),
+@Type_5fe93507 NVARCHAR(100),
+@Length_5fe93507 INT,
+@Precision_5fe93507 INT,
+@Scale_5fe93507 INT,
+@AllowsNull_5fe93507 BIT,
+@DefaultValue_5fe93507 NVARCHAR(255),
+@IsPrimaryKey_5fe93507 BIT,
+@IsUniqueKey_5fe93507 BIT,
+@IsReadOnly_5fe93507 BIT,
+@IsRequired_5fe93507 BIT,
+@RelatedIntegrationObjectID_5fe93507 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_5fe93507 NVARCHAR(255),
+@Sequence_5fe93507 INT,
+@Configuration_5fe93507 NVARCHAR(MAX),
+@Status_5fe93507 NVARCHAR(25),
+@IsCustom_5fe93507 BIT,
+@MetadataSource_5fe93507 NVARCHAR(20)
 SET
-  @ID_d96d94c5 = '052c5b24-f6c0-467e-b72a-d8aabb23e417'
+  @ID_5fe93507 = '052C5B24-F6C0-467E-B72A-D8AABB23E417'
 SET
-  @IntegrationObjectID_d96d94c5 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_5fe93507 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_d96d94c5 = N'post_type'
+  @Name_5fe93507 = N'post_type'
 SET
-  @DisplayName_d96d94c5 = N'Post Type'
+  @DisplayName_5fe93507 = N'Post Type'
 SET
-  @Description_d96d94c5 = N'Associated post type.'
+  @Description_5fe93507 = N'Associated post type.'
 SET
-  @Type_d96d94c5 = N'String'
+  @Type_5fe93507 = N'String'
 SET
-  @AllowsNull_d96d94c5 = 1
+  @AllowsNull_5fe93507 = 1
 SET
-  @IsPrimaryKey_d96d94c5 = 0
+  @IsPrimaryKey_5fe93507 = 0
 SET
-  @IsUniqueKey_d96d94c5 = 0
+  @IsUniqueKey_5fe93507 = 0
 SET
-  @IsReadOnly_d96d94c5 = 1
+  @IsReadOnly_5fe93507 = 1
 SET
-  @IsRequired_d96d94c5 = 0
+  @IsRequired_5fe93507 = 0
 SET
-  @Sequence_d96d94c5 = 17
+  @Sequence_5fe93507 = 17
 SET
-  @Configuration_d96d94c5 = N'{
+  @Configuration_5fe93507 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_d96d94c5 = N'Active'
+  @Status_5fe93507 = N'Active'
 SET
-  @IsCustom_d96d94c5 = 0
+  @IsCustom_5fe93507 = 0
 SET
-  @MetadataSource_d96d94c5 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_d96d94c5,
-  @IntegrationObjectID = @IntegrationObjectID_d96d94c5,
-  @Name = @Name_d96d94c5,
-  @DisplayName = @DisplayName_d96d94c5,
-  @Description = @Description_d96d94c5,
-  @Category = @Category_d96d94c5,
+  @MetadataSource_5fe93507 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_5fe93507,
+  @IntegrationObjectID = @IntegrationObjectID_5fe93507,
+  @Name = @Name_5fe93507,
+  @DisplayName = @DisplayName_5fe93507,
+  @Description = @Description_5fe93507,
+  @Category = @Category_5fe93507,
   @Category_Clear = 1,
-  @Type = @Type_d96d94c5,
-  @Length = @Length_d96d94c5,
+  @Type = @Type_5fe93507,
+  @Length = @Length_5fe93507,
   @Length_Clear = 1,
-  @Precision = @Precision_d96d94c5,
+  @Precision = @Precision_5fe93507,
   @Precision_Clear = 1,
-  @Scale = @Scale_d96d94c5,
+  @Scale = @Scale_5fe93507,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_d96d94c5,
-  @DefaultValue = @DefaultValue_d96d94c5,
+  @AllowsNull = @AllowsNull_5fe93507,
+  @DefaultValue = @DefaultValue_5fe93507,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_d96d94c5,
-  @IsUniqueKey = @IsUniqueKey_d96d94c5,
-  @IsReadOnly = @IsReadOnly_d96d94c5,
-  @IsRequired = @IsRequired_d96d94c5,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_d96d94c5,
+  @IsPrimaryKey = @IsPrimaryKey_5fe93507,
+  @IsUniqueKey = @IsUniqueKey_5fe93507,
+  @IsReadOnly = @IsReadOnly_5fe93507,
+  @IsRequired = @IsRequired_5fe93507,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_5fe93507,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_d96d94c5,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_5fe93507,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_d96d94c5,
-  @Configuration = @Configuration_d96d94c5,
-  @Status = @Status_d96d94c5,
-  @IsCustom = @IsCustom_d96d94c5,
-  @MetadataSource = @MetadataSource_d96d94c5;
+  @Sequence = @Sequence_5fe93507,
+  @Configuration = @Configuration_5fe93507,
+  @Status = @Status_5fe93507,
+  @IsCustom = @IsCustom_5fe93507,
+  @MetadataSource = @MetadataSource_5fe93507;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_c8f00a10 UNIQUEIDENTIFIER,
-@IntegrationObjectID_c8f00a10 UNIQUEIDENTIFIER,
-@Name_c8f00a10 NVARCHAR(255),
-@DisplayName_c8f00a10 NVARCHAR(255),
-@Description_c8f00a10 NVARCHAR(MAX),
-@Category_c8f00a10 NVARCHAR(100),
-@Type_c8f00a10 NVARCHAR(100),
-@Length_c8f00a10 INT,
-@Precision_c8f00a10 INT,
-@Scale_c8f00a10 INT,
-@AllowsNull_c8f00a10 BIT,
-@DefaultValue_c8f00a10 NVARCHAR(255),
-@IsPrimaryKey_c8f00a10 BIT,
-@IsUniqueKey_c8f00a10 BIT,
-@IsReadOnly_c8f00a10 BIT,
-@IsRequired_c8f00a10 BIT,
-@RelatedIntegrationObjectID_c8f00a10 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_c8f00a10 NVARCHAR(255),
-@Sequence_c8f00a10 INT,
-@Configuration_c8f00a10 NVARCHAR(MAX),
-@Status_c8f00a10 NVARCHAR(25),
-@IsCustom_c8f00a10 BIT,
-@MetadataSource_c8f00a10 NVARCHAR(20)
+DECLARE @ID_3faa397d UNIQUEIDENTIFIER,
+@IntegrationObjectID_3faa397d UNIQUEIDENTIFIER,
+@Name_3faa397d NVARCHAR(255),
+@DisplayName_3faa397d NVARCHAR(255),
+@Description_3faa397d NVARCHAR(MAX),
+@Category_3faa397d NVARCHAR(100),
+@Type_3faa397d NVARCHAR(100),
+@Length_3faa397d INT,
+@Precision_3faa397d INT,
+@Scale_3faa397d INT,
+@AllowsNull_3faa397d BIT,
+@DefaultValue_3faa397d NVARCHAR(255),
+@IsPrimaryKey_3faa397d BIT,
+@IsUniqueKey_3faa397d BIT,
+@IsReadOnly_3faa397d BIT,
+@IsRequired_3faa397d BIT,
+@RelatedIntegrationObjectID_3faa397d UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_3faa397d NVARCHAR(255),
+@Sequence_3faa397d INT,
+@Configuration_3faa397d NVARCHAR(MAX),
+@Status_3faa397d NVARCHAR(25),
+@IsCustom_3faa397d BIT,
+@MetadataSource_3faa397d NVARCHAR(20)
 SET
-  @ID_c8f00a10 = '811c26a6-c1fa-47b3-8b73-b403d591d21a'
+  @ID_3faa397d = '811C26A6-C1FA-47B3-8B73-B403D591D21A'
 SET
-  @IntegrationObjectID_c8f00a10 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_3faa397d = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_c8f00a10 = N'post_status'
+  @Name_3faa397d = N'post_status'
 SET
-  @DisplayName_c8f00a10 = N'Post Status'
+  @DisplayName_3faa397d = N'Post Status'
 SET
-  @Description_c8f00a10 = N'Associated post status at the time of the event.'
+  @Description_3faa397d = N'Associated post status at the time of the event.'
 SET
-  @Type_c8f00a10 = N'String'
+  @Type_3faa397d = N'String'
 SET
-  @AllowsNull_c8f00a10 = 1
+  @AllowsNull_3faa397d = 1
 SET
-  @IsPrimaryKey_c8f00a10 = 0
+  @IsPrimaryKey_3faa397d = 0
 SET
-  @IsUniqueKey_c8f00a10 = 0
+  @IsUniqueKey_3faa397d = 0
 SET
-  @IsReadOnly_c8f00a10 = 1
+  @IsReadOnly_3faa397d = 1
 SET
-  @IsRequired_c8f00a10 = 0
+  @IsRequired_3faa397d = 0
 SET
-  @Sequence_c8f00a10 = 18
+  @Sequence_3faa397d = 18
 SET
-  @Configuration_c8f00a10 = N'{
+  @Configuration_3faa397d = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_c8f00a10 = N'Active'
+  @Status_3faa397d = N'Active'
 SET
-  @IsCustom_c8f00a10 = 0
+  @IsCustom_3faa397d = 0
 SET
-  @MetadataSource_c8f00a10 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_c8f00a10,
-  @IntegrationObjectID = @IntegrationObjectID_c8f00a10,
-  @Name = @Name_c8f00a10,
-  @DisplayName = @DisplayName_c8f00a10,
-  @Description = @Description_c8f00a10,
-  @Category = @Category_c8f00a10,
+  @MetadataSource_3faa397d = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_3faa397d,
+  @IntegrationObjectID = @IntegrationObjectID_3faa397d,
+  @Name = @Name_3faa397d,
+  @DisplayName = @DisplayName_3faa397d,
+  @Description = @Description_3faa397d,
+  @Category = @Category_3faa397d,
   @Category_Clear = 1,
-  @Type = @Type_c8f00a10,
-  @Length = @Length_c8f00a10,
+  @Type = @Type_3faa397d,
+  @Length = @Length_3faa397d,
   @Length_Clear = 1,
-  @Precision = @Precision_c8f00a10,
+  @Precision = @Precision_3faa397d,
   @Precision_Clear = 1,
-  @Scale = @Scale_c8f00a10,
+  @Scale = @Scale_3faa397d,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_c8f00a10,
-  @DefaultValue = @DefaultValue_c8f00a10,
+  @AllowsNull = @AllowsNull_3faa397d,
+  @DefaultValue = @DefaultValue_3faa397d,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_c8f00a10,
-  @IsUniqueKey = @IsUniqueKey_c8f00a10,
-  @IsReadOnly = @IsReadOnly_c8f00a10,
-  @IsRequired = @IsRequired_c8f00a10,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_c8f00a10,
+  @IsPrimaryKey = @IsPrimaryKey_3faa397d,
+  @IsUniqueKey = @IsUniqueKey_3faa397d,
+  @IsReadOnly = @IsReadOnly_3faa397d,
+  @IsRequired = @IsRequired_3faa397d,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_3faa397d,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_c8f00a10,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_3faa397d,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_c8f00a10,
-  @Configuration = @Configuration_c8f00a10,
-  @Status = @Status_c8f00a10,
-  @IsCustom = @IsCustom_c8f00a10,
-  @MetadataSource = @MetadataSource_c8f00a10;
+  @Sequence = @Sequence_3faa397d,
+  @Configuration = @Configuration_3faa397d,
+  @Status = @Status_3faa397d,
+  @IsCustom = @IsCustom_3faa397d,
+  @MetadataSource = @MetadataSource_3faa397d;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_b001d186 UNIQUEIDENTIFIER,
-@IntegrationObjectID_b001d186 UNIQUEIDENTIFIER,
-@Name_b001d186 NVARCHAR(255),
-@DisplayName_b001d186 NVARCHAR(255),
-@Description_b001d186 NVARCHAR(MAX),
-@Category_b001d186 NVARCHAR(100),
-@Type_b001d186 NVARCHAR(100),
-@Length_b001d186 INT,
-@Precision_b001d186 INT,
-@Scale_b001d186 INT,
-@AllowsNull_b001d186 BIT,
-@DefaultValue_b001d186 NVARCHAR(255),
-@IsPrimaryKey_b001d186 BIT,
-@IsUniqueKey_b001d186 BIT,
-@IsReadOnly_b001d186 BIT,
-@IsRequired_b001d186 BIT,
-@RelatedIntegrationObjectID_b001d186 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_b001d186 NVARCHAR(255),
-@Sequence_b001d186 INT,
-@Configuration_b001d186 NVARCHAR(MAX),
-@Status_b001d186 NVARCHAR(25),
-@IsCustom_b001d186 BIT,
-@MetadataSource_b001d186 NVARCHAR(20)
+DECLARE @ID_d03bf348 UNIQUEIDENTIFIER,
+@IntegrationObjectID_d03bf348 UNIQUEIDENTIFIER,
+@Name_d03bf348 NVARCHAR(255),
+@DisplayName_d03bf348 NVARCHAR(255),
+@Description_d03bf348 NVARCHAR(MAX),
+@Category_d03bf348 NVARCHAR(100),
+@Type_d03bf348 NVARCHAR(100),
+@Length_d03bf348 INT,
+@Precision_d03bf348 INT,
+@Scale_d03bf348 INT,
+@AllowsNull_d03bf348 BIT,
+@DefaultValue_d03bf348 NVARCHAR(255),
+@IsPrimaryKey_d03bf348 BIT,
+@IsUniqueKey_d03bf348 BIT,
+@IsReadOnly_d03bf348 BIT,
+@IsRequired_d03bf348 BIT,
+@RelatedIntegrationObjectID_d03bf348 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_d03bf348 NVARCHAR(255),
+@Sequence_d03bf348 INT,
+@Configuration_d03bf348 NVARCHAR(MAX),
+@Status_d03bf348 NVARCHAR(25),
+@IsCustom_d03bf348 BIT,
+@MetadataSource_d03bf348 NVARCHAR(20)
 SET
-  @ID_b001d186 = '857ac7ac-23f2-4f29-bc8a-8ea45f7a0bd7'
+  @ID_d03bf348 = '857AC7AC-23F2-4F29-BC8A-8EA45F7A0BD7'
 SET
-  @IntegrationObjectID_b001d186 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
+  @IntegrationObjectID_d03bf348 = '1B6AAA3C-002C-4E1A-8C82-0900D33FE02A'
 SET
-  @Name_b001d186 = N'meta'
+  @Name_d03bf348 = N'meta'
 SET
-  @DisplayName_b001d186 = N'Metadata'
+  @DisplayName_d03bf348 = N'Metadata'
 SET
-  @Description_b001d186 = N'Event metadata pivoted from the plugin name/value table into a single object. Keys vary by event type.'
+  @Description_d03bf348 = N'Event metadata pivoted from the plugin name/value table into a single object. Keys vary by event type.'
 SET
-  @Type_b001d186 = N'json'
+  @Type_d03bf348 = N'json'
 SET
-  @AllowsNull_b001d186 = 1
+  @AllowsNull_d03bf348 = 1
 SET
-  @IsPrimaryKey_b001d186 = 0
+  @IsPrimaryKey_d03bf348 = 0
 SET
-  @IsUniqueKey_b001d186 = 0
+  @IsUniqueKey_d03bf348 = 0
 SET
-  @IsReadOnly_b001d186 = 1
+  @IsReadOnly_d03bf348 = 1
 SET
-  @IsRequired_b001d186 = 0
+  @IsRequired_d03bf348 = 0
 SET
-  @Sequence_b001d186 = 19
+  @Sequence_d03bf348 = 19
 SET
-  @Configuration_b001d186 = N'{
+  @Configuration_d03bf348 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_b001d186 = N'Active'
+  @Status_d03bf348 = N'Active'
 SET
-  @IsCustom_b001d186 = 0
+  @IsCustom_d03bf348 = 0
 SET
-  @MetadataSource_b001d186 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_b001d186,
-  @IntegrationObjectID = @IntegrationObjectID_b001d186,
-  @Name = @Name_b001d186,
-  @DisplayName = @DisplayName_b001d186,
-  @Description = @Description_b001d186,
-  @Category = @Category_b001d186,
+  @MetadataSource_d03bf348 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_d03bf348,
+  @IntegrationObjectID = @IntegrationObjectID_d03bf348,
+  @Name = @Name_d03bf348,
+  @DisplayName = @DisplayName_d03bf348,
+  @Description = @Description_d03bf348,
+  @Category = @Category_d03bf348,
   @Category_Clear = 1,
-  @Type = @Type_b001d186,
-  @Length = @Length_b001d186,
+  @Type = @Type_d03bf348,
+  @Length = @Length_d03bf348,
   @Length_Clear = 1,
-  @Precision = @Precision_b001d186,
+  @Precision = @Precision_d03bf348,
   @Precision_Clear = 1,
-  @Scale = @Scale_b001d186,
+  @Scale = @Scale_d03bf348,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_b001d186,
-  @DefaultValue = @DefaultValue_b001d186,
+  @AllowsNull = @AllowsNull_d03bf348,
+  @DefaultValue = @DefaultValue_d03bf348,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_b001d186,
-  @IsUniqueKey = @IsUniqueKey_b001d186,
-  @IsReadOnly = @IsReadOnly_b001d186,
-  @IsRequired = @IsRequired_b001d186,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_b001d186,
+  @IsPrimaryKey = @IsPrimaryKey_d03bf348,
+  @IsUniqueKey = @IsUniqueKey_d03bf348,
+  @IsReadOnly = @IsReadOnly_d03bf348,
+  @IsRequired = @IsRequired_d03bf348,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_d03bf348,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_b001d186,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_d03bf348,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_b001d186,
-  @Configuration = @Configuration_b001d186,
-  @Status = @Status_b001d186,
-  @IsCustom = @IsCustom_b001d186,
-  @MetadataSource = @MetadataSource_b001d186;
+  @Sequence = @Sequence_d03bf348,
+  @Configuration = @Configuration_d03bf348,
+  @Status = @Status_d03bf348,
+  @IsCustom = @IsCustom_d03bf348,
+  @MetadataSource = @MetadataSource_d03bf348;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_22241a1b UNIQUEIDENTIFIER,
-@IntegrationObjectID_22241a1b UNIQUEIDENTIFIER,
-@Name_22241a1b NVARCHAR(255),
-@DisplayName_22241a1b NVARCHAR(255),
-@Description_22241a1b NVARCHAR(MAX),
-@Category_22241a1b NVARCHAR(100),
-@Type_22241a1b NVARCHAR(100),
-@Length_22241a1b INT,
-@Precision_22241a1b INT,
-@Scale_22241a1b INT,
-@AllowsNull_22241a1b BIT,
-@DefaultValue_22241a1b NVARCHAR(255),
-@IsPrimaryKey_22241a1b BIT,
-@IsUniqueKey_22241a1b BIT,
-@IsReadOnly_22241a1b BIT,
-@IsRequired_22241a1b BIT,
-@RelatedIntegrationObjectID_22241a1b UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_22241a1b NVARCHAR(255),
-@Sequence_22241a1b INT,
-@Configuration_22241a1b NVARCHAR(MAX),
-@Status_22241a1b NVARCHAR(25),
-@IsCustom_22241a1b BIT,
-@MetadataSource_22241a1b NVARCHAR(20)
+DECLARE @ID_eceb899b UNIQUEIDENTIFIER,
+@IntegrationObjectID_eceb899b UNIQUEIDENTIFIER,
+@Name_eceb899b NVARCHAR(255),
+@DisplayName_eceb899b NVARCHAR(255),
+@Description_eceb899b NVARCHAR(MAX),
+@Category_eceb899b NVARCHAR(100),
+@Type_eceb899b NVARCHAR(100),
+@Length_eceb899b INT,
+@Precision_eceb899b INT,
+@Scale_eceb899b INT,
+@AllowsNull_eceb899b BIT,
+@DefaultValue_eceb899b NVARCHAR(255),
+@IsPrimaryKey_eceb899b BIT,
+@IsUniqueKey_eceb899b BIT,
+@IsReadOnly_eceb899b BIT,
+@IsRequired_eceb899b BIT,
+@RelatedIntegrationObjectID_eceb899b UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_eceb899b NVARCHAR(255),
+@Sequence_eceb899b INT,
+@Configuration_eceb899b NVARCHAR(MAX),
+@Status_eceb899b NVARCHAR(25),
+@IsCustom_eceb899b BIT,
+@MetadataSource_eceb899b NVARCHAR(20)
 SET
-  @ID_22241a1b = '81106de0-473b-4541-8f7b-6165561dad5e'
+  @ID_eceb899b = '81106DE0-473B-4541-8F7B-6165561DAD5E'
 SET
-  @IntegrationObjectID_22241a1b = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_eceb899b = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_22241a1b = N'alert_id'
+  @Name_eceb899b = N'alert_id'
 SET
-  @DisplayName_22241a1b = N'Alert ID'
+  @DisplayName_eceb899b = N'Alert ID'
 SET
-  @Description_22241a1b = N'WP Activity Log event type ID. Primary key.'
+  @Description_eceb899b = N'WP Activity Log event type ID. Primary key.'
 SET
-  @Type_22241a1b = N'Integer'
+  @Type_eceb899b = N'Integer'
 SET
-  @AllowsNull_22241a1b = 0
+  @AllowsNull_eceb899b = 0
 SET
-  @IsPrimaryKey_22241a1b = 1
+  @IsPrimaryKey_eceb899b = 1
 SET
-  @IsUniqueKey_22241a1b = 1
+  @IsUniqueKey_eceb899b = 1
 SET
-  @IsReadOnly_22241a1b = 1
+  @IsReadOnly_eceb899b = 1
 SET
-  @IsRequired_22241a1b = 1
+  @IsRequired_eceb899b = 1
 SET
-  @Sequence_22241a1b = 0
+  @Sequence_eceb899b = 0
 SET
-  @Configuration_22241a1b = N'{
+  @Configuration_eceb899b = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_22241a1b = N'Active'
+  @Status_eceb899b = N'Active'
 SET
-  @IsCustom_22241a1b = 0
+  @IsCustom_eceb899b = 0
 SET
-  @MetadataSource_22241a1b = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_22241a1b,
-  @IntegrationObjectID = @IntegrationObjectID_22241a1b,
-  @Name = @Name_22241a1b,
-  @DisplayName = @DisplayName_22241a1b,
-  @Description = @Description_22241a1b,
-  @Category = @Category_22241a1b,
+  @MetadataSource_eceb899b = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_eceb899b,
+  @IntegrationObjectID = @IntegrationObjectID_eceb899b,
+  @Name = @Name_eceb899b,
+  @DisplayName = @DisplayName_eceb899b,
+  @Description = @Description_eceb899b,
+  @Category = @Category_eceb899b,
   @Category_Clear = 1,
-  @Type = @Type_22241a1b,
-  @Length = @Length_22241a1b,
+  @Type = @Type_eceb899b,
+  @Length = @Length_eceb899b,
   @Length_Clear = 1,
-  @Precision = @Precision_22241a1b,
+  @Precision = @Precision_eceb899b,
   @Precision_Clear = 1,
-  @Scale = @Scale_22241a1b,
+  @Scale = @Scale_eceb899b,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_22241a1b,
-  @DefaultValue = @DefaultValue_22241a1b,
+  @AllowsNull = @AllowsNull_eceb899b,
+  @DefaultValue = @DefaultValue_eceb899b,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_22241a1b,
-  @IsUniqueKey = @IsUniqueKey_22241a1b,
-  @IsReadOnly = @IsReadOnly_22241a1b,
-  @IsRequired = @IsRequired_22241a1b,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_22241a1b,
+  @IsPrimaryKey = @IsPrimaryKey_eceb899b,
+  @IsUniqueKey = @IsUniqueKey_eceb899b,
+  @IsReadOnly = @IsReadOnly_eceb899b,
+  @IsRequired = @IsRequired_eceb899b,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_eceb899b,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_22241a1b,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_eceb899b,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_22241a1b,
-  @Configuration = @Configuration_22241a1b,
-  @Status = @Status_22241a1b,
-  @IsCustom = @IsCustom_22241a1b,
-  @MetadataSource = @MetadataSource_22241a1b;
+  @Sequence = @Sequence_eceb899b,
+  @Configuration = @Configuration_eceb899b,
+  @Status = @Status_eceb899b,
+  @IsCustom = @IsCustom_eceb899b,
+  @MetadataSource = @MetadataSource_eceb899b;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_13275329 UNIQUEIDENTIFIER,
-@IntegrationObjectID_13275329 UNIQUEIDENTIFIER,
-@Name_13275329 NVARCHAR(255),
-@DisplayName_13275329 NVARCHAR(255),
-@Description_13275329 NVARCHAR(MAX),
-@Category_13275329 NVARCHAR(100),
-@Type_13275329 NVARCHAR(100),
-@Length_13275329 INT,
-@Precision_13275329 INT,
-@Scale_13275329 INT,
-@AllowsNull_13275329 BIT,
-@DefaultValue_13275329 NVARCHAR(255),
-@IsPrimaryKey_13275329 BIT,
-@IsUniqueKey_13275329 BIT,
-@IsReadOnly_13275329 BIT,
-@IsRequired_13275329 BIT,
-@RelatedIntegrationObjectID_13275329 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_13275329 NVARCHAR(255),
-@Sequence_13275329 INT,
-@Configuration_13275329 NVARCHAR(MAX),
-@Status_13275329 NVARCHAR(25),
-@IsCustom_13275329 BIT,
-@MetadataSource_13275329 NVARCHAR(20)
+DECLARE @ID_4618087a UNIQUEIDENTIFIER,
+@IntegrationObjectID_4618087a UNIQUEIDENTIFIER,
+@Name_4618087a NVARCHAR(255),
+@DisplayName_4618087a NVARCHAR(255),
+@Description_4618087a NVARCHAR(MAX),
+@Category_4618087a NVARCHAR(100),
+@Type_4618087a NVARCHAR(100),
+@Length_4618087a INT,
+@Precision_4618087a INT,
+@Scale_4618087a INT,
+@AllowsNull_4618087a BIT,
+@DefaultValue_4618087a NVARCHAR(255),
+@IsPrimaryKey_4618087a BIT,
+@IsUniqueKey_4618087a BIT,
+@IsReadOnly_4618087a BIT,
+@IsRequired_4618087a BIT,
+@RelatedIntegrationObjectID_4618087a UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_4618087a NVARCHAR(255),
+@Sequence_4618087a INT,
+@Configuration_4618087a NVARCHAR(MAX),
+@Status_4618087a NVARCHAR(25),
+@IsCustom_4618087a BIT,
+@MetadataSource_4618087a NVARCHAR(20)
 SET
-  @ID_13275329 = '2497fd94-cfb2-44da-95a1-dd49c53039a5'
+  @ID_4618087a = '2497FD94-CFB2-44DA-95A1-DD49C53039A5'
 SET
-  @IntegrationObjectID_13275329 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_4618087a = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_13275329 = N'label'
+  @Name_4618087a = N'label'
 SET
-  @DisplayName_13275329 = N'Label'
+  @DisplayName_4618087a = N'Label'
 SET
-  @Description_13275329 = N'Short human-readable name of the event type.'
+  @Description_4618087a = N'Short human-readable name of the event type.'
 SET
-  @Type_13275329 = N'String'
+  @Type_4618087a = N'String'
 SET
-  @AllowsNull_13275329 = 1
+  @AllowsNull_4618087a = 1
 SET
-  @IsPrimaryKey_13275329 = 0
+  @IsPrimaryKey_4618087a = 0
 SET
-  @IsUniqueKey_13275329 = 0
+  @IsUniqueKey_4618087a = 0
 SET
-  @IsReadOnly_13275329 = 1
+  @IsReadOnly_4618087a = 1
 SET
-  @IsRequired_13275329 = 0
+  @IsRequired_4618087a = 0
 SET
-  @Sequence_13275329 = 1
+  @Sequence_4618087a = 1
 SET
-  @Configuration_13275329 = N'{
+  @Configuration_4618087a = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_13275329 = N'Active'
+  @Status_4618087a = N'Active'
 SET
-  @IsCustom_13275329 = 0
+  @IsCustom_4618087a = 0
 SET
-  @MetadataSource_13275329 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_13275329,
-  @IntegrationObjectID = @IntegrationObjectID_13275329,
-  @Name = @Name_13275329,
-  @DisplayName = @DisplayName_13275329,
-  @Description = @Description_13275329,
-  @Category = @Category_13275329,
+  @MetadataSource_4618087a = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_4618087a,
+  @IntegrationObjectID = @IntegrationObjectID_4618087a,
+  @Name = @Name_4618087a,
+  @DisplayName = @DisplayName_4618087a,
+  @Description = @Description_4618087a,
+  @Category = @Category_4618087a,
   @Category_Clear = 1,
-  @Type = @Type_13275329,
-  @Length = @Length_13275329,
+  @Type = @Type_4618087a,
+  @Length = @Length_4618087a,
   @Length_Clear = 1,
-  @Precision = @Precision_13275329,
+  @Precision = @Precision_4618087a,
   @Precision_Clear = 1,
-  @Scale = @Scale_13275329,
+  @Scale = @Scale_4618087a,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_13275329,
-  @DefaultValue = @DefaultValue_13275329,
+  @AllowsNull = @AllowsNull_4618087a,
+  @DefaultValue = @DefaultValue_4618087a,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_13275329,
-  @IsUniqueKey = @IsUniqueKey_13275329,
-  @IsReadOnly = @IsReadOnly_13275329,
-  @IsRequired = @IsRequired_13275329,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_13275329,
+  @IsPrimaryKey = @IsPrimaryKey_4618087a,
+  @IsUniqueKey = @IsUniqueKey_4618087a,
+  @IsReadOnly = @IsReadOnly_4618087a,
+  @IsRequired = @IsRequired_4618087a,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_4618087a,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_13275329,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_4618087a,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_13275329,
-  @Configuration = @Configuration_13275329,
-  @Status = @Status_13275329,
-  @IsCustom = @IsCustom_13275329,
-  @MetadataSource = @MetadataSource_13275329;
+  @Sequence = @Sequence_4618087a,
+  @Configuration = @Configuration_4618087a,
+  @Status = @Status_4618087a,
+  @IsCustom = @IsCustom_4618087a,
+  @MetadataSource = @MetadataSource_4618087a;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_c4cbe92f UNIQUEIDENTIFIER,
-@IntegrationObjectID_c4cbe92f UNIQUEIDENTIFIER,
-@Name_c4cbe92f NVARCHAR(255),
-@DisplayName_c4cbe92f NVARCHAR(255),
-@Description_c4cbe92f NVARCHAR(MAX),
-@Category_c4cbe92f NVARCHAR(100),
-@Type_c4cbe92f NVARCHAR(100),
-@Length_c4cbe92f INT,
-@Precision_c4cbe92f INT,
-@Scale_c4cbe92f INT,
-@AllowsNull_c4cbe92f BIT,
-@DefaultValue_c4cbe92f NVARCHAR(255),
-@IsPrimaryKey_c4cbe92f BIT,
-@IsUniqueKey_c4cbe92f BIT,
-@IsReadOnly_c4cbe92f BIT,
-@IsRequired_c4cbe92f BIT,
-@RelatedIntegrationObjectID_c4cbe92f UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_c4cbe92f NVARCHAR(255),
-@Sequence_c4cbe92f INT,
-@Configuration_c4cbe92f NVARCHAR(MAX),
-@Status_c4cbe92f NVARCHAR(25),
-@IsCustom_c4cbe92f BIT,
-@MetadataSource_c4cbe92f NVARCHAR(20)
+DECLARE @ID_44f26643 UNIQUEIDENTIFIER,
+@IntegrationObjectID_44f26643 UNIQUEIDENTIFIER,
+@Name_44f26643 NVARCHAR(255),
+@DisplayName_44f26643 NVARCHAR(255),
+@Description_44f26643 NVARCHAR(MAX),
+@Category_44f26643 NVARCHAR(100),
+@Type_44f26643 NVARCHAR(100),
+@Length_44f26643 INT,
+@Precision_44f26643 INT,
+@Scale_44f26643 INT,
+@AllowsNull_44f26643 BIT,
+@DefaultValue_44f26643 NVARCHAR(255),
+@IsPrimaryKey_44f26643 BIT,
+@IsUniqueKey_44f26643 BIT,
+@IsReadOnly_44f26643 BIT,
+@IsRequired_44f26643 BIT,
+@RelatedIntegrationObjectID_44f26643 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_44f26643 NVARCHAR(255),
+@Sequence_44f26643 INT,
+@Configuration_44f26643 NVARCHAR(MAX),
+@Status_44f26643 NVARCHAR(25),
+@IsCustom_44f26643 BIT,
+@MetadataSource_44f26643 NVARCHAR(20)
 SET
-  @ID_c4cbe92f = '4ee0f696-df4d-4511-98e1-e1d29fbe8b54'
+  @ID_44f26643 = '4EE0F696-DF4D-4511-98E1-E1D29FBE8B54'
 SET
-  @IntegrationObjectID_c4cbe92f = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_44f26643 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_c4cbe92f = N'message'
+  @Name_44f26643 = N'message'
 SET
-  @DisplayName_c4cbe92f = N'Message Template'
+  @DisplayName_44f26643 = N'Message Template'
 SET
-  @Description_c4cbe92f = N'Message template the plugin renders for this event type.'
+  @Description_44f26643 = N'Message template the plugin renders for this event type. Prose: WSAL templates run to several hundred characters, well past the 255 default.'
 SET
-  @Type_c4cbe92f = N'String'
+  @Type_44f26643 = N'String'
 SET
-  @AllowsNull_c4cbe92f = 1
+  @Length_44f26643 = 4000
 SET
-  @IsPrimaryKey_c4cbe92f = 0
+  @AllowsNull_44f26643 = 1
 SET
-  @IsUniqueKey_c4cbe92f = 0
+  @IsPrimaryKey_44f26643 = 0
 SET
-  @IsReadOnly_c4cbe92f = 1
+  @IsUniqueKey_44f26643 = 0
 SET
-  @IsRequired_c4cbe92f = 0
+  @IsReadOnly_44f26643 = 1
 SET
-  @Sequence_c4cbe92f = 2
+  @IsRequired_44f26643 = 0
 SET
-  @Configuration_c4cbe92f = N'{
+  @Sequence_44f26643 = 2
+SET
+  @Configuration_44f26643 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_c4cbe92f = N'Active'
+  @Status_44f26643 = N'Active'
 SET
-  @IsCustom_c4cbe92f = 0
+  @IsCustom_44f26643 = 0
 SET
-  @MetadataSource_c4cbe92f = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_c4cbe92f,
-  @IntegrationObjectID = @IntegrationObjectID_c4cbe92f,
-  @Name = @Name_c4cbe92f,
-  @DisplayName = @DisplayName_c4cbe92f,
-  @Description = @Description_c4cbe92f,
-  @Category = @Category_c4cbe92f,
+  @MetadataSource_44f26643 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_44f26643,
+  @IntegrationObjectID = @IntegrationObjectID_44f26643,
+  @Name = @Name_44f26643,
+  @DisplayName = @DisplayName_44f26643,
+  @Description = @Description_44f26643,
+  @Category = @Category_44f26643,
   @Category_Clear = 1,
-  @Type = @Type_c4cbe92f,
-  @Length = @Length_c4cbe92f,
-  @Length_Clear = 1,
-  @Precision = @Precision_c4cbe92f,
+  @Type = @Type_44f26643,
+  @Length = @Length_44f26643,
+  @Precision = @Precision_44f26643,
   @Precision_Clear = 1,
-  @Scale = @Scale_c4cbe92f,
+  @Scale = @Scale_44f26643,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_c4cbe92f,
-  @DefaultValue = @DefaultValue_c4cbe92f,
+  @AllowsNull = @AllowsNull_44f26643,
+  @DefaultValue = @DefaultValue_44f26643,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_c4cbe92f,
-  @IsUniqueKey = @IsUniqueKey_c4cbe92f,
-  @IsReadOnly = @IsReadOnly_c4cbe92f,
-  @IsRequired = @IsRequired_c4cbe92f,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_c4cbe92f,
+  @IsPrimaryKey = @IsPrimaryKey_44f26643,
+  @IsUniqueKey = @IsUniqueKey_44f26643,
+  @IsReadOnly = @IsReadOnly_44f26643,
+  @IsRequired = @IsRequired_44f26643,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_44f26643,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_c4cbe92f,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_44f26643,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_c4cbe92f,
-  @Configuration = @Configuration_c4cbe92f,
-  @Status = @Status_c4cbe92f,
-  @IsCustom = @IsCustom_c4cbe92f,
-  @MetadataSource = @MetadataSource_c4cbe92f;
+  @Sequence = @Sequence_44f26643,
+  @Configuration = @Configuration_44f26643,
+  @Status = @Status_44f26643,
+  @IsCustom = @IsCustom_44f26643,
+  @MetadataSource = @MetadataSource_44f26643;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_fe5cb55b UNIQUEIDENTIFIER,
-@IntegrationObjectID_fe5cb55b UNIQUEIDENTIFIER,
-@Name_fe5cb55b NVARCHAR(255),
-@DisplayName_fe5cb55b NVARCHAR(255),
-@Description_fe5cb55b NVARCHAR(MAX),
-@Category_fe5cb55b NVARCHAR(100),
-@Type_fe5cb55b NVARCHAR(100),
-@Length_fe5cb55b INT,
-@Precision_fe5cb55b INT,
-@Scale_fe5cb55b INT,
-@AllowsNull_fe5cb55b BIT,
-@DefaultValue_fe5cb55b NVARCHAR(255),
-@IsPrimaryKey_fe5cb55b BIT,
-@IsUniqueKey_fe5cb55b BIT,
-@IsReadOnly_fe5cb55b BIT,
-@IsRequired_fe5cb55b BIT,
-@RelatedIntegrationObjectID_fe5cb55b UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_fe5cb55b NVARCHAR(255),
-@Sequence_fe5cb55b INT,
-@Configuration_fe5cb55b NVARCHAR(MAX),
-@Status_fe5cb55b NVARCHAR(25),
-@IsCustom_fe5cb55b BIT,
-@MetadataSource_fe5cb55b NVARCHAR(20)
+DECLARE @ID_1354c3ac UNIQUEIDENTIFIER,
+@IntegrationObjectID_1354c3ac UNIQUEIDENTIFIER,
+@Name_1354c3ac NVARCHAR(255),
+@DisplayName_1354c3ac NVARCHAR(255),
+@Description_1354c3ac NVARCHAR(MAX),
+@Category_1354c3ac NVARCHAR(100),
+@Type_1354c3ac NVARCHAR(100),
+@Length_1354c3ac INT,
+@Precision_1354c3ac INT,
+@Scale_1354c3ac INT,
+@AllowsNull_1354c3ac BIT,
+@DefaultValue_1354c3ac NVARCHAR(255),
+@IsPrimaryKey_1354c3ac BIT,
+@IsUniqueKey_1354c3ac BIT,
+@IsReadOnly_1354c3ac BIT,
+@IsRequired_1354c3ac BIT,
+@RelatedIntegrationObjectID_1354c3ac UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_1354c3ac NVARCHAR(255),
+@Sequence_1354c3ac INT,
+@Configuration_1354c3ac NVARCHAR(MAX),
+@Status_1354c3ac NVARCHAR(25),
+@IsCustom_1354c3ac BIT,
+@MetadataSource_1354c3ac NVARCHAR(20)
 SET
-  @ID_fe5cb55b = '92965b4e-08df-4c0d-89f1-a8d8aa58308d'
+  @ID_1354c3ac = '92965B4E-08DF-4C0D-89F1-A8D8AA58308D'
 SET
-  @IntegrationObjectID_fe5cb55b = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_1354c3ac = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_fe5cb55b = N'severity'
+  @Name_1354c3ac = N'severity'
 SET
-  @DisplayName_fe5cb55b = N'Severity'
+  @DisplayName_1354c3ac = N'Severity'
 SET
-  @Description_fe5cb55b = N'Declared severity level for this event type.'
+  @Description_1354c3ac = N'Declared severity level for this event type.'
 SET
-  @Type_fe5cb55b = N'String'
+  @Type_1354c3ac = N'String'
 SET
-  @AllowsNull_fe5cb55b = 1
+  @AllowsNull_1354c3ac = 1
 SET
-  @IsPrimaryKey_fe5cb55b = 0
+  @IsPrimaryKey_1354c3ac = 0
 SET
-  @IsUniqueKey_fe5cb55b = 0
+  @IsUniqueKey_1354c3ac = 0
 SET
-  @IsReadOnly_fe5cb55b = 1
+  @IsReadOnly_1354c3ac = 1
 SET
-  @IsRequired_fe5cb55b = 0
+  @IsRequired_1354c3ac = 0
 SET
-  @Sequence_fe5cb55b = 3
+  @Sequence_1354c3ac = 3
 SET
-  @Configuration_fe5cb55b = N'{
+  @Configuration_1354c3ac = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_fe5cb55b = N'Active'
+  @Status_1354c3ac = N'Active'
 SET
-  @IsCustom_fe5cb55b = 0
+  @IsCustom_1354c3ac = 0
 SET
-  @MetadataSource_fe5cb55b = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_fe5cb55b,
-  @IntegrationObjectID = @IntegrationObjectID_fe5cb55b,
-  @Name = @Name_fe5cb55b,
-  @DisplayName = @DisplayName_fe5cb55b,
-  @Description = @Description_fe5cb55b,
-  @Category = @Category_fe5cb55b,
+  @MetadataSource_1354c3ac = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_1354c3ac,
+  @IntegrationObjectID = @IntegrationObjectID_1354c3ac,
+  @Name = @Name_1354c3ac,
+  @DisplayName = @DisplayName_1354c3ac,
+  @Description = @Description_1354c3ac,
+  @Category = @Category_1354c3ac,
   @Category_Clear = 1,
-  @Type = @Type_fe5cb55b,
-  @Length = @Length_fe5cb55b,
+  @Type = @Type_1354c3ac,
+  @Length = @Length_1354c3ac,
   @Length_Clear = 1,
-  @Precision = @Precision_fe5cb55b,
+  @Precision = @Precision_1354c3ac,
   @Precision_Clear = 1,
-  @Scale = @Scale_fe5cb55b,
+  @Scale = @Scale_1354c3ac,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_fe5cb55b,
-  @DefaultValue = @DefaultValue_fe5cb55b,
+  @AllowsNull = @AllowsNull_1354c3ac,
+  @DefaultValue = @DefaultValue_1354c3ac,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_fe5cb55b,
-  @IsUniqueKey = @IsUniqueKey_fe5cb55b,
-  @IsReadOnly = @IsReadOnly_fe5cb55b,
-  @IsRequired = @IsRequired_fe5cb55b,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_fe5cb55b,
+  @IsPrimaryKey = @IsPrimaryKey_1354c3ac,
+  @IsUniqueKey = @IsUniqueKey_1354c3ac,
+  @IsReadOnly = @IsReadOnly_1354c3ac,
+  @IsRequired = @IsRequired_1354c3ac,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_1354c3ac,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_fe5cb55b,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_1354c3ac,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_fe5cb55b,
-  @Configuration = @Configuration_fe5cb55b,
-  @Status = @Status_fe5cb55b,
-  @IsCustom = @IsCustom_fe5cb55b,
-  @MetadataSource = @MetadataSource_fe5cb55b;
+  @Sequence = @Sequence_1354c3ac,
+  @Configuration = @Configuration_1354c3ac,
+  @Status = @Status_1354c3ac,
+  @IsCustom = @IsCustom_1354c3ac,
+  @MetadataSource = @MetadataSource_1354c3ac;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_4cefec23 UNIQUEIDENTIFIER,
-@IntegrationObjectID_4cefec23 UNIQUEIDENTIFIER,
-@Name_4cefec23 NVARCHAR(255),
-@DisplayName_4cefec23 NVARCHAR(255),
-@Description_4cefec23 NVARCHAR(MAX),
-@Category_4cefec23 NVARCHAR(100),
-@Type_4cefec23 NVARCHAR(100),
-@Length_4cefec23 INT,
-@Precision_4cefec23 INT,
-@Scale_4cefec23 INT,
-@AllowsNull_4cefec23 BIT,
-@DefaultValue_4cefec23 NVARCHAR(255),
-@IsPrimaryKey_4cefec23 BIT,
-@IsUniqueKey_4cefec23 BIT,
-@IsReadOnly_4cefec23 BIT,
-@IsRequired_4cefec23 BIT,
-@RelatedIntegrationObjectID_4cefec23 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_4cefec23 NVARCHAR(255),
-@Sequence_4cefec23 INT,
-@Configuration_4cefec23 NVARCHAR(MAX),
-@Status_4cefec23 NVARCHAR(25),
-@IsCustom_4cefec23 BIT,
-@MetadataSource_4cefec23 NVARCHAR(20)
+DECLARE @ID_7351afa5 UNIQUEIDENTIFIER,
+@IntegrationObjectID_7351afa5 UNIQUEIDENTIFIER,
+@Name_7351afa5 NVARCHAR(255),
+@DisplayName_7351afa5 NVARCHAR(255),
+@Description_7351afa5 NVARCHAR(MAX),
+@Category_7351afa5 NVARCHAR(100),
+@Type_7351afa5 NVARCHAR(100),
+@Length_7351afa5 INT,
+@Precision_7351afa5 INT,
+@Scale_7351afa5 INT,
+@AllowsNull_7351afa5 BIT,
+@DefaultValue_7351afa5 NVARCHAR(255),
+@IsPrimaryKey_7351afa5 BIT,
+@IsUniqueKey_7351afa5 BIT,
+@IsReadOnly_7351afa5 BIT,
+@IsRequired_7351afa5 BIT,
+@RelatedIntegrationObjectID_7351afa5 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_7351afa5 NVARCHAR(255),
+@Sequence_7351afa5 INT,
+@Configuration_7351afa5 NVARCHAR(MAX),
+@Status_7351afa5 NVARCHAR(25),
+@IsCustom_7351afa5 BIT,
+@MetadataSource_7351afa5 NVARCHAR(20)
 SET
-  @ID_4cefec23 = 'dc9b21a8-e493-4e9c-9be8-6b5bfa5d9ba6'
+  @ID_7351afa5 = 'DC9B21A8-E493-4E9C-9BE8-6B5BFA5D9BA6'
 SET
-  @IntegrationObjectID_4cefec23 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_7351afa5 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_4cefec23 = N'category'
+  @Name_7351afa5 = N'category'
 SET
-  @DisplayName_4cefec23 = N'Category'
+  @DisplayName_7351afa5 = N'Category'
 SET
-  @Description_4cefec23 = N'Top-level grouping the event type belongs to.'
+  @Description_7351afa5 = N'Top-level grouping the event type belongs to.'
 SET
-  @Type_4cefec23 = N'String'
+  @Type_7351afa5 = N'String'
 SET
-  @AllowsNull_4cefec23 = 1
+  @AllowsNull_7351afa5 = 1
 SET
-  @IsPrimaryKey_4cefec23 = 0
+  @IsPrimaryKey_7351afa5 = 0
 SET
-  @IsUniqueKey_4cefec23 = 0
+  @IsUniqueKey_7351afa5 = 0
 SET
-  @IsReadOnly_4cefec23 = 1
+  @IsReadOnly_7351afa5 = 1
 SET
-  @IsRequired_4cefec23 = 0
+  @IsRequired_7351afa5 = 0
 SET
-  @Sequence_4cefec23 = 4
+  @Sequence_7351afa5 = 4
 SET
-  @Configuration_4cefec23 = N'{
+  @Configuration_7351afa5 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_4cefec23 = N'Active'
+  @Status_7351afa5 = N'Active'
 SET
-  @IsCustom_4cefec23 = 0
+  @IsCustom_7351afa5 = 0
 SET
-  @MetadataSource_4cefec23 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_4cefec23,
-  @IntegrationObjectID = @IntegrationObjectID_4cefec23,
-  @Name = @Name_4cefec23,
-  @DisplayName = @DisplayName_4cefec23,
-  @Description = @Description_4cefec23,
-  @Category = @Category_4cefec23,
+  @MetadataSource_7351afa5 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_7351afa5,
+  @IntegrationObjectID = @IntegrationObjectID_7351afa5,
+  @Name = @Name_7351afa5,
+  @DisplayName = @DisplayName_7351afa5,
+  @Description = @Description_7351afa5,
+  @Category = @Category_7351afa5,
   @Category_Clear = 1,
-  @Type = @Type_4cefec23,
-  @Length = @Length_4cefec23,
+  @Type = @Type_7351afa5,
+  @Length = @Length_7351afa5,
   @Length_Clear = 1,
-  @Precision = @Precision_4cefec23,
+  @Precision = @Precision_7351afa5,
   @Precision_Clear = 1,
-  @Scale = @Scale_4cefec23,
+  @Scale = @Scale_7351afa5,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_4cefec23,
-  @DefaultValue = @DefaultValue_4cefec23,
+  @AllowsNull = @AllowsNull_7351afa5,
+  @DefaultValue = @DefaultValue_7351afa5,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_4cefec23,
-  @IsUniqueKey = @IsUniqueKey_4cefec23,
-  @IsReadOnly = @IsReadOnly_4cefec23,
-  @IsRequired = @IsRequired_4cefec23,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_4cefec23,
+  @IsPrimaryKey = @IsPrimaryKey_7351afa5,
+  @IsUniqueKey = @IsUniqueKey_7351afa5,
+  @IsReadOnly = @IsReadOnly_7351afa5,
+  @IsRequired = @IsRequired_7351afa5,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_7351afa5,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_4cefec23,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_7351afa5,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_4cefec23,
-  @Configuration = @Configuration_4cefec23,
-  @Status = @Status_4cefec23,
-  @IsCustom = @IsCustom_4cefec23,
-  @MetadataSource = @MetadataSource_4cefec23;
+  @Sequence = @Sequence_7351afa5,
+  @Configuration = @Configuration_7351afa5,
+  @Status = @Status_7351afa5,
+  @IsCustom = @IsCustom_7351afa5,
+  @MetadataSource = @MetadataSource_7351afa5;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_ea9faeac UNIQUEIDENTIFIER,
-@IntegrationObjectID_ea9faeac UNIQUEIDENTIFIER,
-@Name_ea9faeac NVARCHAR(255),
-@DisplayName_ea9faeac NVARCHAR(255),
-@Description_ea9faeac NVARCHAR(MAX),
-@Category_ea9faeac NVARCHAR(100),
-@Type_ea9faeac NVARCHAR(100),
-@Length_ea9faeac INT,
-@Precision_ea9faeac INT,
-@Scale_ea9faeac INT,
-@AllowsNull_ea9faeac BIT,
-@DefaultValue_ea9faeac NVARCHAR(255),
-@IsPrimaryKey_ea9faeac BIT,
-@IsUniqueKey_ea9faeac BIT,
-@IsReadOnly_ea9faeac BIT,
-@IsRequired_ea9faeac BIT,
-@RelatedIntegrationObjectID_ea9faeac UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_ea9faeac NVARCHAR(255),
-@Sequence_ea9faeac INT,
-@Configuration_ea9faeac NVARCHAR(MAX),
-@Status_ea9faeac NVARCHAR(25),
-@IsCustom_ea9faeac BIT,
-@MetadataSource_ea9faeac NVARCHAR(20)
+DECLARE @ID_df2f3a15 UNIQUEIDENTIFIER,
+@IntegrationObjectID_df2f3a15 UNIQUEIDENTIFIER,
+@Name_df2f3a15 NVARCHAR(255),
+@DisplayName_df2f3a15 NVARCHAR(255),
+@Description_df2f3a15 NVARCHAR(MAX),
+@Category_df2f3a15 NVARCHAR(100),
+@Type_df2f3a15 NVARCHAR(100),
+@Length_df2f3a15 INT,
+@Precision_df2f3a15 INT,
+@Scale_df2f3a15 INT,
+@AllowsNull_df2f3a15 BIT,
+@DefaultValue_df2f3a15 NVARCHAR(255),
+@IsPrimaryKey_df2f3a15 BIT,
+@IsUniqueKey_df2f3a15 BIT,
+@IsReadOnly_df2f3a15 BIT,
+@IsRequired_df2f3a15 BIT,
+@RelatedIntegrationObjectID_df2f3a15 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_df2f3a15 NVARCHAR(255),
+@Sequence_df2f3a15 INT,
+@Configuration_df2f3a15 NVARCHAR(MAX),
+@Status_df2f3a15 NVARCHAR(25),
+@IsCustom_df2f3a15 BIT,
+@MetadataSource_df2f3a15 NVARCHAR(20)
 SET
-  @ID_ea9faeac = '41cb0754-e4df-4f84-bc5c-f2c777663bb4'
+  @ID_df2f3a15 = '41CB0754-E4DF-4F84-BC5C-F2C777663BB4'
 SET
-  @IntegrationObjectID_ea9faeac = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_df2f3a15 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_ea9faeac = N'subcategory'
+  @Name_df2f3a15 = N'subcategory'
 SET
-  @DisplayName_ea9faeac = N'Subcategory'
+  @DisplayName_df2f3a15 = N'Subcategory'
 SET
-  @Description_ea9faeac = N'Secondary grouping the event type belongs to.'
+  @Description_df2f3a15 = N'Secondary grouping the event type belongs to.'
 SET
-  @Type_ea9faeac = N'String'
+  @Type_df2f3a15 = N'String'
 SET
-  @AllowsNull_ea9faeac = 1
+  @AllowsNull_df2f3a15 = 1
 SET
-  @IsPrimaryKey_ea9faeac = 0
+  @IsPrimaryKey_df2f3a15 = 0
 SET
-  @IsUniqueKey_ea9faeac = 0
+  @IsUniqueKey_df2f3a15 = 0
 SET
-  @IsReadOnly_ea9faeac = 1
+  @IsReadOnly_df2f3a15 = 1
 SET
-  @IsRequired_ea9faeac = 0
+  @IsRequired_df2f3a15 = 0
 SET
-  @Sequence_ea9faeac = 5
+  @Sequence_df2f3a15 = 5
 SET
-  @Configuration_ea9faeac = N'{
+  @Configuration_df2f3a15 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_ea9faeac = N'Active'
+  @Status_df2f3a15 = N'Active'
 SET
-  @IsCustom_ea9faeac = 0
+  @IsCustom_df2f3a15 = 0
 SET
-  @MetadataSource_ea9faeac = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_ea9faeac,
-  @IntegrationObjectID = @IntegrationObjectID_ea9faeac,
-  @Name = @Name_ea9faeac,
-  @DisplayName = @DisplayName_ea9faeac,
-  @Description = @Description_ea9faeac,
-  @Category = @Category_ea9faeac,
+  @MetadataSource_df2f3a15 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_df2f3a15,
+  @IntegrationObjectID = @IntegrationObjectID_df2f3a15,
+  @Name = @Name_df2f3a15,
+  @DisplayName = @DisplayName_df2f3a15,
+  @Description = @Description_df2f3a15,
+  @Category = @Category_df2f3a15,
   @Category_Clear = 1,
-  @Type = @Type_ea9faeac,
-  @Length = @Length_ea9faeac,
+  @Type = @Type_df2f3a15,
+  @Length = @Length_df2f3a15,
   @Length_Clear = 1,
-  @Precision = @Precision_ea9faeac,
+  @Precision = @Precision_df2f3a15,
   @Precision_Clear = 1,
-  @Scale = @Scale_ea9faeac,
+  @Scale = @Scale_df2f3a15,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_ea9faeac,
-  @DefaultValue = @DefaultValue_ea9faeac,
+  @AllowsNull = @AllowsNull_df2f3a15,
+  @DefaultValue = @DefaultValue_df2f3a15,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_ea9faeac,
-  @IsUniqueKey = @IsUniqueKey_ea9faeac,
-  @IsReadOnly = @IsReadOnly_ea9faeac,
-  @IsRequired = @IsRequired_ea9faeac,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_ea9faeac,
+  @IsPrimaryKey = @IsPrimaryKey_df2f3a15,
+  @IsUniqueKey = @IsUniqueKey_df2f3a15,
+  @IsReadOnly = @IsReadOnly_df2f3a15,
+  @IsRequired = @IsRequired_df2f3a15,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_df2f3a15,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_ea9faeac,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_df2f3a15,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_ea9faeac,
-  @Configuration = @Configuration_ea9faeac,
-  @Status = @Status_ea9faeac,
-  @IsCustom = @IsCustom_ea9faeac,
-  @MetadataSource = @MetadataSource_ea9faeac;
+  @Sequence = @Sequence_df2f3a15,
+  @Configuration = @Configuration_df2f3a15,
+  @Status = @Status_df2f3a15,
+  @IsCustom = @IsCustom_df2f3a15,
+  @MetadataSource = @MetadataSource_df2f3a15;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_ddf0aa81 UNIQUEIDENTIFIER,
-@IntegrationObjectID_ddf0aa81 UNIQUEIDENTIFIER,
-@Name_ddf0aa81 NVARCHAR(255),
-@DisplayName_ddf0aa81 NVARCHAR(255),
-@Description_ddf0aa81 NVARCHAR(MAX),
-@Category_ddf0aa81 NVARCHAR(100),
-@Type_ddf0aa81 NVARCHAR(100),
-@Length_ddf0aa81 INT,
-@Precision_ddf0aa81 INT,
-@Scale_ddf0aa81 INT,
-@AllowsNull_ddf0aa81 BIT,
-@DefaultValue_ddf0aa81 NVARCHAR(255),
-@IsPrimaryKey_ddf0aa81 BIT,
-@IsUniqueKey_ddf0aa81 BIT,
-@IsReadOnly_ddf0aa81 BIT,
-@IsRequired_ddf0aa81 BIT,
-@RelatedIntegrationObjectID_ddf0aa81 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_ddf0aa81 NVARCHAR(255),
-@Sequence_ddf0aa81 INT,
-@Configuration_ddf0aa81 NVARCHAR(MAX),
-@Status_ddf0aa81 NVARCHAR(25),
-@IsCustom_ddf0aa81 BIT,
-@MetadataSource_ddf0aa81 NVARCHAR(20)
+DECLARE @ID_6311f716 UNIQUEIDENTIFIER,
+@IntegrationObjectID_6311f716 UNIQUEIDENTIFIER,
+@Name_6311f716 NVARCHAR(255),
+@DisplayName_6311f716 NVARCHAR(255),
+@Description_6311f716 NVARCHAR(MAX),
+@Category_6311f716 NVARCHAR(100),
+@Type_6311f716 NVARCHAR(100),
+@Length_6311f716 INT,
+@Precision_6311f716 INT,
+@Scale_6311f716 INT,
+@AllowsNull_6311f716 BIT,
+@DefaultValue_6311f716 NVARCHAR(255),
+@IsPrimaryKey_6311f716 BIT,
+@IsUniqueKey_6311f716 BIT,
+@IsReadOnly_6311f716 BIT,
+@IsRequired_6311f716 BIT,
+@RelatedIntegrationObjectID_6311f716 UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_6311f716 NVARCHAR(255),
+@Sequence_6311f716 INT,
+@Configuration_6311f716 NVARCHAR(MAX),
+@Status_6311f716 NVARCHAR(25),
+@IsCustom_6311f716 BIT,
+@MetadataSource_6311f716 NVARCHAR(20)
 SET
-  @ID_ddf0aa81 = 'b613f52d-00c9-4a75-8705-efaa9879e513'
+  @ID_6311f716 = 'B613F52D-00C9-4A75-8705-EFAA9879E513'
 SET
-  @IntegrationObjectID_ddf0aa81 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_6311f716 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_ddf0aa81 = N'object'
+  @Name_6311f716 = N'object'
 SET
-  @DisplayName_ddf0aa81 = N'Object'
+  @DisplayName_6311f716 = N'Object'
 SET
-  @Description_ddf0aa81 = N'Subject this event type concerns.'
+  @Description_6311f716 = N'Subject this event type concerns.'
 SET
-  @Type_ddf0aa81 = N'String'
+  @Type_6311f716 = N'String'
 SET
-  @AllowsNull_ddf0aa81 = 1
+  @AllowsNull_6311f716 = 1
 SET
-  @IsPrimaryKey_ddf0aa81 = 0
+  @IsPrimaryKey_6311f716 = 0
 SET
-  @IsUniqueKey_ddf0aa81 = 0
+  @IsUniqueKey_6311f716 = 0
 SET
-  @IsReadOnly_ddf0aa81 = 1
+  @IsReadOnly_6311f716 = 1
 SET
-  @IsRequired_ddf0aa81 = 0
+  @IsRequired_6311f716 = 0
 SET
-  @Sequence_ddf0aa81 = 6
+  @Sequence_6311f716 = 6
 SET
-  @Configuration_ddf0aa81 = N'{
+  @Configuration_6311f716 = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_ddf0aa81 = N'Active'
+  @Status_6311f716 = N'Active'
 SET
-  @IsCustom_ddf0aa81 = 0
+  @IsCustom_6311f716 = 0
 SET
-  @MetadataSource_ddf0aa81 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_ddf0aa81,
-  @IntegrationObjectID = @IntegrationObjectID_ddf0aa81,
-  @Name = @Name_ddf0aa81,
-  @DisplayName = @DisplayName_ddf0aa81,
-  @Description = @Description_ddf0aa81,
-  @Category = @Category_ddf0aa81,
+  @MetadataSource_6311f716 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_6311f716,
+  @IntegrationObjectID = @IntegrationObjectID_6311f716,
+  @Name = @Name_6311f716,
+  @DisplayName = @DisplayName_6311f716,
+  @Description = @Description_6311f716,
+  @Category = @Category_6311f716,
   @Category_Clear = 1,
-  @Type = @Type_ddf0aa81,
-  @Length = @Length_ddf0aa81,
+  @Type = @Type_6311f716,
+  @Length = @Length_6311f716,
   @Length_Clear = 1,
-  @Precision = @Precision_ddf0aa81,
+  @Precision = @Precision_6311f716,
   @Precision_Clear = 1,
-  @Scale = @Scale_ddf0aa81,
+  @Scale = @Scale_6311f716,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_ddf0aa81,
-  @DefaultValue = @DefaultValue_ddf0aa81,
+  @AllowsNull = @AllowsNull_6311f716,
+  @DefaultValue = @DefaultValue_6311f716,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_ddf0aa81,
-  @IsUniqueKey = @IsUniqueKey_ddf0aa81,
-  @IsReadOnly = @IsReadOnly_ddf0aa81,
-  @IsRequired = @IsRequired_ddf0aa81,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_ddf0aa81,
+  @IsPrimaryKey = @IsPrimaryKey_6311f716,
+  @IsUniqueKey = @IsUniqueKey_6311f716,
+  @IsReadOnly = @IsReadOnly_6311f716,
+  @IsRequired = @IsRequired_6311f716,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_6311f716,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_ddf0aa81,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_6311f716,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_ddf0aa81,
-  @Configuration = @Configuration_ddf0aa81,
-  @Status = @Status_ddf0aa81,
-  @IsCustom = @IsCustom_ddf0aa81,
-  @MetadataSource = @MetadataSource_ddf0aa81;
+  @Sequence = @Sequence_6311f716,
+  @Configuration = @Configuration_6311f716,
+  @Status = @Status_6311f716,
+  @IsCustom = @IsCustom_6311f716,
+  @MetadataSource = @MetadataSource_6311f716;
 
 GO
 
 -- Save MJ: Integration Object Fields (core SP call only)
-DECLARE @ID_3be2e282 UNIQUEIDENTIFIER,
-@IntegrationObjectID_3be2e282 UNIQUEIDENTIFIER,
-@Name_3be2e282 NVARCHAR(255),
-@DisplayName_3be2e282 NVARCHAR(255),
-@Description_3be2e282 NVARCHAR(MAX),
-@Category_3be2e282 NVARCHAR(100),
-@Type_3be2e282 NVARCHAR(100),
-@Length_3be2e282 INT,
-@Precision_3be2e282 INT,
-@Scale_3be2e282 INT,
-@AllowsNull_3be2e282 BIT,
-@DefaultValue_3be2e282 NVARCHAR(255),
-@IsPrimaryKey_3be2e282 BIT,
-@IsUniqueKey_3be2e282 BIT,
-@IsReadOnly_3be2e282 BIT,
-@IsRequired_3be2e282 BIT,
-@RelatedIntegrationObjectID_3be2e282 UNIQUEIDENTIFIER,
-@RelatedIntegrationObjectFieldName_3be2e282 NVARCHAR(255),
-@Sequence_3be2e282 INT,
-@Configuration_3be2e282 NVARCHAR(MAX),
-@Status_3be2e282 NVARCHAR(25),
-@IsCustom_3be2e282 BIT,
-@MetadataSource_3be2e282 NVARCHAR(20)
+DECLARE @ID_c90fce9c UNIQUEIDENTIFIER,
+@IntegrationObjectID_c90fce9c UNIQUEIDENTIFIER,
+@Name_c90fce9c NVARCHAR(255),
+@DisplayName_c90fce9c NVARCHAR(255),
+@Description_c90fce9c NVARCHAR(MAX),
+@Category_c90fce9c NVARCHAR(100),
+@Type_c90fce9c NVARCHAR(100),
+@Length_c90fce9c INT,
+@Precision_c90fce9c INT,
+@Scale_c90fce9c INT,
+@AllowsNull_c90fce9c BIT,
+@DefaultValue_c90fce9c NVARCHAR(255),
+@IsPrimaryKey_c90fce9c BIT,
+@IsUniqueKey_c90fce9c BIT,
+@IsReadOnly_c90fce9c BIT,
+@IsRequired_c90fce9c BIT,
+@RelatedIntegrationObjectID_c90fce9c UNIQUEIDENTIFIER,
+@RelatedIntegrationObjectFieldName_c90fce9c NVARCHAR(255),
+@Sequence_c90fce9c INT,
+@Configuration_c90fce9c NVARCHAR(MAX),
+@Status_c90fce9c NVARCHAR(25),
+@IsCustom_c90fce9c BIT,
+@MetadataSource_c90fce9c NVARCHAR(20)
 SET
-  @ID_3be2e282 = '3184b995-8214-49a5-94f6-bc5975a84063'
+  @ID_c90fce9c = '3184B995-8214-49A5-94F6-BC5975A84063'
 SET
-  @IntegrationObjectID_3be2e282 = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
+  @IntegrationObjectID_c90fce9c = 'FB9E1B85-6B87-4561-B332-C264ECF2D87B'
 SET
-  @Name_3be2e282 = N'event_type'
+  @Name_c90fce9c = N'event_type'
 SET
-  @DisplayName_3be2e282 = N'Event Type'
+  @DisplayName_c90fce9c = N'Event Type'
 SET
-  @Description_3be2e282 = N'Action this event type represents.'
+  @Description_c90fce9c = N'Action this event type represents.'
 SET
-  @Type_3be2e282 = N'String'
+  @Type_c90fce9c = N'String'
 SET
-  @AllowsNull_3be2e282 = 1
+  @AllowsNull_c90fce9c = 1
 SET
-  @IsPrimaryKey_3be2e282 = 0
+  @IsPrimaryKey_c90fce9c = 0
 SET
-  @IsUniqueKey_3be2e282 = 0
+  @IsUniqueKey_c90fce9c = 0
 SET
-  @IsReadOnly_3be2e282 = 1
+  @IsReadOnly_c90fce9c = 1
 SET
-  @IsRequired_3be2e282 = 0
+  @IsRequired_c90fce9c = 0
 SET
-  @Sequence_3be2e282 = 7
+  @Sequence_c90fce9c = 7
 SET
-  @Configuration_3be2e282 = N'{
+  @Configuration_c90fce9c = N'{
   "contexts": [
     "view"
   ]
 }'
 SET
-  @Status_3be2e282 = N'Active'
+  @Status_c90fce9c = N'Active'
 SET
-  @IsCustom_3be2e282 = 0
+  @IsCustom_c90fce9c = 0
 SET
-  @MetadataSource_3be2e282 = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_3be2e282,
-  @IntegrationObjectID = @IntegrationObjectID_3be2e282,
-  @Name = @Name_3be2e282,
-  @DisplayName = @DisplayName_3be2e282,
-  @Description = @Description_3be2e282,
-  @Category = @Category_3be2e282,
+  @MetadataSource_c90fce9c = N'Declared' EXEC [__mj].spCreateIntegrationObjectField @ID = @ID_c90fce9c,
+  @IntegrationObjectID = @IntegrationObjectID_c90fce9c,
+  @Name = @Name_c90fce9c,
+  @DisplayName = @DisplayName_c90fce9c,
+  @Description = @Description_c90fce9c,
+  @Category = @Category_c90fce9c,
   @Category_Clear = 1,
-  @Type = @Type_3be2e282,
-  @Length = @Length_3be2e282,
+  @Type = @Type_c90fce9c,
+  @Length = @Length_c90fce9c,
   @Length_Clear = 1,
-  @Precision = @Precision_3be2e282,
+  @Precision = @Precision_c90fce9c,
   @Precision_Clear = 1,
-  @Scale = @Scale_3be2e282,
+  @Scale = @Scale_c90fce9c,
   @Scale_Clear = 1,
-  @AllowsNull = @AllowsNull_3be2e282,
-  @DefaultValue = @DefaultValue_3be2e282,
+  @AllowsNull = @AllowsNull_c90fce9c,
+  @DefaultValue = @DefaultValue_c90fce9c,
   @DefaultValue_Clear = 1,
-  @IsPrimaryKey = @IsPrimaryKey_3be2e282,
-  @IsUniqueKey = @IsUniqueKey_3be2e282,
-  @IsReadOnly = @IsReadOnly_3be2e282,
-  @IsRequired = @IsRequired_3be2e282,
-  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_3be2e282,
+  @IsPrimaryKey = @IsPrimaryKey_c90fce9c,
+  @IsUniqueKey = @IsUniqueKey_c90fce9c,
+  @IsReadOnly = @IsReadOnly_c90fce9c,
+  @IsRequired = @IsRequired_c90fce9c,
+  @RelatedIntegrationObjectID = @RelatedIntegrationObjectID_c90fce9c,
   @RelatedIntegrationObjectID_Clear = 1,
-  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_3be2e282,
+  @RelatedIntegrationObjectFieldName = @RelatedIntegrationObjectFieldName_c90fce9c,
   @RelatedIntegrationObjectFieldName_Clear = 1,
-  @Sequence = @Sequence_3be2e282,
-  @Configuration = @Configuration_3be2e282,
-  @Status = @Status_3be2e282,
-  @IsCustom = @IsCustom_3be2e282,
-  @MetadataSource = @MetadataSource_3be2e282;
+  @Sequence = @Sequence_c90fce9c,
+  @Configuration = @Configuration_c90fce9c,
+  @Status = @Status_c90fce9c,
+  @IsCustom = @IsCustom_c90fce9c,
+  @MetadataSource = @MetadataSource_c90fce9c;
 
 GO

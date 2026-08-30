@@ -39794,9 +39794,9 @@
                 "fields": {
                   "Name": "message",
                   "DisplayName": "Message Template",
-                  "Description": "Message template the plugin renders for this event type.",
+                  "Description": "Message template the plugin renders for this event type. Prose: WSAL templates run to several hundred characters, well past the 255 default.",
                   "Type": "String",
-                  "Length": null,
+                  "Length": 4000,
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -39815,8 +39815,8 @@
                   "ID": "4EE0F696-DF4D-4511-98E1-E1D29FBE8B54"
                 },
                 "sync": {
-                  "lastModified": "2026-08-30T00:02:47.163Z",
-                  "checksum": "2483b601c1bdc5a4be9835ef373993e59dde731359aec8b6a8c7fb8502cc1e1f"
+                  "lastModified": "2026-08-30T00:22:40.266Z",
+                  "checksum": "39848a3c40313e2802c424dabd64d6eceb8b9b4e9b11d6c895f346d13ef9ce9e"
                 }
               },
               {
