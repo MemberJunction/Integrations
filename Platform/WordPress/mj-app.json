@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "name": "connector-wordpress",
   "displayName": "WordPress Connector",
-  "description": "WordPress connector for MemberJunction — the self-hosted WordPress REST API (wp/v2) plus WooCommerce (wc/v3), 78 objects / 1,052 fields. Authenticates with a site URL plus an Application Password over HTTP Basic (authenticates both namespaces), or optional WooCommerce consumer key/secret for WooCommerce-only reach.",
+  "description": "WordPress connector for MemberJunction — the self-hosted WordPress REST API (wp/v2) plus WooCommerce (wc/v3), 78 objects / 1,052 fields, plus 2 WP Activity Log objects served by the bundled companion plugin. Authenticates with a site URL plus an Application Password over HTTP Basic (authenticates both namespaces), or optional WooCommerce consumer key/secret for WooCommerce-only reach.",
   "version": "1.0.0",
   "license": "BUSL-1.1",
   "publisher": {

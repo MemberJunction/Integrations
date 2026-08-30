@@ -1,7 +1,13 @@
-# Catalog freshness (A9) & metadata-field lint (A11)
+# Catalog freshness (A9 / A9b) & metadata-field lint (A11)
 
-Two CI guards + their standing tech-debt. Both target the same failure mode: **a declaration
-on `next` that no tenant / no install actually sees**, so a green check confirms a fiction.
+Three CI guards + their standing tech-debt, all against one failure mode: **a declaration nobody
+can check**, so a green run confirms a fiction. Each guards a different way that happens —
+
+| | The declaration | What goes unchecked |
+|---|---|---|
+| **A9** | a connector version on `next` | the tag an install actually resolves has moved past it |
+| **A9b** | a declared object catalog | *what vendor artifact it was derived from, and when* |
+| **A11** | a metadata `fields.*` key | `SetLocal` drops it on push, so it reaches no tenant |
 
 ---
 
@@ -36,44 +42,80 @@ Releases are cut + tagged on `main`, but the version-bump commit is often never 
   highest semver tag; fails on any lag. Modes: `--report` (never fail), `--public-only`, `--json`.
 - `.github/workflows/catalog-freshness.yml` — daily `schedule` + `workflow_dispatch`. Deliberately a
   **branch-state** check, not a per-PR gate (the recurrence never arrives via a `next` PR, and
-  per-PR gating would block unrelated PRs on pre-existing drift). **It is RED until the merge-back
-  sweep lands — that red run is the tracked signal for the debt below.**
+  per-PR gating would block unrelated PRs on pre-existing drift).
 
-### Deferred: the merge-back sweep
+### Status: the merge-back sweep landed
 
-15 public (installable) connectors lag their newest tag. For every one, the tag differs from `next`
-**only** in `package.json` + `mj-app.json` version and `CHANGELOG.md` — `next` already has the code;
-only the version-bump never merged back. Worklist (regenerate with
-`node scripts/check-catalog-freshness.mjs --json --public-only`):
+**Updated 2026-08-26.** The 15-connector worklist this section used to carry is **done** — every
+connector on it now matches its newest tag. Current state
+(`node scripts/check-catalog-freshness.mjs --json`):
 
 | Connector | next | newest tag |
 |---|---|---|
-| AMS/Impexium | 0.1.0 | 1.0.0 |
-| AMS/WildApricot | 1.2.0 | 1.2.1 |
-| CRM/HubSpot | 1.1.0 | 1.1.1 |
-| Events/Eventbrite | 2.0.0 | 2.0.1 |
-| Finance/Stripe | 0.2.1 | 0.2.2 |
-| Marketing/MagnetMail | 3.0.0 | 3.0.2 |
-| Platform/HigherLogicThriveCommunity | 0.1.0 | 0.2.0 |
-| Platform/HigherLogicVanilla | 0.1.0 | 0.2.1 |
-| Platform/MongoDB | 1.0.0 | 1.0.1 |
-| Platform/MySQL | 1.0.0 | 1.0.1 |
-| Platform/Oracle | 1.0.0 | 1.0.1 |
-| Platform/PostgreSQL | 1.0.0 | 1.0.1 |
-| Platform/SQLServer | 1.0.0 | 1.0.1 |
-| Platform/Snowflake | 1.0.0 | 1.0.1 |
-| Platform/Zendesk | 1.1.0 | 1.1.2 |
+| LMS/Elevate | 0.1.0 | 0.2.0 |
 
-(10 more **private/held** connectors also lag; they are not in the catalog. Use the script without
-`--public-only` to see all 25.)
+**1 of 56** lagging (1 of 49 public; the 7 private/held connectors are all current). The daily
+workflow is therefore still RED, but for a *different and much smaller* reason than the text here
+previously claimed — do not read a red run as evidence that the old sweep is outstanding.
 
-**Why not bump-back in this PR:** these are *not* trivially safe under this repo's changeset
-machinery. A version-only bump-back on `next` trips `scripts/require-changeset.mjs` (the target
-version is already on npm ⇒ "already-published connector changed with no covering changeset"), and
-adding a changeset would **double-bump** on the next `next → main` release. The correct reconciliation
-is a `main → next` merge-back of each release's version commit (or a `git checkout <tag> -- <conn>`
-of just the version/changelog files, committed without a new changeset), verified against the
-changeset/publish flow — which needs the publish pipeline this PR can't run. Tracked as follow-up.
+`LMS/Elevate` is the one live case, and the original caution still applies to it: a version-only
+bump-back on `next` trips `scripts/require-changeset.mjs` (the target version is already on npm ⇒
+"already-published connector changed with no covering changeset"), and adding a changeset would
+**double-bump** on the next `next → main` release. The correct reconciliation is a `main → next`
+merge-back of that release's version commit (or a `git checkout <tag> -- LMS/Elevate` of just the
+version/changelog files, committed without a new changeset), verified against the changeset/publish
+flow.
+
+## A9b — Catalog-freshness pin (declared-against)
+
+### The bug class
+
+A9 above compares a **package version to a git tag**. It is silent on whether a connector's
+declared object catalog still matches the vendor API it was derived from — a connector can be
+perfectly tag-current and declared against a two-year-old spec.
+
+The catalog is derived from a vendor artifact: an OpenAPI doc, a WSDL, a plugin's PHP source, a
+support-site article. That artifact moves; the catalog does not. With no record of **which**
+artifact was read and **when**, a stale catalog is indistinguishable from a current one — a
+missing object could mean the connector is wrong or the vendor moved after we looked, and nothing
+says which. The declaration reads as settled fact because the gap was never written down.
+
+### The guard
+
+- `scripts/lint-catalog-freshness-pin.mjs` — every connector's
+  `metadata/integration/*.integration.json` must carry `fields.Configuration.DeclaredAgainst`
+  containing, at any depth, **at least one source URL** (what was read) and **at least one ISO
+  date** (when). Modes: `--report` (never fail), `--json`.
+- Wired into `pr.yml` and `release.yml` as **Catalog freshness pin declared**.
+
+The bar is deliberately low — URL + date, nothing more. The richer pins in the tree are what make
+a pin genuinely useful, and they are **documented best practice, not enforced**; a bar high enough
+to be ignored guards nothing. The worked examples:
+
+| | `Platform/WordPress` | `AMS/NetForum` |
+|---|---|---|
+| artifact hash | zip `sha256` for WP + Woo | **absent** — recorded as a gap |
+| vendor version | `wp 7.1` / `woocommerce 11.0.1` | **absent** — recorded as a gap |
+| source vs edit date | — | `accessedAt` + `catalogLastEditedAt` |
+
+netFORUM is the instructive one: its block records what it *cannot* prove as explicitly as what it
+can. An unrecorded gap reads as a settled fact, so "no sha256 was captured" is itself worth
+declaring.
+
+### Standing debt: the 53 grandfathered connectors
+
+Only **3 of 56** connectors pinned at the time the guard landed (`AMS/NetForum`,
+`Platform/WordPress`, `LMS/Elevate`). The other 53 are listed in `GRANDFATHERED` in the linter, so
+it is green on day one and a **new connector must pin from day one**.
+
+Backfilling those 53 is *not* scheduled as a campaign: each needs a real source fetch, cannot be
+inferred from the repo, and a fabricated pin is worse than no pin. The intended path is
+opportunistic — a grandfathered connector gains its pin whenever someone next touches that
+connector's metadata for other reasons.
+
+The exemption is checked in **both directions**: once a grandfathered connector gains a valid pin,
+the linter fails until its entry is deleted. The debt list can only shrink, and can never quietly
+rot into a list of connectors that are actually fine.
 
 ---
 

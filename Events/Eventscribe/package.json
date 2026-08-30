@@ -1,29 +1,28 @@
 {
-  "name": "@memberjunction/connector-wordpress",
-  "version": "1.0.0",
-  "description": "MemberJunction WordPress connector (wp/v2 + WooCommerce wc/v3).",
+  "name": "@memberjunction/connector-eventscribe",
+  "version": "0.1.0",
+  "description": "MemberJunction Eventscribe connector.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "/dist",
-    "/wp-plugin"
+    "/dist"
   ],
   "scripts": {
     "build": "tsc && tsc-alias -f",
     "test": "vitest run"
   },
   "author": "MemberJunction.com",
-  "license": "BUSL-1.1",
+  "license": "ISC",
   "peerDependencies": {
     "@memberjunction/core": ">=5.43.0 <6.0.0",
     "@memberjunction/core-entities": ">=5.43.0 <6.0.0",
     "@memberjunction/global": ">=5.43.0 <6.0.0",
-    "@memberjunction/integration-engine": ">=5.43.0 <6.0.0",
-    "@memberjunction/integration-engine-base": ">=5.43.0 <6.0.0"
+    "@memberjunction/integration-engine": ">=5.43.0 <6.0.0"
   },
   "dependencies": {
-    "@memberjunction/connector-schema-merge": "^1.1.0"
+    "zod": "~3.24.4",
+    "@memberjunction/connector-schema-merge": "^1.0.0"
   },
   "devDependencies": {
     "@memberjunction/core": "^5.43.0",
@@ -34,8 +33,7 @@
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
-    "@memberjunction/integration-engine-base": "^5.43.0",
-    "@memberjunction/connector-schema-merge": "^1.1.0"
+    "@memberjunction/integration-engine-base": "^5.43.0"
   },
   "repository": {
     "type": "git",
