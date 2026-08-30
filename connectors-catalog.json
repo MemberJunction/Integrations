@@ -995,7 +995,7 @@
       ],
       "logo": "fa-brands fa-wordpress",
       "navigationBaseURL": "{siteUrl}/wp-admin/",
-      "objectCount": 78,
+      "objectCount": 80,
       "className": "WordPressConnector",
       "npmPackage": "@memberjunction/connector-wordpress",
       "version": "1.0.0",

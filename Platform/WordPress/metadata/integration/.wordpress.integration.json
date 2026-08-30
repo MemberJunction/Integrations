@@ -39022,6 +39022,957 @@
             "lastModified": "2026-08-22T03:25:02.136Z",
             "checksum": "34898b3ba38425bd8e56cd45daef2ff480457ab3e3621d17c9a2ae2fa81e9875"
           }
+        },
+        {
+          "fields": {
+            "Name": "ActivityLogEvent",
+            "DisplayName": "Activity Log Event",
+            "Description": "WP Activity Log events, flattened one row per logged event with its metadata pivoted in. Served by the MJ bridge plugin at mj-wsal/v1, because WP Activity Log itself registers no REST routes.",
+            "APIPath": "/mj-wsal/v1/events",
+            "Category": "WP Activity Log",
+            "ResponseDataKey": null,
+            "PaginationType": "PageNumber",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "created_at",
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "WatermarkIncremental",
+            "ContentHashApplicable": false,
+            "StableOrderingKey": "id",
+            "Status": "Active",
+            "Configuration": {
+              "namespace": "mj-wsal/v1",
+              "listPath": "/mj-wsal/v1/events",
+              "getOnePath": null,
+              "routes": [
+                "GET /mj-wsal/v1/events"
+              ],
+              "responseShape": "array",
+              "pkField": "id",
+              "pkEvidence": "Tier1-source — the bridge projects wsal_occurrences.id, which is that table's bigint AUTO_INCREMENT PRIMARY KEY.",
+              "pagination": {
+                "type": "PageNumber",
+                "pageParam": "page",
+                "sizeParam": "per_page",
+                "maxPageSize": 100,
+                "totalHeader": "X-WP-Total",
+                "totalPagesHeader": "X-WP-TotalPages"
+              },
+              "paginationNote": "The bridge registers page/per_page (per_page max 100, matching core) and emits X-WP-Total / X-WP-TotalPages. Rows are ordered by (created_on, id) — a total order, so no row can be skipped or repeated across an offset boundary.",
+              "incrementalWatermark": {
+                "field": "created_at",
+                "filterParam": "after",
+                "beforeParam": "before",
+                "datesAreGmt": true,
+                "orderby": "created_on",
+                "note": "Watermarked on created_at (ISO-8601 UTC) rather than the raw created_on double: a bare epoch number is ambiguous to date parsers (seconds vs milliseconds), and reading these seconds as milliseconds would date every event to January 1970. The `after` bound is INCLUSIVE because created_on is not unique — an exclusive bound would drop every event sharing the last synced timestamp. A re-delivered boundary event dedupes on id."
+              },
+              "incrementalNote": null,
+              "contextGatedFields": [],
+              "customFieldSurface": [
+                "meta"
+              ],
+              "requiresCompanionPlugin": {
+                "plugin": "MJ WP Activity Log Bridge (Platform/WordPress/wp-plugin/mj-wsal-bridge)",
+                "reason": "WP Activity Log stores events in the custom tables wsal_occurrences and wsal_metadata and registers ZERO REST routes — verified against WSAL 5.6.6, which contains no register_rest_route or rest_api_init call anywhere. Without the bridge installed this namespace is absent from the site route index and the object cannot be read.",
+                "minimumWsalVersion": "5.0.0",
+                "requiredCapability": "manage_options (manage_network_options on multisite)"
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique event identifier. Primary key.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 0,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B9664C40-3AB1-4CDA-BF25-D4C326D2FC49"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.813Z",
+                  "checksum": "f0d56a3b0753e1978afbc06318238f0670e44d10113b5bba80b4c5e7b072dbed"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "site_id",
+                  "DisplayName": "Site ID",
+                  "Description": "Multisite network site ID; 1 on a single-site install.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C8AD08C3-7312-4805-846E-E4E2BCBC61B5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.827Z",
+                  "checksum": "906ef5856b8e74a19f870d2d3bce03c7c49c96238853a06611d6870776da096b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alert_id",
+                  "DisplayName": "Alert ID",
+                  "Description": "WP Activity Log event type ID. Joins to ActivityLogEventType.alert_id.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A9A1A083-81B5-4C39-8670-F19183FE3751"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.840Z",
+                  "checksum": "b43394fa3edfc51f75c72d028da8f5aa72dca28e47250ae6e6498359c8bbaf3d"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alert_label",
+                  "DisplayName": "Alert Label",
+                  "Description": "Human-readable name of the event type, resolved from the installed plugin set.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "69198AE8-53D7-417A-8610-9729F17655B5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.855Z",
+                  "checksum": "30995503d1e3d419f51b002e6d8b414d99618e0b17428603158e02b0e0f86371"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on",
+                  "DisplayName": "Created On (Epoch)",
+                  "Description": "Raw Unix timestamp in SECONDS with sub-second precision, exactly as WP Activity Log stores it.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0A82633B-3811-46B9-9B88-515FA3DDF9C4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.869Z",
+                  "checksum": "c9c9b9673582d63f4042eb85b3895b8dadcddcaeee555e486a7ba02155f2c8e7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "The same instant as an ISO-8601 UTC datetime. This is the incremental watermark field.",
+                  "Type": "Datetime",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2150206A-4215-4D16-AA64-CC18734C98EF"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.881Z",
+                  "checksum": "7b6e42d53f66784740ea9f9e7e162c79b3880a5863feab08e75ae8fce3ead63a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "severity",
+                  "DisplayName": "Severity",
+                  "Description": "Raw numeric severity level as stored by the plugin: 500, 400, 300, 250 or 200.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "275D0167-D5CF-4983-A38F-0E3AA6009A39"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.895Z",
+                  "checksum": "dbb71884cb62c6d9a972b8f61ebbfcf84b924b9dd431a0096b434b1a12e110f1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "severity_label",
+                  "DisplayName": "Severity Label",
+                  "Description": "Severity resolved to a name: Critical, High, Medium, Low, Informational or Unknown.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "62640CD4-25FB-4399-85C7-D5C9DA821B10"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.908Z",
+                  "checksum": "16ca4ed3b46118adea6fa80e037e230c3ad5dc6e41d4d595a2e952f54ae24c40"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "object",
+                  "DisplayName": "Object",
+                  "Description": "Subject of the activity, e.g. user, post or plugin.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D2EC5B7F-2495-4087-BCF0-C87347AC9810"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.959Z",
+                  "checksum": "6e5622dc0cb33941caca96ece25f32d4e39ea3e6d3fd831d26a09121500aad23"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "event_type",
+                  "DisplayName": "Event Type",
+                  "Description": "Classification of the activity, e.g. login, modified or deleted.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BA435B7D-340C-4038-8F19-6ED068DCFBF9"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.972Z",
+                  "checksum": "3a35f23ea678cce453104e519d7e5fcbf380c2e7670b7a385843cd2940b44d7c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "username",
+                  "DisplayName": "Username",
+                  "Description": "WordPress username responsible for the event.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CC4E4400-B43D-4B3D-BCDB-2641E8520389"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.985Z",
+                  "checksum": "7cd2653fb228534f1559d693682b95e9245d4be7aafa1a144d807dc3eacc33d9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_id",
+                  "DisplayName": "User ID",
+                  "Description": "WordPress user ID responsible for the event; null for anonymous events.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 11,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3D14316E-4350-415D-AF2C-642545D2E304"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:46.998Z",
+                  "checksum": "58ca500e3ed93f432c47521da61eed9d5653b091d10dd0180e62008c10911fb9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_roles",
+                  "DisplayName": "User Roles",
+                  "Description": "Roles held by the user at the time of the event.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 12,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "48A99EF2-4665-4BD7-959B-306C65BF5930"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.015Z",
+                  "checksum": "aff41567b222d8730528af48b0a5b29f9e9336cc33403608cea7a8b6f559c692"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "client_ip",
+                  "DisplayName": "Client IP",
+                  "Description": "Source IP address the activity originated from.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 13,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "01B518B3-7AF1-4D8F-B63B-307AACDB82F4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.030Z",
+                  "checksum": "f6bea44b5c12e5c5dc16468eae0c58c7e55a6e4551be63460c81e8ea180ea674"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_agent",
+                  "DisplayName": "User Agent",
+                  "Description": "Browser user agent string captured with the event.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 14,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A5D041C3-A044-452C-84CC-B2F154DFE48E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.044Z",
+                  "checksum": "959c79ac987fc12021e2933c55f5a035b3c385703a6d2d3a9b7a63dc8cd79942"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "session_id",
+                  "DisplayName": "Session ID",
+                  "Description": "Identifier of the session the event belongs to.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 15,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1B9E12A3-4CA9-4C0F-96DE-F05D3CE76416"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.058Z",
+                  "checksum": "d1083667da3f97977778f1877ab41c6b34ed7256be7b9ca830d799aa38a92fd2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "post_id",
+                  "DisplayName": "Post ID",
+                  "Description": "Associated post ID; 0 when the event is not post-related.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DB762596-31DF-4A51-B278-D40558D5AAF5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.071Z",
+                  "checksum": "21ce6b0d9647df88fba68b9c7f7d3abdc06a3c3503c624958d6f53320d5d4bad"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "post_type",
+                  "DisplayName": "Post Type",
+                  "Description": "Associated post type.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 17,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "052C5B24-F6C0-467E-B72A-D8AABB23E417"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.083Z",
+                  "checksum": "a706e04b8fee62b1ef8b691e2f5a4783b06a97274e1069629fb6ea30266ae77a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "post_status",
+                  "DisplayName": "Post Status",
+                  "Description": "Associated post status at the time of the event.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 18,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "811C26A6-C1FA-47B3-8B73-B403D591D21A"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.108Z",
+                  "checksum": "46ef30f34deb9cbca5d26792e1aceca634254bc85814c4e56972a37472dd8658"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "meta",
+                  "DisplayName": "Metadata",
+                  "Description": "Event metadata pivoted from the plugin name/value table into a single object. Keys vary by event type.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 19,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "857AC7AC-23F2-4F29-BC8A-8EA45F7A0BD7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.121Z",
+                  "checksum": "64920dd703911d3f2e70b16036509880051cd4151cd3bc00afa8e82999210306"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "1B6AAA3C-002C-4E1A-8C82-0900D33FE02A"
+          },
+          "sync": {
+            "lastModified": "2026-08-30T00:02:22.287Z",
+            "checksum": "c153cd6b5fae4202428a06e56b5d51c30f7582444cc80f2edb44b4fccccc4716"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ActivityLogEventType",
+            "DisplayName": "Activity Log Event Type",
+            "Description": "The activity log event-type catalog: every event ID the installed plugin set can emit, with its label, severity and category. A slow-moving dimension for interpreting ActivityLogEvent.alert_id.",
+            "APIPath": "/mj-wsal/v1/event-types",
+            "Category": "WP Activity Log",
+            "ResponseDataKey": null,
+            "PaginationType": "PageNumber",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "alert_id",
+            "Status": "Active",
+            "Configuration": {
+              "namespace": "mj-wsal/v1",
+              "listPath": "/mj-wsal/v1/event-types",
+              "getOnePath": null,
+              "routes": [
+                "GET /mj-wsal/v1/event-types"
+              ],
+              "responseShape": "array",
+              "pkField": "alert_id",
+              "pkEvidence": "Tier1-source — the bridge keys the catalog by the plugin's own alert code, which Alert_Manager rejects duplicates of at registration time.",
+              "pagination": {
+                "type": "PageNumber",
+                "pageParam": "page",
+                "sizeParam": "per_page",
+                "maxPageSize": 100,
+                "totalHeader": "X-WP-Total",
+                "totalPagesHeader": "X-WP-TotalPages"
+              },
+              "paginationNote": "Paginated like the events route, though the catalog is small (order hundreds of rows) and slow-moving. Paginating it is what makes it a discoverable collection: the connector treats a GET route registering per_page as a listable object.",
+              "incrementalWatermark": null,
+              "incrementalNote": "The catalog is a static definition set with no timestamps of any kind — it changes only when a plugin is installed, updated or removed. Full-pulled and hash-diffed rather than given a synthesised watermark.",
+              "contextGatedFields": [],
+              "customFieldSurface": [],
+              "requiresCompanionPlugin": {
+                "plugin": "MJ WP Activity Log Bridge (Platform/WordPress/wp-plugin/mj-wsal-bridge)",
+                "reason": "Read through the plugin's own Alert_Manager, so third-party sensors (WooCommerce, Gravity Forms, Yoast and the rest) that register their own event types are included automatically and labels track the installed version.",
+                "minimumWsalVersion": "5.0.0",
+                "requiredCapability": "manage_options (manage_network_options on multisite)"
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "alert_id",
+                  "DisplayName": "Alert ID",
+                  "Description": "WP Activity Log event type ID. Primary key.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 0,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "81106DE0-473B-4541-8F7B-6165561DAD5E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.135Z",
+                  "checksum": "0b191779f289443d8363f248a49314c1240a64d079545ca4d78eccf03ff6abae"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "label",
+                  "DisplayName": "Label",
+                  "Description": "Short human-readable name of the event type.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2497FD94-CFB2-44DA-95A1-DD49C53039A5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.149Z",
+                  "checksum": "4a30e40e1f7175963f475ddf6f60dfb99a53e11f12f268bd347aa6300fa10398"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "message",
+                  "DisplayName": "Message Template",
+                  "Description": "Message template the plugin renders for this event type.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4EE0F696-DF4D-4511-98E1-E1D29FBE8B54"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.163Z",
+                  "checksum": "2483b601c1bdc5a4be9835ef373993e59dde731359aec8b6a8c7fb8502cc1e1f"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "severity",
+                  "DisplayName": "Severity",
+                  "Description": "Declared severity level for this event type.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "92965B4E-08DF-4C0D-89F1-A8D8AA58308D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.177Z",
+                  "checksum": "880ff4dab3cc60b60445f2a32fca91f89b526b6255efa3db22db11440d748352"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "category",
+                  "DisplayName": "Category",
+                  "Description": "Top-level grouping the event type belongs to.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DC9B21A8-E493-4E9C-9BE8-6B5BFA5D9BA6"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.192Z",
+                  "checksum": "c19fdf8a71d44c649ee89113d6c6c2ef8cba529ac7c08a84d14326b50a9bad76"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "subcategory",
+                  "DisplayName": "Subcategory",
+                  "Description": "Secondary grouping the event type belongs to.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "41CB0754-E4DF-4F84-BC5C-F2C777663BB4"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.206Z",
+                  "checksum": "5d44a658d6e5655a1a7800d3d4582ae4231513bc793f7014a0dd294509bae2ef"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "object",
+                  "DisplayName": "Object",
+                  "Description": "Subject this event type concerns.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B613F52D-00C9-4A75-8705-EFAA9879E513"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.219Z",
+                  "checksum": "8316b8dfa2f675446e6cd961834fb8250d244932d49504de774a807b8aed5ae6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "event_type",
+                  "DisplayName": "Event Type",
+                  "Description": "Action this event type represents.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3184B995-8214-49A5-94F6-BC5975A84063"
+                },
+                "sync": {
+                  "lastModified": "2026-08-30T00:02:47.232Z",
+                  "checksum": "f8a61e5cf6a73127c04dd0c706cc3db0c264d44c30d389f5359e8932cb41a780"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "FB9E1B85-6B87-4561-B332-C264ECF2D87B"
+          },
+          "sync": {
+            "lastModified": "2026-08-30T00:02:22.329Z",
+            "checksum": "544356426d858b424f9d682bddb2f56c3a9bb4e58516ae8e96677dbe4243cd98"
+          }
         }
       ]
     },

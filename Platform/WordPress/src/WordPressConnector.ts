@@ -47,6 +47,13 @@ import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema
 //   * `DiscoverFields` issues `OPTIONS <route>` and reads the endpoint's real JSON Schema.
 //   * `IntrospectSchema` unions declared ∪ route-index-discovered ∪ OPTIONS-described ∪ live-sampled.
 //
+// Two further objects — ActivityLogEvent / ActivityLogEventType, category "WP Activity Log" — are
+// declared OUTSIDE that vendor floor. WP Activity Log keeps its events in the custom tables
+// wsal_occurrences / wsal_metadata and registers no REST routes at all, so they are served by the
+// companion plugin in wp-plugin/mj-wsal-bridge over the `mj-wsal/v1` namespace. They need NO code here:
+// the bridge registers GET collection routes with `per_page`, which is exactly what the route-index scan
+// below already looks for, and a site without the bridge simply never advertises that namespace.
+//
 // Nothing is ever DEACTIVATED from discovery (`DiscoveryIsAuthoritative` stays false): a namespace can
 // vanish from one site's index behind a feature flag or a lazy-load filter, and field visibility is
 // capability-gated (`context=edit`), so absence proves nothing.
