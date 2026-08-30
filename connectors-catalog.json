@@ -102,10 +102,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-netforum-enterprise",
       "npmPackage": "@memberjunction/connector-netforum-enterprise",
-      "version": "1.3.2",
+      "version": "1.3.3",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NetForum",
-      "installTag": "AMS-NetForum@1.3.2"
+      "installTag": "AMS-NetForum@1.3.3"
     },
     {
       "name": "Nimble AMS",
@@ -375,10 +375,10 @@
       "objectCount": 38,
       "className": "EventscribeConnector",
       "npmPackage": "@memberjunction/connector-eventscribe",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Events/Eventscribe",
-      "installTag": "Events-Eventscribe@0.1.0"
+      "installTag": "Events-Eventscribe@0.2.0"
     },
     {
       "name": "OpenWater",
@@ -483,10 +483,10 @@
       "objectCount": 205,
       "className": "@memberjunction/connector-netsuite",
       "npmPackage": "@memberjunction/connector-netsuite",
-      "version": "1.3.2",
+      "version": "1.4.0",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/NetSuite",
-      "installTag": "Finance-NetSuite@1.3.2"
+      "installTag": "Finance-NetSuite@1.4.0"
     },
     {
       "name": "QuickBooks",
@@ -998,10 +998,10 @@
       "objectCount": 80,
       "className": "WordPressConnector",
       "npmPackage": "@memberjunction/connector-wordpress",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Platform/WordPress",
-      "installTag": "Platform-WordPress@1.0.0"
+      "installTag": "Platform-WordPress@1.1.0"
     },
     {
       "name": "zendesk",
