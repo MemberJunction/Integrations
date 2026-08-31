@@ -547,7 +547,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         if (cached) return cached;
 
         const creds = await this.LoadCredentials(companyIntegration, contextUser);
-        const siteUrl = (creds.SiteUrl ?? '').trim().replace(/\/+$/, '');
+        const siteUrl = this.NormalizeSiteUrl(creds.SiteUrl);
         if (!siteUrl) {
             throw new Error(
                 '[elevate] No Elevate site URL configured. Elevate is deployed PER CLIENT — there is no shared ' +
@@ -1593,6 +1593,32 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             SiteUrl: fromCredential?.SiteUrl ?? fromConfig?.SiteUrl,
             ApiKey: fromCredential?.ApiKey ?? fromConfig?.ApiKey,
         };
+    }
+
+    /**
+     * The connection's site ROOT, with a door path removed if one was pasted in with it.
+     *
+     * `GetBaseURL` returns this verbatim and `JoinURL` then appends the object's own door
+     * (`/api/reports`), so a `siteUrl` that already carries the door produced
+     * `…/api/reports/api/reports`. That is a 404/405, `ValidateResource` swallows it, and
+     * `TestConnection` reports "rejected a minimal query — check the site URL and the API key" —
+     * naming two things that are both correct. Observed against a real tenant whose key and every
+     * declared resource worked (86,074 ProductRegistration rows) while the connection would not save.
+     *
+     * The door paths are the ones this connector can append: `/api/reports` (read, and its `/form`
+     * variant) and `/api/registrations` (write). Only a TRAILING occurrence is stripped, and only
+     * whole path segments, so a site genuinely hosted under a directory of another name is untouched.
+     *
+     * @param raw The configured value, which may be null/undefined.
+     * @returns The trimmed site root with no trailing slash, or '' when nothing was configured.
+     */
+    private NormalizeSiteUrl(raw: string | null | undefined): string {
+        return (raw ?? '')
+            .trim()
+            .replace(/\/+$/, '')
+            .replace(/\/api\/reports\/form$/i, '')
+            .replace(/\/api\/(?:reports|registrations)$/i, '')
+            .replace(/\/+$/, '');
     }
 
     /** Extracts the two Elevate credential fields from a credential/Configuration JSON string. */
