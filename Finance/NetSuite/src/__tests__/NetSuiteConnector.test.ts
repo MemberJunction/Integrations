@@ -358,9 +358,15 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         return { Status: 200, Body: { items, hasMore, count: items.length }, Headers: {} };
     }
 
+    // NOTE ON FIXTURE KEYS: SuiteQL returns its column keys LOWER-CASED. These fixtures previously
+    // used camelCase (`lastModifiedDate`), which made a case-sensitive lookup in the connector look
+    // correct here while matching nothing in production — no watermark ever advanced, and every
+    // "incremental" run re-fetched the whole object. The keys below are the shape the vendor
+    // actually returns.
+
     it('first sync (no watermark): full SuiteQL SELECT, ORDER BY id (keyset), Prefer: transient header', async () => {
         const c = new MockedNetSuiteConnector();
-        c.Responses = [suiteQLResponse([{ id: '107', lastModifiedDate: '2026-03-01T10:00:00Z' }], false)];
+        c.Responses = [suiteQLResponse([{ id: '107', lastmodifieddate: '2026-03-01T10:00:00Z' }], false)];
         const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
         const result = await c.FetchChanges(ctx);
 
@@ -374,39 +380,94 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         expect(result.Records).toHaveLength(1);
         expect(result.Records[0].ExternalID).toBe('107');
         // Full record passed through.
-        expect(result.Records[0].Fields.lastModifiedDate).toBe('2026-03-01T10:00:00Z');
-        // Drained → watermark persisted as the max seen.
-        expect(result.NewWatermarkValue).toBe('2026-03-01T10:00:00Z');
+        expect(result.Records[0].Fields.lastmodifieddate).toBe('2026-03-01T10:00:00Z');
+        // Drained → watermark emitted, normalised to ISO.
+        expect(result.NewWatermarkValue).toBe('2026-03-01T10:00:00.000Z');
     });
 
-    it('subsequent sync: applies the watermark predicate (lastModifiedDate > watermark)', async () => {
+    it('reads the change stamp case-insensitively — the bug that kept every watermark null', async () => {
+        // The IO declares `lastModifiedDate`; the vendor returns `lastmodifieddate`. A case-sensitive
+        // lookup by the declared name is what made MaxWatermark return undefined on every page of
+        // every object, forever.
         const c = new MockedNetSuiteConnector();
-        c.Responses = [suiteQLResponse([{ id: '200', lastModifiedDate: '2026-04-05T00:00:00Z' }], false)];
+        c.Responses = [suiteQLResponse([{ id: '1', lastmodifieddate: '2026-04-10T00:00:00Z' }], false)];
+        const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
+        const result = await c.FetchChanges(ctx);
+        expect(result.NewWatermarkValue).toBe('2026-04-10T00:00:00.000Z');
+    });
+
+    it('subsequent sync: narrows with an explicit TO_DATE predicate', async () => {
+        // Oracle-flavoured SuiteQL converts a bare string using the session's NLS format, so the same
+        // predicate can work on one account and fail on another; TO_DATE states the format outright.
+        const c = new MockedNetSuiteConnector();
+        c.Responses = [suiteQLResponse([{ id: '200', lastmodifieddate: '2026-04-05T00:00:00Z' }], false)];
         const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: '2026-03-01T10:00:00Z', BatchSize: 1000, ContextUser: USER };
         await c.FetchChanges(ctx);
         const q = (c.Calls[0].body as { q: string }).q;
-        expect(q).toContain("WHERE lastModifiedDate > '2026-03-01T10:00:00Z'");
+        expect(q).toContain("WHERE lastModifiedDate >= TO_DATE('2026-03-01 10:00:00', 'YYYY-MM-DD HH24:MI:SS')");
         expect(q).toContain('ORDER BY id'); // seek order — unique key, exact page boundaries
     });
 
-    it('out-of-order batch: persists the MAX watermark seen, not the last record', async () => {
+    it('out-of-order batch: emits the MAX stamp seen, not the last record', async () => {
         const c = new MockedNetSuiteConnector();
         c.Responses = [suiteQLResponse([
-            { id: '1', lastModifiedDate: '2026-04-10T00:00:00Z' },
-            { id: '2', lastModifiedDate: '2026-04-01T00:00:00Z' },
+            { id: '1', lastmodifieddate: '2026-04-10T00:00:00Z' },
+            { id: '2', lastmodifieddate: '2026-04-01T00:00:00Z' },
         ], false)];
         const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
         const result = await c.FetchChanges(ctx);
-        expect(result.NewWatermarkValue).toBe('2026-04-10T00:00:00Z');
+        expect(result.NewWatermarkValue).toBe('2026-04-10T00:00:00.000Z');
     });
 
-    it('partial batch (hasMore=true): watermark NOT persisted; keyset position + cursor advance for resume', async () => {
+    it('carries the running max ACROSS pages — under ORDER BY id the last page is not the max', async () => {
+        // The old code computed the watermark from the final page alone. Rows come back ordered by
+        // id, which has nothing to do with when they changed, so the newest stamp routinely sits on
+        // an earlier page and was silently discarded.
         const c = new MockedNetSuiteConnector();
-        c.Responses = [suiteQLResponse([{ id: '1', lastModifiedDate: '2026-04-01T00:00:00Z' }], true)];
+        c.Responses = [
+            suiteQLResponse([{ id: '1', lastmodifieddate: '2026-04-10T00:00:00Z' }], true),
+            suiteQLResponse([{ id: '2', lastmodifieddate: '2026-04-01T00:00:00Z' }], false),
+        ];
+        const base = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
+        const first = await c.FetchChanges({ ...base } as FetchContext);
+        const second = await c.FetchChanges({ ...base, AfterKeyValue: first.NextAfterKeyValue } as FetchContext);
+
+        expect(second.NewWatermarkValue).toBe('2026-04-10T00:00:00.000Z');
+    });
+
+    it('clamps the watermark to when the scan started, so a mid-scan edit is not skipped', async () => {
+        // A record edited during the walk at an id already passed is never re-read. Storing the max
+        // stamp SEEN would put the next run's window past that edit; clamping to the scan's start
+        // keeps it inside. The stamp here is in the future to force the clamp deterministically.
+        const c = new MockedNetSuiteConnector();
+        const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        c.Responses = [suiteQLResponse([{ id: '1', lastmodifieddate: future }], false)];
+        const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
+        const result = await c.FetchChanges(ctx);
+
+        expect(Date.parse(result.NewWatermarkValue as string)).toBeLessThan(Date.parse(future));
+    });
+
+    it('emits no watermark when no change field can be resolved — a full re-fetch is the honest answer', async () => {
+        // A custom record with no declared watermark field and no lastmodifieddate column. Guessing a
+        // column name into the WHERE clause is what produced the 400s that keyset paging had to fix.
+        const c = new MockedNetSuiteConnector();
+        c.Fields = [makeField({ ID: 'f-id', Name: 'id', Type: 'String', IsPrimaryKey: true, IsUniqueKey: true, Sequence: 0 })];
+        c.IO = makeIO({ IncrementalWatermarkField: null });
+        c.Responses = [suiteQLResponse([{ id: '1', name: 'x' }], false)];
+        const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
+        const result = await c.FetchChanges(ctx);
+
+        expect(result.NewWatermarkValue).toBeUndefined();
+        expect((c.Calls[0].body as { q: string }).q).not.toContain('WHERE');
+    });
+
+    it('partial batch (hasMore=true): keyset position + cursor advance for resume', async () => {
+        const c = new MockedNetSuiteConnector();
+        c.Responses = [suiteQLResponse([{ id: '1', lastmodifieddate: '2026-04-01T00:00:00Z' }], true)];
         const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER, CurrentOffset: 0 };
         const result = await c.FetchChanges(ctx);
         expect(result.HasMore).toBe(true);
-        expect(result.NewWatermarkValue).toBeUndefined();
         expect(result.NextOffset).toBe(1);
         // The frontier id rides BOTH fields: NextAfterKeyValue is what the engine persists for
         // durable resume, NextCursor is what arms its prefetch pipeline.
@@ -416,7 +477,7 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
 
     it('seek page: AfterKeyValue becomes a numeric id > predicate ANDed with the watermark', async () => {
         const c = new MockedNetSuiteConnector();
-        c.Responses = [suiteQLResponse([{ id: '250', lastModifiedDate: '2026-04-02T00:00:00Z' }], false)];
+        c.Responses = [suiteQLResponse([{ id: '250', lastmodifieddate: '2026-04-02T00:00:00Z' }], false)];
         const ctx: FetchContext = {
             CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event',
             WatermarkValue: '2026-03-01T10:00:00Z', BatchSize: 1000, ContextUser: USER,
@@ -424,11 +485,32 @@ describe('NetSuiteConnector — FetchChanges via SuiteQL', () => {
         };
         const result = await c.FetchChanges(ctx);
         const q = (c.Calls[0].body as { q: string }).q;
-        expect(q).toContain("WHERE lastModifiedDate > '2026-03-01T10:00:00Z' AND id > 200");
+        expect(q).toContain("WHERE lastModifiedDate >= TO_DATE('2026-03-01 10:00:00', 'YYYY-MM-DD HH24:MI:SS') AND id > 200");
         expect(q).toContain('ORDER BY id');
         // Terminal page (hasMore=false): no further position emitted.
         expect(result.NextAfterKeyValue).toBeUndefined();
         expect(result.NextCursor).toBeUndefined();
+    });
+
+    it('classifies an absent record type as OBJECT_UNAVAILABLE, not a retryable failure', async () => {
+        // A record type the catalog lists but THIS account has not enabled. It fails identically on
+        // every run — 71 such objects on one live connection — so the engine needs to be able to tell
+        // it apart from a transient read failure and stop asking.
+        const c = new MockedNetSuiteConnector();
+        c.Responses = [{ Status: 400, Body: { 'o:errorDetails': [{ detail: "Invalid search query. Search error occurred: Record 'message' was not found." }] }, Headers: {} }];
+        const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Message', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
+
+        await expect(c.FetchChanges(ctx)).rejects.toMatchObject({ code: 'OBJECT_UNAVAILABLE' });
+    });
+
+    it('leaves every other 400 as an ordinary failure', async () => {
+        const c = new MockedNetSuiteConnector();
+        c.Responses = [{ Status: 400, Body: { 'o:errorDetails': [{ detail: 'Invalid search query. Unknown identifier bogus_column.' }] }, Headers: {} }];
+        const ctx: FetchContext = { CompanyIntegration: ci(TBA_CONFIG), ObjectName: 'Event', WatermarkValue: null, BatchSize: 1000, ContextUser: USER };
+
+        const err = await c.FetchChanges(ctx).catch((e: unknown) => e);
+        expect((err as { code?: string }).code).toBeUndefined();
+        expect(String(err)).toContain('SuiteQL read failed');
     });
 
     it('a NON-numeric AfterKeyValue never reaches the SQL (SuiteQL injection guard)', async () => {
