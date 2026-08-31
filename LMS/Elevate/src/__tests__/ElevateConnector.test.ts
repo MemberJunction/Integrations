@@ -749,6 +749,42 @@ describe('ElevateConnector — auth, base URL and credential hygiene', () => {
         await expect(c.PublicAuthenticate(makeCI({ apiKey: FIXTURE_KEY }))).rejects.toThrow(/site URL/i);
     });
 
+    // A tenant handed over its site URL with the door path already on it. GetBaseURL returns siteUrl
+    // verbatim and JoinURL then appends /api/reports, so every call went to /api/reports/api/reports —
+    // a 404/405 that ValidateResource swallows, leaving TestConnection to report "check the site URL
+    // and the API key" about a key and a tenant that were both fine (86,074 rows were reachable).
+    it.each([
+        ['https://tenant-a.example.net/api/reports', 'the read door'],
+        ['https://tenant-a.example.net/api/reports/', 'the read door with a trailing slash'],
+        ['https://tenant-a.example.net/api/reports/form', 'the form variant'],
+        ['https://tenant-a.example.net/api/registrations', 'the write door'],
+        ['https://tenant-a.example.net/API/Reports', 'the door in a different case'],
+    ])('strips a pasted door path from siteUrl: %s (%s)', async (configured) => {
+        const c = makeConnector([[productIO, productIOFs]]);
+        const ci = makeCI({ siteUrl: configured, apiKey: FIXTURE_KEY });
+        const auth = await c.PublicAuthenticate(ci);
+        expect(c.PublicGetBaseURL(ci, auth)).toBe('https://tenant-a.example.net');
+    });
+
+    it('appends the door exactly once when siteUrl already carried it', async () => {
+        const c = makeConnector([[productIO, productIOFs]]);
+        c.Canned.push({ response: ok(envelope(productRows, productLabels)) });
+        await c.FetchChanges(fetchCtx(makeCI({ siteUrl: 'https://learn.example.org/api/reports', apiKey: FIXTURE_KEY }), 'Product'));
+        expect(c.Captured[0].url).toBe('https://learn.example.org/api/reports');
+    });
+
+    // Only whole trailing segments are stripped, so a site genuinely served from a directory keeps it.
+    it.each([
+        'https://tenant-a.example.net/lms',
+        'https://tenant-a.example.net/api/reportsdata',
+        'https://tenant-a.example.net/api/reports/extra',
+    ])('leaves a legitimate site path intact: %s', async (configured) => {
+        const c = makeConnector([[productIO, productIOFs]]);
+        const ci = makeCI({ siteUrl: configured, apiKey: FIXTURE_KEY });
+        const auth = await c.PublicAuthenticate(ci);
+        expect(c.PublicGetBaseURL(ci, auth)).toBe(configured);
+    });
+
     it('fails loudly when the connection supplies no api_key', async () => {
         const c = makeConnector([[productIO, productIOFs]]);
         await expect(c.PublicAuthenticate(makeCI({ siteUrl: 'https://learn.example.org' }))).rejects.toThrow(/API key/i);
