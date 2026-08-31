@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: MJ WP Activity Log Bridge
- * Description: Exposes WP Activity Log (WSAL) events over the WordPress REST API, read-only, so the MemberJunction WordPress connector can discover and sync them like any other collection. Registers no writes and stores no data of its own.
- * Version:     1.0.0
+ * Description: Exposes the WP Activity Log (WSAL) tables over the WordPress REST API, read-only, so the MemberJunction WordPress connector can discover and sync them like any other collection. Registers no writes and stores no data of its own.
+ * Version:     1.1.0
  * Requires PHP: 7.4
  * Author:      MemberJunction
  * License:     GPL-2.0-or-later
@@ -74,6 +74,49 @@ if ( ! class_exists( 'MJ_WSAL_Bridge' ) ) {
 					'schema' => array( __CLASS__, 'get_event_schema' ),
 				)
 			);
+
+			// Introspection. Reports which WP Activity Log tables this site actually HAS, with their
+			// columns and row counts. It exists because table presence is not a constant: the free
+			// plugin creates only wsal_occurrences and wsal_metadata, while sessions, notifications and
+			// the two report tables arrive with premium extensions — and their columns vary by version.
+			// Deciding what to support by GUESSING which tables exist would be a guess about someone
+			// else's install; this asks the site.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/tables',
+				array(
+					array(
+						'methods'             => WP_REST_Server::READABLE,
+						'callback'            => array( __CLASS__, 'get_tables' ),
+						'permission_callback' => array( __CLASS__, 'permission_check' ),
+						'args'                => array(),
+					),
+				)
+			);
+
+			// The remaining WP Activity Log tables, each behind the same generic handler. Registered
+			// unconditionally so the route index is stable across sites; a site missing the table gets
+			// a 503 naming it when the route is called, which is a far clearer signal than the route
+			// silently not existing.
+			foreach ( array_keys( self::generic_tables() ) as $mj_wsal_key ) {
+				register_rest_route(
+					self::REST_NAMESPACE,
+					'/' . $mj_wsal_key,
+					array(
+						array(
+							'methods'             => WP_REST_Server::READABLE,
+							'callback'            => static function ( WP_REST_Request $request ) use ( $mj_wsal_key ) {
+								return self::get_generic( $mj_wsal_key, $request );
+							},
+							'permission_callback' => array( __CLASS__, 'permission_check' ),
+							'args'                => self::get_basic_collection_params(),
+						),
+						'schema' => static function () use ( $mj_wsal_key ) {
+							return self::generic_schema( $mj_wsal_key );
+						},
+					)
+				);
+			}
 
 			register_rest_route(
 				self::REST_NAMESPACE,
@@ -628,6 +671,315 @@ if ( ! class_exists( 'MJ_WSAL_Bridge' ) ) {
 			$response->header( 'X-WP-TotalPages', (string) ( $per_page > 0 ? (int) ceil( $total / $per_page ) : 0 ) );
 
 			return $response;
+		}
+
+
+		// ─── /tables (introspection) ──────────────────────────────────────────────
+
+		/**
+		 * GET /mj-wsal/v1/tables
+		 *
+		 * Every `<base_prefix>wsal_*` table on this site, with its columns, types and row count.
+		 *
+		 * Discovered by PREFIX rather than from a fixed list, so a table this build has never heard of
+		 * — a newer premium extension, a future version — still shows up instead of being invisible.
+		 * Reports structure and counts only: no row content is read, so nothing in the activity log
+		 * itself can leak through this route.
+		 *
+		 * @param WP_REST_Request $request Request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public static function get_tables( WP_REST_Request $request ) {
+			global $wpdb;
+
+			$prefix = $wpdb->base_prefix . 'wsal_';
+			// LIKE pattern: esc_like then the wildcard, so an underscore in the prefix stays literal.
+			$like = $wpdb->esc_like( $prefix ) . '%';
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- schema name and pattern are placeholders.
+			$names = $wpdb->get_col(
+				$wpdb->prepare(
+					'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME LIKE %s ORDER BY TABLE_NAME',
+					DB_NAME,
+					$like
+				)
+			);
+
+			$known = array(
+				'wsal_occurrences'          => 'Activity events. Supported today as ActivityLogEvent.',
+				'wsal_metadata'             => 'Per-event name/value detail. Supported today, pivoted into ActivityLogEvent.meta.',
+				'wsal_sessions'             => 'Live logged-in sessions. Rows are DELETED on logout, so this is a snapshot, not a history.',
+				'wsal_custom_notifications' => 'Notification rules. Plugin configuration, not user activity.',
+				'wsal_generated_reports'    => 'History of report runs. Plugin configuration, not user activity.',
+				'wsal_periodic_reports'     => 'Scheduled report definitions. Plugin configuration, not user activity.',
+			);
+
+			$out = array();
+			foreach ( (array) $names as $full ) {
+				$suffix = substr( $full, strlen( $wpdb->base_prefix ) );
+
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- values are placeholders.
+				$cols = $wpdb->get_results(
+					$wpdb->prepare(
+						'SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION',
+						DB_NAME,
+						$full
+					),
+					ARRAY_A
+				);
+
+				// Table identifiers cannot be parameterised; this one came from information_schema for
+				// this exact schema and prefix, never from input, and is backtick-quoted.
+				$safe = str_replace( '`', '', $full );
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$rows = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$safe}`" );
+
+				$out[] = array(
+					'table'     => $full,
+					'suffix'    => $suffix,
+					'rows'      => $rows,
+					'supported' => in_array( $suffix, array( 'wsal_occurrences', 'wsal_metadata' ), true ),
+					'note'      => isset( $known[ $suffix ] ) ? $known[ $suffix ] : 'Not documented by this build — discovered by prefix.',
+					'columns'   => array_map(
+						static function ( $c ) {
+							return array(
+								'name'     => $c['COLUMN_NAME'],
+								'type'     => $c['COLUMN_TYPE'],
+								'nullable' => 'YES' === $c['IS_NULLABLE'],
+								'key'      => $c['COLUMN_KEY'],
+							);
+						},
+						(array) $cols
+					),
+				);
+			}
+
+			// Name the documented tables that are ABSENT. Silence about a missing table reads as "we
+			// looked and it was empty", which is a different fact from "this site never had it".
+			$present = wp_list_pluck( $out, 'suffix' );
+			$missing = array();
+			foreach ( $known as $suffix => $note ) {
+				if ( ! in_array( $suffix, $present, true ) ) {
+					$missing[] = array( 'suffix' => $suffix, 'note' => $note );
+				}
+			}
+
+			return new WP_REST_Response(
+				array(
+					'base_prefix' => $wpdb->base_prefix,
+					'present'     => $out,
+					'missing'     => $missing,
+				)
+			);
+		}
+
+
+		/**
+		 * The remaining WP Activity Log tables, served by ONE generic handler.
+		 *
+		 * These four are not created by the free plugin — they arrive with premium extensions — so every
+		 * route below is PRESENCE-GATED: a site without the table gets a clear 503 naming it, never a
+		 * 500 and never an empty-but-successful page that reads as "there is no activity".
+		 *
+		 * `epoch` names columns holding a Unix timestamp; each gains an `<name>_at` ISO-8601 sibling,
+		 * for the same reason ActivityLogEvent has `created_at`: a bare epoch is ambiguous to date
+		 * parsers, and seconds read as milliseconds land every row in 1970.
+		 *
+		 * `json` names columns holding a JSON document in a text column. They are decoded so a consumer
+		 * receives a real object rather than a string it has to parse a second time.
+		 */
+		private static function generic_tables() {
+			return array(
+				'sessions'          => array(
+					'suffix' => 'wsal_sessions',
+					'pk'     => 'id',
+					'epoch'  => array( 'created_on', 'expires_on' ),
+					'json'   => array(),
+					'title'  => 'mj_wsal_session',
+					'note'   => 'Live logged-in sessions. Rows are DELETED on logout, so this is a snapshot of who is signed in now, never a history.',
+				),
+				'notifications'     => array(
+					'suffix' => 'wsal_custom_notifications',
+					'pk'     => 'id',
+					'epoch'  => array( 'created_on' ),
+					'json'   => array( 'notification_settings', 'notification_template', 'notification_sms_template', 'notification_slack_template', 'notification_query' ),
+					'title'  => 'mj_wsal_notification',
+					'note'   => 'Notification rules configured in the plugin.',
+				),
+				'generated-reports' => array(
+					'suffix' => 'wsal_generated_reports',
+					'pk'     => 'id',
+					'epoch'  => array( 'created_on' ),
+					'json'   => array( 'generated_report_filters', 'generated_report_filters_normalized', 'generated_report_header_columns' ),
+					'title'  => 'mj_wsal_generated_report',
+					'note'   => 'History of report runs.',
+				),
+				'periodic-reports'  => array(
+					'suffix' => 'wsal_periodic_reports',
+					'pk'     => 'id',
+					'epoch'  => array( 'created_on', 'last_sent' ),
+					'json'   => array( 'report_data' ),
+					'title'  => 'mj_wsal_periodic_report',
+					'note'   => 'Scheduled report definitions.',
+				),
+			);
+		}
+
+		/**
+		 * Columns of one table, from information_schema. Returns an empty array when the table is absent.
+		 *
+		 * @param string $full Fully-qualified table name.
+		 * @return array<int,array<string,string>>
+		 */
+		private static function columns_of( $full ) {
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- values are placeholders.
+			return (array) $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION',
+					DB_NAME,
+					$full
+				),
+				ARRAY_A
+			);
+		}
+
+		/**
+		 * One page of a generic table.
+		 *
+		 * @param string          $key     Key into {@see generic_tables()}.
+		 * @param WP_REST_Request $request Request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		private static function get_generic( $key, WP_REST_Request $request ) {
+			global $wpdb;
+
+			$spec  = self::generic_tables()[ $key ];
+			$full  = self::table( $spec['suffix'] );
+			$cols  = self::columns_of( $full );
+
+			if ( empty( $cols ) ) {
+				return new WP_Error(
+					'mj_wsal_table_missing',
+					sprintf(
+						/* translators: %s: database table name */
+						__( 'The table "%s" does not exist on this site. It is created by a WP Activity Log premium extension; without that extension there is nothing to read here.', 'mj-wsal-bridge' ),
+						$full
+					),
+					array( 'status' => 503 )
+				);
+			}
+
+			$per_page = (int) $request->get_param( 'per_page' );
+			$page     = (int) $request->get_param( 'page' );
+			$pk       = $spec['pk'];
+
+			// The PK comes from this file, never from input, and is validated against the real column
+			// list before it reaches SQL — so an ordering clause can never be attacker-controlled.
+			$names = wp_list_pluck( $cols, 'COLUMN_NAME' );
+			$order = in_array( $pk, $names, true ) ? $pk : $names[0];
+
+			$safe = str_replace( '`', '', $full );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- identifier from information_schema, values are placeholders.
+			$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$safe}`" );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$rows = $wpdb->get_results(
+				$wpdb->prepare( "SELECT * FROM `{$safe}` ORDER BY `{$order}` ASC LIMIT %d OFFSET %d", $per_page, ( $page - 1 ) * $per_page ),
+				ARRAY_A
+			);
+
+			$data = array();
+			foreach ( (array) $rows as $row ) {
+				foreach ( $spec['json'] as $col ) {
+					if ( isset( $row[ $col ] ) && is_string( $row[ $col ] ) && '' !== $row[ $col ] ) {
+						$decoded = json_decode( $row[ $col ], true );
+						if ( JSON_ERROR_NONE === json_last_error() ) {
+							$row[ $col ] = $decoded;
+						}
+					}
+				}
+				foreach ( $spec['epoch'] as $col ) {
+					if ( isset( $row[ $col ] ) && is_numeric( $row[ $col ] ) && (float) $row[ $col ] > 0 ) {
+						$row[ $col . '_at' ] = self::to_iso8601( (float) $row[ $col ] );
+					} elseif ( array_key_exists( $col, $row ) ) {
+						$row[ $col . '_at' ] = null;   // 0 means "never", which is not 1970.
+					}
+				}
+				$data[] = $row;
+			}
+
+			$response = new WP_REST_Response( $data );
+			$response->header( 'X-WP-Total', (string) $total );
+			$response->header( 'X-WP-TotalPages', (string) ( $per_page > 0 ? (int) ceil( $total / $per_page ) : 0 ) );
+
+			return $response;
+		}
+
+		/**
+		 * JSON Schema for a generic table, derived from the LIVE columns rather than a frozen list —
+		 * these tables' shapes vary by premium version, so a hardcoded schema would misdescribe some
+		 * sites. Absent table: an empty property set, and the route reports 503 when actually called.
+		 *
+		 * @param string $key Key into {@see generic_tables()}.
+		 * @return array
+		 */
+		private static function generic_schema( $key ) {
+			$spec  = self::generic_tables()[ $key ];
+			$cols  = self::columns_of( self::table( $spec['suffix'] ) );
+			$props = array();
+
+			foreach ( $cols as $c ) {
+				$props[ $c['COLUMN_NAME'] ] = array(
+					'description' => $c['COLUMN_NAME'] . ' (' . $c['DATA_TYPE'] . ')',
+					'type'        => self::json_type_for( $c['DATA_TYPE'], in_array( $c['COLUMN_NAME'], $spec['json'], true ) ),
+					'readonly'    => true,
+				);
+			}
+			foreach ( $spec['epoch'] as $col ) {
+				if ( isset( $props[ $col ] ) ) {
+					$props[ $col . '_at' ] = array(
+						'description' => $col . ' as an ISO-8601 UTC datetime; null when unset.',
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+						'readonly'    => true,
+					);
+				}
+			}
+
+			return array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => $spec['title'],
+				'type'       => 'object',
+				'properties' => $props,
+			);
+		}
+
+		/**
+		 * MySQL data type to JSON Schema type.
+		 *
+		 * @param string $data_type MySQL DATA_TYPE.
+		 * @param bool   $is_json   Whether this build decodes the column as JSON.
+		 * @return string|array
+		 */
+		private static function json_type_for( $data_type, $is_json ) {
+			if ( $is_json ) {
+				return array( 'object', 'array', 'string', 'null' );
+			}
+			switch ( strtolower( $data_type ) ) {
+				case 'tinyint':
+				case 'smallint':
+				case 'mediumint':
+				case 'int':
+				case 'integer':
+				case 'bigint':
+					return array( 'integer', 'null' );
+				case 'decimal':
+				case 'float':
+				case 'double':
+					return array( 'number', 'null' );
+				default:
+					return array( 'string', 'null' );
+			}
 		}
 
 		// ─── Schemas (what OPTIONS returns, and what the connector reads fields from) ──
