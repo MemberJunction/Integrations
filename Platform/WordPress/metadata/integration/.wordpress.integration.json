@@ -39973,6 +39973,1952 @@
             "lastModified": "2026-08-30T00:02:22.329Z",
             "checksum": "544356426d858b424f9d682bddb2f56c3a9bb4e58516ae8e96677dbe4243cd98"
           }
+        },
+        {
+          "fields": {
+            "Name": "ActivityLogSession",
+            "DisplayName": "Activity Log Session",
+            "Description": "Live WP Activity Log sessions — who is signed in right now. Rows are deleted on logout, so this is a snapshot rather than a history. Requires the MJ bridge plugin and a WSAL premium extension.",
+            "APIPath": "/mj-wsal/v1/sessions",
+            "Category": "WP Activity Log",
+            "ResponseDataKey": null,
+            "PaginationType": "PageNumber",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "id",
+            "Status": "Active",
+            "Configuration": {
+              "namespace": "mj-wsal/v1",
+              "listPath": "/mj-wsal/v1/sessions",
+              "getOnePath": null,
+              "routes": [
+                "GET /mj-wsal/v1/sessions"
+              ],
+              "responseShape": "array",
+              "pkField": "id",
+              "pkEvidence": "Tier1-source — the bridge projects the table's own AUTO_INCREMENT PRIMARY KEY.",
+              "pagination": {
+                "type": "PageNumber",
+                "pageParam": "page",
+                "sizeParam": "per_page",
+                "maxPageSize": 100,
+                "totalHeader": "X-WP-Total",
+                "totalPagesHeader": "X-WP-TotalPages"
+              },
+              "paginationNote": "The bridge registers page/per_page (max 100) and emits X-WP-Total / X-WP-TotalPages, ordered by the primary key for a stable total order.",
+              "incrementalWatermark": null,
+              "incrementalNote": "No watermark and none possible: rows are DELETED on logout, so the set only ever describes the present moment. Full-pulled and hash-diffed.",
+              "contextGatedFields": [],
+              "customFieldSurface": [],
+              "requiresCompanionPlugin": {
+                "plugin": "MJ WP Activity Log Bridge (Platform/WordPress/wp-plugin/mj-wsal-bridge)",
+                "reason": "WP Activity Log registers no REST routes of its own, so this table is unreachable without the bridge. Created by a WP Activity Log PREMIUM extension. On a site without that extension the table does not exist and the bridge answers 503 naming it, rather than an empty-but-successful page.",
+                "minimumWsalVersion": "5.0.0",
+                "requiredCapability": "manage_options (manage_network_options on multisite)",
+                "premiumExtensionRequired": true
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique session row identifier. Primary key.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 0,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0A7045FA-4908-41F0-9283-DD883391C4E0"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.658Z",
+                  "checksum": "2410c93f8693e04e7eb0e07951c2c07081bb6eef57bf48b23553204bfbdd298b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "site_id",
+                  "DisplayName": "Site ID",
+                  "Description": "Multisite network site ID; 1 on a single-site install.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B7018AE-2088-42A9-BA2E-D3700FC74542"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.674Z",
+                  "checksum": "0e6475e2076284c7cfe61c6eaf6fed88fd02ada95eac67e69b4b10fef3be88f6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "user_id",
+                  "DisplayName": "User ID",
+                  "Description": "WordPress user the session belongs to.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BD0B2AF4-0466-4FEA-A7A6-EF0677E46983"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.691Z",
+                  "checksum": "09059e7aaea8b25d023664826b1942c3b33e97a554fe8a288d12732e515bd491"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "session_token",
+                  "DisplayName": "Session Token",
+                  "Description": "Identifier of the session, matching ActivityLogEvent.session_id.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BE916295-75B3-44A2-B09F-C50850DD8BD9"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.708Z",
+                  "checksum": "33fb94036cd43f8627c1a10eb90ca8def632cf3ae3b2279b81552062945f04cd"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on",
+                  "DisplayName": "Created On (Epoch)",
+                  "Description": "Raw Unix timestamp in seconds when the session began.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8F2657CA-6616-4AB5-A93E-A6174C890468"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.722Z",
+                  "checksum": "a03c4acc0bfe77d3ee6edff41fd66169f2cbe3a76d26d9cd7d45627a324c80dc"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on_at",
+                  "DisplayName": "Created At",
+                  "Description": "The same instant as an ISO-8601 UTC datetime; null when unset.",
+                  "Type": "Datetime",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "581E1F14-8A06-4721-9917-FA90DE0BBBF7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.734Z",
+                  "checksum": "c219c73ac1f260abd372c0aaf936115b95c1f8c016f794f5109217e4276ad127"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "expires_on",
+                  "DisplayName": "Expires On (Epoch)",
+                  "Description": "Raw Unix timestamp in seconds when the session expires.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F3F1F8EA-381A-485F-B05F-A2EECA6E58B2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.750Z",
+                  "checksum": "0a5d6893a579d1cf2c5da663fcd01a1cb08bf9eaee261d655ba1e8f0b206f6e5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "expires_on_at",
+                  "DisplayName": "Expires At",
+                  "Description": "The same instant as an ISO-8601 UTC datetime; null when unset.",
+                  "Type": "Datetime",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "794FABCB-6248-4940-ABB3-D5AA9B7DE308"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.765Z",
+                  "checksum": "1fed76566973b3a4cdf70a5af18c7de6ca92ef909d940950af053cbc89ee05e3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ip",
+                  "DisplayName": "IP Address",
+                  "Description": "Source IP address the session was opened from.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0BE11290-BB4E-496C-9D80-B0F41A6490EC"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.778Z",
+                  "checksum": "4d373b7551253eaf6dec76134741c219ea84f3f9026dccd57fdecd6c096309eb"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "4F43F895-585E-45D2-A753-F9B33561D950"
+          },
+          "sync": {
+            "lastModified": "2026-08-31T20:46:22.228Z",
+            "checksum": "7039f83fd1dafbbefa7026a984a5c703ac9a7c46f23e1f4af93a65c84ff3be3f"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ActivityLogNotification",
+            "DisplayName": "Activity Log Notification",
+            "Description": "Notification rules configured in WP Activity Log: what triggers an alert and where it is sent. Plugin configuration rather than user activity. Requires the MJ bridge plugin and a WSAL premium extension.",
+            "APIPath": "/mj-wsal/v1/notifications",
+            "Category": "WP Activity Log",
+            "ResponseDataKey": null,
+            "PaginationType": "PageNumber",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "id",
+            "Status": "Active",
+            "Configuration": {
+              "namespace": "mj-wsal/v1",
+              "listPath": "/mj-wsal/v1/notifications",
+              "getOnePath": null,
+              "routes": [
+                "GET /mj-wsal/v1/notifications"
+              ],
+              "responseShape": "array",
+              "pkField": "id",
+              "pkEvidence": "Tier1-source — the bridge projects the table's own AUTO_INCREMENT PRIMARY KEY.",
+              "pagination": {
+                "type": "PageNumber",
+                "pageParam": "page",
+                "sizeParam": "per_page",
+                "maxPageSize": 100,
+                "totalHeader": "X-WP-Total",
+                "totalPagesHeader": "X-WP-TotalPages"
+              },
+              "paginationNote": "The bridge registers page/per_page (max 100) and emits X-WP-Total / X-WP-TotalPages, ordered by the primary key for a stable total order.",
+              "incrementalWatermark": null,
+              "incrementalNote": "The table carries no modified timestamp, only created_on, so an edited rule would never resurface under a watermark. Full-pulled and hash-diffed instead.",
+              "contextGatedFields": [],
+              "customFieldSurface": [],
+              "requiresCompanionPlugin": {
+                "plugin": "MJ WP Activity Log Bridge (Platform/WordPress/wp-plugin/mj-wsal-bridge)",
+                "reason": "WP Activity Log registers no REST routes of its own, so this table is unreachable without the bridge. Created by a WP Activity Log PREMIUM extension. On a site without that extension the table does not exist and the bridge answers 503 naming it, rather than an empty-but-successful page.",
+                "minimumWsalVersion": "5.0.0",
+                "requiredCapability": "manage_options (manage_network_options on multisite)",
+                "premiumExtensionRequired": true
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique notification identifier. Primary key.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 0,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "342D297B-62EA-45BA-B001-46615B914CDB"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.790Z",
+                  "checksum": "097c67e96cbc4b3f3f9c5e0126eb027c4a0eb529f43574f7bafeccedb90d391e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_user_id",
+                  "DisplayName": "Created By User ID",
+                  "Description": "WordPress user that created the rule.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4486BFDB-4604-4398-936A-6F5074285D6E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.812Z",
+                  "checksum": "7a1dd22a138633226855d7bbdf7e34430e0b00cd40088d9887054f96e9238888"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_username",
+                  "DisplayName": "Created By",
+                  "Description": "WordPress username that created the rule.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "93B28A51-4122-4D6E-97E1-1ED8888E6284"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.825Z",
+                  "checksum": "91dedb715bab070eef1e0a35102408160bd6816bbec25e25f4c93c88adfd0451"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_settings",
+                  "DisplayName": "Settings",
+                  "Description": "Delivery configuration for the rule.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "73C9535D-0D23-4CA9-9B48-EC951AF8CE0F"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.837Z",
+                  "checksum": "d6495d1aaa8903c75ddd2ae9b4f243b83934a5730966174392547b1b60a252c1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_title",
+                  "DisplayName": "Title",
+                  "Description": "Human-readable name of the rule.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CE46DEF1-F797-4DF8-AC9A-DBEC8B49C196"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.850Z",
+                  "checksum": "b8e73d9f0c47c83531f5f458949b3e08bfa02c455fb7be5d07a8b10a0f229fec"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_email",
+                  "DisplayName": "Email Recipients",
+                  "Description": "Comma-separated email recipients.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6C644BC0-26F0-47D8-9336-82DBAF5FCDC2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.866Z",
+                  "checksum": "45ad6081c5c7587a4b9a2cd75c99b0341d7fd0bc6c8b8cb31d828f951784485c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_email_bcc",
+                  "DisplayName": "BCC Recipients",
+                  "Description": "Comma-separated BCC recipients.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E7827AEB-0D19-4FDC-9426-0F044FD70895"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.884Z",
+                  "checksum": "b92f01f9fdc82602a9cc04b11d41e521dcc9a2b9a9a10ff17908d6e6285cb00b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_email_user",
+                  "DisplayName": "Email Affected User",
+                  "Description": "Whether the affected user is emailed (0 or 1).",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9D966154-B79F-4B06-A1EE-509DC2E04313"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.902Z",
+                  "checksum": "86b25c3f6969bb916b38457dff33104c25eb8f25497a91d9daeabe3bb95f263b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_phone",
+                  "DisplayName": "Phone Recipients",
+                  "Description": "Phone number(s) for SMS delivery.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C9A5FE04-47CE-4D2B-BBF5-89B4D68E0AA5"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.916Z",
+                  "checksum": "b032b6482065cae185e2630ef8bff3b9ec3d6f495480ee9c1a2a0dec40611a52"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_template",
+                  "DisplayName": "Email Template",
+                  "Description": "Email subject and body template with placeholders.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F230AEAD-4F07-42C5-92DA-60E2E11E2DFC"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.930Z",
+                  "checksum": "c6f4c667f9e2796950df2052870251bb3fd33f0580fbda74ff1c12872b5e9dd7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_sms_template",
+                  "DisplayName": "SMS Template",
+                  "Description": "SMS message template.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2F2E1349-921B-4E61-8930-3676A2FCC5F7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.942Z",
+                  "checksum": "a3b42707526f8fb94b46045dc3c6e07c08e4f6835ff531913dfdddc3f8369bc2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_slack",
+                  "DisplayName": "Slack Target",
+                  "Description": "Slack webhook or channel.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 11,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CD86E031-E1CB-411D-9F09-E7F382FAF634"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.970Z",
+                  "checksum": "d7ef6008489ffd18a9fd157f69f98d6cf8c6b83055109e6d0eaf9368defc48a7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_slack_template",
+                  "DisplayName": "Slack Template",
+                  "Description": "Slack message template.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 12,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CBB00382-A575-4B5E-A681-AD4BC02E7A7D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.983Z",
+                  "checksum": "e09429b86581e55232e9724f5f4b8a37c785a26448fd8976d370f96fd52e9a83"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_query",
+                  "DisplayName": "Trigger Conditions",
+                  "Description": "Conditions that fire the notification.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 13,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8852F402-7417-4E44-8A69-CC13004348E8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:47.996Z",
+                  "checksum": "e126a3e0cdaeaee6ad6abc09023b056b42eef53516fc4b79d5424233e49f76f5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_query_sql",
+                  "DisplayName": "Trigger SQL",
+                  "Description": "SQL equivalent of the trigger conditions.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 14,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C6A9B6AE-A6D7-43B7-9063-043258366F11"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.012Z",
+                  "checksum": "5b2eda43118489450470e71f342a4d5fd35273821109717d18ff9604d26fb0f4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_status",
+                  "DisplayName": "Enabled",
+                  "Description": "Whether the rule is enabled (1) or disabled (0).",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 15,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B96FE863-B2F5-42CB-8605-D04697393D13"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.029Z",
+                  "checksum": "4e137105a3b7b80c7f7af083e64d4331ad3bcb00a42b375c2659710362ae5c6c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "notification_view_state",
+                  "DisplayName": "View State",
+                  "Description": "UI display state of the rule.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D10A44E0-0A8C-4CE2-A3A6-46EB714EC892"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.045Z",
+                  "checksum": "151fe36f08018d9ba604f1da6a6f6802844247ac65070721b4a3c8c825c8c5af"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on",
+                  "DisplayName": "Created On (Epoch)",
+                  "Description": "Raw Unix timestamp in seconds when the rule was created.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 17,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CABB7DC5-F8E1-4AE7-94CA-1906D9C65D9E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.061Z",
+                  "checksum": "e1ab04f71ffdc5c5f628aaf4c0ae1de4a37e3c9b0ac5dd373f1f76b4cf1f5df4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on_at",
+                  "DisplayName": "Created At",
+                  "Description": "The same instant as an ISO-8601 UTC datetime; null when unset.",
+                  "Type": "Datetime",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 18,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4D08A720-13DA-445F-AD9A-CD137B6001FF"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.077Z",
+                  "checksum": "d4389b2785fb50a023f91bd7e2e1c73dfe27f41847858610988d1a30443cd2ca"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "57CB1C78-6769-4B80-887A-18F207A205FB"
+          },
+          "sync": {
+            "lastModified": "2026-08-31T20:46:22.247Z",
+            "checksum": "6a5a6a84882b808b6db987304d3a8b2805690a2eedcc896d75ad0da46bdd165a"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ActivityLogGeneratedReport",
+            "DisplayName": "Activity Log Generated Report",
+            "Description": "History of WP Activity Log report runs: what was requested, by whom, and whether it finished. Plugin activity rather than site-user activity. Requires the MJ bridge plugin and a WSAL premium extension.",
+            "APIPath": "/mj-wsal/v1/generated-reports",
+            "Category": "WP Activity Log",
+            "ResponseDataKey": null,
+            "PaginationType": "PageNumber",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "id",
+            "Status": "Active",
+            "Configuration": {
+              "namespace": "mj-wsal/v1",
+              "listPath": "/mj-wsal/v1/generated-reports",
+              "getOnePath": null,
+              "routes": [
+                "GET /mj-wsal/v1/generated-reports"
+              ],
+              "responseShape": "array",
+              "pkField": "id",
+              "pkEvidence": "Tier1-source — the bridge projects the table's own AUTO_INCREMENT PRIMARY KEY.",
+              "pagination": {
+                "type": "PageNumber",
+                "pageParam": "page",
+                "sizeParam": "per_page",
+                "maxPageSize": 100,
+                "totalHeader": "X-WP-Total",
+                "totalPagesHeader": "X-WP-TotalPages"
+              },
+              "paginationNote": "The bridge registers page/per_page (max 100) and emits X-WP-Total / X-WP-TotalPages, ordered by the primary key for a stable total order.",
+              "incrementalWatermark": null,
+              "incrementalNote": "The table records created_on only — a report that later finishes is updated in place with no modified timestamp, so a watermark would miss the transition. Full-pulled and hash-diffed.",
+              "contextGatedFields": [],
+              "customFieldSurface": [],
+              "requiresCompanionPlugin": {
+                "plugin": "MJ WP Activity Log Bridge (Platform/WordPress/wp-plugin/mj-wsal-bridge)",
+                "reason": "WP Activity Log registers no REST routes of its own, so this table is unreachable without the bridge. Created by a WP Activity Log PREMIUM extension. On a site without that extension the table does not exist and the bridge answers 503 naming it, rather than an empty-but-successful page.",
+                "minimumWsalVersion": "5.0.0",
+                "requiredCapability": "manage_options (manage_network_options on multisite)",
+                "premiumExtensionRequired": true
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique report-run identifier. Primary key.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 0,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F1CEF282-C497-49D2-B400-AE8EB3E0C380"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.094Z",
+                  "checksum": "70e726b85fa4e6a9db9b0cf232df7dac44726ad2963d7aa93b2e0042841fce90"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_user_id",
+                  "DisplayName": "Requested By User ID",
+                  "Description": "WordPress user that requested the report.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "73E5DE5A-7630-40A3-BFF5-31EF3DE2CCD3"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.106Z",
+                  "checksum": "5677332e2da562a86ae5c19d1ed1ba754e421bf108120a6e66e5b68bcd2f03b2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_username",
+                  "DisplayName": "Requested By",
+                  "Description": "WordPress username that requested the report.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B5840E5D-9599-43F8-B031-1BF1B7926F3E"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.131Z",
+                  "checksum": "b1bb6bd1e7bd5e72ed39fca63f97f27f1cdd83ffa681c4a75cdba24516513111"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_filters",
+                  "DisplayName": "Filters",
+                  "Description": "Date range, users and event IDs applied to the run.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0CA3E102-548E-4FF4-994E-D72D7B2AAADE"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.144Z",
+                  "checksum": "d26625f4ec9daab1d7b169762abae00ad30a1b2be060e8f4bd8c11301cfbcbcf"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_filters_normalized",
+                  "DisplayName": "Filters (Normalized)",
+                  "Description": "Flattened subset of the applied filters.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C6E0E0B6-8DA4-482E-8599-11F8954D548B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.158Z",
+                  "checksum": "e7d038d54aaa6a44bbd0fb4612a0244bc767034902977ab6406321937bb74f7c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_header_columns",
+                  "DisplayName": "Header Columns",
+                  "Description": "Human-readable column headers for the output.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "62D46B1B-FED4-48EB-852C-B52A32D7A022"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.173Z",
+                  "checksum": "a16287f44b63c8f895c5549d78281ac629ae2b410505e2d4087b10e0cd3b5b39"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_where_clause",
+                  "DisplayName": "Where Clause",
+                  "Description": "Precompiled SQL WHERE clause for the run.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FC68F819-94B9-4799-B219-EA3BC62B94B2"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.185Z",
+                  "checksum": "609e9cafcb352fafe9cc6ebf2d37dcf65f6c001efe2e6d8fc12daa05a64c0058"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_finished",
+                  "DisplayName": "Finished",
+                  "Description": "Processing status: 0 in progress, 1 complete.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6EDC6855-BE20-444D-8DF2-D9312F955C84"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.199Z",
+                  "checksum": "12242448495e4814d1261bb0bf4267501b59c6415956d532b23c8f08563a5adf"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_to_date",
+                  "DisplayName": "To Date (Epoch)",
+                  "Description": "UTC epoch upper bound of the report range.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7CA3FB6E-1FA4-4F05-B3DD-2AB3C690F778"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.211Z",
+                  "checksum": "c77013db2e1dd88f1616c52ab802f5d9028bb76aac0f6b530552cb35b38e5063"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_name",
+                  "DisplayName": "Name",
+                  "Description": "Internal name of the report run.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B5374487-E5BD-4737-B889-021843F1B3D7"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.227Z",
+                  "checksum": "e5a95ee520ead623d8fb95107b4935e3a36bb1838a3a596cce167ebf3e5f4d5b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_file",
+                  "DisplayName": "Output File",
+                  "Description": "Output filename produced by the run.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EA3D9791-E8CC-4485-AD62-5E0ABDA5CD5D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.244Z",
+                  "checksum": "636457e1fc2d3bd40b7befabc473f6235fe8b3fffc861c900b3d92860fbb2f35"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_tag",
+                  "DisplayName": "Tag",
+                  "Description": "Optional label applied to the run.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 11,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6F30EAC5-AD77-460F-BF9E-D77880DED060"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.259Z",
+                  "checksum": "dcca583e8286d24b006dbb570ed9299ee38cce79e00eab51adea22aafd89f5df"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_format",
+                  "DisplayName": "Format Code",
+                  "Description": "Output format code.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 12,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0350177E-E6CA-407B-B1D9-0A4510585F28"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.287Z",
+                  "checksum": "3f19dcba1d2e2d626d3586dcf5bbb5cfaaa53654008531adee32f3af45f63499"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generated_report_number_of_records",
+                  "DisplayName": "Record Count",
+                  "Description": "Number of rows the run produced.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 13,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8048858C-2E05-48F4-A7F9-17C5773445B1"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.305Z",
+                  "checksum": "5c364e29f32caa068716de80ff735a96aab9d5f9a65687641a06d73f13faad58"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on",
+                  "DisplayName": "Created On (Epoch)",
+                  "Description": "Raw Unix timestamp in seconds when the run was created.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 14,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EF96AC63-4C14-4EFE-9560-793F51EBF377"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.319Z",
+                  "checksum": "88c6844b9f90dd1ed500af5a8c7e448c7b4cb811f63409a583ae1256f77c108c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on_at",
+                  "DisplayName": "Created At",
+                  "Description": "The same instant as an ISO-8601 UTC datetime; null when unset.",
+                  "Type": "Datetime",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 15,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9BC366DD-7889-43C1-B113-A39EAAABC984"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.334Z",
+                  "checksum": "6f957a8235ad91f7a24be66e535e6728f098f0fad9b822c778da3764358062da"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "8A02D5F8-BB4F-4C00-8CB4-31BBBB9AECBB"
+          },
+          "sync": {
+            "lastModified": "2026-08-31T20:46:22.268Z",
+            "checksum": "57101cdac40b37b47388ee6902fd188d28f0c430c068a3f63428b5394947adcd"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ActivityLogPeriodicReport",
+            "DisplayName": "Activity Log Periodic Report",
+            "Description": "Scheduled WP Activity Log report definitions: what is sent, to whom and how often. Plugin configuration rather than user activity. Requires the MJ bridge plugin and a WSAL premium extension.",
+            "APIPath": "/mj-wsal/v1/periodic-reports",
+            "Category": "WP Activity Log",
+            "ResponseDataKey": null,
+            "PaginationType": "PageNumber",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "id",
+            "Status": "Active",
+            "Configuration": {
+              "namespace": "mj-wsal/v1",
+              "listPath": "/mj-wsal/v1/periodic-reports",
+              "getOnePath": null,
+              "routes": [
+                "GET /mj-wsal/v1/periodic-reports"
+              ],
+              "responseShape": "array",
+              "pkField": "id",
+              "pkEvidence": "Tier1-source — the bridge projects the table's own AUTO_INCREMENT PRIMARY KEY.",
+              "pagination": {
+                "type": "PageNumber",
+                "pageParam": "page",
+                "sizeParam": "per_page",
+                "maxPageSize": 100,
+                "totalHeader": "X-WP-Total",
+                "totalPagesHeader": "X-WP-TotalPages"
+              },
+              "paginationNote": "The bridge registers page/per_page (max 100) and emits X-WP-Total / X-WP-TotalPages, ordered by the primary key for a stable total order.",
+              "incrementalWatermark": null,
+              "incrementalNote": "Only created_on and last_sent are recorded; an edited schedule keeps its created_on, so a watermark would never resurface it. Full-pulled and hash-diffed.",
+              "contextGatedFields": [],
+              "customFieldSurface": [],
+              "requiresCompanionPlugin": {
+                "plugin": "MJ WP Activity Log Bridge (Platform/WordPress/wp-plugin/mj-wsal-bridge)",
+                "reason": "WP Activity Log registers no REST routes of its own, so this table is unreachable without the bridge. Created by a WP Activity Log PREMIUM extension. On a site without that extension the table does not exist and the bridge answers 503 naming it, rather than an empty-but-successful page.",
+                "minimumWsalVersion": "5.0.0",
+                "requiredCapability": "manage_options (manage_network_options on multisite)",
+                "premiumExtensionRequired": true
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique scheduled-report identifier. Primary key.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 0,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9131E9EB-119B-41CB-9A15-0E97A830BBC6"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.350Z",
+                  "checksum": "9db2d48fe2e39c68529eac94c1a46d1d6d509ebe86015c44643c74b8d0599ee1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_user_id",
+                  "DisplayName": "Created By User ID",
+                  "Description": "WordPress user that created the schedule.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7DDC8E40-901E-4330-8C0A-3839897B7054"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.367Z",
+                  "checksum": "6e930b50739514bdd80bca7bb90339e833d3ed0de1a5c5c91a881d626d622e00"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_username",
+                  "DisplayName": "Created By",
+                  "Description": "WordPress username that created the schedule.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "76B38152-B0B1-4CA6-AEDB-4D0CD8AA3E7B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.383Z",
+                  "checksum": "3cc399fb90e0d67e7b5b1ed7c023f152cec71f48d710e4c8b0b784b8be18e6ed"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_name",
+                  "DisplayName": "Name",
+                  "Description": "Human-readable name of the scheduled report.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E04975F7-6CEF-4729-BFE2-C12729B26108"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.401Z",
+                  "checksum": "d80aa95edc5f3fc30f037d08bbadd3d633d4414c9b5284cca7d2aa161b0db615"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_frequency",
+                  "DisplayName": "Frequency Code",
+                  "Description": "Schedule frequency code.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "13C60454-7D67-441C-8C65-AFF18BFA8762"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.418Z",
+                  "checksum": "50e23bfee25dd865ffaf8a5f0480c91ec11e144d4562820bf6a0bdf6de057d18"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_format",
+                  "DisplayName": "Format Code",
+                  "Description": "Export format code.",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1677B0E8-43E4-403A-9D6B-B07D360F6153"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.430Z",
+                  "checksum": "cc6952f0c7c4f588f34daa6998b4c74588b72e094e744a736d70dd8565a2d4ba"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_email",
+                  "DisplayName": "Recipients",
+                  "Description": "Comma-separated email recipients.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C506AE84-CC3D-4D7F-BC8F-EF593BE32E9D"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.456Z",
+                  "checksum": "7489360e25cdf1daf8be6eadfb8ad3b29f6f808a8cc28f4d6fbf31e301ca1282"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_data",
+                  "DisplayName": "Filter Configuration",
+                  "Description": "Filter configuration applied to each run.",
+                  "Type": "json",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "ED878ACC-F7B5-4D90-BA90-74C84A120B2B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.472Z",
+                  "checksum": "7679b42fa1ef6453ba1c4f7b7c44821475673823cf8f4e9dc19bc2ad23bdf26e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_tag",
+                  "DisplayName": "Tag",
+                  "Description": "Optional label applied to the schedule.",
+                  "Type": "String",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C1D24BCC-DF57-423A-965D-B5E558DF09AE"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.490Z",
+                  "checksum": "df283cb1f2024759c600e4e6df2b67c2657a4f35452adf0f2b3c20ccdf0f4cbc"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "report_disabled",
+                  "DisplayName": "Disabled",
+                  "Description": "Whether the schedule is disabled (1) or active (0).",
+                  "Type": "Integer",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 9,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D2F221BC-98DD-4E1F-9138-F7ECA19C807C"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.507Z",
+                  "checksum": "4d505838554a80a68ff95e80a7d695fa18b3f9e9ea47f5cf615ad604cd8e1a02"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "last_sent",
+                  "DisplayName": "Last Sent (Epoch)",
+                  "Description": "Raw Unix timestamp in seconds of the last send; 0 when never sent.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 10,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "62081241-EC33-4A65-B2EE-951D4FFFF7A8"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.521Z",
+                  "checksum": "fdc80bc9d39de870f5d86c6599fa3be194551dc2fd202589c4dbce746048b4f0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "last_sent_at",
+                  "DisplayName": "Last Sent At",
+                  "Description": "The same instant as an ISO-8601 UTC datetime; null when never sent.",
+                  "Type": "Datetime",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 11,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A02BF0A5-0745-47C4-8F18-DA9D6C0C7A24"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.534Z",
+                  "checksum": "f67333ccb03ddab1b93f5a76683dcd7d17b6b43d14730dc5e19d3fc170d14d1e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on",
+                  "DisplayName": "Created On (Epoch)",
+                  "Description": "Raw Unix timestamp in seconds when the schedule was created.",
+                  "Type": "Decimal",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 12,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F42FAB2B-97CE-42AF-9BB5-49D7850EF113"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.547Z",
+                  "checksum": "80fdf4bd5660d89c808b4ffdea535d37e13eedeab4ad01b1b784be5da8d6508c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "created_on_at",
+                  "DisplayName": "Created At",
+                  "Description": "The same instant as an ISO-8601 UTC datetime; null when unset.",
+                  "Type": "Datetime",
+                  "Length": null,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 13,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ]
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "892C978E-86BC-40EF-83B2-AB8997527F8B"
+                },
+                "sync": {
+                  "lastModified": "2026-08-31T20:46:48.559Z",
+                  "checksum": "568ee5398093189730aca4b1302a09d08255b48134e80a3d2bf3fb5dd203b743"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "1B3D9A90-EF7B-44B5-BBD8-3AE4E5832C4E"
+          },
+          "sync": {
+            "lastModified": "2026-08-31T20:46:22.285Z",
+            "checksum": "1a4bd61658249e6daf5b695f44a6ede68667023cdabe5ae22d76e47721c28fa0"
+          }
         }
       ]
     },
