@@ -483,10 +483,10 @@
       "objectCount": 205,
       "className": "@memberjunction/connector-netsuite",
       "npmPackage": "@memberjunction/connector-netsuite",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/NetSuite",
-      "installTag": "Finance-NetSuite@1.4.0"
+      "installTag": "Finance-NetSuite@1.4.1"
     },
     {
       "name": "QuickBooks",
@@ -546,10 +546,10 @@
       "objectCount": 5,
       "className": "ElevateConnector",
       "npmPackage": "@memberjunction/connector-elevate",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Elevate",
-      "installTag": "LMS-Elevate@0.2.0"
+      "installTag": "LMS-Elevate@0.2.1"
     },
     {
       "name": "Path LMS",
@@ -998,10 +998,10 @@
       "objectCount": 84,
       "className": "WordPressConnector",
       "npmPackage": "@memberjunction/connector-wordpress",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "Platform/WordPress",
-      "installTag": "Platform-WordPress@1.1.0"
+      "installTag": "Platform-WordPress@1.2.0"
     },
     {
       "name": "zendesk",
