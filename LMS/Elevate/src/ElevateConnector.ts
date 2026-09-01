@@ -1214,6 +1214,28 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             } catch (err) {
                 const named = err instanceof ElevateAPIError ? err.Classification.UnknownField : null;
                 if (named == null || !candidates.some(c => c.toLowerCase() === named.toLowerCase())) {
+                    // The door refused the batch WITHOUT naming a field — the live case is a bare
+                    // HTTP 500 with no vendor message, which this API returns for any client error
+                    // including one unusable name among thirty. Giving up here discarded every
+                    // candidate on the first refusal: a real tenant learned 32 columns on one object
+                    // and 26 on another, and verified NONE of them, run after run, because the same
+                    // few unusable names poisoned the same batch every time.
+                    //
+                    // The names in question are not junk. `LearnLabels` reads the door's own
+                    // `response.labels` dictionary, which mixes queryable columns with relation and
+                    // rollup keys (`user`, `product`, `stats`, `count`) that are not read selectors.
+                    // They cannot be told apart by name, only by asking.
+                    //
+                    // So ask in halves. Bisection isolates the offenders in O(log n) requests
+                    // instead of surrendering the whole set, and every column the door does accept
+                    // gets verified. Only reached when the vendor declines to name the field: when
+                    // it names one, the cheaper targeted repair below still runs first.
+                    if (candidates.length > 1) {
+                        const mid = Math.ceil(candidates.length / 2);
+                        await this.VerifyFieldSubset(auth, companyIntegration, obj, route, filters, key, candidates.slice(0, mid), warnings);
+                        await this.VerifyFieldSubset(auth, companyIntegration, obj, route, filters, key, candidates.slice(mid), warnings);
+                        return;
+                    }
                     this.WarnOnce(
                         `verify-failed:${key}`,
                         `[elevate] Could not prove runtime-discovered column(s) ${candidates.join(', ')} on ` +
@@ -1253,6 +1275,90 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             && !verified.has(name)
             && !declaredSelectors.has(name)
             && !declaredNames.has(name.toLowerCase()));
+    }
+
+    /**
+     * Verify ONE subset of candidate columns, halving on an unattributed refusal.
+     *
+     * Separate from {@link VerifyLearnedFields} because that method owns "what is still pending on
+     * this connection" (dedupe against declared/verified/rejected), while this owns "does the door
+     * accept exactly these". Recursing through the outer method would re-derive the pending set on
+     * every level and lose the half being tested.
+     *
+     * Terminates two ways. A subset of ONE that still fails is the offender: it is remembered as
+     * rejected so it never poisons another batch on this connection — the same terminal state a
+     * NAMED rejection produces, reached by isolation instead of by the vendor telling us. Depth is
+     * also bounded, so a door failing for a reason that has nothing to do with field names (an
+     * outage mid-verification) costs a bounded number of requests and leaves everything unverified
+     * rather than rejecting good columns one at a time.
+     */
+    private async VerifyFieldSubset(
+        auth: ElevateAuthContext,
+        companyIntegration: MJCompanyIntegrationEntity,
+        obj: MJIntegrationObjectEntity,
+        route: ElevateReadRoute,
+        filters: Record<string, unknown> | null,
+        key: string,
+        subset: string[],
+        warnings: FetchWarning[],
+        depth = 0,
+    ): Promise<void> {
+        if (subset.length === 0) return;
+        const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth), route.Door);
+        const headers = this.BuildHeaders(auth);
+        try {
+            const body = this.BuildEnvelope(companyIntegration, route.Resource, subset, filters);
+            const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, body);
+            this.LearnLabels(key, response.Body, route, this.NormalizeResponse(response.Body, route.DataKey));
+            this.MarkVerified(key, subset);
+            return;
+        } catch (err) {
+            const named = err instanceof ElevateAPIError ? err.Classification.UnknownField : null;
+            if (named != null && subset.some(c => c.toLowerCase() === named.toLowerCase())) {
+                // The door named it — no need to keep halving.
+                this.RememberRejected(key, named);
+                warnings.push({
+                    Code: 'FIELD_REJECTED',
+                    Message: `Elevate rejected runtime-discovered column "${named}" on "${obj.Name}"; it was dropped before any data read.`,
+                    Data: { objectName: obj.Name, field: named, phase: 'verification' },
+                });
+                const rest = subset.filter(c => c.toLowerCase() !== named.toLowerCase());
+                await this.VerifyFieldSubset(auth, companyIntegration, obj, route, filters, key, rest, warnings, depth + 1);
+                return;
+            }
+            if (subset.length === 1) {
+                // Isolated by bisection: this column, alone, is what the door refuses.
+                const offender = subset[0];
+                this.RememberRejected(key, offender);
+                this.WarnOnce(
+                    `rejected-field:${key}:${offender}`,
+                    `[elevate] The door refused runtime-discovered column "${offender}" on "${obj.Name}" when ` +
+                    'asked for it ALONE, so it is the one the batch was failing on. It was refused during ' +
+                    'OUT-OF-BAND verification — no data read ever carried it and no row was lost — and it will ' +
+                    'not be asked for again on this connection. The door names no field on these refusals, ' +
+                    'so it was identified by isolation.',
+                );
+                warnings.push({
+                    Code: 'FIELD_REJECTED',
+                    Message: `Elevate refused runtime-discovered column "${offender}" on "${obj.Name}" in isolation; it was dropped before any data read.`,
+                    Data: { objectName: obj.Name, field: offender, phase: 'verification-bisect' },
+                });
+                return;
+            }
+            if (depth >= MAX_SELECTOR_REPAIRS) {
+                this.WarnOnce(
+                    `verify-depth:${key}`,
+                    `[elevate] Stopped isolating runtime-discovered columns on "${obj.Name}" after ` +
+                    `${MAX_SELECTOR_REPAIRS} levels (${this.SafeMessage(err)}). The remaining ${subset.length} ` +
+                    'stay UNVERIFIED — not rejected — so the object still syncs on what it has and the next ' +
+                    'sync re-attempts them.',
+                );
+                return;
+            }
+            const mid = Math.ceil(subset.length / 2);
+            await this.VerifyFieldSubset(auth, companyIntegration, obj, route, filters, key, subset.slice(0, mid), warnings, depth + 1);
+            await this.VerifyFieldSubset(auth, companyIntegration, obj, route, filters, key, subset.slice(mid), warnings, depth + 1);
+        }
     }
 
     /** Records the learned names this connection's door answered a read for. */
