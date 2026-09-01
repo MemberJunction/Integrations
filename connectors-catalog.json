@@ -546,10 +546,10 @@
       "objectCount": 5,
       "className": "ElevateConnector",
       "npmPackage": "@memberjunction/connector-elevate",
-      "version": "0.2.2",
+      "version": "0.3.0",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Elevate",
-      "installTag": "LMS-Elevate@0.2.2"
+      "installTag": "LMS-Elevate@0.3.0"
     },
     {
       "name": "Path LMS",
