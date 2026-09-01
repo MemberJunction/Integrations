@@ -481,6 +481,68 @@ describe('ElevateConnector — the field allow-list is discovered, not frozen', 
         for (const sel of dataReads) expect(sel).not.toContain('unsupported_label_field');
     });
 
+    // THE LIVE FAILURE. This door answers a bad field name with a bare HTTP 500 and NO vendor
+    // message, so `Classification.UnknownField` is null and the targeted repair has nothing to
+    // aim at. Before bisection the connector surrendered the whole batch on that first refusal:
+    // a real tenant learned 32 columns on one object and 26 on another and verified NONE of them,
+    // every run, because the same few unusable names poisoned the same batch each time.
+    it('isolates the offender by bisection when the door refuses WITHOUT naming a field', async () => {
+        const c = makeConnector([[earnedCreditIO, earnedCreditIOFs]]);
+        const ci = makeCI(baseConfig);
+        const labels = { ...earnedCreditLabels, good_one: 'Good', bad_one: 'Rollup', good_two: 'Also Good' };
+        const good = envelope([{ earning_method: 'assessment', updated_at: '2025-04-01T12:00:00' }], labels);
+        const blind500 = { Status: 500, Body: {}, Headers: {} };
+
+        c.Canned.push(
+            { response: ok(good) },                                            // learn the labels
+            // Any probe carrying `bad_one` fails, unattributed. Everything else succeeds.
+            { match: ({ body }) => JSON.stringify((body as Record<string, unknown>)?.fields ?? {}).includes('bad_one'), response: blind500 },
+            { match: ({ body }) => JSON.stringify((body as Record<string, unknown>)?.fields ?? {}).includes('bad_one'), response: blind500 },
+            { match: ({ body }) => JSON.stringify((body as Record<string, unknown>)?.fields ?? {}).includes('bad_one'), response: blind500 },
+            { match: ({ body }) => JSON.stringify((body as Record<string, unknown>)?.fields ?? {}).includes('bad_one'), response: blind500 },
+            { response: ok(good) }, { response: ok(good) }, { response: ok(good) },
+            { response: ok(good) }, { response: ok(good) }, { response: ok(good) },
+        );
+
+        await c.FetchChanges(fetchCtx(ci, 'EarnedCredit'));
+        const batch = await c.FetchChanges(fetchCtx(ci, 'EarnedCredit'));
+
+        // The offender was asked for ALONE at some point — that is what isolation means.
+        const solo = c.SelectorsSent().filter(sel => sel.length === 1 && sel[0] === 'bad_one');
+        expect(solo.length).toBeGreaterThan(0);
+        expect(batch.Warnings?.some(w => w.Code === 'FIELD_REJECTED')).toBe(true);
+
+        // And the good siblings were NOT discarded with it — the whole point.
+        await c.FetchChanges(fetchCtx(ci, 'EarnedCredit'));
+        const later = c.SelectorsSent()[c.SelectorsSent().length - 1];
+        expect(later).toContain('good_one');
+        expect(later).toContain('good_two');
+        expect(later).not.toContain('bad_one');
+    });
+
+    it('never lets an unproven name reach a data read, even while bisecting', async () => {
+        const c = makeConnector([[earnedCreditIO, earnedCreditIOFs]]);
+        const ci = makeCI(baseConfig);
+        const labels = { ...earnedCreditLabels, bad_one: 'Rollup' };
+        const good = envelope([{ earning_method: 'assessment', updated_at: '2025-04-01T12:00:00' }], labels);
+        const blind = { match: ({ body }: { body?: Record<string, unknown> }) => JSON.stringify(body?.fields ?? {}).includes('bad_one'), response: { Status: 500, Body: {}, Headers: {} } };
+        // The offender fails EVERY time it is asked for, including alone — that is what makes it
+        // the offender. Canning a single failure would let the isolation probe succeed and prove
+        // the opposite of the thing under test.
+        c.Canned.push(
+            { response: ok(good) },
+            blind, blind, blind, blind,
+            { response: ok(good) }, { response: ok(good) }, { response: ok(good) },
+        );
+        await c.FetchChanges(fetchCtx(ci, 'EarnedCredit'));
+        await c.FetchChanges(fetchCtx(ci, 'EarnedCredit'));
+
+        // A DATA read is one carrying the declared columns. None may carry an unproven name.
+        const dataReads = c.SelectorsSent().filter(sel => sel.includes('earning_method'));
+        expect(dataReads.length).toBeGreaterThan(0);
+        for (const sel of dataReads) expect(sel).not.toContain('bad_one');
+    });
+
     it('fails FAST when the door names a column the request never sent — it does not replay the same call', async () => {
         const c = makeConnector([[productIO, productIOFs]]);
         const ci = makeCI(baseConfig);
