@@ -749,6 +749,26 @@ describe('ElevateConnector — auth, base URL and credential hygiene', () => {
         await expect(c.PublicAuthenticate(makeCI({ apiKey: FIXTURE_KEY }))).rejects.toThrow(/site URL/i);
     });
 
+    // The connection was created through the standard credential UI, which writes the shape declared
+    // by this integration's own CredentialTypeID ("API Key with Endpoint"): {apiKey, endpoint}. The
+    // site root therefore arrives under `endpoint`, which was missing from the alias list — so SiteUrl
+    // resolved to undefined and Authenticate threw BEFORE any HTTP call, on a connection whose key and
+    // URL were both correct. ValidateResource reported that as the door rejecting the query, so a live
+    // tenant read "check the site URL and the API key" while curl against the same pair returned 200.
+    it('accepts the site root under `endpoint`, the key the credential type actually writes', async () => {
+        const c = makeConnector([[productIO, productIOFs]]);
+        const ci = makeCI({ endpoint: 'https://tenant-a.example.net', apiKey: FIXTURE_KEY });
+        const auth = await c.PublicAuthenticate(ci);
+        expect(c.PublicGetBaseURL(ci, auth)).toBe('https://tenant-a.example.net');
+    });
+
+    it('still prefers an explicit siteUrl when both are present', async () => {
+        const c = makeConnector([[productIO, productIOFs]]);
+        const ci = makeCI({ siteUrl: 'https://explicit.example.net', endpoint: 'https://fallback.example.net', apiKey: FIXTURE_KEY });
+        const auth = await c.PublicAuthenticate(ci);
+        expect(c.PublicGetBaseURL(ci, auth)).toBe('https://explicit.example.net');
+    });
+
     // A tenant handed over its site URL with the door path already on it. GetBaseURL returns siteUrl
     // verbatim and JoinURL then appends /api/reports, so every call went to /api/reports/api/reports —
     // a 404/405 that ValidateResource swallows, leaving TestConnection to report "check the site URL
