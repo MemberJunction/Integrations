@@ -33,6 +33,7 @@ import {
     type CRUDResult,
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
+import { parseReportsCatalog, type CatalogResource } from './ReportsCatalogPage.js';
 
 // ─── Design note — WHY THE GENERIC REST READ PATH IS OVERRIDDEN ────────────────
 //
@@ -202,6 +203,13 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
     private verifiedFieldNames = new Map<string, Set<string>>();
     /** One sampled value per discovered field name, used ONLY for runtime type inference. */
     private discoveredSamples = new Map<string, Map<string, unknown>>();
+
+    /**
+     * The tenant's own resource catalog, parsed from `<siteUrl>/api/reports`, per connection.
+     * `null` means we tried and the page was unusable — cached so a dead page is fetched once, not
+     * once per object.
+     */
+    private catalogPage = new Map<string, CatalogResource[] | null>();
     /** Field names this connection's door REJECTED — never requested again for that object. */
     private rejectedFieldNames = new Map<string, Set<string>>();
     /** Declared resources this connection accepted a probe query for. Absence NEVER deactivates. */
@@ -339,6 +347,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         contextUser: UserInfo,
     ): Promise<ExternalObjectSchema[]> {
         const declared: ExternalObjectSchema[] = [];
+        const declaredWire = new Set<string>();
         for (const obj of this.getCachedObjects(companyIntegration.IntegrationID)) {
             await this.ValidateResource(companyIntegration, contextUser, obj.Name);
             declared.push({
@@ -349,6 +358,28 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                 SupportsIncrementalSync: obj.SupportsIncrementalSync,
                 SupportsWrite: obj.SupportsWrite,
             });
+            try { declaredWire.add(this.ReadRouteFor(obj).Resource.toLowerCase()); } catch { /* no wire value declared */ }
+            declaredWire.add(obj.Name.toLowerCase());
+        }
+
+        // ADD whatever this site documents that the catalog does not. Purely additive: a resource the
+        // page omits is left exactly as declared, because this page is evidence of PRESENCE only —
+        // `DiscoveryIsAuthoritative` stays false and nothing here can deactivate.
+        const page = await this.LoadCatalogPage(companyIntegration, contextUser);
+        if (page) {
+            for (const resource of page) {
+                if (declaredWire.has(resource.Name.toLowerCase())) continue;
+                declared.push({
+                    Name: resource.Name,
+                    Label: resource.Name,
+                    Description: `Discovered from this site's Report API catalog (${resource.Fields.length} field(s)).`,
+                    // The page states no watermark field and no write door, and inferring either from
+                    // a field name is the kind of guess that ships a broken predicate. A discovered
+                    // resource is read-only and full-sync until someone declares otherwise.
+                    SupportsIncrementalSync: false,
+                    SupportsWrite: false,
+                });
+            }
         }
         return declared;
     }
@@ -388,6 +419,23 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const samples = this.discoveredSamples.get(key);
         const rejected = this.rejectedFieldNames.get(key) ?? new Set<string>();
         const extra: ExternalFieldSchema[] = [];
+
+        // The site's own catalog page documents this resource's full field list. Fold it in FIRST:
+        // it is the vendor's stated surface, whereas the streamed names below are whatever one probe
+        // happened to return. Still additive — a declared field the page omits is untouched.
+        const page = await this.LoadCatalogPage(companyIntegration, contextUser);
+        if (page) {
+            let wire = objectName;
+            try { wire = this.ReadRouteFor(this.GetCachedObject(companyIntegration.IntegrationID, objectName)).Resource; } catch { /* discovered resources are named by their wire value */ }
+            const resource = page.find(r => r.Name.toLowerCase() === wire.toLowerCase())
+                ?? page.find(r => r.Name.toLowerCase() === objectName.toLowerCase());
+            for (const f of resource?.Fields ?? []) {
+                if (claimed.has(f.Name.toLowerCase()) || rejected.has(f.Name)) continue;
+                claimed.add(f.Name.toLowerCase());
+                const schema = this.SchemaForDiscoveredField(f.Name, samples?.get(f.Name));
+                extra.push(f.Description ? { ...schema, Description: f.Description } : schema);
+            }
+        }
         for (const name of this.SortedNames(this.discoveredFieldNames.get(key))) {
             if (claimed.has(name.toLowerCase()) || rejected.has(name)) continue;
             extra.push(this.SchemaForDiscoveredField(name, samples?.get(name)));
@@ -1502,6 +1550,53 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
      * present. A rejection is remembered and warned about but NEVER removes the object — with no describe
      * endpoint, absence proves nothing, and deactivating on a thin result is tenant-visible data loss.
      */
+    /**
+     * Fetch and parse this connection's own resource catalog from `<siteUrl>/api/reports`.
+     *
+     * A plain GET of the URL the Report API posts to. No credential is sent — the page is not
+     * credential-gated on the deployment this was built against, and sending a key on a GET the
+     * vendor never documented would be inventing a protocol.
+     *
+     * Every failure path returns `null` and is cached, so an unusable page costs ONE request per
+     * connection and the declared catalog simply stands. Nothing here can remove an object.
+     */
+    private async LoadCatalogPage(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+    ): Promise<CatalogResource[] | null> {
+        const key = companyIntegration.ID;
+        const cached = this.catalogPage.get(key);
+        if (cached !== undefined) return cached;
+
+        let parsed: CatalogResource[] | null = null;
+        try {
+            const auth = await this.Authenticate(companyIntegration, contextUser);
+            const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth), '/api/reports');
+            const response = await fetch(url, { method: 'GET', headers: { Accept: 'text/html' } });
+            if (response.ok) {
+                // Gate on the resources the declared catalog already asserts: if the page does not
+                // describe those, its shape is not the one this parser understands and every
+                // conclusion from it is suspect.
+                const known = this.getCachedObjects(companyIntegration.IntegrationID)
+                    .map(o => { try { return this.ReadRouteFor(o).Resource; } catch { return null; } })
+                    .filter((r): r is string => r != null);
+                parsed = parseReportsCatalog(await response.text(), known);
+            }
+        } catch {
+            parsed = null;
+        }
+
+        if (parsed === null) {
+            this.WarnOnce(
+                `catalog-page:${key}`,
+                '[elevate] Could not read this site\'s resource catalog at /api/reports — the declared ' +
+                'catalog stands. Objects and fields this site has but the catalog does not will not appear.',
+            );
+        }
+        this.catalogPage.set(key, parsed);
+        return parsed;
+    }
+
     private async ValidateResource(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo,
