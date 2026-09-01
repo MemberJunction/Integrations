@@ -426,7 +426,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const page = await this.LoadCatalogPage(companyIntegration, contextUser);
         if (page) {
             let wire = objectName;
-            try { wire = this.ReadRouteFor(this.GetCachedObject(companyIntegration.IntegrationID, objectName)).Resource; } catch { /* discovered resources are named by their wire value */ }
+            try { wire = this.ReadRouteFor(this.GetCachedObject(companyIntegration.IntegrationID, objectName), companyIntegration).Resource; } catch { /* discovered resources are named by their wire value */ }
             const resource = page.find(r => r.Name.toLowerCase() === wire.toLowerCase())
                 ?? page.find(r => r.Name.toLowerCase() === objectName.toLowerCase());
             for (const f of resource?.Fields ?? []) {
@@ -528,7 +528,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const obj = this.GetCachedObject(companyIntegration.IntegrationID, ctx.ObjectName);
         const iofs = this.GetCachedFields(obj.ID);
         const auth = await this.Authenticate(companyIntegration, ctx.ContextUser);
-        const route = this.ReadRouteFor(obj);
+        const route = this.ReadRouteFor(obj, companyIntegration);
         const columns = this.ReadColumnsFor(iofs);
         const warnings: FetchWarning[] = [];
 
@@ -1586,12 +1586,29 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
 
     // ── Metadata routing helpers ──────────────────────────────────────────────
 
-    /** The read route for one object, entirely from metadata. Throws rather than guessing a wire value. */
-    private ReadRouteFor(obj: MJIntegrationObjectEntity): ElevateReadRoute {
+    /**
+     * The read route for one object. Throws rather than GUESSING a wire value — but this site's own
+     * catalog is not a guess.
+     *
+     * Three sources, in order: the declared `resourceWireValue`, the declared access path's own body
+     * selector, then the resource name this site returned from `/api/reports`. The third exists because
+     * a runtime-discovered object has no declared Configuration at all: `DiscoverObjects` learns it from
+     * the catalog page and can only report its name. Without this the object is born unqueryable —
+     * `DiscoverFieldsViaFetch` fails, no fields are ever learned, and it shows up in the picker with
+     * "No fields found for this table" and can never sync. That was every discovered object.
+     *
+     * The refusal below still stands for anything the catalog does NOT list, which is what it was
+     * written to prevent: the vendor's own prose spells the accounting resource "accountCode", and that
+     * spelling is rejected with HTTP 500 — the proven wire value is "accountingCode". The catalog is
+     * evidence of the exact opposite kind, because the site returns the string verbatim rather than
+     * describing it in prose.
+     */
+    private ReadRouteFor(obj: MJIntegrationObjectEntity, companyIntegration?: MJCompanyIntegrationEntity): ElevateReadRoute {
         const cfg = this.ObjectConfig(obj);
         const readContract = this.AsObject(cfg?.readContract);
         const resource = this.FirstString(cfg, ['resourceWireValue'])
-            ?? this.AccessPathResource(cfg);
+            ?? this.AccessPathResource(cfg)
+            ?? this.CatalogResourceFor(obj, companyIntegration);
         if (!resource) {
             throw new Error(
                 `[elevate] IntegrationObject "${obj.Name}" declares no Configuration.resourceWireValue. Elevate ` +
@@ -1607,6 +1624,28 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             CountKey: this.FirstString(readContract, ['responseCountKey']) ?? 'response.count',
             LabelsKey: this.FirstString(readContract, ['responseLabelsKey']) ?? 'response.labels',
         };
+    }
+
+    /**
+     * Third resource source: the resource name THIS site listed at `/api/reports`.
+     *
+     * Read from the already-populated per-connection cache, never fetched here — this method is
+     * synchronous and is called from inside `LoadCatalogPage` itself while building the page's own
+     * sanity gate. At that moment the cache is unset, so this returns undefined and the gate stays
+     * built from declared wire values only, which is what makes it a gate.
+     *
+     * Matching is case-insensitive but the value returned is the catalog's EXACT string: the wire
+     * value is what the site said, not what the object happens to be called.
+     */
+    private CatalogResourceFor(
+        obj: MJIntegrationObjectEntity,
+        companyIntegration?: MJCompanyIntegrationEntity,
+    ): string | undefined {
+        if (!companyIntegration) return undefined;
+        const page = this.catalogPage.get(companyIntegration.ID);
+        if (!page) return undefined;
+        const wanted = obj.Name.toLowerCase();
+        return page.find(r => r.Name.toLowerCase() === wanted)?.Name;
     }
 
     /** Fallback resource resolution: the depth-0 access path's own body selector. Still metadata, not code. */
@@ -1727,7 +1766,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                 return false;
             }
             const auth = await this.Authenticate(companyIntegration, contextUser);
-            const route = this.ReadRouteFor(obj);
+            const route = this.ReadRouteFor(obj, companyIntegration);
             const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth), route.Door);
             const probeFields: Record<string, boolean> = {};
             probeFields[columns[0].WireSelector] = true;
