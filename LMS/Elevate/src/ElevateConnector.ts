@@ -206,6 +206,16 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
     private rejectedFieldNames = new Map<string, Set<string>>();
     /** Declared resources this connection accepted a probe query for. Absence NEVER deactivates. */
     private validatedResources = new Map<string, boolean>();
+
+    /**
+     * Why the last probe for a given cache key failed, verbatim.
+     *
+     * `ValidateResource` deliberately does not throw — a rejection must never deactivate an object.
+     * But it also swallowed the REASON, so every distinct failure (a credential that would not load,
+     * a rejected key, an unroutable host) reached the operator as one sentence blaming the site URL
+     * and the API key. Keeping the text lets `TestConnection` say what actually happened.
+     */
+    private lastProbeFailure = new Map<string, string>();
     /**
      * `product_url` returned alongside a created registration, keyed by the new registration_id — the
      * learner's link, which the generic `CRUDResult` has no slot for. Bounded (oldest evicted) so a long
@@ -435,10 +445,16 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             const probed = objects[0].Name;
             const accepted = await this.ValidateResource(companyIntegration, contextUser, probed);
             if (!accepted) {
+                // Report the REASON, not a guess. The two named suspects were frequently both innocent:
+                // the most common failure here was a credential whose site root is stored under a key
+                // this connector did not read, which never reached the network at all.
+                const reason = this.lastProbeFailure.get(this.CacheKey(companyIntegration, probed));
                 return {
                     Success: false,
-                    Message: `[elevate] The Report API door rejected a minimal query for resource "${probed}". ` +
-                        'Check the site URL and the API key issued for this site.',
+                    Message: reason
+                        ? `[elevate] Could not read resource "${probed}" on this connection: ${reason}`
+                        : `[elevate] The Report API door rejected a minimal query for resource "${probed}", ` +
+                          'and reported no reason.',
                 };
             }
             return {
@@ -1520,6 +1536,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             this.LearnLabels(key, response.Body, route, this.NormalizeResponse(response.Body, route.DataKey));
             accepted = true;
         } catch (err) {
+            this.lastProbeFailure.set(key, this.SafeMessage(err));
             this.WarnOnce(
                 `probe-failed:${objectName}`,
                 `[elevate] Declared resource "${objectName}" did not accept a minimal probe query on this ` +
@@ -1626,7 +1643,15 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const parsed = this.ParseJSONObject(json);
         if (!parsed) return null;
         return {
-            SiteUrl: this.FirstString(parsed, ['siteUrl', 'SiteUrl', 'site_url', 'BaseURL', 'baseURL', 'BaseUrl', 'baseUrl']),
+            // `endpoint` is appended, NOT prepended: this integration declares CredentialTypeID
+            // "API Key with Endpoint", whose schema is {apiKey, endpoint}, so every connection made
+            // through the standard credential UI stores the site root under `endpoint`. That key was
+            // missing here, so SiteUrl resolved to undefined and Authenticate threw "No Elevate site
+            // URL configured" BEFORE any HTTP call — which ValidateResource reported as the door
+            // rejecting the query. A correct key and a correct URL failed identically, and the
+            // message blamed both. Adding it last keeps an explicitly-set siteUrl authoritative, so
+            // this is purely additive for every connection that already works.
+            SiteUrl: this.FirstString(parsed, ['siteUrl', 'SiteUrl', 'site_url', 'BaseURL', 'baseURL', 'BaseUrl', 'baseUrl', 'endpoint', 'Endpoint', 'endpointUrl', 'endpointURL']),
             ApiKey: this.FirstString(parsed, ['apiKey', 'ApiKey', 'api_key', 'APIKey', 'key']),
         };
     }
