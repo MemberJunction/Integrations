@@ -373,6 +373,75 @@ describe('ElevateConnector — the POST envelope read path', () => {
         expect(c.Captured).toHaveLength(0);
     });
 
+    // A RUNTIME-DISCOVERED object has no declared Configuration at all — DiscoverObjects learns it
+    // from this site's /api/reports page and can only report its name. Before the catalog became a
+    // wire-value source, every such object was born unqueryable: FetchChanges threw, no fields were
+    // ever learned, and it appeared in the table picker as "No fields found for this table" with no
+    // way to ever sync it. That was all 18 discovered objects on a live tenant while the 5 declared
+    // ones worked, which is what made it look like discovery had failed.
+    describe('the catalog as a wire-value source', () => {
+        const catalogIO = makeIO({ ID: 'io-quizaccess', Name: 'quizAccess', Configuration: null });
+        const catalogIOFs = [
+            makeIOF({ Name: 'id', Sequence: 0, IsPrimaryKey: true, Configuration: JSON.stringify({ wireSelector: 'id', responsePath: ['id'] }) }),
+        ];
+        const seedCatalog = (c: MockedElevateConnector, names: string[]): void => {
+            (c as unknown as { catalogPage: Map<string, Array<{ Name: string; Fields: []; Relations: [] }>> })
+                .catalogPage.set(ci.ID, names.map(n => ({ Name: n, Fields: [], Relations: [] })));
+        };
+
+        it('queries a discovered object using the resource name the site itself published', async () => {
+            const c = makeConnector([[catalogIO, catalogIOFs]]);
+            seedCatalog(c, ['quizAccess', 'surveyResult']);
+            c.Canned.push({ response: ok(envelope([], { id: 'ID' })) });
+
+            await c.FetchChanges(fetchCtx(ci, 'quizAccess'));
+
+            expect(c.Captured).toHaveLength(1);
+            expect((c.Captured[0].body as { resource?: string }).resource).toBe('quizAccess');
+        });
+
+        it('sends the catalog\'s EXACT spelling, not the object\'s casing', async () => {
+            // The wire value is what the site said. Matching is case-insensitive so a differently-
+            // cased IntegrationObject still routes, but the string sent is the catalog's.
+            const c = makeConnector([[makeIO({ ID: 'io-qa2', Name: 'QuizAccess', Configuration: null }), catalogIOFs]]);
+            seedCatalog(c, ['quizAccess']);
+            c.Canned.push({ response: ok(envelope([], { id: 'ID' })) });
+
+            await c.FetchChanges(fetchCtx(ci, 'QuizAccess'));
+
+            expect((c.Captured[0].body as { resource?: string }).resource).toBe('quizAccess');
+        });
+
+        it('still refuses an object the catalog does not list', async () => {
+            // The refusal exists because the vendor's prose spells the accounting resource
+            // "accountCode" and that is rejected with HTTP 500 — only "accountingCode" works. A name
+            // absent from the catalog is exactly that kind of unproven guess and must stay refused.
+            const c = makeConnector([[unroutableIO, []]]);
+            seedCatalog(c, ['quizAccess']);
+            await expect(c.FetchChanges(fetchCtx(ci, 'Unroutable')))
+                .rejects.toThrow(/Configuration\.resourceWireValue/);
+            expect(c.Captured).toHaveLength(0);
+        });
+
+        it('refuses when no catalog has been read for this connection', async () => {
+            const c = makeConnector([[catalogIO, catalogIOFs]]);
+            await expect(c.FetchChanges(fetchCtx(ci, 'quizAccess')))
+                .rejects.toThrow(/Configuration\.resourceWireValue/);
+        });
+
+        it('never lets the catalog override a declared wire value', async () => {
+            // Declared stays authoritative: the catalog is the THIRD source, consulted only when the
+            // declaration is silent.
+            const c = makeConnector([[productIO, productIOFs]]);
+            seedCatalog(c, ['somethingElse', 'Product']);
+            c.Canned.push({ response: ok(envelope([], { id: 'ID' })) });
+
+            await c.FetchChanges(fetchCtx(ci, 'Product'));
+
+            expect((c.Captured[0].body as { resource?: string }).resource).toBe('product');
+        });
+    });
+
     it('falls back to the depth-0 access path body selector — still metadata, never a literal in code', async () => {
         const io = makeIO({
             ID: 'io-ac', Name: 'AccountingCode',
