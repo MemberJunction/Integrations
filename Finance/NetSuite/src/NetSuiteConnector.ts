@@ -797,7 +797,11 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         const cfg = this.ReadIOConfig(obj);
         // SuiteQL table = the IO's configured suiteQLTable; fall back to the catalog slug (collapsed name).
         const table = cfg.suiteQLTable ?? this.ResolveRecordTypeSlug(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
-        const watermarkField = obj.IncrementalWatermarkField ?? 'lastModifiedDate';
+        // Resolve the change field from EVIDENCE, never a guess. The old `?? 'lastModifiedDate'`
+        // fallback was latent: it only reaches the SQL once a watermark exists, and no watermark
+        // ever persisted (below), so every custom table that lacks the column was one working
+        // watermark away from failing its predicate — the same shape as the ORDER BY 400s.
+        const watermarkField = this.ResolveWatermarkField(obj, fields);
         const offset = ctx.CurrentOffset ?? 0;
         const pageSize = obj.DefaultPageSize ?? cfg.defaultPageSize ?? NS_DEFAULT_PAGE_SIZE;
 
@@ -815,13 +819,34 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
             'Content-Type': 'application/json',
             'Prefer': 'transient',
         };
+        // Anchor the scan's clock BEFORE reading. `ORDER BY id` walks ids ascending, so a record
+        // edited during the walk at an id we have already passed is not re-read — and if we then
+        // stored the max modstamp we saw, the next incremental run would start after that edit and
+        // never collect it. Clamping the stored watermark to when the scan STARTED means such an
+        // edit is always inside the next run's window. Re-reading a few records is free (the
+        // content hash skips them); missing one is not.
+        const scanStartedAt = afterKey === null ? new Date() : this._scanStarts.get(`${ctx.CompanyIntegration.ID}:${ctx.ObjectName}`);
+        if (afterKey === null) this._scanStarts.set(`${ctx.CompanyIntegration.ID}:${ctx.ObjectName}`, scanStartedAt as Date);
+
         // A 429 the retry loop absorbs still reaches the engine through RateLimitReport, so its
         // adaptive concurrency cap learns the account's real grant instead of re-hitting it.
         const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, { q: sql },
             (err) => ctx.RateLimitReport?.(err));
         if (response.Status < 200 || response.Status >= 300) {
+            const preview = this.PreviewBody(response.Body);
+            // "Record 'x' was not found" means the record type exists in the catalog but is not
+            // enabled for THIS account — a permanent fact, not a failure to retry. Marking it lets
+            // the engine record it once and stop asking, instead of spending a request, an error and
+            // a retry ladder on it every run forever. The code is duck-typed on purpose: the engine
+            // recognises it without this connector importing anything from a matching engine version.
+            if (/Record '[^']*' was not found/i.test(preview)) {
+                throw Object.assign(
+                    new Error(`NetSuite cannot serve "${ctx.ObjectName}" for this account: ${preview}`),
+                    { code: 'OBJECT_UNAVAILABLE' }
+                );
+            }
             throw new Error(
-                `NetSuite SuiteQL read failed for "${ctx.ObjectName}": HTTP ${response.Status} — ${this.PreviewBody(response.Body)}`
+                `NetSuite SuiteQL read failed for "${ctx.ObjectName}": HTTP ${response.Status} — ${preview}`
             );
         }
 
@@ -848,10 +873,21 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         const lastRaw = rawRecords.length > 0 ? rawRecords[rawRecords.length - 1] : undefined;
         const nextKey = lastRaw !== undefined && lastRaw !== null ? lastRaw['id'] : undefined;
         const nextAfterKey = hasMore && nextKey !== undefined && nextKey !== null ? String(nextKey) : undefined;
-        // Track the max watermark and persist it ONLY when the full result set has been drained
-        // (partial-failure semantics: a mid-iteration stop leaves the watermark unchanged). For a
-        // keyset connector the engine resumes from the key above and ignores this anyway.
-        const newWatermark = !hasMore ? this.MaxWatermark(rawRecords, watermarkField) : undefined;
+        // The watermark is the running max across the WHOLE scan, not the max of one page.
+        //
+        // Two bugs lived here. The lookup read the record by the DECLARED field name, but SuiteQL
+        // returns its keys lower-cased, so `lastModifiedDate` matched nothing and every scan emitted
+        // undefined — which is why no watermark ever advanced and every "incremental" run re-fetched
+        // the entire object. And the value was computed over the final page only, which under
+        // `ORDER BY id` is not the scan's max at all.
+        //
+        // The engine keeps the last non-null value it is handed and persists it when the query
+        // completes, so emitting the running max every page is both correct and resume-friendly.
+        const scanKey = `${ctx.CompanyIntegration.ID}:${ctx.ObjectName}`;
+        if (afterKey === null) this._scanWatermarks.delete(scanKey);   // a fresh scan starts a fresh max
+        const newWatermark = watermarkField
+            ? this.TrackScanWatermark(scanKey, rawRecords, watermarkField, scanStartedAt)
+            : undefined;
 
         return {
             Records: records,
@@ -870,9 +906,11 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
      * boundary — a timestamp cannot promise that, since rows sharing a modstamp straddle pages.
      * The watermark predicate still narrows an incremental run; the seek walks within it.
      */
-    private BuildSuiteQL(table: string, watermarkField: string, watermark: string | null, afterKey: string | null): string {
+    private BuildSuiteQL(table: string, watermarkField: string | undefined, watermark: string | null, afterKey: string | null): string {
         const clauses: string[] = [];
-        if (watermark) clauses.push(`${watermarkField} > ${this.QuoteSuiteQLDate(watermark)}`);
+        // No resolved change field means the object has no incremental story — scan it whole rather
+        // than narrowing on a column name nobody has evidence exists.
+        if (watermark && watermarkField) clauses.push(`${watermarkField} >= ${this.QuoteSuiteQLDate(watermark)}`);
         // Numeric-only: a non-numeric key would be a SuiteQL injection vector and cannot be a
         // NetSuite id. Falls back to an unseeked page rather than emitting bad SQL.
         if (afterKey !== undefined && afterKey !== null && /^\d+$/.test(String(afterKey))) {
@@ -882,20 +920,97 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         return `SELECT * FROM ${table}${where} ORDER BY id`;
     }
 
-    /** Quotes a watermark value for SuiteQL — wraps a NetSuite datetime in TO_DATE/quotes, escaping quotes. */
+    /**
+     * Renders a watermark as an explicit SuiteQL date literal.
+     *
+     * SuiteQL is Oracle-flavoured, where comparing a date column against a bare string leans on the
+     * session's NLS format to convert it — so the same predicate can work on one account and fail on
+     * another. TO_DATE with an explicit mask states the format outright. (This method's own doc
+     * already claimed it emitted TO_DATE; it never did.)
+     */
     private QuoteSuiteQLDate(value: string): string {
-        const escaped = value.replace(/'/g, "''");
-        return `'${escaped}'`;
+        const parsed = Date.parse(value);
+        // Only ever reached with a value this connector emitted (already ISO), but a stored value can
+        // predate this code — fall back to the literal rather than emitting a malformed date.
+        if (!Number.isFinite(parsed)) {
+            return `'${value.replace(/'/g, "''")}'`;
+        }
+        const d = new Date(parsed);
+        const pad = (n: number, w = 2) => String(n).padStart(w, '0');
+        const formatted =
+            `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ` +
+            `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+        return `TO_DATE('${formatted}', 'YYYY-MM-DD HH24:MI:SS')`;
     }
 
-    /** Returns the maximum value of the watermark field across the batch (string compare on ISO timestamps). */
-    private MaxWatermark(records: Record<string, unknown>[], field: string): string | undefined {
-        let max: string | undefined;
-        for (const r of records) {
-            const v = r[field];
-            if (typeof v === 'string' && v.length > 0 && (!max || v > max)) max = v;
+    /** Per-scan running max of the change field, keyed by connection + object. */
+    private readonly _scanWatermarks = new Map<string, number>();
+    /** When each in-flight scan began, by the same key — the clamp ceiling for its watermark. */
+    private readonly _scanStarts = new Map<string, Date>();
+
+    /**
+     * Resolves the field whose value means "when this record last changed", from evidence only.
+     *
+     * The IO's declaration wins. Otherwise the object's own described fields are searched for
+     * NetSuite's standard change columns — which covers custom records, whose IO rows carry no
+     * declaration. When neither says anything, the answer is "this object has no change field":
+     * no predicate, no watermark, a full re-fetch every run. That is the CORRECT behaviour for such
+     * an object, and far better than guessing a column name into the WHERE clause.
+     */
+    private ResolveWatermarkField(obj: { IncrementalWatermarkField?: string | null }, fields: { Name: string }[]): string | undefined {
+        if (obj.IncrementalWatermarkField) return obj.IncrementalWatermarkField;
+        const byLower = new Map(fields.map(f => [f.Name.toLowerCase(), f.Name]));
+        for (const candidate of ['lastmodifieddate', 'lastmodified']) {
+            const hit = byLower.get(candidate);
+            if (hit) return hit;
         }
-        return max;
+        return undefined;
+    }
+
+    /**
+     * Reads a record's change stamp. SuiteQL lower-cases the keys it returns, so a case-sensitive
+     * lookup by the DECLARED name silently missed every row — the whole reason watermarks never
+     * advanced. Matching case-insensitively is immune to that regardless of how the field was
+     * declared.
+     */
+    private ReadChangeStamp(record: Record<string, unknown>, field: string): string | undefined {
+        const direct = record[field];
+        if (typeof direct === 'string' && direct.length > 0) return direct;
+        const wanted = field.toLowerCase();
+        for (const [k, v] of Object.entries(record)) {
+            if (k.toLowerCase() === wanted && typeof v === 'string' && v.length > 0) return v;
+        }
+        return undefined;
+    }
+
+    /**
+     * Folds this page into the scan's running max and returns the value to store — clamped to when
+     * the scan started (see FetchChanges) and normalised to ISO.
+     *
+     * A stamp this connector cannot PARSE is never emitted. The stored value goes straight back into
+     * the next run's predicate, so emitting something unparseable would either silently narrow the
+     * window or break the query outright; keeping today's "no watermark, full re-fetch" behaviour is
+     * the safe failure, and it is visible in the run events rather than silent.
+     */
+    private TrackScanWatermark(
+        scanKey: string,
+        records: Record<string, unknown>[],
+        field: string,
+        scanStartedAt: Date | undefined
+    ): string | undefined {
+        let max = this._scanWatermarks.get(scanKey);
+        for (const r of records) {
+            const raw = this.ReadChangeStamp(r, field);
+            if (raw === undefined) continue;
+            const parsed = Date.parse(raw);
+            if (!Number.isFinite(parsed)) continue;
+            if (max === undefined || parsed > max) max = parsed;
+        }
+        if (max === undefined) return undefined;
+        this._scanWatermarks.set(scanKey, max);
+        const ceiling = scanStartedAt?.getTime();
+        const clamped = ceiling !== undefined && ceiling < max ? ceiling : max;
+        return new Date(clamped).toISOString();
     }
 
     /**
