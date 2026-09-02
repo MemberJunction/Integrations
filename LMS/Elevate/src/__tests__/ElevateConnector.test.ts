@@ -956,7 +956,9 @@ describe('ElevateConnector — auth, base URL and credential hygiene', () => {
 
     it('redacts the credential out of an error message even when the vendor echoes it', async () => {
         const c = makeConnector([[productIO, productIOFs]]);
-        c.Canned.push({ response: { Status: 500, Body: { error: { message: `bad key ${FIXTURE_KEY}` } }, Headers: {} } });
+        // An UNEXPLAINED 500 gets one bounded retry, so the failure must be durable: two canned copies.
+        const echo = { response: { Status: 500, Body: { error: { message: `bad key ${FIXTURE_KEY}` } }, Headers: {} } };
+        c.Canned.push(echo, echo, echo, echo);
         await expect(c.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product')))
             .rejects.toThrow(/\*\*\*/);
         await expect(c.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product')).catch(e => { throw new Error(String((e as Error).message)); }))
@@ -984,6 +986,47 @@ describe('ElevateConnector — error classification', () => {
         connector.Canned.push({ response: { Status: 500, Body: { error: { message: 'Wrong resource name.' } }, Headers: {} } });
         await expect(connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'))).rejects.toThrow(ElevateAPIError);
         expect(connector.Captured).toHaveLength(1);
+    });
+
+    it('requests only requestable names — an embedded-only column stays OUT of the allow-list but IN the record', async () => {
+        // The door RETURNS more than it ACCEPTS: row-embedded aggregates (products_labels_*) are
+        // real columns but naming one in `fields` draws a 500. Persisted embedded-only columns must
+        // therefore never re-enter the request — while their data still arrives in the raw row.
+        const embeddedIOF = makeIOF({
+            Name: 'categories_labels_sum5', Sequence: 99, MetadataSource: 'Discovered',
+            Configuration: JSON.stringify({ wireSelector: 'categories_labels_sum5', responsePath: ['categories_labels_sum5'] }),
+        });
+        const c = makeConnector([[productIO, [...productIOFs, embeddedIOF]]]);
+        const ci = makeCI(baseConfig);
+        (c as unknown as { catalogPage: Map<string, Array<{ Name: string; Fields: Array<{ Name: string }>; Relations: string[] }>> })
+            .catalogPage.set(ci.ID, [{ Name: 'product', Fields: productIOFs.map(f => ({ Name: f.Name })), Relations: [] }]);
+        const rowWithEmbedded = productRows.map(r => ({ ...r, categories_labels_sum5: 7 }));
+        c.Canned.push({ response: ok(envelope(rowWithEmbedded, productLabels)) });
+        const batch = await c.FetchChanges(fetchCtx(ci, 'Product'));
+        const sent = c.Captured[0].body as { fields: Record<string, boolean> };
+        expect(Object.keys(sent.fields)).not.toContain('categories_labels_sum5');
+        expect(Object.keys(sent.fields)).toContain('id');
+        expect(batch.Records[0].Fields['categories_labels_sum5']).toBe(7);
+    });
+
+    it('retries an UNEXPLAINED 500 exactly once — heavy reports flake', async () => {
+        // Live: the same EarnedCredit query answered 71k rows one day and 500 (no message) the next.
+        connector.Canned.push(
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            { response: ok(envelope(productRows, productLabels)) },
+        );
+        const batch = await connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'));
+        expect(batch.Records.length).toBeGreaterThan(0);
+        expect(connector.Captured).toHaveLength(2);
+    });
+
+    it('a second unexplained 500 propagates — the retry is bounded', async () => {
+        connector.Canned.push(
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            { response: { Status: 500, Body: {}, Headers: {} } },
+        );
+        await expect(connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'))).rejects.toThrow(ElevateAPIError);
+        expect(connector.Captured).toHaveLength(2);
     });
 
     it('classifies an unknown resource and an unknown field distinctly, naming the field', () => {
@@ -1131,3 +1174,164 @@ describe('ElevateConnector — writes (generic slots, one idiosyncratic verb)', 
         expect(c.Captured).toHaveLength(0);
     });
 });
+
+// EVERY object this site publishes must yield its columns, INCLUDING the ones with no
+// persisted IntegrationObject — which is every runtime-discovered object, because the
+// pipeline samples before it persists.
+//
+// The break this pins: BaseRESTIntegrationConnector.DiscoverFields opens with
+// GetCachedObject, which throws "IntegrationObject not found" for exactly those objects.
+// That throw escaped this method and defeated the engine's own fallback — the pipeline
+// calls DiscoverFieldsViaFetch, its fetch fails on the same missing row, the engine
+// catches and falls back HERE, and this rethrew. The pipeline then persisted the object
+// with an EMPTY field list. On a live tenant that was 18 of 23 objects: listed in the
+// picker, "No fields found for this table", permanently unsyncable.
+//
+// Site-agnostic by construction: the expectations below are derived from the catalog page
+// alone, so any Elevate site's own page drives its own result.
+describe('every catalogued object yields fields without a persisted IntegrationObject', () => {
+    const CATALOG: Array<[string, number]> = [
+        ['accountingCode', 1], ['cart', 5], ['category', 10], ['discountUsage', 5],
+        ['earnedCredit', 27], ['liveInPerson', 12], ['package', 23], ['payment', 18],
+        ['product', 23], ['productManaged', 23], ['productRegistration', 26],
+        ['productType', 2], ['quiz', 11], ['quizAccess', 7], ['quizAnswer', 7],
+        ['quizResult', 11], ['quizUser', 11], ['speaker', 5], ['survey', 6],
+        ['surveyAnswer', 9], ['surveyResult', 8], ['user', 24], ['webContent', 10],
+    ];
+
+    const ci = makeCI(baseConfig);
+
+    /** A connector with an EMPTY engine cache — nothing is persisted, as during discovery. */
+    function unpersistedConnector(): MockedElevateConnector {
+        const c = makeConnector([]);
+        (c as unknown as { catalogPage: Map<string, Array<{ Name: string; Fields: Array<{ Name: string }>; Relations: string[] }>> })
+            .catalogPage.set(ci.ID, CATALOG.map(([name, n]) => ({
+                Name: name,
+                Fields: Array.from({ length: n }, (_v, i) => ({ Name: `${name}_f${i}` })),
+                Relations: [],
+            })));
+        return c;
+    }
+
+    it('returns the page\'s fields for ALL 23 objects, none of them persisted', async () => {
+        const c = unpersistedConnector();
+        const got: Array<[string, number]> = [];
+        for (const [name] of CATALOG) {
+            const fields = await c.DiscoverFields(ci, name, contextUser);
+            got.push([name, fields.length]);
+        }
+        // Every object must yield at least what the page documents — none may come back empty.
+        expect(got.filter(([, n]) => n === 0)).toEqual([]);
+        expect(got).toEqual(CATALOG);
+    });
+
+    it('does not depend on the object name matching a declared one', async () => {
+        // A site publishing a resource nobody declared still gets its columns.
+        const c = makeConnector([]);
+        (c as unknown as { catalogPage: Map<string, unknown> }).catalogPage.set(ci.ID, [
+            { Name: 'somethingNobodyDeclared', Fields: [{ Name: 'a' }, { Name: 'b' }], Relations: [] },
+        ]);
+        const fields = await c.DiscoverFields(ci, 'somethingNobodyDeclared', contextUser);
+        expect(fields.map(f => f.Name).sort()).toEqual(['a', 'b']);
+    });
+
+    it('still returns nothing when the site published no catalog at all', async () => {
+        // No page, no persisted object → genuinely nothing to say, and it must not throw.
+        const c = makeConnector([]);
+        (c as unknown as { catalogPage: Map<string, unknown> }).catalogPage.set(ci.ID, null);
+        await expect(c.DiscoverFields(ci, 'quizAccess', contextUser)).resolves.toEqual([]);
+    });
+});
+
+// ALWAYS-STREAM. Discovery must stream records for EVERY object on first contact — including one
+// that exists only in this site's /api/reports catalog, with no persisted IntegrationObject and no
+// declared fields. The contract is explicit ("always do stream discovery"); the cache miss is a
+// persistence-ordering detail and must not decide whether sampling happens.
+//
+// Before this, FetchChanges opened by throwing on exactly those objects, so the stream never ran:
+// no statistical primary key, no observed widths, no data-only columns — the page's field NAMES
+// were the ceiling of what discovery could ever learn about them.
+describe('always-stream: FetchChanges for an object that exists only in the catalog', () => {
+    const ci = makeCI(baseConfig);
+    const seedPage = (c: MockedElevateConnector): void => {
+        (c as unknown as { catalogPage: Map<string, unknown> }).catalogPage.set(ci.ID, [
+            { Name: 'quizAccess', Fields: [{ Name: 'id' }, { Name: 'user_id' }, { Name: 'minutes_accessed' }], Relations: [] },
+        ]);
+    };
+
+    it('streams records using the page\'s wire value and field selectors', async () => {
+        // First contact for quizAccess itself, with the integration's declared floor present —
+        // which is every real install (the metadata migration seeds it). A connector with NO
+        // declared metadata at all cannot know its door; that refusal is pinned below.
+        const c = makeConnector([[productIO, productIOFs]]);
+        seedPage(c);
+        c.Canned.push({ match: (r) => (r.body as { resource?: string })?.resource === 'quizAccess',
+                        response: ok(envelope(
+            [{ id: 'qa-1', user_id: 'u-1', minutes_accessed: '12' }],
+            { id: 'ID', user_id: 'User', minutes_accessed: 'Minutes' }
+        )) });
+
+        const result = await c.FetchChanges(fetchCtx(ci, 'quizAccess'));
+
+        expect(result.Records).toHaveLength(1);
+        expect(result.Records[0].Fields['id']).toBe('qa-1');
+        expect(c.Captured).toHaveLength(1);
+        const body = c.Captured[0].body as { resource?: string; fields?: Record<string, boolean> };
+        expect(body.resource).toBe('quizAccess');
+        expect(Object.keys(body.fields ?? {}).sort()).toEqual(['id', 'minutes_accessed', 'user_id']);
+    });
+
+    it('a PERSISTED discovered object reads through the declared door, not its stamped APIPath', async () => {
+        // Live regression: the pipeline persists runtime objects with APIPath = the bare object
+        // name (the schema type carries no route), and trusting it sent every read to /cart,
+        // /quiz, … — HTTP 405 on all 18 discovered tables. Provenance rules: discovered objects
+        // inherit the declared access path that surfaced them.
+        const poisoned = makeIO({
+            ID: 'io-cart', Name: 'cart', Configuration: null,
+            MetadataSource: 'Discovered', APIPath: 'cart', ResponseDataKey: '',
+        });
+        const poisonedIOFs = [
+            makeIOF({ Name: 'id', Sequence: 0, IsPrimaryKey: true, MetadataSource: 'Discovered',
+                      Configuration: JSON.stringify({ wireSelector: 'id', responsePath: ['id'] }) }),
+        ];
+        const c = makeConnector([[productIO, productIOFs], [poisoned, poisonedIOFs]]);
+        (c as unknown as { catalogPage: Map<string, unknown> }).catalogPage.set(ci.ID, [
+            { Name: 'cart', Fields: [{ Name: 'id' }], Relations: [] },
+        ]);
+        c.Canned.push({ match: (r) => (r.body as { resource?: string })?.resource === 'cart',
+                        response: ok(envelope([{ id: 'c-1' }], { id: 'ID' })) });
+
+        await c.FetchChanges(fetchCtx(ci, 'cart'));
+
+        expect(c.Captured[0].url).toContain('/api/reports');
+        expect(c.Captured[0].url).not.toContain('/cart');
+    });
+
+    it('REFUSES to guess a door when the integration declares no metadata at all', async () => {
+        const c = makeConnector([]);   // zero declared objects — no access path to inherit
+        seedPage(c);
+        await expect(c.FetchChanges(fetchCtx(ci, 'quizAccess'))).rejects.toThrow(/no declared access path/);
+        expect(c.Captured).toHaveLength(0);
+    });
+
+    it('borrows the door and response keys from the integration\'s declared objects', async () => {
+        const c = makeConnector([[productIO, productIOFs]]);   // one declared object to borrow from
+        seedPage(c);
+        c.Canned.push({ match: (r) => (r.body as { resource?: string })?.resource === 'quizAccess',
+                        response: ok(envelope([{ id: 'qa-2' }], { id: 'ID' })) });
+
+        await c.FetchChanges(fetchCtx(ci, 'quizAccess'));
+
+        expect(c.Captured[0].url).toContain('/api/reports');
+    });
+
+    it('still throws the original cache miss when the page does not list the object', async () => {
+        // No page entry means there is genuinely nothing to route by — synthesis must not invent
+        // a wire value, which is the guess the HTTP-500 "accountCode" spelling proved fatal.
+        const c = makeConnector([]);
+        seedPage(c);
+        await expect(c.FetchChanges(fetchCtx(ci, 'somethingElse'))).rejects.toThrow(/not found/i);
+        expect(c.Captured).toHaveLength(0);
+    });
+});
+

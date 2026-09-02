@@ -397,7 +397,25 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         objectName: string,
         contextUser: UserInfo,
     ): Promise<ExternalFieldSchema[]> {
-        const declared = await super.DiscoverFields(companyIntegration, objectName, contextUser);
+        // A RUNTIME-DISCOVERED object has NO persisted IntegrationObject yet — the pipeline samples
+        // before it persists — and the REST base's DiscoverFields opens with GetCachedObject, which
+        // throws "IntegrationObject not found" for exactly those objects.
+        //
+        // That throw used to escape this method, and with it the engine's whole fallback: the pipeline
+        // calls DiscoverFieldsViaFetch, its fetch fails on the same missing row, the engine catches and
+        // falls back HERE, and this rethrew. The pipeline's own catch then persisted the object with an
+        // EMPTY field list. Every object this site publishes beyond the declared few was therefore born
+        // with no columns — "No fields found for this table" in the picker, and unsyncable — even though
+        // the catalog fold-in below already knew all of them.
+        //
+        // A missing declared floor is not an error here. It means "nothing was declared", which is the
+        // truth for a discovered object, and the catalog page below is then the whole surface.
+        let declared: ExternalFieldSchema[] = [];
+        try {
+            declared = await super.DiscoverFields(companyIntegration, objectName, contextUser);
+        } catch {
+            /* not persisted yet → no declared floor; the catalog page supplies the fields. */
+        }
         await this.LearnFieldsFromSource(companyIntegration, contextUser, objectName);
 
         // A declared column is claimed under BOTH names: its MJ column name (`product_title`) and the
@@ -438,7 +456,13 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         }
         for (const name of this.SortedNames(this.discoveredFieldNames.get(key))) {
             if (claimed.has(name.toLowerCase()) || rejected.has(name)) continue;
-            extra.push(this.SchemaForDiscoveredField(name, samples?.get(name)));
+            // Labels-only names stay display metadata. `response.labels` flattens RELATED resources'
+            // label groups into this resource's dictionary (categories_labels_sum5 on Product), and the
+            // door rejects an entire query over one unknown selector — so a name becomes a queryable
+            // column only once a streamed row has actually carried it (that is exactly what
+            // discoveredSamples records; LearnLabels adds a sample only from observed row data).
+            if (!samples?.has(name)) continue;
+            extra.push(this.SchemaForDiscoveredField(name, samples.get(name)));
         }
         return [...declared, ...extra];
     }
@@ -525,11 +549,34 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         const companyIntegration = ctx.CompanyIntegration;
-        const obj = this.GetCachedObject(companyIntegration.IntegrationID, ctx.ObjectName);
-        const iofs = this.GetCachedFields(obj.ID);
+        // ALWAYS-STREAM. Discovery samples an object BEFORE persisting it, so a runtime-discovered
+        // object has no cached IntegrationObject on first contact — and this method used to open by
+        // throwing on exactly that. The stream never ran for those objects: no statistical PK, no
+        // observed widths, no data-only columns, ever. The site's own /api/reports page carries
+        // everything a read needs — the wire value and the field selectors — so when the cache
+        // misses, the route is synthesized from the page and the stream runs anyway. The contract
+        // is explicit that discovery streams records for every table, always; a missing metadata
+        // row is a persistence ordering detail and must not decide whether sampling happens.
+        let obj: MJIntegrationObjectEntity;
+        let iofs: MJIntegrationObjectFieldEntity[];
+        let columns: ElevateReadColumn[];
+        try {
+            obj = this.GetCachedObject(companyIntegration.IntegrationID, ctx.ObjectName);
+            iofs = this.GetCachedFields(obj.ID);
+            columns = this.ReadColumnsFor(iofs);
+        } catch (cacheMiss) {
+            const synth = await this.SyntheticRouteFor(companyIntegration, ctx.ObjectName, ctx.ContextUser);
+            if (!synth) throw cacheMiss;
+            obj = synth.Object;
+            iofs = [];
+            columns = synth.Columns;
+            // DIAG: one line, per synthetic fetch — resource + how many selectors we will actually send.
+            // This is the fact every log-forensic theory kept guessing at. Remove once the empty-fetch
+            // cause is fixed.
+            console.log(`[elevate][synthetic] "${ctx.ObjectName}" resource=${synth.Object.Configuration} columns=${synth.Columns.length} selectors=[${synth.Columns.map(c => c.WireSelector).slice(0, 8).join(',')}]`);
+        }
         const auth = await this.Authenticate(companyIntegration, ctx.ContextUser);
         const route = this.ReadRouteFor(obj, companyIntegration);
-        const columns = this.ReadColumnsFor(iofs);
         const warnings: FetchWarning[] = [];
 
         const windowField = this.WindowFieldFor(obj);
@@ -554,6 +601,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             : { [windowField as string]: { date: [windows[0].From, windows[0].To] } };
         await this.VerifyLearnedFields(auth, companyIntegration, obj, route, columns, firstFilters, warnings);
 
+        const requestable = await this.RequestableSelectorsFor(companyIntegration, ctx.ContextUser, route, iofs);
         const rows: Record<string, unknown>[] = [];
         let nextWindowStart: string | undefined;
 
@@ -562,7 +610,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             // query, and the completeness tripwire inside RunReportQuery is what proves it actually
             // returned everything.
             const filters = this.WatermarkFilter(obj, ctx);
-            rows.push(...await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx));
+            rows.push(...await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx, requestable));
         } else {
             for (let i = 0; i < windows.length; i++) {
                 if (rows.length >= batchLimit) {
@@ -570,7 +618,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                     break;
                 }
                 rows.push(...await this.RunWindow(
-                    auth, companyIntegration, obj, route, columns, windowField!, windows[i], warnings, ctx, 0,
+                    auth, companyIntegration, obj, route, columns, windowField!, windows[i], warnings, ctx, 0, requestable,
                 ));
             }
         }
@@ -985,13 +1033,15 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         filters: Record<string, unknown> | null,
         warnings: FetchWarning[],
         ctx?: FetchContext,
+        requestable?: Set<string>,
     ): Promise<Record<string, unknown>[]> {
         const key = this.CacheKey(companyIntegration, obj.Name);
         const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth), route.Door);
         const headers = this.BuildHeaders(auth);
 
+        let retried500 = false;
         for (let repair = 0; repair <= MAX_SELECTOR_REPAIRS; repair++) {
-            const selectors = this.SelectorsFor(companyIntegration, obj, columns, ctx);
+            const selectors = this.SelectorsFor(companyIntegration, obj, columns, ctx, requestable);
             if (selectors.length === 0) {
                 throw new Error(
                     `[elevate] No read-surface columns are declared for "${obj.Name}", so no \`fields\` allow-list ` +
@@ -1002,6 +1052,8 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             try {
                 const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, body);
                 const rows = this.NormalizeResponse(response.Body, route.DataKey);
+                // DIAG: the fact. resource, selector count, filters shape, rows the door returned.
+                console.log(`[elevate][query] "${obj.Name}" resource=${route.Resource} selectors=${selectors.length} filters=${filters ? JSON.stringify(filters).slice(0,120) : 'none'} -> rows=${rows.length}`);
                 this.LearnLabels(key, response.Body, route, rows);
                 this.CheckCompleteness(obj, response.Body, route, rows.length, filters, warnings);
                 return rows;
@@ -1013,7 +1065,22 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                 // rest of the handler a typed `err` instead of a cast at every use.
                 if (!(err instanceof ElevateAPIError)) throw err;
                 const rejected = err.Classification.UnknownField;
-                if (rejected == null || repair === MAX_SELECTOR_REPAIRS) throw err;
+                if (rejected == null) {
+                    // Only the UNEXPLAINED 500 retries: a classified rejection (unknown resource,
+                    // unknown field) is deterministic and replaying it is pure waste. An unexplained
+                    // 500 is the door failing the report itself, not naming a bad column —
+                    // the same query has answered 71k rows one day and 500 the next. ONE bounded retry
+                    // absorbs that flake; a repeat is a real fault and propagates. repair-- so the
+                    // retry never spends the selector-repair budget.
+                    if (!retried500 && err.Classification.Reason === 'http-500') {
+                        retried500 = true;
+                        repair--;
+                        await new Promise((res) => setTimeout(res, 2500));
+                        continue;
+                    }
+                    throw err;
+                }
+                if (repair === MAX_SELECTOR_REPAIRS) throw err;
                 if (!selectors.some(s => s.toLowerCase() === rejected.toLowerCase())) {
                     // The door named a column this request did NOT ask for. The all-or-nothing repair has
                     // nothing to act on: dropping the name changes no byte of the envelope, so retrying can
@@ -1064,11 +1131,12 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         warnings: FetchWarning[],
         ctx: FetchContext,
         depth: number,
+        requestable?: Set<string>,
     ): Promise<Record<string, unknown>[]> {
         const before = warnings.length;
         const filters: Record<string, unknown> = {};
         filters[windowField] = { date: [window.From, window.To] };
-        const rows = await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx);
+        const rows = await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx, requestable);
 
         const truncated = warnings.slice(before).some(w => w.Code === 'INCOMPLETE_READ');
         if (!truncated || depth >= MAX_WINDOW_SPLIT_DEPTH) return rows;
@@ -1080,7 +1148,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const out: Record<string, unknown>[] = [];
         for (const half of halves) {
             out.push(...await this.RunWindow(
-                auth, companyIntegration, obj, route, columns, windowField, half, warnings, ctx, depth + 1,
+                auth, companyIntegration, obj, route, columns, windowField, half, warnings, ctx, depth + 1, requestable,
             ));
         }
         return out;
@@ -1144,11 +1212,38 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
      * `FetchContext.RequestedSourceFields`, when the engine supplies it, narrows the union to the columns
      * actually mapped.
      */
+    /**
+     * Elevate's door RETURNS more than it ACCEPTS: every row embeds related-resource aggregates
+     * (products_labels_* …), so names proven by row data are real columns — but naming one in the
+     * `fields` allow-list draws HTTP 500 "Field … doesn't exist" and the whole query dies. Only
+     * three surfaces are proven REQUESTABLE: declared metadata, the site's own catalog page, and
+     * names VerifyLearnedFields has probed (handled inside SelectorsFor). Everything else still
+     * arrives embedded in the response, so excluding it from the request loses no data —
+     * ToElevateRecord keeps the whole raw row.
+     */
+    private async RequestableSelectorsFor(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+        route: ElevateReadRoute,
+        iofs: MJIntegrationObjectFieldEntity[],
+    ): Promise<Set<string>> {
+        const requestable = new Set<string>();
+        for (const col of this.ReadColumnsFor(iofs.filter(i => i.MetadataSource !== 'Discovered'))) {
+            requestable.add(col.WireSelector.toLowerCase());
+            requestable.add(col.Name.toLowerCase());
+        }
+        const page = await this.LoadCatalogPage(companyIntegration, contextUser);
+        const resource = page?.find(r => r.Name.toLowerCase() === route.Resource.toLowerCase());
+        for (const f of resource?.Fields ?? []) requestable.add(f.Name.toLowerCase());
+        return requestable;
+    }
+
     private SelectorsFor(
         companyIntegration: MJCompanyIntegrationEntity,
         obj: MJIntegrationObjectEntity,
         columns: ElevateReadColumn[],
         ctx?: FetchContext,
+        requestable?: Set<string>,
     ): string[] {
         const key = this.CacheKey(companyIntegration, obj.Name);
         const rejected = this.rejectedFieldNames.get(key) ?? new Set<string>();
@@ -1160,6 +1255,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         for (const col of columns) {
             if (rejected.has(col.WireSelector)) continue;
             if (wanted && !wanted.has(col.Name.toLowerCase()) && !wanted.has(col.WireSelector.toLowerCase())) continue;
+            if (requestable && !requestable.has(col.WireSelector.toLowerCase()) && !requestable.has(col.Name.toLowerCase())) continue;
             out.add(col.WireSelector);
         }
         const declaredSelectors = new Set(columns.map(c => c.WireSelector));
@@ -1617,13 +1713,33 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                 'HTTP 500) would get shipped instead of the proven "accountingCode".',
             );
         }
+        // PROVENANCE, not trust: a runtime-discovered resource was surfaced BY the declared access
+        // path's own catalog page, so it reads through that path's door. Its persisted APIPath is
+        // whatever the pipeline stamped at persist time (the schema type carries no route, so the
+        // engine defaults it to the bare object name) — this connector never authored it, and
+        // trusting it sent every discovered read to a door that does not exist (HTTP 405 live).
+        // The declared template is metadata, so a site that declares a different door is followed.
+        const template = obj.MetadataSource === 'Discovered'
+            ? this.DeclaredTemplateFor(obj.IntegrationID)
+            : undefined;
+        if (obj.MetadataSource === 'Discovered' && !template) {
+            throw new Error(
+                `[elevate] Discovered object "${obj.Name}" has no declared access path to inherit its ` +
+                'door from — the declared metadata floor is missing for this integration.',
+            );
+        }
         return {
-            Door: obj.APIPath,
+            Door: template?.APIPath ?? obj.APIPath,
             Resource: resource,
-            DataKey: obj.ResponseDataKey,
+            DataKey: template?.ResponseDataKey ?? obj.ResponseDataKey,
             CountKey: this.FirstString(readContract, ['responseCountKey']) ?? 'response.count',
             LabelsKey: this.FirstString(readContract, ['responseLabelsKey']) ?? 'response.labels',
         };
+    }
+
+    /** The first DECLARED object of this integration: the access-path template discovered objects inherit. */
+    private DeclaredTemplateFor(integrationID: string): MJIntegrationObjectEntity | undefined {
+        return this.getCachedObjects(integrationID).find(o => o.MetadataSource !== 'Discovered');
     }
 
     /**
@@ -1646,6 +1762,42 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         if (!page) return undefined;
         const wanted = obj.Name.toLowerCase();
         return page.find(r => r.Name.toLowerCase() === wanted)?.Name;
+    }
+
+    /**
+     * A complete read route for an object that exists ONLY in this site's /api/reports catalog —
+     * no persisted IntegrationObject, no declared fields. Everything is taken from evidence:
+     * the wire value and field selectors are the page's own strings, and the door + response keys
+     * are borrowed from this integration's declared objects (every Elevate object reads through
+     * the same single POST door). Null when the page does not list the object — then the original
+     * cache miss stands, because there is genuinely nothing to route by.
+     */
+    private async SyntheticRouteFor(
+        companyIntegration: MJCompanyIntegrationEntity,
+        objectName: string,
+        contextUser: UserInfo,
+    ): Promise<{ Object: MJIntegrationObjectEntity; Columns: ElevateReadColumn[] } | null> {
+        const page = await this.LoadCatalogPage(companyIntegration, contextUser);
+        const resource = page?.find(r => r.Name.toLowerCase() === objectName.toLowerCase());
+        if (!resource || resource.Fields.length === 0) return null;
+        const object = {
+            ID: `synthetic:${resource.Name}`,
+            Name: objectName,
+            DisplayName: resource.Name,
+            Description: 'Synthesized from this site\'s report catalog for first-contact stream sampling.',
+            IntegrationID: companyIntegration.IntegrationID,
+            // Discovered ⇒ ReadRouteFor inherits Door/DataKey from the declared access path — the
+            // one mechanism, no literals here.
+            MetadataSource: 'Discovered',
+            IncrementalWatermarkField: null,
+            SupportsIncrementalSync: false,
+            SupportsWrite: false,
+            Configuration: JSON.stringify({ resourceWireValue: resource.Name }),
+        } as unknown as MJIntegrationObjectEntity;
+        const columns: ElevateReadColumn[] = resource.Fields.map(f => ({
+            Name: f.Name, WireSelector: f.Name, ResponsePath: [f.Name],
+        }));
+        return { Object: object, Columns: columns };
     }
 
     /** Fallback resource resolution: the depth-0 access path's own body selector. Still metadata, not code. */
