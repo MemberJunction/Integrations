@@ -276,6 +276,12 @@ class MockedElevateConnector extends ElevateConnector {
 const contextUser = { ID: 'test', Email: 'test@example.com', Name: 'test' } as unknown as Parameters<ElevateConnector['TestConnection']>[1];
 const FIXTURE_KEY = 'fixture-placeholder-not-a-real-credential';
 
+/** Reads a captured window filter back to [fromDay, toDay] from the vendor's operator form. */
+function windowDays(r: CapturedRequest, field: string): [string, string] {
+    const f = (r.body as { filters: Record<string, Record<string, string>> }).filters[field];
+    return [f['>='].slice(0, 10), f['<='].slice(0, 10)];
+}
+
 function makeCI(configuration: Record<string, unknown>): MJCompanyIntegrationEntity {
     return {
         ID: 'ci-elevate',
@@ -674,8 +680,10 @@ describe('ElevateConnector — date-windowed bulk extraction', () => {
         const batch = await c.FetchChanges(fetchCtx(makeCI(windowed), 'ProductRegistration'));
 
         expect(c.Captured).toHaveLength(2);
-        expect(c.Captured[0].body!.filters).toEqual({ modified_at: { date: ['2025-01-01', '2025-12-31'] } });
-        expect(c.Captured[1].body!.filters).toEqual({ modified_at: { date: ['2026-01-01', '2026-12-31'] } });
+        // The vendor's own documented filter form: operator keys with full datetimes. The old
+        // { date: [from, to] } shape matched NOTHING on the wire — zero rows on 29k-row tables, live.
+        expect(c.Captured[0].body!.filters).toEqual({ modified_at: { '>=': '2025-01-01 00:00:00', '<=': '2025-12-31 23:59:59' } });
+        expect(c.Captured[1].body!.filters).toEqual({ modified_at: { '>=': '2026-01-01 00:00:00', '<=': '2026-12-31 23:59:59' } });
         expect(batch.Records).toHaveLength(2);
         expect(batch.HasMore).toBe(false);
     });
@@ -700,7 +708,7 @@ describe('ElevateConnector — date-windowed bulk extraction', () => {
         const batch = await c.FetchChanges(fetchCtx(makeCI(windowed), 'ProductRegistration'));
 
         expect(c.Captured).toHaveLength(4);
-        const halves = [c.Captured[1], c.Captured[2]].map(r => (r.body!.filters as Record<string, { date: string[] }>).modified_at.date);
+        const halves = [c.Captured[1], c.Captured[2]].map(r => windowDays(r, 'modified_at'));
         expect(halves[0][0]).toBe('2025-01-01');
         expect(halves[1][1]).toBe('2025-12-31');
         // The halves meet without a gap and without an overlap.
@@ -717,7 +725,7 @@ describe('ElevateConnector — date-windowed bulk extraction', () => {
 
         c.Canned.push({ response: ok(envelope(registrationRows, registrationLabels)) });
         const second = await c.FetchChanges(fetchCtx(makeCI(windowed), 'ProductRegistration', { BatchSize: 1, AfterKeyValue: first.NextAfterKeyValue }));
-        expect((c.Captured[1].body!.filters as Record<string, { date: string[] }>).modified_at.date[0]).toBe('2026-01-01');
+        expect(windowDays(c.Captured[1], 'modified_at')[0]).toBe('2026-01-01');
         expect(second.HasMore).toBe(false);
     });
 
@@ -729,9 +737,11 @@ describe('ElevateConnector — date-windowed bulk extraction', () => {
         await c.FetchChanges(fetchCtx(makeCI(baseConfig), 'ProductRegistration', {
             WatermarkValue: '2026-08-01T00:00:00', AfterKeyValue: '2026-08-20',
         }));
-        const filters = c.LastBody().filters as Record<string, { date?: string[]; '>='?: string }>;
-        expect(filters.modified_at.date?.[0]).toBe('2026-08-20');
-        expect(filters.modified_at['>=']).toBeUndefined();
+        // Intent preserved in the vendor's wire form: the resume chunk is BOUNDED (has an upper
+        // bound) and starts at the cursor — never an open-ended >= from the original watermark.
+        const filters = c.LastBody().filters as Record<string, Record<string, string>>;
+        expect(filters.modified_at['>=']).toBe('2026-08-20 00:00:00');
+        expect(filters.modified_at['<=']).toBeDefined();
     });
 
     it('raises INCOMPLETE_READ when an UNCHUNKABLE object comes back truncated — never a silent success', async () => {
@@ -769,7 +779,7 @@ describe('ElevateConnector — incremental sync', () => {
         await c.FetchChanges(fetchCtx(makeCI(baseConfig), 'ProductRegistration', { WatermarkValue: '2020-01-01T00:00:00' }));
 
         expect(c.Captured.length).toBeGreaterThan(1);
-        const spans = c.Captured.map(r => (r.body!.filters as Record<string, { date: string[] }>).modified_at.date);
+        const spans = c.Captured.map(r => windowDays(r, 'modified_at'));
         expect(spans[0][0]).toBe('2020-01-01');
         for (let i = 1; i < spans.length; i++) {
             // consecutive and non-overlapping: each window starts the day after the previous one ended
