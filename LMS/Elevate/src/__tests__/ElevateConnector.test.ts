@@ -1260,9 +1260,13 @@ describe('always-stream: FetchChanges for an object that exists only in the cata
     };
 
     it('streams records using the page\'s wire value and field selectors', async () => {
-        const c = makeConnector([]);   // cache completely empty — first contact
+        // First contact for quizAccess itself, with the integration's declared floor present —
+        // which is every real install (the metadata migration seeds it). A connector with NO
+        // declared metadata at all cannot know its door; that refusal is pinned below.
+        const c = makeConnector([[productIO, productIOFs]]);
         seedPage(c);
-        c.Canned.push({ response: ok(envelope(
+        c.Canned.push({ match: (r) => (r.body as { resource?: string })?.resource === 'quizAccess',
+                        response: ok(envelope(
             [{ id: 'qa-1', user_id: 'u-1', minutes_accessed: '12' }],
             { id: 'ID', user_id: 'User', minutes_accessed: 'Minutes' }
         )) });
@@ -1275,6 +1279,39 @@ describe('always-stream: FetchChanges for an object that exists only in the cata
         const body = c.Captured[0].body as { resource?: string; fields?: Record<string, boolean> };
         expect(body.resource).toBe('quizAccess');
         expect(Object.keys(body.fields ?? {}).sort()).toEqual(['id', 'minutes_accessed', 'user_id']);
+    });
+
+    it('a PERSISTED discovered object reads through the declared door, not its stamped APIPath', async () => {
+        // Live regression: the pipeline persists runtime objects with APIPath = the bare object
+        // name (the schema type carries no route), and trusting it sent every read to /cart,
+        // /quiz, … — HTTP 405 on all 18 discovered tables. Provenance rules: discovered objects
+        // inherit the declared access path that surfaced them.
+        const poisoned = makeIO({
+            ID: 'io-cart', Name: 'cart', Configuration: null,
+            MetadataSource: 'Discovered', APIPath: 'cart', ResponseDataKey: '',
+        });
+        const poisonedIOFs = [
+            makeIOF({ Name: 'id', Sequence: 0, IsPrimaryKey: true, MetadataSource: 'Discovered',
+                      Configuration: JSON.stringify({ wireSelector: 'id', responsePath: ['id'] }) }),
+        ];
+        const c = makeConnector([[productIO, productIOFs], [poisoned, poisonedIOFs]]);
+        (c as unknown as { catalogPage: Map<string, unknown> }).catalogPage.set(ci.ID, [
+            { Name: 'cart', Fields: [{ Name: 'id' }], Relations: [] },
+        ]);
+        c.Canned.push({ match: (r) => (r.body as { resource?: string })?.resource === 'cart',
+                        response: ok(envelope([{ id: 'c-1' }], { id: 'ID' })) });
+
+        await c.FetchChanges(fetchCtx(ci, 'cart'));
+
+        expect(c.Captured[0].url).toContain('/api/reports');
+        expect(c.Captured[0].url).not.toContain('/cart');
+    });
+
+    it('REFUSES to guess a door when the integration declares no metadata at all', async () => {
+        const c = makeConnector([]);   // zero declared objects — no access path to inherit
+        seedPage(c);
+        await expect(c.FetchChanges(fetchCtx(ci, 'quizAccess'))).rejects.toThrow(/no declared access path/);
+        expect(c.Captured).toHaveLength(0);
     });
 
     it('borrows the door and response keys from the integration\'s declared objects', async () => {

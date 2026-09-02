@@ -1713,13 +1713,33 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                 'HTTP 500) would get shipped instead of the proven "accountingCode".',
             );
         }
+        // PROVENANCE, not trust: a runtime-discovered resource was surfaced BY the declared access
+        // path's own catalog page, so it reads through that path's door. Its persisted APIPath is
+        // whatever the pipeline stamped at persist time (the schema type carries no route, so the
+        // engine defaults it to the bare object name) — this connector never authored it, and
+        // trusting it sent every discovered read to a door that does not exist (HTTP 405 live).
+        // The declared template is metadata, so a site that declares a different door is followed.
+        const template = obj.MetadataSource === 'Discovered'
+            ? this.DeclaredTemplateFor(obj.IntegrationID)
+            : undefined;
+        if (obj.MetadataSource === 'Discovered' && !template) {
+            throw new Error(
+                `[elevate] Discovered object "${obj.Name}" has no declared access path to inherit its ` +
+                'door from — the declared metadata floor is missing for this integration.',
+            );
+        }
         return {
-            Door: obj.APIPath,
+            Door: template?.APIPath ?? obj.APIPath,
             Resource: resource,
-            DataKey: obj.ResponseDataKey,
+            DataKey: template?.ResponseDataKey ?? obj.ResponseDataKey,
             CountKey: this.FirstString(readContract, ['responseCountKey']) ?? 'response.count',
             LabelsKey: this.FirstString(readContract, ['responseLabelsKey']) ?? 'response.labels',
         };
+    }
+
+    /** The first DECLARED object of this integration: the access-path template discovered objects inherit. */
+    private DeclaredTemplateFor(integrationID: string): MJIntegrationObjectEntity | undefined {
+        return this.getCachedObjects(integrationID).find(o => o.MetadataSource !== 'Discovered');
     }
 
     /**
@@ -1760,15 +1780,15 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const page = await this.LoadCatalogPage(companyIntegration, contextUser);
         const resource = page?.find(r => r.Name.toLowerCase() === objectName.toLowerCase());
         if (!resource || resource.Fields.length === 0) return null;
-        const template = this.getCachedObjects(companyIntegration.IntegrationID)[0];
         const object = {
             ID: `synthetic:${resource.Name}`,
             Name: objectName,
             DisplayName: resource.Name,
-            Description: 'Synthesized from this site\'s /api/reports catalog for first-contact stream sampling.',
+            Description: 'Synthesized from this site\'s report catalog for first-contact stream sampling.',
             IntegrationID: companyIntegration.IntegrationID,
-            APIPath: template?.APIPath ?? '/api/reports',
-            ResponseDataKey: template?.ResponseDataKey ?? 'response.items',
+            // Discovered ⇒ ReadRouteFor inherits Door/DataKey from the declared access path — the
+            // one mechanism, no literals here.
+            MetadataSource: 'Discovered',
             IncrementalWatermarkField: null,
             SupportsIncrementalSync: false,
             SupportsWrite: false,
