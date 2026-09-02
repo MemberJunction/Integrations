@@ -598,7 +598,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         // a data read puts every row of the object behind a guess.
         const firstFilters = windows.length === 0
             ? this.WatermarkFilter(obj, ctx)
-            : { [windowField as string]: { date: [windows[0].From, windows[0].To] } };
+            : this.WindowWireFilter(windowField as string, windows[0]);
         await this.VerifyLearnedFields(auth, companyIntegration, obj, route, columns, firstFilters, warnings);
 
         const requestable = await this.RequestableSelectorsFor(companyIntegration, ctx.ContextUser, route, iofs);
@@ -1134,8 +1134,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         requestable?: Set<string>,
     ): Promise<Record<string, unknown>[]> {
         const before = warnings.length;
-        const filters: Record<string, unknown> = {};
-        filters[windowField] = { date: [window.From, window.To] };
+        const filters = this.WindowWireFilter(windowField, window);
         const rows = await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx, requestable);
 
         const truncated = warnings.slice(before).some(w => w.Code === 'INCOMPLETE_READ');
@@ -1590,6 +1589,21 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
      * watermark; an object whose metadata declares none runs a FULL SCAN, and no delta path is invented
      * for it.
      */
+    /**
+     * The wire form of one date window, exactly as the vendor documents filters on its own
+     * catalog page: comparison-operator keys with full datetimes —
+     *   "filters": { "transaction_at": { ">=": "2021-04-06 00:00:00", ... } }
+     * The previous `{ date: [from, to] }` shape was an invention the door silently matched
+     * NOTHING against: every windowed read returned zero rows on a table with tens of
+     * thousands (live, three different fields). Inclusive bounds at day resolution preserve
+     * the deliberate boundary-day re-read; identity dedup absorbs the overlap.
+     */
+    private WindowWireFilter(windowField: string, window: ElevateWindow): Record<string, unknown> {
+        return {
+            [windowField]: { '>=': `${window.From} 00:00:00`, '<=': `${window.To} 23:59:59` },
+        };
+    }
+
     private WatermarkFilter(
         obj: MJIntegrationObjectEntity,
         ctx: FetchContext,
