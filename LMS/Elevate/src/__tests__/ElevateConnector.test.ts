@@ -988,6 +988,27 @@ describe('ElevateConnector — error classification', () => {
         expect(connector.Captured).toHaveLength(1);
     });
 
+    it('requests only requestable names — an embedded-only column stays OUT of the allow-list but IN the record', async () => {
+        // The door RETURNS more than it ACCEPTS: row-embedded aggregates (products_labels_*) are
+        // real columns but naming one in `fields` draws a 500. Persisted embedded-only columns must
+        // therefore never re-enter the request — while their data still arrives in the raw row.
+        const embeddedIOF = makeIOF({
+            Name: 'categories_labels_sum5', Sequence: 99, MetadataSource: 'Discovered',
+            Configuration: JSON.stringify({ wireSelector: 'categories_labels_sum5', responsePath: ['categories_labels_sum5'] }),
+        });
+        const c = makeConnector([[productIO, [...productIOFs, embeddedIOF]]]);
+        const ci = makeCI(baseConfig);
+        (c as unknown as { catalogPage: Map<string, Array<{ Name: string; Fields: Array<{ Name: string }>; Relations: string[] }>> })
+            .catalogPage.set(ci.ID, [{ Name: 'product', Fields: productIOFs.map(f => ({ Name: f.Name })), Relations: [] }]);
+        const rowWithEmbedded = productRows.map(r => ({ ...r, categories_labels_sum5: 7 }));
+        c.Canned.push({ response: ok(envelope(rowWithEmbedded, productLabels)) });
+        const batch = await c.FetchChanges(fetchCtx(ci, 'Product'));
+        const sent = c.Captured[0].body as { fields: Record<string, boolean> };
+        expect(Object.keys(sent.fields)).not.toContain('categories_labels_sum5');
+        expect(Object.keys(sent.fields)).toContain('id');
+        expect(batch.Records[0].Fields['categories_labels_sum5']).toBe(7);
+    });
+
     it('retries an UNEXPLAINED 500 exactly once — heavy reports flake', async () => {
         // Live: the same EarnedCredit query answered 71k rows one day and 500 (no message) the next.
         connector.Canned.push(

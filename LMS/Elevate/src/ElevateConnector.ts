@@ -601,6 +601,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             : { [windowField as string]: { date: [windows[0].From, windows[0].To] } };
         await this.VerifyLearnedFields(auth, companyIntegration, obj, route, columns, firstFilters, warnings);
 
+        const requestable = await this.RequestableSelectorsFor(companyIntegration, ctx.ContextUser, route, iofs);
         const rows: Record<string, unknown>[] = [];
         let nextWindowStart: string | undefined;
 
@@ -609,7 +610,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             // query, and the completeness tripwire inside RunReportQuery is what proves it actually
             // returned everything.
             const filters = this.WatermarkFilter(obj, ctx);
-            rows.push(...await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx));
+            rows.push(...await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx, requestable));
         } else {
             for (let i = 0; i < windows.length; i++) {
                 if (rows.length >= batchLimit) {
@@ -617,7 +618,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                     break;
                 }
                 rows.push(...await this.RunWindow(
-                    auth, companyIntegration, obj, route, columns, windowField!, windows[i], warnings, ctx, 0,
+                    auth, companyIntegration, obj, route, columns, windowField!, windows[i], warnings, ctx, 0, requestable,
                 ));
             }
         }
@@ -1032,6 +1033,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         filters: Record<string, unknown> | null,
         warnings: FetchWarning[],
         ctx?: FetchContext,
+        requestable?: Set<string>,
     ): Promise<Record<string, unknown>[]> {
         const key = this.CacheKey(companyIntegration, obj.Name);
         const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth), route.Door);
@@ -1039,7 +1041,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
 
         let retried500 = false;
         for (let repair = 0; repair <= MAX_SELECTOR_REPAIRS; repair++) {
-            const selectors = this.SelectorsFor(companyIntegration, obj, columns, ctx);
+            const selectors = this.SelectorsFor(companyIntegration, obj, columns, ctx, requestable);
             if (selectors.length === 0) {
                 throw new Error(
                     `[elevate] No read-surface columns are declared for "${obj.Name}", so no \`fields\` allow-list ` +
@@ -1129,11 +1131,12 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         warnings: FetchWarning[],
         ctx: FetchContext,
         depth: number,
+        requestable?: Set<string>,
     ): Promise<Record<string, unknown>[]> {
         const before = warnings.length;
         const filters: Record<string, unknown> = {};
         filters[windowField] = { date: [window.From, window.To] };
-        const rows = await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx);
+        const rows = await this.RunReportQuery(auth, companyIntegration, obj, route, columns, filters, warnings, ctx, requestable);
 
         const truncated = warnings.slice(before).some(w => w.Code === 'INCOMPLETE_READ');
         if (!truncated || depth >= MAX_WINDOW_SPLIT_DEPTH) return rows;
@@ -1145,7 +1148,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const out: Record<string, unknown>[] = [];
         for (const half of halves) {
             out.push(...await this.RunWindow(
-                auth, companyIntegration, obj, route, columns, windowField, half, warnings, ctx, depth + 1,
+                auth, companyIntegration, obj, route, columns, windowField, half, warnings, ctx, depth + 1, requestable,
             ));
         }
         return out;
@@ -1209,11 +1212,38 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
      * `FetchContext.RequestedSourceFields`, when the engine supplies it, narrows the union to the columns
      * actually mapped.
      */
+    /**
+     * Elevate's door RETURNS more than it ACCEPTS: every row embeds related-resource aggregates
+     * (products_labels_* …), so names proven by row data are real columns — but naming one in the
+     * `fields` allow-list draws HTTP 500 "Field … doesn't exist" and the whole query dies. Only
+     * three surfaces are proven REQUESTABLE: declared metadata, the site's own catalog page, and
+     * names VerifyLearnedFields has probed (handled inside SelectorsFor). Everything else still
+     * arrives embedded in the response, so excluding it from the request loses no data —
+     * ToElevateRecord keeps the whole raw row.
+     */
+    private async RequestableSelectorsFor(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+        route: ElevateReadRoute,
+        iofs: MJIntegrationObjectFieldEntity[],
+    ): Promise<Set<string>> {
+        const requestable = new Set<string>();
+        for (const col of this.ReadColumnsFor(iofs.filter(i => i.MetadataSource !== 'Discovered'))) {
+            requestable.add(col.WireSelector.toLowerCase());
+            requestable.add(col.Name.toLowerCase());
+        }
+        const page = await this.LoadCatalogPage(companyIntegration, contextUser);
+        const resource = page?.find(r => r.Name.toLowerCase() === route.Resource.toLowerCase());
+        for (const f of resource?.Fields ?? []) requestable.add(f.Name.toLowerCase());
+        return requestable;
+    }
+
     private SelectorsFor(
         companyIntegration: MJCompanyIntegrationEntity,
         obj: MJIntegrationObjectEntity,
         columns: ElevateReadColumn[],
         ctx?: FetchContext,
+        requestable?: Set<string>,
     ): string[] {
         const key = this.CacheKey(companyIntegration, obj.Name);
         const rejected = this.rejectedFieldNames.get(key) ?? new Set<string>();
@@ -1225,6 +1255,7 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         for (const col of columns) {
             if (rejected.has(col.WireSelector)) continue;
             if (wanted && !wanted.has(col.Name.toLowerCase()) && !wanted.has(col.WireSelector.toLowerCase())) continue;
+            if (requestable && !requestable.has(col.WireSelector.toLowerCase()) && !requestable.has(col.Name.toLowerCase())) continue;
             out.add(col.WireSelector);
         }
         const declaredSelectors = new Set(columns.map(c => c.WireSelector));
