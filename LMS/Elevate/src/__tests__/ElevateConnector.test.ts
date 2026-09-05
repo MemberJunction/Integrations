@@ -1030,13 +1030,109 @@ describe('ElevateConnector — error classification', () => {
         expect(connector.Captured).toHaveLength(2);
     });
 
-    it('a second unexplained 500 propagates — the retry is bounded', async () => {
+    it('a second unexplained 500 propagates after chunked salvage also fails — the retry is bounded', async () => {
+        // full request 500s, the bounded retry 500s, then salvage tries each column alone
+        // ([id,remote_accounting_code] and [id,title]) — both die too, both get quarantined,
+        // salvage yields nothing, and the ORIGINAL error still propagates.
         connector.Canned.push(
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            { response: { Status: 500, Body: {}, Headers: {} } },
             { response: { Status: 500, Body: {}, Headers: {} } },
             { response: { Status: 500, Body: {}, Headers: {} } },
         );
         await expect(connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'))).rejects.toThrow(ElevateAPIError);
-        expect(connector.Captured).toHaveLength(2);
+        expect(connector.Captured).toHaveLength(4);
+    });
+
+    it('an unfetchable full report is salvaged in PK-joined field chunks', async () => {
+        // Live: a site whose report cost is additive per column and whose proxy kills slow reports —
+        // the full allow-list dies with an EMPTY 500 while every subset answers fine.
+        const isChunk = (fields: string[]) => (req: { body: Record<string, unknown> | undefined }) => {
+            const sent = Object.keys((req.body?.fields as Record<string, boolean>) ?? {});
+            return fields.every(f => sent.includes(f)) && sent.length === fields.length;
+        };
+        connector.Canned.push(
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            {
+                match: isChunk(['id', 'remote_accounting_code']),
+                response: ok(envelope(productRows.map(r => ({ id: r.id, remote_accounting_code: r.remote_accounting_code })), productLabels)),
+            },
+            {
+                match: isChunk(['id', 'title']),
+                response: ok(envelope(productRows.map(r => ({ id: r.id, title: r.title })), productLabels)),
+            },
+        );
+        const batch = await connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'));
+        expect(batch.Records).toHaveLength(2);
+        const one = batch.Records.find(r => r.Fields['id'] === 101);
+        expect(one?.Fields['title']).toBe('Introduction to Compliance');
+        expect(one?.Fields['remote_accounting_code']).toBe('GL-4100');
+        // every chunk request carried the PK — the join key
+        for (const sent of connector.SelectorsSent().slice(2)) expect(sent).toContain('id');
+        expect(connector.Captured).toHaveLength(4);
+    });
+
+    it('a column whose report dies even alone is quarantined and the rest of the object still lands', async () => {
+        const hasField = (f: string) => (req: { body: Record<string, unknown> | undefined }) =>
+            Object.keys((req.body?.fields as Record<string, boolean>) ?? {}).includes(f);
+        connector.Canned.push(
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            {
+                match: hasField('remote_accounting_code'),
+                response: ok(envelope(productRows.map(r => ({ id: r.id, remote_accounting_code: r.remote_accounting_code })), productLabels)),
+            },
+            { match: hasField('title'), response: { Status: 500, Body: {}, Headers: {} } },
+        );
+        const batch = await connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'));
+        expect(batch.Records).toHaveLength(2);
+        expect(batch.Records[0].Fields['remote_accounting_code']).toBeDefined();
+        expect(batch.Records[0].Fields['title']).toBeUndefined();
+    });
+
+    it('a keyless object refuses chunk salvage — row order across reports is not a contract', async () => {
+        const keylessIOFs = productIOFs.map(f => makeIOF({
+            Name: f.Name, Sequence: f.Sequence, Configuration: f.Configuration,
+        }));
+        const c = makeConnector([[productIO, keylessIOFs]]);
+        c.Canned.push(
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            { response: { Status: 500, Body: {}, Headers: {} } },
+        );
+        await expect(c.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'))).rejects.toThrow(ElevateAPIError);
+        expect(c.Captured).toHaveLength(2); // no chunk requests were attempted
+    });
+
+    it('the proven chunk plan is replayed on the next fetch — no doomed full request first', async () => {
+        const isChunk = (fields: string[]) => (req: { body: Record<string, unknown> | undefined }) => {
+            const sent = Object.keys((req.body?.fields as Record<string, boolean>) ?? {});
+            return fields.every(f => sent.includes(f)) && sent.length === fields.length;
+        };
+        const chunkResponses = () => [
+            {
+                match: isChunk(['id', 'remote_accounting_code']),
+                response: ok(envelope(productRows.map(r => ({ id: r.id, remote_accounting_code: r.remote_accounting_code })), productLabels)),
+            },
+            {
+                match: isChunk(['id', 'title']),
+                response: ok(envelope(productRows.map(r => ({ id: r.id, title: r.title })), productLabels)),
+            },
+        ];
+        connector.Canned.push(
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            { response: { Status: 500, Body: {}, Headers: {} } },
+            ...chunkResponses(),
+        );
+        await connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'));
+        expect(connector.Captured).toHaveLength(4);
+
+        connector.Canned.push(...chunkResponses());
+        const again = await connector.FetchChanges(fetchCtx(makeCI(baseConfig), 'Product'));
+        expect(again.Records).toHaveLength(2);
+        // exactly two more requests, both chunks — the full request was never replayed
+        expect(connector.Captured).toHaveLength(6);
+        for (const sent of connector.SelectorsSent().slice(4)) expect(sent.length).toBe(2);
     });
 
     it('classifies an unknown resource and an unknown field distinctly, naming the field', () => {
