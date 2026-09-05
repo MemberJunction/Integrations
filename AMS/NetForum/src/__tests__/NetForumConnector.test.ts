@@ -284,7 +284,11 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         // BatchSize bounds the page. Previously this was a hardcoded `@TOP -1`, which pulled the
         // entire result set into memory in a single SOAP call regardless of BatchSize.
         expect(req!.body).toContain('<szObjectName>Individual @TOP 100</szObjectName>');
-        expect(req!.body).toContain('<szColumnList>*</szColumnList>');
+        // EMPTY szColumnList. The vendor documents `*` as an invalid value that FAULTS the call (and
+        // xWeb counts every fault toward the daily limit that locks the account); an empty list returns
+        // the object's default columns with the primary key first. `*` is what locked us out in 2026-09.
+        expect(req!.body).toContain('<szColumnList></szColumnList>');
+        expect(req!.body).not.toContain('<szColumnList>*');
         // no watermark → no szWhereClause
         expect(req!.body).not.toContain('szWhereClause');
 
@@ -346,6 +350,29 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         const res = await c.FetchChanges(ctx);
         expect(res.Records).toHaveLength(0);
         expect(res.Warnings?.[0].Code).toBe('ZERO_ROWS');
+    });
+
+    it('warns WATERMARK_COLUMN_ABSENT when the default column list omits the watermark column', async () => {
+        const c = makeConnector();
+        // An empty szColumnList returns the tenant's DEFAULT list columns, and nothing guarantees the
+        // IO's watermark column is among them. Rows without it must not pass as a healthy batch —
+        // the watermark would never advance and every sync would re-read the same window.
+        c.Responses['GetQuery'] = { Status: 200, Body: '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><GetQueryResponse xmlns="http://www.avectra.com/2005/"><GetQueryResult><Results><Result><ind_cst_key>11111111-1111-1111-1111-111111111111</ind_cst_key><ind_first_name>Ada</ind_first_name></Result></Results></GetQueryResult></GetQueryResponse></soap:Body></soap:Envelope>', Headers: {} };
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        const res = await c.FetchChanges(ctx);
+        expect(res.Records).toHaveLength(1);
+        const w = res.Warnings?.find(x => x.Code === 'WATERMARK_COLUMN_ABSENT');
+        expect(w).toBeDefined();
+        expect(w!.Message).toContain('ind_change_date');
+        expect(w!.Data?.Columns).toEqual(['ind_cst_key', 'ind_first_name']);
+        expect(res.NewWatermarkValue).toBeUndefined();
+    });
+
+    it('does not warn WATERMARK_COLUMN_ABSENT when rows carry the watermark column', async () => {
+        const c = makeConnector();
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        const res = await c.FetchChanges(ctx);
+        expect(res.Warnings?.some(x => x.Code === 'WATERMARK_COLUMN_ABSENT') ?? false).toBe(false);
     });
 });
 
