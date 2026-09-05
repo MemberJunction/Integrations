@@ -85,6 +85,9 @@ import { parseReportsCatalog, type CatalogResource } from './ReportsCatalogPage.
 /** Vendor-documented cap on how many times a rejected field name is dropped before the read gives up. */
 const MAX_SELECTOR_REPAIRS = 8;
 
+/** Hard ceiling on requests one object's chunked salvage may spend converging in a single fetch. */
+const MAX_CHUNK_REQUESTS = 24;
+
 /** Maximum times a single windowed query is halved when the door reports truncation. */
 const MAX_WINDOW_SPLIT_DEPTH = 12;
 
@@ -212,6 +215,10 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
     private catalogPage = new Map<string, CatalogResource[] | null>();
     /** Field names this connection's door REJECTED — never requested again for that object. */
     private rejectedFieldNames = new Map<string, Set<string>>();
+    /** Columns whose report dies even when fetched alone (unexplained 500) — quarantined per connection. */
+    private volumeQuarantined = new Map<string, Set<string>>();
+    /** Proven field chunkings per connection+object, so later fetches skip the doomed full request. */
+    private chunkPlans = new Map<string, string[][]>();
     /** Declared resources this connection accepted a probe query for. Absence NEVER deactivates. */
     private validatedResources = new Map<string, boolean>();
 
@@ -1039,6 +1046,19 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth), route.Door);
         const headers = this.BuildHeaders(auth);
 
+        // A connection that already proved this object only answers in field chunks goes straight to
+        // the proven chunking — replaying the doomed full request would just spend the door's time
+        // twice. A stale plan (selector drift, a chunk dying again) falls through to the normal path.
+        if (this.chunkPlans.has(key)) {
+            const planSelectors = this.SelectorsFor(companyIntegration, obj, columns, ctx, requestable);
+            const replayed = await this.ChunkedReportSalvage(
+                auth, companyIntegration, obj, route, filters, warnings, planSelectors,
+                this.chunkPlans.get(key),
+            );
+            if (replayed != null) return replayed;
+            this.chunkPlans.delete(key);
+        }
+
         let retried500 = false;
         for (let repair = 0; repair <= MAX_SELECTOR_REPAIRS; repair++) {
             const selectors = this.SelectorsFor(companyIntegration, obj, columns, ctx, requestable);
@@ -1078,6 +1098,16 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
                         await new Promise((res) => setTimeout(res, 2500));
                         continue;
                     }
+                    if (err.Classification.Reason === 'http-500') {
+                        // Twice-confirmed unexplained 500: on some sites report cost is additive per
+                        // column and anything slow is killed mid-generation, so the full allow-list can
+                        // be unfetchable while every subset answers. Try fetching in PK-joined chunks
+                        // before giving the object up.
+                        const salvaged = await this.ChunkedReportSalvage(
+                            auth, companyIntegration, obj, route, filters, warnings, selectors,
+                        );
+                        if (salvaged != null) return salvaged;
+                    }
                     throw err;
                 }
                 if (repair === MAX_SELECTOR_REPAIRS) throw err;
@@ -1113,6 +1143,178 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
             }
         }
         throw new Error(`[elevate] Field-selector repair for "${obj.Name}" did not converge.`);
+    }
+
+    /**
+     * FIELD-CHUNKED SALVAGE for an UNNAMED 500 — the door failing the report itself rather than naming
+     * a bad column. On some sites report generation cost is additive per column and a front proxy (or
+     * the app itself) kills any report that runs too long, so the full allow-list can be unfetchable
+     * while every subset of it answers fine. This extends the selector war of attrition from "bad name"
+     * to "too heavy": split the selectors, fetch the pieces, join the rows back by primary key.
+     *
+     *   • every chunk carries ALL PK selectors — the join key. A keyless object cannot be chunk-joined
+     *     (row order across separate reports is not a contract), so salvage refuses, says why, and the
+     *     original error propagates;
+     *   • a chunk that still dies is split again, down to a single column; a column whose report dies
+     *     even alone is quarantined for this connection with a loud warning and the REST of the object
+     *     still lands — the whole object minus one column beats no object at all;
+     *   • the proven chunking is remembered per connection+object, so the next fetch goes straight to
+     *     the working chunks instead of dying on the full request first.
+     *
+     * Returns the joined rows, or null when salvage cannot apply (keyless object, nothing to split, or
+     * a remembered plan that no longer covers the selector set) — the caller then propagates the error
+     * or falls back to the ordinary path.
+     */
+    private async ChunkedReportSalvage(
+        auth: ElevateAuthContext,
+        companyIntegration: MJCompanyIntegrationEntity,
+        obj: MJIntegrationObjectEntity,
+        route: ElevateReadRoute,
+        filters: Record<string, unknown> | null,
+        warnings: FetchWarning[],
+        selectors: string[],
+        rememberedPlan?: string[][],
+    ): Promise<Record<string, unknown>[] | null> {
+        const key = this.CacheKey(companyIntegration, obj.Name);
+        const pkCols = this.ReadColumnsFor(this.GetCachedFields(obj.ID).filter(f => f.IsPrimaryKey));
+        const pkSelectors = pkCols.map(c => c.WireSelector).filter(s => selectors.includes(s));
+        if (pkCols.length === 0 || pkSelectors.length !== pkCols.length) {
+            this.WarnOnce(
+                `chunk-keyless:${key}`,
+                `[elevate] "${obj.Name}" died on an unexplained 500 and cannot be fetched in field chunks: ` +
+                'its primary key selectors are missing from the read, so chunk rows cannot be joined (row ' +
+                'order across separate reports is not a contract). Declare a primary key for the object to ' +
+                'enable chunked salvage.',
+            );
+            warnings.push({
+                Code: 'CHUNKED_FETCH_UNAVAILABLE',
+                Message: `"${obj.Name}" cannot be chunk-fetched: no primary key selectors to join chunk rows on.`,
+                Data: { objectName: obj.Name },
+            });
+            return null;
+        }
+
+        const quarantined = this.volumeQuarantined.get(key) ?? new Set<string>();
+        this.volumeQuarantined.set(key, quarantined);
+        const rest = selectors.filter(s => !pkSelectors.includes(s) && !quarantined.has(s));
+        if (rest.length === 0) return null;
+        if (rest.length < 2 && !rememberedPlan) return null;
+
+        // A remembered plan replays proven chunks; a fresh salvage starts from one halving. A plan that
+        // no longer covers the current selector set is stale — refuse so the caller re-learns.
+        let seedChunks: string[][];
+        if (rememberedPlan) {
+            const covered = new Set(rememberedPlan.flat());
+            if (rest.some(s => !covered.has(s))) return null;
+            seedChunks = rememberedPlan
+                .map(chunk => chunk.filter(s => rest.includes(s)))
+                .filter(chunk => chunk.length > 0);
+            if (seedChunks.length === 0) return null;
+        } else {
+            const mid = Math.ceil(rest.length / 2);
+            seedChunks = [rest.slice(0, mid), rest.slice(mid)];
+        }
+
+        const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth), route.Door);
+        const headers = this.BuildHeaders(auth);
+        let requestsSpent = 0;
+
+        const fetchChunk = async (cols: string[]): Promise<Record<string, unknown>[] | null> => {
+            if (requestsSpent >= MAX_CHUNK_REQUESTS) {
+                throw new Error(
+                    `[elevate] Chunked salvage for "${obj.Name}" spent ${MAX_CHUNK_REQUESTS} requests ` +
+                    'without converging on a fetchable chunking.',
+                );
+            }
+            requestsSpent++;
+            const body = this.BuildEnvelope(companyIntegration, route.Resource, [...pkSelectors, ...cols], filters);
+            try {
+                const response = await this.MakeHTTPRequest(auth, url, 'POST', headers, body);
+                const rows = this.NormalizeResponse(response.Body, route.DataKey);
+                console.log(`[elevate][chunk] "${obj.Name}" resource=${route.Resource} chunk=${cols.length}+${pkSelectors.length}pk filters=${filters ? JSON.stringify(filters).slice(0, 120) : 'none'} -> rows=${rows.length}`);
+                this.LearnLabels(key, response.Body, route, rows);
+                this.CheckCompleteness(obj, response.Body, route, rows.length, filters, warnings);
+                return rows;
+            } catch (err) {
+                if (!(err instanceof ElevateAPIError)) throw err;
+                if (err.Classification.Reason !== 'http-500' || err.Classification.UnknownField != null) throw err;
+                // DIAG failure twin: a chunk that dies must be as visible as one that answers.
+                console.warn(`[elevate][chunk] "${obj.Name}" resource=${route.Resource} chunk=${cols.length}+${pkSelectors.length}pk -> ${this.SafeMessage(err)}`);
+                return null;
+            }
+        };
+
+        const fetched: Array<{ cols: string[]; rows: Record<string, unknown>[] }> = [];
+        const pending: string[][] = [...seedChunks];
+        while (pending.length > 0) {
+            const cols = pending.shift() as string[];
+            const rows = await fetchChunk(cols);
+            if (rows != null) {
+                fetched.push({ cols, rows });
+                continue;
+            }
+            if (cols.length === 1) {
+                quarantined.add(cols[0]);
+                this.WarnOnce(
+                    `chunk-quarantine:${key}:${cols[0]}`,
+                    `[elevate] Column "${cols[0]}" on "${obj.Name}" makes the door's report die even when ` +
+                    'requested alone (unexplained 500), so it is quarantined for this connection. The rest ' +
+                    'of the object still syncs without it.',
+                );
+                warnings.push({
+                    Code: 'FIELD_UNFETCHABLE_AT_VOLUME',
+                    Message: `Column "${cols[0]}" on "${obj.Name}" makes the door's report die even when requested alone; it was quarantined for this connection and the object synced without it.`,
+                    Data: { objectName: obj.Name, field: cols[0] },
+                });
+                continue;
+            }
+            const mid = Math.ceil(cols.length / 2);
+            pending.unshift(cols.slice(0, mid), cols.slice(mid));
+        }
+        if (fetched.length === 0) return null;
+
+        // Join chunk rows by PK tuple. The first chunk seeds; later chunks merge field-by-field. A row
+        // whose PK cannot be read joins nothing: kept from the seed chunk (it is still a real record),
+        // dropped from later chunks (there is nothing safe to attach it to) — both counted and warned.
+        const joinCols = pkCols.filter(c => pkSelectors.includes(c.WireSelector));
+        const keyOf = (row: Record<string, unknown>): string | null => {
+            const parts = joinCols.map(c => this.ReadPath(row, c.ResponsePath));
+            if (parts.some(v => v == null || v === '')) return null;
+            return parts.map(v => String(v)).join(' ');
+        };
+        const joined = new Map<string, Record<string, unknown>>();
+        const seedless: Record<string, unknown>[] = [];
+        let dropped = 0;
+        fetched.forEach(({ rows }, index) => {
+            for (const row of rows) {
+                const rowKey = keyOf(row);
+                if (rowKey == null) {
+                    if (index === 0) seedless.push(row);
+                    else dropped++;
+                    continue;
+                }
+                const existing = joined.get(rowKey);
+                if (existing) Object.assign(existing, row);
+                else joined.set(rowKey, row);
+            }
+        });
+        const perChunkRows = fetched.map(f => f.rows.length);
+        if (dropped > 0 || seedless.length > 0 || new Set(perChunkRows).size > 1) {
+            warnings.push({
+                Code: 'CHUNK_JOIN_ANOMALIES',
+                Message: `Chunked fetch of "${obj.Name}" joined uneven pieces (rows changing between chunk requests, or rows with unreadable keys); the next full sync converges them.`,
+                Data: { objectName: obj.Name, perChunkRows, rowsWithoutKey: seedless.length, droppedFromLaterChunks: dropped },
+            });
+        }
+
+        this.chunkPlans.set(key, fetched.map(f => f.cols));
+        warnings.push({
+            Code: 'CHUNKED_FETCH_ENGAGED',
+            Message: `"${obj.Name}" could not be fetched in one report (unexplained 500) and was fetched in ${fetched.length} field chunks joined on [${pkSelectors.join(', ')}].`,
+            Data: { objectName: obj.Name, chunks: fetched.length, requestsSpent, rows: joined.size + seedless.length },
+        });
+        console.log(`[elevate][chunked] "${obj.Name}" resource=${route.Resource} chunks=${fetched.length} requests=${requestsSpent} -> rows=${joined.size + seedless.length}`);
+        return [...joined.values(), ...seedless];
     }
 
     /**
