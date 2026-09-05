@@ -4,7 +4,7 @@
   "name": "connector-elevate",
   "displayName": "Elevate LMS Connector",
   "description": "Elevate LMS connector for MemberJunction — full curated object catalog.",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
