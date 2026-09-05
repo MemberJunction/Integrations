@@ -102,10 +102,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-netforum-enterprise",
       "npmPackage": "@memberjunction/connector-netforum-enterprise",
-      "version": "1.3.3",
+      "version": "1.3.4",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/NetForum",
-      "installTag": "AMS-NetForum@1.3.3"
+      "installTag": "AMS-NetForum@1.3.4"
     },
     {
       "name": "Nimble AMS",
@@ -546,10 +546,10 @@
       "objectCount": 5,
       "className": "ElevateConnector",
       "npmPackage": "@memberjunction/connector-elevate",
-      "version": "0.3.4",
+      "version": "0.3.5",
       "mjVersionRange": ">=5.43.0 <6.0.0",
       "repoSubpath": "LMS/Elevate",
-      "installTag": "LMS-Elevate@0.3.4"
+      "installTag": "LMS-Elevate@0.3.5"
     },
     {
       "name": "Path LMS",
