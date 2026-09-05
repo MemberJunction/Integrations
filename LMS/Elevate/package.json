@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-elevate",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "MemberJunction Elevate connector.",
   "type": "module",
   "main": "dist/index.js",
