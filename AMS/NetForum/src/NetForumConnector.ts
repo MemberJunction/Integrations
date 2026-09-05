@@ -25,6 +25,17 @@
  *   Read (door = GetQuery):
  *     GetQuery(szObjectName, szColumnList, szWhereClause?, szOrderBy?) → GetQueryResult
  *       - GetQueryResult is a `<s:any>` wildcard DataSet — flattened rows, one element per row.
+ *       - szColumnList is sent EMPTY. The vendor's GetQuery page documents both halves: "Asterisk (*)
+ *         is not a valid value for szColumnList" (the request faults), and an empty string "returns
+ *         the default column listing for the object's primary table — the primary key for the object
+ *         will still be returned in the node as the first child". This connector sent `*` until
+ *         2026-09, so every fetch faulted (surfacing as HTTP 500 / a SOAP fault), and because xWeb
+ *         counts faulted calls toward MethodsFaultLimitPerDay — default 100 a day, per xWeb USER + IP
+ *         ADDRESS (vendor's xWeb Configuration Settings page: the user is never locked, only the IP)
+ *         — every later call from that IP faulted "Locked". Confirmed by the vendor against our xWeb
+ *         credential from THEIR IP, 2026-09, while ours was locked. Consequence: a row carries
+ *         the tenant's default list columns, NOT the declared union — FetchChanges warns
+ *         (WATERMARK_COLUMN_ABSENT) when the watermark column is missing from what came back.
  *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" where the watermark column is
  *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date).
  *         There is NO canonical `LastModifiedDate` column — the field is per-facade and is read
@@ -419,6 +430,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * Full-record pass-through: every parsed row becomes ExternalRecord.Fields verbatim — never a
      * filtered/narrow literal — so the framework's custom-column capture sees every column the query
      * returned, including customer-added ones.
+     *
+     * szColumnList is the EMPTY string, never `*`: the vendor documents `*` as an invalid value that
+     * faults the call, and an empty list as "the default column listing for the object's primary
+     * table" with the primary key always first. The row therefore carries the tenant's default list
+     * columns; when the IO's watermark column is not among them the batch says so
+     * (WATERMARK_COLUMN_ABSENT) rather than silently never advancing.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as NFAuthContext;
@@ -434,6 +451,9 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // `topModifier` is ignored because its only purpose was bypassing the DataGrid row cap,
         // which paging supersedes. Without an ordering key we cannot page safely, so we keep the
         // legacy single unbounded fetch and say so via a warning instead of failing silently.
+        // UNPROVEN with an empty szColumnList: the vendor's GetQuery page says @TOP -1 needs named
+        // columns ("specific, named fields must be passed ... in order to process using the -1
+        // parameter"). If this fallback faults on a live tenant, that sentence is why.
         const canPaginate = !!orderingKey;
         const pageSize = ctx.BatchSize > 0 ? ctx.BatchSize : 0;
         const topModifier = canPaginate && pageSize > 0
@@ -441,7 +461,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             : (accessPath.doorArgs?.topModifier ?? '@TOP -1');
         const szObjectName = topModifier ? `${queryObject} ${topModifier}` : queryObject;
 
-        const args: Record<string, string> = { szObjectName, szColumnList: '*' };
+        // Empty, never `*` — see the class header: `*` is documented as invalid and faulted every fetch.
+        const args: Record<string, string> = { szObjectName, szColumnList: '' };
 
         const predicates: string[] = [];
         const watermarkField = obj.IncrementalWatermarkField ?? undefined;
@@ -476,6 +497,22 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     `or a primary-key field), so GetQuery ran unbounded (${topModifier}) and returned the ` +
                     `entire result set in one call. Declare an ordering key to enable keyset paging.`,
                 Data: { ObjectName: ctx.ObjectName, RowCount: rows.length },
+            });
+        }
+        // An empty szColumnList returns the tenant's DEFAULT list columns for the query object, which
+        // need not include the IO's watermark column. Without it NewWatermarkValue stays undefined and
+        // every sync re-reads the same window — a green run that never advances. Say so.
+        if (watermarkField && rows.length > 0 && !rows.some(row => watermarkField in row)) {
+            warnings.push({
+                Code: 'WATERMARK_COLUMN_ABSENT',
+                Message:
+                    `NetForum "${ctx.ObjectName}" declares IncrementalWatermarkField "${watermarkField}", but no row of ` +
+                    `this GetQuery batch carries that column: with an empty szColumnList, xWeb returns the tenant's ` +
+                    `default list columns for "${queryObject}" and "${watermarkField}" is not among them. The watermark ` +
+                    `cannot advance, so each sync re-reads the same window. Add the column to the object's default ` +
+                    `list in netFORUM (List Table setup) or point IncrementalWatermarkField at a column the default ` +
+                    `list returns.`,
+                Data: { ObjectName: ctx.ObjectName, WatermarkField: watermarkField, Columns: Object.keys(rows[0]) },
             });
         }
 
