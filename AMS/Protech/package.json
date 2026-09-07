@@ -1,0 +1,40 @@
+{
+  "name": "@memberjunction/connector-protech",
+  "version": "0.1.0",
+  "description": "MemberJunction Protech AMS (UX 365) connector — thin leaf over the Microsoft Dynamics 365 (Dataverse) connector.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "build": "tsc && tsc-alias -f",
+    "test": "vitest run"
+  },
+  "author": "MemberJunction.com",
+  "license": "BUSL-1.1",
+  "peerDependencies": {
+    "@memberjunction/core": ">=5.43.0 <6.0.0",
+    "@memberjunction/core-entities": ">=5.43.0 <6.0.0",
+    "@memberjunction/global": ">=5.43.0 <6.0.0",
+    "@memberjunction/integration-engine": ">=5.43.0 <6.0.0"
+  },
+  "dependencies": {
+    "@memberjunction/connector-microsoft-dynamics-365-dataverse": "*"
+  },
+  "devDependencies": {
+    "@memberjunction/core": "^5.43.0",
+    "@memberjunction/core-entities": "^5.43.0",
+    "@memberjunction/global": "^5.43.0",
+    "@memberjunction/integration-engine": "^5.43.0",
+    "@types/node": "24.10.11",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MemberJunction/Integrations"
+  }
+}
