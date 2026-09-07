@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 50,
+  "count": 51,
   "connectors": [
     {
       "name": "Fonteva",
@@ -148,6 +148,27 @@
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "AMS/Novi",
       "installTag": "AMS-Novi@1.2.1"
+    },
+    {
+      "name": "Protech",
+      "displayName": "Protech Connector",
+      "description": "Protech AMS (UX 365): association management built on Microsoft Dynamics 365/Dataverse. Thin leaf over the Dataverse connector — Entra ID client credentials, runtime discovery of pa_* + standard CE tables, change-tracking incremental, full CRUD.",
+      "category": "AMS",
+      "tags": [
+        "protech",
+        "ams",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-building-columns",
+      "navigationBaseURL": "https://protechassociates.com",
+      "objectCount": null,
+      "className": "@memberjunction/connector-protech",
+      "npmPackage": "@memberjunction/connector-protech",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <6.0.0",
+      "repoSubpath": "AMS/Protech",
+      "installTag": "AMS-Protech@0.1.0"
     },
     {
       "name": "re:Members AMS",
