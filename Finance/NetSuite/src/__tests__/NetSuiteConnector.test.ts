@@ -199,6 +199,17 @@ describe('NetSuiteConnector — identity & capabilities', () => {
         expect(c.MaxConcurrencyHint).toBeGreaterThan(0);
     });
 
+    it('declares the base-tier concurrency grant — this is what makes the engine gate exist', () => {
+        // The engine's fetch gate is OPT-IN: getFetchGate() builds one only when the connection's
+        // Configuration.fetchConcurrency OR the connector's MaxConcurrencyHint declares a ceiling,
+        // and returns undefined (ungated, as before) when neither does. Declaring the smallest
+        // documented NetSuite grant is therefore what gives EVERY fresh connection an adaptive
+        // in-flight cap with no operator configuration. The controller halves on a detected throttle
+        // and creeps back up, so an account with a larger grant is not held down by this number.
+        const c = new NetSuiteConnector();
+        expect(c.MaxConcurrencyHint).toBe(5);
+    });
+
     it('parses Retry-After from a 429 error message into ms', () => {
         const c = new NetSuiteConnector();
         expect(c.ExtractRetryAfterMs(new Error('429 Too Many Requests Retry-After: 5'))).toBe(5000);
@@ -579,6 +590,96 @@ describe('NetSuiteConnector — MakeHTTPRequest surfaces absorbed 429s via onThr
             const res = await c.Probe(oauth2Auth, 'https://acct.example.test/x', (e) => reported.push(e));
             expect(res.Status).toBe(200);
             expect(reported).toHaveLength(0); // a 503 is not a concurrency rejection
+        } finally {
+            fetchSpy.mockRestore();
+        }
+    });
+});
+
+// ─── 401 under load: over-concurrency that NetSuite reported as an auth failure ─────────────
+
+describe('NetSuiteConnector — a 401 on an already-served connection is a throttle', () => {
+    class ProbeConnector extends NetSuiteConnector {
+        public Probe(auth: RESTAuthContext, url: string, onThrottle?: (e: unknown) => void) {
+            return this.MakeHTTPRequest(auth, url, 'GET', {}, undefined, onThrottle);
+        }
+        public PublicAuthenticate(integration: MJCompanyIntegrationEntity): Promise<RESTAuthContext> {
+            return this.Authenticate(integration, USER);
+        }
+    }
+    const URL_ = 'https://acct.example.test/services/rest/query/v1/suiteql';
+    /** An auth context for one account; `Realm` is the connection identity the heuristic keys on. */
+    const authFor = (realm: string): RESTAuthContext =>
+        ({ Mode: 'oauth2', BearerToken: 't', Realm: realm, HostBaseURL: 'https://acct.example.test', Config: {} }) as unknown as RESTAuthContext;
+    const json = (status: number, extra: Record<string, string> = {}) =>
+        new Response('{"items":[]}', { status, headers: { 'Content-Type': 'application/json', ...extra } });
+
+    it('a 401 on the FIRST request is a genuine auth failure — surfaced at once, not retried', async () => {
+        // Nothing has proven these credentials, so this is exactly what a bad token looks like.
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => json(401, { 'Retry-After': '0' }));
+        try {
+            const reported: unknown[] = [];
+            const c = new ProbeConnector();
+            const res = await c.Probe(authFor('ACCT-A'), URL_, (e) => reported.push(e));
+            expect(res.Status).toBe(401);
+            expect(reported).toHaveLength(0);   // never mislabelled as congestion
+            expect(fetchSpy).toHaveBeenCalledTimes(1); // and never retried
+        } finally {
+            fetchSpy.mockRestore();
+        }
+    });
+
+    it('a 401 AFTER the same connection was served is reported as a throttle and retried', async () => {
+        // The live shape: earlier pages of the walk succeeded on this very token, then NetSuite
+        // answered 401 "Invalid login attempt" under 8 concurrent fetches.
+        const responses = [json(200), json(401, { 'Retry-After': '0' }), json(200)];
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
+        try {
+            const reported: unknown[] = [];
+            const c = new ProbeConnector();
+            const auth = authFor('ACCT-B');
+            expect((await c.Probe(auth, URL_, (e) => reported.push(e))).Status).toBe(200); // proves the credential
+
+            const res = await c.Probe(auth, URL_, (e) => reported.push(e));
+            expect(res.Status).toBe(200);       // the retry absorbed it — the page is NOT lost
+            expect(reported).toHaveLength(1);   // ...and the engine's fetch gate hears the congestion
+            expect((reported[0] as Error).message).toContain('401');
+            expect((reported[0] as Error).message).toContain('throttle');
+            expect(fetchSpy).toHaveBeenCalledTimes(3);
+        } finally {
+            fetchSpy.mockRestore();
+        }
+    });
+
+    it('the proof is per-connection — one account being served does not soften another\'s 401', async () => {
+        const responses = [json(200), json(401, { 'Retry-After': '0' })];
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
+        try {
+            const reported: unknown[] = [];
+            const c = new ProbeConnector();
+            await c.Probe(authFor('ACCT-C'), URL_);                                   // C is proven
+            const res = await c.Probe(authFor('ACCT-D'), URL_, (e) => reported.push(e)); // D is not
+            expect(res.Status).toBe(401);
+            expect(reported).toHaveLength(0);
+            expect(fetchSpy).toHaveBeenCalledTimes(2);
+        } finally {
+            fetchSpy.mockRestore();
+        }
+    });
+
+    it('TestConnection still reports an auth failure on 401, even after the account has been served', async () => {
+        // A connection test exists to answer "are these credentials good?" — its 401 IS the answer.
+        const responses = [json(200), json(401, { 'Retry-After': '0' })];
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
+        try {
+            const c = new ProbeConnector();
+            const auth = await c.PublicAuthenticate(ci(TBA_CONFIG));
+            expect((await c.Probe(auth, URL_)).Status).toBe(200); // same account, now proven
+
+            const result = await c.TestConnection(ci(TBA_CONFIG), USER);
+            expect(result.Success).toBe(false);
+            expect(result.Message).toMatch(/authentication failed/);
+            expect(fetchSpy).toHaveBeenCalledTimes(2); // verdict returned at once, no throttle retries
         } finally {
             fetchSpy.mockRestore();
         }
