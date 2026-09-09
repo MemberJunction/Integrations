@@ -204,6 +204,33 @@ describe('NetSuiteConnector — identity & capabilities', () => {
         expect(c.ExtractRetryAfterMs(new Error('429 Too Many Requests Retry-After: 5'))).toBe(5000);
         expect(c.ExtractRetryAfterMs(new Error('some other error'))).toBeUndefined();
     });
+
+    it('declares a 120s per-page fetch budget — SuiteQL pages on large tables outlive the framework 30s default', () => {
+        // With nothing declared, every fresh connection ran at the engine's 30s FetchChanges default
+        // and lost big-table pages that were still healthy (the connector's own per-request abort is
+        // 90s). The engine reads this duck-typed; precedence is connection Configuration.fetchTimeoutMs
+        // → this → framework default.
+        const c = new NetSuiteConnector();
+        expect(c.FetchChangesTimeoutMs).toBe(120_000);
+        expect(c.FetchChangesTimeoutMs).toBeGreaterThan(30_000);
+    });
+
+    it('declares the fetch budget as a prototype ACCESSOR, not an instance field', () => {
+        // Shape matters, not just the value. The engine version that consumes this hook declares
+        // `get FetchChangesTimeoutMs(): number | null` on BaseIntegrationConnector. A derived
+        // *property* compiled with useDefineForClassFields:false becomes `this.X = 120000` in the
+        // constructor — an assignment to a prototype accessor with no setter, which throws
+        // TypeError under ESM strict mode and bricks every NetSuite connection. A getter overrides
+        // a getter cleanly on every engine version, so pin the shape here.
+        const c = new NetSuiteConnector();
+        expect(Object.getOwnPropertyDescriptor(c, 'FetchChangesTimeoutMs')).toBeUndefined();
+        const desc = Object.getOwnPropertyDescriptor(
+            Object.getPrototypeOf(c) as object,
+            'FetchChangesTimeoutMs'
+        );
+        expect(typeof desc?.get).toBe('function');
+        expect(desc?.value).toBeUndefined();
+    });
 });
 
 // ─── OAuth 1.0a signer (auth-helper) ─────────────────────────────────────
