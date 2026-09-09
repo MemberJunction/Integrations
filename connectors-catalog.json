@@ -483,10 +483,10 @@
       "objectCount": 205,
       "className": "@memberjunction/connector-netsuite",
       "npmPackage": "@memberjunction/connector-netsuite",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "mjVersionRange": ">=5.42.0 <6.0.0",
       "repoSubpath": "Finance/NetSuite",
-      "installTag": "Finance-NetSuite@1.4.1"
+      "installTag": "Finance-NetSuite@1.4.2"
     },
     {
       "name": "QuickBooks",

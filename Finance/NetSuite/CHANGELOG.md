@@ -1,5 +1,31 @@
 # @memberjunction/connector-netsuite
 
+## 1.4.2
+
+### Patch Changes
+
+- f620c10: Read a 401 on an already-served connection as a concurrency throttle instead of an auth failure.
+
+  NetSuite governs by concurrent requests per account, and past the grant it does not always answer 429. Under 8 concurrent fetches it intermittently answered HTTP 401 "Invalid login attempt" mid-walk, on objects whose earlier pages had just succeeded with the same token. Classified as a persistent auth error the page was skipped, the object finished INCOMPLETE, and roughly 58s of retry budget went with each hit — 41 stalls of 10s or more summed 19.9 minutes of one 59.8-minute run.
+
+  The connector now treats a 401 as congestion only once this process has watched NetSuite serve a 2xx for that connection (auth mode + account): it backs off like a 429 and reports through `onThrottle`, which is what halves the engine's adaptive fetch gate, so the account's real grant is found rather than guessed. A 401 on the first request of a connection — what a bad or missing credential actually looks like — and any 401 from `TestConnection` stay genuine auth failures, surfaced immediately with no retry. The one case the heuristic can misread, a token revoked mid-run, costs three backoff retries before the same 401 is surfaced unchanged.
+
+  `MaxConcurrencyHint` (5, the smallest documented tier grant) already shipped and is what makes the engine's opt-in fetch gate exist at all; a test now pins the value so the gate cannot be silently removed.
+
+- 8af4156: Declare a 120s per-page fetch budget (`FetchChangesTimeoutMs`) so large SuiteQL tables stop losing pages to the framework's 30s default.
+
+  The engine bounds every `FetchChanges` call with a fixed 30s timeout unless the connector (or the connection's `Configuration.fetchTimeoutMs`) says otherwise. A SuiteQL page on a large NetSuite transaction table routinely takes longer than that under account-level queueing while the request itself is healthy — the connector's own per-request abort is 90s — so the engine cut the page at 30s, retried, cut it again, and the object finished INCOMPLETE with pages skipped. Every fresh connection ran at that guillotine because the connector declared nothing.
+
+  The connector now declares `FetchChangesTimeoutMs = 120000`. Engine precedence is connection `Configuration.fetchTimeoutMs` → this property → framework default, so a deployment keeps the last word. The property is read duck-typed (the same posture as the `OBJECT_UNAVAILABLE` error code): an engine that predates the per-connector timeout hook ignores it, with no behaviour change there.
+
+- 84a39ff: Retire the four declared objects whose `suiteQLTable` NetSuite rejects outright.
+
+  The Declared catalog was authored by camel-collapsing NetSuite's UI labels into record-type slugs. For most of the 200+ standard types the collapse lands on the real record-type id; for four it does not, and `FetchChanges` runs `SELECT * FROM <slug>` through SuiteQL, so the read fails on every account, on every run, with HTTP 400 `Invalid search type: <slug>` (`INVALID_PARAMETER`). Requisition (real id `purchaserequisition`), Weekly Timesheet (`timesheet`), Bin Putaway Worksheet (`binworksheet`) and Advanced Intercompany Journal Entry (`advintercompanyjournalentry`) could never sync, yet each shipped Active, was auto-mapped, and spent a request, an error and a retry ladder every run.
+
+  They are now `Status='Disabled'` in the metadata and in a new delta migration (SQL Server + Postgres) keyed by the seeded row IDs — nothing is deleted, no ID is re-minted, and the released seed is untouched, so no Flyway checksum breaks. They are not remapped either: `DiscoverObjects` unions the Declared floor with the account's live metadata-catalog and passes unknown slugs through verbatim, so tenants already surface the real record type as its own object, and a remap would put two objects over one table.
+
+  Objects that fail with `Record 'x' was not found` are explicitly out of scope: that record type is real and merely not provisioned for the account (already reported as `OBJECT_UNAVAILABLE`), and it syncs as soon as the feature is enabled. A catalog test pins the metadata and both migration dialects to exactly these four rows.
+
 ## 1.4.1
 
 ### Patch Changes
