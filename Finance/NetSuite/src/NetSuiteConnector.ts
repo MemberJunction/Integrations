@@ -94,6 +94,12 @@ import { z } from 'zod';
 const NS_DEFAULT_PAGE_SIZE = 100;
 const NS_MAX_RETRIES = 3;
 const NS_REQUEST_TIMEOUT_MS = 90_000;
+// Per-PAGE budget the engine applies around one FetchChanges call (see FetchChangesTimeoutMs).
+// A SuiteQL page on a large transaction table routinely runs past the framework's 30s default
+// under account-level queueing while the request itself is healthy — the connector's own
+// per-request abort above is 90s. 120s outlasts one slow request plus headroom, and still cuts a
+// genuinely hung page instead of holding the sync lock forever.
+const NS_FETCH_CHANGES_TIMEOUT_MS = 120_000;
 const NS_RECORD_BASE_PATH = '/services/rest/record/v1';
 const NS_SUITEQL_PATH = '/services/rest/query/v1/suiteql';
 const NS_METADATA_CATALOG_PATH = '/services/rest/record/v1/metadata-catalog';
@@ -152,6 +158,12 @@ interface NSAuthContext extends RESTAuthContext {
     Realm: string;
     /** Pre-resolved bearer token for OAuth2 mode (empty for TBA). */
     BearerToken: string;
+    /**
+     * Set ONLY by TestConnection. A connection test exists to answer "are these credentials good?",
+     * so its 401 is the answer, never a throttle — the load heuristic in MakeHTTPRequest is skipped
+     * for it and the failure is reported immediately instead of being retried for ~7s first.
+     */
+    IsConnectionTest?: boolean;
 }
 
 /** NetSuite HATEOAS / SuiteQL paged response envelope. */
@@ -175,6 +187,14 @@ interface NSCatalogResponse {
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-netsuite')
 export class NetSuiteConnector extends BaseRESTIntegrationConnector {
     private oauth2Manager = new OAuth2TokenManager();
+
+    /**
+     * Connections (auth mode + account) whose credentials this process has ALREADY seen NetSuite
+     * accept — the precondition for reading a later 401 as a throttle rather than an auth failure
+     * (see Is401UnderLoad). Holds a derived, non-secret key per account: never a token, never a
+     * secret. Bounded by the number of accounts the process serves.
+     */
+    private readonly provenConnections = new Set<string>();
 
     // ── Identity + capabilities ──────────────────────────────────────────
 
@@ -220,6 +240,22 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
      * usable for keyset/seek resume.
      */
     public override StableOrderingKey(_objectName: string): string | null { return 'id'; }
+
+    /**
+     * Per-page operation timeout the engine wraps around each FetchChanges call.
+     *
+     * Without a declaration every fresh connection runs at the framework default (30s), and a
+     * SuiteQL page on a large transaction table that takes longer is killed mid-flight, retried,
+     * killed again, and the object finishes INCOMPLETE with pages skipped — while the request
+     * itself was healthy (the connector's own per-request abort is 90s). Engine precedence is
+     * connection `Configuration.fetchTimeoutMs` → this → framework default, so a deployment keeps
+     * the last word.
+     *
+     * Read by the engine duck-typed (same posture as the `OBJECT_UNAVAILABLE` error code): the
+     * base class this connector compiles against does not declare it, so there is no `override`
+     * here, and an engine that predates the per-connector timeout hook simply ignores it.
+     */
+    public get FetchChangesTimeoutMs(): number { return NS_FETCH_CHANGES_TIMEOUT_MS; }
 
     /** Parse NetSuite's 429 Retry-After (seconds) into ms; concurrency limit errors carry no precise hint. */
     public override ExtractRetryAfterMs(error: unknown): number | undefined {
@@ -437,9 +473,62 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
                 continue;
             }
 
+            // A 401 on a connection NetSuite has already served in this process is over-concurrency
+            // reported as an auth failure — back off and retry it exactly like a 429.
+            if (response.status === 401 && attempt < NS_MAX_RETRIES && this.Is401UnderLoad(nsAuth)) {
+                const retryAfter = this.ParseRetryAfterHeader(response);
+                onThrottle?.(new Error(
+                    retryAfter !== undefined
+                        ? `NetSuite 401 on an already-authenticated connection — treating as a concurrency throttle — Retry-After: ${Math.ceil(retryAfter / 1000)}`
+                        : 'NetSuite 401 on an already-authenticated connection — treating as a concurrency throttle'
+                ));
+                await this.Sleep(retryAfter ?? this.BackoffDelay(attempt));
+                continue;
+            }
+
+            // Proof the credentials were accepted, for the heuristic above. Deliberately 2xx only:
+            // a 4xx says nothing unambiguous about the credential, and this flag must not be set by
+            // anything short of NetSuite actually serving the request.
+            if (response.status >= 200 && response.status < 300) this.provenConnections.add(this.ConnectionKey(nsAuth));
+
             return this.BuildRESTResponse(response);
         }
         throw new Error(`NetSuite request failed after ${NS_MAX_RETRIES + 1} attempts: ${url}`);
+    }
+
+    /**
+     * Whether a 401 should be read as a THROTTLE rather than an auth failure.
+     *
+     * The heuristic: NetSuite governs by CONCURRENT requests per account, and past the grant it does
+     * not always answer 429. Under 8 concurrent fetches it intermittently answered 401 "Invalid login
+     * attempt" mid-walk, on objects whose EARLIER pages had just succeeded with the SAME token — the
+     * credential was demonstrably valid microseconds earlier and nothing about it changed. Treated as
+     * a persistent auth error the page was skipped, the object ended INCOMPLETE, and ~58s of retry
+     * budget was burned per hit (41 stalls of >=10s summed 19.9 of one 59.8-minute run).
+     *
+     * So: a 401 is a genuine auth failure UNTIL this process has watched NetSuite serve a 2xx for this
+     * connection (auth mode + account). After that, a 401 is congestion — it is retried with backoff
+     * and reported through `onThrottle`, which is what halves the engine's adaptive fetch gate, so the
+     * account's real concurrency grant is found instead of guessed.
+     *
+     * What stays a genuine auth failure, by construction:
+     *  - the FIRST request on a connection (bad or missing credentials never reach a 2xx, so the flag
+     *    is never set and the 401 is surfaced immediately);
+     *  - anything from TestConnection (`IsConnectionTest`), whose entire purpose is to report the
+     *    credential verdict.
+     *
+     * Cost of the one wrong call it can make — a token revoked or expired MID-run — is bounded: three
+     * backoff retries (~7s) before the 401 is surfaced unchanged. That is the deliberate trade against
+     * losing whole objects to a throttle that merely looked like an auth error.
+     */
+    private Is401UnderLoad(auth: NSAuthContext): boolean {
+        if (auth.IsConnectionTest) return false;
+        return this.provenConnections.has(this.ConnectionKey(auth));
+    }
+
+    /** Non-secret identity of one connection: auth mode + account (realm; host root as fallback). */
+    private ConnectionKey(auth: NSAuthContext): string {
+        return `${auth.Mode ?? ''}|${auth.Realm ?? auth.HostBaseURL ?? ''}`;
     }
 
     /**
@@ -543,6 +632,9 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
     ): Promise<ConnectionTestResult> {
         try {
             const auth = await this.Authenticate(companyIntegration, contextUser) as NSAuthContext;
+            // A connection test's whole job is to report whether the credentials work, so its 401
+            // is never re-read as a throttle no matter what this account has served before.
+            auth.IsConnectionTest = true;
             // serverTime is the cheapest authenticated read and seeds the incremental watermark.
             const url = `${auth.HostBaseURL}${NS_SERVERTIME_PATH}`;
             const headers = this.BuildHeaders(auth);
