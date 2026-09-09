@@ -94,6 +94,12 @@ import { z } from 'zod';
 const NS_DEFAULT_PAGE_SIZE = 100;
 const NS_MAX_RETRIES = 3;
 const NS_REQUEST_TIMEOUT_MS = 90_000;
+// Per-PAGE budget the engine applies around one FetchChanges call (see FetchChangesTimeoutMs).
+// A SuiteQL page on a large transaction table routinely runs past the framework's 30s default
+// under account-level queueing while the request itself is healthy — the connector's own
+// per-request abort above is 90s. 120s outlasts one slow request plus headroom, and still cuts a
+// genuinely hung page instead of holding the sync lock forever.
+const NS_FETCH_CHANGES_TIMEOUT_MS = 120_000;
 const NS_RECORD_BASE_PATH = '/services/rest/record/v1';
 const NS_SUITEQL_PATH = '/services/rest/query/v1/suiteql';
 const NS_METADATA_CATALOG_PATH = '/services/rest/record/v1/metadata-catalog';
@@ -220,6 +226,22 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
      * usable for keyset/seek resume.
      */
     public override StableOrderingKey(_objectName: string): string | null { return 'id'; }
+
+    /**
+     * Per-page operation timeout the engine wraps around each FetchChanges call.
+     *
+     * Without a declaration every fresh connection runs at the framework default (30s), and a
+     * SuiteQL page on a large transaction table that takes longer is killed mid-flight, retried,
+     * killed again, and the object finishes INCOMPLETE with pages skipped — while the request
+     * itself was healthy (the connector's own per-request abort is 90s). Engine precedence is
+     * connection `Configuration.fetchTimeoutMs` → this → framework default, so a deployment keeps
+     * the last word.
+     *
+     * Read by the engine duck-typed (same posture as the `OBJECT_UNAVAILABLE` error code): the
+     * base class this connector compiles against does not declare it, so there is no `override`
+     * here, and an engine that predates the per-connector timeout hook simply ignores it.
+     */
+    public get FetchChangesTimeoutMs(): number { return NS_FETCH_CHANGES_TIMEOUT_MS; }
 
     /** Parse NetSuite's 429 Retry-After (seconds) into ms; concurrency limit errors carry no precise hint. */
     public override ExtractRetryAfterMs(error: unknown): number | undefined {
