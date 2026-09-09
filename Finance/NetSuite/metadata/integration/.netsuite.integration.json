@@ -3396,6 +3396,7 @@
         {
           "fields": {
             "Name": "Advanced Intercompany Journal Entry",
+            "Description": "Disabled: 'advancedintercompanyjournalentry' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: advancedintercompanyjournalentry\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'advintercompanyjournalentry' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/advancedintercompanyjournalentry",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -3405,7 +3406,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/advancedintercompanyjournalentry",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -4062,6 +4063,7 @@
         {
           "fields": {
             "Name": "Bin Putaway Worksheet",
+            "Description": "Disabled: 'binputawayworksheet' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: binputawayworksheet\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'binworksheet' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/binputawayworksheet",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -4071,7 +4073,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/binputawayworksheet",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -12894,6 +12896,7 @@
         {
           "fields": {
             "Name": "Requisition",
+            "Description": "Disabled: 'requisition' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: requisition\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'purchaserequisition' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/requisition",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -12903,7 +12906,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/requisition",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -16779,6 +16782,7 @@
         {
           "fields": {
             "Name": "Weekly Timesheet",
+            "Description": "Disabled: 'weeklytimesheet' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: weeklytimesheet\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'timesheet' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/weeklytimesheet",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -16788,7 +16792,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/weeklytimesheet",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
