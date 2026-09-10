@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-reply",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": false,
   "description": "MemberJunction Reply.io connector — 84 declared objects (55 active) across contacts, accounts, sequences, outreach channels, tasks, inbox and webhooks.",
   "type": "module",
