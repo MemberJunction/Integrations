@@ -3,7 +3,7 @@
  * Keeps each connector's mj-app.json in sync with its package after `changeset version`:
  *   - mj-app.json.version      ← the connector package.json version
  *   - mj-app.json.mjVersionRange ← derived from the connector's @memberjunction/core peer-dep range
- *     (e.g. ">=5.43.0 <6.0.0"), so the Open App's MJ compatibility matches the framework it builds against.
+ *     (e.g. ">=5.43.0 <7.0.0"), so the Open App's MJ compatibility matches the framework it builds against.
  * Run as part of the `version` step (after changeset version) so the bump + sync commit together.
  * Mirrors the bizapps publish.yml "Sync mj-app.json version and MJ version range" step, per-connector.
  */
