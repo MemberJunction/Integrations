@@ -25,7 +25,7 @@ const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const MJ_METADATA_DIR = process.env.MJ_METADATA_DIR || process.argv.find((a) => a.startsWith('--source='))?.slice(9);
 const INCLUDE_HUBSPOT = process.argv.includes('--include-hubspot');
 const REPO_URL = 'https://github.com/MemberJunction/Integrations';
-const MJ_VERSION_RANGE = '>=5.43.0 <6.0.0';
+const MJ_VERSION_RANGE = '>=5.43.0 <7.0.0';
 const SHARED_PACKAGE = '@memberjunction/integration-connectors';
 
 if (!MJ_METADATA_DIR || !existsSync(MJ_METADATA_DIR)) {
