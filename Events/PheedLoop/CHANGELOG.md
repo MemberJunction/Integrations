@@ -1,5 +1,39 @@
 # @memberjunction/connector-pheedloop
 
+## 1.4.6
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
+- 0589fa2: PheedLoop: Attendees is one row per attendee PER EVENT, and its key now says so.
+
+  Attendees is `Scope: event` with APIPath `/events/{eventCode}/attendees/`, so it is fetched once per
+  event. An attendee who attended more than one event comes back once per event with the same `code`.
+  The key was `code` alone, and `code` was also marked unique, so those rows collapsed into one.
+
+  Measured on the same PheedLoop account across two workspaces: 370 attendee records fetched over 5
+  events, 124 collapsed as repeated identities, 246 rows stored. Identical numbers on both.
+
+  The 124 lost rows are the visible half. The worse half is that `is_checked_in` and `checkin_date`
+  are per-event facts, and with no event column on the row each survivor kept a check-in state from
+  whichever event was fetched last, with nothing recording which.
+
+  `eventCode` needs no new fetch work: `BaseRESTIntegrationConnector` already tags every record
+  fetched through an APIPath template var with the resolved parent id under the template var's own
+  name, so the value has been arriving all along and being discarded for want of a declared field.
+
+  Ships as a delta migration in both dialects, keyed by the seeded row IDs and idempotent, rather
+  than a re-seed — installed tenants keep their rows and Flyway checksums.
+
+  Note for already-built connections: the mirror table keeps its current primary key. The schema
+  builder warns on a key change and skips it rather than rebuilding a table under live data, so an
+  existing connection needs that object rebuilt for this to take effect.
+
 ## 1.4.5
 
 ### Patch Changes
