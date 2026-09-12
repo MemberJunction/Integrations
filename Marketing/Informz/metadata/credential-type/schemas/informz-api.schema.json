@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "User": {
+      "type": "string",
+      "title": "Username",
+      "description": "Informz username (embedded in SOAP request body as <User> or <Username>).",
+      "isSecret": true,
+      "order": 0
+    },
+    "Password": {
+      "type": "string",
+      "title": "Password",
+      "description": "Informz password (embedded in SOAP request body as <Password>).",
+      "isSecret": true,
+      "order": 1
+    },
+    "BrandID": {
+      "type": "string",
+      "title": "Brand ID",
+      "description": "Informz Brand ID (numeric value embedded in SOAP request body as <Brand id=\"NNNN\">). Identifies the tenant/organization within Informz.",
+      "isSecret": false,
+      "order": 2
+    },
+    "BrandName": {
+      "type": "string",
+      "title": "Brand Name",
+      "description": "Optional Informz Brand Name (embedded in SOAP request body as <Brand id=\"NNNN\">Brand Name</Brand> for display/logging purposes).",
+      "isSecret": false,
+      "order": 3
+    },
+    "Region": {
+      "type": "string",
+      "title": "API Region",
+      "description": "Informz API region selector: 'us' (partner.informz.net), 'ca' (partner.informz.ca), or 'test' (partnertest.informz.net).",
+      "enum": ["us", "ca", "test"],
+      "order": 4
+    }
+  },
+  "required": [
+    "User",
+    "Password",
+    "BrandID",
+    "Region"
+  ]
+}
