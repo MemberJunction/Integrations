@@ -219,9 +219,9 @@
                   "Type": "string",
                   "IntegrationObjectID": "@parent:ID",
                   "IsPrimaryKey": true,
-                  "IsUniqueKey": true,
+                  "IsUniqueKey": false,
                   "AllowsNull": false,
-                  "Description": "Primary key — PheedLoop string 'code' identifier (universal convention)."
+                  "Description": "Attendee code. Part of the key, NOT unique on its own: this object is fetched once per event, so an attendee who attended more than one event is returned once per event with the same code. Unique only with eventCode."
                 },
                 "primaryKey": {
                   "ID": "C63B7DD1-3CE6-483F-B7B1-7C4DA3A9242B"
@@ -613,6 +613,22 @@
                 "sync": {
                   "lastModified": "2026-06-29T03:26:46.004Z",
                   "checksum": "1253ea5cff06f906e3c476664dc283556c4486ffe9cfde3b7d263a1c831bc124"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "eventCode",
+                  "Type": "string",
+                  "Length": 100,
+                  "IntegrationObjectID": "@parent:ID",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "IsReadOnly": true,
+                  "Description": "The event this attendee row belongs to. APIPath is /events/{eventCode}/attendees/, so the engine tags every fetched record with the resolved parent id under the template var's own name. Declared so the row can record WHICH event its is_checked_in and checkin_date describe."
+                },
+                "primaryKey": {
+                  "ID": "9C1F4B0E-27A6-4D3B-8E5A-6F0B71C4D982"
                 }
               }
             ]
