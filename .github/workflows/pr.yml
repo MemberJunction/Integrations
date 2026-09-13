@@ -96,6 +96,14 @@ jobs:
       - name: Validate migrations
         run: node scripts/validate-migrations.mjs
 
+      # A migration that matches a metadata row by NAME must not depend on the database's
+      # collation. `i.Name = 'openwater'` matches on SQL Server (case-insensitive default) and
+      # matches NOTHING on PostgreSQL, so the statement inserts zero rows and still succeeds.
+      # OpenWater lost 24 field declarations that way: 5 objects ended with no columns, so no
+      # primary key, so discovery skipped them and they could never sync (2026-09-13).
+      - name: Migration name matching is collation-independent
+        run: node scripts/lint-migration-name-case.mjs
+
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 

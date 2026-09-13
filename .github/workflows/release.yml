@@ -54,6 +54,13 @@ jobs:
       - name: Metadata fields on allowlist
         run: node scripts/lint-metadata-fields.mjs
 
+      # A migration that matches a metadata row by NAME must not depend on the database's collation.
+      # `i.Name = 'openwater'` matches on SQL Server (case-insensitive default) and matches NOTHING on
+      # PostgreSQL, so the INSERT inserts zero rows and still reports success. OpenWater lost 24 field
+      # declarations that way — 5 objects ended with no columns, hence no key, hence never synced.
+      - name: Migration name matching is collation-independent
+        run: node scripts/lint-migration-name-case.mjs
+
       # Every connector must record what its catalog was declared against and when — a source
       # URL + an ISO date in Configuration.DeclaredAgainst (concern A9b). Grandfathered list
       # can only shrink.
