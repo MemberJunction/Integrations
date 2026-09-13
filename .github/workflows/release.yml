@@ -61,6 +61,13 @@ jobs:
       - name: Migration name matching is collation-independent
         run: node scripts/lint-migration-name-case.mjs
 
+      # A parameter given a VALUE and its _Clear flag in the same call: the clear wins and the
+      # value is silently discarded. Five OpenWater objects were created with their AccessPath
+      # supplied and cleared together, so the walk was never entered and the fetch requested a
+      # prose APIPath as a URL — on every dialect, since creation (2026-09-13).
+      - name: No parameter is both set and cleared
+        run: node scripts/lint-migration-value-then-clear.mjs
+
       # Every connector must record what its catalog was declared against and when — a source
       # URL + an ISO date in Configuration.DeclaredAgainst (concern A9b). Grandfathered list
       # can only shrink.
