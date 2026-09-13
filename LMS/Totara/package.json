@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-totara",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "MemberJunction Totara connector.",
   "type": "module",
   "main": "dist/index.js",
