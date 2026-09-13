@@ -396,10 +396,10 @@
       "objectCount": 30,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
-      "version": "1.3.8",
+      "version": "1.3.9",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Events/OpenWater",
-      "installTag": "Events-OpenWater@1.3.8"
+      "installTag": "Events-OpenWater@1.3.9"
     },
     {
       "name": "PheedLoop",
@@ -800,10 +800,10 @@
       "objectCount": 98,
       "className": "@memberjunction/connector-hivebrite",
       "npmPackage": "@memberjunction/connector-hivebrite",
-      "version": "1.2.3",
+      "version": "1.2.4",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Platform/Hivebrite",
-      "installTag": "Platform-Hivebrite@1.2.3"
+      "installTag": "Platform-Hivebrite@1.2.4"
     },
     {
       "name": "MongoDB",
