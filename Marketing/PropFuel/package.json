@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-propfuel",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "MemberJunction PropFuel connector.",
   "type": "module",
   "main": "dist/index.js",
