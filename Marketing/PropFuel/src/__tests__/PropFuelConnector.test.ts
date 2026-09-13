@@ -4,7 +4,7 @@ import type {
     FetchContext,
     ExternalObjectSchema,
 } from '@memberjunction/integration-engine';
-import { PropFuelConnector, parseFileName, compareMicrotime } from '../PropFuelConnector.js';
+import { PropFuelConnector, parseFileName, compareMicrotime, stableHash } from '../PropFuelConnector.js';
 import type { MJCompanyIntegrationEntity } from '@memberjunction/core-entities';
 import type { UserInfo } from '@memberjunction/core';
 
@@ -324,5 +324,53 @@ describe('PropFuelConnector', () => {
             expect(headers['Authorization']).toBe('Bearer abc');
             expect(headers['Accept']).toBe('application/json');
         });
+    });
+});
+
+describe('stableHash — record identity must reflect NESTED content', () => {
+    // Regression for the identity collapse found on SANDBOX 2026-09-13.
+    //
+    // `JSON.stringify(record, Object.keys(record).sort())` passes the top-level keys as a REPLACER.
+    // An array replacer is an allow-list applied at EVERY level, so every nested key was stripped and
+    // each record serialised to `{"campaign":{},"click":{},"contact":{}}`. All records in a file with
+    // the same shape therefore shared one identity, and the engine's CollapseDuplicateIdentities —
+    // correctly treating one identity seen twice as one record — collapsed 882 of 884 clicks in a
+    // single batch. A sync that fetched ~2,400 records stored 181.
+    const clickA = {
+        campaign: { id: 'c1', name: 'Spring' },
+        contact: { id: 'p1', email: 'a@example.com' },
+        click: { id: 'k1', clicked_at: '2026-01-01T10:00:00Z', link: 'https://a' },
+    };
+    const clickB = {
+        campaign: { id: 'c1', name: 'Spring' },
+        contact: { id: 'p2', email: 'b@example.com' },
+        click: { id: 'k2', clicked_at: '2026-02-02T20:00:00Z', link: 'https://b' },
+    };
+
+    it('gives two records differing ONLY in nested fields different hashes', () => {
+        expect(stableHash(clickA)).not.toBe(stableHash(clickB));
+    });
+
+    it('is stable for the same content regardless of key order', () => {
+        const reordered = {
+            click: { link: 'https://a', clicked_at: '2026-01-01T10:00:00Z', id: 'k1' },
+            contact: { email: 'a@example.com', id: 'p1' },
+            campaign: { name: 'Spring', id: 'c1' },
+        };
+        expect(stableHash(reordered)).toBe(stableHash(clickA));
+    });
+
+    it('distinguishes a difference at ANY depth', () => {
+        const deepA = { a: { b: { c: { d: 1 } } } };
+        const deepB = { a: { b: { c: { d: 2 } } } };
+        expect(stableHash(deepA)).not.toBe(stableHash(deepB));
+    });
+
+    it('keeps array ORDER significant', () => {
+        expect(stableHash({ xs: [1, 2, 3] })).not.toBe(stableHash({ xs: [3, 2, 1] }));
+    });
+
+    it('still separates flat records (the case the old code handled by accident)', () => {
+        expect(stableHash({ id: 1, v: 'x' })).not.toBe(stableHash({ id: 2, v: 'x' }));
     });
 });
