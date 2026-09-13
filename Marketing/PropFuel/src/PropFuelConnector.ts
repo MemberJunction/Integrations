@@ -285,14 +285,27 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
         // The resume cursor: prefer the engine-provided keyset position, else the watermark value.
         const cursor = ctx.AfterKeyValue ?? ctx.WatermarkValue ?? null;
 
+        // A file is NOT the atomic unit any more. The cursor may carry a within-file offset
+        // ("<microtime>@<n>") so a batch can stop PART-WAY through a file and the next call resumes
+        // at record n+1 of that same file. Without it the record cap was only checked BETWEEN files,
+        // so one 1,000-record file answered a 200-record request with 1,000 — the engine's
+        // CONNECTOR_IGNORED_BATCH_SIZE. Plain "<microtime>" cursors written by earlier versions
+        // parse as offset 0, so stored positions keep working.
+        const resume = parseCursor(cursor);
+
         const candidates = allFiles
             .map(f => ({ file: f, parsed: parseFileName(f) }))
             .filter((x): x is { file: string; parsed: ParsedFileName } => x.parsed != null && x.parsed.dataType === ctx.ObjectName)
-            .filter(x => cursor == null || compareMicrotime(x.parsed.microtime, cursor) > 0)
+            // Strictly-after the cursor's file, EXCEPT the cursor's own file when it was left
+            // part-read — that one must be revisited to finish it.
+            .filter(x => resume.microtime == null
+                || compareMicrotime(x.parsed.microtime, resume.microtime) > 0
+                || (resume.offset > 0 && compareMicrotime(x.parsed.microtime, resume.microtime) === 0))
             .sort((a, b) => compareMicrotime(a.parsed.microtime, b.parsed.microtime));
 
         const records: ExternalRecord[] = [];
-        let maxMicrotime = cursor ?? '';
+        let cursorOut = cursor ?? '';
+        let stoppedMidFile = false;
         // An absent BatchSize used to mean Number.MAX_SAFE_INTEGER, i.e. "download the ENTIRE backlog
         // for this data type in one call and hold every record in memory". On an append-only hourly
         // feed the backlog only grows, so the first sync of a long-lived tenant was the worst case.
@@ -306,30 +319,49 @@ export class PropFuelConnector extends BaseRESTIntegrationConnector {
             if (records.length >= batchLimit) break;
             if (filesProcessed >= MAX_FILES_PER_FETCH) break;
             const fileRecords = await this.DownloadFileRecords(auth, candidate.file);
-            for (const raw of fileRecords) {
+
+            // Resume inside this file when it is the one the last batch stopped in.
+            const startAt = (resume.microtime != null
+                && resume.offset > 0
+                && compareMicrotime(candidate.parsed.microtime, resume.microtime) === 0)
+                ? resume.offset
+                : 0;
+
+            let consumed = startAt;
+            for (let i = startAt; i < fileRecords.length; i++) {
+                if (records.length >= batchLimit) break;
                 // Full-record pass-through: the COMPLETE source record reaches ExternalRecord.Fields
                 // so the framework's custom-column capture sees every key the source returned.
                 records.push({
-                    ExternalID: this.BuildRecordIdentity(raw, candidate.parsed),
+                    ExternalID: this.BuildRecordIdentity(fileRecords[i], candidate.parsed),
                     ObjectType: ctx.ObjectName,
-                    Fields: raw,
+                    Fields: fileRecords[i],
                 });
+                consumed = i + 1;
             }
-            if (compareMicrotime(candidate.parsed.microtime, maxMicrotime) > 0) {
-                maxMicrotime = candidate.parsed.microtime;
+
+            if (consumed < fileRecords.length) {
+                // Stopped part-way: the cursor keeps this file and remembers how far we got, so the
+                // next call finishes it rather than re-emitting from the top (which would re-send
+                // records) or skipping past it (which would lose them).
+                cursorOut = `${candidate.parsed.microtime}@${consumed}`;
+                stoppedMidFile = true;
+                break;
             }
+
+            cursorOut = candidate.parsed.microtime;
             filesProcessed++;
         }
 
         const moreFiles = filesProcessed < candidates.length;
         const result: FetchBatchResult = {
             Records: records,
-            HasMore: moreFiles,
+            HasMore: moreFiles || stoppedMidFile,
         };
-        if (maxMicrotime && maxMicrotime !== (cursor ?? '')) {
+        if (cursorOut && cursorOut !== (cursor ?? '')) {
             // Surface the new cursor both as the watermark value and the keyset resume position.
-            result.NewWatermarkValue = maxMicrotime;
-            result.NextAfterKeyValue = maxMicrotime;
+            result.NewWatermarkValue = cursorOut;
+            result.NextAfterKeyValue = cursorOut;
         }
         return result;
     }
@@ -613,6 +645,23 @@ function canonicalJSON(value: unknown): string {
     const obj = value as Record<string, unknown>;
     const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
     return `{${keys.map(k => `${JSON.stringify(k)}:${canonicalJSON(obj[k])}`).join(',')}}`;
+}
+
+/**
+ * Splits a stored cursor into its file microtime and within-file offset.
+ *
+ * `"1787158633.8607"`    -> finished that file        -> { microtime, offset: 0 }
+ * `"1787158633.8607@40"` -> stopped after 40 records  -> { microtime, offset: 40 }
+ *
+ * Cursors written before mid-file resume existed carry no `@`, so they parse as offset 0 and keep
+ * resuming exactly where they did before.
+ */
+export function parseCursor(cursor: string | null | undefined): { microtime: string | null; offset: number } {
+    if (cursor == null || cursor === '') return { microtime: null, offset: 0 };
+    const at = cursor.lastIndexOf('@');
+    if (at < 0) return { microtime: cursor, offset: 0 };
+    const n = Number(cursor.slice(at + 1));
+    return { microtime: cursor.slice(0, at), offset: Number.isFinite(n) && n > 0 ? n : 0 };
 }
 
 /** Small deterministic hash for record identity fallback (FNV-1a, hex). Exported for tests. */
