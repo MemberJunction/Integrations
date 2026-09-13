@@ -25,6 +25,31 @@ import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema
 import { z } from 'zod';
 
 /**
+ * Stable JSON serialisation: keys sorted RECURSIVELY, array order kept (order is semantically
+ * meaningful), `undefined` omitted.
+ *
+ * This replaces the replacer form `JSON.stringify(v, Object.keys(v).sort())`. That second argument
+ * is a REPLACER, and an array replacer is an allow-list of property names applied at EVERY level —
+ * so passing the top-level keys stripped every NESTED key from the output, and any two values that
+ * differed only below the top level serialised identically.
+ *
+ * Proven live on PropFuel 2026-09-13, where the identical line was the primary record identity: a
+ * sync that fetched ~2,400 records stored 181, because `CollapseDuplicateIdentities` correctly
+ * treats one identity seen twice as one record observed twice. Fixed there in 1.2.4; this is the
+ * same line in the three connectors that still carried it.
+ */
+export function canonicalJSON(value: unknown): string {
+    if (value === null || value === undefined) return 'null';
+    if (typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(v => canonicalJSON(v)).join(',')}]`;
+    if (value instanceof Date) return JSON.stringify(value.toISOString());
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+    return `{${keys.map(k => `${JSON.stringify(k)}:${canonicalJSON(obj[k])}`).join(',')}}`;
+}
+
+
+/**
  * Wild Apricot membership-management connector (Admin API v2.3).
  *
  * ── AUTH ──────────────────────────────────────────────────────────────────
@@ -715,7 +740,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 /** Small deterministic hash for record-identity fallback (FNV-1a, hex). */
 function stableHash(record: Record<string, unknown>): string {
-    const json = JSON.stringify(record, Object.keys(record).sort());
+    const json = canonicalJSON(record);
     let h = 0x811c9dc5;
     for (let i = 0; i < json.length; i++) {
         h ^= json.charCodeAt(i);
