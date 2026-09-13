@@ -590,9 +590,34 @@ export function compareMicrotime(a: string, b: string): number {
     return a === b ? 0 : (a > b ? 1 : -1);
 }
 
-/** Small deterministic hash for record identity fallback (FNV-1a, hex). */
-function stableHash(record: Record<string, unknown>): string {
-    const json = JSON.stringify(record, Object.keys(record).sort());
+/**
+ * Stable JSON serialisation for the identity hash: keys sorted RECURSIVELY, array order kept
+ * (order is semantically meaningful), `undefined` omitted.
+ *
+ * This replaces `JSON.stringify(record, Object.keys(record).sort())`. That second argument is a
+ * REPLACER, and an array replacer is an allow-list of property names applied at EVERY level — so
+ * passing the top-level keys stripped every NESTED key from the output. A PropFuel export row is
+ * nested (`{campaign:{...}, contact:{...}, click:{...}}`), so every record serialised to
+ * `{"campaign":{},"click":{},"contact":{}}` and every record in a file with the same shape hashed
+ * identically. Downstream, the engine treats one identity seen twice as one record observed twice:
+ * `CollapseDuplicateIdentities` collapsed 882 of 884 clicks in a single batch, and a sandbox sync
+ * that fetched ~2,400 records stored 181. Live evidence 2026-09-13 — the colliding hash `566c9995`
+ * from the sandbox's DUPLICATE_IDENTITIES_IN_BATCH warning reproduces exactly from two records that
+ * differ in every nested field.
+ */
+function canonicalJSON(value: unknown): string {
+    if (value === null || value === undefined) return 'null';
+    if (typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(v => canonicalJSON(v)).join(',')}]`;
+    if (value instanceof Date) return JSON.stringify(value.toISOString());
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+    return `{${keys.map(k => `${JSON.stringify(k)}:${canonicalJSON(obj[k])}`).join(',')}}`;
+}
+
+/** Small deterministic hash for record identity fallback (FNV-1a, hex). Exported for tests. */
+export function stableHash(record: Record<string, unknown>): string {
+    const json = canonicalJSON(record);
     let h = 0x811c9dc5;
     for (let i = 0; i < json.length; i++) {
         h ^= json.charCodeAt(i);
