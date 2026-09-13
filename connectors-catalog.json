@@ -693,10 +693,10 @@
       "objectCount": 1,
       "className": "@memberjunction/connector-propfuel",
       "npmPackage": "@memberjunction/connector-propfuel",
-      "version": "1.2.4",
+      "version": "1.2.5",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Marketing/PropFuel",
-      "installTag": "Marketing-PropFuel@1.2.4"
+      "installTag": "Marketing-PropFuel@1.2.5"
     },
     {
       "name": "rasa",
