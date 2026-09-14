@@ -11,6 +11,15 @@ module.exports = {
   dbTrustServerCertificate: 'Y',
   mjCoreSchema: '__mj',
 
+  // Per-request SQL timeout for the seed push. mssql defaults to 15s, which is fine for a small
+  // catalog and NOT fine for a large one: SFMC (225 objects / 3,786 fields) aborts partway through
+  // MJ: Integration Object Fields with `Timeout: Request failed to complete in 15000ms`, rolls the
+  // whole transaction back, and emits a truncated migration. The failure looks like a data problem
+  // and is purely a clock. 15 minutes is generous enough for the largest catalogs we ship.
+  dbRequestTimeout: process.env.MJ_MIGRATION_REQUEST_TIMEOUT
+    ? parseInt(process.env.MJ_MIGRATION_REQUEST_TIMEOUT, 10)
+    : 900000,
+
   // mj sync push reads the metadata directory tree; each connector pushes its own metadata/ folder.
   // The sqlLogging block in each connector's metadata/.mj-sync.json emits the seed SQL into migrations/.
 };
