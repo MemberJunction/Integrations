@@ -178,6 +178,24 @@ const DOOR_CACHE_MAX_ENTRIES = 20;
  */
 const MAX_PARENTS_PER_CALL = 100;
 /**
+ * Parent details fetched CONCURRENTLY inside one walk batch.
+ *
+ * The walk is one HTTP call per parent and was strictly serial — `await` inside the parent loop —
+ * so a door of 2,079 applications cost 2,079 round trips end to end, and three objects derived from
+ * that same door (ApplicationFile, ApplicationRoundSubmission, Media) each paid it in full. Measured
+ * live on the sandbox 2026-09-14: 6,273 records in ~20 minutes, ~300 rows/min, against 13,518 in 73s
+ * for the objects that fetch a list directly.
+ *
+ * Nothing about that was rate-limit driven: the engine's own limiter and the 429 backoff sit UNDER
+ * this loop and keep applying, so widening the batch cannot outrun them — it only stops the walk
+ * idling on latency between calls. `fetchConcurrency` on the connection overrides it; the ceiling is
+ * deliberate, because the door enumeration above already drew `HTTP 429 at /v2/Applications` at
+ * modest rates and a per-parent burst is the same vendor.
+ */
+const DEFAULT_WALK_CONCURRENCY = 8;
+/** Hard ceiling for {@link DEFAULT_WALK_CONCURRENCY}, whatever the connection asks for. */
+const MAX_WALK_CONCURRENCY = 16;
+/**
  * Door rows harvested in ONE call, and the wall-clock the whole walk gets before it yields.
  *
  * A count is only ever a PROXY for the thing that actually kills the batch, which is the engine's
@@ -1245,6 +1263,29 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
      * sibling re-pays the full per-application call count against the vendor.
      * 404 returns null (parent deleted between list and detail — skip, don't fail the object).
      */
+    /**
+     * How many parent details a detail walk fetches at once.
+     *
+     * `fetchConcurrency` is the connection-level knob the framework already defines for exactly this
+     * (the engine reads the same key for its own fetch pipeline), so a tenant whose vendor tolerates
+     * more — or less — needs no release. Anything unparseable, zero or negative falls back rather
+     * than being applied verbatim: `Number('')` is 0, and a 0 here would stall the walk outright.
+     */
+    private ResolveWalkConcurrency(companyIntegration: MJCompanyIntegrationEntity | null | undefined): number {
+        let requested: number | null = null;
+        if (companyIntegration?.Configuration) {
+            try {
+                const parsed = JSON.parse(companyIntegration.Configuration) as { fetchConcurrency?: unknown };
+                const n = Number(parsed?.fetchConcurrency);
+                if (Number.isFinite(n) && n > 0) requested = Math.floor(n);
+            } catch {
+                // A connection whose Configuration is not JSON is a real state (hand-edited rows exist);
+                // the walk still has to run, so fall through to the default rather than throwing here.
+            }
+        }
+        return Math.min(requested ?? DEFAULT_WALK_CONCURRENCY, MAX_WALK_CONCURRENCY);
+    }
+
     private async FetchDetailCached(auth: OpenWaterAuthContext, baseURL: string, path: string,
         warnings: FetchWarning[]): Promise<Record<string, unknown> | null> {
         const now = Date.now();
@@ -1413,37 +1454,62 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         let consumed = startAt;
         // The nesting walk's counterpart to harvestShape: what the first parent detail actually held.
         let nestShape: string | null = null;
-        for (const parentID of parentIDs.slice(startAt)) {
+        // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL — and
+        // fetch each bounded window CONCURRENTLY, processing the results IN ORDER. Ordering is what
+        // keeps this a pure latency change: `consumed` (the resume cursor), the budget cut-off and
+        // `nestShape` (first detail wins) all behave exactly as they did when the walk was serial.
+        const walkConcurrency = this.ResolveWalkConcurrency(ctx.CompanyIntegration);
+        const walkWindow = parentIDs.slice(startAt, startAt + MAX_PARENTS_PER_CALL);
+        for (let w = 0; w < walkWindow.length; ) {
             if (out.length >= budget) break;
-            // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL —
-            // and stop on the clock, which is what the engine actually kills the batch on.
-            if (consumed - startAt >= MAX_PARENTS_PER_CALL) break;
+            // The clock is checked per SLICE, not per parent: it is what the engine actually kills
+            // the batch on, and requests already in flight cannot be recalled anyway.
             if (Date.now() > deadline) break;
-            consumed++;
-            const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
-            if (leafPath == null) continue;
-            const detail = await this.FetchDetailCached(auth, baseURL, leafPath, warnings);
-            if (!detail) continue;
-            if (accessPath.extractionMode === 'detail-object') {
-                const rec: Record<string, unknown> = { ...detail };
-                if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
-                    rec[accessPath.parentParamName] = parentID;
-                out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
-            } else {
-                if (nestShape === null) nestShape = this.ShapeAlong(detail, accessPath.nestingSegments ?? []);
-                let elements = this.WalkSegments([detail], accessPath.nestingSegments ?? []) as Record<string, unknown>[];
-                if (filt && filt.key) {
-                    elements = elements.filter(e => e && (filt.exists
-                        ? e[filt.key] != null
-                        : String(e[filt.key]) === String(filt.value)));
-                }
-                for (const e of elements) {
-                    const rec: Record<string, unknown> = { ...e };
+            /**
+             * Never dispatch more parents than the REMAINING budget could consume. A parent yields
+             * at least zero records, so a full-width slice is right for a sparse child mid-sync —
+             * but a sampling call asks for a handful, and fetching a fixed 8 for a budget of 2 is
+             * exactly the over-walking that made DiscoverFieldsViaFetch blow the discovery budget
+             * (see the batch-stops-early test). Width follows demand.
+             */
+            const sliceWidth = Math.max(1, Math.min(walkConcurrency, budget - out.length));
+            const slice = walkWindow.slice(w, w + sliceWidth);
+            const fetched = await Promise.all(slice.map(async (parentID) => {
+                const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
+                if (leafPath == null) return { parentID, detail: null };
+                return { parentID, detail: await this.FetchDetailCached(auth, baseURL, leafPath, warnings) };
+            }));
+            w += slice.length;
+            let budgetMet = false;
+            for (const { parentID, detail } of fetched) {
+                // A parent fetched but not processed is deliberately NOT counted as consumed: the
+                // next call re-walks it and FetchDetailCached serves it from cache, so the cursor
+                // stays truthful without paying the vendor twice.
+                if (out.length >= budget) { budgetMet = true; break; }
+                consumed++;
+                if (!detail) continue;
+                if (accessPath.extractionMode === 'detail-object') {
+                    const rec: Record<string, unknown> = { ...detail };
                     if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
                         rec[accessPath.parentParamName] = parentID;
                     out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
+                } else {
+                    if (nestShape === null) nestShape = this.ShapeAlong(detail, accessPath.nestingSegments ?? []);
+                    let elements = this.WalkSegments([detail], accessPath.nestingSegments ?? []) as Record<string, unknown>[];
+                    if (filt && filt.key) {
+                        elements = elements.filter(e => e && (filt.exists
+                            ? e[filt.key] != null
+                            : String(e[filt.key]) === String(filt.value)));
+                    }
+                    for (const e of elements) {
+                        const rec: Record<string, unknown> = { ...e };
+                        if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
+                            rec[accessPath.parentParamName] = parentID;
+                        out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
+                    }
                 }
             }
+            if (budgetMet) break;
         }
         if (out.length === 0 && startAt === 0) {
             warnings.push({ Code: 'ZERO_LEAVES',
