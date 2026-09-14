@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "Subdomain": {
+      "type": "string",
+      "title": "Tenant Subdomain",
+      "description": "The 28-character tenant subdomain from your Marketing Cloud Installed Package (e.g. mc563885gzs27c5t9-63k636ttgm). Every base URI is tenant-specific and is derived from it: {Subdomain}.auth.marketingcloudapis.com/v2/token. The REST and SOAP base URIs are then taken from that token response (rest_instance_url / soap_instance_url) and are never hardcoded.",
+      "isSecret": false,
+      "order": 0
+    },
+    "ClientID": {
+      "type": "string",
+      "title": "Client ID",
+      "description": "The client_id of a Marketing Cloud Installed Package API Integration component (Server-to-Server). An Installed Package is required; there is no username/password path for this connector.",
+      "isSecret": true,
+      "order": 1
+    },
+    "ClientSecret": {
+      "type": "string",
+      "title": "Client Secret",
+      "description": "The client_secret of the same Installed Package API Integration component.",
+      "isSecret": true,
+      "order": 2
+    },
+    "AccountID": {
+      "type": "string",
+      "title": "Business Unit MID (optional)",
+      "description": "Optional account_id (MID) selecting the business unit the token should act on. Omit to use the Installed Package's default business unit. Sent as account_id on the v2/token request.",
+      "isSecret": false,
+      "order": 3
+    },
+    "Scope": {
+      "type": "string",
+      "title": "Scope (optional)",
+      "description": "Optional space-delimited OAuth scope list narrowing the token's permissions to a subset of those granted to the Installed Package. Omit to receive every scope the package allows.",
+      "isSecret": false,
+      "order": 4
+    }
+  },
+  "required": [
+    "Subdomain",
+    "ClientID",
+    "ClientSecret"
+  ]
+}
