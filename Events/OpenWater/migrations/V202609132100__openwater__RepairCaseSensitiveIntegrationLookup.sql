@@ -114,7 +114,6 @@ JOIN [__mj].IntegrationObject p ON p.IntegrationID = i.ID AND p.Name = m.ParentO
 WHERE LOWER(i.Name) = 'openwater'
   AND f.RelatedIntegrationObjectID IS NULL;
 
-END
 GO
 
 -- 2. Their declared fields (guarded direct INSERT, per the V202608050910 delta precedent) --------------------
@@ -175,7 +174,6 @@ WHERE NOT EXISTS (
     SELECT 1 FROM [__mj].IntegrationObjectField f
     WHERE f.IntegrationObjectID = o.ID AND f.Name = v.FieldName);
 
-END
 GO
 
 -- 2. Declared fields: Judge x5 and JudgeAssignment.roundId (guarded direct INSERT) --------------------------
