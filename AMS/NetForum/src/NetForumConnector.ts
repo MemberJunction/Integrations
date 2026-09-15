@@ -15,8 +15,13 @@
  *   SOAPAction : http://www.avectra.com/2005/<MethodName>
  *
  *   Auth (TWO-STEP, SOAP — NOT HTTP Basic / WWW-Authenticate / Bearer):
- *     1. Authenticate(userName, password) → AuthenticateResult (the token string).
- *        The Authenticate envelope carries NO AuthorizationToken header — it is the bootstrap.
+ *     1. Authenticate(userName, password) → the token is in the RESPONSE HEADER,
+ *        <soap:Header><AuthorizationToken><Token>. The WSDL declares AuthorizationToken as an OUTPUT
+ *        header of Authenticate. The body's AuthenticateResult is NOT the token: on a real tenant it
+ *        holds the namespace URI "http://www.avectra.com/2005/". This connector read AuthenticateResult
+ *        through 1.3.4 and so sent that URI as its token; netFORUM answers an unrecognised token with
+ *        HTTP 500 + faultstring "Locked" on EVERY call, with nothing locked (vendor-confirmed with a
+ *        captured response, 2026-09-15). The Authenticate REQUEST carries no AuthorizationToken header.
  *     2. Every subsequent data/CRUD call carries the token in the SOAP HEADER element:
  *          <AuthorizationToken xmlns="http://www.avectra.com/2005/"><Token>{token}</Token></AuthorizationToken>
  *        (NOT an HTTP Authorization header.) Source: WSDL `AuthorizationToken` complexType +
@@ -28,14 +33,15 @@
  *       - szColumnList is sent EMPTY. The vendor's GetQuery page documents both halves: "Asterisk (*)
  *         is not a valid value for szColumnList" (the request faults), and an empty string "returns
  *         the default column listing for the object's primary table — the primary key for the object
- *         will still be returned in the node as the first child". This connector sent `*` until
- *         2026-09, so every fetch faulted (surfacing as HTTP 500 / a SOAP fault), and because xWeb
- *         counts faulted calls toward MethodsFaultLimitPerDay — default 100 a day, per xWeb USER + IP
- *         ADDRESS (vendor's xWeb Configuration Settings page: the user is never locked, only the IP)
- *         — every later call from that IP faulted "Locked". Confirmed by the vendor against our xWeb
- *         credential from THEIR IP, 2026-09, while ours was locked. Consequence: a row carries
- *         the tenant's default list columns, NOT the declared union — FetchChanges warns
- *         (WATERMARK_COLUMN_ABSENT) when the watermark column is missing from what came back.
+ *         will still be returned in the node as the first child". This connector sent `*` through
+ *         1.3.2 (fixed in 1.3.4). Consequence: a row carries the tenant's default list columns, NOT
+ *         the declared union — FetchChanges warns (WATERMARK_COLUMN_ABSENT) when the watermark
+ *         column is missing from what came back, and an IO whose default list lacks a column the
+ *         connector needs declares Configuration.columnList (proven live: naming the columns works,
+ *         including the watermark, an incremental `>=` predicate on it, and ORDER BY it).
+ *       - The "Locked" fault seen alongside those failures was NOT a lock — see the Auth section:
+ *         a token read from the wrong element. 1.3.4's changelog attributed it to
+ *         MethodsFaultLimitPerDay; that diagnosis was wrong.
  *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" where the watermark column is
  *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date).
  *         There is NO canonical `LastModifiedDate` column — the field is per-facade and is read
@@ -146,6 +152,13 @@ interface NFAccessPath {
 
 /** Shape of the per-IO Configuration JSON relevant to this connector. */
 interface NFObjectConfig {
+    /**
+     * Explicit szColumnList, declared ONLY when the tenant's default list lacks a column the connector
+     * needs (Individual's default list carries 9 columns and not ind_change_date — proven live 2026-09-15).
+     * A declared list REPLACES the default list; the connector appends its own needs (PK, ordering key,
+     * watermark) when omitted. Absent ⇒ empty szColumnList ⇒ the tenant's default columns.
+     */
+    columnList?: string[];
     accessPath?: NFAccessPath;
     stableOrderingKey?: string;
     soapEndpoint?: string;
@@ -184,9 +197,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Step 1 of the two-step auth: POST a SOAP `Authenticate(userName, password)` envelope (which
-     * carries NO AuthorizationToken header — it is the bootstrap) and read the token string from
-     * `AuthenticateResult`. The token is cached and re-used until its TTL elapses or a 401 forces
-     * re-auth. Credentials go in the SOAP body elements — there is no HTTP Basic / Bearer here.
+     * carries NO AuthorizationToken header — it is the bootstrap) and read the token from the SOAP
+     * RESPONSE HEADER, `<AuthorizationToken><Token>`, which the WSDL declares as an output header of
+     * Authenticate. The body's `AuthenticateResult` is deliberately NOT read: on a real tenant it
+     * holds the namespace URI, and sending that as the token gets HTTP 500 "Locked" on every call
+     * (what 1.3.4 and earlier did). No fallback to the body — a wrong fallback is exactly this bug.
+     * The token is cached and re-used until its TTL elapses or a 401 forces re-auth. Credentials go
+     * in the SOAP body elements — there is no HTTP Basic / Bearer here.
      */
     protected async Authenticate(ci: MJCompanyIntegrationEntity, cu: UserInfo): Promise<RESTAuthContext> {
         const config = await this.ParseConfig(ci, cu);
@@ -203,9 +220,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (response.Status < 200 || response.Status >= 300) {
             throw new Error(`NetForum Authenticate failed: HTTP ${response.Status}`);
         }
-        const token = this.ParseSoapScalar(this.AsText(response.Body), 'AuthenticateResult');
+        const token = this.ParseAuthenticateToken(this.AsText(response.Body));
         if (!token) {
-            throw new Error('NetForum Authenticate response contained no token (AuthenticateResult element)');
+            throw new Error(
+                'NetForum Authenticate response carried no token: expected <AuthorizationToken><Token> in the SOAP ' +
+                'response HEADER (the WSDL declares it as an output header of Authenticate). The body\'s ' +
+                'AuthenticateResult is not the token — on a real tenant it holds the namespace URI — and is not used.',
+            );
         }
         this.tokenCache = { Token: token, ExpiresAt: Date.now() + TOKEN_TTL_MS };
         return { Token: token, Config: config } as NFAuthContext;
@@ -461,11 +482,18 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             : (accessPath.doorArgs?.topModifier ?? '@TOP -1');
         const szObjectName = topModifier ? `${queryObject} ${topModifier}` : queryObject;
 
-        // Empty, never `*` — see the class header: `*` is documented as invalid and faulted every fetch.
-        const args: Record<string, string> = { szObjectName, szColumnList: '' };
+        const watermarkField = obj.IncrementalWatermarkField ?? undefined;
+        const pkField = this.PrimaryKeyFieldName(obj);
+        // Empty by default (the tenant's default list columns), never `*` — see the class header. An IO
+        // may declare Configuration.columnList when its default list lacks a column the connector needs;
+        // the door returns ONLY named columns, so a declared list is completed with the PK, the ordering
+        // key and the watermark — the three columns this method itself reads.
+        const args: Record<string, string> = {
+            szObjectName,
+            szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField]),
+        };
 
         const predicates: string[] = [];
-        const watermarkField = obj.IncrementalWatermarkField ?? undefined;
         if (ctx.WatermarkValue && watermarkField) {
             predicates.push(`${watermarkField} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
         }
@@ -484,7 +512,6 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         }
 
         const rows = this.NormalizeResponse(response.Body, null);
-        const pkField = this.PrimaryKeyFieldName(obj);
         const warnings: FetchWarning[] = [];
         if (rows.length === 0) {
             warnings.push({ Code: 'ZERO_ROWS', Message: `GetQuery(${szObjectName}) returned no rows.` });
@@ -509,9 +536,9 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     `NetForum "${ctx.ObjectName}" declares IncrementalWatermarkField "${watermarkField}", but no row of ` +
                     `this GetQuery batch carries that column: with an empty szColumnList, xWeb returns the tenant's ` +
                     `default list columns for "${queryObject}" and "${watermarkField}" is not among them. The watermark ` +
-                    `cannot advance, so each sync re-reads the same window. Add the column to the object's default ` +
-                    `list in netFORUM (List Table setup) or point IncrementalWatermarkField at a column the default ` +
-                    `list returns.`,
+                    `cannot advance, so each sync re-reads the same window. Declare Configuration.columnList on the IO ` +
+                    `(the default columns plus "${watermarkField}"), add the column to the object's default list in ` +
+                    `netFORUM (List Table setup), or point IncrementalWatermarkField at a column the default list returns.`,
                 Data: { ObjectName: ctx.ObjectName, WatermarkField: watermarkField, Columns: Object.keys(rows[0]) },
             });
         }
@@ -553,6 +580,30 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     private EscapeSqlLiteral(v: string): string { return v.replace(/'/g, "''"); }
+
+    /**
+     * The szColumnList for one fetch: empty (tenant default list) unless the IO declares
+     * Configuration.columnList. A declared list is completed with `required` — the primary key, the
+     * ordering key and the watermark column — because the door returns ONLY the named columns and
+     * those are what FetchChanges reads. Comma-joined, as the vendor's own examples are; duplicates
+     * (case-insensitive) collapse to the first spelling.
+     */
+    private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>): string {
+        const declared = Array.isArray(cfg.columnList)
+            ? cfg.columnList.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).map(c => c.trim())
+            : [];
+        if (declared.length === 0) return '';
+        const out: string[] = [];
+        const seen = new Set<string>();
+        for (const c of [...declared, ...required]) {
+            if (!c) continue;
+            const key = c.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(c);
+        }
+        return out.join(',');
+    }
 
     // ─── CRUD — SOAP facade ops via per-operation metadata columns ────
 
@@ -728,6 +779,18 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * namespace prefixes. Returns undefined when absent. Used for AuthenticateResult, mdc_* columns,
      * and create-result keys.
      */
+    /**
+     * The session token from an Authenticate RESPONSE: the <Token> inside the <AuthorizationToken>
+     * header element (any namespace prefix, attributes such as soap:actor tolerated). Never the body's
+     * AuthenticateResult — see Authenticate(). Returns undefined when the header is absent.
+     */
+    private ParseAuthenticateToken(xml: string): string | undefined {
+        const hdr = /<(?:[\w.-]+:)?AuthorizationToken\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?AuthorizationToken>/i.exec(xml);
+        if (!hdr) return undefined;
+        const token = this.ParseSoapScalar(hdr[1], 'Token');
+        return token && token.length > 0 ? token : undefined;
+    }
+
     private ParseSoapScalar(xml: string, localName: string): string | undefined {
         const re = new RegExp(`<(?:[\\w.-]+:)?${this.EscapeRegExp(localName)}\\b[^>]*>([\\s\\S]*?)</(?:[\\w.-]+:)?${this.EscapeRegExp(localName)}>`);
         const m = re.exec(xml);
