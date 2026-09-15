@@ -21,8 +21,26 @@ import { NetForumConnector } from '../NetForumConnector.js';
  * scrubbed per connector-test-conventions (names -> <scrubbed-name-N>, emails -> example+N@example.com).
  */
 
+// The REAL Authenticate response shape (vendor capture, 2026-09-15; GUIDs replaced): the token is in
+// the SOAP response HEADER, and the body's AuthenticateResult holds the namespace URI, not a token.
+// The previous fixture put the GUID in AuthenticateResult — the guess the connector was built to.
 const AUTH_XML = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Header>
+    <AuthorizationToken soap:actor="4f158adf-9292-40e8-aa09-c905d3787e5f" xmlns="http://www.avectra.com/2005/">
+      <Token>eb5667ab-25ac-45c9-b831-23b43be8f194</Token>
+    </AuthorizationToken>
+  </soap:Header>
+  <soap:Body>
+    <AuthenticateResponse xmlns="http://www.avectra.com/2005/">
+      <AuthenticateResult>http://www.avectra.com/2005/</AuthenticateResult>
+    </AuthenticateResponse>
+  </soap:Body>
+</soap:Envelope>`;
+
+/** What the connector was built against through 1.3.4: no header, a GUID in AuthenticateResult. */
+const AUTH_XML_BODY_ONLY = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <AuthenticateResponse xmlns="http://www.avectra.com/2005/">
       <AuthenticateResult>eb5667ab-25ac-45c9-b831-23b43be8f194</AuthenticateResult>
@@ -217,7 +235,7 @@ describe('NetForumConnector — identity & capability', () => {
 });
 
 describe('NetForumConnector — Authenticate (two-step SOAP token)', () => {
-    it('POSTs a SOAP Authenticate envelope with credentials in the body and reads the token from AuthenticateResult', async () => {
+    it('POSTs a SOAP Authenticate envelope with credentials in the body and reads the token from the response HEADER', async () => {
         const c = makeConnector();
         // exercise auth via TestConnection (it authenticates then GetVersion)
         const r = await c.TestConnection(CI, CU);
@@ -241,7 +259,20 @@ describe('NetForumConnector — Authenticate (two-step SOAP token)', () => {
         const versionReq = c.Requests.find(req => req.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetVersion');
         expect(versionReq).toBeDefined();
         expect(versionReq!.body).toContain('<AuthorizationToken xmlns="http://www.avectra.com/2005/"><Token>eb5667ab-25ac-45c9-b831-23b43be8f194</Token></AuthorizationToken>');
+        // The body's AuthenticateResult (the namespace URI on a real tenant) must NEVER be sent as the
+        // token — that is what produced HTTP 500 "Locked" on every call through 1.3.4.
+        expect(versionReq!.body).not.toContain('<Token>http://www.avectra.com/2005/</Token>');
         expect(versionReq!.headers['Authorization']).toBeUndefined();
+    });
+
+    it('refuses an Authenticate response whose token is only in the body (no header) rather than sending a guess', async () => {
+        const c = makeConnector();
+        c.Responses['Authenticate'] = { Status: 200, Body: AUTH_XML_BODY_ONLY, Headers: {} };
+        const r = await c.TestConnection(CI, CU);
+        expect(r.Success).toBe(false);
+        expect(r.Message).toMatch(/response HEADER/);
+        // No data call was attempted with a body-sourced value.
+        expect(c.Requests.some(req => req.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetVersion')).toBe(false);
     });
 
     it('TestConnection surfaces auth failure as Success=false', async () => {
@@ -366,6 +397,25 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         expect(w!.Message).toContain('ind_change_date');
         expect(w!.Data?.Columns).toEqual(['ind_cst_key', 'ind_first_name']);
         expect(res.NewWatermarkValue).toBeUndefined();
+    });
+
+    it('sends a DECLARED Configuration.columnList, completed with the PK, ordering key and watermark it reads', async () => {
+        const c = makeConnector();
+        // The door returns ONLY named columns, so a declaration that omits what FetchChanges itself
+        // needs (ExternalID, keyset resume, watermark) would silently break all three. Appended, deduped.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_first_name', 'IND_CST_KEY', ' ind_last_name '] }) };
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+        const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(req!.body).toContain('<szColumnList>ind_first_name,IND_CST_KEY,ind_last_name,ind_change_date</szColumnList>');
+    });
+
+    it('sends an EMPTY szColumnList when no columnList is declared (the tenant default list)', async () => {
+        const c = makeConnector();
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+        const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(req!.body).toContain('<szColumnList></szColumnList>');
     });
 
     it('does not warn WATERMARK_COLUMN_ABSENT when rows carry the watermark column', async () => {
