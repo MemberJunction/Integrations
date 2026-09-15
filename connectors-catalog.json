@@ -396,10 +396,10 @@
       "objectCount": 30,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
-      "version": "1.3.9",
+      "version": "1.3.10",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Events/OpenWater",
-      "installTag": "Events-OpenWater@1.3.9"
+      "installTag": "Events-OpenWater@1.3.10"
     },
     {
       "name": "PheedLoop",
