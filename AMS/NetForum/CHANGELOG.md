@@ -1,5 +1,17 @@
 # @memberjunction/connector-netforum-enterprise
 
+## 1.3.6
+
+### Patch Changes
+
+- 7ce078e: **The session token is read from the Authenticate RESPONSE HEADER, not from `AuthenticateResult`.** Through 1.3.4, `Authenticate()` took the body's `<AuthenticateResult>` as the token. On a real tenant that element holds the namespace URI `http://www.avectra.com/2005/`; the token is in `<soap:Header><AuthorizationToken><Token>`, which the WSDL declares as an output header of the Authenticate operation. The connector therefore sent the URI as its token, and netFORUM answers an unrecognised token with HTTP 500 + faultstring `Locked` on every call — with nothing locked. Vendor-confirmed with a captured response. **1.3.4's changelog attributed "Locked" to a MethodsFaultLimitPerDay lock; that diagnosis was wrong.** The `*` column list was a real, separate fault (fixed in 1.3.4); "Locked" was this. There is deliberately no fallback to the body — a wrong fallback is exactly this bug — and a response with no header token now fails loudly instead of sending a guess.
+
+  **Objects whose default column list cannot carry their watermark now declare one.** With the empty `szColumnList`, GetQuery returns the tenant's _default_ list columns, and on a live tenant not one of the 23 incremental objects' default lists includes its `<prefix>_change_date` — so incremental sync could never advance (1.3.4's `WATERMARK_COLUMN_ABSENT` warning would have fired on every one). Three objects (IndividualPhone, IndividualFax, InvoiceDetailCustomer) fault even on the empty list, because their default list is itself `*`. Naming the columns works — including the watermark, an incremental `>=` predicate on it, and ORDER BY it. So an IntegrationObject may declare `Configuration.columnList`; the connector sends it and completes it with the primary key, ordering key and watermark it reads. Twelve objects declare a list proven live — their default columns plus the watermark, minus display columns such as `cst_sort_name_dn` / `cst_eml_address_dn` / `adr_city_state_code` that the door refuses by name: Individual, IndividualEmail, IndividualAddress, IndividualPhone, IndividualFax, Organization, Committee, Invoice, InvoiceDetail, InvoiceDetailCustomer, CentralizedOrderEntry, EventsRegistrant. Each carries a `columnListNote` with its provenance. The ten incremental objects that were empty on the probe tenant keep the empty list and the warning (their default columns are unknowable there); MembershipBilling is not readable by the probe credential ("not authorized to perform Select on Membership object").
+
+  Live evidence, the first for this connector: `Individual @TOP 5`, empty list, `ORDER BY ind_cst_key` → 5 rows × 9 columns with `ind_cst_key`; with the declared list → 10 columns including `ind_change_date`; `ind_change_date >= '2000-01-01'` accepted.
+
+  Ships as delta migration `V202609151700` (+ Postgres twin): corrected auth prose on the Integration and CredentialType rows (they said the token was the `AuthenticateResult` string), `columnList` on the twelve objects, `DeclaredAgainst.catalogLastEditedAt` → 2026-09-15. No rows added or removed, no IDs re-minted.
+
 ## 1.3.5
 
 ### Patch Changes
