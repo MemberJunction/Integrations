@@ -536,94 +536,113 @@ const FACADE_OBJECT_LIST_XML = `<?xml version="1.0" encoding="utf-8"?>
 </GetFacadeObjectListResult></GetFacadeObjectListResponse>
 </soap:Body></soap:Envelope>`;
 
-const CI_ENUMERATE = { IntegrationID: 'integ-1', CredentialID: undefined, Configuration: JSON.stringify({
-    BaseURL: 'https://test.netforum.example', Username: 'u', Password: 'p', discoverAllObjects: true,
-}) } as unknown as MJCompanyIntegrationEntity;
 
-describe('NetForumConnector — DiscoverObjects (GetFacadeObjectList enumeration)', () => {
-    it('does NOT enumerate by default — the declared baseline is returned untouched', async () => {
+describe('NetForumConnector — DiscoverObjects ALWAYS enumerates from the source', () => {
+    it('calls GetFacadeObjectList on every discovery — no flag, no opt-in', async () => {
         const c = makeConnector();
         c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
         await c.DiscoverObjects(CI, CU);
-        // The whole point: IntrospectSchema costs one GetQueryDefinition per object returned here,
-        // so enumerating 878 facades by default would never finish inside the run deadline.
         const actions = c.Requests.map(r => (r.headers['SOAPAction'] ?? '').replace('http://www.avectra.com/2005/', ''));
-        expect(actions).not.toContain('GetFacadeObjectList');
+        expect(actions).toContain('GetFacadeObjectList');
     });
 
-    it('enumerates when discoverAllObjects is set, parsing obj_name/obj_description', async () => {
+    it('returns every enumerated object — the declared catalog is a floor, never a ceiling', async () => {
+        const c = makeConnector();
+        c.Declared = [{ Name: 'Individual', Label: 'Individual', SupportsIncrementalSync: true, SupportsWrite: true }];
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const objs = await c.DiscoverObjects(CI, CU);
+        // fixture: Individual (declared) + Accreditation + AskLadder + Assignment
+        expect(objs).toHaveLength(4);
+        expect(objs.map(o => o.Name)).toEqual(
+            expect.arrayContaining(['Individual', 'Accreditation', 'AskLadder', 'Assignment']));
+    });
+
+    it('parses obj_name/obj_description and reports capability honestly', async () => {
         const c = makeConnector();
         c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
-        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
-        const names = objs.map(o => o.Name);
-        expect(names).toContain('Accreditation');
-        expect(names).toContain('AskLadder');
+        const objs = await c.DiscoverObjects(CI, CU);
         const acc = objs.find(o => o.Name === 'Accreditation')!;
         expect(acc.Label).toBe('Accreditation record');
-        // Honest capability: a bare name proves neither incremental sync nor write support.
         expect(acc.SupportsIncrementalSync).toBe(false);
         expect(acc.SupportsWrite).toBe(false);
-    });
-
-    it('never reports the same object twice, and falls back to an empty description', async () => {
-        const c = makeConnector();
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
-        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
-        const names = objs.map(o => o.Name.toLowerCase());
-        expect(new Set(names).size).toBe(names.length);
         const asg = objs.find(o => o.Name === 'Assignment')!;
-        expect(asg.Label).toBe('Assignment'); // empty obj_description → Label falls back to the name
+        expect(asg.Label).toBe('Assignment'); // empty obj_description falls back to the name
     });
 
-    it('honours discoverAllObjectsMax so a huge installation cannot blow the run deadline', async () => {
+    it('never reports the same object twice', async () => {
         const c = makeConnector();
         c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
-        const ci = { IntegrationID: 'integ-1', CredentialID: undefined, Configuration: JSON.stringify({
-            BaseURL: 'https://test.netforum.example', Username: 'u', Password: 'p',
-            discoverAllObjects: true, discoverAllObjectsMax: 2,
-        }) } as unknown as MJCompanyIntegrationEntity;
-        const objs = await c.DiscoverObjects(ci, CU);
-        const declared = await c.DiscoverObjects(CI, CU);
-        expect(objs.length).toBe(declared.length + 2);
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name.toLowerCase());
+        expect(new Set(names).size).toBe(names.length);
     });
 
     it('falls back to the declared baseline when the account is not granted the method', async () => {
         const c = makeConnector();
-        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>Locked</faultstring>', Headers: {} };
-        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
-        const declared = await c.DiscoverObjects(CI, CU);
-        expect(objs.map(o => o.Name)).toEqual(declared.map(o => o.Name));
-    });
-});
-
-describe('NetForumConnector — enumeration must EXTEND the declared catalog, never replace it', () => {
-    it('keeps the curated declared object on a name collision, discarding the enumerated stub', async () => {
-        const c = makeConnector();
-        // "Individual" is curated: it knows it can sync incrementally and be written to.
-        c.Declared = [{ Name: 'Individual', Label: 'Individual (curated)', Description: 'curated',
-                        SupportsIncrementalSync: true, SupportsWrite: true }];
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
-        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
-
-        const individuals = objs.filter(o => o.Name === 'Individual');
-        expect(individuals).toHaveLength(1);
-        // The curated metadata survives — the enumerated stub would have said false/false and
-        // silently downgraded a working object to an unsyncable name.
-        expect(individuals[0].Label).toBe('Individual (curated)');
-        expect(individuals[0].SupportsIncrementalSync).toBe(true);
-        expect(individuals[0].SupportsWrite).toBe(true);
-    });
-
-    it('adds only the objects the declared catalog does not already cover', async () => {
-        const c = makeConnector();
         c.Declared = [{ Name: 'Individual', Label: 'Individual', SupportsIncrementalSync: true, SupportsWrite: true }];
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
-        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
-        // fixture holds Individual + 3 others; Individual is already declared
-        expect(objs).toHaveLength(4);
-        expect(objs[0].Name).toBe('Individual'); // declared first, curated set intact
+        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>not authorized</faultstring>', Headers: {} };
+        const objs = await c.DiscoverObjects(CI, CU);
+        expect(objs.map(o => o.Name)).toEqual(['Individual']);
     });
 });
+
+describe('NetForumConnector — the client object set is a RECONCILIATION (everything.txt §2)', () => {
+    // declared: Individual (in source), Membership + FacadeObject (NOT in source)
+    const DECLARED = [
+        { Name: 'Individual', Label: 'Individual (declared)', Description: 'declared desc',
+          SupportsIncrementalSync: true, SupportsWrite: true },
+        { Name: 'Membership', Label: 'Membership', SupportsIncrementalSync: true, SupportsWrite: true },
+        { Name: 'FacadeObject', Label: 'FacadeObject', SupportsIncrementalSync: false, SupportsWrite: false },
+    ];
+
+    it('EXCLUDES declared objects the source does not list — they are not this client\'s objects', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name);
+        expect(names).not.toContain('Membership');
+        expect(names).not.toContain('FacadeObject');
+    });
+
+    it('ADDS objects the source has and the declaration does not', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name);
+        expect(names).toEqual(expect.arrayContaining(['Accreditation', 'AskLadder', 'Assignment']));
+    });
+
+    it('overlays per attribute with EXTERNAL SYSTEM priority, declaration as fallback', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const ind = (await c.DiscoverObjects(CI, CU)).find(o => o.Name === 'Individual')!;
+        // the source states a description -> it wins
+        expect(ind.Description).toBe('Individual');
+        // the source says NOTHING about these -> the declaration survives
+        expect(ind.SupportsIncrementalSync).toBe(true);
+        expect(ind.SupportsWrite).toBe(true);
+    });
+
+    it('falls back to the declaration when the source is silent on an attribute', async () => {
+        const c = makeConnector();
+        // Assignment has an EMPTY obj_description in the fixture
+        c.Declared = [{ Name: 'Assignment', Label: 'Assignment (declared)', Description: 'kept',
+                        SupportsIncrementalSync: true, SupportsWrite: false }];
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const asg = (await c.DiscoverObjects(CI, CU)).find(o => o.Name === 'Assignment')!;
+        expect(asg.Description).toBe('kept');
+        expect(asg.Label).toBe('Assignment (declared)');
+    });
+
+    it('NEVER excludes when the source did not answer — a failure is not an absence', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>not authorized</faultstring>', Headers: {} };
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name);
+        expect(names).toEqual(['Individual', 'Membership', 'FacadeObject']);
+    });
+});
+
 
 describe('NetForumConnector — SOAP faults carry netFORUM\'s own reason', () => {
     const FAULT = `<?xml version="1.0"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">

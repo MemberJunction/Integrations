@@ -298,26 +298,30 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     // ─── Discovery — Declared cache + runtime GetQueryDefinition ──────
 
     /**
-     * Standard objects = the Declared metadata (engine cache of persisted IntegrationObject rows).
-     * NO hardcoded catalog. The base implementation reads exactly the credential-free Declared
-     * universe; a live credential only ADDS customer-installed query objects (the Discovered
-     * extension), it never supplies the baseline — so this re-yields the standard universe
-     * credential-free and the runtime structure self-check passes without a token.
+     * Objects come from the SOURCE whenever the source can list them. netFORUM can:
+     * `GetFacadeObjectList` takes an empty request and returns every facade the credential may see
+     * (878 on a live tenant against a declared catalog of 34). It is called on every discovery — a
+     * connector that can enumerate must never report a baked-in list instead.
+     *
+     * The declared catalog remains the BASELINE, not the answer: declared rows are curated (APIPath,
+     * watermark, primary key, write capability) and an enumerated row carries a name, key and
+     * description, so declared always wins a name collision. Enumeration ADDS the rest.
+     *
+     * Credential-free (or if the account is not granted the method) this degrades to the declared
+     * baseline, so the runtime structure self-check still passes without a token.
      */
     public override async DiscoverObjects(
         ci: MJCompanyIntegrationEntity,
         cu: UserInfo,
     ): Promise<ExternalObjectSchema[]> {
         const declared = await this.DeclaredObjects(ci, cu);
-        const { enumerateAll, max } = this.ReadEnumerationFlags(ci);
-        if (!enumerateAll) return declared;
         try {
             const auth = await this.Authenticate(ci, cu) as NFAuthContext;
             const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
             const body = this.BuildSoapEnvelope('GetFacadeObjectList', {}, auth.Token);
             const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetFacadeObjectList'), body);
             if (r.Status >= 200 && r.Status < 300) {
-                return this.MergeEnumeratedObjects(declared, this.ParseFacadeObjectList(this.AsText(r.Body)), max);
+                return this.MergeEnumeratedObjects(declared, this.ParseFacadeObjectList(this.AsText(r.Body)));
             }
         } catch {
             // Credential-free, network failure, parse failure, or the account not granted
@@ -373,56 +377,54 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * Unions the enumerated universe onto the Declared baseline. DECLARED ALWAYS WINS on a name
-     * collision — the declared rows are curated (APIPath, watermark field, primary key, pagination,
-     * write capability) and the enumeration carries none of that, so replacing a declared object
-     * with its enumerated stub would silently downgrade a working object to an unsyncable name.
+     * Resolves the client's object set per the framework contract (everything.txt §2), which is a
+     * three-way reconciliation, NOT a union:
      *
-     * The enumeration's job is to make the REST of the installation visible for selection, not to
-     * restate what is already curated. On the tenant this was built against that is 34 declared
-     * objects plus ~844 newly visible ones.
+     *   in BOTH          -> keep, and overlay attribute-by-attribute with EXTERNAL SYSTEM PRIORITY.
+     *                       The source wins wherever it says something; the declared metadata is the
+     *                       FALLBACK for whatever the source is silent about. Asked per attribute,
+     *                       not per object: GetFacadeObjectList states a description, and says
+     *                       nothing about APIPath, watermark, primary key or write capability — so
+     *                       the description comes from the source and the rest from the declaration.
+     *
+     *   source ONLY      -> add. These are the client's custom/undeclared objects.
+     *
+     *   declared ONLY    -> EXCLUDE for this client. "if you have metadata for Objects A,B,C, and
+     *                       the external system has C,D,E ... you basically exclude A,B for this
+     *                       client as potential entity maps". A declared object the source does not
+     *                       list is not this tenant's object, and carrying it forward is what
+     *                       produces catalog rows that can never be fetched, have no provable
+     *                       primary key, and are skipped at materialisation.
+     *
+     * Exclusion applies ONLY when the source actually enumerated. If the call failed or the account
+     * is not granted it, DiscoverObjects returns the declared baseline untouched — absence of an
+     * answer must never be read as absence of an object.
      */
     private MergeEnumeratedObjects(
         declared: ExternalObjectSchema[],
         enumerated: ExternalObjectSchema[],
-        max: number,
     ): ExternalObjectSchema[] {
-        const byName = new Set(declared.map(o => o.Name.toLowerCase()));
-        const additions = enumerated
-            .filter(o => !byName.has(o.Name.toLowerCase()))
-            .sort((a, b) => a.Name.localeCompare(b.Name))
-            .slice(0, Math.max(0, max));
-        return [...declared, ...additions];
-    }
-
-    /**
-     * Enumeration is OPT-IN and BOUNDED, and both halves are deliberate.
-     *
-     * OPT-IN (`discoverAllObjects`, default false): `IntrospectSchema` builds from DiscoverObjects
-     * PLUS DiscoverFields, so every object returned here costs a GetQueryDefinition round trip. A
-     * real tenant enumerates 878 facades; at the ~14 minutes this connector takes for 34 objects that
-     * is far past the engine's 45-minute run deadline, and the run would be failed mid-Introspect with
-     * nothing persisted. Defaulting on would convert a working 34-object discovery into one that never
-     * finishes.
-     *
-     * BOUNDED (`discoverAllObjectsMax`, default 250): a cap the operator can raise deliberately, sorted
-     * by name so successive runs are stable rather than arbitrary. Truncation is silent to the caller,
-     * so the cap is named in config rather than hidden in code.
-     *
-     * The Declared baseline is returned unchanged when the flag is off — byte-identical to the
-     * behaviour before enumeration existed.
-     */
-    private ReadEnumerationFlags(ci: MJCompanyIntegrationEntity): { enumerateAll: boolean; max: number } {
-        try {
-            const cfg = ci.Configuration ? JSON.parse(ci.Configuration) as Record<string, unknown> : {};
-            const raw = cfg.discoverAllObjects;
-            const enumerateAll = raw === true || raw === 'true';
-            const maxRaw = Number(cfg.discoverAllObjectsMax);
-            const max = Number.isFinite(maxRaw) && maxRaw > 0 ? Math.floor(maxRaw) : 250;
-            return { enumerateAll, max };
-        } catch {
-            return { enumerateAll: false, max: 250 };
+        const declaredByName = new Map(declared.map(o => [o.Name.toLowerCase(), o]));
+        const resolved: ExternalObjectSchema[] = [];
+        for (const src of enumerated) {
+            const dec = declaredByName.get(src.Name.toLowerCase());
+            if (!dec) {
+                resolved.push(src);               // source only — bring it in
+                continue;
+            }
+            // The source's ONLY statement about an object is obj_description. ParseFacadeObjectList
+            // synthesises Label from the name when that is empty, so Label alone cannot distinguish
+            // "the source described it" from "the source said nothing" — gate both on the raw
+            // description, or a silent source would overwrite a curated label with the bare name.
+            const sourceSpoke = !!src.Description?.trim();
+            resolved.push({
+                ...dec,                            // declared is the fallback for everything
+                Name: dec.Name,                    // keep the declared casing the catalog is keyed on
+                Label: sourceSpoke ? src.Label : dec.Label,
+                Description: sourceSpoke ? src.Description : dec.Description,
+            });
         }
+        return resolved.sort((a, b) => a.Name.localeCompare(b.Name));
     }
 
     /**
