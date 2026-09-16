@@ -218,7 +218,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const headers = this.SoapHeaders('Authenticate');
         const response = await this.MakeRawHTTPRequest(url, 'POST', headers, body);
         if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`NetForum Authenticate failed: HTTP ${response.Status}`);
+            throw new Error(`NetForum Authenticate failed: HTTP ${response.Status}${this.SoapFault(response.Body)}`);
         }
         const token = this.ParseAuthenticateToken(this.AsText(response.Body));
         if (!token) {
@@ -308,7 +308,121 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         ci: MJCompanyIntegrationEntity,
         cu: UserInfo,
     ): Promise<ExternalObjectSchema[]> {
+        const declared = await this.DeclaredObjects(ci, cu);
+        const { enumerateAll, max } = this.ReadEnumerationFlags(ci);
+        if (!enumerateAll) return declared;
+        try {
+            const auth = await this.Authenticate(ci, cu) as NFAuthContext;
+            const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
+            const body = this.BuildSoapEnvelope('GetFacadeObjectList', {}, auth.Token);
+            const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetFacadeObjectList'), body);
+            if (r.Status >= 200 && r.Status < 300) {
+                return this.MergeEnumeratedObjects(declared, this.ParseFacadeObjectList(this.AsText(r.Body)), max);
+            }
+        } catch {
+            // Credential-free, network failure, parse failure, or the account not granted
+            // GetFacadeObjectList → the Declared baseline stands alone, exactly as before.
+        }
+        return declared;
+    }
+
+    /**
+     * The Declared baseline (engine cache of persisted IntegrationObject rows).
+     *
+     * `protected` so a unit-test subclass can supply a canned declared set — the same single-seam
+     * idiom MakeRawHTTPRequest uses. The base reads the IntegrationEngineBase singleton, which a
+     * test cannot intercept, and the declared-wins guarantee below is worth testing directly.
+     */
+    protected async DeclaredObjects(
+        ci: MJCompanyIntegrationEntity,
+        cu: UserInfo,
+    ): Promise<ExternalObjectSchema[]> {
         return super.DiscoverObjects(ci, cu);
+    }
+
+    /**
+     * Parses a GetFacadeObjectList response into the enumerated object universe.
+     *
+     * Verified shape (live, 2026-09-15): `<ObjectObjects>` containing one `<ObjectObject>` per facade,
+     * each carrying `<obj_name>`, `<obj_key>` and `<obj_description>`. 878 rows on a real tenant.
+     *
+     * Enumerated-only objects are reported HONESTLY as unknown-capability: the list gives a name and
+     * a description, never a watermark field or a write path, so `SupportsIncrementalSync` and
+     * `SupportsWrite` are false until the Declared metadata says otherwise. Claiming either from a
+     * bare name would promise a sync mode the connector cannot deliver.
+     */
+    private ParseFacadeObjectList(xml: string): ExternalObjectSchema[] {
+        const out: ExternalObjectSchema[] = [];
+        const seen = new Set<string>();
+        for (const row of this.ExtractElements(xml, 'ObjectObject')) {
+            const name = this.ParseSoapScalar(row, 'obj_name');
+            if (!name) continue;
+            const key = name.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            const description = this.ParseSoapScalar(row, 'obj_description');
+            out.push({
+                Name: name,
+                Label: description || name,
+                Description: description,
+                SupportsIncrementalSync: false,
+                SupportsWrite: false,
+            });
+        }
+        return out;
+    }
+
+    /**
+     * Unions the enumerated universe onto the Declared baseline. DECLARED ALWAYS WINS on a name
+     * collision — the declared rows are curated (APIPath, watermark field, primary key, pagination,
+     * write capability) and the enumeration carries none of that, so replacing a declared object
+     * with its enumerated stub would silently downgrade a working object to an unsyncable name.
+     *
+     * The enumeration's job is to make the REST of the installation visible for selection, not to
+     * restate what is already curated. On the tenant this was built against that is 34 declared
+     * objects plus ~844 newly visible ones.
+     */
+    private MergeEnumeratedObjects(
+        declared: ExternalObjectSchema[],
+        enumerated: ExternalObjectSchema[],
+        max: number,
+    ): ExternalObjectSchema[] {
+        const byName = new Set(declared.map(o => o.Name.toLowerCase()));
+        const additions = enumerated
+            .filter(o => !byName.has(o.Name.toLowerCase()))
+            .sort((a, b) => a.Name.localeCompare(b.Name))
+            .slice(0, Math.max(0, max));
+        return [...declared, ...additions];
+    }
+
+    /**
+     * Enumeration is OPT-IN and BOUNDED, and both halves are deliberate.
+     *
+     * OPT-IN (`discoverAllObjects`, default false): `IntrospectSchema` builds from DiscoverObjects
+     * PLUS DiscoverFields, so every object returned here costs a GetQueryDefinition round trip. A
+     * real tenant enumerates 878 facades; at the ~14 minutes this connector takes for 34 objects that
+     * is far past the engine's 45-minute run deadline, and the run would be failed mid-Introspect with
+     * nothing persisted. Defaulting on would convert a working 34-object discovery into one that never
+     * finishes.
+     *
+     * BOUNDED (`discoverAllObjectsMax`, default 250): a cap the operator can raise deliberately, sorted
+     * by name so successive runs are stable rather than arbitrary. Truncation is silent to the caller,
+     * so the cap is named in config rather than hidden in code.
+     *
+     * The Declared baseline is returned unchanged when the flag is off — byte-identical to the
+     * behaviour before enumeration existed.
+     */
+    private ReadEnumerationFlags(ci: MJCompanyIntegrationEntity): { enumerateAll: boolean; max: number } {
+        try {
+            const cfg = ci.Configuration ? JSON.parse(ci.Configuration) as Record<string, unknown> : {};
+            const raw = cfg.discoverAllObjects;
+            const enumerateAll = raw === true || raw === 'true';
+            const maxRaw = Number(cfg.discoverAllObjectsMax);
+            const max = Number.isFinite(maxRaw) && maxRaw > 0 ? Math.floor(maxRaw) : 250;
+            return { enumerateAll, max };
+        } catch {
+            return { enumerateAll: false, max: 250 };
+        }
     }
 
     /**
@@ -508,7 +622,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const envelope = this.BuildSoapEnvelope('GetQuery', args, auth.Token);
         const response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQuery'), envelope);
         if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}`);
+            throw new Error(`NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}`);
         }
 
         const rows = this.NormalizeResponse(response.Body, null);
@@ -633,7 +747,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const envelope = this.BuildSoapEnvelope(operation, ctx.Attributes, auth.Token);
         const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders(operation), envelope);
         if (r.Status < 200 || r.Status >= 300) {
-            return { Success: false, ExternalID: '', StatusCode: r.Status, ErrorMessage: `Create of "${ctx.ObjectName}" failed: HTTP ${r.Status}` };
+            return { Success: false, ExternalID: '', StatusCode: r.Status, ErrorMessage: `Create of "${ctx.ObjectName}" failed: HTTP ${r.Status}${this.SoapFault(r.Body)}` };
         }
         const externalID = this.ExtractKeyFromResponse(r.Body);
         return this.BuildCreatedResult(externalID, r.Status, ctx.ObjectName);
@@ -665,7 +779,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (r.Status >= 200 && r.Status < 300) {
             return { Success: true, ExternalID: ctx.ExternalID, StatusCode: r.Status };
         }
-        return { Success: false, ExternalID: ctx.ExternalID, StatusCode: r.Status, ErrorMessage: `Update of "${ctx.ObjectName}" failed: HTTP ${r.Status}` };
+        return { Success: false, ExternalID: ctx.ExternalID, StatusCode: r.Status, ErrorMessage: `Update of "${ctx.ObjectName}" failed: HTTP ${r.Status}${this.SoapFault(r.Body)}` };
     }
 
     /**
@@ -1028,6 +1142,21 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         } catch {
             return new Set<string>();
         }
+    }
+
+    /**
+     * The `<faultstring>` from a SOAP fault, formatted for appending to an error message.
+     *
+     * netFORUM says precisely what is wrong and who can fix it — "Account is not authorized to
+     * perform Select on Audience object." — and reporting only "HTTP 500" throws that away, turning
+     * a one-line permissions answer into a guessing game. Proven live 2026-09-15: ten objects failed
+     * discovery for this exact reason and the run reported only the status code.
+     *
+     * Returns '' when there is no faultstring, so callers can append unconditionally.
+     */
+    private SoapFault(body: unknown): string {
+        const fault = this.ParseSoapScalar(this.AsText(body), 'faultstring');
+        return fault ? ` — ${fault}` : '';
     }
 
     private AsText(body: unknown): string {
