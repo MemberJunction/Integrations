@@ -149,6 +149,8 @@ class MockedNetForumConnector extends NetForumConnector {
     public Responses: Record<string, RESTResponse> = {};
     /** The PK field name the mocked Individual object exposes. */
     public PkField = 'ind_cst_key';
+    /** Canned Declared baseline — curated objects, as the engine cache would supply them. */
+    public Declared: ExternalObjectSchema[] = [];
     /** Per-object capability/config the mocked cache reports. */
     public Caps: { SupportsCreate: boolean; SupportsUpdate: boolean; CreateBodyKey: string | null; UpdateBodyKey: string | null; IncrementalWatermarkField: string | null; Configuration: string | null } = {
         SupportsCreate: true,
@@ -163,6 +165,10 @@ class MockedNetForumConnector extends NetForumConnector {
             writeOps: { createOp: 'WEBIndividualInsert', updateOp: 'WEBIndividualUpdate' },
         }),
     };
+
+    protected override async DeclaredObjects(): Promise<ExternalObjectSchema[]> {
+        return this.Declared;
+    }
 
     protected override async MakeRawHTTPRequest(url: string, method: string, headers: Record<string, string>, body?: string): Promise<RESTResponse> {
         this.Requests.push({ url, method, headers, body });
@@ -514,5 +520,132 @@ describe('NetForumConnector — StableOrderingKey', () => {
         // prime LastIntegrationID via a fetch
         await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU });
         expect(c.StableOrderingKey('Individual')).toBe('ind_cst_key');
+    });
+});
+
+// ── GetFacadeObjectList — the VERIFIED live shape (probed 2026-09-15: 878 <ObjectObject> rows) ──
+const FACADE_OBJECT_LIST_XML = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>
+<GetFacadeObjectListResponse xmlns="http://www.avectra.com/2005/"><GetFacadeObjectListResult>
+<ObjectObjects>
+  <ObjectObject><obj_name>Individual</obj_name><obj_key>k1</obj_key><obj_description>Individual</obj_description></ObjectObject>
+  <ObjectObject><obj_name>Accreditation</obj_name><obj_key>k2</obj_key><obj_description>Accreditation record</obj_description></ObjectObject>
+  <ObjectObject><obj_name>AskLadder</obj_name><obj_key>k3</obj_key><obj_description>Ask Ladder</obj_description></ObjectObject>
+  <ObjectObject><obj_name>Assignment</obj_name><obj_key>k4</obj_key><obj_description></obj_description></ObjectObject>
+</ObjectObjects>
+</GetFacadeObjectListResult></GetFacadeObjectListResponse>
+</soap:Body></soap:Envelope>`;
+
+const CI_ENUMERATE = { IntegrationID: 'integ-1', CredentialID: undefined, Configuration: JSON.stringify({
+    BaseURL: 'https://test.netforum.example', Username: 'u', Password: 'p', discoverAllObjects: true,
+}) } as unknown as MJCompanyIntegrationEntity;
+
+describe('NetForumConnector — DiscoverObjects (GetFacadeObjectList enumeration)', () => {
+    it('does NOT enumerate by default — the declared baseline is returned untouched', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        await c.DiscoverObjects(CI, CU);
+        // The whole point: IntrospectSchema costs one GetQueryDefinition per object returned here,
+        // so enumerating 878 facades by default would never finish inside the run deadline.
+        const actions = c.Requests.map(r => (r.headers['SOAPAction'] ?? '').replace('http://www.avectra.com/2005/', ''));
+        expect(actions).not.toContain('GetFacadeObjectList');
+    });
+
+    it('enumerates when discoverAllObjects is set, parsing obj_name/obj_description', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
+        const names = objs.map(o => o.Name);
+        expect(names).toContain('Accreditation');
+        expect(names).toContain('AskLadder');
+        const acc = objs.find(o => o.Name === 'Accreditation')!;
+        expect(acc.Label).toBe('Accreditation record');
+        // Honest capability: a bare name proves neither incremental sync nor write support.
+        expect(acc.SupportsIncrementalSync).toBe(false);
+        expect(acc.SupportsWrite).toBe(false);
+    });
+
+    it('never reports the same object twice, and falls back to an empty description', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
+        const names = objs.map(o => o.Name.toLowerCase());
+        expect(new Set(names).size).toBe(names.length);
+        const asg = objs.find(o => o.Name === 'Assignment')!;
+        expect(asg.Label).toBe('Assignment'); // empty obj_description → Label falls back to the name
+    });
+
+    it('honours discoverAllObjectsMax so a huge installation cannot blow the run deadline', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const ci = { IntegrationID: 'integ-1', CredentialID: undefined, Configuration: JSON.stringify({
+            BaseURL: 'https://test.netforum.example', Username: 'u', Password: 'p',
+            discoverAllObjects: true, discoverAllObjectsMax: 2,
+        }) } as unknown as MJCompanyIntegrationEntity;
+        const objs = await c.DiscoverObjects(ci, CU);
+        const declared = await c.DiscoverObjects(CI, CU);
+        expect(objs.length).toBe(declared.length + 2);
+    });
+
+    it('falls back to the declared baseline when the account is not granted the method', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>Locked</faultstring>', Headers: {} };
+        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
+        const declared = await c.DiscoverObjects(CI, CU);
+        expect(objs.map(o => o.Name)).toEqual(declared.map(o => o.Name));
+    });
+});
+
+describe('NetForumConnector — enumeration must EXTEND the declared catalog, never replace it', () => {
+    it('keeps the curated declared object on a name collision, discarding the enumerated stub', async () => {
+        const c = makeConnector();
+        // "Individual" is curated: it knows it can sync incrementally and be written to.
+        c.Declared = [{ Name: 'Individual', Label: 'Individual (curated)', Description: 'curated',
+                        SupportsIncrementalSync: true, SupportsWrite: true }];
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
+
+        const individuals = objs.filter(o => o.Name === 'Individual');
+        expect(individuals).toHaveLength(1);
+        // The curated metadata survives — the enumerated stub would have said false/false and
+        // silently downgraded a working object to an unsyncable name.
+        expect(individuals[0].Label).toBe('Individual (curated)');
+        expect(individuals[0].SupportsIncrementalSync).toBe(true);
+        expect(individuals[0].SupportsWrite).toBe(true);
+    });
+
+    it('adds only the objects the declared catalog does not already cover', async () => {
+        const c = makeConnector();
+        c.Declared = [{ Name: 'Individual', Label: 'Individual', SupportsIncrementalSync: true, SupportsWrite: true }];
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const objs = await c.DiscoverObjects(CI_ENUMERATE, CU);
+        // fixture holds Individual + 3 others; Individual is already declared
+        expect(objs).toHaveLength(4);
+        expect(objs[0].Name).toBe('Individual'); // declared first, curated set intact
+    });
+});
+
+describe('NetForumConnector — SOAP faults carry netFORUM\'s own reason', () => {
+    const FAULT = `<?xml version="1.0"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body><soap:Fault><faultcode>soap:Server</faultcode>
+<faultstring>Account is not authorized to perform Select on Audience object.</faultstring>
+</soap:Fault></soap:Body></soap:Envelope>`;
+
+    it('surfaces the faultstring on a failed GetQuery instead of a bare status code', async () => {
+        const c = makeConnector();
+        c.Responses['GetQuery'] = { Status: 500, Body: FAULT, Headers: {} };
+        await expect(c.FetchChanges({
+            CompanyIntegration: CI, ContextUser: CU, ObjectName: 'Audience',
+            BatchSize: 10, WatermarkValue: null,
+        } as never)).rejects.toThrow(/not authorized to perform Select on Audience/);
+    });
+
+    it('still reports the status code when there is no faultstring', async () => {
+        const c = makeConnector();
+        c.Responses['GetQuery'] = { Status: 503, Body: '<html>gateway</html>', Headers: {} };
+        await expect(c.FetchChanges({
+            CompanyIntegration: CI, ContextUser: CU, ObjectName: 'Individual',
+            BatchSize: 10, WatermarkValue: null,
+        } as never)).rejects.toThrow(/HTTP 503/);
     });
 });
