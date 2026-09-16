@@ -1,5 +1,21 @@
 # @memberjunction/connector-netforum-enterprise
 
+## 1.4.0
+
+### Minor Changes
+
+- 56f99cc: **`DiscoverObjects` can now enumerate the installation instead of only replaying the declared catalog.** Through 1.3.6 the override existed but did nothing except `return super.DiscoverObjects(...)` — the persisted `IntegrationObject` rows — so discovery could never report more objects than were baked into the catalog, whatever the tenant actually exposes. Its own doc comment already claimed "a live credential only ADDS customer-installed query objects (the Discovered extension)"; no code did that. xWeb advertises `GetFacadeObjectList` with an EMPTY request, and on a live tenant it answers 878 facades against a declared catalog of 34. The connector now calls it and unions the result onto the declared baseline.
+
+  **The declared catalog always wins on a name collision.** Declared rows are curated — `APIPath`, watermark field, primary key, pagination, write capability — and the enumeration carries a name, a key and a description. Replacing a declared object with its enumerated stub would silently downgrade a working object to an unsyncable name, so enumerated entries are added only where the declared catalog has no object of that name. Enumerated-only objects report `SupportsIncrementalSync: false` and `SupportsWrite: false`: a bare name proves neither.
+
+  **Enumeration is opt-in (`discoverAllObjects`, default false) and bounded (`discoverAllObjectsMax`, default 250).** `IntrospectSchema` builds from `DiscoverObjects` PLUS `DiscoverFields`, so every object returned costs a `GetQueryDefinition` round trip. Live, this connector takes ~14 minutes for 34 objects; 878 would run far past the engine's 45-minute run deadline and the run would be failed mid-Introspect with nothing persisted — turning a working discovery into one that never finishes. Default-off keeps existing behaviour byte-identical; a failure of any kind (method not granted, network, parse) falls back to the declared baseline.
+
+  **SOAP faults now carry netFORUM's own reason instead of a bare status code.** `Authenticate`, `GetQuery`, create and update reported only `HTTP 500`, discarding the `<faultstring>` the server sent. Live evidence: a discovery run reported `NetForum GetQuery(Audience) failed: HTTP 500` for ten objects, while netFORUM was saying `Account is not authorized to perform Select on Audience object.` — a one-line answer naming both the cause and who can fix it. The status code alone sent the investigation through transport faults, catalog-authoring errors and per-method security before the real cause surfaced.
+
+  Live evidence (2026-09-15, probe tenant): `GetFacadeObjectList` → HTTP 200, 155,737 bytes, 878 `<ObjectObject>` rows of `<obj_name>`/`<obj_key>`/`<obj_description>`. Of the 34 declared objects, 24 are visible to the probe credential and 10 are not — and those 10 are exactly the ones whose `GetQuery` returned 500. `GetFacadeXMLSchema(Audience)` returns the authorization faultstring above, which also shows `GetFacadeObjectList` is permission-scoped: the 878 is what this account may see, a floor rather than a ceiling. 1.3.5 already recorded this for one object ("MembershipBilling is not readable by the probe credential"); it is ten.
+
+  No catalog rows are added, removed or re-minted, and no migration ships with this change. The ten unreadable objects are a NetForum admin grant, not a code defect — the connector's job here is to say so.
+
 ## 1.3.6
 
 ### Patch Changes
