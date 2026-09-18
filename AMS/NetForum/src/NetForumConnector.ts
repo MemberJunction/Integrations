@@ -462,9 +462,25 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * IntrospectSchema — pure WIRING of MJ's existing sampler into the declared catalog (the connector
-     * sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md). This connector adds NO discovery,
-     * merge, or sync logic — it only wires `DiscoverFieldsViaFetch` (MJ's sampler) into IntrospectSchema.
+     * IntrospectSchema — resolves each object's columns in the contract's order:
+     *   1. DiscoverObjects  — the endpoint's object list (GetFacadeObjectList), reconciled in 1.5.0
+     *   2. DiscoverFields   — the endpoint's COLUMN list (GetQueryDefinition), added here
+     *   3. Sampling         — streams records for what only data can answer: measured string widths,
+     *                         primary-key significance, and custom columns findable no other way
+     *
+     * Step 2 was missing. This method went straight from the declared catalog to sampling, so any
+     * object without declared metadata could only get columns if streaming its records happened to
+     * work. After 1.5.0 enumerated 878 objects, 862 of them landed with ZERO columns — and therefore
+     * no key, no table, and an RSU that emitted a migration with no DDL — while GetQueryDefinition
+     * could describe every one of them. Measured 2026-09-18: `Abstract Author` 137 columns,
+     * `AccountingPeriod` 58, `Individual` 1161, no faults. The endpoint also returns type,
+     * nullability and mdc_width_max, so widths no longer depend on sampling reaching the object.
+     *
+     * Ordering matters beyond correctness: one schema call per object costs nothing next to paging
+     * rows, so the column list no longer competes with the run deadline.
+     *
+     * Sampling remains UNCONDITIONAL — it is not gated on what the endpoint returned. It is the only
+     * source for PK statistics and for columns that exist in data but in no schema.
      *
      * `super.IntrospectSchema` yields the cache-driven Declared catalog (no measured widths). For each
      * object we then call MJ's `DiscoverFieldsViaFetch` — MJ's own read-path sampler that measures real
@@ -472,25 +488,56 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * unions the two by field name (adopt MJ's measured width; append MJ-discovered custom columns). MJ
      * owns everything else (measurement, type/PK inference, persistence, reconcile, sync).
      *
-     * Recursion note: `DiscoverFieldsViaFetch` falls back to the UNCHANGED `DiscoverFields` (cache-driven)
-     * when the read path can't run — never back into THIS method — so there is no infinite recursion.
-     * This connector does NOT override `DiscoverFields` to call any ViaFetch/ViaStream.
+     * Recursion note: `DiscoverFieldsViaFetch` falls back to `DiscoverFields`, never back into THIS
+     * method, so there is no infinite recursion. `DiscoverFields` itself does NOT call any
+     * ViaFetch/ViaStream — it is the endpoint path.
      *
      * Robustness: objects are sampled IN PARALLEL under a small bounded pool; any per-object failure
      * keeps that object's declared fields, so a single bad sample never breaks introspection.
      */
+    /**
+     * Test seam over the cache-driven declared catalog, mirroring {@link DeclaredObjects}.
+     * `super.IntrospectSchema` reads the IntegrationEngineBase singleton, which a unit test cannot
+     * stand up — without this, the step ordering in IntrospectSchema is untestable and the missing
+     * DiscoverFields call went unnoticed through 38 passing tests.
+     */
+    protected async DeclaredSchema(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+    ): Promise<SourceSchemaInfo> {
+        return super.IntrospectSchema(companyIntegration, contextUser);
+    }
+
     public override async IntrospectSchema(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo
     ): Promise<SourceSchemaInfo> {
-        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
+        const schema = await this.DeclaredSchema(companyIntegration, contextUser);
 
         await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
+            // Step 2 — the endpoint's column list. DiscoverFields already reconciles GetQueryDefinition
+            // against the declared baseline and degrades to declared on any failure, so an empty or
+            // faulting response leaves this object exactly as it was.
+            try {
+                const fromEndpoint = await this.DiscoverFields(companyIntegration, obj.ExternalName, contextUser);
+                if (fromEndpoint.length > 0) {
+                    // Same shared merge the sampling pass uses: it folds an ExternalFieldSchema[] into
+                    // the object's SourceFieldInfo[] by name, adopting the endpoint's width and
+                    // appending columns the declared baseline never had. For an enumerated-only object
+                    // the declared side is empty, so the result is simply the endpoint's column list.
+                    obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, fromEndpoint);
+                }
+            } catch {
+                // Endpoint unreachable for this object — keep the declared fields and let sampling try.
+            }
+
+            // Step 3 — sampling, unchanged and unconditional. Merges measured widths and any column
+            // that exists in the data but in neither the declared metadata nor the endpoint.
             try {
                 const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
                 obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
             } catch {
-                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
+                // Keep what we have — sampling is best-effort and never breaks introspection.
             }
         });
 
