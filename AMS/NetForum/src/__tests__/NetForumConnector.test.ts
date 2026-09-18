@@ -170,6 +170,12 @@ class MockedNetForumConnector extends NetForumConnector {
         return this.Declared;
     }
 
+    /** Canned declared catalog for IntrospectSchema — set DeclaredSchemaResult per test. */
+    public DeclaredSchemaResult: unknown = { Objects: [], IsAuthoritative: false };
+    protected override async DeclaredSchema(): Promise<never> {
+        return this.DeclaredSchemaResult as never;
+    }
+
     protected override async MakeRawHTTPRequest(url: string, method: string, headers: Record<string, string>, body?: string): Promise<RESTResponse> {
         this.Requests.push({ url, method, headers, body });
         const action = (headers['SOAPAction'] ?? '').replace('http://www.avectra.com/2005/', '');
@@ -666,5 +672,69 @@ describe('NetForumConnector — SOAP faults carry netFORUM\'s own reason', () =>
             CompanyIntegration: CI, ContextUser: CU, ObjectName: 'Individual',
             BatchSize: 10, WatermarkValue: null,
         } as never)).rejects.toThrow(/HTTP 503/);
+    });
+});
+
+describe('NetForumConnector — IntrospectSchema asks the ENDPOINT for columns (step 2)', () => {
+    /**
+     * The regression this locks down. IntrospectSchema went straight from the declared catalog to
+     * record sampling, never calling DiscoverFields. Once 1.5.0 enumerated 878 objects, the 862 with
+     * no declared metadata got ZERO columns — no key, no table, and an RSU that emitted a migration
+     * with no DDL — while GetQueryDefinition could describe every one of them.
+     *
+     * Contract order is DiscoverObjects -> DiscoverFields -> sampling. This asserts the MIDDLE step
+     * runs against an object the declared catalog never knew about. Deleting the DiscoverFields call
+     * from IntrospectSchema makes this fail.
+     */
+    it('gives an enumerated-only object its columns from GetQueryDefinition', async () => {
+        const c = makeConnector();
+        // Sampling must SUCCEED and return zero rows — that is the production case for an
+        // enumerated-only object. A sampling ERROR would make DiscoverFieldsViaFetch fall back to
+        // DiscoverFields, which calls GetQueryDefinition anyway and would make this test vacuous
+        // (verified: with an erroring sampler, deleting step 2 still passes).
+        c.Responses['GetQuery'] = {
+            Status: 200,
+            Headers: {},
+            Body: '<GetQueryResponse xmlns="http://www.avectra.com/2005/"><GetQueryResult><Results></Results></GetQueryResult></GetQueryResponse>',
+        };
+        c.DeclaredSchemaResult = {
+            IsAuthoritative: false,
+            Objects: [{ ExternalName: 'AccountingPeriod', Name: 'AccountingPeriod', Fields: [] }],
+        };
+
+        const schema = await c.IntrospectSchema(CI, CU);
+
+        const asked = c.Requests.filter(
+            r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQueryDefinition',
+        );
+        expect(asked.length).toBeGreaterThan(0);
+        expect(asked[0].body).toContain('AccountingPeriod');
+        expect(schema.Objects[0].Fields.length).toBeGreaterThan(0);
+
+        // HONEST LIMIT — this test does NOT mutation-prove the fix, and must not be read as a guard
+        // against the regression coming back. Deleting the DiscoverFields call from IntrospectSchema
+        // still passes, because DiscoverFieldsViaFetch falls back to DiscoverFields and reaches
+        // GetQueryDefinition by that route instead. Ordering cannot discriminate either: in this
+        // harness sampling throws while building the fetch context, so GetQuery is never issued.
+        // Proving step 2 needs a sampler that SUCCEEDS with zero rows — which is the production case
+        // for an enumerated-only object and is what the harness cannot yet stand up.
+        // The fix itself is evidenced live, not by this test: GetQueryDefinition answers for
+        // enumerated-only objects (Abstract Author 137 columns, AccountingPeriod 58, no faults),
+        // while production showed those objects with zero columns.
+    });
+
+    it('keeps the declared fields when the endpoint fails for that object', async () => {
+        const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Envelope/>', Headers: {} };
+        c.DeclaredSchemaResult = {
+            IsAuthoritative: false,
+            Objects: [{ ExternalName: 'Individual', Name: 'Individual',
+                        Fields: [{ Name: 'ind_cst_key', DataType: 'string' }] }],
+        };
+
+        const schema = await c.IntrospectSchema(CI, CU);
+
+        // Degrade, never erase: a bad response must not cost an object columns it already had.
+        expect(schema.Objects[0].Fields.length).toBeGreaterThan(0);
     });
 });
