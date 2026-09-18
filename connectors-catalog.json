@@ -102,10 +102,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-netforum-enterprise",
       "npmPackage": "@memberjunction/connector-netforum-enterprise",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "AMS/NetForum",
-      "installTag": "AMS-NetForum@1.6.0"
+      "installTag": "AMS-NetForum@1.6.1"
     },
     {
       "name": "Nimble AMS",
