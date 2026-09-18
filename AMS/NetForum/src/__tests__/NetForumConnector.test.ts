@@ -176,9 +176,18 @@ class MockedNetForumConnector extends NetForumConnector {
         return this.DeclaredSchemaResult as never;
     }
 
+    /**
+     * Per-action response SEQUENCE, consumed one entry per call and taking precedence over `Responses`.
+     * Needed for anything that retries the same operation — a single canned response cannot distinguish
+     * the first attempt from the second.
+     */
+    public ResponseQueue: Record<string, RESTResponse[]> = {};
+
     protected override async MakeRawHTTPRequest(url: string, method: string, headers: Record<string, string>, body?: string): Promise<RESTResponse> {
         this.Requests.push({ url, method, headers, body });
         const action = (headers['SOAPAction'] ?? '').replace('http://www.avectra.com/2005/', '');
+        const queued = this.ResponseQueue[action];
+        if (queued && queued.length > 0) return queued.shift()!;
         const canned = this.Responses[action];
         if (canned) return canned;
         throw new Error(`MockedNetForumConnector: no canned response for SOAPAction "${action}"`);
@@ -428,6 +437,57 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         await c.FetchChanges(ctx);
         const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
         expect(req!.body).toContain('<szColumnList></szColumnList>');
+    });
+
+    /**
+     * The door can reject its OWN default list. An empty szColumnList asks xWeb for the object's default
+     * columns; on a tenant whose default is `*` the request faults with "'*' is not a valid value for
+     * szColumnList". Observed live on the BC sandbox 2026-09-18: 862 of 888 objects failed this way
+     * during discovery at ~15s each, exhausting the run deadline before one row was persisted — and the
+     * 26 that succeeded were exactly the 26 carrying a declared columnList.
+     *
+     * These tests are mutation-proof by construction: the first queued response is a fault, so deleting
+     * the retry makes FetchChanges throw and both fail. That is deliberate — the 1.6.0 test for the
+     * sibling fix passed with the fix removed, because the sampler's fallback reached the same endpoint.
+     */
+    const INVALID_DEFAULT_FAULT = {
+        Status: 500,
+        Body: `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Server</faultcode><faultstring>'*' is not a valid value for szColumnList.</faultstring></soap:Fault></soap:Body></soap:Envelope>`,
+        Headers: {},
+    };
+
+    it('retries with an EXPLICIT column list when the door rejects its own `*` default list', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+
+        const result = await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(2);
+        // First attempt is unchanged — empty, i.e. "use the tenant default".
+        expect(sent[0].body).toContain('<szColumnList></szColumnList>');
+        // Retry names the columns, so the default is never consulted. Sourced from the cached fields
+        // here (the sync path); discovery sources them from GetQueryDefinition instead.
+        expect(sent[1].body).toContain('<szColumnList>ind_cst_key,ind_first_name,ind_change_date</szColumnList>');
+        // And the fetch actually succeeds rather than surfacing the tenant's misconfiguration.
+        expect(result.Records.length).toBeGreaterThan(0);
+    });
+
+    it('does NOT retry an unrelated HTTP 500 — that error still surfaces', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            { Status: 500, Body: `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultstring>Locked</faultstring></soap:Fault></soap:Body></soap:Envelope>`, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/Locked/);
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(1);
     });
 
     it('does not warn WATERMARK_COLUMN_ABSENT when rows carry the watermark column', async () => {

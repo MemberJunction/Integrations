@@ -295,6 +295,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         }
     }
 
+    /**
+     * Column names GetQueryDefinition returned for an object during THIS process's discovery, keyed by
+     * lowercased external name. It exists for one reason: on a tenant whose xWeb default list is itself
+     * `*`, an empty szColumnList makes the door fault on its own default ("'*' is not a valid value for
+     * szColumnList"), and during introspection the discovered fields are not persisted yet, so
+     * GetCachedFields cannot supply a replacement. Step 2 already has the answer — keep it for step 3.
+     */
+    private readonly DiscoveredColumnsByObject = new Map<string, string[]>();
+
     // ─── Discovery — Declared cache + runtime GetQueryDefinition ──────
 
     /**
@@ -521,6 +530,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             try {
                 const fromEndpoint = await this.DiscoverFields(companyIntegration, obj.ExternalName, contextUser);
                 if (fromEndpoint.length > 0) {
+                    // Hand step 2's answer to step 3: sampling needs a named column list on tenants
+                    // whose default list is `*`, and nothing else in the run knows these names yet.
+                    this.DiscoveredColumnsByObject.set(
+                        obj.ExternalName.toLowerCase(),
+                        fromEndpoint.map(f => f.Name).filter(n => !!n),
+                    );
                     // Same shared merge the sampling pass uses: it folds an ExternalFieldSchema[] into
                     // the object's SourceFieldInfo[] by name, adopting the endpoint's width and
                     // appending columns the declared baseline never had. For an enumerated-only object
@@ -668,8 +683,30 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (orderingKey) args.szOrderBy = orderingKey;
 
         const url = `${auth.Config.BaseURL}${this.SoapEndpoint(cfg)}`;
-        const envelope = this.BuildSoapEnvelope('GetQuery', args, auth.Token);
-        const response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQuery'), envelope);
+        let response = await this.MakeRawHTTPRequest(
+            url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
+        );
+
+        // The door can reject ITS OWN default list. An empty szColumnList asks xWeb for the object's
+        // configured default columns, and on a tenant where that default is `*` the request faults with
+        // "'*' is not a valid value for szColumnList" — a fault about the tenant's configuration, not
+        // about anything this connector sent. Observed on the BC sandbox 2026-09-18: 862 of 888 objects
+        // faulted this way during discovery, ~15s each, which exhausted the run deadline before a single
+        // row was persisted. The 26 that worked were exactly the 26 carrying a declared columnList.
+        //
+        // Retry ONCE with an explicit list. Named columns bypass the default entirely, so this turns a
+        // certain failure into a normal fetch without changing behaviour on tenants whose default is
+        // usable — they never reach this branch.
+        if (this.IsInvalidDefaultColumnListFault(response)) {
+            const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            if (explicit) {
+                response = await this.MakeRawHTTPRequest(
+                    url, 'POST', this.SoapHeaders('GetQuery'),
+                    this.BuildSoapEnvelope('GetQuery', { ...args, szColumnList: explicit }, auth.Token),
+                );
+            }
+        }
+
         if (response.Status < 200 || response.Status >= 300) {
             throw new Error(`NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}`);
         }
@@ -751,6 +788,46 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * those are what FetchChanges reads. Comma-joined, as the vendor's own examples are; duplicates
      * (case-insensitive) collapse to the first spelling.
      */
+    /**
+     * True when a GetQuery response is xWeb refusing its OWN configured default column list. The door
+     * substitutes the object's default list for an empty szColumnList, and a tenant whose default is
+     * `*` gets that value rejected by the same call that supplied it. Matched on the vendor's wording
+     * rather than the status alone, so an unrelated HTTP 500 still surfaces as the error it is.
+     */
+    private IsInvalidDefaultColumnListFault(response: { Status: number; Body: unknown }): boolean {
+        if (response.Status < 400) return false;
+        const fault = this.SoapFault(response.Body);
+        return typeof fault === 'string' && /not a valid value for szColumnList/i.test(fault);
+    }
+
+    /**
+     * An explicit, non-empty column list for an object whose tenant default is unusable, drawn from the
+     * best source available at the moment of the call:
+     *   1. columns GetQueryDefinition returned earlier in this discovery run (introspection — the
+     *      fields are not persisted yet, so this is the only source),
+     *   2. the object's cached fields (sync — discovery has already persisted them).
+     * `required` is appended because the door returns ONLY named columns and FetchChanges reads the
+     * primary key, the ordering key and the watermark. Empty when nothing is known, which leaves the
+     * original fault to surface rather than sending a request we cannot justify.
+     */
+    private ExplicitColumnListFor(obj: MJIntegrationObjectEntity, required: Array<string | undefined>): string {
+        const discovered = this.DiscoveredColumnsByObject.get(obj.Name.toLowerCase()) ?? [];
+        const known = discovered.length > 0
+            ? discovered
+            : this.GetCachedFields(obj.ID).map(f => f.Name).filter((n): n is string => !!n);
+        if (known.length === 0) return '';
+        const out: string[] = [];
+        const seen = new Set<string>();
+        for (const c of [...known, ...required]) {
+            if (!c) continue;
+            const key = c.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(c);
+        }
+        return out.join(',');
+    }
+
     private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>): string {
         const declared = Array.isArray(cfg.columnList)
             ? cfg.columnList.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).map(c => c.trim())
