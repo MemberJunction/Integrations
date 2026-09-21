@@ -304,6 +304,19 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      */
     private readonly DiscoveredColumnsByObject = new Map<string, string[]>();
 
+    /**
+     * CompanyIntegration IDs whose xWeb default column list is unusable.
+     *
+     * xWeb counts FAULTS, not calls, against `MethodsFaultLimitPerDay` (default 100 per user+IP),
+     * and it does NOT auto-reset — a vendor clears it by hand. The retry in FetchChanges learns the
+     * default is bad by faulting, which is correct once and ruinous repeated: without this set it
+     * re-learned it on EVERY call, so a tenant whose default resolves to `*` spent one fault per
+     * object. 888 objects on the BC sandbox meant >=888 faults against a budget of 100, which is
+     * what locked the account on 2026-09-05 and again on 2026-09-19 — our request shape, not the
+     * tenant's data. Remembering the answer costs one fault instead of hundreds.
+     */
+    private readonly DefaultColumnListUnusable = new Set<string>();
+
     // ─── Discovery — Declared cache + runtime GetQueryDefinition ──────
 
     /**
@@ -683,6 +696,22 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (orderingKey) args.szOrderBy = orderingKey;
 
         const url = `${auth.Config.BaseURL}${this.SoapEndpoint(cfg)}`;
+
+        // Once this connection is known to have an unusable default list, lead with the explicit list
+        // rather than paying another fault to re-discover what we already know (see the field's doc).
+        //
+        // Deliberately narrow. This only REORDERS two requests that were going to be sent in sequence
+        // anyway, and only when an explicit list actually exists; with nothing better to send it falls
+        // through to the original empty request unchanged. So a tenant whose defaults are fine never
+        // reaches it, and — because netFORUM configures the default list PER OBJECT — an object whose
+        // own default is fine on a tenant where others are not still gets its normal request.
+        const faultKey = ctx.CompanyIntegration?.ID ?? '';
+        if (!args.szColumnList && this.DefaultColumnListUnusable.has(faultKey)) {
+            const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            if (known) args.szColumnList = known;
+        }
+        const sentEmptyColumnList = !args.szColumnList;
+
         let response = await this.MakeRawHTTPRequest(
             url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
         );
@@ -698,6 +727,10 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // certain failure into a normal fetch without changing behaviour on tenants whose default is
         // usable — they never reach this branch.
         if (this.IsInvalidDefaultColumnListFault(response)) {
+            // Remember, but ONLY when the empty list is what the door rejected. A declared
+            // Configuration.columnList drawing this same fault is a different defect and must keep
+            // surfacing per call, rather than silently changing what every later object sends.
+            if (sentEmptyColumnList) this.DefaultColumnListUnusable.add(faultKey);
             const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
             if (explicit) {
                 response = await this.MakeRawHTTPRequest(
