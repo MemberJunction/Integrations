@@ -490,6 +490,103 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         expect(sent).toHaveLength(1);
     });
 
+    /**
+     * THE FAULT BUDGET. xWeb counts FAULTS, not calls, against `MethodsFaultLimitPerDay` (default 100
+     * per user+IP) and does NOT auto-reset — a vendor clears it by hand. The retry above is correct
+     * once and ruinous repeated: before the latch it re-learned the tenant's default was bad on EVERY
+     * call, so 888 objects cost >=888 faults against a budget of 100. That is what locked the BC
+     * sandbox account on 2026-09-05 and again on 2026-09-19 — our request shape, not the tenant's data.
+     *
+     * These assert the REQUEST COUNT, which is the only thing that maps to fault spend. Asserting the
+     * column list alone would pass on an implementation that computes the right list and still sends
+     * the doomed empty request first.
+     */
+    const CI_A = { ...CI, ID: 'ci-aaa' } as unknown as MJCompanyIntegrationEntity;
+    const CI_B = { ...CI, ID: 'ci-bbb' } as unknown as MJCompanyIntegrationEntity;
+
+    it('pays the fault ONCE per connection — the second fetch leads with the explicit list', async () => {
+        const c = makeConnector();
+        // Only the FIRST GetQuery faults. If the second fetch still opened with an empty list it would
+        // consume the 200 queued here and then have nothing for its retry, so a regression cannot pass
+        // this by accident — the request count is checked directly besides.
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+
+        await c.FetchChanges(ctx);
+        await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        // 2 for the first fetch (empty -> fault -> explicit), 1 for the second. NOT 4.
+        expect(sent).toHaveLength(3);
+        expect(sent[0].body).toContain('<szColumnList></szColumnList>');
+        expect(sent[1].body).toContain('<szColumnList>ind_cst_key,ind_first_name,ind_change_date</szColumnList>');
+        // The whole point: the second fetch never sends an empty list, so it never costs a fault.
+        expect(sent[2].body).not.toContain('<szColumnList></szColumnList>');
+        expect(sent[2].body).toContain('<szColumnList>ind_cst_key,ind_first_name,ind_change_date</szColumnList>');
+    });
+
+    it('latches per connection — a different connection is not assumed broken', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,                                  // A: empty -> fault
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },       // A: explicit -> ok
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },       // B: empty -> ok (its default is fine)
+        ];
+        await c.FetchChanges({ CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU });
+        await c.FetchChanges({ CompanyIntegration: CI_B, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU });
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(3);
+        // B must still ask for the tenant default. Sharing one connection's verdict across every
+        // connection in the process would send a narrowed column list to a tenant that never needed it.
+        expect(sent[2].body).toContain('<szColumnList></szColumnList>');
+    });
+
+    it('never overwrites a DECLARED columnList, even once latched', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+
+        // Now declare one. The latch must not touch it — a declaration is the operator's explicit
+        // instruction and outranks anything inferred from a fault.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_last_name'] }) };
+        await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(3);
+        expect(sent[2].body).toContain('<szColumnList>ind_last_name,ind_cst_key,ind_change_date</szColumnList>');
+    });
+
+    it('does NOT latch when a DECLARED list is what the door rejected', async () => {
+        const c = makeConnector();
+        // Same fault wording, different cause: the operator's own list was refused. Latching on it
+        // would silently narrow what every later object sends, hiding a real declaration bug.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_last_name'] }) };
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+
+        // Remove the declaration; the connection must be UNLATCHED, so this asks for the default again.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ BaseURL: 'https://test.netforum.example', Username: 'u', Password: 'p' }) };
+        await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent[sent.length - 1].body).toContain('<szColumnList></szColumnList>');
+    });
+
     it('does not warn WATERMARK_COLUMN_ABSENT when rows carry the watermark column', async () => {
         const c = makeConnector();
         const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
