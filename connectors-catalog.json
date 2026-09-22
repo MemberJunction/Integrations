@@ -383,7 +383,7 @@
     {
       "name": "OpenWater",
       "displayName": "OpenWater Connector",
-      "description": "OpenWater awards/grants/abstracts/fellowship platform connector — pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "description": "OpenWater awards/grants/abstracts/fellowship connector — pull sync of programs, applications, users, invoices, judges, rounds and review objects via Public API v2. Catalog is DECLARED (vendor has no enumeration API); see Configuration.DeclaredAgainst.",
       "category": "Events",
       "tags": [
         "openwater",
@@ -392,7 +392,7 @@
         "integration"
       ],
       "logo": "fa-solid fa-trophy",
-      "navigationBaseURL": "https://api.getopenwater.com",
+      "navigationBaseURL": "https://{tenant}.secure-platform.com",
       "objectCount": 30,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
