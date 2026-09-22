@@ -4,10 +4,33 @@
       "Name": "OpenWater",
       "Icon": "fa-solid fa-trophy",
       "ClassName": "@memberjunction/connector-openwater",
-      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector \u2014 pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "Description": "OpenWater awards/grants/abstracts/fellowship connector \u2014 pull sync of programs, applications, users, invoices, judges, rounds and review objects via Public API v2. Catalog is DECLARED (vendor has no enumeration API); see Configuration.DeclaredAgainst.",
       "ImportPath": "@memberjunction/connector-openwater",
-      "NavigationBaseURL": "https://api.getopenwater.com",
-      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API"
+      "NavigationBaseURL": "https://{tenant}.secure-platform.com",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API",
+      "Configuration": {
+        "DeclaredAgainst": {
+          "swagger": {
+            "url": "https://api.secure-platform.com/swagger/v2/swagger.json",
+            "accessedAt": "2026-09-22",
+            "sha256": "1abdc36cd18add8a0fea16a66530a9141c2b2c7998906af81130d738b5798747",
+            "sizeBytes": 437128,
+            "specFormat": "OpenAPI 3.0.1",
+            "apiTitle": "OpenWater API 2.0",
+            "pathCount": 92,
+            "getPathCount": 46,
+            "schemaCount": 231,
+            "authentication": "none required to read the document"
+          },
+          "catalogIsContract": true,
+          "catalogIsContractNote": "None of the 92 paths enumerates the object surface, so live discovery is not possible for this vendor. DiscoverObjects, DiscoverFields and IntrospectSchema read the Declared catalog from the engine cache and DiscoveryIsAuthoritative stays false, so the platform is never told that a live enumeration happened. The object list is therefore the connector version: a collection OpenWater adds after accessedAt cannot appear on any tenant until this catalog is re-declared against a newer swagger.",
+          "howToRecheck": "Fetch swagger.url, compare sha256; if it changed, diff its GET paths against the set of APIPath, AccessPath.doorPath, AccessPath.entryPath, alternativePaths and harvestDetailPath values in this catalog. A GET list path with no match is an undeclared object.",
+          "surfaceCoverageAt": "2026-09-22",
+          "surfaceCoverageNote": "Every GET path not referenced by the catalog on this date is a per-record detail (/{id}), a form template, or a settings singleton. No undeclared list collection existed. Per-record detail data (Evaluation scores and answers, Session chairs and items, User flags) is tracked separately as extraction work, not as a catalog gap.",
+          "catalogLastEditedAt": "2026-09-22",
+          "catalogLastEditedNote": "Added this pin, extended Description, and replaced NavigationBaseURL (api.getopenwater.com no longer resolves; the live API host is the shared api.secure-platform.com and each tenant UI lives at its own subdomain, which is the connection ClientKey). No object or field changed."
+        }
+      }
     },
     "relatedEntities": {
       "MJ: Integration Objects": [
