@@ -2077,7 +2077,7 @@
       "IncrementalWatermarkField": null,
       "DefaultQueryParams": "wsfunction=core_completion_get_course_completion_status&moodlewsrestformat=json",
       "Sequence": 4,
-      "Status": "Active",
+      "Status": "Disabled",
       "Configuration": {
        "wsfunction": "core_completion_get_course_completion_status",
        "responseEnvelopeKey": "completionstatus",
@@ -2191,7 +2191,7 @@
       "IncrementalWatermarkField": null,
       "DefaultQueryParams": "wsfunction=core_completion_get_activities_completion_status&moodlewsrestformat=json",
       "Sequence": 5,
-      "Status": "Active",
+      "Status": "Disabled",
       "Configuration": {
        "wsfunction": "core_completion_get_activities_completion_status",
        "responseEnvelopeKey": "statuses",
@@ -5245,7 +5245,7 @@
       "IncrementalWatermarkField": null,
       "DefaultQueryParams": "wsfunction=gradereport_user_get_grade_items&moodlewsrestformat=json",
       "Sequence": 14,
-      "Status": "Active",
+      "Status": "Disabled",
       "Configuration": {
        "wsfunction": "gradereport_user_get_grade_items",
        "responseEnvelopeKey": "usergrades",
@@ -5413,7 +5413,7 @@
       "IncrementalWatermarkField": null,
       "DefaultQueryParams": "wsfunction=gradereport_overview_get_course_grades&moodlewsrestformat=json",
       "Sequence": 15,
-      "Status": "Active",
+      "Status": "Disabled",
       "Configuration": {
        "wsfunction": "gradereport_overview_get_course_grades",
        "responseEnvelopeKey": "grades",
