@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/lint-writable-pk.mjs --write",
   "scope": "read-only",
-  "count": 260,
+  "count": 264,
   "keys": [
     "AMS/iMIS::AutoPayProcessor",
     "AMS/iMIS::ContentItem",
@@ -154,6 +154,10 @@
     "Events/Eventscribe::PosterImages",
     "Events/Eventscribe::ReviewQuestion",
     "Events/Eventscribe::Slide",
+    "Events/OpenWater::ApplicationJudgeScorecard",
+    "Events/OpenWater::ApplicationPendingRecommendation",
+    "Events/OpenWater::ApplicationReceivedRecommendation",
+    "Events/OpenWater::ApplicationScoringQuestionScore",
     "Events/PheedLoop::EventAttendance",
     "Finance/NetSuite::InvoiceItem",
     "Finance/NetSuite::SalesOrderItem",

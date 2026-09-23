@@ -41,7 +41,7 @@ jobs:
       # so a keyless one either costs the soft-PK classifier a per-tenant inference
       # at every discovery (the stage that exhausted memory on an 888-object
       # catalog) or lands `entity.skipped-no-pk` and never syncs while the picker
-      # still offers it. Ratcheted against scripts/readonly-pk-baseline.json (260
+      # still offers it. Ratcheted against scripts/readonly-pk-baseline.json (264
       # at seeding); anything new fails, and a fixed entry must leave the file.
       # Disabled objects are exempt: the engine does not offer them.
       - name: Active objects declare a primary key
