@@ -393,7 +393,7 @@
       ],
       "logo": "fa-solid fa-trophy",
       "navigationBaseURL": "https://{tenant}.secure-platform.com",
-      "objectCount": 30,
+      "objectCount": 34,
       "className": "@memberjunction/connector-openwater",
       "npmPackage": "@memberjunction/connector-openwater",
       "version": "1.3.10",

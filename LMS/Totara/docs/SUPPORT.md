@@ -2,7 +2,7 @@
 
 > **Evidence tier:** 🟢 Live-vendor (real API + real account)  ·  **Last verified:** 2026-08-05  ·  **Proof DB(s):** MJ_CT48
 >
-> **Known issues:** Verified against the live service, with known defects outstanding — see the residual gap below and `docs/REQUIRED-FIXES.md`.
+> **Known issues:** Verified against the live service. Every connector defect found in proving is fixed and released; what remains in `docs/REQUIRED-FIXES.md` is two engine defects and one finding awaiting re-proof, and the open product decisions are in the residual gap below.
 
 ## What this connector supports
 
@@ -78,8 +78,8 @@
 > timeouts across the whole run. The 29,002 rows are a floor read from a run stopped at **8.6 hours covering 64
 > of 428 courses**, not a ceiling.
 >
-> **Why it is that slow is now measured rather than guessed, and one defect in it was real.** Three causes, in
-> `docs/REQUIRED-FIXES.md` item 7: (1) **course `1` is the Moodle site course** that every user on the site is
+> **Why it is that slow is now measured rather than guessed, and one defect in it was real.** Three causes, measured
+> from run `9200B480`: (1) **course `1` is the Moodle site course** that every user on the site is
 > enrolled in, so 17,937 of these 29,002 rows (62%) are one course, and string-sorted ids walk it first — hours
 > pass showing one `courseid`; (2) **44% of what was fetched was re-read** — 50,608 records fetched produced
 > 29,002 distinct rows, because the keyset cursor can hold only one mid-parent offset and a second concurrent
@@ -87,8 +87,8 @@
 > parent, so every lane resumes and paged walks keep the engine's concurrency; (3) **~68 ms of vendor time per
 > record, linear in rows**, because `core_enrol_get_enrolled_users` returns a full user profile per enrolment
 > including the `groups`/`roles`/`preferences`/`enrolledcourses` aggregates. Larger pages do not reduce that
-> per-record cost. `options.userfields` would trim it but drops declared columns, so it is written up with the
-> numbers rather than applied silently. **Two further defects came out of re-reading the same run by batch
+> per-record cost. `options.userfields` would trim it but drops declared columns, so it is an open product
+> decision (residual gap below) rather than applied silently. **Two further defects came out of re-reading the same run by batch
 > duration instead of by percentile**: the rate-limit wait sat *outside* the fetch deadline (one call reached
 > **1,063,987 ms against a 20,000 ms budget**), and a transient read timeout **retired** its course — 24 courses
 > were left partly read behind a green run. Both fixed; abandoning a parent now always emits `PARENT_ABANDONED`.
@@ -134,7 +134,10 @@ remaining cause is a connector defect: both open defects on that run have since 
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
 - **Coverage:** 10 of 28 declared objects have proven rows — every object this site's token can reach and key, plus one (`Groupings`) proven reachable and empty. The other 18 are attributed above (13 token-scope, 4 keyless, 1 empty), not untested.
-- **`Enrolled Users` has never been read to completion on this site** — 64 of 428 courses in 8.6 hours. Three defects in that run are fixed (re-read, unbounded deadline, transient-retire). At the measured healthy rate the ≈93,000-row site is **≈1.8 hours** of vendor time; that estimate is not yet confirmed by a completed run. Quantified in `docs/REQUIRED-FIXES.md` item 7.
+- **`Enrolled Users` has never been read to completion on this site** — 64 of 428 courses in 8.6 hours. Every connector defect in that run is fixed and released: the 44% re-read, the rate-limit wait outside the deadline, and the transient-retire in 0.3.0; the `RequestTimeoutMs: 0` opt-out that meant no deadline at all in 0.4.2. Of the 8.6 hours, 3.3 were 15 pathological batches (one reached 1,063,987 ms against a 20,000 ms budget); the 193 healthy batches ran at **68 ms per record, linear in rows**. At that rate the ≈93,000-row site is **≈1.8 hours** of vendor time; the estimate is not yet confirmed by a completed run.
+- **Open product decisions on `Enrolled Users`, deliberately not made in code.** (1) Sending `options.userfields` would cut the per-record cost by roughly the aggregate sub-queries' share, but it drops declared columns — `groups`, `roles`, `preferences`, `customfields`, `enrolledcourses` would stop arriving. The mechanism is one metadata key in the same shape as `orderingParams`; what is missing is a decision about which of the 29 declared fields an enrolment row is for. (2) Whether **course `1`, the Moodle site course, belongs in an enrolment sync at all**: every user on the site is enrolled in it, it is 17,937 of the 29,002 rows landed (62%), and it duplicates the user table.
+- **`Enrolled Users` per-course key: row-level live proof still owed.** The key was widened to (userid, courseid) so enrolments no longer overwrite each other; the catalog side is verified, but one full non-incremental pull is needed to prove the per-course rows separate live.
+- **`Group Members` re-enumerates its chain every call.** Learning group ids costs one request per course, 84–92 of 428 courses is as far as one 20,000 ms budget reaches, and the chain is deliberately not cached, so `PARENT_CHAIN_TRUNCATED` fires on every call. Coverage is not lost, but on a site whose token *can* read group members, reaching every group takes many calls.
 
 ---
 
