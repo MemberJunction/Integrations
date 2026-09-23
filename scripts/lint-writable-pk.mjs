@@ -27,9 +27,9 @@
  * so the picker offers data that cannot arrive. Declaring the key removes both. The read-only
  * baseline (`readonly-pk-baseline.json`) is the debt register: 264 Active objects at seeding
  * (2026-09-22; a further 63 keyless objects were already Disabled and are exempt), concentrated
- * in YourMembership, Cvent, NeonCRM, ConstantContact, MagnetMail. Four of the 264 are OpenWater's
- * #364 detail children, declared with only their parent tag until the vendor element shape is
- * known; they are debt to work off, not a pattern to repeat.
+ * in YourMembership, Cvent, NeonCRM, ConstantContact, MagnetMail. Four of the 264 were OpenWater's
+ * #364 detail children, declared with only their parent tag; #399 declared their keys from the
+ * vendor schema and they left the file, the first ratchet down (264 -> 260).
  *
  * The rule is AT LEAST one key, deliberately not exactly one. Join/association objects
  * legitimately carry a COMPOSITE key — HubSpot's `associations_*` family keys on

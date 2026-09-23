@@ -24,7 +24,11 @@
  * roundId), then calls the entry path once per parent — injecting the parent id either
  * into the path template ({programId}/{fundId}) or as a query param (roundId-gated
  * JudgeAssignments/Recusals, which 400 without it). An `embedded-array` AccessPath
- * (Rounds) emits records directly from the door payload with no second call.
+ * (Rounds) emits records directly from the door payload with no second call. The detail modes
+ * (`detail-object`, `detail-embedded`) fetch each door row's OWN detail and emit either the detail
+ * (EvaluationDetail, SessionDetail, UserDetail) or arrays inside it (scorecards, chairs, winner
+ * assignments), tagging intermediate ids via `segmentTags` and keeping scalar leaves via
+ * `scalarLeafKey`.
  *
  * Discovery — credential-free: DiscoverObjects/DiscoverFields/IntrospectSchema use the
  * BaseRESTIntegrationConnector implementations, which read the Declared IO/IOF metadata
@@ -265,6 +269,21 @@ interface AccessPath {
     embeddedParentTag?: { sourceKey?: string; asKey?: string };
     /** detail-harvest: the key read off each walked element (default 'id') — e.g. 'mediaId'. */
     harvestIdKey?: string;
+    /**
+     * detail-embedded only: copy a field from an INTERMEDIATE node onto every element beneath it.
+     * `segment` names the nestingSegments level whose nodes supply the value (e.g. 'roundSubmissions[]'
+     * with sourceKey 'roundId'); the door id is already stamped via parentParamName, this reaches the
+     * levels in between. Without it a round-submission child arrives knowing its application but not
+     * its round, which is why the four #364 children could not declare a key. Vendor-supplied values
+     * under asKey are never overwritten. See WalkSegmentsTagged.
+     */
+    segmentTags?: { segment: string; sourceKey: string; asKey?: string }[];
+    /**
+     * detail-embedded only: when the LEAF elements are scalars (roundSubmissions[].winnerTypes[] is
+     * an array of strings, subAccountUserIds[] of integers), wrap each as { [scalarLeafKey]: value }
+     * so it can be tagged and keyed. Absent, scalar leaves are dropped, as they always were.
+     */
+    scalarLeafKey?: string;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────
@@ -1495,7 +1514,8 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
                     out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
                 } else {
                     if (nestShape === null) nestShape = this.ShapeAlong(detail, accessPath.nestingSegments ?? []);
-                    let elements = this.WalkSegments([detail], accessPath.nestingSegments ?? []) as Record<string, unknown>[];
+                    let elements = this.WalkSegmentsTagged([detail], accessPath.nestingSegments ?? [],
+                        accessPath.segmentTags ?? [], accessPath.scalarLeafKey);
                     if (filt && filt.key) {
                         elements = elements.filter(e => e && (filt.exists
                             ? e[filt.key] != null
@@ -1670,6 +1690,55 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
             nodes = next;
         }
         return nodes;
+    }
+
+    /**
+     * WalkSegments for the detail-embedded mode: the same descent, plus two things the plain walker
+     * cannot do. (1) `segmentTags` carries a field from an intermediate node down onto every element
+     * beneath it — the round submission's roundId onto each scorecard, recommendation or winner type —
+     * so a leaf that is only unique within its round can be keyed (applicationId, roundId, ...).
+     * (2) `scalarLeafKey` keeps scalar leaves: roundSubmissions[].winnerTypes[] is an array of
+     * STRINGS, and the plain walker's object-only filter dropped every one of them silently — the
+     * per-application half of the 74-vs-89 winner type gap (REQUIRED-FIXES / INT-32). A tag never
+     * overwrites a value the vendor itself supplied under that name. With no tags and no scalar key
+     * this behaves exactly as WalkSegments.
+     */
+    private WalkSegmentsTagged(
+        doorRows: Record<string, unknown>[],
+        segments: string[],
+        segmentTags: { segment: string; sourceKey: string; asKey?: string }[],
+        scalarLeafKey?: string
+    ): Record<string, unknown>[] {
+        type Node = { value: unknown; tags: Record<string, unknown> };
+        let nodes: Node[] = doorRows.map(value => ({ value, tags: {} }));
+        segments.forEach((seg, depth) => {
+            const key = seg.endsWith('[]') ? seg.slice(0, -2) : seg;
+            const isLast = depth === segments.length - 1;
+            const tagsHere = segmentTags.filter(t => t.segment === seg);
+            const next: Node[] = [];
+            for (const node of nodes) {
+                if (node.value == null || typeof node.value !== 'object') continue;
+                const child = (node.value as Record<string, unknown>)[key];
+                const children = Array.isArray(child) ? child : child != null ? [child] : [];
+                for (const c of children) {
+                    if (c != null && typeof c === 'object') {
+                        // Tags declared FOR this level read off this node and apply to its descendants.
+                        const own: Record<string, unknown> = {};
+                        for (const t of tagsHere) {
+                            const v = (c as Record<string, unknown>)[t.sourceKey];
+                            if (v != null) own[t.asKey ?? t.sourceKey] = v;
+                        }
+                        next.push({ value: c, tags: { ...node.tags, ...own } });
+                    } else if (isLast && scalarLeafKey && c != null) {
+                        next.push({ value: { [scalarLeafKey]: c }, tags: node.tags });
+                    }
+                    // A scalar at an intermediate level, or a scalar leaf with no scalarLeafKey: dropped.
+                }
+            }
+            nodes = next;
+        });
+        // Vendor values win over tags: spread the element LAST.
+        return nodes.map(n => ({ ...n.tags, ...(n.value as Record<string, unknown>) }));
     }
 
     /** For embedded-array access paths: emit the nested records directly from the door payload. */
