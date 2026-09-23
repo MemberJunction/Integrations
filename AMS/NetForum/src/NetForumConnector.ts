@@ -15,8 +15,13 @@
  *   SOAPAction : http://www.avectra.com/2005/<MethodName>
  *
  *   Auth (TWO-STEP, SOAP — NOT HTTP Basic / WWW-Authenticate / Bearer):
- *     1. Authenticate(userName, password) → AuthenticateResult (the token string).
- *        The Authenticate envelope carries NO AuthorizationToken header — it is the bootstrap.
+ *     1. Authenticate(userName, password) → the token is in the RESPONSE HEADER,
+ *        <soap:Header><AuthorizationToken><Token>. The WSDL declares AuthorizationToken as an OUTPUT
+ *        header of Authenticate. The body's AuthenticateResult is NOT the token: on a real tenant it
+ *        holds the namespace URI "http://www.avectra.com/2005/". This connector read AuthenticateResult
+ *        through 1.3.4 and so sent that URI as its token; netFORUM answers an unrecognised token with
+ *        HTTP 500 + faultstring "Locked" on EVERY call, with nothing locked (vendor-confirmed with a
+ *        captured response, 2026-09-15). The Authenticate REQUEST carries no AuthorizationToken header.
  *     2. Every subsequent data/CRUD call carries the token in the SOAP HEADER element:
  *          <AuthorizationToken xmlns="http://www.avectra.com/2005/"><Token>{token}</Token></AuthorizationToken>
  *        (NOT an HTTP Authorization header.) Source: WSDL `AuthorizationToken` complexType +
@@ -28,14 +33,15 @@
  *       - szColumnList is sent EMPTY. The vendor's GetQuery page documents both halves: "Asterisk (*)
  *         is not a valid value for szColumnList" (the request faults), and an empty string "returns
  *         the default column listing for the object's primary table — the primary key for the object
- *         will still be returned in the node as the first child". This connector sent `*` until
- *         2026-09, so every fetch faulted (surfacing as HTTP 500 / a SOAP fault), and because xWeb
- *         counts faulted calls toward MethodsFaultLimitPerDay — default 100 a day, per xWeb USER + IP
- *         ADDRESS (vendor's xWeb Configuration Settings page: the user is never locked, only the IP)
- *         — every later call from that IP faulted "Locked". Confirmed by the vendor against our xWeb
- *         credential from THEIR IP, 2026-09, while ours was locked. Consequence: a row carries
- *         the tenant's default list columns, NOT the declared union — FetchChanges warns
- *         (WATERMARK_COLUMN_ABSENT) when the watermark column is missing from what came back.
+ *         will still be returned in the node as the first child". This connector sent `*` through
+ *         1.3.2 (fixed in 1.3.4). Consequence: a row carries the tenant's default list columns, NOT
+ *         the declared union — FetchChanges warns (WATERMARK_COLUMN_ABSENT) when the watermark
+ *         column is missing from what came back, and an IO whose default list lacks a column the
+ *         connector needs declares Configuration.columnList (proven live: naming the columns works,
+ *         including the watermark, an incremental `>=` predicate on it, and ORDER BY it).
+ *       - The "Locked" fault seen alongside those failures was NOT a lock — see the Auth section:
+ *         a token read from the wrong element. 1.3.4's changelog attributed it to
+ *         MethodsFaultLimitPerDay; that diagnosis was wrong.
  *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" where the watermark column is
  *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date).
  *         There is NO canonical `LastModifiedDate` column — the field is per-facade and is read
@@ -146,6 +152,13 @@ interface NFAccessPath {
 
 /** Shape of the per-IO Configuration JSON relevant to this connector. */
 interface NFObjectConfig {
+    /**
+     * Explicit szColumnList, declared ONLY when the tenant's default list lacks a column the connector
+     * needs (Individual's default list carries 9 columns and not ind_change_date — proven live 2026-09-15).
+     * A declared list REPLACES the default list; the connector appends its own needs (PK, ordering key,
+     * watermark) when omitted. Absent ⇒ empty szColumnList ⇒ the tenant's default columns.
+     */
+    columnList?: string[];
     accessPath?: NFAccessPath;
     stableOrderingKey?: string;
     soapEndpoint?: string;
@@ -184,9 +197,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Step 1 of the two-step auth: POST a SOAP `Authenticate(userName, password)` envelope (which
-     * carries NO AuthorizationToken header — it is the bootstrap) and read the token string from
-     * `AuthenticateResult`. The token is cached and re-used until its TTL elapses or a 401 forces
-     * re-auth. Credentials go in the SOAP body elements — there is no HTTP Basic / Bearer here.
+     * carries NO AuthorizationToken header — it is the bootstrap) and read the token from the SOAP
+     * RESPONSE HEADER, `<AuthorizationToken><Token>`, which the WSDL declares as an output header of
+     * Authenticate. The body's `AuthenticateResult` is deliberately NOT read: on a real tenant it
+     * holds the namespace URI, and sending that as the token gets HTTP 500 "Locked" on every call
+     * (what 1.3.4 and earlier did). No fallback to the body — a wrong fallback is exactly this bug.
+     * The token is cached and re-used until its TTL elapses or a 401 forces re-auth. Credentials go
+     * in the SOAP body elements — there is no HTTP Basic / Bearer here.
      */
     protected async Authenticate(ci: MJCompanyIntegrationEntity, cu: UserInfo): Promise<RESTAuthContext> {
         const config = await this.ParseConfig(ci, cu);
@@ -201,11 +218,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const headers = this.SoapHeaders('Authenticate');
         const response = await this.MakeRawHTTPRequest(url, 'POST', headers, body);
         if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`NetForum Authenticate failed: HTTP ${response.Status}`);
+            throw new Error(`NetForum Authenticate failed: HTTP ${response.Status}${this.SoapFault(response.Body)}`);
         }
-        const token = this.ParseSoapScalar(this.AsText(response.Body), 'AuthenticateResult');
+        const token = this.ParseAuthenticateToken(this.AsText(response.Body));
         if (!token) {
-            throw new Error('NetForum Authenticate response contained no token (AuthenticateResult element)');
+            throw new Error(
+                'NetForum Authenticate response carried no token: expected <AuthorizationToken><Token> in the SOAP ' +
+                'response HEADER (the WSDL declares it as an output header of Authenticate). The body\'s ' +
+                'AuthenticateResult is not the token — on a real tenant it holds the namespace URI — and is not used.',
+            );
         }
         this.tokenCache = { Token: token, ExpiresAt: Date.now() + TOKEN_TTL_MS };
         return { Token: token, Config: config } as NFAuthContext;
@@ -274,20 +295,158 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         }
     }
 
+    /**
+     * Column names GetQueryDefinition returned for an object during THIS process's discovery, keyed by
+     * lowercased external name. It exists for one reason: on a tenant whose xWeb default list is itself
+     * `*`, an empty szColumnList makes the door fault on its own default ("'*' is not a valid value for
+     * szColumnList"), and during introspection the discovered fields are not persisted yet, so
+     * GetCachedFields cannot supply a replacement. Step 2 already has the answer — keep it for step 3.
+     */
+    private readonly DiscoveredColumnsByObject = new Map<string, string[]>();
+
+    /**
+     * CompanyIntegration IDs whose xWeb default column list is unusable.
+     *
+     * xWeb counts FAULTS, not calls, against `MethodsFaultLimitPerDay` (default 100 per user+IP),
+     * and it does NOT auto-reset — a vendor clears it by hand. The retry in FetchChanges learns the
+     * default is bad by faulting, which is correct once and ruinous repeated: without this set it
+     * re-learned it on EVERY call, so a tenant whose default resolves to `*` spent one fault per
+     * object. 888 objects on the BC sandbox meant >=888 faults against a budget of 100, which is
+     * what locked the account on 2026-09-05 and again on 2026-09-19 — our request shape, not the
+     * tenant's data. Remembering the answer costs one fault instead of hundreds.
+     */
+    private readonly DefaultColumnListUnusable = new Set<string>();
+
     // ─── Discovery — Declared cache + runtime GetQueryDefinition ──────
 
     /**
-     * Standard objects = the Declared metadata (engine cache of persisted IntegrationObject rows).
-     * NO hardcoded catalog. The base implementation reads exactly the credential-free Declared
-     * universe; a live credential only ADDS customer-installed query objects (the Discovered
-     * extension), it never supplies the baseline — so this re-yields the standard universe
-     * credential-free and the runtime structure self-check passes without a token.
+     * Objects come from the SOURCE whenever the source can list them. netFORUM can:
+     * `GetFacadeObjectList` takes an empty request and returns every facade the credential may see
+     * (878 on a live tenant against a declared catalog of 34). It is called on every discovery — a
+     * connector that can enumerate must never report a baked-in list instead.
+     *
+     * The declared catalog remains the BASELINE, not the answer: declared rows are curated (APIPath,
+     * watermark, primary key, write capability) and an enumerated row carries a name, key and
+     * description, so declared always wins a name collision. Enumeration ADDS the rest.
+     *
+     * Credential-free (or if the account is not granted the method) this degrades to the declared
+     * baseline, so the runtime structure self-check still passes without a token.
      */
     public override async DiscoverObjects(
         ci: MJCompanyIntegrationEntity,
         cu: UserInfo,
     ): Promise<ExternalObjectSchema[]> {
+        const declared = await this.DeclaredObjects(ci, cu);
+        try {
+            const auth = await this.Authenticate(ci, cu) as NFAuthContext;
+            const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
+            const body = this.BuildSoapEnvelope('GetFacadeObjectList', {}, auth.Token);
+            const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetFacadeObjectList'), body);
+            if (r.Status >= 200 && r.Status < 300) {
+                return this.MergeEnumeratedObjects(declared, this.ParseFacadeObjectList(this.AsText(r.Body)));
+            }
+        } catch {
+            // Credential-free, network failure, parse failure, or the account not granted
+            // GetFacadeObjectList → the Declared baseline stands alone, exactly as before.
+        }
+        return declared;
+    }
+
+    /**
+     * The Declared baseline (engine cache of persisted IntegrationObject rows).
+     *
+     * `protected` so a unit-test subclass can supply a canned declared set — the same single-seam
+     * idiom MakeRawHTTPRequest uses. The base reads the IntegrationEngineBase singleton, which a
+     * test cannot intercept, and the declared-wins guarantee below is worth testing directly.
+     */
+    protected async DeclaredObjects(
+        ci: MJCompanyIntegrationEntity,
+        cu: UserInfo,
+    ): Promise<ExternalObjectSchema[]> {
         return super.DiscoverObjects(ci, cu);
+    }
+
+    /**
+     * Parses a GetFacadeObjectList response into the enumerated object universe.
+     *
+     * Verified shape (live, 2026-09-15): `<ObjectObjects>` containing one `<ObjectObject>` per facade,
+     * each carrying `<obj_name>`, `<obj_key>` and `<obj_description>`. 878 rows on a real tenant.
+     *
+     * Enumerated-only objects are reported HONESTLY as unknown-capability: the list gives a name and
+     * a description, never a watermark field or a write path, so `SupportsIncrementalSync` and
+     * `SupportsWrite` are false until the Declared metadata says otherwise. Claiming either from a
+     * bare name would promise a sync mode the connector cannot deliver.
+     */
+    private ParseFacadeObjectList(xml: string): ExternalObjectSchema[] {
+        const out: ExternalObjectSchema[] = [];
+        const seen = new Set<string>();
+        for (const row of this.ExtractElements(xml, 'ObjectObject')) {
+            const name = this.ParseSoapScalar(row, 'obj_name');
+            if (!name) continue;
+            const key = name.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            const description = this.ParseSoapScalar(row, 'obj_description');
+            out.push({
+                Name: name,
+                Label: description || name,
+                Description: description,
+                SupportsIncrementalSync: false,
+                SupportsWrite: false,
+            });
+        }
+        return out;
+    }
+
+    /**
+     * Resolves the client's object set per the framework contract (everything.txt §2), which is a
+     * three-way reconciliation, NOT a union:
+     *
+     *   in BOTH          -> keep, and overlay attribute-by-attribute with EXTERNAL SYSTEM PRIORITY.
+     *                       The source wins wherever it says something; the declared metadata is the
+     *                       FALLBACK for whatever the source is silent about. Asked per attribute,
+     *                       not per object: GetFacadeObjectList states a description, and says
+     *                       nothing about APIPath, watermark, primary key or write capability — so
+     *                       the description comes from the source and the rest from the declaration.
+     *
+     *   source ONLY      -> add. These are the client's custom/undeclared objects.
+     *
+     *   declared ONLY    -> EXCLUDE for this client. "if you have metadata for Objects A,B,C, and
+     *                       the external system has C,D,E ... you basically exclude A,B for this
+     *                       client as potential entity maps". A declared object the source does not
+     *                       list is not this tenant's object, and carrying it forward is what
+     *                       produces catalog rows that can never be fetched, have no provable
+     *                       primary key, and are skipped at materialisation.
+     *
+     * Exclusion applies ONLY when the source actually enumerated. If the call failed or the account
+     * is not granted it, DiscoverObjects returns the declared baseline untouched — absence of an
+     * answer must never be read as absence of an object.
+     */
+    private MergeEnumeratedObjects(
+        declared: ExternalObjectSchema[],
+        enumerated: ExternalObjectSchema[],
+    ): ExternalObjectSchema[] {
+        const declaredByName = new Map(declared.map(o => [o.Name.toLowerCase(), o]));
+        const resolved: ExternalObjectSchema[] = [];
+        for (const src of enumerated) {
+            const dec = declaredByName.get(src.Name.toLowerCase());
+            if (!dec) {
+                resolved.push(src);               // source only — bring it in
+                continue;
+            }
+            // The source's ONLY statement about an object is obj_description. ParseFacadeObjectList
+            // synthesises Label from the name when that is empty, so Label alone cannot distinguish
+            // "the source described it" from "the source said nothing" — gate both on the raw
+            // description, or a silent source would overwrite a curated label with the bare name.
+            const sourceSpoke = !!src.Description?.trim();
+            resolved.push({
+                ...dec,                            // declared is the fallback for everything
+                Name: dec.Name,                    // keep the declared casing the catalog is keyed on
+                Label: sourceSpoke ? src.Label : dec.Label,
+                Description: sourceSpoke ? src.Description : dec.Description,
+            });
+        }
+        return resolved.sort((a, b) => a.Name.localeCompare(b.Name));
     }
 
     /**
@@ -325,9 +484,25 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * IntrospectSchema — pure WIRING of MJ's existing sampler into the declared catalog (the connector
-     * sample-union standard; see CONNECTOR_DISCOVERY_STANDARD.md). This connector adds NO discovery,
-     * merge, or sync logic — it only wires `DiscoverFieldsViaFetch` (MJ's sampler) into IntrospectSchema.
+     * IntrospectSchema — resolves each object's columns in the contract's order:
+     *   1. DiscoverObjects  — the endpoint's object list (GetFacadeObjectList), reconciled in 1.5.0
+     *   2. DiscoverFields   — the endpoint's COLUMN list (GetQueryDefinition), added here
+     *   3. Sampling         — streams records for what only data can answer: measured string widths,
+     *                         primary-key significance, and custom columns findable no other way
+     *
+     * Step 2 was missing. This method went straight from the declared catalog to sampling, so any
+     * object without declared metadata could only get columns if streaming its records happened to
+     * work. After 1.5.0 enumerated 878 objects, 862 of them landed with ZERO columns — and therefore
+     * no key, no table, and an RSU that emitted a migration with no DDL — while GetQueryDefinition
+     * could describe every one of them. Measured 2026-09-18: `Abstract Author` 137 columns,
+     * `AccountingPeriod` 58, `Individual` 1161, no faults. The endpoint also returns type,
+     * nullability and mdc_width_max, so widths no longer depend on sampling reaching the object.
+     *
+     * Ordering matters beyond correctness: one schema call per object costs nothing next to paging
+     * rows, so the column list no longer competes with the run deadline.
+     *
+     * Sampling remains UNCONDITIONAL — it is not gated on what the endpoint returned. It is the only
+     * source for PK statistics and for columns that exist in data but in no schema.
      *
      * `super.IntrospectSchema` yields the cache-driven Declared catalog (no measured widths). For each
      * object we then call MJ's `DiscoverFieldsViaFetch` — MJ's own read-path sampler that measures real
@@ -335,25 +510,62 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * unions the two by field name (adopt MJ's measured width; append MJ-discovered custom columns). MJ
      * owns everything else (measurement, type/PK inference, persistence, reconcile, sync).
      *
-     * Recursion note: `DiscoverFieldsViaFetch` falls back to the UNCHANGED `DiscoverFields` (cache-driven)
-     * when the read path can't run — never back into THIS method — so there is no infinite recursion.
-     * This connector does NOT override `DiscoverFields` to call any ViaFetch/ViaStream.
+     * Recursion note: `DiscoverFieldsViaFetch` falls back to `DiscoverFields`, never back into THIS
+     * method, so there is no infinite recursion. `DiscoverFields` itself does NOT call any
+     * ViaFetch/ViaStream — it is the endpoint path.
      *
      * Robustness: objects are sampled IN PARALLEL under a small bounded pool; any per-object failure
      * keeps that object's declared fields, so a single bad sample never breaks introspection.
      */
+    /**
+     * Test seam over the cache-driven declared catalog, mirroring {@link DeclaredObjects}.
+     * `super.IntrospectSchema` reads the IntegrationEngineBase singleton, which a unit test cannot
+     * stand up — without this, the step ordering in IntrospectSchema is untestable and the missing
+     * DiscoverFields call went unnoticed through 38 passing tests.
+     */
+    protected async DeclaredSchema(
+        companyIntegration: MJCompanyIntegrationEntity,
+        contextUser: UserInfo,
+    ): Promise<SourceSchemaInfo> {
+        return super.IntrospectSchema(companyIntegration, contextUser);
+    }
+
     public override async IntrospectSchema(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo
     ): Promise<SourceSchemaInfo> {
-        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
+        const schema = await this.DeclaredSchema(companyIntegration, contextUser);
 
         await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
+            // Step 2 — the endpoint's column list. DiscoverFields already reconciles GetQueryDefinition
+            // against the declared baseline and degrades to declared on any failure, so an empty or
+            // faulting response leaves this object exactly as it was.
+            try {
+                const fromEndpoint = await this.DiscoverFields(companyIntegration, obj.ExternalName, contextUser);
+                if (fromEndpoint.length > 0) {
+                    // Hand step 2's answer to step 3: sampling needs a named column list on tenants
+                    // whose default list is `*`, and nothing else in the run knows these names yet.
+                    this.DiscoveredColumnsByObject.set(
+                        obj.ExternalName.toLowerCase(),
+                        fromEndpoint.map(f => f.Name).filter(n => !!n),
+                    );
+                    // Same shared merge the sampling pass uses: it folds an ExternalFieldSchema[] into
+                    // the object's SourceFieldInfo[] by name, adopting the endpoint's width and
+                    // appending columns the declared baseline never had. For an enumerated-only object
+                    // the declared side is empty, so the result is simply the endpoint's column list.
+                    obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, fromEndpoint);
+                }
+            } catch {
+                // Endpoint unreachable for this object — keep the declared fields and let sampling try.
+            }
+
+            // Step 3 — sampling, unchanged and unconditional. Merges measured widths and any column
+            // that exists in the data but in neither the declared metadata nor the endpoint.
             try {
                 const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
                 obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
             } catch {
-                // Keep this object's declared fields — sampling is best-effort and never breaks introspection.
+                // Keep what we have — sampling is best-effort and never breaks introspection.
             }
         });
 
@@ -461,11 +673,18 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             : (accessPath.doorArgs?.topModifier ?? '@TOP -1');
         const szObjectName = topModifier ? `${queryObject} ${topModifier}` : queryObject;
 
-        // Empty, never `*` — see the class header: `*` is documented as invalid and faulted every fetch.
-        const args: Record<string, string> = { szObjectName, szColumnList: '' };
+        const watermarkField = obj.IncrementalWatermarkField ?? undefined;
+        const pkField = this.PrimaryKeyFieldName(obj);
+        // Empty by default (the tenant's default list columns), never `*` — see the class header. An IO
+        // may declare Configuration.columnList when its default list lacks a column the connector needs;
+        // the door returns ONLY named columns, so a declared list is completed with the PK, the ordering
+        // key and the watermark — the three columns this method itself reads.
+        const args: Record<string, string> = {
+            szObjectName,
+            szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField]),
+        };
 
         const predicates: string[] = [];
-        const watermarkField = obj.IncrementalWatermarkField ?? undefined;
         if (ctx.WatermarkValue && watermarkField) {
             predicates.push(`${watermarkField} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
         }
@@ -477,14 +696,55 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (orderingKey) args.szOrderBy = orderingKey;
 
         const url = `${auth.Config.BaseURL}${this.SoapEndpoint(cfg)}`;
-        const envelope = this.BuildSoapEnvelope('GetQuery', args, auth.Token);
-        const response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQuery'), envelope);
+
+        // Once this connection is known to have an unusable default list, lead with the explicit list
+        // rather than paying another fault to re-discover what we already know (see the field's doc).
+        //
+        // Deliberately narrow. This only REORDERS two requests that were going to be sent in sequence
+        // anyway, and only when an explicit list actually exists; with nothing better to send it falls
+        // through to the original empty request unchanged. So a tenant whose defaults are fine never
+        // reaches it, and — because netFORUM configures the default list PER OBJECT — an object whose
+        // own default is fine on a tenant where others are not still gets its normal request.
+        const faultKey = ctx.CompanyIntegration?.ID ?? '';
+        if (!args.szColumnList && this.DefaultColumnListUnusable.has(faultKey)) {
+            const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            if (known) args.szColumnList = known;
+        }
+        const sentEmptyColumnList = !args.szColumnList;
+
+        let response = await this.MakeRawHTTPRequest(
+            url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
+        );
+
+        // The door can reject ITS OWN default list. An empty szColumnList asks xWeb for the object's
+        // configured default columns, and on a tenant where that default is `*` the request faults with
+        // "'*' is not a valid value for szColumnList" — a fault about the tenant's configuration, not
+        // about anything this connector sent. Observed on the BC sandbox 2026-09-18: 862 of 888 objects
+        // faulted this way during discovery, ~15s each, which exhausted the run deadline before a single
+        // row was persisted. The 26 that worked were exactly the 26 carrying a declared columnList.
+        //
+        // Retry ONCE with an explicit list. Named columns bypass the default entirely, so this turns a
+        // certain failure into a normal fetch without changing behaviour on tenants whose default is
+        // usable — they never reach this branch.
+        if (this.IsInvalidDefaultColumnListFault(response)) {
+            // Remember, but ONLY when the empty list is what the door rejected. A declared
+            // Configuration.columnList drawing this same fault is a different defect and must keep
+            // surfacing per call, rather than silently changing what every later object sends.
+            if (sentEmptyColumnList) this.DefaultColumnListUnusable.add(faultKey);
+            const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            if (explicit) {
+                response = await this.MakeRawHTTPRequest(
+                    url, 'POST', this.SoapHeaders('GetQuery'),
+                    this.BuildSoapEnvelope('GetQuery', { ...args, szColumnList: explicit }, auth.Token),
+                );
+            }
+        }
+
         if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}`);
+            throw new Error(`NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}`);
         }
 
         const rows = this.NormalizeResponse(response.Body, null);
-        const pkField = this.PrimaryKeyFieldName(obj);
         const warnings: FetchWarning[] = [];
         if (rows.length === 0) {
             warnings.push({ Code: 'ZERO_ROWS', Message: `GetQuery(${szObjectName}) returned no rows.` });
@@ -509,9 +769,9 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     `NetForum "${ctx.ObjectName}" declares IncrementalWatermarkField "${watermarkField}", but no row of ` +
                     `this GetQuery batch carries that column: with an empty szColumnList, xWeb returns the tenant's ` +
                     `default list columns for "${queryObject}" and "${watermarkField}" is not among them. The watermark ` +
-                    `cannot advance, so each sync re-reads the same window. Add the column to the object's default ` +
-                    `list in netFORUM (List Table setup) or point IncrementalWatermarkField at a column the default ` +
-                    `list returns.`,
+                    `cannot advance, so each sync re-reads the same window. Declare Configuration.columnList on the IO ` +
+                    `(the default columns plus "${watermarkField}"), add the column to the object's default list in ` +
+                    `netFORUM (List Table setup), or point IncrementalWatermarkField at a column the default list returns.`,
                 Data: { ObjectName: ctx.ObjectName, WatermarkField: watermarkField, Columns: Object.keys(rows[0]) },
             });
         }
@@ -554,6 +814,70 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
     private EscapeSqlLiteral(v: string): string { return v.replace(/'/g, "''"); }
 
+    /**
+     * The szColumnList for one fetch: empty (tenant default list) unless the IO declares
+     * Configuration.columnList. A declared list is completed with `required` — the primary key, the
+     * ordering key and the watermark column — because the door returns ONLY the named columns and
+     * those are what FetchChanges reads. Comma-joined, as the vendor's own examples are; duplicates
+     * (case-insensitive) collapse to the first spelling.
+     */
+    /**
+     * True when a GetQuery response is xWeb refusing its OWN configured default column list. The door
+     * substitutes the object's default list for an empty szColumnList, and a tenant whose default is
+     * `*` gets that value rejected by the same call that supplied it. Matched on the vendor's wording
+     * rather than the status alone, so an unrelated HTTP 500 still surfaces as the error it is.
+     */
+    private IsInvalidDefaultColumnListFault(response: { Status: number; Body: unknown }): boolean {
+        if (response.Status < 400) return false;
+        const fault = this.SoapFault(response.Body);
+        return typeof fault === 'string' && /not a valid value for szColumnList/i.test(fault);
+    }
+
+    /**
+     * An explicit, non-empty column list for an object whose tenant default is unusable, drawn from the
+     * best source available at the moment of the call:
+     *   1. columns GetQueryDefinition returned earlier in this discovery run (introspection — the
+     *      fields are not persisted yet, so this is the only source),
+     *   2. the object's cached fields (sync — discovery has already persisted them).
+     * `required` is appended because the door returns ONLY named columns and FetchChanges reads the
+     * primary key, the ordering key and the watermark. Empty when nothing is known, which leaves the
+     * original fault to surface rather than sending a request we cannot justify.
+     */
+    private ExplicitColumnListFor(obj: MJIntegrationObjectEntity, required: Array<string | undefined>): string {
+        const discovered = this.DiscoveredColumnsByObject.get(obj.Name.toLowerCase()) ?? [];
+        const known = discovered.length > 0
+            ? discovered
+            : this.GetCachedFields(obj.ID).map(f => f.Name).filter((n): n is string => !!n);
+        if (known.length === 0) return '';
+        const out: string[] = [];
+        const seen = new Set<string>();
+        for (const c of [...known, ...required]) {
+            if (!c) continue;
+            const key = c.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(c);
+        }
+        return out.join(',');
+    }
+
+    private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>): string {
+        const declared = Array.isArray(cfg.columnList)
+            ? cfg.columnList.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).map(c => c.trim())
+            : [];
+        if (declared.length === 0) return '';
+        const out: string[] = [];
+        const seen = new Set<string>();
+        for (const c of [...declared, ...required]) {
+            if (!c) continue;
+            const key = c.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(c);
+        }
+        return out.join(',');
+    }
+
     // ─── CRUD — SOAP facade ops via per-operation metadata columns ────
 
     /**
@@ -582,7 +906,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const envelope = this.BuildSoapEnvelope(operation, ctx.Attributes, auth.Token);
         const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders(operation), envelope);
         if (r.Status < 200 || r.Status >= 300) {
-            return { Success: false, ExternalID: '', StatusCode: r.Status, ErrorMessage: `Create of "${ctx.ObjectName}" failed: HTTP ${r.Status}` };
+            return { Success: false, ExternalID: '', StatusCode: r.Status, ErrorMessage: `Create of "${ctx.ObjectName}" failed: HTTP ${r.Status}${this.SoapFault(r.Body)}` };
         }
         const externalID = this.ExtractKeyFromResponse(r.Body);
         return this.BuildCreatedResult(externalID, r.Status, ctx.ObjectName);
@@ -614,7 +938,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (r.Status >= 200 && r.Status < 300) {
             return { Success: true, ExternalID: ctx.ExternalID, StatusCode: r.Status };
         }
-        return { Success: false, ExternalID: ctx.ExternalID, StatusCode: r.Status, ErrorMessage: `Update of "${ctx.ObjectName}" failed: HTTP ${r.Status}` };
+        return { Success: false, ExternalID: ctx.ExternalID, StatusCode: r.Status, ErrorMessage: `Update of "${ctx.ObjectName}" failed: HTTP ${r.Status}${this.SoapFault(r.Body)}` };
     }
 
     /**
@@ -728,6 +1052,18 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * namespace prefixes. Returns undefined when absent. Used for AuthenticateResult, mdc_* columns,
      * and create-result keys.
      */
+    /**
+     * The session token from an Authenticate RESPONSE: the <Token> inside the <AuthorizationToken>
+     * header element (any namespace prefix, attributes such as soap:actor tolerated). Never the body's
+     * AuthenticateResult — see Authenticate(). Returns undefined when the header is absent.
+     */
+    private ParseAuthenticateToken(xml: string): string | undefined {
+        const hdr = /<(?:[\w.-]+:)?AuthorizationToken\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?AuthorizationToken>/i.exec(xml);
+        if (!hdr) return undefined;
+        const token = this.ParseSoapScalar(hdr[1], 'Token');
+        return token && token.length > 0 ? token : undefined;
+    }
+
     private ParseSoapScalar(xml: string, localName: string): string | undefined {
         const re = new RegExp(`<(?:[\\w.-]+:)?${this.EscapeRegExp(localName)}\\b[^>]*>([\\s\\S]*?)</(?:[\\w.-]+:)?${this.EscapeRegExp(localName)}>`);
         const m = re.exec(xml);
@@ -965,6 +1301,21 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         } catch {
             return new Set<string>();
         }
+    }
+
+    /**
+     * The `<faultstring>` from a SOAP fault, formatted for appending to an error message.
+     *
+     * netFORUM says precisely what is wrong and who can fix it — "Account is not authorized to
+     * perform Select on Audience object." — and reporting only "HTTP 500" throws that away, turning
+     * a one-line permissions answer into a guessing game. Proven live 2026-09-15: ten objects failed
+     * discovery for this exact reason and the run reported only the status code.
+     *
+     * Returns '' when there is no faultstring, so callers can append unconditionally.
+     */
+    private SoapFault(body: unknown): string {
+        const fault = this.ParseSoapScalar(this.AsText(body), 'faultstring');
+        return fault ? ` — ${fault}` : '';
     }
 
     private AsText(body: unknown): string {

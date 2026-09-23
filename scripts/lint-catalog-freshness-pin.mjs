@@ -68,7 +68,6 @@ const GRANDFATHERED = new Set([
   'CRM/Salesforce',
   'Events/Cvent',
   'Events/Eventbrite',
-  'Events/OpenWater',
   'Events/PheedLoop',
   'Events/Whova',
   'Finance/BillCom',

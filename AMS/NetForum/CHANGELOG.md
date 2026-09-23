@@ -1,5 +1,137 @@
 # @memberjunction/connector-netforum-enterprise
 
+## 1.6.2
+
+### Patch Changes
+
+- 41fc48b: Stop spending the xWeb fault budget re-learning the same answer.
+
+  xWeb counts **faults, not calls**, against `MethodsFaultLimitPerDay` (default 100 per user+IP), and
+  it does not auto-reset — a vendor clears it by hand. 1.6.1 retries `GetQuery` with an explicit
+  column list after the empty list faults, which is correct once and ruinous repeated: it re-learned
+  the tenant's default was unusable on every call, so a tenant whose default resolves to `*` spent one
+  fault per object. 888 objects on a live tenant is >=888 faults against a budget of 100 — enough to
+  lock the account mid-discovery, twice.
+
+  `FetchChanges` now remembers, per `CompanyIntegration`, that the default list is unusable, and leads
+  with the explicit list from then on: ~888 faults becomes 1.
+
+  Deliberately narrow, so a healthy tenant cannot regress. It only reorders two requests that were
+  already going to be sent in sequence, and only when an explicit list exists; with nothing better to
+  send it falls through to the original empty request unchanged. netFORUM configures the default list
+  _per object_, so an object whose own default is fine still gets its normal request even on a tenant
+  where others are not. The post-fault retry is retained — the first call on a connection still learns
+  by faulting, and that retry is what keeps that object from failing outright. The latch is set only
+  when the empty list is what the door rejected, so a declared `Configuration.columnList` drawing the
+  same fault keeps surfacing per call instead of silently narrowing what later objects send.
+
+## 1.6.1
+
+### Patch Changes
+
+- 2161e2f: Retry GetQuery with an explicit column list when xWeb rejects its own default.
+
+  An empty `szColumnList` asks xWeb for the object's configured default columns. On a tenant whose default list is itself `*`, the door rejects the value it just supplied: `'*' is not a valid value for szColumnList`. The connector never sends `*` — this is a fault about the tenant's configuration surfacing as a fault about our request.
+
+  Measured on the BC sandbox 2026-09-18, a discovery over 888 objects: **862 faulted this way**, roughly 15 seconds each. That exhausted the 45-minute stage deadline at object 336, and because the pipeline fails rather than persisting what it gathered, **nothing was written at all** — 45 minutes of successful introspection discarded. The 26 objects that did succeed were exactly the 26 carrying a declared `Configuration.columnList`, which is what let them bypass the default.
+
+  `FetchChanges` now retries once with a named column list when it sees that specific fault. Named columns bypass the default entirely, so the second attempt succeeds. The column names come from the best source available at the moment of the call:
+
+  - during discovery, the columns `GetQueryDefinition` returned earlier in the same run — the fields are not persisted yet, so nothing else knows them;
+  - during sync, the object's cached fields.
+
+  Either way the list is completed with the primary key, ordering key and watermark, because the door returns ONLY named columns and `FetchChanges` reads all three.
+
+  Behaviour is unchanged on tenants whose default list is usable: the first attempt is still an empty `szColumnList` and they never reach the retry. An unrelated HTTP 500 is not retried and still surfaces as the error it is.
+
+  Both tests are mutation-proof by construction — the first queued response is the fault, so deleting the retry makes them fail. That is deliberate: the 1.6.0 test for the sibling fix passed with its fix removed, because the sampler's fallback reached the same endpoint.
+
+  Known limits, stated rather than implied:
+
+  - This makes sampling _reachable_, not complete. An object whose columns no source knows still gets an empty list and still faults.
+  - The run deadline is untouched. A catalog wide enough to exceed 45 minutes of honest work still fails and still discards everything; persisting on deadline is an engine-side change, not a connector one.
+  - `GetQueryDefinition` carries no key indicator, so enumerated-only objects gain columns but no primary key, and the schema builder still skips them.
+
+## 1.6.0
+
+### Minor Changes
+
+- a9f3474: Ask the endpoint for an object's columns before sampling its data.
+
+  `IntrospectSchema` went straight from the declared catalog to record sampling, never calling `DiscoverFields`. The contract's order is DiscoverObjects → DiscoverFields → sampling, and the middle step was missing.
+
+  It mattered once 1.5.0 started enumerating the real catalog. On a live netFORUM, discovery found 888 objects; the 862 with no declared metadata could only get columns if streaming their records happened to work, and they landed with **zero** columns — so no primary key, no table, and an RSU that emitted a migration with no DDL. `GetQueryDefinition` could describe every one of them the whole time: measured live, `Abstract Author` 137 columns, `AccountingPeriod` 58, `Individual` 1161, no faults. It also returns data type, nullability and `mdc_width_max`, so widths no longer depend on sampling reaching the object.
+
+  `IntrospectSchema` now merges the endpoint's column list into each object before sampling. Sampling is unchanged and still unconditional — it remains the only source for primary-key statistics and for columns that exist in data but in no schema. Any object whose endpoint call fails or returns nothing keeps exactly the fields it had, so a bad response can never empty a working catalog.
+
+  Cost matters here too: one schema call per object is trivial next to paging rows, so building the column list no longer competes with the run deadline. A discovery observed taking 20 minutes was still in its field-discovery stage when an unrelated restart killed it.
+
+  Also adds a `DeclaredSchema` test seam mirroring `DeclaredObjects`, so `IntrospectSchema`'s step ordering is reachable from unit tests at all — without it the missing call went unnoticed through 38 passing tests.
+
+  Known limits, stated rather than implied:
+
+  - The response carries no key indicator, so enumerated-only objects gain columns but still no primary key, and the schema builder skips objects without one. netFORUM's `<prefix>_key` convention plus `mdc_table_name` makes this derivable; that is a separate change.
+  - When sampling fails, `DiscoverFields` now runs twice for that object — once here, once via the sampler's own fallback. Harmless, but redundant.
+  - The new test does not mutation-prove the fix and says so in place: deleting the call still passes, because the sampler's fallback reaches the same endpoint. A real guard needs a sampler that succeeds with zero rows.
+
+## 1.5.0
+
+### Minor Changes
+
+- d0acf8c: **Discovery resolves the client's object set from the source, per the framework contract — it no longer unions a baked-in list.** 1.4.0 shipped this behind an opt-in flag that defaulted OFF, so discovery still reported the declared 34 out of the box; and when enabled it _added_ to the declared catalog rather than reconciling with it. Both were wrong against `everything.txt` §2.
+
+  **Enumeration is unconditional.** `GetFacadeObjectList` takes an empty request and returns every facade the credential may see (878 on a live tenant against a declared catalog of 34). A connector whose source can list its objects must ask the source, every time. There is no flag and no cap: the previous justification — that each listed object would cost a `GetQueryDefinition` round trip — was simply false. `BaseRESTIntegrationConnector.IntrospectSchema` is cache-driven (`GetActiveIntegrationObjects` + `GetCachedFields`) and issues no network calls, so enumeration costs exactly one request.
+
+  **The object set is now a three-way reconciliation, not a union.** Per the contract: _"if you have metadata for Objects A,B,C, and the external system has C,D,E ... you basically exclude A,B for this client as potential entity maps"_.
+
+  - **In both** — kept, and overlaid attribute-by-attribute with **external-system priority**, the declaration as fallback. `GetFacadeObjectList` states a description and is silent on APIPath, watermark, primary key and write capability, so the description comes from the source and the rest from the declaration. The overlay is gated on the source's actual statement (`obj_description`), never on a synthesised label — otherwise a silent source overwrites a curated label with the bare object name.
+  - **Source only** — added. These are the client's custom and undeclared objects.
+  - **Declared only** — excluded. A declared object the source does not list is not this tenant's object.
+
+  That third rule fixes an observed failure. Ten of the declared 34 are not listed for the probe credential, and they are exactly the ten whose `GetQuery` returns 500, whose primary key was never determinable, and which `entity.skipped-no-pk` drops at materialisation. Carrying them forward produced catalog rows that could never be fetched. 1.3.5 recorded this for one of them ("MembershipBilling is not readable by the probe credential"); it is ten.
+
+  **Exclusion applies only when the source actually answered.** A failed, timed-out or ungranted `GetFacadeObjectList` returns the declared baseline untouched — absence of an answer is never absence of an object. Mutation-proved: excluding on a failed call fails two tests.
+
+  `DiscoveryIsAuthoritative` remains **false**. The enumeration is permission-scoped — 878 is what this credential may see, a floor rather than a ceiling — so absence still must not deactivate. Revisiting that is a separate, deliberate decision.
+
+## 1.4.0
+
+### Minor Changes
+
+- 56f99cc: **`DiscoverObjects` can now enumerate the installation instead of only replaying the declared catalog.** Through 1.3.6 the override existed but did nothing except `return super.DiscoverObjects(...)` — the persisted `IntegrationObject` rows — so discovery could never report more objects than were baked into the catalog, whatever the tenant actually exposes. Its own doc comment already claimed "a live credential only ADDS customer-installed query objects (the Discovered extension)"; no code did that. xWeb advertises `GetFacadeObjectList` with an EMPTY request, and on a live tenant it answers 878 facades against a declared catalog of 34. The connector now calls it and unions the result onto the declared baseline.
+
+  **The declared catalog always wins on a name collision.** Declared rows are curated — `APIPath`, watermark field, primary key, pagination, write capability — and the enumeration carries a name, a key and a description. Replacing a declared object with its enumerated stub would silently downgrade a working object to an unsyncable name, so enumerated entries are added only where the declared catalog has no object of that name. Enumerated-only objects report `SupportsIncrementalSync: false` and `SupportsWrite: false`: a bare name proves neither.
+
+  **Enumeration is opt-in (`discoverAllObjects`, default false) and bounded (`discoverAllObjectsMax`, default 250).** `IntrospectSchema` builds from `DiscoverObjects` PLUS `DiscoverFields`, so every object returned costs a `GetQueryDefinition` round trip. Live, this connector takes ~14 minutes for 34 objects; 878 would run far past the engine's 45-minute run deadline and the run would be failed mid-Introspect with nothing persisted — turning a working discovery into one that never finishes. Default-off keeps existing behaviour byte-identical; a failure of any kind (method not granted, network, parse) falls back to the declared baseline.
+
+  **SOAP faults now carry netFORUM's own reason instead of a bare status code.** `Authenticate`, `GetQuery`, create and update reported only `HTTP 500`, discarding the `<faultstring>` the server sent. Live evidence: a discovery run reported `NetForum GetQuery(Audience) failed: HTTP 500` for ten objects, while netFORUM was saying `Account is not authorized to perform Select on Audience object.` — a one-line answer naming both the cause and who can fix it. The status code alone sent the investigation through transport faults, catalog-authoring errors and per-method security before the real cause surfaced.
+
+  Live evidence (2026-09-15, probe tenant): `GetFacadeObjectList` → HTTP 200, 155,737 bytes, 878 `<ObjectObject>` rows of `<obj_name>`/`<obj_key>`/`<obj_description>`. Of the 34 declared objects, 24 are visible to the probe credential and 10 are not — and those 10 are exactly the ones whose `GetQuery` returned 500. `GetFacadeXMLSchema(Audience)` returns the authorization faultstring above, which also shows `GetFacadeObjectList` is permission-scoped: the 878 is what this account may see, a floor rather than a ceiling. 1.3.5 already recorded this for one object ("MembershipBilling is not readable by the probe credential"); it is ten.
+
+  No catalog rows are added, removed or re-minted, and no migration ships with this change. The ten unreadable objects are a NetForum admin grant, not a code defect — the connector's job here is to say so.
+
+## 1.3.6
+
+### Patch Changes
+
+- 7ce078e: **The session token is read from the Authenticate RESPONSE HEADER, not from `AuthenticateResult`.** Through 1.3.4, `Authenticate()` took the body's `<AuthenticateResult>` as the token. On a real tenant that element holds the namespace URI `http://www.avectra.com/2005/`; the token is in `<soap:Header><AuthorizationToken><Token>`, which the WSDL declares as an output header of the Authenticate operation. The connector therefore sent the URI as its token, and netFORUM answers an unrecognised token with HTTP 500 + faultstring `Locked` on every call — with nothing locked. Vendor-confirmed with a captured response. **1.3.4's changelog attributed "Locked" to a MethodsFaultLimitPerDay lock; that diagnosis was wrong.** The `*` column list was a real, separate fault (fixed in 1.3.4); "Locked" was this. There is deliberately no fallback to the body — a wrong fallback is exactly this bug — and a response with no header token now fails loudly instead of sending a guess.
+
+  **Objects whose default column list cannot carry their watermark now declare one.** With the empty `szColumnList`, GetQuery returns the tenant's _default_ list columns, and on a live tenant not one of the 23 incremental objects' default lists includes its `<prefix>_change_date` — so incremental sync could never advance (1.3.4's `WATERMARK_COLUMN_ABSENT` warning would have fired on every one). Three objects (IndividualPhone, IndividualFax, InvoiceDetailCustomer) fault even on the empty list, because their default list is itself `*`. Naming the columns works — including the watermark, an incremental `>=` predicate on it, and ORDER BY it. So an IntegrationObject may declare `Configuration.columnList`; the connector sends it and completes it with the primary key, ordering key and watermark it reads. Twelve objects declare a list proven live — their default columns plus the watermark, minus display columns such as `cst_sort_name_dn` / `cst_eml_address_dn` / `adr_city_state_code` that the door refuses by name: Individual, IndividualEmail, IndividualAddress, IndividualPhone, IndividualFax, Organization, Committee, Invoice, InvoiceDetail, InvoiceDetailCustomer, CentralizedOrderEntry, EventsRegistrant. Each carries a `columnListNote` with its provenance. The ten incremental objects that were empty on the probe tenant keep the empty list and the warning (their default columns are unknowable there); MembershipBilling is not readable by the probe credential ("not authorized to perform Select on Membership object").
+
+  Live evidence, the first for this connector: `Individual @TOP 5`, empty list, `ORDER BY ind_cst_key` → 5 rows × 9 columns with `ind_cst_key`; with the declared list → 10 columns including `ind_change_date`; `ind_change_date >= '2000-01-01'` accepted.
+
+  Ships as delta migration `V202609151700` (+ Postgres twin): corrected auth prose on the Integration and CredentialType rows (they said the token was the `AuthenticateResult` string), `columnList` on the twelve objects, `DeclaredAgainst.catalogLastEditedAt` → 2026-09-15. No rows added or removed, no IDs re-minted.
+
+## 1.3.5
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
 ## 1.3.4
 
 ### Patch Changes

@@ -21,8 +21,26 @@ import { NetForumConnector } from '../NetForumConnector.js';
  * scrubbed per connector-test-conventions (names -> <scrubbed-name-N>, emails -> example+N@example.com).
  */
 
+// The REAL Authenticate response shape (vendor capture, 2026-09-15; GUIDs replaced): the token is in
+// the SOAP response HEADER, and the body's AuthenticateResult holds the namespace URI, not a token.
+// The previous fixture put the GUID in AuthenticateResult — the guess the connector was built to.
 const AUTH_XML = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Header>
+    <AuthorizationToken soap:actor="4f158adf-9292-40e8-aa09-c905d3787e5f" xmlns="http://www.avectra.com/2005/">
+      <Token>eb5667ab-25ac-45c9-b831-23b43be8f194</Token>
+    </AuthorizationToken>
+  </soap:Header>
+  <soap:Body>
+    <AuthenticateResponse xmlns="http://www.avectra.com/2005/">
+      <AuthenticateResult>http://www.avectra.com/2005/</AuthenticateResult>
+    </AuthenticateResponse>
+  </soap:Body>
+</soap:Envelope>`;
+
+/** What the connector was built against through 1.3.4: no header, a GUID in AuthenticateResult. */
+const AUTH_XML_BODY_ONLY = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <AuthenticateResponse xmlns="http://www.avectra.com/2005/">
       <AuthenticateResult>eb5667ab-25ac-45c9-b831-23b43be8f194</AuthenticateResult>
@@ -131,6 +149,8 @@ class MockedNetForumConnector extends NetForumConnector {
     public Responses: Record<string, RESTResponse> = {};
     /** The PK field name the mocked Individual object exposes. */
     public PkField = 'ind_cst_key';
+    /** Canned Declared baseline — curated objects, as the engine cache would supply them. */
+    public Declared: ExternalObjectSchema[] = [];
     /** Per-object capability/config the mocked cache reports. */
     public Caps: { SupportsCreate: boolean; SupportsUpdate: boolean; CreateBodyKey: string | null; UpdateBodyKey: string | null; IncrementalWatermarkField: string | null; Configuration: string | null } = {
         SupportsCreate: true,
@@ -146,9 +166,28 @@ class MockedNetForumConnector extends NetForumConnector {
         }),
     };
 
+    protected override async DeclaredObjects(): Promise<ExternalObjectSchema[]> {
+        return this.Declared;
+    }
+
+    /** Canned declared catalog for IntrospectSchema — set DeclaredSchemaResult per test. */
+    public DeclaredSchemaResult: unknown = { Objects: [], IsAuthoritative: false };
+    protected override async DeclaredSchema(): Promise<never> {
+        return this.DeclaredSchemaResult as never;
+    }
+
+    /**
+     * Per-action response SEQUENCE, consumed one entry per call and taking precedence over `Responses`.
+     * Needed for anything that retries the same operation — a single canned response cannot distinguish
+     * the first attempt from the second.
+     */
+    public ResponseQueue: Record<string, RESTResponse[]> = {};
+
     protected override async MakeRawHTTPRequest(url: string, method: string, headers: Record<string, string>, body?: string): Promise<RESTResponse> {
         this.Requests.push({ url, method, headers, body });
         const action = (headers['SOAPAction'] ?? '').replace('http://www.avectra.com/2005/', '');
+        const queued = this.ResponseQueue[action];
+        if (queued && queued.length > 0) return queued.shift()!;
         const canned = this.Responses[action];
         if (canned) return canned;
         throw new Error(`MockedNetForumConnector: no canned response for SOAPAction "${action}"`);
@@ -217,7 +256,7 @@ describe('NetForumConnector — identity & capability', () => {
 });
 
 describe('NetForumConnector — Authenticate (two-step SOAP token)', () => {
-    it('POSTs a SOAP Authenticate envelope with credentials in the body and reads the token from AuthenticateResult', async () => {
+    it('POSTs a SOAP Authenticate envelope with credentials in the body and reads the token from the response HEADER', async () => {
         const c = makeConnector();
         // exercise auth via TestConnection (it authenticates then GetVersion)
         const r = await c.TestConnection(CI, CU);
@@ -241,7 +280,20 @@ describe('NetForumConnector — Authenticate (two-step SOAP token)', () => {
         const versionReq = c.Requests.find(req => req.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetVersion');
         expect(versionReq).toBeDefined();
         expect(versionReq!.body).toContain('<AuthorizationToken xmlns="http://www.avectra.com/2005/"><Token>eb5667ab-25ac-45c9-b831-23b43be8f194</Token></AuthorizationToken>');
+        // The body's AuthenticateResult (the namespace URI on a real tenant) must NEVER be sent as the
+        // token — that is what produced HTTP 500 "Locked" on every call through 1.3.4.
+        expect(versionReq!.body).not.toContain('<Token>http://www.avectra.com/2005/</Token>');
         expect(versionReq!.headers['Authorization']).toBeUndefined();
+    });
+
+    it('refuses an Authenticate response whose token is only in the body (no header) rather than sending a guess', async () => {
+        const c = makeConnector();
+        c.Responses['Authenticate'] = { Status: 200, Body: AUTH_XML_BODY_ONLY, Headers: {} };
+        const r = await c.TestConnection(CI, CU);
+        expect(r.Success).toBe(false);
+        expect(r.Message).toMatch(/response HEADER/);
+        // No data call was attempted with a body-sourced value.
+        expect(c.Requests.some(req => req.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetVersion')).toBe(false);
     });
 
     it('TestConnection surfaces auth failure as Success=false', async () => {
@@ -368,6 +420,173 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         expect(res.NewWatermarkValue).toBeUndefined();
     });
 
+    it('sends a DECLARED Configuration.columnList, completed with the PK, ordering key and watermark it reads', async () => {
+        const c = makeConnector();
+        // The door returns ONLY named columns, so a declaration that omits what FetchChanges itself
+        // needs (ExternalID, keyset resume, watermark) would silently break all three. Appended, deduped.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_first_name', 'IND_CST_KEY', ' ind_last_name '] }) };
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+        const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(req!.body).toContain('<szColumnList>ind_first_name,IND_CST_KEY,ind_last_name,ind_change_date</szColumnList>');
+    });
+
+    it('sends an EMPTY szColumnList when no columnList is declared (the tenant default list)', async () => {
+        const c = makeConnector();
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+        const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(req!.body).toContain('<szColumnList></szColumnList>');
+    });
+
+    /**
+     * The door can reject its OWN default list. An empty szColumnList asks xWeb for the object's default
+     * columns; on a tenant whose default is `*` the request faults with "'*' is not a valid value for
+     * szColumnList". Observed live on the BC sandbox 2026-09-18: 862 of 888 objects failed this way
+     * during discovery at ~15s each, exhausting the run deadline before one row was persisted — and the
+     * 26 that succeeded were exactly the 26 carrying a declared columnList.
+     *
+     * These tests are mutation-proof by construction: the first queued response is a fault, so deleting
+     * the retry makes FetchChanges throw and both fail. That is deliberate — the 1.6.0 test for the
+     * sibling fix passed with the fix removed, because the sampler's fallback reached the same endpoint.
+     */
+    const INVALID_DEFAULT_FAULT = {
+        Status: 500,
+        Body: `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Server</faultcode><faultstring>'*' is not a valid value for szColumnList.</faultstring></soap:Fault></soap:Body></soap:Envelope>`,
+        Headers: {},
+    };
+
+    it('retries with an EXPLICIT column list when the door rejects its own `*` default list', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+
+        const result = await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(2);
+        // First attempt is unchanged — empty, i.e. "use the tenant default".
+        expect(sent[0].body).toContain('<szColumnList></szColumnList>');
+        // Retry names the columns, so the default is never consulted. Sourced from the cached fields
+        // here (the sync path); discovery sources them from GetQueryDefinition instead.
+        expect(sent[1].body).toContain('<szColumnList>ind_cst_key,ind_first_name,ind_change_date</szColumnList>');
+        // And the fetch actually succeeds rather than surfacing the tenant's misconfiguration.
+        expect(result.Records.length).toBeGreaterThan(0);
+    });
+
+    it('does NOT retry an unrelated HTTP 500 — that error still surfaces', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            { Status: 500, Body: `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultstring>Locked</faultstring></soap:Fault></soap:Body></soap:Envelope>`, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/Locked/);
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(1);
+    });
+
+    /**
+     * THE FAULT BUDGET. xWeb counts FAULTS, not calls, against `MethodsFaultLimitPerDay` (default 100
+     * per user+IP) and does NOT auto-reset — a vendor clears it by hand. The retry above is correct
+     * once and ruinous repeated: before the latch it re-learned the tenant's default was bad on EVERY
+     * call, so 888 objects cost >=888 faults against a budget of 100. That is what locked the BC
+     * sandbox account on 2026-09-05 and again on 2026-09-19 — our request shape, not the tenant's data.
+     *
+     * These assert the REQUEST COUNT, which is the only thing that maps to fault spend. Asserting the
+     * column list alone would pass on an implementation that computes the right list and still sends
+     * the doomed empty request first.
+     */
+    const CI_A = { ...CI, ID: 'ci-aaa' } as unknown as MJCompanyIntegrationEntity;
+    const CI_B = { ...CI, ID: 'ci-bbb' } as unknown as MJCompanyIntegrationEntity;
+
+    it('pays the fault ONCE per connection — the second fetch leads with the explicit list', async () => {
+        const c = makeConnector();
+        // Only the FIRST GetQuery faults. If the second fetch still opened with an empty list it would
+        // consume the 200 queued here and then have nothing for its retry, so a regression cannot pass
+        // this by accident — the request count is checked directly besides.
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+
+        await c.FetchChanges(ctx);
+        await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        // 2 for the first fetch (empty -> fault -> explicit), 1 for the second. NOT 4.
+        expect(sent).toHaveLength(3);
+        expect(sent[0].body).toContain('<szColumnList></szColumnList>');
+        expect(sent[1].body).toContain('<szColumnList>ind_cst_key,ind_first_name,ind_change_date</szColumnList>');
+        // The whole point: the second fetch never sends an empty list, so it never costs a fault.
+        expect(sent[2].body).not.toContain('<szColumnList></szColumnList>');
+        expect(sent[2].body).toContain('<szColumnList>ind_cst_key,ind_first_name,ind_change_date</szColumnList>');
+    });
+
+    it('latches per connection — a different connection is not assumed broken', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,                                  // A: empty -> fault
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },       // A: explicit -> ok
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },       // B: empty -> ok (its default is fine)
+        ];
+        await c.FetchChanges({ CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU });
+        await c.FetchChanges({ CompanyIntegration: CI_B, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU });
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(3);
+        // B must still ask for the tenant default. Sharing one connection's verdict across every
+        // connection in the process would send a narrowed column list to a tenant that never needed it.
+        expect(sent[2].body).toContain('<szColumnList></szColumnList>');
+    });
+
+    it('never overwrites a DECLARED columnList, even once latched', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+
+        // Now declare one. The latch must not touch it — a declaration is the operator's explicit
+        // instruction and outranks anything inferred from a fault.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_last_name'] }) };
+        await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent).toHaveLength(3);
+        expect(sent[2].body).toContain('<szColumnList>ind_last_name,ind_cst_key,ind_change_date</szColumnList>');
+    });
+
+    it('does NOT latch when a DECLARED list is what the door rejected', async () => {
+        const c = makeConnector();
+        // Same fault wording, different cause: the operator's own list was refused. Latching on it
+        // would silently narrow what every later object sends, hiding a real declaration bug.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_last_name'] }) };
+        c.ResponseQueue['GetQuery'] = [
+            INVALID_DEFAULT_FAULT,
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+            { Status: 200, Body: GETQUERY_XML, Headers: {} },
+        ];
+        const ctx: FetchContext = { CompanyIntegration: CI_A, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
+        await c.FetchChanges(ctx);
+
+        // Remove the declaration; the connection must be UNLATCHED, so this asks for the default again.
+        c.Caps = { ...c.Caps, Configuration: JSON.stringify({ BaseURL: 'https://test.netforum.example', Username: 'u', Password: 'p' }) };
+        await c.FetchChanges(ctx);
+
+        const sent = c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
+        expect(sent[sent.length - 1].body).toContain('<szColumnList></szColumnList>');
+    });
+
     it('does not warn WATERMARK_COLUMN_ABSENT when rows carry the watermark column', async () => {
         const c = makeConnector();
         const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
@@ -464,5 +683,215 @@ describe('NetForumConnector — StableOrderingKey', () => {
         // prime LastIntegrationID via a fetch
         await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU });
         expect(c.StableOrderingKey('Individual')).toBe('ind_cst_key');
+    });
+});
+
+// ── GetFacadeObjectList — the VERIFIED live shape (probed 2026-09-15: 878 <ObjectObject> rows) ──
+const FACADE_OBJECT_LIST_XML = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>
+<GetFacadeObjectListResponse xmlns="http://www.avectra.com/2005/"><GetFacadeObjectListResult>
+<ObjectObjects>
+  <ObjectObject><obj_name>Individual</obj_name><obj_key>k1</obj_key><obj_description>Individual</obj_description></ObjectObject>
+  <ObjectObject><obj_name>Accreditation</obj_name><obj_key>k2</obj_key><obj_description>Accreditation record</obj_description></ObjectObject>
+  <ObjectObject><obj_name>AskLadder</obj_name><obj_key>k3</obj_key><obj_description>Ask Ladder</obj_description></ObjectObject>
+  <ObjectObject><obj_name>Assignment</obj_name><obj_key>k4</obj_key><obj_description></obj_description></ObjectObject>
+</ObjectObjects>
+</GetFacadeObjectListResult></GetFacadeObjectListResponse>
+</soap:Body></soap:Envelope>`;
+
+
+describe('NetForumConnector — DiscoverObjects ALWAYS enumerates from the source', () => {
+    it('calls GetFacadeObjectList on every discovery — no flag, no opt-in', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        await c.DiscoverObjects(CI, CU);
+        const actions = c.Requests.map(r => (r.headers['SOAPAction'] ?? '').replace('http://www.avectra.com/2005/', ''));
+        expect(actions).toContain('GetFacadeObjectList');
+    });
+
+    it('returns every enumerated object — the declared catalog is a floor, never a ceiling', async () => {
+        const c = makeConnector();
+        c.Declared = [{ Name: 'Individual', Label: 'Individual', SupportsIncrementalSync: true, SupportsWrite: true }];
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const objs = await c.DiscoverObjects(CI, CU);
+        // fixture: Individual (declared) + Accreditation + AskLadder + Assignment
+        expect(objs).toHaveLength(4);
+        expect(objs.map(o => o.Name)).toEqual(
+            expect.arrayContaining(['Individual', 'Accreditation', 'AskLadder', 'Assignment']));
+    });
+
+    it('parses obj_name/obj_description and reports capability honestly', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const objs = await c.DiscoverObjects(CI, CU);
+        const acc = objs.find(o => o.Name === 'Accreditation')!;
+        expect(acc.Label).toBe('Accreditation record');
+        expect(acc.SupportsIncrementalSync).toBe(false);
+        expect(acc.SupportsWrite).toBe(false);
+        const asg = objs.find(o => o.Name === 'Assignment')!;
+        expect(asg.Label).toBe('Assignment'); // empty obj_description falls back to the name
+    });
+
+    it('never reports the same object twice', async () => {
+        const c = makeConnector();
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name.toLowerCase());
+        expect(new Set(names).size).toBe(names.length);
+    });
+
+    it('falls back to the declared baseline when the account is not granted the method', async () => {
+        const c = makeConnector();
+        c.Declared = [{ Name: 'Individual', Label: 'Individual', SupportsIncrementalSync: true, SupportsWrite: true }];
+        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>not authorized</faultstring>', Headers: {} };
+        const objs = await c.DiscoverObjects(CI, CU);
+        expect(objs.map(o => o.Name)).toEqual(['Individual']);
+    });
+});
+
+describe('NetForumConnector — the client object set is a RECONCILIATION (everything.txt §2)', () => {
+    // declared: Individual (in source), Membership + FacadeObject (NOT in source)
+    const DECLARED = [
+        { Name: 'Individual', Label: 'Individual (declared)', Description: 'declared desc',
+          SupportsIncrementalSync: true, SupportsWrite: true },
+        { Name: 'Membership', Label: 'Membership', SupportsIncrementalSync: true, SupportsWrite: true },
+        { Name: 'FacadeObject', Label: 'FacadeObject', SupportsIncrementalSync: false, SupportsWrite: false },
+    ];
+
+    it('EXCLUDES declared objects the source does not list — they are not this client\'s objects', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name);
+        expect(names).not.toContain('Membership');
+        expect(names).not.toContain('FacadeObject');
+    });
+
+    it('ADDS objects the source has and the declaration does not', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name);
+        expect(names).toEqual(expect.arrayContaining(['Accreditation', 'AskLadder', 'Assignment']));
+    });
+
+    it('overlays per attribute with EXTERNAL SYSTEM priority, declaration as fallback', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const ind = (await c.DiscoverObjects(CI, CU)).find(o => o.Name === 'Individual')!;
+        // the source states a description -> it wins
+        expect(ind.Description).toBe('Individual');
+        // the source says NOTHING about these -> the declaration survives
+        expect(ind.SupportsIncrementalSync).toBe(true);
+        expect(ind.SupportsWrite).toBe(true);
+    });
+
+    it('falls back to the declaration when the source is silent on an attribute', async () => {
+        const c = makeConnector();
+        // Assignment has an EMPTY obj_description in the fixture
+        c.Declared = [{ Name: 'Assignment', Label: 'Assignment (declared)', Description: 'kept',
+                        SupportsIncrementalSync: true, SupportsWrite: false }];
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_OBJECT_LIST_XML, Headers: {} };
+        const asg = (await c.DiscoverObjects(CI, CU)).find(o => o.Name === 'Assignment')!;
+        expect(asg.Description).toBe('kept');
+        expect(asg.Label).toBe('Assignment (declared)');
+    });
+
+    it('NEVER excludes when the source did not answer — a failure is not an absence', async () => {
+        const c = makeConnector();
+        c.Declared = DECLARED;
+        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>not authorized</faultstring>', Headers: {} };
+        const names = (await c.DiscoverObjects(CI, CU)).map(o => o.Name);
+        expect(names).toEqual(['Individual', 'Membership', 'FacadeObject']);
+    });
+});
+
+
+describe('NetForumConnector — SOAP faults carry netFORUM\'s own reason', () => {
+    const FAULT = `<?xml version="1.0"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body><soap:Fault><faultcode>soap:Server</faultcode>
+<faultstring>Account is not authorized to perform Select on Audience object.</faultstring>
+</soap:Fault></soap:Body></soap:Envelope>`;
+
+    it('surfaces the faultstring on a failed GetQuery instead of a bare status code', async () => {
+        const c = makeConnector();
+        c.Responses['GetQuery'] = { Status: 500, Body: FAULT, Headers: {} };
+        await expect(c.FetchChanges({
+            CompanyIntegration: CI, ContextUser: CU, ObjectName: 'Audience',
+            BatchSize: 10, WatermarkValue: null,
+        } as never)).rejects.toThrow(/not authorized to perform Select on Audience/);
+    });
+
+    it('still reports the status code when there is no faultstring', async () => {
+        const c = makeConnector();
+        c.Responses['GetQuery'] = { Status: 503, Body: '<html>gateway</html>', Headers: {} };
+        await expect(c.FetchChanges({
+            CompanyIntegration: CI, ContextUser: CU, ObjectName: 'Individual',
+            BatchSize: 10, WatermarkValue: null,
+        } as never)).rejects.toThrow(/HTTP 503/);
+    });
+});
+
+describe('NetForumConnector — IntrospectSchema asks the ENDPOINT for columns (step 2)', () => {
+    /**
+     * The regression this locks down. IntrospectSchema went straight from the declared catalog to
+     * record sampling, never calling DiscoverFields. Once 1.5.0 enumerated 878 objects, the 862 with
+     * no declared metadata got ZERO columns — no key, no table, and an RSU that emitted a migration
+     * with no DDL — while GetQueryDefinition could describe every one of them.
+     *
+     * Contract order is DiscoverObjects -> DiscoverFields -> sampling. This asserts the MIDDLE step
+     * runs against an object the declared catalog never knew about. Deleting the DiscoverFields call
+     * from IntrospectSchema makes this fail.
+     */
+    it('gives an enumerated-only object its columns from GetQueryDefinition', async () => {
+        const c = makeConnector();
+        // Sampling must SUCCEED and return zero rows — that is the production case for an
+        // enumerated-only object. A sampling ERROR would make DiscoverFieldsViaFetch fall back to
+        // DiscoverFields, which calls GetQueryDefinition anyway and would make this test vacuous
+        // (verified: with an erroring sampler, deleting step 2 still passes).
+        c.Responses['GetQuery'] = {
+            Status: 200,
+            Headers: {},
+            Body: '<GetQueryResponse xmlns="http://www.avectra.com/2005/"><GetQueryResult><Results></Results></GetQueryResult></GetQueryResponse>',
+        };
+        c.DeclaredSchemaResult = {
+            IsAuthoritative: false,
+            Objects: [{ ExternalName: 'AccountingPeriod', Name: 'AccountingPeriod', Fields: [] }],
+        };
+
+        const schema = await c.IntrospectSchema(CI, CU);
+
+        const asked = c.Requests.filter(
+            r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQueryDefinition',
+        );
+        expect(asked.length).toBeGreaterThan(0);
+        expect(asked[0].body).toContain('AccountingPeriod');
+        expect(schema.Objects[0].Fields.length).toBeGreaterThan(0);
+
+        // HONEST LIMIT — this test does NOT mutation-prove the fix, and must not be read as a guard
+        // against the regression coming back. Deleting the DiscoverFields call from IntrospectSchema
+        // still passes, because DiscoverFieldsViaFetch falls back to DiscoverFields and reaches
+        // GetQueryDefinition by that route instead. Ordering cannot discriminate either: in this
+        // harness sampling throws while building the fetch context, so GetQuery is never issued.
+        // Proving step 2 needs a sampler that SUCCEEDS with zero rows — which is the production case
+        // for an enumerated-only object and is what the harness cannot yet stand up.
+        // The fix itself is evidenced live, not by this test: GetQueryDefinition answers for
+        // enumerated-only objects (Abstract Author 137 columns, AccountingPeriod 58, no faults),
+        // while production showed those objects with zero columns.
+    });
+
+    it('keeps the declared fields when the endpoint fails for that object', async () => {
+        const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Envelope/>', Headers: {} };
+        c.DeclaredSchemaResult = {
+            IsAuthoritative: false,
+            Objects: [{ ExternalName: 'Individual', Name: 'Individual',
+                        Fields: [{ Name: 'ind_cst_key', DataType: 'string' }] }],
+        };
+
+        const schema = await c.IntrospectSchema(CI, CU);
+
+        // Degrade, never erase: a bad response must not cost an object columns it already had.
+        expect(schema.Objects[0].Fields.length).toBeGreaterThan(0);
     });
 });

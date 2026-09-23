@@ -1,5 +1,74 @@
 # @memberjunction/connector-propfuel
 
+## 1.2.5
+
+### Patch Changes
+
+- 01226b6: PropFuel: honour the requested batch size instead of overshooting by a whole file.
+
+  The record cap was only checked BETWEEN files, so a single file larger than the cap was emitted in
+  full: a 1,000-record file answered a 200-record request with 1,000 records. The engine flagged it as
+  `CONNECTOR_IGNORED_BATCH_SIZE` ("connector returned 1000 records for batch 1 (requested 200)") and
+  wrote them in chunks, so nothing was lost — but the contract was broken and the ceiling on memory
+  was one file, not one batch.
+
+  A file is no longer the atomic unit. The synthetic cursor may now carry a within-file offset,
+  `"<microtime>@<n>"`, so a batch can stop part-way through a file and the next call resumes at record
+  n+1 of that same file. Stopping mid-file keeps the file in the cursor rather than advancing past it,
+  so records are neither repeated nor skipped.
+
+  Cursors written by earlier versions are a bare microtime with no `@`; they parse as offset 0 and
+  continue to mean "that file is finished", so stored positions keep working across the upgrade.
+
+  Covered by tests: a batch of 1 against a 3-record file returns exactly 1; walking a whole feed one
+  record at a time yields every record exactly once and in order; a legacy bare-microtime cursor does
+  not re-download the file it already finished; a file that exactly fills the batch leaves a clean
+  cursor with no phantom offset.
+
+## 1.2.4
+
+### Patch Changes
+
+- 4fe25d0: PropFuel: record identity stripped every nested field, so most records shared one id.
+
+  `stableHash` built its identity with `JSON.stringify(record, Object.keys(record).sort())`. The
+  second argument to `JSON.stringify` is a REPLACER, and an array replacer is an allow-list of
+  property names applied at EVERY level — not an ordering hint for the top level. Passing the
+  top-level keys therefore stripped every NESTED key from the serialisation.
+
+  A PropFuel export row is nested (`{campaign:{...}, contact:{...}, click:{...}}`), so every record
+  serialised to `{"campaign":{},"click":{},"contact":{}}` and every record in a file with the same
+  shape hashed to the same value. `BuildRecordIdentity` falls back to this hash for every data type
+  whose payload has no top-level `id`/`uuid`/`externalID`, which is all of them.
+
+  Downstream the engine did exactly the right thing with a wrong input: two records sharing an
+  ExternalID are one source record observed twice, so `CollapseDuplicateIdentities` collapsed them.
+
+  Measured on a live account 2026-09-13: a batch of 884 `clicks` contained 2 distinct identities and
+  882 were collapsed; 1000 `opens` → 998 collapsed; 500 `checkin_questions` → 499 collapsed. The sync
+  fetched roughly 2,400 records and stored 181, reporting success with warnings. The colliding hash
+  `566c9995` from that run reproduces exactly from two synthetic records that differ in every nested
+  field.
+
+  Replaced with a recursive canonical serialisation — keys sorted at every depth, array order kept
+  (order is semantically meaningful), `undefined` omitted. Five regression tests cover the nested
+  case, key-order stability, depth, array order, and the flat records the old code happened to handle
+  correctly by accident; two of them fail against the previous implementation.
+
+  Note for existing installs: this CHANGES every ExternalID. Rows written under the old hash will not
+  match the new identity, so they are not updated in place — they need reconciling rather than a
+  plain re-sync.
+
+## 1.2.3
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
 ## 1.2.2
 
 ### Patch Changes

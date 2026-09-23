@@ -96,6 +96,21 @@ jobs:
       - name: Validate migrations
         run: node scripts/validate-migrations.mjs
 
+      # A migration that matches a metadata row by NAME must not depend on the database's
+      # collation. `i.Name = 'openwater'` matches on SQL Server (case-insensitive default) and
+      # matches NOTHING on PostgreSQL, so the statement inserts zero rows and still succeeds.
+      # OpenWater lost 24 field declarations that way: 5 objects ended with no columns, so no
+      # primary key, so discovery skipped them and they could never sync (2026-09-13).
+      - name: Migration name matching is collation-independent
+        run: node scripts/lint-migration-name-case.mjs
+
+      # A parameter given a VALUE and its _Clear flag in the same call: the clear wins and the
+      # value is silently discarded. Five OpenWater objects were created with their AccessPath
+      # supplied and cleared together, so the walk was never entered and the fetch requested a
+      # prose APIPath as a URL — on every dialect, since creation (2026-09-13).
+      - name: No parameter is both set and cleared
+        run: node scripts/lint-migration-value-then-clear.mjs
+
       - name: PG migrations up to date
         run: node scripts/build-pg-migrations.mjs --check
 
