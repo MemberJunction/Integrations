@@ -67,6 +67,30 @@ class MockedOpenWaterConnector extends OpenWaterConnector {
     }
 }
 
+/**
+ * Counts OVERLAPPING requests so concurrency is asserted structurally rather than by wall-clock.
+ * The `setTimeout(0)` yield is what lets every dispatched request increment before any resolves —
+ * a timing-free proof that the walk no longer awaits one parent before starting the next.
+ */
+class ConcurrencyProbeConnector extends MockedOpenWaterConnector {
+    public InFlight = 0;
+    public MaxInFlight = 0;
+
+    protected override async MakeHTTPRequest(
+        auth: RESTAuthContext, url: string, method: string,
+        headers: Record<string, string>, body?: unknown
+    ): Promise<RESTResponse> {
+        this.InFlight++;
+        this.MaxInFlight = Math.max(this.MaxInFlight, this.InFlight);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 0));
+            return await super.MakeHTTPRequest(auth, url, method, headers, body);
+        } finally {
+            this.InFlight--;
+        }
+    }
+}
+
 /** Exposes the REAL MakeHTTPRequest (no transport override) so the abort deadline can be asserted. */
 class RealTransportOpenWaterConnector extends OpenWaterConnector {
     public async PublicMakeHTTP(auth: RESTAuthContext, url: string): Promise<RESTResponse> {
@@ -1128,6 +1152,36 @@ describe('OpenWaterConnector — a detail walk is bounded by the caller\'s batch
         expect(result.NextCursor).toBe('detail:2');
         // Only the parents needed for this batch were fetched — 103/104 were never touched.
         expect(connector.Requests.some(r => r.url.includes('/v2/Applications/103'))).toBe(false);
+    });
+
+    it('walks parent details CONCURRENTLY, and still emits them in parent order', async () => {
+        // The walk was one `await` per parent, so a 2,079-application door cost 2,079 serialized
+        // round trips and three objects derived from that door each paid it in full — measured on
+        // the sandbox 2026-09-14 at ~300 rows/min. Concurrency is the fix; ORDER is what it must
+        // not cost, because `consumed` is the resume cursor and nestShape is "first detail wins".
+        const connector = new ConcurrencyProbeConnector();
+        fourApplications(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        expect(result.Records).toHaveLength(4);
+        expect(result.Records.map(r => String(r.Fields.applicationId))).toEqual(['101', '102', '103', '104']);
+        // The point of the change: more than one detail in flight at once.
+        expect(connector.MaxInFlight).toBeGreaterThan(1);
+    });
+
+    it('fetchConcurrency on the connection bounds the walk width', async () => {
+        // The knob has to be reachable without a release — a vendor that rate-limits harder than
+        // OpenWater must be throttleable from the connection alone.
+        const connector = new ConcurrencyProbeConnector();
+        fourApplications(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', {
+            CompanyIntegration: { IntegrationID: 'int-1', Configuration: JSON.stringify({ fetchConcurrency: 1 }) },
+        } as Partial<FetchContext>));
+
+        expect(result.Records).toHaveLength(4);
+        expect(connector.MaxInFlight).toBe(1);
     });
 
     it('resuming from the cursor continues at the offset and reports completion', async () => {
