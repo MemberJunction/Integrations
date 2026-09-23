@@ -1,5 +1,6 @@
 {
   "generatedBy": "scripts/lint-writable-pk.mjs --write",
+  "scope": "writable",
   "count": 0,
   "keys": []
 }
