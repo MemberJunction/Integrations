@@ -4,10 +4,33 @@
       "Name": "OpenWater",
       "Icon": "fa-solid fa-trophy",
       "ClassName": "@memberjunction/connector-openwater",
-      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector \u2014 pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "Description": "OpenWater awards/grants/abstracts/fellowship connector \u2014 pull sync of programs, applications, users, invoices, judges, rounds and review objects via Public API v2. Catalog is DECLARED (vendor has no enumeration API); see Configuration.DeclaredAgainst.",
       "ImportPath": "@memberjunction/connector-openwater",
-      "NavigationBaseURL": "https://api.getopenwater.com",
-      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API"
+      "NavigationBaseURL": "https://{tenant}.secure-platform.com",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API",
+      "Configuration": {
+        "DeclaredAgainst": {
+          "swagger": {
+            "url": "https://api.secure-platform.com/swagger/v2/swagger.json",
+            "accessedAt": "2026-09-22",
+            "sha256": "1abdc36cd18add8a0fea16a66530a9141c2b2c7998906af81130d738b5798747",
+            "sizeBytes": 437128,
+            "specFormat": "OpenAPI 3.0.1",
+            "apiTitle": "OpenWater API 2.0",
+            "pathCount": 92,
+            "getPathCount": 46,
+            "schemaCount": 231,
+            "authentication": "none required to read the document"
+          },
+          "catalogIsContract": true,
+          "catalogIsContractNote": "None of the 92 paths enumerates the object surface, so live discovery is not possible for this vendor. DiscoverObjects, DiscoverFields and IntrospectSchema read the Declared catalog from the engine cache and DiscoveryIsAuthoritative stays false, so the platform is never told that a live enumeration happened. The object list is therefore the connector version: a collection OpenWater adds after accessedAt cannot appear on any tenant until this catalog is re-declared against a newer swagger.",
+          "howToRecheck": "Fetch swagger.url, compare sha256; if it changed, diff its GET paths against the set of APIPath, AccessPath.doorPath, AccessPath.entryPath, alternativePaths and harvestDetailPath values in this catalog. A GET list path with no match is an undeclared object.",
+          "surfaceCoverageAt": "2026-09-22",
+          "surfaceCoverageNote": "Every GET path not referenced by the catalog on this date is a per-record detail (/{id}), a form template, or a settings singleton. No undeclared list collection existed. Per-record detail data (Evaluation scores and answers, Session chairs and items, User flags) is tracked separately as extraction work, not as a catalog gap.",
+          "catalogLastEditedAt": "2026-09-22",
+          "catalogLastEditedNote": "Added this pin, extended Description, and replaced NavigationBaseURL (api.getopenwater.com no longer resolves; the live API host is the shared api.secure-platform.com and each tenant UI lives at its own subdomain, which is the connection ClientKey). No object or field changed."
+        }
+      }
     },
     "relatedEntities": {
       "MJ: Integration Objects": [
@@ -327,8 +350,8 @@
                   "ID": "C2D02E5F-7232-4562-82D0-BFEC3F4CB128"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.095Z",
-                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                  "lastModified": "2026-09-14T01:57:47.807Z",
+                  "checksum": "978264b44df1c2eb25dedcd718334aabefccb2317ef0e9175d1e6da2ec09c5fb"
                 }
               },
               {
@@ -900,8 +923,8 @@
                   "ID": "9EA86648-550B-426C-9D4F-A8612DCFBF26"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.420Z",
-                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                  "lastModified": "2026-09-14T01:57:47.863Z",
+                  "checksum": "978264b44df1c2eb25dedcd718334aabefccb2317ef0e9175d1e6da2ec09c5fb"
                 }
               },
               {
@@ -1305,8 +1328,8 @@
                   "ID": "2091109B-A9AB-4D8D-B8E7-E1D7EBB5AC73"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.642Z",
-                  "checksum": "41bdc720f49684fa60089e2d17a7aa760e20d97fd3b84cd6250ed050a688e694"
+                  "lastModified": "2026-09-14T01:57:47.909Z",
+                  "checksum": "e01b2669ea510f2bb159f311b47200c10f40590a2e42d196f41f4184ac545d6f"
                 }
               },
               {
@@ -1328,8 +1351,8 @@
                   "ID": "AB54E7DF-318C-417E-BB75-038E1C087893"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.654Z",
-                  "checksum": "8ee5ef34e8e1a072fa7bbd2a77298a38b9e7df3a1925130c2d12a4f28c009b7f"
+                  "lastModified": "2026-09-14T01:57:47.935Z",
+                  "checksum": "d5215f5a11e6fae397f02a4daabd9862f52be33c8454fef66d11382a380ba7d7"
                 }
               },
               {
@@ -1454,7 +1477,7 @@
             "IntegrationID": "@parent:ID",
             "MetadataSource": "Declared",
             "Configuration": {
-              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId \u2014 generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
+              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId — generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
             }
           },
           "relatedEntities": {
@@ -2873,8 +2896,8 @@
                   "ID": "D582FCE5-33DF-4901-AE2F-2CB7E4819C17"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.509Z",
-                  "checksum": "8a0fe9afe97ff0e068f1254aecb5fa03d3a3cfa1186e24e22e14db99883180bb"
+                  "lastModified": "2026-09-14T01:57:48.065Z",
+                  "checksum": "2945b7bbf3dfe18abd2f0c08d1b6af8a6c0a8bb4152ef735d291051ad3694eb0"
                 }
               },
               {
@@ -2918,8 +2941,8 @@
                   "ID": "1E282CEF-C7AF-4D3A-8CA9-BB526B666CCA"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.536Z",
-                  "checksum": "0f4326f73329cad018a83b030166c6cd58bc7216b320516adb144ad04474cc80"
+                  "lastModified": "2026-09-14T01:57:48.085Z",
+                  "checksum": "a90f4cb6a66ae56f5d74cbad4b018b280c091b81f8e91aa1f5018c968a52ce90"
                 }
               },
               {
@@ -3061,8 +3084,8 @@
                   "ID": "4777B9F4-E9F9-4905-B357-621103A8BCDA"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.617Z",
-                  "checksum": "dd82e29146c0f40c81276606bca9cb6b900f8cfc512294047d1046edc1f686a5"
+                  "lastModified": "2026-09-14T01:57:48.128Z",
+                  "checksum": "e5f35f62b8f4c0465a48c008d6b2fbe15ac6b19cac49af8edb75a135608238a6"
                 }
               },
               {
@@ -3084,8 +3107,8 @@
                   "ID": "99A41678-06F2-403B-A68D-3C1B2AADB806"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.631Z",
-                  "checksum": "7413c3e59c992eb024cff6af9ffa37338f211cc605aac79822b4897e64debd65"
+                  "lastModified": "2026-09-14T01:57:48.149Z",
+                  "checksum": "1db2ea612ff3f14e524982f61f20e106c31f375dfb314b73ebf2cebe45d4c8e5"
                 }
               },
               {
@@ -3239,7 +3262,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3252,6 +3275,10 @@
                 },
                 "primaryKey": {
                   "ID": "2BFE5913-9D8F-5769-B46A-EC38C98FD9C6"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.205Z",
+                  "checksum": "f652a0fef0faed4a966dafbf8ae0addc23a92cd18eae2b8c9479fe4f67ae785a"
                 }
               }
             ]
@@ -3407,8 +3434,8 @@
                   "ID": "176AB13A-58C7-4772-B643-426126110DAC"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.780Z",
-                  "checksum": "d2baf39b3c70e79103e1b35cc47fb75df08b45669f0e1a2e99561ca3dbe1e91b"
+                  "lastModified": "2026-09-14T01:57:48.230Z",
+                  "checksum": "61edcb54202c4bbbd033e204455f7ff7e2e630c739b97e4d20710f300549ab92"
                 }
               },
               {
@@ -3437,7 +3464,7 @@
                 "fields": {
                   "Name": "fundId",
                   "DisplayName": "Fund Id",
-                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3450,6 +3477,10 @@
                 },
                 "primaryKey": {
                   "ID": "2212B345-8394-5E7B-9A35-34110D54D538"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.251Z",
+                  "checksum": "739eb1226183db21a3f69abd40a4df653d77695f44ffa3f914af2291c5026623"
                 }
               }
             ]
@@ -3491,7 +3522,7 @@
                 "entryPath": "/v2/JudgeAssignments/AssignedToRound",
                 "parentParamIn": "query"
               },
-              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} \u2014 generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
+              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} — generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
             },
             "Status": "Active",
             "SupportsPagination": true,
@@ -3590,8 +3621,8 @@
                   "ID": "FAE98E46-6C91-413E-B2E0-232AE847689D"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.860Z",
-                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                  "lastModified": "2026-09-14T01:57:48.294Z",
+                  "checksum": "978264b44df1c2eb25dedcd718334aabefccb2317ef0e9175d1e6da2ec09c5fb"
                 }
               },
               {
@@ -3790,8 +3821,8 @@
                   "ID": "23966173-14BE-4193-AB69-29A807ACF4E1"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.942Z",
-                  "checksum": "7255454584c0e248414cf419d11340b76d2fbbe46741bde067fbac1e9e9d6144"
+                  "lastModified": "2026-09-14T01:57:48.318Z",
+                  "checksum": "c7396400a4e14932094f9a1c1db337eaa6ca018e72ad53e198c1b418f119d46a"
                 }
               },
               {
@@ -3913,15 +3944,15 @@
                   "ID": "CE2A003B-4201-47EC-BF6E-41CA07FABE6F"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:59.007Z",
-                  "checksum": "37d26e69113675b27239ba7d1e1c52171d20238e2b9031e3d3153a6a84eed2ea"
+                  "lastModified": "2026-09-14T01:57:48.363Z",
+                  "checksum": "471d3f6a6eeecd0f08f2ddbc178109360d3825d50157b7b4b4b23b095ddaf5c7"
                 }
               },
               {
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3934,6 +3965,10 @@
                 },
                 "primaryKey": {
                   "ID": "42F46EF8-074F-5BAD-8D36-6C5DE00862F3"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.388Z",
+                  "checksum": "d79e1a6a23262fd4df113f7e5ced5a7b96afd13bec5ab530434ce50f566bf7a8"
                 }
               }
             ]
@@ -4025,7 +4060,7 @@
                 "fields": {
                   "Name": "roundId",
                   "DisplayName": "Round Id",
-                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4038,6 +4073,10 @@
                 },
                 "primaryKey": {
                   "ID": "DE1496E1-64A1-5F78-9BFC-B44C7EBFB569"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.412Z",
+                  "checksum": "74d710e13985d3a56ff020128cc2eea7b30ba9e464ea537bd609a5ce88375f42"
                 }
               }
             ]
@@ -4180,7 +4219,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4193,6 +4232,10 @@
                 },
                 "primaryKey": {
                   "ID": "5860D712-577F-57C2-89F2-1D51E934699F"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.459Z",
+                  "checksum": "b108b11ae07048927b82c29a02bec8c78d05ed582666498fda51bf2531cb7f72"
                 }
               }
             ]
@@ -4350,15 +4393,15 @@
                   "ID": "5263652B-DDA1-44EA-A728-516E3E3DA6AB"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:59.166Z",
-                  "checksum": "fac4e8609a6b8723d5f06738d4f16ba4ea40ec45f11cdb849b4d53aa9066111c"
+                  "lastModified": "2026-09-14T01:57:48.510Z",
+                  "checksum": "e9d3eb0e2aa521a16416ab3577e78d134531c01c1f4f97bdd35586a379831d46"
                 }
               },
               {
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4371,6 +4414,10 @@
                 },
                 "primaryKey": {
                   "ID": "152C9C7A-DC82-5C11-81D4-92753315C3AC"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.485Z",
+                  "checksum": "15994b5087e0bd59b3ba67ed2f8cb9d101115486dc75c9899d559153f67c5377"
                 }
               }
             ]
@@ -4413,7 +4460,7 @@
                 "parentParamName": "programId",
                 "entryPath": "/v2/Programs/{programId}/Scheduler/TimeSlots"
               },
-              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) \u2014 generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
+              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) — generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
               "LiteralUpdateReason": "Update UpdateRequest requires scheduleDayIds (array of int); read-side IOF is availableOnlyInDayIds. Generic flat body omits/misnames it -> 422. Connector overrides UpdateRecord to supply scheduleDayIds from availableOnlyInDayIds. Mirrors LiteralCreateReason."
             },
             "Status": "Active",
@@ -4559,7 +4606,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4572,6 +4619,10 @@
                 },
                 "primaryKey": {
                   "ID": "26A08615-7040-5CDC-9162-6646C583C239"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.553Z",
+                  "checksum": "06f04f5bca7bc95b647d49ef068d87a2e9aa1454025f5e0ed476428777dcbf02"
                 }
               }
             ]
@@ -4769,7 +4820,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4782,6 +4833,10 @@
                 },
                 "primaryKey": {
                   "ID": "7D9FF438-D975-5CD5-8E14-E3A5D40473F6"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.597Z",
+                  "checksum": "fd6c77955f53b89daaac7063d10dbf4150da7169605dbcd7491f06ed90d2061b"
                 }
               }
             ]
@@ -4866,7 +4921,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4879,6 +4934,10 @@
                 },
                 "primaryKey": {
                   "ID": "F5C6C9BF-B530-5C9C-8B56-FF89358C8428"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.621Z",
+                  "checksum": "c3da669fd2d4068dd6716092e2c04ba234d37525d21507337993a1f4e3ace97c"
                 }
               }
             ]
@@ -5398,6 +5457,13 @@
                   "Status": "Active",
                   "MetadataSource": "Declared",
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9C1E7B24-3F86-5A41-B7D2-58C0E1A4F933"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.676Z",
+                  "checksum": "65190be489999cfb5ce6f296cba445f44c75481a117cf4894bd2fa7a837f6275"
                 }
               },
               {
@@ -5440,6 +5506,10 @@
           },
           "primaryKey": {
             "ID": "7D3F6794-4A3A-4C2F-9255-A27448CB4B50"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.602Z",
+            "checksum": "053fb0b57e73144bf873553969d29ad48cf5d5db92cf3f2a7cd8953da8c00dfb"
           }
         },
         {
@@ -5584,6 +5654,258 @@
           },
           "primaryKey": {
             "ID": "2B33BEA0-AC37-46EB-9190-3CE4B45571CC"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationJudgeScorecard",
+            "DisplayName": "Application Judge Scorecards",
+            "Description": "OpenWater per-judge scorecards on an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> judgeScorecardInfos[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].judgeScorecardInfos[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "judgeScorecardInfos[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "41A2D3C3-0F57-4AB9-A400-99DBF3D9DA3F"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.723Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "644DBEC0-A0A5-4CDC-B598-FF9F3E2AB413"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.663Z",
+            "checksum": "6adb9147099b8fe5c3897b07e59a36420707d1004cb6e60edec3b9f8a188a386"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationReceivedRecommendation",
+            "DisplayName": "Application Received Recommendations",
+            "Description": "OpenWater recommendations RECEIVED for an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> receivedRecommendations[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].receivedRecommendations[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "receivedRecommendations[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AFFE89AA-49C5-4971-9760-AF7FBF5A95BE"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.747Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E2351748-76FA-490A-8E65-22BE8EF77FCC"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.693Z",
+            "checksum": "e765808597e365e52569e9389b837462e36461ae515e42b49c49090eb83ffd95"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationPendingRecommendation",
+            "DisplayName": "Application Pending Recommendations",
+            "Description": "OpenWater recommendations REQUESTED but not yet received for an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> notReceivedRecommendations[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].notReceivedRecommendations[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "notReceivedRecommendations[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "438E0ECC-0099-4F44-9BB2-3CA46DF52AF3"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.772Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "4514D359-D1F5-40B6-84D2-36ED211D0E30"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.724Z",
+            "checksum": "244fcadfe1eab53e118ffc2519f3da5b7e914beebc670b69e32968e5fed26e56"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationScoringQuestionScore",
+            "DisplayName": "Application Scoring Question Scores",
+            "Description": "OpenWater aggregated scores per general scoring question on an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> generalScoringQuestionsAggregatedScoreInfos[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].generalScoringQuestionsAggregatedScoreInfos[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "generalScoringQuestionsAggregatedScoreInfos[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0CF7EC86-3411-4C92-93DD-306AD5436D86"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.795Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "7DD615DB-8E11-43A0-9A07-1E2912543C48"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.751Z",
+            "checksum": "f56cdb62b1b0d6fc2fb0401f9dd9fa128a5034d5f758a650d8a9dc3fddadec5e"
           }
         }
       ]
