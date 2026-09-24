@@ -199,6 +199,19 @@ interface NFQueryDefinition {
     DefaultListColumns: string[];
 }
 
+/**
+ * xWeb refuses any GetQuery whose text contains `_entity_key` — the vendor's GetQuery page lists it with
+ * select/insert/update/delete/exec/execute as the tokens that make the door answer "Invalid query." (it is
+ * netFORUM's multi-entity security column). Every netFORUM table carries a `<prefix>_entity_key`, so a
+ * column list built from an object's definition ALWAYS contained one, and every such list was refused: 8 of 8
+ * explicit lists on a live tenant (2026-09-24), while the same objects' default lists — which never include
+ * it — read fine. The keyword tokens are matched by xWeb as words, not substrings: the vendor's own example
+ * filters on `mls_delete_flag=0`, so `_delete_flag` columns stay. Only `_entity_key` is excluded.
+ */
+function IsQueryableColumn(name: string): boolean {
+    return !/_entity_key/i.test(name);
+}
+
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-netforum-enterprise')
 export class NetForumConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
@@ -762,7 +775,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             ? columns.filter(c => !!c.Table && c.Table.toLowerCase() === mainTable.toLowerCase() && !c.Alias)
             : [];
         const pool = main.length > 0 ? main : columns;
-        const keyed = pool.filter(c => isKeyType(c.DataType));
+        // `_entity_key` is av_key-typed but is not a candidate: xWeb refuses any query that names it.
+        const keyed = pool.filter(c => isKeyType(c.DataType) && IsQueryableColumn(c.Name));
         if (keyed.length === 0) return undefined;
         const described = keyed.find(c => /^primary\s+key$/i.test((c.Description ?? '').trim()));
         if (main.length > 0 && described) return described.Name;
@@ -940,7 +954,18 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         }
         if (!args.szColumnList && this.DefaultColumnListUnusable.has(faultKey)) {
             const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
-            if (known) args.szColumnList = known;
+            if (known) {
+                args.szColumnList = known;
+            } else {
+                // The tenant's default list is known to be unusable and nothing describes this object's
+                // columns (no definition, no persisted fields). The only request left is one that will
+                // fault, and faults are what lock the account — so it is not sent.
+                throw new Error(
+                    `NetForum GetQuery(${ctx.ObjectName}) not attempted: this connection's default column list is ` +
+                    `unusable ('*' faulted earlier) and no column list is known for "${ctx.ObjectName}" — ` +
+                    `GetQueryDefinition described no columns and none are persisted. Nothing valid to send.`,
+                );
+            }
         }
         // The vendor: "@TOP -1 ... specific, named fields must be passed ... in szColumnList". The
         // legacy unbounded fetch of a keyless object therefore names its columns when it can.
@@ -1122,7 +1147,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const out: string[] = [];
         const seen = new Set<string>();
         const add = (name: string | undefined, qualifier: string | null): void => {
-            if (!name) return;
+            if (!name || !IsQueryableColumn(name)) return;
             const key = name.toLowerCase();
             if (seen.has(key)) return;
             seen.add(key);
