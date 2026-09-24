@@ -217,7 +217,11 @@ class MockedNetForumConnector extends NetForumConnector {
         } as unknown as MJIntegrationObjectEntity;
     }
 
+    /** When true the mocked cache carries NO fields at all — an object persisted without columns. */
+    public NoFields = false;
+
     protected override GetCachedFields(_objectID: string): MJIntegrationObjectFieldEntity[] {
+        if (this.NoFields) return [];
         const fields = [
             { Name: this.PkField, DisplayName: 'Customer Key', Description: 'Customer Key', Type: 'String', IsPrimaryKey: true, IsRequired: true, IsReadOnly: true, IsUniqueKey: true, Status: 'Active', Sequence: 0 },
             { Name: 'ind_first_name', DisplayName: 'First Name', Description: 'First Name', Type: 'String', IsPrimaryKey: false, IsRequired: false, IsReadOnly: false, IsUniqueKey: false, Status: 'Active', Sequence: 1 },
@@ -1223,6 +1227,55 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         expect(q.body).toContain('<szObjectName>WidgetLog @TOP -1</szObjectName>');
         expect(q.body).toContain('<szColumnList>cu_widget_log.wlg_message,cu_widget_log.wlg_when,ind_change_date</szColumnList>');
         expect((res.Warnings ?? []).map(w => w.Code)).toContain('UNPAGINATED_FETCH');
+    });
+
+    it('the explicit column list never names an _entity_key column (xWeb refuses the whole query), and keeps _delete_flag', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        const def = INDIVIDUAL_DEF_REAL_XML.replace(
+            '<Column><mdc_name>ind_prf_code</mdc_name>',
+            '<Column><mdc_name>ind_entity_key</mdc_name><mdc_description>Entity Key</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>' +
+            '<Column><mdc_name>ind_delete_flag</mdc_name><mdc_description>Deleted</mdc_description><mdc_data_type>av_flag</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>1</mdc_width_max></Column>' +
+            '<Column><mdc_name>ind_prf_code</mdc_name>');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: def, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [FAULT_500("'*' is not a valid value for szColumnList"), { Status: 200, Body: GETQUERY_XML, Headers: {} }];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const list = /<szColumnList>([^<]*)<\/szColumnList>/.exec(getQueries(c)[1].body)![1];
+        expect(list).not.toMatch(/entity_key/i);
+        expect(list).toContain('co_individual.ind_delete_flag');
+        expect(list.split(',')[0]).toBe('co_individual.ind_cst_key');
+        // the definition still reports the column — it is a real column, just not one GetQuery may name
+        const fields = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(fields.some(f => f.Name === 'ind_entity_key')).toBe(true);
+        expect(fields.find(f => f.Name === 'ind_entity_key')!.IsPrimaryKey).toBe(false);
+    });
+
+    it('an _entity_key column is never chosen as the key, even when it is the only key-typed column', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set(['Individual']);
+        const def = KEYLESS_DEF_XML.replace(
+            '<Column><mdc_name>wlg_message</mdc_name>',
+            '<Column><mdc_name>wlg_entity_key</mdc_name><mdc_description>Entity Key</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_nullable>0</mdc_nullable><mdc_table_name>cu_widget_log</mdc_table_name><mdc_width_max>16</mdc_width_max></Column><Column><mdc_name>wlg_message</mdc_name>');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: def, Headers: {} };
+        const fields = await c.DiscoverFields(CI, 'WidgetLog', CU);
+        expect(fields.some(f => f.IsPrimaryKey)).toBe(false);
+    });
+
+    it('with the default list known unusable and no column list to send, no request is made', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.NoFields = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('WidgetLog');
+        c.Responses['GetQueryDefinition'] = FAULT_500('Account is not authorized');   // no definition → no columns
+        c.Responses['GetQuery'] = FAULT_500("'*' is not a valid value for szColumnList");
+        const ctx = sampleCtx('WidgetLog', { CompanyIntegration: { ...CI, ID: 'ci-9' } });
+        // first object on this connection: the empty list is tried once and faults — the latch is set
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/not a valid value for szColumnList/);
+        expect(getQueries(c)).toHaveLength(1);
+        // the connector must NOT pay a second fault for a request it knows will be refused
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/not attempted.*Nothing valid to send/);
+        expect(getQueries(c)).toHaveLength(1);
     });
 
     it('a refused definition is not asked again on this instance; a network failure is', async () => {
