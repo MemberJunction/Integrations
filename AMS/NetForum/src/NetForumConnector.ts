@@ -169,6 +169,36 @@ interface NFObjectConfig {
     writeOps?: { createOp?: string; updateOp?: string };
 }
 
+/** One `<Column>` of a GetQueryDefinition response, with the table (and alias) that carries it. */
+interface NFDefinedColumn {
+    Name: string;
+    /** `mdc_table_name`, else the enclosing `<lsf_from_table>`; null when the response states neither. */
+    Table: string | null;
+    /** `<lsf_from_alias>` of the enclosing table — GetQuery MUST use it to name this column when set. */
+    Alias: string | null;
+    DataType: string | null;
+    Description: string | undefined;
+    AllowsNull: boolean | undefined;
+    MaxLength: number | null;
+}
+
+/**
+ * A parsed GetQueryDefinition response — the vendor's "data dictionary" for one facade object
+ * (documentation.abila.com, xWeb › Methods › GetQueryDefinition): `<Object>` → `<ListTable>` (the MAIN
+ * table, `<lst_mdt_name>`) → `<ListFromTables>` → `<ListFromTable>` per joined table (`<lsf_from_table>`,
+ * `<lsf_from_alias>`, `<Columns>`, and `<ListFromTableColumns>` = the columns an EMPTY szColumnList
+ * returns). Key columns are typed `av_key`; the main table's primary key is described "Primary Key".
+ */
+interface NFQueryDefinition {
+    MainTable: string | null;
+    /** The main table's primary-key column, when the definition lets us name it; else undefined (keyless, honestly). */
+    KeyColumn: string | undefined;
+    /** Every column, document order, deduplicated by name (first occurrence kept, main table preferred). */
+    Columns: NFDefinedColumn[];
+    /** `<lsc_mdc_name>` of the default list — what GetQuery returns for an empty szColumnList. */
+    DefaultListColumns: string[];
+}
+
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-netforum-enterprise')
 export class NetForumConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
@@ -305,28 +335,35 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     private readonly DiscoveredColumnsByObject = new Map<string, string[]>();
 
     /**
-     * The key column `GetFacadeObjectList` names for each enumerated object (`<obj_key>`), keyed by
-     * lowercased object name. netFORUM states every facade's key in the enumeration and states it
-     * nowhere else — `GetQueryDefinition` describes columns without marking a key. Through 1.6.2 the
-     * parser read `obj_name` and `obj_description` and dropped `obj_key`, so every enumerated-only
-     * object arrived keyless: 862 of 888 on a live tenant. Keyless costs three things, all seen live:
-     * the schema builder skips the object (no table); the classifier is asked to guess a key it has
-     * no signal for; and `FetchChanges` cannot page, so it ran `@TOP -1` and pulled the WHOLE table to
-     * sample fifty rows — the discovery that took hours, and the resident memory the kernel killed.
-     *
-     * Written by every enumeration on this instance; read by DiscoverFields (the field's IsPrimaryKey)
-     * and by FetchChanges (the paging key while the persisted catalog does not carry it yet).
+     * `<obj_key>` of each enumerated facade object, keyed by lowercased object name. It is the facade
+     * object's own GUID — the vendor's GetFacadeObjectList page shows
+     * `<obj_name>ProductSubscription</obj_name><obj_key>22210b27-2396-48f0-a6a7-5e1a8eb9bda6</obj_key>` —
+     * and NOT a column of the object. 1.6.3 read it as the key COLUMN: `ORDER BY 74a11d45-ec60-…` and a
+     * column list containing that GUID went to SQL Server for every enumerated object, which answered
+     * "Incorrect syntax near 'a11d45'" (its tokenizer splitting the GUID), "The floating point value
+     * '07e325' is out of the range of computer representation" (a hex fragment read as a float) and
+     * "Invalid query." — 975 faults and zero rows in one discovery on a live tenant (2026-09-24).
+     * Kept as METADATA only: it never reaches szColumnList, szWhereClause or szOrderBy, and it never
+     * marks a field IsPrimaryKey. The key comes from the object's own definition (DefinitionByObject).
      */
-    private readonly EnumeratedKeyByObject = new Map<string, string>();
+    private readonly EnumeratedObjectIdByObject = new Map<string, string>();
 
     /**
-     * Whether this instance has asked xWeb for the facade list yet. DiscoverFields wants the
-     * enumerated key even when DiscoverObjects did not run on this instance (a standalone
-     * IntegrationDiscoverFields call), so it enumerates lazily — but ONCE, success or failure. A
-     * failing GetFacadeObjectList must never be retried per object: xWeb counts faults against the
-     * daily budget that locks the account, and 888 objects is nine times that budget.
+     * Parsed GetQueryDefinition per object (lowercased name), fetched at most once per instance per
+     * object: DiscoverFields needs the columns, FetchChanges needs the key column and the alias-
+     * qualified column list. `null` records a definite non-2xx answer so an object the account cannot
+     * describe is not asked again (xWeb counts faults, not calls, against the daily lock budget); a
+     * thrown network error is NOT cached, so a transient failure does not leave the object keyless for
+     * the life of the process.
      */
-    private EnumerationAttempted = false;
+    private readonly DefinitionByObject = new Map<string, NFQueryDefinition | null>();
+
+    /**
+     * `<connection>|<object>` pairs xWeb has refused with "Account is not authorized to perform Select
+     * on <object> object". A grant does not appear between two calls of one run, and each retry is a
+     * ~7.5 s HTTP 500 that counts against the fault budget; the second and later calls fail locally.
+     */
+    private readonly SelectNotAuthorized = new Set<string>();
 
     /**
      * CompanyIntegration IDs whose xWeb default column list is unusable.
@@ -368,11 +405,9 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     /**
      * One `GetFacadeObjectList` call: the enumerated object universe, or `null` when the source could
      * not be asked — credential-free, network failure, parse failure, or the account not granted the
-     * method; the Declared baseline then stands alone, exactly as before. Records that the attempt
-     * was made, successful or not, so a lazy caller never repeats it (see EnumerationAttempted).
+     * method; the Declared baseline then stands alone, exactly as before.
      */
     private async EnumerateFacadeObjects(ci: MJCompanyIntegrationEntity, cu: UserInfo): Promise<ExternalObjectSchema[] | null> {
-        this.EnumerationAttempted = true;
         try {
             const auth = await this.Authenticate(ci, cu) as NFAuthContext;
             const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
@@ -386,15 +421,6 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             // GetFacadeObjectList → the Declared baseline stands alone, exactly as before.
         }
         return null;
-    }
-
-    /**
-     * The key column the enumeration named for `objectName`, enumerating first if this instance has
-     * not done so yet. Undefined when the source never listed the object or named no key for it.
-     */
-    private async EnumeratedKeyFor(ci: MJCompanyIntegrationEntity, cu: UserInfo, objectName: string): Promise<string | undefined> {
-        if (!this.EnumerationAttempted) await this.EnumerateFacadeObjects(ci, cu);
-        return this.EnumeratedKeyByObject.get(objectName.toLowerCase());
     }
 
     /**
@@ -416,7 +442,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      *
      * Verified shape (live, 2026-09-15): `<ObjectObjects>` containing one `<ObjectObject>` per facade,
      * each carrying `<obj_name>`, `<obj_key>` and `<obj_description>`. 878 rows on a real tenant.
-     * `obj_key` is the facade's key column and is kept (EnumeratedKeyByObject); nothing else states it.
+     * `obj_key` is the facade object's GUID (vendor documentation, and a live tenant's SQL faults
+     * quoting its fragments) — kept as an identifier (EnumeratedObjectIdByObject), never as a column.
      *
      * Enumerated-only objects are reported HONESTLY as unknown-capability: the list gives a name and
      * a description, never a watermark field or a write path, so `SupportsIncrementalSync` and
@@ -434,7 +461,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             seen.add(key);
             const description = this.ParseSoapScalar(row, 'obj_description');
             const objKey = this.ParseSoapScalar(row, 'obj_key');
-            if (objKey) this.EnumeratedKeyByObject.set(key, objKey);
+            if (objKey) this.EnumeratedObjectIdByObject.set(key, objKey);
             out.push({
                 Name: name,
                 Label: description || name,
@@ -521,26 +548,44 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (!/IntegrationObject not found/.test(err instanceof Error ? err.message : String(err))) throw err;
             declared = [];
         }
-        const enumeratedKey = await this.EnumeratedKeyFor(ci, cu, objectName);
         // The base FieldEntityToSchema folds PK into IsUniqueKey and never sets IsPrimaryKey, so
         // re-derive the honest IsPrimaryKey from the cached IOF entities (which carry it explicitly).
         const pkNames = this.DeclaredPrimaryKeyNames(ci, objectName);
         const declaredByName = new Map(
             declared.map(f => [f.Name.toLowerCase(), { ...f, IsPrimaryKey: pkNames.has(f.Name.toLowerCase()) }]),
         );
+        // The object's own definition names its columns AND its key (the main table's `av_key`
+        // column described "Primary Key", else the `<prefix>_key` naming convention). Nothing here
+        // enumerates the facade list: `obj_key` is not a column and has nothing to say about fields.
+        const def = await this.DefinitionFor(ci, cu, objectName);
+        if (def && def.Columns.length > 0) return this.FieldsFromDefinition(def, declaredByName);
+        return declared;
+    }
+
+    /**
+     * The parsed GetQueryDefinition for `objectName`, fetched once per instance per object. A non-2xx
+     * answer is remembered as `null` (not asked again — faults are the budget xWeb locks the account
+     * on); a thrown network error is not remembered, so the next caller asks again.
+     */
+    private async DefinitionFor(ci: MJCompanyIntegrationEntity, cu: UserInfo, objectName: string): Promise<NFQueryDefinition | null> {
+        const key = objectName.toLowerCase();
+        if (this.DefinitionByObject.has(key)) return this.DefinitionByObject.get(key) ?? null;
         try {
             const auth = await this.Authenticate(ci, cu) as NFAuthContext;
             const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
             const body = this.BuildSoapEnvelope('GetQueryDefinition', { szObjectName: objectName }, auth.Token);
             const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQueryDefinition'), body);
             if (r.Status >= 200 && r.Status < 300) {
-                const discovered = this.ParseQueryDefinition(this.AsText(r.Body), declaredByName, enumeratedKey);
-                if (discovered.length > 0) return discovered;
+                const parsed = this.ParseQueryDefinition(this.AsText(r.Body));
+                const def = parsed.Columns.length > 0 ? parsed : null;
+                this.DefinitionByObject.set(key, def);
+                return def;
             }
+            this.DefinitionByObject.set(key, null);   // a definite refusal — not retried per call
         } catch {
-            // credential-free / network / parse failure → fall through to Declared
+            // credential-free / network / parse failure → nothing cached, nothing known
         }
-        return declared;
+        return null;
     }
 
     /**
@@ -633,55 +678,142 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * Parses a GetQueryDefinition response (the SQL column definition) into ExternalFieldSchema[].
-     * Each `<Column>` carries mdc_name / mdc_description / mdc_data_type / mdc_nullable /
-     * mdc_width_max. A column definition does not mark a key, so the key comes from elsewhere:
-     * declared metadata when it names one, else the enumeration's `obj_key` (EnumeratedKeyByObject).
-     * Discovery contributes the full column corpus + provable nullability/length.
+     * Parses a GetQueryDefinition response into its tables, columns and default list, and names the
+     * object's key column when the definition allows it (see KeyColumnFromDefinition). Columns are
+     * deduplicated by name: netFORUM list tables join the same table more than once under aliases
+     * (Individual joins mb_membership as Membership, ChapterMembership and OrgMembership), so one
+     * column name can appear several times — the first occurrence wins, the main table's preferred.
+     * Element names per the vendor's own sample: lst_mdt_name, lsf_from_table, lsf_from_alias,
+     * mdc_name / mdc_description / mdc_data_type / mdc_nullable / mdc_table_name / mdc_width_max,
+     * lsc_mdc_name. A response without <ListFromTable> wrappers still yields its <Column>s.
      */
-    private ParseQueryDefinition(
-        xml: string,
-        declaredByName: Map<string, ExternalFieldSchema>,
-        enumeratedKey?: string,
-    ): ExternalFieldSchema[] {
-        const out: ExternalFieldSchema[] = [];
-        // Declared metadata wins the key: a declared key stands and an enumerated one cannot displace
-        // it. Only when nothing declared carries a key does the enumeration's `obj_key` name it.
+    private ParseQueryDefinition(xml: string): NFQueryDefinition {
+        const mainTable = this.ParseSoapScalar(xml, 'lst_mdt_name') ?? null;
+        const columns: NFDefinedColumn[] = [];
+        const defaultList: string[] = [];
+        const readColumns = (scope: string, table: string | null, alias: string | null): void => {
+            for (const colXml of this.ExtractElements(scope, 'Column')) {
+                const name = this.ParseSoapScalar(colXml, 'mdc_name');
+                if (!name) continue;
+                const nullable = this.ParseSoapScalar(colXml, 'mdc_nullable');
+                const widthRaw = this.ParseSoapScalar(colXml, 'mdc_width_max');
+                columns.push({
+                    Name: name,
+                    Table: this.ParseSoapScalar(colXml, 'mdc_table_name') ?? table,
+                    Alias: alias,
+                    DataType: this.ParseSoapScalar(colXml, 'mdc_data_type') ?? null,
+                    Description: this.ParseSoapScalar(colXml, 'mdc_description') || undefined,
+                    // AllowsNull provable-only: 'mdc_nullable' is an explicit source flag. "0"/"false"/"no" ⇒ NOT NULL.
+                    AllowsNull: nullable == null ? undefined : !/^(0|false|no|n)$/i.test(nullable.trim()),
+                    MaxLength: widthRaw && /^\d+$/.test(widthRaw) ? Number(widthRaw) : null,
+                });
+            }
+        };
+        const fromTables = this.ExtractElements(xml, 'ListFromTable');
+        if (fromTables.length > 0) {
+            for (const lft of fromTables) {
+                const table = this.ParseSoapScalar(lft, 'lsf_from_table') ?? null;
+                const alias = this.ParseSoapScalar(lft, 'lsf_from_alias') || null;   // <lsf_from_alias xsi:nil="true"/> → null
+                readColumns(lft, table, alias);
+                for (const dl of this.ExtractElements(lft, 'ListFromTableColumn')) {
+                    const n = this.ParseSoapScalar(dl, 'lsc_mdc_name');
+                    if (n) defaultList.push(n);
+                }
+            }
+        } else {
+            readColumns(xml, null, null);
+        }
+        // Dedupe by name; a main-table occurrence displaces an earlier joined-table one of the same name.
+        const byName = new Map<string, NFDefinedColumn>();
+        const isMain = (c: NFDefinedColumn): boolean => !!mainTable && !!c.Table && c.Table.toLowerCase() === mainTable.toLowerCase() && !c.Alias;
+        for (const c of columns) {
+            const k = c.Name.toLowerCase();
+            const prior = byName.get(k);
+            if (!prior || (isMain(c) && !isMain(prior))) byName.set(k, c);
+        }
+        const deduped = [...byName.values()];
+        return {
+            MainTable: mainTable,
+            KeyColumn: this.KeyColumnFromDefinition(mainTable, deduped),
+            Columns: deduped,
+            DefaultListColumns: defaultList,
+        };
+    }
+
+    /**
+     * The object's key column from its definition — or undefined when the definition cannot say.
+     *
+     * The rule, in the order the evidence is strong:
+     *   1. among the MAIN table's columns (mdc_table_name = lst_mdt_name, unaliased), the key-typed
+     *      column (`av_key`, or `uniqueidentifier`) described "Primary Key" — the vendor's own sample
+     *      marks `ind_cst_key` exactly so;
+     *   2. else the key-typed main-table column named `<prefix>_key`, then `<prefix>_cst_key`, where
+     *      prefix is the main table's column prefix (netFORUM: arp_key, evt_key; the customer subclasses
+     *      ind_cst_key / org_cst_key);
+     *   3. else the main table's first key-typed column in document order (the sample lists the PK first).
+     * Without a main table the naming rule alone is applied to all columns and nothing else is guessed:
+     * measured on a live tenant, 493 of 878 objects carry more than one `<x>_key` column, and the most
+     * frequent prefix is NOT the object's own (AccountingPeriod's would pick atc_key over arp_key) —
+     * so a key that cannot be anchored to the main table is left to the sample-based classifier.
+     */
+    private KeyColumnFromDefinition(mainTable: string | null, columns: NFDefinedColumn[]): string | undefined {
+        const isKeyType = (t: string | null): boolean => !!t && /^(av_key|uniqueidentifier)$/i.test(t.trim());
+        const main = mainTable
+            ? columns.filter(c => !!c.Table && c.Table.toLowerCase() === mainTable.toLowerCase() && !c.Alias)
+            : [];
+        const pool = main.length > 0 ? main : columns;
+        const keyed = pool.filter(c => isKeyType(c.DataType));
+        if (keyed.length === 0) return undefined;
+        const described = keyed.find(c => /^primary\s+key$/i.test((c.Description ?? '').trim()));
+        if (main.length > 0 && described) return described.Name;
+        const prefixCounts = new Map<string, number>();
+        for (const c of pool) {
+            const p = c.Name.toLowerCase().split('_')[0];
+            if (p) prefixCounts.set(p, (prefixCounts.get(p) ?? 0) + 1);
+        }
+        const prefix = [...prefixCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
+        if (prefix) {
+            const exact = keyed.find(c => c.Name.toLowerCase() === `${prefix}_key`);
+            if (exact) return exact.Name;
+            const cst = keyed.find(c => c.Name.toLowerCase() === `${prefix}_cst_key`);
+            if (cst) return cst.Name;
+        }
+        return main.length > 0 ? keyed[0].Name : undefined;
+    }
+
+    /**
+     * The definition's columns as ExternalFieldSchema, overlaid on the declared baseline by name.
+     * IsPrimaryKey is the declared flag when the declaration carries a key, else the definition's key
+     * column — never anything the enumeration said. Declared fields the definition does not list are
+     * re-added (the provable-only baseline is never lost).
+     */
+    private FieldsFromDefinition(def: NFQueryDefinition, declaredByName: Map<string, ExternalFieldSchema>): ExternalFieldSchema[] {
         const declaredHasKey = [...declaredByName.values()].some(f => f.IsPrimaryKey === true);
-        const enumeratedKeyLower = !declaredHasKey && enumeratedKey ? enumeratedKey.toLowerCase() : undefined;
+        const keyLower = !declaredHasKey && def.KeyColumn ? def.KeyColumn.toLowerCase() : undefined;
+        const out: ExternalFieldSchema[] = [];
         const seen = new Set<string>();
-        for (const colXml of this.ExtractElements(xml, 'Column')) {
-            const name = this.ParseSoapScalar(colXml, 'mdc_name');
-            if (!name || seen.has(name.toLowerCase())) continue;
-            seen.add(name.toLowerCase());
-            const declared = declaredByName.get(name.toLowerCase());
-            const dataType = this.ParseSoapScalar(colXml, 'mdc_data_type');
-            const description = this.ParseSoapScalar(colXml, 'mdc_description');
-            const nullable = this.ParseSoapScalar(colXml, 'mdc_nullable');
-            const widthRaw = this.ParseSoapScalar(colXml, 'mdc_width_max');
-            const maxLength = widthRaw && /^\d+$/.test(widthRaw) ? Number(widthRaw) : null;
-            // AllowsNull provable-only: 'mdc_nullable' is an explicit source flag. "0"/"false"/"no" ⇒ NOT NULL.
-            const allowsNull = nullable == null
-                ? undefined
-                : !/^(0|false|no|n)$/i.test(nullable.trim());
+        for (const c of def.Columns) {
+            const k = c.Name.toLowerCase();
+            if (seen.has(k)) continue;
+            seen.add(k);
+            const declared = declaredByName.get(k);
             out.push({
-                Name: name,
-                Label: declared?.Label ?? name,
-                Description: declared?.Description ?? (description || undefined),
-                DataType: declared?.DataType ?? this.MapSoapType(dataType ?? null),
+                Name: c.Name,
+                Label: declared?.Label ?? c.Name,
+                Description: declared?.Description ?? c.Description,
+                DataType: declared?.DataType ?? this.MapSoapType(c.DataType),
                 IsRequired: declared?.IsRequired ?? false,
-                AllowsNull: allowsNull,
-                IsPrimaryKey: declared?.IsPrimaryKey === true || name.toLowerCase() === enumeratedKeyLower,
+                AllowsNull: c.AllowsNull,
+                IsPrimaryKey: declared?.IsPrimaryKey === true || k === keyLower,
                 IsUniqueKey: declared?.IsUniqueKey ?? false,
                 IsReadOnly: declared?.IsReadOnly ?? false,
                 IsForeignKey: declared?.IsForeignKey ?? false,
                 ForeignKeyTarget: declared?.ForeignKeyTarget ?? null,
-                MaxLength: maxLength,
+                MaxLength: c.MaxLength,
             });
         }
-        // Re-add any Declared field GetQueryDefinition did not surface (provable-only baseline never lost).
-        for (const [key, f] of declaredByName) {
-            if (!seen.has(key)) out.push(f);
+        for (const [k, f] of declaredByName) {
+            if (!seen.has(k)) out.push(f);
         }
         return out;
     }
@@ -690,10 +822,10 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (!sqlType) return 'string';
         const t = sqlType.toLowerCase();
         if (/(date|time)/.test(t)) return 'datetime';
-        if (/(int|bigint|smallint|tinyint)/.test(t)) return 'number';
-        if (/(decimal|numeric|money|float|real)/.test(t)) return 'decimal';
-        if (/bit/.test(t)) return 'boolean';
-        if (/uniqueidentifier/.test(t)) return 'string';
+        if (/(int|bigint|smallint|tinyint|av_count|av_seq)/.test(t)) return 'number';
+        if (/(decimal|numeric|money|float|real|av_percent)/.test(t)) return 'decimal';
+        if (/(bit|av_flag)/.test(t)) return 'boolean';
+        if (/(uniqueidentifier|av_key)/.test(t)) return 'string';
         return 'string';
     }
 
@@ -722,12 +854,17 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const accessPath = cfg.accessPath ?? {};
 
         const queryObject = accessPath.queryObject ?? accessPath.doorArgs?.szObjectName ?? ctx.ObjectName;
-        // The key: the persisted catalog's primary key when it has one, else the key this instance's
-        // enumeration named for the object. The second case is the first discovery — enumerated
-        // objects are sampled before their fields (and key) are persisted, and with no key every one
-        // of them used to be fetched unbounded.
-        const enumeratedKey = this.EnumeratedKeyByObject.get(ctx.ObjectName.toLowerCase());
-        const pkField = this.PrimaryKeyFieldName(obj) ?? enumeratedKey;
+        // The key: the persisted catalog's primary key when it has one, else the key column the object's
+        // OWN definition names (GetQueryDefinition, one metadata call per object per instance). The
+        // second case is the first discovery — enumerated objects are sampled before their fields are
+        // persisted. NEVER the enumeration's obj_key: that is the facade object's GUID, not a column,
+        // and sending it as one is what faulted every read on a live tenant (EnumeratedObjectIdByObject).
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const persistedKey = this.PrimaryKeyFieldName(obj);
+        const definedKey = persistedKey
+            ? undefined
+            : (await this.DefinitionFor(ci, ctx.ContextUser as UserInfo, ctx.ObjectName))?.KeyColumn;
+        const pkField = persistedKey ?? definedKey;
         const orderingKey = cfg.stableOrderingKey ?? pkField;
 
         // Keyset pagination requires a total order to seek on. With one, we page via
@@ -793,11 +930,26 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // reaches it, and — because netFORUM configures the default list PER OBJECT — an object whose
         // own default is fine on a tenant where others are not still gets its normal request.
         const faultKey = ctx.CompanyIntegration?.ID ?? '';
+        const grantKey = `${faultKey}|${ctx.ObjectName.toLowerCase()}`;
+        if (this.SelectNotAuthorized.has(grantKey)) {
+            throw new Error(
+                `NetForum GetQuery(${ctx.ObjectName}) not attempted: this xWeb account is not authorized to ` +
+                `Select on "${ctx.ObjectName}" (xWeb said so earlier on this connection; a grant does not appear ` +
+                `between calls, and each retry is a fault against the daily budget that locks the account).`,
+            );
+        }
         if (!args.szColumnList && this.DefaultColumnListUnusable.has(faultKey)) {
             const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
             if (known) args.szColumnList = known;
         }
+        // The vendor: "@TOP -1 ... specific, named fields must be passed ... in szColumnList". The
+        // legacy unbounded fetch of a keyless object therefore names its columns when it can.
+        if (!args.szColumnList && /@TOP\s+-1\b/i.test(szObjectName)) {
+            const named = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            if (named) args.szColumnList = named;
+        }
         const sentEmptyColumnList = !args.szColumnList;
+        let sentArgs: Record<string, string> = args;
 
         let response = await this.MakeRawHTTPRequest(
             url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
@@ -820,15 +972,22 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (sentEmptyColumnList) this.DefaultColumnListUnusable.add(faultKey);
             const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
             if (explicit) {
+                sentArgs = { ...args, szColumnList: explicit };
                 response = await this.MakeRawHTTPRequest(
                     url, 'POST', this.SoapHeaders('GetQuery'),
-                    this.BuildSoapEnvelope('GetQuery', { ...args, szColumnList: explicit }, auth.Token),
+                    this.BuildSoapEnvelope('GetQuery', sentArgs, auth.Token),
                 );
             }
         }
 
         if (response.Status < 200 || response.Status >= 300) {
-            throw new Error(`NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}`);
+            if (this.IsSelectNotAuthorizedFault(response)) this.SelectNotAuthorized.add(grantKey);
+            // The fault text is SQL Server's or xWeb's; the SHAPE of what we sent is ours to report, or
+            // the next reader of the run log is left guessing which parameter the door rejected.
+            throw new Error(
+                `NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}` +
+                ` [sent: ${this.DescribeRequestShape(sentArgs)}]`,
+            );
         }
 
         const rows = this.NormalizeResponse(response.Body, null);
@@ -873,9 +1032,23 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         }
 
         // Highest ordering-key value seen → keyset resume position when no watermark exists.
+        // With no key known and the tenant's default list sent, the vendor guarantees "the primary key
+        // for the object will still be returned in the node as the first child" — so the first column
+        // of each row identifies the record, and its NAME is reported for the key classifier.
+        const firstColumn = !pkField && sentEmptyColumnList && rows.length > 0 ? Object.keys(rows[0])[0] : undefined;
+        if (firstColumn) {
+            warnings.push({
+                Code: 'KEY_FROM_DEFAULT_LIST_FIRST_COLUMN',
+                Message:
+                    `NetForum "${ctx.ObjectName}" has no known key column; with the tenant's default column list ` +
+                    `xWeb returns the object's primary key as the first column of every row, so "${firstColumn}" ` +
+                    `identifies these records.`,
+                Data: { ObjectName: ctx.ObjectName, FirstColumn: firstColumn },
+            });
+        }
         let maxKey: string | undefined;
         const records: ExternalRecord[] = rows.map(row => {
-            const externalID = pkField ? String(row[pkField] ?? '') : '';
+            const externalID = pkField ? String(row[pkField] ?? '') : (firstColumn ? String(row[firstColumn] ?? '') : '');
             if (orderingKey) {
                 const v = row[orderingKey];
                 if (v != null) { const s = String(v); if (maxKey === undefined || s > maxKey) maxKey = s; }
@@ -940,21 +1113,58 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * original fault to surface rather than sending a request we cannot justify.
      */
     private ExplicitColumnListFor(obj: MJIntegrationObjectEntity, required: Array<string | undefined>): string {
+        // Preferred source: the object's definition, which knows each column's table and alias. The
+        // vendor requires the alias (or table) prefix wherever a table is joined more than once
+        // ("ambiguous column name" / "Object Reference Not Set" otherwise), so every column is sent
+        // qualified — `Membership.mbr_src_code`, `co_individual.ind_cst_key` — and each name once.
+        // The key column leads, so a row's first element is the key whichever list was sent.
+        const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
+        const out: string[] = [];
+        const seen = new Set<string>();
+        const add = (name: string | undefined, qualifier: string | null): void => {
+            if (!name) return;
+            const key = name.toLowerCase();
+            if (seen.has(key)) return;
+            seen.add(key);
+            out.push(qualifier ? `${qualifier}.${name}` : name);
+        };
+        if (def && def.Columns.length > 0) {
+            const qualifierOf = (c: NFDefinedColumn): string | null => c.Alias ?? c.Table;
+            const lead = def.Columns.find(c => !!def.KeyColumn && c.Name.toLowerCase() === def.KeyColumn!.toLowerCase());
+            if (lead) add(lead.Name, qualifierOf(lead));
+            for (const c of def.Columns) add(c.Name, qualifierOf(c));
+            for (const r of required) add(r, null);
+            return out.join(',');
+        }
         const discovered = this.DiscoveredColumnsByObject.get(obj.Name.toLowerCase()) ?? [];
         const known = discovered.length > 0
             ? discovered
             : this.GetCachedFields(obj.ID).map(f => f.Name).filter((n): n is string => !!n);
         if (known.length === 0) return '';
-        const out: string[] = [];
-        const seen = new Set<string>();
-        for (const c of [...known, ...required]) {
-            if (!c) continue;
-            const key = c.toLowerCase();
-            if (seen.has(key)) continue;
-            seen.add(key);
-            out.push(c);
-        }
+        for (const c of [...known, ...required]) add(c ?? undefined, null);
         return out.join(',');
+    }
+
+    /** "Account is not authorized to perform Select on <object> object" — a grant, not a query, failed. */
+    private IsSelectNotAuthorizedFault(response: { Status: number; Body: unknown }): boolean {
+        if (response.Status < 400) return false;
+        const fault = this.SoapFault(response.Body);
+        return typeof fault === 'string' && /not authorized to perform select/i.test(fault);
+    }
+
+    /**
+     * The shape of a GetQuery request for a fault message: which object and TOP, how many columns were
+     * named (or that the default list was asked for), the ORDER BY column, and how many WHERE
+     * predicates — never a literal value, so a key or watermark value is not copied into a log.
+     */
+    private DescribeRequestShape(args: Record<string, string>): string {
+        const cols = args.szColumnList
+            ? `${args.szColumnList.split(',').filter(c => c.trim().length > 0).length} named column(s)`
+            : 'default list (empty szColumnList)';
+        const where = args.szWhereClause
+            ? `${args.szWhereClause.split(/\s+AND\s+/i).length} predicate(s)`
+            : 'none';
+        return `szObjectName="${args.szObjectName}"; szColumnList=${cols}; szOrderBy=${args.szOrderBy ?? 'none'}; szWhereClause=${where}`;
     }
 
     private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>): string {
