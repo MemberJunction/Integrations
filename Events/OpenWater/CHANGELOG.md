@@ -1,5 +1,55 @@
 # @memberjunction/connector-openwater
 
+## 1.4.0
+
+### Minor Changes
+
+- 97dbcd8: Walk parent details concurrently, and model four embedded collections as their own objects.
+
+  A detail walk is one HTTP call per parent and the loop awaited each one before starting the
+  next. Three objects derive from the same Application door, so each paid the full serial cost
+  of ~2,079 application details — measured 6,273 records in ~20 minutes on the sandbox, against
+  13,518 in 73 seconds for objects that fetch a list directly. Parents are now fetched in bounded
+  concurrent slices and processed in order, so the resume cursor and the record budget behave
+  exactly as before. Slice width follows the remaining budget, which keeps discovery sampling as
+  cheap as it was. `fetchConcurrency` on the connection overrides the default of 8, capped at 16.
+
+  Four collections embedded in an application's round submissions — judge scorecards, received
+  and pending recommendations, and aggregated scoring-question scores — were reaching tenants as
+  unmapped overflow keys, offered as JSON-blob columns on the parent. They are now declared
+  objects walked through the same detail path, each tagged with its applicationId so it joins the
+  dependency graph as a child table rather than a stringified array.
+
+  Also repairs the T-SQL twin of the case-sensitivity migration, which carried two orphaned END
+  statements and failed with "Incorrect syntax near 'END'". The Postgres twin was unaffected, so
+  this never showed on a Postgres tenant — but it meant the catalog repair, and every migration
+  after it, could not apply on SQL Server at all.
+
+### Patch Changes
+
+- 140cf18: The catalog now says it is the contract, and no longer advertises a dead host.
+
+  **Discovery is declared-only, and nothing said so.** `DiscoverObjects`, `DiscoverFields` and
+  `IntrospectSchema` read the Declared catalog from the engine cache. That is correct for this vendor:
+  the published swagger (92 paths, read 2026-09-22) has no endpoint that enumerates the object surface,
+  so there is nothing live to reconcile against, and `DiscoveryIsAuthoritative` is honestly false. But
+  with no record of what the catalog was declared from or when, a stale catalog was indistinguishable
+  from a current one, and the picker looked complete without saying it could only ever be as current as
+  the last catalog edit. The Integration row now carries `Configuration.DeclaredAgainst` (swagger URL,
+  access date, sha256, path and schema counts, and how to re-check), the Description (bounded to 255 characters by
+  the column) states that the catalog is declared and names the pin, and OpenWater leaves the freshness-pin lint's
+  grandfathered list. Checked on the same date: every swagger GET path the catalog does not reference is
+  a per-record detail, a form template or a settings singleton, so no list collection is undeclared today.
+
+  **The catalog advertised a host that does not resolve.** `NavigationBaseURL` was
+  `https://api.getopenwater.com`, which is NXDOMAIN. Display-only, so nothing failed, but it is the URL a
+  person is shown when they ask where their data comes from. The value is now the fleet's per-tenant
+  template form, `https://{tenant}.secure-platform.com`; the tenant subdomain is the connection's
+  ClientKey.
+
+  One delta migration (paired T-SQL and PostgreSQL) updates the Integration row, resolved with
+  `LOWER(Name)` so it applies on both dialects. No object or field changed.
+
 ## 1.3.10
 
 ### Patch Changes
@@ -55,7 +105,7 @@
 
   Six OpenWater migrations resolved the integration with
 
-        JOIN "__mj"."Integration" i ON i."Name" = 'openwater'
+          JOIN "__mj"."Integration" i ON i."Name" = 'openwater'
 
   while the Integration row is named `OpenWater`. SQL Server's default collation is case-INSENSITIVE,
   so the predicate matched there and every row landed. PostgreSQL compares strings case-SENSITIVELY, so
