@@ -32,15 +32,19 @@ jobs:
       - name: Parent declarations resolvable
         run: node scripts/validate-parent-declarations.mjs
 
-      # Same silent-failure family as the parent-declaration gate, on the WRITE
-      # side: a writable object with no IsPrimaryKey field yields a keyless
-      # derived entity, and on Postgres every save then fails with
-      # `syntax error at or near ","` while fetch keeps succeeding — so the
-      # connector reads as healthy and persists nothing (HubSpot #105 was one
-      # instance). Ratcheted against scripts/writable-pk-baseline.json: the 86
-      # pre-existing offenders are accepted, anything new fails, and a baselined
-      # entry that has since been fixed must be removed from the file.
-      - name: Writable objects declare a primary key
+      # Same silent-failure family as the parent-declaration gate, on the KEY side.
+      # WRITABLE: an object with no IsPrimaryKey field yields a keyless derived
+      # entity, and on Postgres every save then fails with `syntax error at or
+      # near ","` while fetch keeps succeeding — the connector reads as healthy
+      # and persists nothing (HubSpot #105). Zero tolerance; the baseline is empty.
+      # READ-ONLY: a synced object is written INTO MJ regardless of write support,
+      # so a keyless one either costs the soft-PK classifier a per-tenant inference
+      # at every discovery (the stage that exhausted memory on an 888-object
+      # catalog) or lands `entity.skipped-no-pk` and never syncs while the picker
+      # still offers it. Ratcheted against scripts/readonly-pk-baseline.json (264
+      # at seeding); anything new fails, and a fixed entry must leave the file.
+      # Disabled objects are exempt: the engine does not offer them.
+      - name: Active objects declare a primary key
         run: npm run lint:writable-pk
 
       # Third member of the silent-truncation family: a connector with no

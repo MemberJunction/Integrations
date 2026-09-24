@@ -20,7 +20,7 @@ tenant whose org does not define them will find those 6 objects unresolvable, wh
 |---|---|---|---|
 | Account | ✓ | `CU` | ✓ |
 | Contact | ✓ | — (read-only) | ✓ |
-| FuseEndpoint | ✓ | — (read-only) | — |
+| FuseEndpoint | — (Disabled: an endpoint, not a data object; `V202609221300__nimble-ams__DisableFuseEndpoint`) | — | — |
 | LmsProduct | ✓ | — (read-only) | ✓ |
 | LmsPurchase | ✓ | `U` | ✓ |
 | NU__Affiliation__c | ✓ | `CUD` | ✓ |
