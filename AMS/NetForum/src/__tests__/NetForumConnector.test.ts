@@ -1152,7 +1152,8 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         const res = await c.FetchChanges(sampleCtx('Individual'));
         const q = getQueries(c)[0];
         expect(q.body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
-        expect(q.body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
+        // the definition knows the key's table, so ORDER BY is qualified (xWeb adds its own copy of the key)
+        expect(q.body).toContain('<szOrderBy>co_individual.ind_cst_key</szOrderBy>');
         expect(argsOf(q.body)).not.toMatch(GUID_RE);
         expect((res.Warnings ?? []).map(w => w.Code)).not.toContain('UNPAGINATED_FETCH');
         expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
@@ -1276,6 +1277,31 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         // the connector must NOT pay a second fault for a request it knows will be refused
         await expect(c.FetchChanges(ctx)).rejects.toThrow(/not attempted.*Nothing valid to send/);
         expect(getQueries(c)).toHaveLength(1);
+    });
+
+    it('ORDER BY and the paging predicate are qualified by the key\'s table when the definition knows it — xWeb adds its own copy of the key', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [FAULT_500("'*' is not a valid value for szColumnList"), { Status: 200, Body: GETQUERY_XML, Headers: {} }, { Status: 200, Body: GETQUERY_XML, Headers: {} }];
+        const first = await c.FetchChanges(sampleCtx('Individual'));
+        const q2 = getQueries(c)[1].body;                                  // the explicit-list retry
+        expect(q2).toContain('<szOrderBy>co_individual.ind_cst_key</szOrderBy>');
+        expect(q2).not.toContain('<szOrderBy>ind_cst_key</szOrderBy>');
+        // rows still read by the bare column name
+        expect(first.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
+        // the next page's predicate is qualified too, and carries no unqualified key
+        await c.FetchChanges(sampleCtx('Individual', { AfterKeyValue: '11111111-1111-1111-1111-111111111111' }));
+        const q3 = getQueries(c)[2].body;
+        expect(q3).toContain('<szWhereClause>co_individual.ind_cst_key &gt; &apos;11111111-1111-1111-1111-111111111111&apos;</szWhereClause>');
+        expect(q3).toContain('<szOrderBy>co_individual.ind_cst_key</szOrderBy>');
+    });
+
+    it('with no definition for the object, ORDER BY stays the bare key (nothing to qualify with)', async () => {
+        const c = makeConnector();                                          // declared key ind_cst_key, no definition fetched
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)[0].body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
     });
 
     it('a refused definition is not asked again on this instance; a network failure is', async () => {

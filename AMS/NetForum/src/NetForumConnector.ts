@@ -922,16 +922,22 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField]),
         };
 
+        // ORDER BY and WHERE name the key and the watermark QUALIFIED by their table (or alias) whenever
+        // the object's definition knows it. xWeb adds its own copy of the object's primary key to every
+        // query it builds, so with an explicit column list the result carries the key column twice, and
+        // an unqualified `ORDER BY cpo_key` is then "Ambiguous column name 'cpo_key'" — 15 of 16 faults on
+        // a live tenant's first explicit-list run (2026-09-24). The default-list reads never hit it (the
+        // key appears once). A qualified reference resolves in both cases.
         const predicates: string[] = [];
         if (ctx.WatermarkValue && watermarkField) {
-            predicates.push(`${watermarkField} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
+            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField)} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
         }
         if (canPaginate && ctx.AfterKeyValue) {
-            predicates.push(`${orderingKey} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
+            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
         }
         if (predicates.length > 0) args.szWhereClause = predicates.join(' AND ');
 
-        if (orderingKey) args.szOrderBy = orderingKey;
+        if (orderingKey) args.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey);
 
         const url = `${auth.Config.BaseURL}${this.SoapEndpoint(cfg)}`;
 
@@ -1168,6 +1174,18 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (known.length === 0) return '';
         for (const c of [...known, ...required]) add(c ?? undefined, null);
         return out.join(',');
+    }
+
+    /**
+     * `<alias-or-table>.<column>` when this instance's parsed definition of the object knows which table
+     * carries the column, else the bare column name. Rows still come back with the bare, lowercased column
+     * name, so readers keep using `name`; only the SQL sent qualifies.
+     */
+    private QualifiedColumn(objectName: string, name: string): string {
+        const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
+        const col = def?.Columns.find(c => c.Name.toLowerCase() === name.toLowerCase());
+        const q = col ? (col.Alias ?? col.Table) : null;
+        return q ? `${q}.${name}` : name;
     }
 
     /** "Account is not authorized to perform Select on <object> object" — a grant, not a query, failed. */
