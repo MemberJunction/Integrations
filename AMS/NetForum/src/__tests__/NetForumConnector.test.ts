@@ -943,63 +943,295 @@ const WIDGET_DEF_XML = `<?xml version="1.0" encoding="utf-8"?>
 const ENUMERATE_ACTION = 'http://www.avectra.com/2005/GetFacadeObjectList';
 const GETQUERY_ACTION = 'http://www.avectra.com/2005/GetQuery';
 
-describe('NetForumConnector — the enumerated key (obj_key) becomes the primary key of an enumerated-only object', () => {
-    it('DiscoverObjects keeps each obj_key; DiscoverFields marks that column IsPrimaryKey and nothing else', async () => {
+/**
+ * The REAL enumeration shape, per the vendor's GetFacadeObjectList page: `obj_key` is the facade object's
+ * GUID. `Abstract Reviewer` carries the documented `74a11d45-ec60-4961-a976-480408610e8c` — the GUID whose
+ * fragment a live tenant's SQL Server quoted back ("Incorrect syntax near 'a11d45'") when 1.6.3 sent it
+ * as an ORDER BY column.
+ */
+const FACADE_REAL_XML = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>
+<GetFacadeObjectListResponse xmlns="http://www.avectra.com/2005/"><GetFacadeObjectListResult>
+<ObjectObjects>
+  <ObjectObject><obj_name>Individual</obj_name><obj_key>F41B6E06-299B-4022-BE6F-0641BA87DE59</obj_key><obj_description>Individual</obj_description></ObjectObject>
+  <ObjectObject><obj_name>Abstract Reviewer</obj_name><obj_key>74a11d45-ec60-4961-a976-480408610e8c</obj_key><obj_description>Abstract Reviewer</obj_description></ObjectObject>
+  <ObjectObject><obj_name>WidgetOrder</obj_name><obj_key>22210b27-2396-48f0-a6a7-5e1a8eb9bda6</obj_key><obj_description>Widget orders (custom)</obj_description></ObjectObject>
+  <ObjectObject><obj_name>WidgetLog</obj_name><obj_key>e4b15169-86c2-4a66-9b30-fa1c48e6c557</obj_key><obj_description>Widget log (custom, keyless)</obj_description></ObjectObject>
+</ObjectObjects>
+</GetFacadeObjectListResult></GetFacadeObjectListResponse>
+</soap:Body></soap:Envelope>`;
+
+/**
+ * The vendor's own GetQueryDefinition sample for Individual, condensed: main table co_individual whose
+ * `av_key` column is described "Primary Key"; co_customer joined (cst_key, "Customer Key"); mb_membership
+ * joined THREE times under aliases so `mbr_src_code` appears three times; mb_member_type (mbt_key,
+ * "Unique Key"); and the default list (ind_first_name, ind_last_name).
+ */
+const INDIVIDUAL_DEF_REAL_XML = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>
+<GetQueryDefinitionResponse xmlns="http://www.avectra.com/2005/"><GetQueryDefinitionResult>
+<Object xmlns="">
+<obj_key>F41B6E06-299B-4022-BE6F-0641BA87DE59</obj_key>
+<obj_name>Individual</obj_name>
+<obj_description>Individual</obj_description>
+<ListTable>
+<lst_mdt_name>co_individual</lst_mdt_name>
+<lst_select_distinct>1</lst_select_distinct>
+<mdt_description>Individual</mdt_description>
+<ListFromTables>
+<ListFromTable>
+<lsf_from_table>co_individual</lsf_from_table>
+<lsf_from_alias xsi:nil="true"/>
+<lsf_from_join_type xsi:nil="true"/>
+<lsf_from_join xsi:nil="true"/>
+<mdt_description>Individual</mdt_description>
+<Columns>
+<Column><mdc_name>ind_cst_key</mdc_name><mdc_description>Primary Key</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+<Column><mdc_name>ind_prf_code</mdc_name><mdc_description>Prefix</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>20</mdc_width_max></Column>
+<Column><mdc_name>ind_first_name</mdc_name><mdc_description>First Name</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>50</mdc_width_max></Column>
+<Column><mdc_name>ind_change_date</mdc_name><mdc_description>Change Date</mdc_description><mdc_data_type>av_date_small</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+</Columns>
+<ListFromTableColumns>
+<ListFromTableColumn><lsc_mdc_name>ind_first_name</lsc_mdc_name><lsc_name_alias>First</lsc_name_alias><lsc_order>1</lsc_order></ListFromTableColumn>
+<ListFromTableColumn><lsc_mdc_name>ind_last_name</lsc_mdc_name><lsc_name_alias>Last</lsc_name_alias><lsc_order>5</lsc_order></ListFromTableColumn>
+</ListFromTableColumns>
+</ListFromTable>
+<ListFromTable>
+<lsf_from_table>co_customer</lsf_from_table>
+<lsf_from_alias xsi:nil="true"/>
+<lsf_from_join_type>Join</lsf_from_join_type>
+<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>
+<mdt_description>Customer</mdt_description>
+<Columns>
+<Column><mdc_name>cst_key</mdc_name><mdc_description>Customer Key</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>co_customer</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+<Column><mdc_name>cst_type</mdc_name><mdc_description>Customer Type</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>co_customer</mdc_table_name><mdc_width_max>20</mdc_width_max></Column>
+</Columns>
+</ListFromTable>
+<ListFromTable>
+<lsf_from_table>mb_membership</lsf_from_table>
+<lsf_from_alias>Membership</lsf_from_alias>
+<lsf_from_join_type>Left Join</lsf_from_join_type>
+<lsf_from_join>ind_cst_key = Membership.mbr_cst_key</lsf_from_join>
+<mdt_description>Membership</mdt_description>
+<Columns>
+<Column><mdc_name>mbr_src_code</mdc_name><mdc_description>Source Code</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>50</mdc_width_max></Column>
+</Columns>
+</ListFromTable>
+<ListFromTable>
+<lsf_from_table>mb_member_type</lsf_from_table>
+<lsf_from_alias xsi:nil="true"/>
+<lsf_from_join_type>Left Join</lsf_from_join_type>
+<lsf_from_join>Membership.mbr_mbt_key=mbt_key</lsf_from_join>
+<mdt_description>Member Type</mdt_description>
+<Columns>
+<Column><mdc_name>mbt_key</mdc_name><mdc_description>Unique Key</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>mb_member_type</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+</Columns>
+</ListFromTable>
+<ListFromTable>
+<lsf_from_table>mb_membership</lsf_from_table>
+<lsf_from_alias>ChapterMembership</lsf_from_alias>
+<lsf_from_join_type>Left Join</lsf_from_join_type>
+<lsf_from_join>ind_cst_key = ChapterMembership.mbr_cst_key</lsf_from_join>
+<mdt_description>Membership</mdt_description>
+<Columns>
+<Column><mdc_name>mbr_src_code</mdc_name><mdc_description>Source Code</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>50</mdc_width_max></Column>
+</Columns>
+</ListFromTable>
+</ListFromTables>
+</ListTable>
+</Object>
+</GetQueryDefinitionResult></GetQueryDefinitionResponse>
+</soap:Body></soap:Envelope>`;
+
+/** A definition whose main table has NO key-typed column: honestly keyless. */
+const KEYLESS_DEF_XML = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>
+<GetQueryDefinitionResponse xmlns="http://www.avectra.com/2005/"><GetQueryDefinitionResult>
+<Object xmlns=""><obj_key>e4b15169-86c2-4a66-9b30-fa1c48e6c557</obj_key><obj_name>WidgetLog</obj_name>
+<ListTable><lst_mdt_name>cu_widget_log</lst_mdt_name><ListFromTables><ListFromTable>
+<lsf_from_table>cu_widget_log</lsf_from_table><lsf_from_alias xsi:nil="true"/>
+<Columns>
+<Column><mdc_name>wlg_message</mdc_name><mdc_description>Message</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_nullable>1</mdc_nullable><mdc_table_name>cu_widget_log</mdc_table_name><mdc_width_max>400</mdc_width_max></Column>
+<Column><mdc_name>wlg_when</mdc_name><mdc_description>When</mdc_description><mdc_data_type>av_date_small</mdc_data_type><mdc_nullable>1</mdc_nullable><mdc_table_name>cu_widget_log</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+</Columns>
+</ListFromTable></ListFromTables></ListTable></Object>
+</GetQueryDefinitionResult></GetQueryDefinitionResponse>
+</soap:Body></soap:Envelope>`;
+
+/** The Individual definition with the "Primary Key" description moved onto a joined table's key — the declaration must still win. */
+const INDIVIDUAL_DEF_MISDESCRIBED_XML = INDIVIDUAL_DEF_REAL_XML
+    .replace('<mdc_description>Primary Key</mdc_description>', '<mdc_description>Individual Key</mdc_description>')
+    .replace('<mdc_description>Customer Key</mdc_description>', '<mdc_description>Primary Key</mdc_description>');
+
+const FAULT_500 = (text: string): RESTResponse => ({ Status: 500, Body: `<soap:Fault><faultstring>${text}</faultstring></soap:Fault>`, Headers: {} });
+const GUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+/** The GetQuery arguments only — the SOAP header legitimately carries the auth token GUID. */
+const argsOf = (body: string): string => /<GetQuery [^>]*>([\s\S]*?)<\/GetQuery>/.exec(body)?.[1] ?? '';
+
+describe('NetForumConnector — obj_key is the facade object\'s GUID, never a column (1.6.4)', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string, over: Record<string, unknown> = {}): FetchContext => ({
+        CompanyIntegration: CI, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50, ...over,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+
+    it('a GUID obj_key never reaches szOrderBy, szWhereClause or szColumnList', async () => {
         const c = makeConnector();
-        c.KnownObjects = new Set(['Individual']); // WidgetOrder is not in the engine cache yet — first discovery
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
-        await c.DiscoverObjects(CI, CU);
+        c.Keyless = true;                                   // nothing persisted carries a key
+        c.Caps.Configuration = KEYLESS_CONFIG('WidgetLog');
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_REAL_XML, Headers: {} };
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: KEYLESS_DEF_XML, Headers: {} };
+        await c.DiscoverObjects(CI, CU);                    // the enumeration has been seen — and its GUIDs
+        await c.FetchChanges(sampleCtx('WidgetLog'));
+        await c.FetchChanges(sampleCtx('WidgetLog', { AfterKeyValue: 'x' }));
+        for (const q of getQueries(c)) {
+            expect(argsOf(q.body)).not.toMatch(GUID_RE);
+            expect(q.body).not.toContain('szOrderBy');
+            expect(q.body).toContain('<szObjectName>WidgetLog @TOP 50</szObjectName>');
+        }
+        expect(getQueries(c).length).toBeGreaterThan(0);
+    });
+
+    it('DiscoverFields never marks a column from obj_key, and never enumerates the facade list', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set(['Individual']);
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_REAL_XML, Headers: {} };
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: KEYLESS_DEF_XML, Headers: {} };
+        const fields = await c.DiscoverFields(CI, 'WidgetLog', CU);
+        expect(fields.map(f => f.Name)).toEqual(['wlg_message', 'wlg_when']);
+        expect(fields.some(f => f.IsPrimaryKey)).toBe(false);
+        expect(c.Requests.filter(r => r.headers['SOAPAction'] === ENUMERATE_ACTION)).toHaveLength(0);
+    });
+
+    it('the key is the MAIN table\'s av_key column described "Primary Key" — not the joined tables\' keys', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.KnownObjects = new Set(['Individual']);
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        const fields = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(fields.find(f => f.Name === 'ind_cst_key')!.IsPrimaryKey).toBe(true);
+        expect(fields.find(f => f.Name === 'cst_key')!.IsPrimaryKey).toBe(false);
+        expect(fields.find(f => f.Name === 'mbt_key')!.IsPrimaryKey).toBe(false);
+        expect(fields.filter(f => f.IsPrimaryKey)).toHaveLength(1);
+        // duplicate names across aliases collapse to one field
+        expect(fields.filter(f => f.Name === 'mbr_src_code')).toHaveLength(1);
+        // netFORUM's own type names map
+        expect(fields.find(f => f.Name === 'ind_change_date')!.DataType).toBe('datetime');
+    });
+
+    it('without a "Primary Key" description the key is the main table\'s <prefix>_key column', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set(['Individual']);
         c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
-
         const fields = await c.DiscoverFields(CI, 'WidgetOrder', CU);
-
-        expect(fields.map(f => f.Name)).toEqual(expect.arrayContaining(['wor_key', 'wor_name']));
         expect(fields.find(f => f.Name === 'wor_key')!.IsPrimaryKey).toBe(true);
-        expect(fields.find(f => f.Name === 'wor_name')!.IsPrimaryKey).toBe(false);
         expect(fields.filter(f => f.IsPrimaryKey)).toHaveLength(1);
     });
 
-    it('an object the cache does not know yet still gets its endpoint columns on the FIRST pass (the base throw is absorbed)', async () => {
-        const c = makeConnector();
-        c.KnownObjects = new Set(['Individual']);
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
-        c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
-        const fields = await c.DiscoverFields(CI, 'WidgetOrder', CU);
-        expect(fields).toHaveLength(2);
-    });
-
-    it('a DECLARED key wins — the enumeration cannot displace it', async () => {
+    it('a DECLARED key wins over the definition', async () => {
         const c = makeConnector(); // Individual is declared with PK ind_cst_key (GetCachedFields)
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_BOGUS_KEY_XML, Headers: {} }; // says ind_first_name
-        await c.DiscoverObjects(CI, CU);
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_MISDESCRIBED_XML, Headers: {} };
         const fields = await c.DiscoverFields(CI, 'Individual', CU);
         expect(fields.find(f => f.Name === 'ind_cst_key')!.IsPrimaryKey).toBe(true);
-        expect(fields.find(f => f.Name === 'ind_first_name')!.IsPrimaryKey).toBe(false);
+        expect(fields.find(f => f.Name === 'cst_key')!.IsPrimaryKey).toBe(false);
     });
 
-    it('DiscoverFields with no prior DiscoverObjects enumerates ONCE on this instance, never again', async () => {
+    it('the definition\'s key pages a sample of an object whose fields are not persisted yet, and identifies its records', async () => {
         const c = makeConnector();
-        c.KnownObjects = new Set(['Individual']);
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
-        c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
-        const first = await c.DiscoverFields(CI, 'WidgetOrder', CU);
-        await c.DiscoverFields(CI, 'WidgetOrder', CU);
-        await c.DiscoverFields(CI, 'WidgetOrder', CU);
-        expect(c.Requests.filter(r => r.headers['SOAPAction'] === ENUMERATE_ACTION)).toHaveLength(1);
-        expect(first.find(f => f.Name === 'wor_key')!.IsPrimaryKey).toBe(true);
+        c.Keyless = true;                                   // the persisted catalog carries no key for it yet
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        const res = await c.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(c)[0];
+        expect(q.body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
+        expect(q.body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
+        expect(argsOf(q.body)).not.toMatch(GUID_RE);
+        expect((res.Warnings ?? []).map(w => w.Code)).not.toContain('UNPAGINATED_FETCH');
+        expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
+        // the definition was fetched ONCE for the object, not per call
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQueryDefinition')).toHaveLength(1);
     });
 
-    it('a FAILED enumeration is not retried per object — faults are the budget xWeb locks the account on', async () => {
+    it('a main table with no key-typed column is keyless: sampled unordered, records identified by the default list\'s first column', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('WidgetLog');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: KEYLESS_DEF_XML, Headers: {} };
+        const res = await c.FetchChanges(sampleCtx('WidgetLog'));
+        const q = getQueries(c)[0];
+        expect(q.body).toContain('<szObjectName>WidgetLog @TOP 50</szObjectName>');
+        expect(q.body).not.toContain('szOrderBy');
+        expect(q.body).toContain('<szColumnList></szColumnList>');
+        const codes = (res.Warnings ?? []).map(w => w.Code);
+        expect(codes).toContain('SAMPLE_BOUNDED_WITHOUT_KEY');
+        expect(codes).toContain('KEY_FROM_DEFAULT_LIST_FIRST_COLUMN');
+        // the vendor: with an empty szColumnList the primary key is the first child of every row
+        expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
+        expect(res.HasMore).toBe(false);
+    });
+
+    it('the explicit column list is alias-qualified, names each column once, leads with the key, and carries no GUID', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [FAULT_500("'*' is not a valid value for szColumnList"), { Status: 200, Body: GETQUERY_XML, Headers: {} }];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const [first, second] = getQueries(c);
+        expect(first.body).toContain('<szColumnList></szColumnList>');
+        const list = /<szColumnList>([^<]*)<\/szColumnList>/.exec(second.body)![1];
+        const cols = list.split(',');
+        expect(cols[0]).toBe('co_individual.ind_cst_key');
+        expect(cols).toContain('co_customer.cst_key');
+        expect(cols).toContain('Membership.mbr_src_code');
+        expect(cols).not.toContain('ChapterMembership.mbr_src_code');
+        expect(cols.filter(x => /mbr_src_code$/.test(x))).toHaveLength(1);
+        expect(new Set(cols.map(x => x.split('.').pop()!.toLowerCase())).size).toBe(cols.length);
+        expect(list).not.toMatch(GUID_RE);
+    });
+
+    it('a fault carries the SHAPE of the request that drew it — never a literal value', async () => {
+        const c = makeConnector();
+        c.Responses['GetQuery'] = FAULT_500('Invalid query.');
+        const ctx = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: '2026-01-01T00:00:00', BatchSize: 500, ContextUser: CU, AfterKeyValue: '2222-secret' } as unknown as FetchContext;
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/Invalid query\./);
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/\[sent: szObjectName="Individual @TOP 500"; szColumnList=default list \(empty szColumnList\); szOrderBy=ind_cst_key; szWhereClause=2 predicate\(s\)\]/);
+        await expect(c.FetchChanges(ctx)).rejects.not.toThrow(/2222-secret|2026-01-01/);
+    });
+
+    it('"not authorized to perform Select" is learned once per object on a connection and never retried', async () => {
+        const c = makeConnector();
+        c.Responses['GetQuery'] = FAULT_500('Account is not authorized to perform Select on Individual object');
+        const ctx = { CompanyIntegration: { ...CI, ID: 'ci-1' }, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 500, ContextUser: CU } as unknown as FetchContext;
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/not authorized to perform Select/);
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/not attempted/);
+        expect(getQueries(c)).toHaveLength(1);
+    });
+
+    it('@TOP -1 (the keyless SYNC fallback) names its columns when the definition knows them — the vendor requires it', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('WidgetLog');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: KEYLESS_DEF_XML, Headers: {} };
+        const res = await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'WidgetLog', WatermarkValue: null, BatchSize: 500, ContextUser: CU });
+        const q = getQueries(c)[0];
+        expect(q.body).toContain('<szObjectName>WidgetLog @TOP -1</szObjectName>');
+        expect(q.body).toContain('<szColumnList>cu_widget_log.wlg_message,cu_widget_log.wlg_when,ind_change_date</szColumnList>');
+        expect((res.Warnings ?? []).map(w => w.Code)).toContain('UNPAGINATED_FETCH');
+    });
+
+    it('a refused definition is not asked again on this instance; a network failure is', async () => {
         const c = makeConnector();
         c.KnownObjects = new Set(['Individual']);
-        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>not authorized</faultstring>', Headers: {} };
-        c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
-        const fields = await c.DiscoverFields(CI, 'WidgetOrder', CU);
-        await c.DiscoverFields(CI, 'WidgetOrder', CU);
-        expect(c.Requests.filter(r => r.headers['SOAPAction'] === ENUMERATE_ACTION)).toHaveLength(1);
-        // Columns still arrive; only the key is unknown, honestly.
-        expect(fields).toHaveLength(2);
-        expect(fields.some(f => f.IsPrimaryKey)).toBe(false);
+        c.Responses['GetQueryDefinition'] = FAULT_500('Account is not authorized');
+        expect(await c.DiscoverFields(CI, 'WidgetOrder', CU)).toHaveLength(0);
+        expect(await c.DiscoverFields(CI, 'WidgetOrder', CU)).toHaveLength(0);
+        expect(c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQueryDefinition')).toHaveLength(1);
     });
 });
 
@@ -1013,6 +1245,12 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
         IsDiscoverySample: true, SampleTargetRecords: 50, ...over,
     } as unknown as FetchContext);
     const getQuery = (c: MockedNetForumConnector) => c.Requests.find(r => r.headers['SOAPAction'] === GETQUERY_ACTION)!;
+    /** A keyless object: no persisted key AND a definition whose main table has no key column. */
+    const keyless = (c: MockedNetForumConnector) => {
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG;
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: KEYLESS_DEF_XML.replace(/WidgetLog/g, 'Individual'), Headers: {} };
+    };
 
     it('keyed object: the page is min(BatchSize, SampleTargetRecords), still ordered by the key', async () => {
         const c = makeConnector();
@@ -1029,8 +1267,7 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
 
     it('keyless object: @TOP target instead of the whole table, no ORDER BY, and it says the sample is unkeyed', async () => {
         const c = makeConnector();
-        c.Keyless = true;
-        c.Caps.Configuration = KEYLESS_CONFIG;
+        keyless(c);
         const res = await c.FetchChanges(sampleCtx());
         expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
         expect(getQuery(c).body).not.toContain('szOrderBy');
@@ -1042,23 +1279,9 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
 
     it('keyless object during a SYNC still runs the legacy unbounded fetch and warns — unchanged', async () => {
         const c = makeConnector();
-        c.Keyless = true;
-        c.Caps.Configuration = KEYLESS_CONFIG;
+        keyless(c);
         const res = await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 500, ContextUser: CU });
         expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP -1</szObjectName>');
         expect((res.Warnings ?? []).map(w => w.Code)).toContain('UNPAGINATED_FETCH');
-    });
-
-    it('the enumerated key pages a sample of an object whose fields are not persisted yet, and identifies its records', async () => {
-        const c = makeConnector();
-        c.Keyless = true; // the persisted catalog carries no key for it yet
-        c.Caps.Configuration = KEYLESS_CONFIG;
-        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
-        await c.DiscoverObjects(CI, CU);
-        const res = await c.FetchChanges(sampleCtx());
-        expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
-        expect(getQuery(c).body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
-        expect((res.Warnings ?? []).map(w => w.Code)).not.toContain('UNPAGINATED_FETCH');
-        expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
     });
 });
