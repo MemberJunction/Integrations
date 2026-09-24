@@ -305,6 +305,30 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     private readonly DiscoveredColumnsByObject = new Map<string, string[]>();
 
     /**
+     * The key column `GetFacadeObjectList` names for each enumerated object (`<obj_key>`), keyed by
+     * lowercased object name. netFORUM states every facade's key in the enumeration and states it
+     * nowhere else — `GetQueryDefinition` describes columns without marking a key. Through 1.6.2 the
+     * parser read `obj_name` and `obj_description` and dropped `obj_key`, so every enumerated-only
+     * object arrived keyless: 862 of 888 on a live tenant. Keyless costs three things, all seen live:
+     * the schema builder skips the object (no table); the classifier is asked to guess a key it has
+     * no signal for; and `FetchChanges` cannot page, so it ran `@TOP -1` and pulled the WHOLE table to
+     * sample fifty rows — the discovery that took hours, and the resident memory the kernel killed.
+     *
+     * Written by every enumeration on this instance; read by DiscoverFields (the field's IsPrimaryKey)
+     * and by FetchChanges (the paging key while the persisted catalog does not carry it yet).
+     */
+    private readonly EnumeratedKeyByObject = new Map<string, string>();
+
+    /**
+     * Whether this instance has asked xWeb for the facade list yet. DiscoverFields wants the
+     * enumerated key even when DiscoverObjects did not run on this instance (a standalone
+     * IntegrationDiscoverFields call), so it enumerates lazily — but ONCE, success or failure. A
+     * failing GetFacadeObjectList must never be retried per object: xWeb counts faults against the
+     * daily budget that locks the account, and 888 objects is nine times that budget.
+     */
+    private EnumerationAttempted = false;
+
+    /**
      * CompanyIntegration IDs whose xWeb default column list is unusable.
      *
      * xWeb counts FAULTS, not calls, against `MethodsFaultLimitPerDay` (default 100 per user+IP),
@@ -337,19 +361,40 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         cu: UserInfo,
     ): Promise<ExternalObjectSchema[]> {
         const declared = await this.DeclaredObjects(ci, cu);
+        const enumerated = await this.EnumerateFacadeObjects(ci, cu);
+        return enumerated ? this.MergeEnumeratedObjects(declared, enumerated) : declared;
+    }
+
+    /**
+     * One `GetFacadeObjectList` call: the enumerated object universe, or `null` when the source could
+     * not be asked — credential-free, network failure, parse failure, or the account not granted the
+     * method; the Declared baseline then stands alone, exactly as before. Records that the attempt
+     * was made, successful or not, so a lazy caller never repeats it (see EnumerationAttempted).
+     */
+    private async EnumerateFacadeObjects(ci: MJCompanyIntegrationEntity, cu: UserInfo): Promise<ExternalObjectSchema[] | null> {
+        this.EnumerationAttempted = true;
         try {
             const auth = await this.Authenticate(ci, cu) as NFAuthContext;
             const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
             const body = this.BuildSoapEnvelope('GetFacadeObjectList', {}, auth.Token);
             const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetFacadeObjectList'), body);
             if (r.Status >= 200 && r.Status < 300) {
-                return this.MergeEnumeratedObjects(declared, this.ParseFacadeObjectList(this.AsText(r.Body)));
+                return this.ParseFacadeObjectList(this.AsText(r.Body));
             }
         } catch {
             // Credential-free, network failure, parse failure, or the account not granted
             // GetFacadeObjectList → the Declared baseline stands alone, exactly as before.
         }
-        return declared;
+        return null;
+    }
+
+    /**
+     * The key column the enumeration named for `objectName`, enumerating first if this instance has
+     * not done so yet. Undefined when the source never listed the object or named no key for it.
+     */
+    private async EnumeratedKeyFor(ci: MJCompanyIntegrationEntity, cu: UserInfo, objectName: string): Promise<string | undefined> {
+        if (!this.EnumerationAttempted) await this.EnumerateFacadeObjects(ci, cu);
+        return this.EnumeratedKeyByObject.get(objectName.toLowerCase());
     }
 
     /**
@@ -371,6 +416,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      *
      * Verified shape (live, 2026-09-15): `<ObjectObjects>` containing one `<ObjectObject>` per facade,
      * each carrying `<obj_name>`, `<obj_key>` and `<obj_description>`. 878 rows on a real tenant.
+     * `obj_key` is the facade's key column and is kept (EnumeratedKeyByObject); nothing else states it.
      *
      * Enumerated-only objects are reported HONESTLY as unknown-capability: the list gives a name and
      * a description, never a watermark field or a write path, so `SupportsIncrementalSync` and
@@ -387,6 +433,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (seen.has(key)) continue;
             seen.add(key);
             const description = this.ParseSoapScalar(row, 'obj_description');
+            const objKey = this.ParseSoapScalar(row, 'obj_key');
+            if (objKey) this.EnumeratedKeyByObject.set(key, objKey);
             out.push({
                 Name: name,
                 Label: description || name,
@@ -461,7 +509,19 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         objectName: string,
         cu: UserInfo,
     ): Promise<ExternalFieldSchema[]> {
-        const declared = await super.DiscoverFields(ci, objectName, cu);
+        // An object this connector enumerated but has not persisted yet is unknown to the engine
+        // cache, and the base DiscoverFields throws for it. On a first discovery that is every
+        // enumerated-only object — through 1.6.2 they got no columns until the second pass. The
+        // endpoint's column list does not depend on the cache, so "not cached" means "nothing
+        // declared" and the call goes on to GetQueryDefinition. Anything else the base throws, throws.
+        let declared: ExternalFieldSchema[];
+        try {
+            declared = await super.DiscoverFields(ci, objectName, cu);
+        } catch (err) {
+            if (!/IntegrationObject not found/.test(err instanceof Error ? err.message : String(err))) throw err;
+            declared = [];
+        }
+        const enumeratedKey = await this.EnumeratedKeyFor(ci, cu, objectName);
         // The base FieldEntityToSchema folds PK into IsUniqueKey and never sets IsPrimaryKey, so
         // re-derive the honest IsPrimaryKey from the cached IOF entities (which carry it explicitly).
         const pkNames = this.DeclaredPrimaryKeyNames(ci, objectName);
@@ -474,7 +534,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             const body = this.BuildSoapEnvelope('GetQueryDefinition', { szObjectName: objectName }, auth.Token);
             const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQueryDefinition'), body);
             if (r.Status >= 200 && r.Status < 300) {
-                const discovered = this.ParseQueryDefinition(this.AsText(r.Body), declaredByName);
+                const discovered = this.ParseQueryDefinition(this.AsText(r.Body), declaredByName, enumeratedKey);
                 if (discovered.length > 0) return discovered;
             }
         } catch {
@@ -575,14 +635,20 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     /**
      * Parses a GetQueryDefinition response (the SQL column definition) into ExternalFieldSchema[].
      * Each `<Column>` carries mdc_name / mdc_description / mdc_data_type / mdc_nullable /
-     * mdc_width_max. Declared metadata wins for PK identity (a column definition does not mark a PK);
-     * discovery contributes the full column corpus + provable nullability/length.
+     * mdc_width_max. A column definition does not mark a key, so the key comes from elsewhere:
+     * declared metadata when it names one, else the enumeration's `obj_key` (EnumeratedKeyByObject).
+     * Discovery contributes the full column corpus + provable nullability/length.
      */
     private ParseQueryDefinition(
         xml: string,
         declaredByName: Map<string, ExternalFieldSchema>,
+        enumeratedKey?: string,
     ): ExternalFieldSchema[] {
         const out: ExternalFieldSchema[] = [];
+        // Declared metadata wins the key: a declared key stands and an enumerated one cannot displace
+        // it. Only when nothing declared carries a key does the enumeration's `obj_key` name it.
+        const declaredHasKey = [...declaredByName.values()].some(f => f.IsPrimaryKey === true);
+        const enumeratedKeyLower = !declaredHasKey && enumeratedKey ? enumeratedKey.toLowerCase() : undefined;
         const seen = new Set<string>();
         for (const colXml of this.ExtractElements(xml, 'Column')) {
             const name = this.ParseSoapScalar(colXml, 'mdc_name');
@@ -605,7 +671,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 DataType: declared?.DataType ?? this.MapSoapType(dataType ?? null),
                 IsRequired: declared?.IsRequired ?? false,
                 AllowsNull: allowsNull,
-                IsPrimaryKey: declared?.IsPrimaryKey ?? false,
+                IsPrimaryKey: declared?.IsPrimaryKey === true || name.toLowerCase() === enumeratedKeyLower,
                 IsUniqueKey: declared?.IsUniqueKey ?? false,
                 IsReadOnly: declared?.IsReadOnly ?? false,
                 IsForeignKey: declared?.IsForeignKey ?? false,
@@ -656,7 +722,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const accessPath = cfg.accessPath ?? {};
 
         const queryObject = accessPath.queryObject ?? accessPath.doorArgs?.szObjectName ?? ctx.ObjectName;
-        const orderingKey = cfg.stableOrderingKey ?? this.PrimaryKeyFieldName(obj);
+        // The key: the persisted catalog's primary key when it has one, else the key this instance's
+        // enumeration named for the object. The second case is the first discovery — enumerated
+        // objects are sampled before their fields (and key) are persisted, and with no key every one
+        // of them used to be fetched unbounded.
+        const enumeratedKey = this.EnumeratedKeyByObject.get(ctx.ObjectName.toLowerCase());
+        const pkField = this.PrimaryKeyFieldName(obj) ?? enumeratedKey;
+        const orderingKey = cfg.stableOrderingKey ?? pkField;
 
         // Keyset pagination requires a total order to seek on. With one, we page via
         // `@TOP <BatchSize>` + `WHERE <key> > <AfterKeyValue> ORDER BY <key>`; the metadata
@@ -668,13 +740,28 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // parameter"). If this fallback faults on a live tenant, that sentence is why.
         const canPaginate = !!orderingKey;
         const pageSize = ctx.BatchSize > 0 ? ctx.BatchSize : 0;
-        const topModifier = canPaginate && pageSize > 0
-            ? `@TOP ${pageSize}`
+        // A discovery sample asks for SampleTargetRecords rows and stops there, so a page larger than
+        // the target is waste, and an UNBOUNDED fetch is the whole table read to keep fifty rows —
+        // measured live as hours per discovery and the resident memory that the kernel killed.
+        // Bound the sample by its target whether or not the object can page: `@TOP n` needs no
+        // ordering key (the door builds a plain SELECT TOP n); it only means the rows come in the
+        // door's natural order rather than from a keyset position, which is fine for widths and
+        // key statistics. Read duck-typed so the connector still compiles against an older engine.
+        const sampleCtx = ctx as FetchContext & { IsDiscoverySample?: boolean; SampleTargetRecords?: number };
+        const sampleTarget = sampleCtx.IsDiscoverySample === true
+            && typeof sampleCtx.SampleTargetRecords === 'number' && sampleCtx.SampleTargetRecords > 0
+            ? Math.floor(sampleCtx.SampleTargetRecords)
+            : 0;
+        const effectivePage = sampleTarget > 0
+            ? (pageSize > 0 ? Math.min(pageSize, sampleTarget) : sampleTarget)
+            : pageSize;
+        const topRows = canPaginate || sampleTarget > 0 ? effectivePage : 0;
+        const topModifier = topRows > 0
+            ? `@TOP ${topRows}`
             : (accessPath.doorArgs?.topModifier ?? '@TOP -1');
         const szObjectName = topModifier ? `${queryObject} ${topModifier}` : queryObject;
 
         const watermarkField = obj.IncrementalWatermarkField ?? undefined;
-        const pkField = this.PrimaryKeyFieldName(obj);
         // Empty by default (the tenant's default list columns), never `*` — see the class header. An IO
         // may declare Configuration.columnList when its default list lacks a column the connector needs;
         // the door returns ONLY named columns, so a declared list is completed with the PK, the ordering
@@ -749,7 +836,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (rows.length === 0) {
             warnings.push({ Code: 'ZERO_ROWS', Message: `GetQuery(${szObjectName}) returned no rows.` });
         }
-        if (!canPaginate) {
+        if (!canPaginate && topRows === 0) {
             warnings.push({
                 Code: 'UNPAGINATED_FETCH',
                 Message:
@@ -757,6 +844,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     `or a primary-key field), so GetQuery ran unbounded (${topModifier}) and returned the ` +
                     `entire result set in one call. Declare an ordering key to enable keyset paging.`,
                 Data: { ObjectName: ctx.ObjectName, RowCount: rows.length },
+            });
+        } else if (!canPaginate) {
+            warnings.push({
+                Code: 'SAMPLE_BOUNDED_WITHOUT_KEY',
+                Message:
+                    `NetForum "${ctx.ObjectName}" has no stable ordering key, so this discovery sample took the ` +
+                    `first ${topRows} rows in the door's natural order (${topModifier}) rather than a keyset page. ` +
+                    `Widths and key statistics are unaffected; a key would let later syncs page.`,
+                Data: { ObjectName: ctx.ObjectName, RowCount: rows.length, SampleTargetRecords: sampleTarget },
             });
         }
         // An empty szColumnList returns the tenant's DEFAULT list columns for the query object, which
@@ -790,7 +886,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // A full page implies another may exist; a short page is the last one. Only meaningful when
         // paginating — without an ordering key there is no seek position, so the single unbounded
         // fetch is by definition complete.
-        const hasMore = canPaginate && pageSize > 0 && rows.length >= pageSize && maxKey !== undefined;
+        const hasMore = canPaginate && topRows > 0 && rows.length >= topRows && maxKey !== undefined;
 
         // Watermark: when this IO has a watermark field, the engine narrows next sync from the max
         // seen. Advance ONLY on the final page — advancing mid-scan would let a crash between pages

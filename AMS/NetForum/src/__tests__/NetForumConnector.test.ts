@@ -151,6 +151,10 @@ class MockedNetForumConnector extends NetForumConnector {
     public PkField = 'ind_cst_key';
     /** Canned Declared baseline — curated objects, as the engine cache would supply them. */
     public Declared: ExternalObjectSchema[] = [];
+    /** When set, GetCachedObject throws for any name not listed — the engine's behaviour for an object not yet persisted. */
+    public KnownObjects: Set<string> | null = null;
+    /** When true the mocked cache carries NO primary key — a keyless object. */
+    public Keyless = false;
     /** Per-object capability/config the mocked cache reports. */
     public Caps: { SupportsCreate: boolean; SupportsUpdate: boolean; CreateBodyKey: string | null; UpdateBodyKey: string | null; IncrementalWatermarkField: string | null; Configuration: string | null } = {
         SupportsCreate: true,
@@ -195,6 +199,9 @@ class MockedNetForumConnector extends NetForumConnector {
 
     // Engine-cache stand-ins so DiscoverFields / FetchChanges / CRUD run without IntegrationEngineBase.
     protected override GetCachedObject(_integrationID: string, objectName: string): MJIntegrationObjectEntity {
+        if (this.KnownObjects && !this.KnownObjects.has(objectName)) {
+            throw new Error(`IntegrationObject not found: "${objectName}" for integration integ-1`);
+        }
         return {
             ID: 'io-individual',
             IntegrationID: 'integ-1',
@@ -211,10 +218,13 @@ class MockedNetForumConnector extends NetForumConnector {
     }
 
     protected override GetCachedFields(_objectID: string): MJIntegrationObjectFieldEntity[] {
-        return [
+        const fields = [
             { Name: this.PkField, DisplayName: 'Customer Key', Description: 'Customer Key', Type: 'String', IsPrimaryKey: true, IsRequired: true, IsReadOnly: true, IsUniqueKey: true, Status: 'Active', Sequence: 0 },
             { Name: 'ind_first_name', DisplayName: 'First Name', Description: 'First Name', Type: 'String', IsPrimaryKey: false, IsRequired: false, IsReadOnly: false, IsUniqueKey: false, Status: 'Active', Sequence: 1 },
         ] as unknown as MJIntegrationObjectFieldEntity[];
+        return this.Keyless
+            ? fields.map(f => ({ ...(f as unknown as Record<string, unknown>), IsPrimaryKey: false })) as unknown as MJIntegrationObjectFieldEntity[]
+            : fields;
     }
 }
 
@@ -893,5 +903,162 @@ describe('NetForumConnector — IntrospectSchema asks the ENDPOINT for columns (
 
         // Degrade, never erase: a bad response must not cost an object columns it already had.
         expect(schema.Objects[0].Fields.length).toBeGreaterThan(0);
+    });
+});
+
+
+/** GetFacadeObjectList naming each facade's key: Individual → its real key; WidgetOrder is enumerated-only. */
+const FACADE_WITH_KEYS_XML = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>
+<GetFacadeObjectListResponse xmlns="http://www.avectra.com/2005/"><GetFacadeObjectListResult>
+<ObjectObjects>
+  <ObjectObject><obj_name>Individual</obj_name><obj_key>ind_cst_key</obj_key><obj_description>Individual</obj_description></ObjectObject>
+  <ObjectObject><obj_name>WidgetOrder</obj_name><obj_key>wor_key</obj_key><obj_description>Widget orders (custom)</obj_description></ObjectObject>
+</ObjectObjects>
+</GetFacadeObjectListResult></GetFacadeObjectListResponse>
+</soap:Body></soap:Envelope>`;
+
+/** The same list, but the enumeration names a NON-key column for Individual — the declared key must win. */
+const FACADE_BOGUS_KEY_XML = FACADE_WITH_KEYS_XML.replace('<obj_key>ind_cst_key</obj_key>', '<obj_key>ind_first_name</obj_key>');
+
+/** GetQueryDefinition for the enumerated-only WidgetOrder: two columns, neither marked as a key (the door never marks one). */
+const WIDGET_DEF_XML = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetQueryDefinitionResponse xmlns="http://www.avectra.com/2005/">
+      <GetQueryDefinitionResult>
+        <obj_name>WidgetOrder</obj_name>
+        <ListTable><lst_mdt_name>cu_widget_order</lst_mdt_name><ListFromTables><ListFromTable>
+          <lsf_from_table>cu_widget_order</lsf_from_table>
+          <Columns>
+            <Column><mdc_name>wor_key</mdc_name><mdc_description>Widget Order Key</mdc_description><mdc_data_type>uniqueidentifier</mdc_data_type><mdc_nullable>0</mdc_nullable><mdc_table_name>cu_widget_order</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+            <Column><mdc_name>wor_name</mdc_name><mdc_description>Name</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_nullable>1</mdc_nullable><mdc_table_name>cu_widget_order</mdc_table_name><mdc_width_max>80</mdc_width_max></Column>
+          </Columns>
+        </ListFromTable></ListFromTables></ListTable>
+      </GetQueryDefinitionResult>
+    </GetQueryDefinitionResponse>
+  </soap:Body>
+</soap:Envelope>`;
+
+const ENUMERATE_ACTION = 'http://www.avectra.com/2005/GetFacadeObjectList';
+const GETQUERY_ACTION = 'http://www.avectra.com/2005/GetQuery';
+
+describe('NetForumConnector — the enumerated key (obj_key) becomes the primary key of an enumerated-only object', () => {
+    it('DiscoverObjects keeps each obj_key; DiscoverFields marks that column IsPrimaryKey and nothing else', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set(['Individual']); // WidgetOrder is not in the engine cache yet — first discovery
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
+        await c.DiscoverObjects(CI, CU);
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
+
+        const fields = await c.DiscoverFields(CI, 'WidgetOrder', CU);
+
+        expect(fields.map(f => f.Name)).toEqual(expect.arrayContaining(['wor_key', 'wor_name']));
+        expect(fields.find(f => f.Name === 'wor_key')!.IsPrimaryKey).toBe(true);
+        expect(fields.find(f => f.Name === 'wor_name')!.IsPrimaryKey).toBe(false);
+        expect(fields.filter(f => f.IsPrimaryKey)).toHaveLength(1);
+    });
+
+    it('an object the cache does not know yet still gets its endpoint columns on the FIRST pass (the base throw is absorbed)', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set(['Individual']);
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
+        const fields = await c.DiscoverFields(CI, 'WidgetOrder', CU);
+        expect(fields).toHaveLength(2);
+    });
+
+    it('a DECLARED key wins — the enumeration cannot displace it', async () => {
+        const c = makeConnector(); // Individual is declared with PK ind_cst_key (GetCachedFields)
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_BOGUS_KEY_XML, Headers: {} }; // says ind_first_name
+        await c.DiscoverObjects(CI, CU);
+        const fields = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(fields.find(f => f.Name === 'ind_cst_key')!.IsPrimaryKey).toBe(true);
+        expect(fields.find(f => f.Name === 'ind_first_name')!.IsPrimaryKey).toBe(false);
+    });
+
+    it('DiscoverFields with no prior DiscoverObjects enumerates ONCE on this instance, never again', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set(['Individual']);
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
+        const first = await c.DiscoverFields(CI, 'WidgetOrder', CU);
+        await c.DiscoverFields(CI, 'WidgetOrder', CU);
+        await c.DiscoverFields(CI, 'WidgetOrder', CU);
+        expect(c.Requests.filter(r => r.headers['SOAPAction'] === ENUMERATE_ACTION)).toHaveLength(1);
+        expect(first.find(f => f.Name === 'wor_key')!.IsPrimaryKey).toBe(true);
+    });
+
+    it('a FAILED enumeration is not retried per object — faults are the budget xWeb locks the account on', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set(['Individual']);
+        c.Responses['GetFacadeObjectList'] = { Status: 500, Body: '<faultstring>not authorized</faultstring>', Headers: {} };
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: WIDGET_DEF_XML, Headers: {} };
+        const fields = await c.DiscoverFields(CI, 'WidgetOrder', CU);
+        await c.DiscoverFields(CI, 'WidgetOrder', CU);
+        expect(c.Requests.filter(r => r.headers['SOAPAction'] === ENUMERATE_ACTION)).toHaveLength(1);
+        // Columns still arrive; only the key is unknown, honestly.
+        expect(fields).toHaveLength(2);
+        expect(fields.some(f => f.IsPrimaryKey)).toBe(false);
+    });
+});
+
+describe('NetForumConnector — a discovery sample is bounded by its target, keyed or not', () => {
+    const KEYLESS_CONFIG = JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: 'Individual', nestingPath: [], doorArgs: { szObjectName: 'Individual', topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (over: Record<string, unknown> = {}): FetchContext => ({
+        CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50, ...over,
+    } as unknown as FetchContext);
+    const getQuery = (c: MockedNetForumConnector) => c.Requests.find(r => r.headers['SOAPAction'] === GETQUERY_ACTION)!;
+
+    it('keyed object: the page is min(BatchSize, SampleTargetRecords), still ordered by the key', async () => {
+        const c = makeConnector();
+        await c.FetchChanges(sampleCtx());
+        expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
+        expect(getQuery(c).body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
+    });
+
+    it('keyed object with a page SMALLER than the target keeps its page (the engine walks pages to the target)', async () => {
+        const c = makeConnector();
+        await c.FetchChanges(sampleCtx({ BatchSize: 20 }));
+        expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 20</szObjectName>');
+    });
+
+    it('keyless object: @TOP target instead of the whole table, no ORDER BY, and it says the sample is unkeyed', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG;
+        const res = await c.FetchChanges(sampleCtx());
+        expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
+        expect(getQuery(c).body).not.toContain('szOrderBy');
+        const codes = (res.Warnings ?? []).map(w => w.Code);
+        expect(codes).not.toContain('UNPAGINATED_FETCH');
+        expect(codes).toContain('SAMPLE_BOUNDED_WITHOUT_KEY');
+        expect(res.HasMore).toBe(false);
+    });
+
+    it('keyless object during a SYNC still runs the legacy unbounded fetch and warns — unchanged', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG;
+        const res = await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 500, ContextUser: CU });
+        expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP -1</szObjectName>');
+        expect((res.Warnings ?? []).map(w => w.Code)).toContain('UNPAGINATED_FETCH');
+    });
+
+    it('the enumerated key pages a sample of an object whose fields are not persisted yet, and identifies its records', async () => {
+        const c = makeConnector();
+        c.Keyless = true; // the persisted catalog carries no key for it yet
+        c.Caps.Configuration = KEYLESS_CONFIG;
+        c.Responses['GetFacadeObjectList'] = { Status: 200, Body: FACADE_WITH_KEYS_XML, Headers: {} };
+        await c.DiscoverObjects(CI, CU);
+        const res = await c.FetchChanges(sampleCtx());
+        expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
+        expect(getQuery(c).body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
+        expect((res.Warnings ?? []).map(w => w.Code)).not.toContain('UNPAGINATED_FETCH');
+        expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
     });
 });
