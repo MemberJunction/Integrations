@@ -212,6 +212,15 @@ function IsQueryableColumn(name: string): boolean {
     return !/_entity_key/i.test(name);
 }
 
+/**
+ * A name xWeb can be handed as a bare SQL identifier. Column names, tables and aliases go into the
+ * statement unquoted, so anything else ("Incorrect syntax near '='." on a live tenant's 711-column
+ * object) breaks the whole query; such a qualifier is dropped and the column sent bare.
+ */
+function IsPlainIdentifier(s: string): boolean {
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s);
+}
+
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-netforum-enterprise')
 export class NetForumConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
@@ -390,6 +399,30 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * tenant's data. Remembering the answer costs one fault instead of hundreds.
      */
     private readonly DefaultColumnListUnusable = new Set<string>();
+    /** Connections whose default-list verdict is known either way (probe answered) — no more gating. */
+    private readonly DefaultListVerdict = new Set<string>();
+    /**
+     * The one in-flight empty-list request per connection while the default-list verdict is unknown.
+     * Sampling runs objects in parallel: without this, every concurrent first request paid its own
+     * "'*' is not a valid value" fault before the latch could tell them (3 of 10 faults on a live run).
+     */
+    private readonly DefaultListProbe = new Map<string, Promise<void>>();
+    /**
+     * Columns xWeb's SQL cannot select for an object on a connection, learned from a fault that named
+     * them ("Invalid column name 'x'." — SQL Server lists every unresolvable column of the statement).
+     * The object's definition lists them, the list query's FROM cannot reach them: the vendor's own
+     * caveat — GetQuery follows the List Table / From Table setup, not the object's data objects, "and
+     * there might be a mismatch in some cases" (6 of a live run's 10 faults, e.g. an Extender key
+     * `cst_key_ext` attributed to a joined table that does not carry it). Keyed
+     * `<companyIntegrationID>|<object>`; once learned, never sent again on this instance — the fault
+     * is paid once per object per process, not on every page of every sync.
+     */
+    private readonly UnselectableColumns = new Map<string, Set<string>>();
+    /**
+     * Objects whose explicit column list broke xWeb's SQL ("Incorrect syntax near …") on a connection.
+     * The fault names no column, so nothing can be dropped; the list is not sent again on this instance.
+     */
+    private readonly ExplicitListUnsendable = new Set<string>();
 
     // ─── Discovery — Declared cache + runtime GetQueryDefinition ──────
 
@@ -959,32 +992,62 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             );
         }
         if (!args.szColumnList && this.DefaultColumnListUnusable.has(faultKey)) {
-            const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
             if (known) {
                 args.szColumnList = known;
             } else {
                 // The tenant's default list is known to be unusable and nothing describes this object's
-                // columns (no definition, no persisted fields). The only request left is one that will
-                // fault, and faults are what lock the account — so it is not sent.
-                throw new Error(
-                    `NetForum GetQuery(${ctx.ObjectName}) not attempted: this connection's default column list is ` +
-                    `unusable ('*' faulted earlier) and no column list is known for "${ctx.ObjectName}" — ` +
-                    `GetQueryDefinition described no columns and none are persisted. Nothing valid to send.`,
-                );
+                // columns (no definition, no persisted fields — or the last list broke xWeb's SQL). The only
+                // request left is one that will fault, and faults are what lock the account — so it is not sent.
+                throw this.NothingValidToSend(ctx.ObjectName);
             }
         }
         // The vendor: "@TOP -1 ... specific, named fields must be passed ... in szColumnList". The
         // legacy unbounded fetch of a keyless object therefore names its columns when it can.
         if (!args.szColumnList && /@TOP\s+-1\b/i.test(szObjectName)) {
-            const named = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            const named = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
             if (named) args.szColumnList = named;
         }
-        const sentEmptyColumnList = !args.szColumnList;
+        let sentEmptyColumnList = !args.szColumnList;
         let sentArgs: Record<string, string> = args;
 
-        let response = await this.MakeRawHTTPRequest(
-            url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
-        );
+        // Sampling runs objects in parallel. While this connection's default-list verdict is unknown, only
+        // ONE empty-list request is in flight; a concurrent caller waits for its answer and then decides as
+        // if it had come later — otherwise every concurrent first request pays its own "'*' is not a valid
+        // value" fault before the latch can tell it (3 of a live run's 10 faults). Once the verdict is known
+        // either way there is nothing to wait for, and requests are never serialised.
+        if (sentEmptyColumnList && !this.DefaultListVerdict.has(faultKey)) {
+            const inflight = this.DefaultListProbe.get(faultKey);
+            if (inflight) {
+                await inflight;
+                if (this.DefaultColumnListUnusable.has(faultKey)) {
+                    const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
+                    if (!known) throw this.NothingValidToSend(ctx.ObjectName);
+                    args.szColumnList = known;
+                    sentEmptyColumnList = false;
+                }
+            }
+        }
+        let response: RESTResponse;
+        if (sentEmptyColumnList && !this.DefaultListVerdict.has(faultKey) && !this.DefaultListProbe.has(faultKey)) {
+            let settle: () => void = () => undefined;
+            this.DefaultListProbe.set(faultKey, new Promise<void>(resolve => { settle = resolve; }));
+            try {
+                response = await this.MakeRawHTTPRequest(
+                    url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
+                );
+                // The verdict is recorded BEFORE the waiters wake, so they read it rather than re-probe.
+                if (this.IsInvalidDefaultColumnListFault(response)) this.DefaultColumnListUnusable.add(faultKey);
+                this.DefaultListVerdict.add(faultKey);
+            } finally {
+                this.DefaultListProbe.delete(faultKey);
+                settle();
+            }
+        } else {
+            response = await this.MakeRawHTTPRequest(
+                url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
+            );
+        }
 
         // The door can reject ITS OWN default list. An empty szColumnList asks xWeb for the object's
         // configured default columns, and on a tenant where that default is `*` the request faults with
@@ -1001,7 +1064,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             // Configuration.columnList drawing this same fault is a different defect and must keep
             // surfacing per call, rather than silently changing what every later object sends.
             if (sentEmptyColumnList) this.DefaultColumnListUnusable.add(faultKey);
-            const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
             if (explicit) {
                 sentArgs = { ...args, szColumnList: explicit };
                 response = await this.MakeRawHTTPRequest(
@@ -1011,13 +1074,39 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             }
         }
 
+        // SQL Server names EVERY column the statement could not resolve. Learn them for this object on this
+        // connection, rebuild the list without them and retry ONCE — so the fault is paid once per object
+        // per process, never again on the next page or the next sync (see UnselectableColumns). A fault
+        // that names no column but says the SQL itself broke is learned the other way: that list is not
+        // sent again on this instance (see ExplicitListUnsendable).
+        if (response.Status >= 400 && sentArgs.szColumnList) {
+            const invalid = this.InvalidColumnNames(response.Body);
+            if (invalid.length > 0) {
+                const learned = this.UnselectableColumns.get(grantKey) ?? new Set<string>();
+                for (const n of invalid) learned.add(n);
+                this.UnselectableColumns.set(grantKey, learned);
+                const rebuilt = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
+                if (rebuilt && rebuilt !== sentArgs.szColumnList) {
+                    sentArgs = { ...sentArgs, szColumnList: rebuilt };
+                    response = await this.MakeRawHTTPRequest(
+                        url, 'POST', this.SoapHeaders('GetQuery'),
+                        this.BuildSoapEnvelope('GetQuery', sentArgs, auth.Token),
+                    );
+                }
+            } else if (this.IsSqlSyntaxFault(response.Body)) {
+                this.ExplicitListUnsendable.add(grantKey);
+            }
+        }
+
         if (response.Status < 200 || response.Status >= 300) {
             if (this.IsSelectNotAuthorizedFault(response)) this.SelectNotAuthorized.add(grantKey);
             // The fault text is SQL Server's or xWeb's; the SHAPE of what we sent is ours to report, or
-            // the next reader of the run log is left guessing which parameter the door rejected.
+            // the next reader of the run log is left guessing which parameter the door rejected. A broken
+            // statement also reports the qualifiers the list used — the next log line names the culprit.
+            const syntaxHint = this.IsSqlSyntaxFault(response.Body) ? ` [qualifiers: ${this.QualifierSummary(obj)}]` : '';
             throw new Error(
                 `NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}` +
-                ` [sent: ${this.DescribeRequestShape(sentArgs)}]`,
+                ` [sent: ${this.DescribeRequestShape(sentArgs)}]${syntaxHint}`,
             );
         }
 
@@ -1133,6 +1222,47 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         return typeof fault === 'string' && /not a valid value for szColumnList/i.test(fault);
     }
 
+    /** The SOAP faultstring, unescaped; '' when the body carries none. */
+    private FaultText(body: unknown): string {
+        return this.ParseSoapScalar(this.AsText(body), 'faultstring') ?? '';
+    }
+
+    /**
+     * Every column SQL Server reported unresolvable in a fault ("Invalid column name 'x'." — one line per
+     * column, all of them in one answer), lowercased, each once. Empty when the fault says something else.
+     */
+    private InvalidColumnNames(body: unknown): string[] {
+        const out = new Set<string>();
+        const re = /Invalid column name '([^']+)'/gi;
+        const text = this.FaultText(body);
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) out.add(m[1].trim().toLowerCase());
+        return [...out];
+    }
+
+    /** "Incorrect syntax near …" — the statement itself broke; no column is named, nothing can be dropped. */
+    private IsSqlSyntaxFault(body: unknown): boolean {
+        return /Incorrect syntax near/i.test(this.FaultText(body));
+    }
+
+    /** The distinct qualifiers (alias or table) the object's definition supplies — names only, for a fault message. */
+    private QualifierSummary(obj: MJIntegrationObjectEntity): string {
+        const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
+        if (!def) return 'none (no definition for the object)';
+        const qs = [...new Set(def.Columns.map(c => c.Alias ?? c.Table ?? '').filter(q => q.length > 0))];
+        return qs.slice(0, 20).map(q => `"${q}"`).join(', ') + (qs.length > 20 ? `, … (${qs.length} distinct)` : '');
+    }
+
+    /** The refusal to send a request known to fault: the default list is unusable and no list can be built. */
+    private NothingValidToSend(objectName: string): Error {
+        return new Error(
+            `NetForum GetQuery(${objectName}) not attempted: this connection's default column list is ` +
+            `unusable ('*' faulted earlier) and no column list can be sent for "${objectName}" — ` +
+            `GetQueryDefinition described no columns and none are persisted, or the last list broke xWeb's SQL. ` +
+            `Nothing valid to send.`,
+        );
+    }
+
     /**
      * An explicit, non-empty column list for an object whose tenant default is unusable, drawn from the
      * best source available at the moment of the call:
@@ -1143,21 +1273,28 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * primary key, the ordering key and the watermark. Empty when nothing is known, which leaves the
      * original fault to surface rather than sending a request we cannot justify.
      */
-    private ExplicitColumnListFor(obj: MJIntegrationObjectEntity, required: Array<string | undefined>): string {
+    private ExplicitColumnListFor(obj: MJIntegrationObjectEntity, required: Array<string | undefined>, learnKey?: string): string {
         // Preferred source: the object's definition, which knows each column's table and alias. The
         // vendor requires the alias (or table) prefix wherever a table is joined more than once
         // ("ambiguous column name" / "Object Reference Not Set" otherwise), so every column is sent
         // qualified — `Membership.mbr_src_code`, `co_individual.ind_cst_key` — and each name once.
         // The key column leads, so a row's first element is the key whichever list was sent.
+        //
+        // `learnKey` (`<connection>|<object>`) applies what earlier faults taught about this object on
+        // this connection: columns xWeb could not resolve are left out, and a list that broke xWeb's SQL
+        // is not rebuilt at all ('' — the callers' "nothing to send" paths then speak, without a request).
+        if (learnKey && this.ExplicitListUnsendable.has(learnKey)) return '';
+        const unselectable = learnKey ? this.UnselectableColumns.get(learnKey) : undefined;
         const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
         const out: string[] = [];
         const seen = new Set<string>();
         const add = (name: string | undefined, qualifier: string | null): void => {
-            if (!name || !IsQueryableColumn(name)) return;
+            if (!name || !IsQueryableColumn(name) || !IsPlainIdentifier(name)) return;
             const key = name.toLowerCase();
-            if (seen.has(key)) return;
+            if (seen.has(key) || unselectable?.has(key)) return;
             seen.add(key);
-            out.push(qualifier ? `${qualifier}.${name}` : name);
+            const q = qualifier && IsPlainIdentifier(qualifier) ? qualifier : null;
+            out.push(q ? `${q}.${name}` : name);
         };
         if (def && def.Columns.length > 0) {
             const qualifierOf = (c: NFDefinedColumn): string | null => c.Alias ?? c.Table;
@@ -1185,7 +1322,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
         const col = def?.Columns.find(c => c.Name.toLowerCase() === name.toLowerCase());
         const q = col ? (col.Alias ?? col.Table) : null;
-        return q ? `${q}.${name}` : name;
+        return q && IsPlainIdentifier(q) ? `${q}.${name}` : name;
     }
 
     /** "Account is not authorized to perform Select on <object> object" — a grant, not a query, failed. */

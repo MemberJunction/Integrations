@@ -1364,3 +1364,99 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
         expect((res.Warnings ?? []).map(w => w.Code)).toContain('UNPAGINATED_FETCH');
     });
 });
+
+describe('NetForumConnector — a fault is paid once, never per page or per sync (1.6.7)', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string, over: Record<string, unknown> = {}): FetchContext => ({
+        CompanyIntegration: { ...CI, ID: 'ci-167' }, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50, ...over,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+    const listOf = (body: string): string[] => (/<szColumnList>([^<]*)<\/szColumnList>/.exec(body)?.[1] ?? '').split(',').filter(x => x.length > 0);
+    const OK = (): RESTResponse => ({ Status: 200, Body: GETQUERY_XML, Headers: {} });
+    const STAR_FAULT = () => FAULT_500("'*' is not a valid value for szColumnList");
+    /** SQL Server lists EVERY unresolvable column of the statement, one line each — as xWeb relays it. */
+    const INVALID_COLUMNS_FAULT = () => FAULT_500("Check the Error Log for more details: Invalid column name 'cst_type'.\nInvalid column name 'mbr_src_code'.");
+
+    it('columns a fault names are learned for the object and dropped: one retry now, and never sent again on this instance', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [STAR_FAULT(), INVALID_COLUMNS_FAULT(), OK(), OK()];
+        const first = await c.FetchChanges(sampleCtx('Individual'));
+        expect(first.Records.length).toBeGreaterThan(0);
+        const q = getQueries(c);
+        expect(q).toHaveLength(3);                                          // empty → explicit → explicit minus the named columns
+        expect(listOf(q[1].body)).toContain('co_customer.cst_type');
+        expect(listOf(q[1].body)).toContain('Membership.mbr_src_code');
+        expect(listOf(q[2].body)).not.toContain('co_customer.cst_type');
+        expect(listOf(q[2].body)).not.toContain('Membership.mbr_src_code');
+        expect(listOf(q[2].body)[0]).toBe('co_individual.ind_cst_key');       // the key still leads
+        // the next page of the same object: ONE request, already without them — the fault was paid once
+        await c.FetchChanges(sampleCtx('Individual', { AfterKeyValue: '11111111-1111-1111-1111-111111111111' }));
+        const q4 = getQueries(c);
+        expect(q4).toHaveLength(4);
+        expect(listOf(q4[3].body)).not.toContain('co_customer.cst_type');
+        expect(listOf(q4[3].body)).not.toContain('Membership.mbr_src_code');
+    });
+
+    it('a fault that names no column but broke the SQL is learned the other way: that list is never sent again', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [STAR_FAULT(), FAULT_500("Check the Error Log for more details: Incorrect syntax near '='.\nIncorrect syntax near the keyword 'with'.")];
+        const err = await c.FetchChanges(sampleCtx('Individual')).catch((e: Error) => e);
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toMatch(/Incorrect syntax near '='/);
+        expect((err as Error).message).toMatch(/\[qualifiers: "co_individual", "co_customer", "Membership", "mb_member_type"\]/);
+        expect(getQueries(c)).toHaveLength(2);
+        // the same object again: nothing is sent — a request known to fault is not a request
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted.*Nothing valid to send/);
+        expect(getQueries(c)).toHaveLength(2);
+    });
+
+    it('a qualifier that is not a plain identifier is dropped and the column sent bare — it cannot go into the statement unquoted', async () => {
+        const ODD_ALIAS_DEF_XML = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_alias>Membership</lsf_from_alias>', '<lsf_from_alias>Member Ship=1</lsf_from_alias>');
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: ODD_ALIAS_DEF_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [STAR_FAULT(), OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const cols = listOf(getQueries(c)[1].body);
+        expect(cols).toContain('mbr_src_code');
+        expect(cols.some(x => /Member Ship/.test(x) || /=/.test(x))).toBe(false);
+        expect(cols[0]).toBe('co_individual.ind_cst_key');
+    });
+
+    it('while the default-list verdict is unknown, concurrent objects share ONE probe: the fault is paid once, not once per object', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [STAR_FAULT(), OK(), OK()];
+        const [a, b] = await Promise.all([c.FetchChanges(sampleCtx('Individual')), c.FetchChanges(sampleCtx('Individual2'))]);
+        expect(a.Records.length).toBeGreaterThan(0);
+        expect(b.Records.length).toBeGreaterThan(0);
+        const q = getQueries(c);
+        expect(q).toHaveLength(3);
+        expect(q.filter(r => r.body.includes('<szColumnList></szColumnList>'))).toHaveLength(1);   // exactly one empty-list request
+        expect(listOf(q[1].body).length).toBeGreaterThan(0);
+        expect(listOf(q[2].body).length).toBeGreaterThan(0);
+    });
+
+    it('once the verdict is known (a usable default list), concurrent objects are not serialised and send their empty lists at once', async () => {
+        const c = makeConnector();
+        c.ResponseQueue['GetQuery'] = [OK(), OK(), OK()];
+        await c.FetchChanges(sampleCtx('Individual'));                                       // the verdict: fine
+        await Promise.all([c.FetchChanges(sampleCtx('Individual2')), c.FetchChanges(sampleCtx('Individual3'))]);
+        const q = getQueries(c);
+        expect(q).toHaveLength(3);
+        expect(q.filter(r => r.body.includes('<szColumnList></szColumnList>'))).toHaveLength(3);
+    });
+});
