@@ -77,6 +77,8 @@
  *   - xWeb Overview   : https://documentation.abila.com/netforum-enterprise/2017.1/Content/xWeb/XWeb_Overview.htm
  *   - GetQuery        : https://documentation.abila.com/netforum-enterprise/2017.1/Content/xWeb/Methods/GetQuery.htm
  */
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type {
@@ -424,6 +426,33 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      */
     private readonly ExplicitListUnsendable = new Set<string>();
 
+    /**
+     * Operator hooks, filesystem-keyed so they need no configuration or restart to arm:
+     *   - `<OperatorRoot>/logs/netforum-definitions/` exists → every GetQueryDefinition answer is written there as
+     *     `<object>.xml` (the vendor's per-object list definition: from-tables, aliases, join text, columns). It is the
+     *     only input that explains which listed columns a tenant's list query can actually select, and fetching it
+     *     never faults — the way to learn a tenant's rules without spending the daily fault budget.
+     *   - `<OperatorRoot>/.nf-definitions-only` exists → FetchChanges stops locally before any GetQuery, so a discovery
+     *     run collects the definitions above and costs zero faults. Remove the file to sample and sync again.
+     * OperatorRoot defaults to the process working directory (MJAPI: the release's apps/MJAPI). Tests point it elsewhere.
+     */
+    public static OperatorRoot: string = process.cwd();
+
+    private DefinitionsOnlyMode(): boolean {
+        try { return existsSync(join(NetForumConnector.OperatorRoot, '.nf-definitions-only')); } catch { return false; }
+    }
+
+    private DumpDefinition(objectName: string, xml: string): void {
+        try {
+            const dir = join(NetForumConnector.OperatorRoot, 'logs', 'netforum-definitions');
+            if (!existsSync(dir)) return;
+            const safe = objectName.replace(/[^A-Za-z0-9_.-]+/g, '_').slice(0, 120);
+            writeFileSync(join(dir, `${safe}.xml`), xml, 'utf8');
+        } catch {
+            // best-effort diagnostics: never let a dump failure change what the connector does
+        }
+    }
+
     // ─── Discovery — Declared cache + runtime GetQueryDefinition ──────
 
     /**
@@ -622,6 +651,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             const body = this.BuildSoapEnvelope('GetQueryDefinition', { szObjectName: objectName }, auth.Token);
             const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQueryDefinition'), body);
             if (r.Status >= 200 && r.Status < 300) {
+                this.DumpDefinition(objectName, this.AsText(r.Body));
                 const parsed = this.ParseQueryDefinition(this.AsText(r.Body));
                 const def = parsed.Columns.length > 0 ? parsed : null;
                 this.DefinitionByObject.set(key, def);
@@ -895,6 +925,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * (WATERMARK_COLUMN_ABSENT) rather than silently never advancing.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
+        if (this.DefinitionsOnlyMode()) {
+            throw new Error(
+                `NetForum GetQuery(${ctx.ObjectName}) not attempted: definitions-only mode ` +
+                `(${join(NetForumConnector.OperatorRoot, '.nf-definitions-only')} exists) — this run collects the objects' ` +
+                `GetQueryDefinition answers and sends no GetQuery. Remove the file to sample and sync.`,
+            );
+        }
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as NFAuthContext;
         const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
         const cfg = this.ParseObjectConfig(obj);

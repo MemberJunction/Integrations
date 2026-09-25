@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type {
     RESTAuthContext,
     RESTResponse,
@@ -1362,6 +1365,49 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
         const res = await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 500, ContextUser: CU });
         expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP -1</szObjectName>');
         expect((res.Warnings ?? []).map(w => w.Code)).toContain('UNPAGINATED_FETCH');
+    });
+});
+
+describe('NetForumConnector — operator hooks: definition dump and definitions-only mode', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string): FetchContext => ({
+        CompanyIntegration: { ...CI, ID: 'ci-ops' }, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+    let root = '';
+    beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'nf-ops-')); NetForumConnector.OperatorRoot = root; });
+    afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(root, { recursive: true, force: true }); });
+
+    it('writes every definition it fetches as <object>.xml when the dump directory exists, and nothing otherwise', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set();
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        await c.DiscoverFields(CI, 'Individual', CU);
+        expect(existsSync(join(root, 'logs', 'netforum-definitions', 'Individual.xml'))).toBe(false);
+        mkdirSync(join(root, 'logs', 'netforum-definitions'), { recursive: true });
+        const d = makeConnector();
+        d.KnownObjects = new Set();
+        d.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        await d.DiscoverFields(CI, 'Individual', CU);
+        expect(readFileSync(join(root, 'logs', 'netforum-definitions', 'Individual.xml'), 'utf8')).toBe(INDIVIDUAL_DEF_REAL_XML);
+    });
+
+    it('with the definitions-only marker present, FetchChanges stops before any GetQuery; without it, it sends', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.Responses['GetQuery'] = { Status: 200, Body: GETQUERY_XML, Headers: {} };
+        writeFileSync(join(root, '.nf-definitions-only'), '');
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted: definitions-only mode/);
+        expect(getQueries(c)).toHaveLength(0);
+        rmSync(join(root, '.nf-definitions-only'));
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)).toHaveLength(1);
     });
 });
 
