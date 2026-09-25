@@ -1,0 +1,5 @@
+---
+"@memberjunction/connector-netforum-enterprise": patch
+---
+
+A GetQuery fault is paid once per object per process, never on every page or every sync. Columns SQL Server reports as "Invalid column name" (the definition lists them; the list query's FROM cannot reach them — the vendor's own List Table / Data Object mismatch, e.g. Extender keys such as `cst_key_ext` attributed to a joined table that does not carry them) are learned for the object and dropped with one retry. A list that broke the SQL ("Incorrect syntax near …") is never sent again on the instance, and the fault names the qualifiers the list used. A qualifier that is not a plain identifier is dropped and the column sent bare. While a connection's default-list verdict is unknown, only one empty-list probe is in flight — concurrent objects wait for its answer instead of each paying the "'*' is not a valid value" fault. On a live tenant 10 faults in 99 sampled objects would have exhausted the vendor's daily lock over a full pass.
