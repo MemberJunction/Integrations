@@ -514,7 +514,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      */
     private GetQueryInFlight = 0;
     private readonly GetQueryWaiters: Array<() => void> = [];
-    private static readonly GETQUERY_MAX_IN_FLIGHT = 4;
+    private static readonly GETQUERY_MAX_IN_FLIGHT = 8;
     private static readonly RETRY_AFTER_429_MS = [3000, 8000, 20000];
 
     /** One GetQuery round trip under the concurrency bound, with 429 waited out and retried. */
