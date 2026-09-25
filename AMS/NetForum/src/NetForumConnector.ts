@@ -519,17 +519,27 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
     /** One GetQuery round trip under the concurrency bound, with 429 waited out and retried. */
     private async SendGetQuery(url: string, args: Record<string, string>, token: string): Promise<RESTResponse> {
+        return this.SendSoap('GetQuery', url, args, token);
+    }
+
+    /**
+     * One xWeb round trip under the shared concurrency bound, with HTTP 429 waited out and retried. GetQuery and
+     * GetQueryDefinition both go through here: the vendor's web server throttles the METADATA calls too, and a
+     * throttled GetQueryDefinition read as "no definition" left 58 of 878 objects with no columns on a live run
+     * (PLUS 2026-09-25) — eight definitions in flight, every 429 cached as a refusal.
+     */
+    private async SendSoap(action: string, url: string, args: Record<string, string>, token: string): Promise<RESTResponse> {
         if (this.GetQueryInFlight >= NetForumConnector.GETQUERY_MAX_IN_FLIGHT) {
             await new Promise<void>(resolve => this.GetQueryWaiters.push(resolve));
         }
         this.GetQueryInFlight++;
         try {
-            let response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, token));
+            let response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders(action), this.BuildSoapEnvelope(action, args, token));
             for (const delay of NetForumConnector.RETRY_AFTER_429_MS) {
                 if (response.Status !== 429) break;
                 const hinted = Number((response.Headers ?? {})['retry-after'] ?? (response.Headers ?? {})['Retry-After']);
                 await this.Sleep(Number.isFinite(hinted) && hinted > 0 ? Math.min(hinted * 1000, 60000) : delay);
-                response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, token));
+                response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders(action), this.BuildSoapEnvelope(action, args, token));
             }
             return response;
         } finally {
@@ -837,9 +847,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * The parsed GetQueryDefinition for `objectName`, fetched once per instance per object. A non-2xx
-     * answer is remembered as `null` (not asked again — faults are the budget xWeb locks the account
-     * on); a thrown network error is not remembered, so the next caller asks again.
+     * The parsed GetQueryDefinition for `objectName`, fetched once per instance per object, under the shared
+     * concurrency bound with 429 waited out. Only a DEFINITE refusal — a SOAP fault, e.g. "Account is not
+     * authorized" — is remembered as `null` (faults are the budget xWeb locks the account on, so it is not asked
+     * again). A throttle that outlasts the retries, a gateway error or a thrown network error is NOT remembered:
+     * the next caller asks again — and when the operator dump directory holds this object's earlier answer
+     * (`logs/netforum-definitions/<object>.xml`, the vendor's own words), that answer stands in meanwhile.
      */
     private async DefinitionFor(ci: MJCompanyIntegrationEntity, cu: UserInfo, objectName: string): Promise<NFQueryDefinition | null> {
         const key = objectName.toLowerCase();
@@ -847,8 +860,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         try {
             const auth = await this.Authenticate(ci, cu) as NFAuthContext;
             const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
-            const body = this.BuildSoapEnvelope('GetQueryDefinition', { szObjectName: objectName }, auth.Token);
-            const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQueryDefinition'), body);
+            const r = await this.SendSoap('GetQueryDefinition', url, { szObjectName: objectName }, auth.Token);
             if (r.Status >= 200 && r.Status < 300) {
                 this.DumpDefinition(objectName, this.AsText(r.Body));
                 const parsed = this.ParseQueryDefinition(this.AsText(r.Body));
@@ -856,11 +868,23 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 this.DefinitionByObject.set(key, def);
                 return def;
             }
-            this.DefinitionByObject.set(key, null);   // a definite refusal — not retried per call
+            const dumped = this.DumpedDefinition(objectName);
+            if (dumped) { this.DefinitionByObject.set(key, dumped); return dumped; }
+            if (r.Status !== 429 && this.FaultText(r.Body)) this.DefinitionByObject.set(key, null);   // a definite refusal — not retried per call
         } catch {
             // credential-free / network / parse failure → nothing cached, nothing known
         }
         return null;
+    }
+
+    /** The object's definition from the operator dump directory, when a live fetch is refused or throttled; null when absent. */
+    private DumpedDefinition(objectName: string): NFQueryDefinition | null {
+        try {
+            const path = join(NetForumConnector.OperatorRoot, 'logs', 'netforum-definitions', `${objectName}.xml`);
+            if (!existsSync(path)) return null;
+            const parsed = this.ParseQueryDefinition(readFileSync(path, 'utf8'));
+            return parsed.Columns.length > 0 ? parsed : null;
+        } catch { return null; }
     }
 
     /**

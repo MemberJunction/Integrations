@@ -1643,6 +1643,58 @@ describe('NetForumConnector — what the definition alone decides (v3, PLUS 2026
     });
 });
 
+describe('NetForumConnector — a throttled definition is not "no definition" (v5.1, PLUS 2026-09-25: 58 of 878 objects lost their columns)', () => {
+    const THROTTLED = (): RESTResponse => ({ Status: 429, Body: '', Headers: { 'retry-after': '0' } });
+    const NOT_AUTH = (): RESTResponse => ({ Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized to perform GetQueryDefinition</faultstring></soap:Fault>', Headers: {} });
+    const defs = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQueryDefinition');
+    let root = '';
+    beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'nf-def-')); NetForumConnector.OperatorRoot = root; });
+    afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(root, { recursive: true, force: true }); });
+
+    it('an HTTP 429 on GetQueryDefinition is waited out and retried, and the definition is used', async () => {
+        const c = makeConnector();
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async () => undefined;   // no real waiting in a unit test
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [THROTTLED(), { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} }];
+        const fields = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(fields.length).toBeGreaterThan(5);
+        expect(defs(c)).toHaveLength(2);
+    });
+
+    it('a throttle that outlasts the retries is NOT remembered as a refusal: the next call asks again', async () => {
+        const c = makeConnector();
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async () => undefined;   // no real waiting in a unit test
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [THROTTLED(), THROTTLED(), THROTTLED(), THROTTLED(), { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} }];
+        const first = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(defs(c)).toHaveLength(4);                                    // one send + three retries, all throttled
+        const second = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(defs(c)).toHaveLength(5);                                    // asked again, answered
+        expect(second.length).toBeGreaterThan(first.length);
+    });
+
+    it('a definite refusal ("Account is not authorized") IS remembered: one request, never again on this instance', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [NOT_AUTH(), { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} }];
+        await c.DiscoverFields(CI, 'Individual', CU);
+        await c.DiscoverFields(CI, 'Individual', CU);
+        expect(defs(c)).toHaveLength(1);
+    });
+
+    it('when the live fetch is refused or throttled but the operator dump holds the object, the dumped definition stands in', async () => {
+        mkdirSync(join(root, 'logs', 'netforum-definitions'), { recursive: true });
+        writeFileSync(join(root, 'logs', 'netforum-definitions', 'Individual.xml'), INDIVIDUAL_DEF_REAL_XML);
+        const c = makeConnector();
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async () => undefined;   // no real waiting in a unit test
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [THROTTLED(), THROTTLED(), THROTTLED(), THROTTLED()];
+        const fields = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(fields.length).toBeGreaterThan(5);
+        expect(fields.some(f => f.Name === 'ind_cst_key')).toBe(true);
+    });
+});
+
 describe('NetForumConnector — what a fault taught is kept for the connection and across processes (v5, PLUS 2026-09-25)', () => {
     const KEYLESS_CONFIG = (name: string) => JSON.stringify({
         accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
