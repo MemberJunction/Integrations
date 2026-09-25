@@ -14,6 +14,12 @@ import type { MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity, MJCompa
 import type { UserInfo } from '@memberjunction/core';
 import { NetForumConnector } from '../NetForumConnector.js';
 
+// Every test runs with OperatorRoot in a throwaway directory: the connector now WRITES there (.nf-learned.json, what
+// faults taught) and a file left in the package directory would teach the next test something it never saw.
+let operatorRootForTest = '';
+beforeEach(() => { operatorRootForTest = mkdtempSync(join(tmpdir(), 'nf-root-')); NetForumConnector.OperatorRoot = operatorRootForTest; });
+afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(operatorRootForTest, { recursive: true, force: true }); });
+
 /**
  * READ-ONLY / MOCKED-ONLY vitest (T4). NEVER hits a live netFORUM instance and NEVER mutates data.
  * Write-method tests assert REQUEST CONSTRUCTION + result handling against a mocked transport seam.
@@ -1214,9 +1220,12 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         const c = makeConnector();
         c.Responses['GetQuery'] = FAULT_500('Invalid query.');
         const ctx = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: '2026-01-01T00:00:00', BatchSize: 500, ContextUser: CU, AfterKeyValue: '2222-secret' } as unknown as FetchContext;
-        await expect(c.FetchChanges(ctx)).rejects.toThrow(/Invalid query\./);
-        await expect(c.FetchChanges(ctx)).rejects.toThrow(/\[sent: szObjectName="Individual @TOP 500"; szColumnList=4 named column\(s\); szOrderBy=co_individual.ind_cst_key; szWhereClause=2 predicate\(s\)\]/);
-        await expect(c.FetchChanges(ctx)).rejects.not.toThrow(/2222-secret|2026-01-01/);
+        const err = await c.FetchChanges(ctx).catch((e: Error) => e) as Error;
+        expect(err.message).toMatch(/Invalid query\./);
+        expect(err.message).toMatch(/\[sent: szObjectName="Individual @TOP 500"; szColumnList=4 named column\(s\); szOrderBy=co_individual.ind_cst_key; szWhereClause=2 predicate\(s\)\]/);
+        expect(err.message).not.toMatch(/2222-secret|2026-01-01/);
+        // a fault that taught nothing is not paid again: the same object now refuses locally, without a request
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/not attempted.*Nothing valid to send/);
     });
 
     it('"not authorized to perform Select" is learned once per object on a connection and never retried', async () => {
@@ -1631,5 +1640,137 @@ describe('NetForumConnector — what the definition alone decides (v3, PLUS 2026
         const q = getQueries(c);
         expect(q).toHaveLength(2);
         expect(q.every(r => !r.body.includes('<szColumnList></szColumnList>'))).toBe(true);
+    });
+});
+
+describe('NetForumConnector — what a fault taught is kept for the connection and across processes (v5, PLUS 2026-09-25)', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string, over: Record<string, unknown> = {}): FetchContext => ({
+        CompanyIntegration: { ...CI, ID: 'ci-v5' }, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50, ...over,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+    const listOf = (body: string): string[] => (/<szColumnList>([^<]*)<\/szColumnList>/.exec(body)?.[1] ?? '').split(',').filter(x => x.length > 0);
+    const OK = (): RESTResponse => ({ Status: 200, Body: GETQUERY_XML, Headers: {} });
+    const defined = (c: MockedNetForumConnector): void => {
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+    };
+    let root = '';
+    beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'nf-learned-')); NetForumConnector.OperatorRoot = root; });
+    afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(root, { recursive: true, force: true }); });
+    const learnedFile = () => (JSON.parse(readFileSync(join(root, '.nf-learned.json'), 'utf8')) as {
+        connections: Record<string, { missingTables: string[]; unresolvable: string[]; objects: Record<string, { unselectable?: string[]; unexposed?: string[]; unsendable?: boolean; refused?: string }> }>;
+    }).connections['ci-v5'];
+
+    it('a fault is paid ONCE per installation: what one process learned, the next process reads from disk and never sends', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [FAULT_500("Check the Error Log for more details: Invalid column name 'cst_type'.\nInvalid column name 'mbr_src_code'."), OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)).toHaveLength(2);
+        const f = learnedFile();
+        expect(f.objects['individual'].unselectable).toEqual(['cst_type', 'mbr_src_code']);
+        expect(f.unresolvable).toEqual(['co_customer.cst_type', 'mb_membership.mbr_src_code']);   // the fact, attributed to its table
+        // a NEW process (a new instance) on the same installation: the first request already leaves them out
+        const d = makeConnector();
+        defined(d);
+        d.ResponseQueue['GetQuery'] = [OK()];
+        await d.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(d);
+        expect(q).toHaveLength(1);
+        expect(listOf(q[0].body)).not.toContain('co_customer.cst_type');
+        expect(listOf(q[0].body)).not.toContain('Membership.mbr_src_code');
+        expect(listOf(q[0].body)[0]).toBe('co_individual.ind_cst_key');
+    });
+
+    it('every qualifier one fault names is learned at once and the retry sends them bare — one fault, not one per table', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [FAULT_500(
+            'Check the Error Log for more details: The multi-part identifier "co_customer.cst_type" could not be bound.\n' +
+            'The multi-part identifier "Membership.mbr_src_code" could not be bound.\nThe multi-part identifier "Membership.mbr_mbt_key" could not be bound.'), OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(c);
+        expect(q).toHaveLength(2);
+        const cols = listOf(q[1].body);
+        expect(cols).toContain('cst_type');
+        expect(cols).toContain('mbr_src_code');
+        expect(cols).not.toContain('co_customer.cst_type');
+        expect(cols).not.toContain('Membership.mbr_src_code');
+        expect(learnedFile().objects['individual'].unexposed).toEqual(['co_customer', 'membership']);
+    });
+
+    it('a table xWeb says does not exist is learned for the whole connection: its columns leave every list, and an object that JOINS it is refused', async () => {
+        const c = makeConnector();
+        defined(c);
+        // Individual's definition attributes mbr_* columns to mb_membership (aliased Membership); pretend the tenant lacks it
+        c.ResponseQueue['GetQuery'] = [FAULT_500("Check the Error Log for more details: Invalid object name 'mb_membership'.")];
+        const err = await c.FetchChanges(sampleCtx('Individual')).catch((e: Error) => e);
+        expect((err as Error).message).toMatch(/Invalid object name 'mb_membership'/);
+        expect(getQueries(c)).toHaveLength(1);                             // it joins the table: no rebuild can help, no retry sent
+        const f = learnedFile();
+        expect(f.missingTables).toEqual(['mb_membership']);
+        expect(f.objects['individual'].refused).toMatch(/joins "mb_membership"/);
+        // the same object, a new process: refused before any request, with the learned reason
+        const d = makeConnector();
+        defined(d);
+        await expect(d.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted: it joins "mb_membership"/);
+        expect(getQueries(d)).toHaveLength(0);
+    });
+
+    it('a fault that teaches nothing ("Invalid query.") is not paid twice: the list is marked unsendable and the object refused from then on', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [FAULT_500('Invalid query.')];
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/Invalid query/);
+        expect(getQueries(c)).toHaveLength(1);
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted.*Nothing valid to send/);
+        expect(getQueries(c)).toHaveLength(1);
+        expect(learnedFile().objects['individual'].unsendable).toBe(true);
+    });
+
+    it('a second class hiding behind the first is learned in the next round: columns fall away, then the key on their table, three requests at most', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [
+            FAULT_500("Check the Error Log for more details: Invalid column name 'mbr_src_code'."),
+            FAULT_500("Check the Error Log for more details: Invalid column name 'mbr_cst_key'."),
+            OK(),
+        ];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(c);
+        expect(q).toHaveLength(3);
+        expect(listOf(q[2].body)).not.toContain('Membership.mbr_src_code');
+        expect(listOf(q[2].body)).not.toContain('Membership.mbr_cst_key');
+        // and the rebuilt list that equals the refused one ends it instead of looping
+        const d = makeConnector();
+        defined(d);
+        d.ResponseQueue['GetQuery'] = [FAULT_500("Check the Error Log for more details: Invalid column name 'nowhere_col'.")];
+        await expect(d.FetchChanges(sampleCtx('Individual2'))).rejects.toThrow(/nowhere_col/);
+        expect(getQueries(d)).toHaveLength(1);
+        expect(learnedFile().objects['individual2'].unsendable).toBe(true);
+    });
+
+    it('a seed file written by an operator is honoured: seeded unselectable columns and unsendable objects cost no request', async () => {
+        writeFileSync(join(root, '.nf-learned.json'), JSON.stringify({
+            version: 1, connections: { '*': {
+                missingTables: [], unresolvable: ['co_customer.cst_type'],
+                objects: { individual: { unselectable: ['mbr_src_code'] }, individual2: { unsendable: true } },
+            } },
+        }));
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const cols = listOf(getQueries(c)[0].body);
+        expect(cols).not.toContain('co_customer.cst_type');
+        expect(cols).not.toContain('Membership.mbr_src_code');
+        await expect(c.FetchChanges(sampleCtx('Individual2'))).rejects.toThrow(/not attempted.*Nothing valid to send/);
+        expect(getQueries(c)).toHaveLength(1);
     });
 });
