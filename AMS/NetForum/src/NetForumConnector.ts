@@ -452,6 +452,49 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * The fault names no column, so nothing can be dropped; the list is not sent again on this instance.
      */
     private readonly ExplicitListUnsendable = new Set<string>();
+    /**
+     * Tables (or aliases) xWeb's generated SQL does not expose under the name the definition gives them, learned
+     * from `The multi-part identifier "T.col" could not be bound` (live: `ev_session_fee`, `oe_price`,
+     * `oe_product_type`, `ac_ar_period_scheduler` — nothing in those definitions differs from the ones that
+     * bind). Keyed `<connection>|<object>`; a column under such a table is sent bare. When the KEY's table is
+     * unexposed the key is left out of the list (xWeb prepends the object's primary key to every query anyway)
+     * so a bare ORDER BY on it is not ambiguous.
+     */
+    private readonly UnexposedQualifiers = new Map<string, Set<string>>();
+    /** Per `<connection>|<object>`: the name xWeb gave the first column when our key was not in the row. */
+    private readonly InjectedKeyByObject = new Map<string, string>();
+    /**
+     * GetQuery requests in flight per instance, bounded: eight parallel samplers drew a burst of 31 HTTP 429
+     * answers from the vendor's web server (PLUS 2026-09-25). A 429 is throttling, not a fault — it is waited out
+     * and retried, never learned from and never surfaced as a failure until the retries are spent.
+     */
+    private GetQueryInFlight = 0;
+    private readonly GetQueryWaiters: Array<() => void> = [];
+    private static readonly GETQUERY_MAX_IN_FLIGHT = 4;
+    private static readonly RETRY_AFTER_429_MS = [3000, 8000, 20000];
+
+    /** One GetQuery round trip under the concurrency bound, with 429 waited out and retried. */
+    private async SendGetQuery(url: string, args: Record<string, string>, token: string): Promise<RESTResponse> {
+        if (this.GetQueryInFlight >= NetForumConnector.GETQUERY_MAX_IN_FLIGHT) {
+            await new Promise<void>(resolve => this.GetQueryWaiters.push(resolve));
+        }
+        this.GetQueryInFlight++;
+        try {
+            let response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, token));
+            for (const delay of NetForumConnector.RETRY_AFTER_429_MS) {
+                if (response.Status !== 429) break;
+                const hinted = Number((response.Headers ?? {})['retry-after'] ?? (response.Headers ?? {})['Retry-After']);
+                await this.Sleep(Number.isFinite(hinted) && hinted > 0 ? Math.min(hinted * 1000, 60000) : delay);
+                response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, token));
+            }
+            return response;
+        } finally {
+            this.GetQueryInFlight--;
+            const next = this.GetQueryWaiters.shift();
+            if (next) next();
+        }
+    }
+
 
     /**
      * Operator hooks, filesystem-keyed so they need no configuration or restart to arm:
@@ -851,39 +894,52 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     /**
      * The reason no GetQuery on this object can compile, read off its own definition — or undefined.
      *
-     * Two shapes, both seen live (PLUS 2026-09-25) and both predictable without a request:
-     *   1. a join names a column with the MAIN table's prefix (`<prefix>_…_key`, the shape of every netFORUM
-     *      key column) that the main table's own column list does not carry — the main table lists every
-     *      column GetQuery can see, so the column is physically absent and the join cannot bind. Only the main
-     *      table's prefix counts: a joined table's columns may be hidden from the list, and function names
-     *      (`nf_get_date`) and hidden non-key columns are not evidence of anything;
-     *   2. a comparison with more than one `=` in one conjunct (`a = b = 'x'`) — not T-SQL.
-     * 39 + 5 of 875 live definitions; each would otherwise cost a fault per object per process.
+     * Five shapes, all seen live (PLUS 2026-09-25, 875 definitions against ~430 explicit reads) and all
+     * predictable without a request: a second root table with no join text (Customer, Certificant); an
+     * unbalanced quote or parenthesis in join text (DeferralHeader); a chained comparison `a = b = 'x'`
+     * (EventsRegistrant and four siblings); a key compared with a date or text column (`aco_add_date=avt_key`,
+     * `cot_cra_code=cra_key` — "Operand type clash" / "Conversion failed"); a join naming a column the
+     * definition lists nowhere (`ivd_whs_key`, `spk_key`, `kit_key`, `zz_dummy` — "Invalid column name").
+     * Each would otherwise cost a fault per object per process; the fix is in netFORUM's List Table setup.
      */
     private BrokenJoinReason(mainTable: string | null, from: NFFromTable[], columns: NFDefinedColumn[]): string | undefined {
-        const names = new Set(columns.map(c => c.Name.toLowerCase()));
-        const tables = new Set(from.map(f => (f.Table ?? '').toLowerCase()));
-        const aliases = new Set(from.map(f => (f.Alias ?? '').toLowerCase()));
-        const mainCols = mainTable ? columns.filter(c => (c.Table ?? '').toLowerCase() === mainTable.toLowerCase()) : [];
-        const prefixCounts = new Map<string, number>();
-        for (const c of mainCols) {
-            const pfx = c.Name.toLowerCase().split('_')[0];
-            if (pfx) prefixCounts.set(pfx, (prefixCounts.get(pfx) ?? 0) + 1);
-        }
-        const mainPrefix = [...prefixCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
-        for (const f of from) {
-            const join = f.Join.replace(/'[^']*'/g, "''");
+        const typeOf = new Map<string, string>();
+        for (const c of columns) if (!typeOf.has(c.Name.toLowerCase())) typeOf.set(c.Name.toLowerCase(), (c.DataType ?? '').toLowerCase());
+        const tables = new Set(from.map(f => (f.Table ?? '').toLowerCase()).filter(t => t.length > 0));
+        const aliases = new Set(from.map(f => (f.Alias ?? '').toLowerCase()).filter(a => a.length > 0));
+        const KEYWORDS = new Set(['and', 'or', 'not', 'null', 'is', 'in', 'like', 'exists', 'between', 'left', 'right', 'inner', 'outer',
+            'join', 'on', 'as', 'case', 'when', 'then', 'else', 'end', 'select', 'from', 'where', 'top', 'distinct', 'dbo', 'with', 'nolock']);
+        const isKey = (t: string): boolean => /^(av_key|uniqueidentifier)$/.test(t);
+        const isDate = (t: string): boolean => /date|time/.test(t);
+        const isText = (t: string): boolean => /char|text/.test(t);
+        for (const [i, f] of from.entries()) {
+            const raw = f.Join ?? '';
+            const who = f.Alias ?? f.Table ?? '?';
+            // (a) a second root: a from-table after the first with no join text is not joined to anything
+            if (i > 0 && raw.trim().length === 0) return `"${who}" is a second root table with no join text`;
+            // (b) unbalanced quotes / parentheses — the text cannot be parsed as SQL
+            if (((raw.match(/'/g) ?? []).length % 2) === 1) return `unbalanced quote in the join on ${who}: "${raw.trim().slice(0, 80)}"`;
+            if ((raw.match(/\(/g) ?? []).length !== (raw.match(/\)/g) ?? []).length) return `unbalanced parenthesis in the join on ${who}: "${raw.trim().slice(0, 80)}"`;
+            const join = raw.replace(/'[^']*'/g, "''");
             for (const conjunct of join.split(/\b(?:and|or)\b/i)) {
-                if ((conjunct.match(/(?<![<>!])=(?!=)/g) ?? []).length > 1) {
-                    return `malformed join on ${f.Alias ?? f.Table ?? '?'}: "${conjunct.trim().slice(0, 80)}"`;
+                // (c) a chained comparison (a = b = 'x') is not T-SQL
+                if ((conjunct.match(/(?<![<>!])=(?!=)/g) ?? []).length > 1) return `malformed join on ${who}: "${conjunct.trim().slice(0, 80)}"`;
+                // (d) a key compared with a date or text column: the server converts and fails on the first real row
+                const cmp = /([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*([A-Za-z_][A-Za-z0-9_.]*)/.exec(conjunct);
+                if (cmp) {
+                    const tl = typeOf.get(cmp[1].split('.').pop()!.toLowerCase()); const tr = typeOf.get(cmp[2].split('.').pop()!.toLowerCase());
+                    if (tl && tr && ((isKey(tl) && (isDate(tr) || isText(tr))) || (isKey(tr) && (isDate(tl) || isText(tl))))) {
+                        return `join on ${who} compares "${cmp[1]}" (${tl}) with "${cmp[2]}" (${tr})`;
+                    }
                 }
             }
-            if (!mainPrefix) continue;
-            for (const tok of join.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []) {
+            // (e) a column the definition does not list anywhere: the join cannot bind. Function calls, keywords,
+            //     table and alias names, and string literals are not columns.
+            const withoutCalls = join.replace(/[A-Za-z_][A-Za-z0-9_]*\s*\(/g, '(');
+            for (const tok of withoutCalls.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []) {
                 const t = tok.toLowerCase();
-                if (!t.startsWith(`${mainPrefix}_`) || !t.endsWith('_key')) continue;
-                if (names.has(t) || tables.has(t) || aliases.has(t)) continue;
-                return `join on ${f.Alias ?? f.Table ?? '?'} names "${tok}", which ${mainTable} does not carry`;
+                if (!t.includes('_') || KEYWORDS.has(t) || tables.has(t) || aliases.has(t) || typeOf.has(t)) continue;
+                return `join on ${who} names "${tok}", which the definition lists nowhere`;
             }
         }
         return undefined;
@@ -1033,7 +1089,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const persistedKey = this.PrimaryKeyFieldName(obj);
         const definedKey = persistedKey ? undefined : def?.KeyColumn;
         const pkField = persistedKey ?? definedKey;
-        const orderingKey = cfg.stableOrderingKey ?? pkField;
+        const orderingKey = cfg.stableOrderingKey ?? this.InjectedKeyByObject.get(grantKey) ?? pkField;
 
         // Keyset pagination requires a total order to seek on. With one, we page via
         // `@TOP <BatchSize>` + `WHERE <key> > <AfterKeyValue> ORDER BY <key>`; the metadata
@@ -1093,14 +1149,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // key appears once). A qualified reference resolves in both cases.
         const predicates: string[] = [];
         if (ctx.WatermarkValue && watermarkField) {
-            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField)} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
+            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField, grantKey)} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
         }
         if (canPaginate && ctx.AfterKeyValue) {
-            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
+            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
         }
         if (predicates.length > 0) args.szWhereClause = predicates.join(' AND ');
 
-        if (orderingKey) args.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey);
+        if (orderingKey) args.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey, grantKey);
 
         const url = `${auth.Config.BaseURL}${this.SoapEndpoint(cfg)}`;
 
@@ -1161,9 +1217,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             let settle: () => void = () => undefined;
             this.DefaultListProbe.set(faultKey, new Promise<void>(resolve => { settle = resolve; }));
             try {
-                response = await this.MakeRawHTTPRequest(
-                    url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
-                );
+                response = await this.SendGetQuery(url, args, auth.Token);
                 // The verdict is recorded BEFORE the waiters wake, so they read it rather than re-probe.
                 if (this.IsInvalidDefaultColumnListFault(response)) this.DefaultColumnListUnusable.add(faultKey);
                 this.DefaultListVerdict.add(faultKey);
@@ -1172,9 +1226,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 settle();
             }
         } else {
-            response = await this.MakeRawHTTPRequest(
-                url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
-            );
+            response = await this.SendGetQuery(url, args, auth.Token);
         }
 
         // The door can reject ITS OWN default list. An empty szColumnList asks xWeb for the object's
@@ -1195,10 +1247,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
             if (explicit) {
                 sentArgs = { ...args, szColumnList: explicit };
-                response = await this.MakeRawHTTPRequest(
-                    url, 'POST', this.SoapHeaders('GetQuery'),
-                    this.BuildSoapEnvelope('GetQuery', sentArgs, auth.Token),
-                );
+                response = await this.SendGetQuery(url, sentArgs, auth.Token);
             }
         }
 
@@ -1216,13 +1265,31 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 const rebuilt = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
                 if (rebuilt && rebuilt !== sentArgs.szColumnList) {
                     sentArgs = { ...sentArgs, szColumnList: rebuilt };
-                    response = await this.MakeRawHTTPRequest(
-                        url, 'POST', this.SoapHeaders('GetQuery'),
-                        this.BuildSoapEnvelope('GetQuery', sentArgs, auth.Token),
-                    );
+                    response = await this.SendGetQuery(url, sentArgs, auth.Token);
                 }
             } else if (this.IsSqlSyntaxFault(response.Body)) {
                 this.ExplicitListUnsendable.add(grantKey);
+            } else {
+                // `The multi-part identifier "T.col" could not be bound`: xWeb's SQL does not expose T under that
+                // name. Learn it, send T's columns bare (and leave our key out if T carries it), retry ONCE.
+                const unbound = /multi-part identifier "([^".]+)\.[^"]+" could not be bound/i.exec(this.FaultText(response.Body));
+                if (unbound) {
+                    const learned = this.UnexposedQualifiers.get(grantKey) ?? new Set<string>();
+                    learned.add(unbound[1].toLowerCase());
+                    this.UnexposedQualifiers.set(grantKey, learned);
+                    const rebuilt = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
+                    if (rebuilt && rebuilt !== sentArgs.szColumnList) {
+                        sentArgs = { ...sentArgs, szColumnList: rebuilt };
+                        if (sentArgs.szOrderBy && orderingKey) sentArgs.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey, grantKey);
+                        if (sentArgs.szWhereClause) {
+                            const predicates: string[] = [];
+                            if (ctx.WatermarkValue && watermarkField) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField, grantKey)} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
+                            if (canPaginate && ctx.AfterKeyValue) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
+                            sentArgs.szWhereClause = predicates.join(' AND ');
+                        }
+                        response = await this.SendGetQuery(url, sentArgs, auth.Token);
+                    }
+                }
             }
         }
 
@@ -1284,7 +1351,11 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // for the object will still be returned in the node as the first child" — so the first column
         // of each row identifies the record, and its NAME is reported for the key classifier.
         // xWeb prepends the object's primary key to EVERY query it builds (INT-45: the explicit list carried it
-        // twice), so the first column of a row identifies the record whichever list was sent.
+        // twice), so the first column of a row identifies the record whichever list was sent — and when our
+        // key was left out of the list (its table unexposed), that injected column is the key from here on.
+        if (pkField && rows.length > 0 && !(pkField in rows[0]) && !(pkField.toLowerCase() in rows[0])) {
+            this.InjectedKeyByObject.set(grantKey, Object.keys(rows[0])[0]);
+        }
         const firstColumn = !pkField && rows.length > 0 ? Object.keys(rows[0])[0] : undefined;
         if (firstColumn) {
             warnings.push({
@@ -1296,11 +1367,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 Data: { ObjectName: ctx.ObjectName, FirstColumn: firstColumn },
             });
         }
+        const injected = this.InjectedKeyByObject.get(grantKey);
+        const idColumn = pkField && rows.length > 0 && !(pkField in rows[0]) && injected ? injected : pkField;
+        const seekColumn = orderingKey && rows.length > 0 && !(orderingKey in rows[0]) && injected ? injected : orderingKey;
         let maxKey: string | undefined;
         const records: ExternalRecord[] = rows.map(row => {
-            const externalID = pkField ? String(row[pkField] ?? '') : (firstColumn ? String(row[firstColumn] ?? '') : '');
-            if (orderingKey) {
-                const v = row[orderingKey];
+            const externalID = idColumn ? String(row[idColumn] ?? '') : (firstColumn ? String(row[firstColumn] ?? '') : '');
+            if (seekColumn) {
+                const v = row[seekColumn];
                 if (v != null) { const s = String(v); if (maxKey === undefined || s > maxKey) maxKey = s; }
             }
             return { ExternalID: externalID, ObjectType: ctx.ObjectName, Fields: row };
@@ -1427,13 +1501,23 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             out.push(q ? `${q}.${name}` : name);
         };
         if (def && def.Columns.length > 0) {
-            const qualifierOf = (c: NFDefinedColumn): string | null => c.Alias ?? c.Table;
+            const unexposed = learnKey ? this.UnexposedQualifiers.get(learnKey) : undefined;
+            const qualifierOf = (c: NFDefinedColumn): string | null => {
+                const q = c.Alias ?? c.Table;
+                return q && unexposed?.has(q.toLowerCase()) ? null : q;
+            };
             // An Extender column under an ALIASED join is unselectable (see NFDefinedColumn.IsExtension).
             const sendable = def.Columns.filter(c => !(c.IsExtension && c.Alias));
             const lead = sendable.find(c => !!def.KeyColumn && c.Name.toLowerCase() === def.KeyColumn!.toLowerCase());
-            if (lead) add(lead.Name, qualifierOf(lead));
-            for (const c of sendable) add(c.Name, qualifierOf(c));
-            for (const r of required) add(r, null);
+            // The key leads — unless its table is unexposed: then it is left out (xWeb prepends the object's
+            // primary key to every query) so that a bare ORDER BY on it names one column, not two.
+            const keyOmitted = !!lead && qualifierOf(lead) === null && !!(lead.Alias ?? lead.Table);
+            if (lead && !keyOmitted) add(lead.Name, qualifierOf(lead));
+            for (const c of sendable) {
+                if (keyOmitted && lead && c.Name.toLowerCase() === lead.Name.toLowerCase()) { seen.add(c.Name.toLowerCase()); continue; }
+                add(c.Name, qualifierOf(c));
+            }
+            for (const r of required) { if (keyOmitted && lead && r && r.toLowerCase() === lead.Name.toLowerCase()) continue; add(r, null); }
             return out.join(',');
         }
         const discovered = this.DiscoveredColumnsByObject.get(obj.Name.toLowerCase()) ?? [];
@@ -1450,10 +1534,11 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * carries the column, else the bare column name. Rows still come back with the bare, lowercased column
      * name, so readers keep using `name`; only the SQL sent qualifies.
      */
-    private QualifiedColumn(objectName: string, name: string): string {
+    private QualifiedColumn(objectName: string, name: string, learnKey?: string): string {
         const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
         const col = def?.Columns.find(c => c.Name.toLowerCase() === name.toLowerCase());
         const q = col ? (col.Alias ?? col.Table) : null;
+        if (q && learnKey && this.UnexposedQualifiers.get(learnKey)?.has(q.toLowerCase())) return name;
         return q && IsPlainIdentifier(q) ? `${q}.${name}` : name;
     }
 
@@ -1884,7 +1969,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const elapsed = Date.now() - this.lastRequestTime;
         if (elapsed < MIN_REQUEST_INTERVAL_MS) await this.Sleep(MIN_REQUEST_INTERVAL_MS - elapsed);
     }
-    private Sleep(ms: number): Promise<void> { return new Promise(r => setTimeout(r, ms)); }
+    protected Sleep(ms: number): Promise<void> { return new Promise(r => setTimeout(r, ms)); }
 
     // ─── Per-object config helpers ───────────────────────────────────
 

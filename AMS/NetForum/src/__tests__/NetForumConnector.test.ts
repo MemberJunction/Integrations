@@ -1003,6 +1003,7 @@ const INDIVIDUAL_DEF_REAL_XML = `<?xml version="1.0" encoding="utf-8"?>
 <Column><mdc_name>ind_prf_code</mdc_name><mdc_description>Prefix</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>20</mdc_width_max></Column>
 <Column><mdc_name>ind_first_name</mdc_name><mdc_description>First Name</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>50</mdc_width_max></Column>
 <Column><mdc_name>ind_change_date</mdc_name><mdc_description>Change Date</mdc_description><mdc_data_type>av_date_small</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+<Column><mdc_name>ind_delete_flag</mdc_name><mdc_description>Delete Flag</mdc_description><mdc_data_type>av_flag</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>1</mdc_width_max></Column>
 </Columns>
 <ListFromTableColumns>
 <ListFromTableColumn><lsc_mdc_name>ind_first_name</lsc_mdc_name><lsc_name_alias>First</lsc_name_alias><lsc_order>1</lsc_order></ListFromTableColumn>
@@ -1028,6 +1029,8 @@ const INDIVIDUAL_DEF_REAL_XML = `<?xml version="1.0" encoding="utf-8"?>
 <mdt_description>Membership</mdt_description>
 <Columns>
 <Column><mdc_name>mbr_src_code</mdc_name><mdc_description>Source Code</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>50</mdc_width_max></Column>
+<Column><mdc_name>mbr_cst_key</mdc_name><mdc_description>Customer</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+<Column><mdc_name>mbr_mbt_key</mdc_name><mdc_description>Member Type</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
 </Columns>
 </ListFromTable>
 <ListFromTable>
@@ -1524,6 +1527,7 @@ describe('NetForumConnector — what the definition alone decides (v3, PLUS 2026
     } as unknown as FetchContext);
     const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
     const listOf = (body: string): string[] => (/<szColumnList>([^<]*)<\/szColumnList>/.exec(body)?.[1] ?? '').split(',').filter(x => x.length > 0);
+    const OK = (): RESTResponse => ({ Status: 200, Body: GETQUERY_XML, Headers: {} });
     const EXT_COL = (name: string, table: string) =>
         `<Column><mdc_name>${name}</mdc_name><mdc_description>Extender Key</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>1</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>${table}_ext</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>`;
     /** Individual's real definition with Extender keys on the UNALIASED co_customer join and on the ALIASED Membership join. */
@@ -1549,18 +1553,65 @@ describe('NetForumConnector — what the definition alone decides (v3, PLUS 2026
         c.Caps.Configuration = KEYLESS_CONFIG('Individual');
         const broken = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join>cst_key=ind_whs_key and ind_delete_flag=0</lsf_from_join>');
         c.Responses['GetQueryDefinition'] = { Status: 200, Body: broken, Headers: {} };
-        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted: this object's list definition cannot compile — join on co_customer names "ind_whs_key", which co_individual does not carry/);
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted: this object's list definition cannot compile — join on co_customer names "ind_whs_key", which the definition lists nowhere/);
         expect(getQueries(c)).toHaveLength(0);
     });
 
-    it('a joined table\'s hidden column or a function in a join is NOT a broken list (only the main table\'s own keys count)', async () => {
+    it('a function call, a keyword, a table or alias name or a string literal in a join is not a column — the list is fine', async () => {
         const c = makeConnector();
         c.Keyless = true;
         c.Caps.Configuration = KEYLESS_CONFIG('Individual');
-        const fine = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_join>Membership.mbr_mbt_key=mbt_key</lsf_from_join>', '<lsf_from_join>Membership.mbr_mbt_key=mbt_key and mbt_hidden_key is not null and mbt_end_date &lt; nf_get_date()</lsf_from_join>');
+        const fine = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_join>Membership.mbr_mbt_key=mbt_key</lsf_from_join>', "<lsf_from_join>Membership.mbr_mbt_key=mbt_key and mbt_key is not null and Membership.mbr_src_code &lt;&gt; 'x_y_z' and nf_get_date() &gt; ind_change_date</lsf_from_join>");
         c.Responses['GetQueryDefinition'] = { Status: 200, Body: fine, Headers: {} };
         await c.FetchChanges(sampleCtx('Individual'));
         expect(getQueries(c)).toHaveLength(1);
+    });
+
+    it('a key compared with a date or a code column, a second root table, or an unclosed quote is a broken list: no request', async () => {
+        const run = async (mutate: (x: string) => string, expected: RegExp) => {
+            const c = makeConnector();
+            c.Keyless = true;
+            c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+            c.Responses['GetQueryDefinition'] = { Status: 200, Body: mutate(INDIVIDUAL_DEF_REAL_XML), Headers: {} };
+            await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(expected);
+            expect(getQueries(c)).toHaveLength(0);
+        };
+        await run(x => x.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join>cst_key=ind_change_date</lsf_from_join>'), /compares "cst_key" \(av_key\) with "ind_change_date" \(av_date_small\)/);
+        await run(x => x.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join>cst_key=ind_prf_code</lsf_from_join>'), /compares "cst_key" \(av_key\) with "ind_prf_code" \(nvarchar\)/);
+        await run(x => x.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join></lsf_from_join>'), /"co_customer" is a second root table with no join text/);
+        await run(x => x.replace('<lsf_from_join>Membership.mbr_mbt_key=mbt_key</lsf_from_join>', "<lsf_from_join>Membership.mbr_mbt_key=mbt_key and mbt_code='sched</lsf_from_join>"), /unbalanced quote in the join on mb_member_type/);
+    });
+
+    it('an unexposed table is learned from "could not be bound": its columns go bare, our key is left out, one retry — and it stays learned', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [FAULT_500('Check the Error Log for more details: The multi-part identifier "co_individual.ind_cst_key" could not be bound.'), OK(), OK()];
+        const res = await c.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(c);
+        expect(q).toHaveLength(2);
+        const cols = listOf(q[1].body);
+        expect(cols).toContain('ind_first_name');                              // co_individual's columns bare
+        expect(cols).not.toContain('co_individual.ind_first_name');
+        expect(cols.some(x => /(^|\.)ind_cst_key$/.test(x))).toBe(false);      // our key left out: xWeb prepends it
+        expect(cols).toContain('co_customer.cst_key');                         // other tables still qualified
+        expect(q[1].body).not.toContain('<szOrderBy>co_individual.');
+        expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');   // identified by the row's key
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)).toHaveLength(3);                                 // no re-learning
+        expect(listOf(getQueries(c)[2].body)).not.toContain('co_individual.ind_first_name');
+    });
+
+    it('HTTP 429 is waited out and retried, never failed and never learned', async () => {
+        const c = makeConnector();
+        const waits: number[] = [];
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async (ms: number) => { waits.push(ms); };
+        c.ResponseQueue['GetQuery'] = [{ Status: 429, Body: '', Headers: { 'retry-after': '2' } }, { Status: 429, Body: '', Headers: {} }, OK()];
+        const res = await c.FetchChanges(sampleCtx('Individual'));
+        expect(res.Records.length).toBeGreaterThan(0);
+        expect(getQueries(c)).toHaveLength(3);
+        expect(waits).toEqual([2000, 8000]);
     });
 
     it('a malformed join (a = b = \'x\') is never queried', async () => {
