@@ -182,6 +182,22 @@ interface NFDefinedColumn {
     Description: string | undefined;
     AllowsNull: boolean | undefined;
     MaxLength: number | null;
+    /**
+     * `<mdc_ext>1</mdc_ext>` — an Extender column: netFORUM stores it in `<table>_ext` and the definition
+     * attributes it to that table (`mdc_table_name` = `co_customer_ext`) while listing it under the base
+     * table's `<ListFromTable>`. Live rule (PLUS, 2026-09-25, 875 definitions vs 31 explicit reads): when the
+     * base table is joined WITHOUT an alias, `co_customer_ext.cst_key_ext` selects fine (all 24 successes);
+     * when the base table is joined under an ALIAS (`Chapter`, `cs1`, `Membership`, `email`) the column is
+     * "Invalid column name" whichever way it is qualified (every invalid-column fault). Such a column is not sent.
+     */
+    IsExtension: boolean;
+}
+
+/** One `<ListFromTable>` of a definition: the table xWeb joins, its alias, and the join text it uses verbatim. */
+interface NFFromTable {
+    Table: string | null;
+    Alias: string | null;
+    Join: string;
 }
 
 /**
@@ -199,6 +215,17 @@ interface NFQueryDefinition {
     Columns: NFDefinedColumn[];
     /** `<lsc_mdc_name>` of the default list — what GetQuery returns for an empty szColumnList. */
     DefaultListColumns: string[];
+    /** The from-tables in document order (main table first). */
+    FromTables: NFFromTable[];
+    /**
+     * Why NO GetQuery on this object can compile, when the definition itself says so; undefined when it can.
+     * xWeb builds every list query from these from-tables and join texts, so a join that names a main-table key
+     * the table does not carry (`pip_cip_key=cpi_key` — live: "Invalid column name 'pip_cip_key'" with the
+     * column absent from the object's 185 columns) or a malformed comparison (`ida_ivd_key_product = ivd_type =
+     * 'discount'` — live: "Incorrect syntax near '='") fails for the default list and every explicit list alike.
+     * Sending anything only spends the tenant's daily fault budget; the fix is in netFORUM's List Table setup.
+     */
+    BrokenJoin: string | undefined;
 }
 
 /**
@@ -782,14 +809,17 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     // AllowsNull provable-only: 'mdc_nullable' is an explicit source flag. "0"/"false"/"no" ⇒ NOT NULL.
                     AllowsNull: nullable == null ? undefined : !/^(0|false|no|n)$/i.test(nullable.trim()),
                     MaxLength: widthRaw && /^\d+$/.test(widthRaw) ? Number(widthRaw) : null,
+                    IsExtension: (this.ParseSoapScalar(colXml, 'mdc_ext') ?? '').trim() === '1',
                 });
             }
         };
+        const from: NFFromTable[] = [];
         const fromTables = this.ExtractElements(xml, 'ListFromTable');
         if (fromTables.length > 0) {
             for (const lft of fromTables) {
                 const table = this.ParseSoapScalar(lft, 'lsf_from_table') ?? null;
                 const alias = this.ParseSoapScalar(lft, 'lsf_from_alias') || null;   // <lsf_from_alias xsi:nil="true"/> → null
+                from.push({ Table: table, Alias: alias, Join: this.ParseSoapScalar(lft, 'lsf_from_join') ?? '' });
                 readColumns(lft, table, alias);
                 for (const dl of this.ExtractElements(lft, 'ListFromTableColumn')) {
                     const n = this.ParseSoapScalar(dl, 'lsc_mdc_name');
@@ -813,7 +843,50 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             KeyColumn: this.KeyColumnFromDefinition(mainTable, deduped),
             Columns: deduped,
             DefaultListColumns: defaultList,
+            FromTables: from,
+            BrokenJoin: this.BrokenJoinReason(mainTable, from, columns),
         };
+    }
+
+    /**
+     * The reason no GetQuery on this object can compile, read off its own definition — or undefined.
+     *
+     * Two shapes, both seen live (PLUS 2026-09-25) and both predictable without a request:
+     *   1. a join names a column with the MAIN table's prefix (`<prefix>_…_key`, the shape of every netFORUM
+     *      key column) that the main table's own column list does not carry — the main table lists every
+     *      column GetQuery can see, so the column is physically absent and the join cannot bind. Only the main
+     *      table's prefix counts: a joined table's columns may be hidden from the list, and function names
+     *      (`nf_get_date`) and hidden non-key columns are not evidence of anything;
+     *   2. a comparison with more than one `=` in one conjunct (`a = b = 'x'`) — not T-SQL.
+     * 39 + 5 of 875 live definitions; each would otherwise cost a fault per object per process.
+     */
+    private BrokenJoinReason(mainTable: string | null, from: NFFromTable[], columns: NFDefinedColumn[]): string | undefined {
+        const names = new Set(columns.map(c => c.Name.toLowerCase()));
+        const tables = new Set(from.map(f => (f.Table ?? '').toLowerCase()));
+        const aliases = new Set(from.map(f => (f.Alias ?? '').toLowerCase()));
+        const mainCols = mainTable ? columns.filter(c => (c.Table ?? '').toLowerCase() === mainTable.toLowerCase()) : [];
+        const prefixCounts = new Map<string, number>();
+        for (const c of mainCols) {
+            const pfx = c.Name.toLowerCase().split('_')[0];
+            if (pfx) prefixCounts.set(pfx, (prefixCounts.get(pfx) ?? 0) + 1);
+        }
+        const mainPrefix = [...prefixCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
+        for (const f of from) {
+            const join = f.Join.replace(/'[^']*'/g, "''");
+            for (const conjunct of join.split(/\b(?:and|or)\b/i)) {
+                if ((conjunct.match(/(?<![<>!])=(?!=)/g) ?? []).length > 1) {
+                    return `malformed join on ${f.Alias ?? f.Table ?? '?'}: "${conjunct.trim().slice(0, 80)}"`;
+                }
+            }
+            if (!mainPrefix) continue;
+            for (const tok of join.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []) {
+                const t = tok.toLowerCase();
+                if (!t.startsWith(`${mainPrefix}_`) || !t.endsWith('_key')) continue;
+                if (names.has(t) || tables.has(t) || aliases.has(t)) continue;
+                return `join on ${f.Alias ?? f.Table ?? '?'} names "${tok}", which ${mainTable} does not carry`;
+            }
+        }
+        return undefined;
     }
 
     /**
@@ -944,10 +1017,21 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // persisted. NEVER the enumeration's obj_key: that is the facade object's GUID, not a column,
         // and sending it as one is what faulted every read on a live tenant (EnumeratedObjectIdByObject).
         const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const faultKey = ctx.CompanyIntegration?.ID ?? '';
+        const grantKey = `${faultKey}|${ctx.ObjectName.toLowerCase()}`;
+        // The object's definition is consulted for EVERY read (one GetQueryDefinition per object per instance): it
+        // names the key when nothing is persisted, it is the column list that carries every column, and it says
+        // when no query on the object can compile at all.
+        const def = await this.DefinitionFor(ci, ctx.ContextUser as UserInfo, ctx.ObjectName);
+        if (def?.BrokenJoin) {
+            throw new Error(
+                `NetForum GetQuery(${ctx.ObjectName}) not attempted: this object's list definition cannot compile — ` +
+                `${def.BrokenJoin}. Every GetQuery on it faults (default list and explicit list alike), so none is sent; ` +
+                `the fix is in netFORUM's List Table setup for "${ctx.ObjectName}".`,
+            );
+        }
         const persistedKey = this.PrimaryKeyFieldName(obj);
-        const definedKey = persistedKey
-            ? undefined
-            : (await this.DefinitionFor(ci, ctx.ContextUser as UserInfo, ctx.ObjectName))?.KeyColumn;
+        const definedKey = persistedKey ? undefined : def?.KeyColumn;
         const pkField = persistedKey ?? definedKey;
         const orderingKey = cfg.stableOrderingKey ?? pkField;
 
@@ -991,6 +1075,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             szObjectName,
             szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField]),
         };
+        // An object whose definition lists its columns is read with ALL of them. The empty list would return the
+        // tenant's default list — a handful of columns (2–18 of up to 300 on a live tenant), which is a partial
+        // read presented as a full one — or fault on a `*` default. Declared Configuration.columnList still wins.
+        if (!args.szColumnList && def && def.Columns.length > 0) {
+            // A statement that broke once is broken with any list: the default list is not a fallback for it.
+            if (this.ExplicitListUnsendable.has(grantKey)) throw this.NothingValidToSend(ctx.ObjectName);
+            const full = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField], grantKey);
+            if (full) args.szColumnList = full;
+        }
 
         // ORDER BY and WHERE name the key and the watermark QUALIFIED by their table (or alias) whenever
         // the object's definition knows it. xWeb adds its own copy of the object's primary key to every
@@ -1019,8 +1112,6 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // through to the original empty request unchanged. So a tenant whose defaults are fine never
         // reaches it, and — because netFORUM configures the default list PER OBJECT — an object whose
         // own default is fine on a tenant where others are not still gets its normal request.
-        const faultKey = ctx.CompanyIntegration?.ID ?? '';
-        const grantKey = `${faultKey}|${ctx.ObjectName.toLowerCase()}`;
         if (this.SelectNotAuthorized.has(grantKey)) {
             throw new Error(
                 `NetForum GetQuery(${ctx.ObjectName}) not attempted: this xWeb account is not authorized to ` +
@@ -1192,7 +1283,9 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // With no key known and the tenant's default list sent, the vendor guarantees "the primary key
         // for the object will still be returned in the node as the first child" — so the first column
         // of each row identifies the record, and its NAME is reported for the key classifier.
-        const firstColumn = !pkField && sentEmptyColumnList && rows.length > 0 ? Object.keys(rows[0])[0] : undefined;
+        // xWeb prepends the object's primary key to EVERY query it builds (INT-45: the explicit list carried it
+        // twice), so the first column of a row identifies the record whichever list was sent.
+        const firstColumn = !pkField && rows.length > 0 ? Object.keys(rows[0])[0] : undefined;
         if (firstColumn) {
             warnings.push({
                 Code: 'KEY_FROM_DEFAULT_LIST_FIRST_COLUMN',
@@ -1335,9 +1428,11 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         };
         if (def && def.Columns.length > 0) {
             const qualifierOf = (c: NFDefinedColumn): string | null => c.Alias ?? c.Table;
-            const lead = def.Columns.find(c => !!def.KeyColumn && c.Name.toLowerCase() === def.KeyColumn!.toLowerCase());
+            // An Extender column under an ALIASED join is unselectable (see NFDefinedColumn.IsExtension).
+            const sendable = def.Columns.filter(c => !(c.IsExtension && c.Alias));
+            const lead = sendable.find(c => !!def.KeyColumn && c.Name.toLowerCase() === def.KeyColumn!.toLowerCase());
             if (lead) add(lead.Name, qualifierOf(lead));
-            for (const c of def.Columns) add(c.Name, qualifierOf(c));
+            for (const c of sendable) add(c.Name, qualifierOf(c));
             for (const r of required) add(r, null);
             return out.join(',');
         }
