@@ -2772,6 +2772,37 @@
           ],
           "extractionScript": "packages/Integration/connectors-registry/sfmc/scripts/classify-object-type-gaps.mjs",
           "extractionScriptUsage": "node scripts/classify-object-type-gaps.mjs <gaps.json>  (gaps.json = JSON array of the GAPS list; run from packages/Integration/connectors-registry/sfmc/scripts/)"
+        },
+        "DeclaredAgainst": {
+          "wsdl": {
+            "url": "https://webservice.exacttarget.com/etframework.wsdl",
+            "accessedAt": null,
+            "sha256": "c03152a0db69ca56e10fb33a04841a42ee83d41d3fb78cc946af19d7a975a437",
+            "sizeBytes": 244113,
+            "pinnedCopy": "packages/Integration/connectors-registry/sfmc/sources/etframework.partnerAPI.wsdl",
+            "pinnedCopyNote": "The pinned copy stores the same document with LF line endings (4,710 lines, 239,403 bytes); converting LF to CRLF reproduces the sha256 and size above exactly.",
+            "accessedAtGap": "SOURCES.json records this WSDL's URL, size and sha256 but no fetch timestamp. It was in hand by 2026-09-08T20:19:21Z: the derived OpenAPI generated then records this sha256 as its wsdlSha256."
+          },
+          "docSnapshot": {
+            "url": "https://developer.salesforce.com/docs/get_document/atlas.en-us.mc-apis.meta",
+            "pageUrlTemplate": "https://developer.salesforce.com/docs/get_document_content/mc-apis/<PAGE_ID>.htm/en-us/noversion",
+            "manifestGeneratedAt": "2026-09-08T20:10:59.940Z",
+            "pagesInToc": 865,
+            "pagesFetched": 865,
+            "corpusSha256": "b605461d3209b443530353579fb033b53afc0203c1130a2e0f794985c7bc6b5a",
+            "pinnedCopy": "packages/Integration/connectors-registry/sfmc/sources/atlas-mc-apis-snapshot/ (manifest.json carries each page's url and sha256)"
+          },
+          "derivedOpenAPI": {
+            "file": "packages/Integration/connectors-registry/sfmc/sources/sfmc-engagement-openapi.derived.json",
+            "generatedAt": "2026-09-08T20:19:21.925Z",
+            "note": "Its info.x-generator records wsdlSha256 and corpusSha256 equal to the two hashes above, so the declared object set was derived from exactly those artifacts. SFMCObjectTypeCatalog (generatedAt 2026-09-08T21:51:54.225Z) reads only these three sources."
+          },
+          "vendorVersion": null,
+          "vendorVersionGap": "Neither source carries a vendor version: the Atlas TOC reports doc_version \"noversion\", api_version null and release_name null, and the partnerAPI WSDL declares none. Freshness is pinned by sha256 only, so a refetch can be diffed but a missing object cannot be attributed to a vendor release.",
+          "howToRecheck": "Fetch wsdl.url and compare its sha256; if it changed, diff its complexTypes against every SOAP object's soapObjectType. Re-walk the Atlas TOC at docSnapshot.url and compare each page's sha256 with the pinned manifest.json; a changed REST reference page means re-deriving that family.",
+          "catalogLastEditedAt": "2026-09-28",
+          "catalogLastEditedNote": "Disabled the 12 keyless objects and declared Length on 91 string fields (77 prose, 10 url, 4 email). No source was refetched: both edits reason from the same 2026-09-08 pinned sources.",
+          "provenance": "The wsdl, docSnapshot and derivedOpenAPI URLs, sizes, hashes and timestamps are copied from the connector's build registry: packages/Integration/connectors-registry/sfmc/SOURCES.json, sources/atlas-mc-apis-snapshot/manifest.json and sources/sfmc-engagement-openapi.derived.json info.x-generator. The SFMCObjectTypeCatalog timestamp is this file's own. The LF/CRLF equivalence and the 865 page hashes were re-checked against the pinned copies on 2026-09-28."
         }
       },
       "ImportPath": "@memberjunction/connector-sfmc",
