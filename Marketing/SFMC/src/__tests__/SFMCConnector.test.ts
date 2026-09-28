@@ -73,12 +73,16 @@ function stringifyConfiguration(row: Record<string, unknown>): Record<string, un
 let metadataRoot: MetadataRoot;
 let metadataObjects: MetadataObjectRow[] = [];
 
-function seedEngine(companyIntegration: Partial<MJCompanyIntegrationEntity>): void {
+/**
+ * Seeds the engine cache with the Active catalog. `extraRows` adds specific non-Active rows for a test
+ * that exercises a mechanism only a Disabled object declares (the engine would not offer it in production).
+ */
+function seedEngine(companyIntegration: Partial<MJCompanyIntegrationEntity>, extraRows: MetadataObjectRow[] = []): void {
     const integ = stringifyConfiguration(metadataRoot.fields) as Partial<MJIntegrationEntity>;
     (integ as Record<string, unknown>).ID = INTEGRATION_ID;
     const objects: Array<Partial<MJIntegrationObjectEntity>> = [];
     const fields: Array<Partial<MJIntegrationObjectFieldEntity>> = [];
-    metadataObjects.forEach((row, i) => {
+    [...metadataObjects, ...extraRows].forEach((row, i) => {
         const io = stringifyConfiguration(row.fields) as Partial<MJIntegrationObjectEntity>;
         (io as Record<string, unknown>).ID = `io-${i + 1}`;
         (io as Record<string, unknown>).IntegrationID = INTEGRATION_ID;
@@ -104,6 +108,13 @@ function metadataObject(name: string): Record<string, unknown> {
     const row = metadataObjects.find(o => o.fields.Name === name);
     if (!row) throw new Error(`Integration Object "${name}" is not in the frozen metadata.`);
     return row.fields;
+}
+
+/** A catalog row by name REGARDLESS of Status — a Disabled row is still shipped metadata. */
+function declaredObjectRow(name: string): MetadataObjectRow {
+    const row = (metadataRoot.relatedEntities?.['MJ: Integration Objects'] ?? []).find(o => o.fields.Name === name);
+    if (!row) throw new Error(`Integration Object "${name}" is not in the frozen metadata.`);
+    return row;
 }
 
 /** An IO's `Configuration` block as it appears in the frozen metadata file. */
@@ -292,8 +303,9 @@ describe('SFMCConnector — identity + capability invariants', () => {
     it('returns the declared StableOrderingKey for an object it has seen', async () => {
         const connector = new MockedSFMCConnector().Enqueue({ Status: 200, Json: {} });
         await connector.DiscoverObjects(companyIntegration(), CONTEXT_USER);
-        const declared = metadataObject('Application').StableOrderingKey;
-        expect(connector.StableOrderingKey('Application')).toBe(declared);
+        const declared = metadataObject('ApplicationKey').StableOrderingKey;
+        expect(declared).toBeTruthy(); // a null == null pass would prove nothing
+        expect(connector.StableOrderingKey('ApplicationKey')).toBe(declared);
         expect(connector.StableOrderingKey('Account')).toBeNull(); // metadata declares none
     });
 
@@ -1045,8 +1057,13 @@ describe('SFMCConnector — REST path shapes the vendor actually publishes', () 
         expect(url.searchParams.get('$page')).toBe('1');
     });
 
+    // StatusoperationID is the only declared object whose APIPath carries an empty-valued query parameter.
+    // It ships Status='Disabled' (keyless by vendor design), so these two tests seed it explicitly.
     it('fills an EMPTY-valued query parameter from the declared pathParams instead of sending it blank', async () => {
-        expect(metadataObject('StatusoperationID').APIPath).toBe('/contacts/v1/contacts/actions/delete/status?operationID=');
+        const row = declaredObjectRow('StatusoperationID');
+        expect(row.fields.Status).toBe('Disabled');
+        expect(row.fields.APIPath).toBe('/contacts/v1/contacts/actions/delete/status?operationID=');
+        seedEngine(companyIntegration(), [row]);
         const ci = companyIntegration({ pathParams: { operationID: 'op-7' } });
         const connector = new MockedSFMCConnector().Enqueue({ Status: 200, Json: { operationID: 'op-7', status: 'Complete' } });
         const result = await connector.FetchChanges({ ...fetchContext('StatusoperationID'), CompanyIntegration: ci });
@@ -1056,6 +1073,7 @@ describe('SFMCConnector — REST path shapes the vendor actually publishes', () 
     });
 
     it('treats an empty-valued query parameter as UNRESOLVED when nothing supplies it', async () => {
+        seedEngine(companyIntegration(), [declaredObjectRow('StatusoperationID')]);
         const connector = new MockedSFMCConnector().Enqueue({ Status: 200, Json: {} });
         const result = await connector.FetchChanges(fetchContext('StatusoperationID'));
         expect(connector.Requests).toHaveLength(0);

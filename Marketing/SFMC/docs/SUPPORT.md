@@ -18,9 +18,10 @@
 ## What this connector supports
 
 **225 objects** declared across **3,786 fields** (source: `metadata/integration/.sfmc.integration.json`)
-— 222 Active plus 3 shipped `Deprecated` (see below). **67** declare a write path (57 create / 50
-update / 49 delete); **148** support incremental sync. Transport is chosen per object from metadata:
-**164 SOAP** (partner API `Retrieve` / `ContinueRequest`) and **58 REST**.
+— 210 Active, 12 shipped `Disabled` (keyless by vendor design) and 3 shipped `Deprecated` (see below).
+Of the Active objects, **66** declare a write path (57 create / 50 update / 48 delete); **145** support
+incremental sync. Transport is chosen per object from metadata: **161 SOAP** (partner API `Retrieve` /
+`ContinueRequest`) and **49 REST**.
 
 | Object | Transport | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|---|
@@ -30,13 +31,11 @@ update / 49 delete); **148** support incremental sync. Transport is chosen per o
 | AccountPrivateLabel | SOAP | ✓ | — (read-only) | ✓ |
 | AccountUser | SOAP | ✓ | `CU` | ✓ |
 | AddressStatus | SOAP | ✓ | — (read-only) | — |
-| Application | REST | ✓ | — (read-only) | — |
 | ApplicationKey | REST | ✓ | `UD` | — |
 | Asset | REST | ✓ | `D` | ✓ |
 | AsyncRequestResult | SOAP | ✓ | — (read-only) | ✓ |
 | AsyncResponse | SOAP | ✓ | — (read-only) | — |
 | AsyncResult | REST | ✓ | — (read-only) | — |
-| AsyncStatus | REST | ✓ | — (read-only) | — |
 | Attribute | SOAP | ✓ | — (read-only) | — |
 | AttributeMap | SOAP | ✓ | — (read-only) | — |
 | AttributeSet | SOAP | ✓ | — (read-only) | ✓ |
@@ -54,8 +53,10 @@ update / 49 delete); **148** support incremental sync. Transport is chosen per o
 | AutomationTask | SOAP | ✓ | — (read-only) | ✓ |
 | AutomationTaskInstance | SOAP | ✓ | — (read-only) | ✓ |
 | BaseMOKeyword | SOAP | ✓ | — (read-only) | ✓ |
+| BounceEvent | SOAP | ✓ | — (read-only) | ✓ |
+| Brand | SOAP | ✓ | — (read-only) | ✓ |
 
-_First 30 of 222 Active objects shown, alphabetically. The full catalog is the metadata file cited above._
+_First 30 of 210 Active objects shown, alphabetically. The full catalog is the metadata file cited above._
 
 > **"Declares a write path" is a capability declaration, not a proven behaviour.** What has actually
 > been executed is in the next section, and nothing else should be read as proven.
@@ -68,8 +69,8 @@ _First 30 of 222 Active objects shown, alphabetically. The full catalog is the m
   entity maps → upsert) against the mock vendor server — a live MJAPI against a real SQL Server
   database, not a unit-test double. `exitReason: completed`, 0 errors, 0 retry events.
 - **Full-catalog coverage: 211 of 211 expected objects landed rows** (`zeroRowReal: 0`). Every one of
-  the 222 Active objects is accounted for in that run: **211 covered + 2 structurally un-enumerable +
-  9 keyless-in-scope** (the catalog-wide keyless figure is 12 — see the residual section).
+  the 222 objects Active at the time of that run is accounted for: **211 covered + 2 structurally
+  un-enumerable + 9 keyless-in-scope** (the catalog-wide keyless figure is 12 — see the residual section).
 - **Idempotency proven**: a second identical sync processed 111 objects and wrote **nothing**
   (all content-hash skipped); no table grew.
 - **Incremental** (watermark GTE filter issued), **Merkle** partition change-detection (unchanged
@@ -92,7 +93,7 @@ The only real calls made to Salesforce infrastructure, and they carry no credent
 
 ### Push (write / bidirectional)
 
-- 67 of 222 Active objects declare a write path.
+- 66 of 210 Active objects declare a write path.
 - **No write round-trip has been exercised end-to-end, against mock or live.** The e2e `WriteBack`
   stage skips for a structural reason: the mock origin is route-replay with no stateful vendor store,
   so a state-reflecting create → read-back → update → delete is not exercisable credential-free.
@@ -114,12 +115,16 @@ The only real calls made to Salesforce infrastructure, and they carry no credent
   recorded in metadata: `DeliveryRecord` (its parent family publishes only a POST *send* action, and
   the call additionally requires a `RecipientSendId` returned only by such a send) and `Nameid`
   (a get-by-id address with no list operation).
-- **12 Active objects are keyless** — statistical PK ideation found no unique column in the pinned
-  sources, so identity falls back to content hash and CodeGen creates no entity. Each carries a
-  `Configuration.keylessReason`. Notably several vendor "ids" are per-call correlation ids
-  (`requestServiceMessageID`) or metrics (`ageSeconds`, `invalid`) which would grow duplicates every sync
-  if used as identity. (The e2e's `keylessSkipped: 9` is a narrower counter — objects skipped within the
-  set it checked — not the catalog-wide figure.)
+- **12 objects are keyless and ship `Status='Disabled'`** — statistical PK ideation found no unique
+  column in the pinned sources: Application, AsyncStatus, CustomObjectIsUsedInContact, ImportSendStatus,
+  LinkSend, ListSend, MessagingConfiguration, Rest, SmsDefinitionQueue, StatusoperationID, Summary and
+  TokenContext. An Active keyless object either costs the soft-PK classifier a per-tenant inference at
+  every discovery or lands `entity.skipped-no-pk` while still offered in the picker, so they are
+  Disabled (`scripts/lint-writable-pk.mjs`); the engine does not offer a Disabled object. Ten carry a
+  `Configuration.keylessReason` (Rest and TokenContext record none). Notably several vendor "ids" are
+  per-call correlation ids (`requestServiceMessageID`) or metrics (`ageSeconds`, `invalid`) which
+  would grow duplicates every sync if used as identity. (The e2e's `keylessSkipped: 9` is a narrower
+  counter — objects skipped within the set it checked — not the catalog-wide figure.)
 - **Scope residual**: 225 objects emitted of a 361-name pinned union. All 90 non-emitted names are
   classified by mechanical WSDL/source evidence (enumerations, nested value types, SOAP envelope and
   options machinery, response payloads, casing duplicates) — see the build's scope decision.

@@ -6956,7 +6956,7 @@
               "keylessReason": "The resource is identified by {appId} (/push/v1/application/{appId}); 'key' is a member of the payload, not the resource identity, and appId is not a declared field. No identity is provable from the pinned sources, so identity falls back to content hash."
             },
             "Sequence": 7,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -10101,7 +10101,7 @@
               "keylessReason": "Single-record STATUS/SUMMARY response, not an entity collection. The field previously marked primary key is an envelope artifact, not an identity: requestServiceMessageID is a PER-CALL correlation id (identity would change every sync -> unbounded duplicate growth), 'invalid' is a COUNT of invalid rows, 'resultCode'/'interval' are result descriptors. No stable key is provable from the pinned sources, so identity falls back to content hash."
             },
             "Sequence": 13,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -40027,7 +40027,7 @@
               "keylessReason": "Single-record STATUS/SUMMARY response, not an entity collection. The field previously marked primary key is an envelope artifact, not an identity: requestServiceMessageID is a PER-CALL correlation id (identity would change every sync -> unbounded duplicate growth), 'invalid' is a COUNT of invalid rows, 'resultCode'/'interval' are result descriptors. No stable key is provable from the pinned sources, so identity falls back to content hash."
             },
             "Sequence": 50,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -74928,7 +74928,7 @@
               "keylessReason": "Single-record STATUS/SUMMARY response, not an entity collection. The field previously marked primary key is an envelope artifact, not an identity: requestServiceMessageID is a PER-CALL correlation id (identity would change every sync -> unbounded duplicate growth), 'invalid' is a COUNT of invalid rows, 'resultCode'/'interval' are result descriptors. No stable key is provable from the pinned sources, so identity falls back to content hash."
             },
             "Sequence": 102,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -81881,7 +81881,7 @@
               "readMethodEvidence": "The partnerAPI is a SINGLE DOOR: every object is read by POSTing a RetrieveRequest envelope to /Service.asmx. The WSDL binds only <soap:operation> over HTTP POST and the derived OpenAPI records /Service.asmx as post-only, so a GET read method is wrong for every SOAP object — the object is selected INSIDE the posted body, not by the path or verb."
             },
             "Sequence": 113,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -84877,7 +84877,7 @@
               "readMethodEvidence": "The partnerAPI is a SINGLE DOOR: every object is read by POSTing a RetrieveRequest envelope to /Service.asmx. The WSDL binds only <soap:operation> over HTTP POST and the derived OpenAPI records /Service.asmx as post-only, so a GET read method is wrong for every SOAP object — the object is selected INSIDE the posted body, not by the path or verb."
             },
             "Sequence": 117,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -89115,7 +89115,7 @@
               "readMethodEvidence": "The partnerAPI is a SINGLE DOOR: every object is read by POSTing a RetrieveRequest envelope to /Service.asmx. The WSDL binds only <soap:operation> over HTTP POST and the derived OpenAPI records /Service.asmx as post-only, so a GET read method is wrong for every SOAP object — the object is selected INSIDE the posted body, not by the path or verb."
             },
             "Sequence": 127,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -108799,7 +108799,7 @@
               "contentHashApplicable": true
             },
             "Sequence": 162,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -122409,7 +122409,7 @@
               "keylessReason": "Single-record queue-DEPTH response (/messaging/v1/sms/definitions/{key}/queue); 'ageSeconds' is a metric, not an identity. Same envelope-artifact class as the status/summary endpoints."
             },
             "Sequence": 184,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -131181,7 +131181,7 @@
               "keylessReason": "Single-record STATUS/SUMMARY response, not an entity collection. The field previously marked primary key is an envelope artifact, not an identity: requestServiceMessageID is a PER-CALL correlation id (identity would change every sync -> unbounded duplicate growth), 'invalid' is a COUNT of invalid rows, 'resultCode'/'interval' are result descriptors. No stable key is provable from the pinned sources, so identity falls back to content hash."
             },
             "Sequence": 197,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -133644,7 +133644,7 @@
               "keylessReason": "Single-record STATUS/SUMMARY response, not an entity collection. The field previously marked primary key is an envelope artifact, not an identity: requestServiceMessageID is a PER-CALL correlation id (identity would change every sync -> unbounded duplicate growth), 'invalid' is a COUNT of invalid rows, 'resultCode'/'interval' are result descriptors. No stable key is provable from the pinned sources, so identity falls back to content hash."
             },
             "Sequence": 202,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
@@ -138322,7 +138322,7 @@
               "contentHashApplicable": true
             },
             "Sequence": 209,
-            "Status": "Active",
+            "Status": "Disabled",
             "IsCustom": false,
             "MetadataSource": "Declared",
             "SupportsCreate": false,
