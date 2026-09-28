@@ -8,9 +8,10 @@
  * JSON and SOAP parsers. Nothing here touches a live endpoint and nothing mutates: the write-path tests
  * assert the exact request the connector WOULD send and the CRUDResult it derives from a recorded reply.
  *
- * Fixtures live at `packages/Integration/connectors-registry/sfmc/fixtures/` and every one descends from
- * the pinned vendor corpus under `packages/Integration/connectors-registry/sfmc/sources/` (per-file
- * provenance in `fixtures/fixtures.json` -> `_provenance`) — NEVER synthesised from the connector's own
+ * Fixtures live at `src/__tests__/fixtures/sfmc/` (vendored from `packages/Integration/connectors-registry/
+ * sfmc/fixtures/`) and every one descends from the pinned vendor corpus under
+ * `packages/Integration/connectors-registry/sfmc/sources/` (per-file provenance in
+ * `fixtures/sfmc/PROVENANCE.json` -> `Entries`) — NEVER synthesised from the connector's own
  * metadata, which would make this suite circular.
  *
  * The engine cache is seeded from the REAL frozen metadata file, so every assertion about transport
@@ -35,9 +36,8 @@ import { SFMCConnector, SFMCRequestError, type SFMCAuthContext } from '../SFMCCo
 // ─── Paths ───────────────────────────────────────────────────────────────────────────────────────
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(HERE, '../../../../..');
-const METADATA_FILE = resolve(REPO_ROOT, 'metadata/integrations/sfmc/.sfmc.integration.json');
-const FIXTURES = resolve(REPO_ROOT, 'packages/Integration/connectors-registry/sfmc/fixtures');
+const METADATA_FILE = resolve(HERE, '../../metadata/integration/.sfmc.integration.json');
+const FIXTURES = resolve(HERE, 'fixtures/sfmc');
 const CONNECTOR_SOURCE = resolve(HERE, '../SFMCConnector.ts');
 
 const MOCK_ORIGIN = 'https://mock-sfmc.invalid';

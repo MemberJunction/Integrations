@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:RetrieveResponseMsg>
+      <par:OverallStatus>OK</par:OverallStatus>
+      <par:RequestID>a5d36471-e636-478c-a29b-fd3571714602</par:RequestID>
+      <par:Results xsi:type="par:Subscriber">
+        <par:Client>
+          <par:ID>12345</par:ID>
+        </par:Client>
+        <par:PartnerKey xsi:nil="true"/>
+        <par:CreatedDate>2018-02-14T16:30:55.000</par:CreatedDate>
+        <par:ModifiedDate>2018-03-02T07:04:31.000</par:ModifiedDate>
+        <par:ID>1003</par:ID>
+        <par:ObjectID>9f2c1b08-0f06-4f4e-9b2f-6bb9d3f0a003</par:ObjectID>
+        <par:EmailAddress>cmoreau@example.com</par:EmailAddress>
+        <par:SubscriberKey>cmoreau@example.com</par:SubscriberKey>
+        <par:Status>Unsubscribed</par:Status>
+        <par:UnsubscribedDate>2018-03-02T07:04:31.000</par:UnsubscribedDate>
+        <par:EmailTypePreference>Text</par:EmailTypePreference>
+        <par:Attributes>
+          <par:Name>First Name</par:Name>
+          <par:Value>Camille</par:Value>
+        </par:Attributes>
+      </par:Results>
+    </par:RetrieveResponseMsg>
+  </soap:Body>
+</soap:Envelope>

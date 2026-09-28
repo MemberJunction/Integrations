@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:RetrieveResponseMsg>
+      <par:OverallStatus>OK</par:OverallStatus>
+      <par:RequestID>92e9d1c2-req-0001</par:RequestID>
+      <par:Results xsi:type="par:SentEvent">
+        <par:PartnerKey>PartnerKey-1</par:PartnerKey>
+        <par:CreatedDate>2024-03-01T10:11:00.000</par:CreatedDate>
+        <par:ModifiedDate>2024-03-01T10:11:00.000</par:ModifiedDate>
+        <par:ID>1001</par:ID>
+        <par:ObjectID>92e9d1c2-0001</par:ObjectID>
+        <par:CustomerKey>SentEvent_KEY_1</par:CustomerKey>
+        <par:CorrelationID>CorrelationID-1</par:CorrelationID>
+        <par:ObjectState>ObjectState-1</par:ObjectState>
+        <par:SendID>1001</par:SendID>
+        <par:SubscriberKey>SubscriberKey-1</par:SubscriberKey>
+        <par:EventDate>2024-03-01T10:11:00.000</par:EventDate>
+        <par:EventType>EventType-1</par:EventType>
+        <par:TriggeredSendDefinitionObjectID>TriggeredSendDefinitionObjectID-1</par:TriggeredSendDefinitionObjectID>
+        <par:BatchID>1001</par:BatchID>
+        <par:Classification>Classification-1</par:Classification>
+        <par:RenderedSubject>RenderedSubject-1</par:RenderedSubject>
+      </par:Results>
+      <par:Results xsi:type="par:SentEvent">
+        <par:PartnerKey>PartnerKey-2</par:PartnerKey>
+        <par:CreatedDate>2024-03-02T10:12:00.000</par:CreatedDate>
+        <par:ModifiedDate>2024-03-02T10:12:00.000</par:ModifiedDate>
+        <par:ID>1002</par:ID>
+        <par:ObjectID>92e9d1c2-0002</par:ObjectID>
+        <par:CustomerKey>SentEvent_KEY_2</par:CustomerKey>
+        <par:CorrelationID>CorrelationID-2</par:CorrelationID>
+        <par:ObjectState>ObjectState-2</par:ObjectState>
+        <par:SendID>1002</par:SendID>
+        <par:SubscriberKey>SubscriberKey-2</par:SubscriberKey>
+        <par:EventDate>2024-03-02T10:12:00.000</par:EventDate>
+        <par:EventType>EventType-2</par:EventType>
+        <par:TriggeredSendDefinitionObjectID>TriggeredSendDefinitionObjectID-2</par:TriggeredSendDefinitionObjectID>
+        <par:BatchID>1002</par:BatchID>
+        <par:Classification>Classification-2</par:Classification>
+        <par:RenderedSubject>RenderedSubject-2</par:RenderedSubject>
+      </par:Results>
+      <par:Results xsi:type="par:SentEvent">
+        <par:PartnerKey>PartnerKey-3</par:PartnerKey>
+        <par:CreatedDate>2024-03-03T10:13:00.000</par:CreatedDate>
+        <par:ModifiedDate>2024-03-03T10:13:00.000</par:ModifiedDate>
+        <par:ID>1003</par:ID>
+        <par:ObjectID>92e9d1c2-0003</par:ObjectID>
+        <par:CustomerKey>SentEvent_KEY_3</par:CustomerKey>
+        <par:CorrelationID>CorrelationID-3</par:CorrelationID>
+        <par:ObjectState>ObjectState-3</par:ObjectState>
+        <par:SendID>1003</par:SendID>
+        <par:SubscriberKey>SubscriberKey-3</par:SubscriberKey>
+        <par:EventDate>2024-03-03T10:13:00.000</par:EventDate>
+        <par:EventType>EventType-3</par:EventType>
+        <par:TriggeredSendDefinitionObjectID>TriggeredSendDefinitionObjectID-3</par:TriggeredSendDefinitionObjectID>
+        <par:BatchID>1003</par:BatchID>
+        <par:Classification>Classification-3</par:Classification>
+        <par:RenderedSubject>RenderedSubject-3</par:RenderedSubject>
+      </par:Results>
+    </par:RetrieveResponseMsg>
+  </soap:Body>
+</soap:Envelope>
