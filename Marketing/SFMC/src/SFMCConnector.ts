@@ -66,7 +66,6 @@ import {
     BaseIntegrationConnector,
     BaseRESTIntegrationConnector,
     ClassifyError,
-    OAuth2TokenManager,
     computeContentHash,
     serializeKeyValue,
     type ConnectionTestResult,
@@ -80,7 +79,9 @@ import {
     type FetchContext,
     type FetchWarning,
     type GetRecordContext,
+    type OAuth2GrantType,
     type OAuth2Token,
+    type OAuth2TokenRequest,
     type PaginationState,
     type PaginationType,
     type RESTAuthContext,
@@ -266,6 +267,116 @@ const ConfigSchema = z.object({
     PathParams: z.record(z.string(), z.record(z.string(), z.string())),
 });
 
+// ─── Token path ──────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * An {@link OAuth2Token} plus the NON-STANDARD top-level members of the token response. SFMC returns
+ * the tenant's routing ON its `/v2/token` response — `rest_instance_url` / `soap_instance_url` —
+ * alongside the access token. Standard RFC 6749 §5.1 members are NOT duplicated here.
+ */
+type SFMCToken = OAuth2Token & { Extra?: Record<string, unknown> };
+
+/** The raw `/v2/token` response body: the RFC 6749 §5.1/§5.2 members plus the vendor's extras. */
+interface SFMCTokenResponse {
+    access_token?: string;
+    refresh_token?: string;
+    token_type?: string;
+    expires_in?: number;
+    scope?: string;
+    error?: string;
+    error_description?: string;
+    [key: string]: unknown;
+}
+
+/** Token-response members that are typed on {@link OAuth2Token}; every other member lands on `Extra`. */
+const STANDARD_TOKEN_MEMBERS = new Set(['access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'error', 'error_description']);
+/** Token request timeout — the same default the shared OAuth2 helper uses. */
+const TOKEN_REQUEST_TIMEOUT_MS = 30_000;
+/** Lifetime assumed when the token response carries no numeric `expires_in` (the shared helper's default). */
+const DEFAULT_TOKEN_EXPIRES_IN_S = 3_600;
+
+/**
+ * Per-connection token cache for the SFMC `/v2/token` endpoint.
+ *
+ * WHY NOT the engine's `OAuth2TokenManager`: in every MJ release this package's peer range covers
+ * (>=5.42 <7) it returns only the standard token members and DISCARDS the rest, so the
+ * `rest_instance_url` / `soap_instance_url` this vendor puts on the token response never reach the
+ * connector and every connection silently falls back to the subdomain template. This class performs the
+ * SAME `client_credentials` round-trip that helper does — form body (vendor extras first, then
+ * `grant_type`, `scope`, `client_id`, `client_secret`), headers, timeout, `expires_in` default, error
+ * text and refresh-buffer caching — and differs only in keeping those non-standard members on `Extra`.
+ */
+class SFMCTokenManager {
+    /** Skew window: re-mint when within this many ms of expiry. */
+    public RefreshBufferMs = 60_000;
+
+    private cached: SFMCToken | null = null;
+
+    /** Returns a valid access token, minting only when the cache is empty or near expiry. */
+    public async GetAccessToken(req: OAuth2TokenRequest, grant: Extract<OAuth2GrantType, 'client_credentials'>): Promise<SFMCToken> {
+        if (this.cached && this.cached.ExpiresAt > Date.now() + this.RefreshBufferMs) {
+            return this.cached;
+        }
+        this.cached = await this.RequestToken(req, grant);
+        return this.cached;
+    }
+
+    /** Clears the cached token (e.g. when the bound config changes). */
+    public Reset(): void {
+        this.cached = null;
+    }
+
+    /** Executes the token-endpoint round-trip, keeping the response's non-standard members. */
+    private async RequestToken(req: OAuth2TokenRequest, grant: Extract<OAuth2GrantType, 'client_credentials'>): Promise<SFMCToken> {
+        const body = new URLSearchParams();
+        // Vendor extras FIRST so the standard params set below always take precedence.
+        for (const [k, v] of Object.entries(req.ExtraParams ?? {})) {
+            if (typeof v === 'string' && v.length > 0) body.set(k, v);
+        }
+        body.set('grant_type', grant);
+        if (req.Scopes) body.set(req.ScopeParam ?? 'scope', req.Scopes);
+        body.set('client_id', req.ClientId);
+        body.set('client_secret', req.ClientSecret);
+
+        const response = await fetch(req.TokenURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+            },
+            body: body.toString(),
+            signal: AbortSignal.timeout(req.TimeoutMs ?? TOKEN_REQUEST_TIMEOUT_MS),
+        });
+
+        const text = await response.text();
+        let parsed: SFMCTokenResponse = {};
+        if (text.length > 0) {
+            try { parsed = JSON.parse(text) as SFMCTokenResponse; } catch { parsed = {}; }
+        }
+
+        if (!response.ok || !parsed.access_token) {
+            const detail = parsed.error_description ?? parsed.error ?? text.slice(0, 300);
+            throw new Error(
+                `OAuth2 ${grant} token request to ${req.TokenURL} failed: HTTP ${response.status}${detail ? ` — ${detail}` : ''}`
+            );
+        }
+
+        const expiresInS = typeof parsed.expires_in === 'number' ? parsed.expires_in : DEFAULT_TOKEN_EXPIRES_IN_S;
+        const extra: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+            if (!STANDARD_TOKEN_MEMBERS.has(k)) extra[k] = v;
+        }
+        return {
+            AccessToken: parsed.access_token,
+            RefreshToken: parsed.refresh_token ?? req.RefreshToken,
+            TokenType: parsed.token_type ?? 'Bearer',
+            ExpiresAt: Date.now() + expiresInS * 1_000,
+            Scope: parsed.scope,
+            Extra: Object.keys(extra).length > 0 ? extra : undefined,
+        };
+    }
+}
+
 // ─── Connector ───────────────────────────────────────────────────────────────────────────────────
 
 // Registered under BOTH keys on purpose. The published Open App sets Integration.ClassName to the
@@ -275,8 +386,8 @@ const ConfigSchema = z.object({
 @RegisterClass(BaseIntegrationConnector, 'SFMCConnector')
 export class SFMCConnector extends BaseRESTIntegrationConnector {
 
-    /** One OAuth2 token manager per CompanyIntegration, so two connections never share a token. */
-    private readonly tokenManagers = new Map<string, OAuth2TokenManager>();
+    /** One token manager per CompanyIntegration, so two connections never share a token. */
+    private readonly tokenManagers = new Map<string, SFMCTokenManager>();
     /**
      * The Integration ID of the most recent call. `StableOrderingKey(objectName)` is handed no
      * connection, so the metadata lookup it needs is scoped by the last connection this connector
@@ -374,16 +485,16 @@ export class SFMCConnector extends BaseRESTIntegrationConnector {
     // ── Auth / transport seams (abstract on BaseRESTIntegrationConnector) ────────────────────────
 
     /**
-     * OAuth2 **client credentials** against `{auth host}/v2/token`, through the shared
-     * {@link OAuth2TokenManager} (no inlined grant logic). `account_id` is appended only when the
-     * connection names a business unit, and `scope` only when configured.
+     * OAuth2 **client credentials** against `{auth host}/v2/token`, through {@link SFMCTokenManager}
+     * (the shared helper's round-trip, keeping the vendor's extra response members). `account_id` is
+     * appended only when the connection names a business unit, and `scope` only when configured.
      *
      * The token is SHORT-LIVED (vendor guidance ≈20 minutes, timed off `expires_in`) so the manager's
      * refresh margin is widened to {@link TOKEN_REFRESH_MARGIN_MS}: a long full sync re-mints PROACTIVELY
      * on the margin rather than waiting for a 401 to discover expiry mid-stream.
      *
      * The token response is ALSO where this vendor's tenant routing comes from — `rest_instance_url` and
-     * `soap_instance_url` land on `OAuth2Token.Extra` and become the connector's base URIs. Neither the
+     * `soap_instance_url` land on `SFMCToken.Extra` and become the connector's base URIs. Neither the
      * token nor the client secret is ever logged.
      */
     protected async Authenticate(
@@ -648,7 +759,7 @@ export class SFMCConnector extends BaseRESTIntegrationConnector {
             Precision: c.Precision ?? null,
             Scale: c.Scale ?? null,
             DefaultValue: c.DefaultValue ?? null,
-            IsPrimaryKey: c.IsPrimaryKey,
+            IsPrimaryKey: c.IsPrimaryKey === true,
             IsForeignKey: false,
             ForeignKeyTarget: null,
         }));
@@ -1996,7 +2107,7 @@ export class SFMCConnector extends BaseRESTIntegrationConnector {
      * are DECIDED: `rest_instance_url` / `soap_instance_url` off the token response first, then an
      * operator override, then the documented subdomain template. `BaseURLsFromToken` records which.
      */
-    private BuildAuthContext(token: OAuth2Token, config: SFMCConfig): SFMCAuthContext {
+    private BuildAuthContext(token: SFMCToken, config: SFMCConfig): SFMCAuthContext {
         const extra = token.Extra ?? {};
         const restFromToken = this.ScalarString(extra.rest_instance_url);
         const soapFromToken = this.ScalarString(extra.soap_instance_url);
@@ -2010,11 +2121,11 @@ export class SFMCConnector extends BaseRESTIntegrationConnector {
     }
 
     /** One token manager per connection, with the refresh margin widened for SFMC's ~20-minute token. */
-    private TokenManagerFor(companyIntegration: MJCompanyIntegrationEntity): OAuth2TokenManager {
+    private TokenManagerFor(companyIntegration: MJCompanyIntegrationEntity): SFMCTokenManager {
         const key = companyIntegration.ID ?? companyIntegration.IntegrationID ?? 'default';
         let manager = this.tokenManagers.get(key);
         if (!manager) {
-            manager = new OAuth2TokenManager();
+            manager = new SFMCTokenManager();
             manager.RefreshBufferMs = TOKEN_REFRESH_MARGIN_MS;
             this.tokenManagers.set(key, manager);
         }
