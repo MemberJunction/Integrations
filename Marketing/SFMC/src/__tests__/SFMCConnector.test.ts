@@ -23,6 +23,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { UserInfo } from '@memberjunction/core';
+import { MJGlobal } from '@memberjunction/global';
 import type {
     MJCompanyIntegrationEntity,
     MJIntegrationEntity,
@@ -30,7 +31,7 @@ import type {
     MJIntegrationObjectFieldEntity,
 } from '@memberjunction/core-entities';
 import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
-import type { FetchContext, RESTAuthContext, RESTResponse } from '@memberjunction/integration-engine';
+import { BaseIntegrationConnector, type FetchContext, type RESTAuthContext, type RESTResponse } from '@memberjunction/integration-engine';
 import { SFMCConnector, SFMCRequestError, type SFMCAuthContext } from '../SFMCConnector.js';
 
 // ─── Paths ───────────────────────────────────────────────────────────────────────────────────────
@@ -258,7 +259,14 @@ describe('SFMCConnector — identity + capability invariants', () => {
     });
 
     it('the class symbol matches the metadata ClassName (the three-way identity invariant)', () => {
-        expect(SFMCConnector.name).toBe(metadataRoot.fields.ClassName);
+        // Open App form (scripts/validate-invariants.mjs): ClassName is the PACKAGE name, equal to
+        // ImportPath, and it is the @RegisterClass key the engine resolves. So the metadata ClassName
+        // AND the class symbol must each construct exactly this class.
+        expect(metadataRoot.fields.ClassName).toBe(metadataRoot.fields.ImportPath);
+        for (const key of [metadataRoot.fields.ClassName as string, SFMCConnector.name]) {
+            const resolved = MJGlobal.Instance.ClassFactory.CreateInstance<BaseIntegrationConnector>(BaseIntegrationConnector, key);
+            expect(resolved?.constructor, `ClassFactory key "${key}"`).toBe(SFMCConnector);
+        }
     });
 
     it('declares the write capabilities the metadata actually carries', () => {
