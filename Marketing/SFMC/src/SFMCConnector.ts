@@ -1398,7 +1398,25 @@ export class SFMCConnector extends BaseRESTIntegrationConnector {
                 response.Status, 'soap', null, undefined, 'CONNECTOR_ERROR',
             );
         }
+        if (operation === 'Retrieve') this.ThrowOnRetrieveStatus(body, objectType, response.Status);
         return body;
+    }
+
+    /**
+     * A failed `Retrieve` is NOT a Fault: SFMC answers HTTP 200 with a `RetrieveResponseMsg` whose
+     * `OverallStatus` is `Error: <reason>` (e.g. a requested property the object will not return) and no
+     * `Results`. Read as "no more data", that synced 0 rows forever — or, on a continuation, returned the
+     * earlier batches as complete. The only non-failure values are `OK` and `MoreDataAvailable`; an absent
+     * status is left to the callers as before.
+     */
+    protected ThrowOnRetrieveStatus(body: SFMCSoapBody, objectType: string, httpStatus: number): void {
+        const status = body.OverallStatus;
+        if (!status || status === 'OK' || status === MORE_DATA_AVAILABLE) return;
+        throw new SFMCRequestError(
+            `SFMC Retrieve ${objectType} failed: ${status}`,
+            httpStatus, 'soap', null, undefined,
+            this.ClassifySoapFault({ Code: '', FaultString: status, Message: status }),
+        );
     }
 
     /**

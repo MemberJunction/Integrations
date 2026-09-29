@@ -1104,3 +1104,47 @@ describe('SFMCConnector — IntrospectSchema sample-union (declared widened, nev
         expect(subscriber?.Fields.some(f => f.Name === 'First Name')).toBe(true);
     }, 120_000);
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+describe('SFMCConnector — a Retrieve that SFMC answers HTTP 200 with OverallStatus "Error"', () => {
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+    // SFMC reports a failed Retrieve (e.g. a requested property the object will not return) INSIDE an
+    // HTTP 200 RetrieveResponseMsg — no Fault, no Results. Read as "no more data", it synced 0 rows forever.
+    const retrieveReply = (status: string): string =>
+        `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+           <soap:Body><par:RetrieveResponseMsg><par:OverallStatus>${status}</par:OverallStatus>
+             <par:RequestID>0b7c3e2a-1111-2222-3333-444455556666</par:RequestID>
+           </par:RetrieveResponseMsg></soap:Body>
+         </soap:Envelope>`;
+    const ERROR_STATUS = 'Error: The Request Property(s) Foo do not match with the fields of Subscriber retrieve';
+
+    it('throws instead of returning zero rows', async () => {
+        const connector = new MockedSFMCConnector().Enqueue({ Status: 200, Xml: retrieveReply(ERROR_STATUS) });
+        const err = await connector.FetchChanges(fetchContext('Subscriber')).catch((e: unknown) => e);
+        expect(err).toBeInstanceOf(SFMCRequestError);
+        expect((err as Error).message).toContain('do not match with the fields of Subscriber retrieve');
+    });
+
+    it('throws when the error arrives on a ContinueRequest batch', async () => {
+        const connector = new MockedSFMCConnector().Enqueue(
+            { Status: 200, Xml: fixtureText('soap/subscriber-batch1.soap.xml') },  // MoreDataAvailable
+            { Status: 200, Xml: retrieveReply(ERROR_STATUS) },
+        );
+        await expect(connector.FetchChanges(fetchContext('Subscriber'))).rejects.toBeInstanceOf(SFMCRequestError);
+    });
+
+    it('throws on a Data Extension rowset Retrieve too', async () => {
+        const connector = new MockedSFMCConnector().Enqueue(
+            { Status: 200, Xml: fixtureText('soap/dataextensionfield-airlines.soap.xml') },  // column discovery
+            { Status: 200, Xml: retrieveReply('Error: Data extension does not exist') },
+        );
+        await expect(connector.FetchChanges(fetchContext('DataExtensionObject[Airlines]'))).rejects.toBeInstanceOf(SFMCRequestError);
+    });
+
+    it('still returns zero rows, without throwing, when SFMC says OK with no Results', async () => {
+        const connector = new MockedSFMCConnector().Enqueue({ Status: 200, Xml: retrieveReply('OK') });
+        const result = await connector.FetchChanges(fetchContext('Subscriber'));
+        expect(result.Records).toHaveLength(0);
+        expect(result.HasMore).toBe(false);
+    });
+});
