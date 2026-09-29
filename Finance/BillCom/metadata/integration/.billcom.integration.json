@@ -111,7 +111,7 @@
                   "DisplayName": "Name",
                   "Description": "Customer name",
                   "Type": "string",
-                  "Length": 255,
+                  "Length": 100,
                   "AllowsNull": false,
                   "IsRequired": true,
                   "IsReadOnly": false,
@@ -123,6 +123,10 @@
                 },
                 "primaryKey": {
                   "ID": "3FE8BE48-030B-5023-B4CA-FC12098B1D44"
+                },
+                "sync": {
+                  "lastModified": "2026-09-27T19:12:16.427Z",
+                  "checksum": "83c084113b814da570c624f48fffe24e601c7b4b8331bef32c4d9f3a3c176a86"
                 }
               },
               {
@@ -131,7 +135,7 @@
                   "DisplayName": "Company Name",
                   "Description": "Customer company name. This field is overridden when you connect with a customer in the BILL network.",
                   "Type": "string",
-                  "Length": 255,
+                  "Length": 250,
                   "AllowsNull": true,
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -143,6 +147,10 @@
                 },
                 "primaryKey": {
                   "ID": "F390A842-ED89-5BEF-9266-1E39F2A41BCB"
+                },
+                "sync": {
+                  "lastModified": "2026-09-27T19:12:16.417Z",
+                  "checksum": "bdb3e5efb1aaecffb40c377968fcc95f508a421da7288dfd72515d06ecb17495"
                 }
               },
               {
@@ -319,7 +327,7 @@
                   "DisplayName": "Account Number",
                   "Description": "Customer account number. The number appears in customer invoices.",
                   "Type": "string",
-                  "Length": 255,
+                  "Length": 100,
                   "AllowsNull": true,
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -331,6 +339,10 @@
                 },
                 "primaryKey": {
                   "ID": "E0D4B90A-8F57-58DF-9202-BDF0E474A57B"
+                },
+                "sync": {
+                  "lastModified": "2026-09-27T19:12:16.444Z",
+                  "checksum": "5885d586bf0ed960032201b8d536ac0737d44c1a6a9b7deeef7c3237b82730f4"
                 }
               },
               {
@@ -594,7 +606,7 @@
                   "DisplayName": "Invoice Number",
                   "Description": "User-generated invoice number. This value can be your chosen number scheme.\n\nIf you do not set this field, `invoiceNumber` is auto-generated.",
                   "Type": "string",
-                  "Length": 255,
+                  "Length": 100,
                   "AllowsNull": true,
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -606,6 +618,10 @@
                 },
                 "primaryKey": {
                   "ID": "C234AE08-D5B3-527D-A9FF-BEEBF45CB6F3"
+                },
+                "sync": {
+                  "lastModified": "2026-09-27T19:12:16.460Z",
+                  "checksum": "b4c029ed37ca7550422153b999a774fa0ca2bf3b66ee1ef09154a003dba30c80"
                 }
               },
               {
