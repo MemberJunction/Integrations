@@ -1,0 +1,15 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <soap:Body>
+      <soap:Fault>
+         <faultcode>soap:Client</faultcode>
+         <faultstring>Not Authenticated</faultstring>
+         <faultactor>https://YOUR_SUBDOMAIN.soap.marketingcloudapis.com/Service.asmx</faultactor>
+         <detail>
+            <apifault xmlns="urn:fault.partner.exacttarget.com">
+               <Code>10</Code>
+               <Message>Not Authenticated: the token was not found in the request, or it is invalid or expired.</Message>
+            </apifault>
+         </detail>
+      </soap:Fault>
+   </soap:Body>
+</soap:Envelope>

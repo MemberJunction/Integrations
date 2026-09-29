@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 50,
+  "count": 51,
   "connectors": [
     {
       "name": "Fonteva",
@@ -102,10 +102,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-netforum-enterprise",
       "npmPackage": "@memberjunction/connector-netforum-enterprise",
-      "version": "1.6.5",
+      "version": "1.6.6",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "AMS/NetForum",
-      "installTag": "AMS-NetForum@1.6.5"
+      "installTag": "AMS-NetForum@1.6.6"
     },
     {
       "name": "Nimble AMS",
@@ -741,6 +741,32 @@
       "mjVersionRange": ">=5.46.0 <7.0.0",
       "repoSubpath": "Marketing/Reply",
       "installTag": "Marketing-Reply@1.0.2"
+    },
+    {
+      "name": "sfmc",
+      "displayName": "Salesforce Marketing Cloud Engagement Connector",
+      "description": "Salesforce Marketing Cloud Engagement (ExactTarget/Fuel) — dual REST+SOAP marketing platform: Data Extensions, Contacts, Journeys, Content Builder, Transactional Messaging, tracking events. OAuth2 client-credentials, tenant-subdomained hosts.",
+      "category": "Marketing",
+      "tags": [
+        "sfmc",
+        "salesforce",
+        "marketing-cloud",
+        "exacttarget",
+        "email-marketing",
+        "soap",
+        "rest",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-cloud",
+      "navigationBaseURL": "https://developer.salesforce.com/docs/marketing/marketing-cloud/overview",
+      "objectCount": 225,
+      "className": "@memberjunction/connector-sfmc",
+      "npmPackage": "@memberjunction/connector-sfmc",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.42.0 <7.0.0",
+      "repoSubpath": "Marketing/SFMC",
+      "installTag": "Marketing-SFMC@1.0.0"
     },
     {
       "name": "higherlogic-thrive",
