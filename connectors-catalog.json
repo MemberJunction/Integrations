@@ -375,10 +375,10 @@
       "objectCount": 38,
       "className": "EventscribeConnector",
       "npmPackage": "@memberjunction/connector-eventscribe",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "Events/Eventscribe",
-      "installTag": "Events-Eventscribe@0.2.1"
+      "installTag": "Events-Eventscribe@0.3.0"
     },
     {
       "name": "OpenWater",
@@ -438,10 +438,10 @@
       "objectCount": 3,
       "className": "@memberjunction/connector-bill-com",
       "npmPackage": "@memberjunction/connector-bill-com",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "Finance/BillCom",
-      "installTag": "Finance-BillCom@0.3.2"
+      "installTag": "Finance-BillCom@0.3.3"
     },
     {
       "name": "business-central",

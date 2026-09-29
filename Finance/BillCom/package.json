@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-bill-com",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "MemberJunction BillCom connector.",
   "type": "module",
   "main": "dist/index.js",
