@@ -2025,3 +2025,233 @@ describe('EventscribeConnector — declared incremental window + max-seen waterm
         expect(result.NewWatermarkValue).toBeUndefined();
     });
 });
+
+// ── Event scope: each event's records stay apart ─────────────────────────────
+//
+// All connections of one connector write into the same tables, and the engine matches an incoming
+// row to an existing one by the entity's primary key across the WHOLE table. A client with one
+// connection per product per event needs the event IN that key. Each active object declares an
+// `EventScope` field marked `connectorStamped: "event-scope"`; on keyed objects it is part of the
+// declared primary key. These fixtures add it the way the shipped metadata does: last in Sequence.
+
+const EVENT_A = 'fixture-event-2025';
+const EVENT_B = 'fixture-event-2026';
+
+function eventScopeIOF(isPrimaryKey: boolean, sequence: number): MJIntegrationObjectFieldEntity {
+    return makeIOF({
+        Name: 'EventScope', Type: 'nvarchar', Length: 100, AllowsNull: false, IsReadOnly: true,
+        IsPrimaryKey: isPrimaryKey, Sequence: sequence,
+        Configuration: JSON.stringify({ connectorStamped: 'event-scope' }),
+    });
+}
+
+const authorScopedIOFs = [...authorIOFs, eventScopeIOF(true, 2)];
+const accountScopedIOFs = [...accountIOFs, eventScopeIOF(true, 2)];
+const boothScopedIOFs = [...boothIOFs, eventScopeIOF(true, 2)];
+const exhibitorScopedIOFs = [...exhibitorIOFs, eventScopeIOF(true, 1)];
+const handoutScopedIOFs = [...handoutIOFs, eventScopeIOF(false, 2)];
+const assetScopedIOFs = [...assetIOFs, eventScopeIOF(true, 2)];
+
+/** A connection: its own ID, the API key, and (optionally) an eID. */
+function connection(id: string, eID?: string): MJCompanyIntegrationEntity {
+    const configuration: Record<string, unknown> = { APIKey: FIXTURE_KEY };
+    if (eID !== undefined) configuration.eID = eID;
+    return { ...(makeCI(configuration) as unknown as Record<string, unknown>), ID: id } as unknown as MJCompanyIntegrationEntity;
+}
+
+/**
+ * The engine's identity for a row: the entity's DECLARED primary key (soft PKs included), values
+ * joined in key order — what MatchEngine matches on across the whole table. Mirrors it here so the
+ * tests assert the property that matters, not an implementation detail.
+ */
+function rowKey(fields: MJIntegrationObjectFieldEntity[], record: { Fields: Record<string, unknown> }): string {
+    return fields.filter(f => f.IsPrimaryKey).sort((a, b) => a.Sequence - b.Sequence)
+        .map(f => String(record.Fields[f.Name])).join('|');
+}
+
+const scorecardPage = (authors: Array<Record<string, unknown>>): RESTResponse =>
+    ok({ metadata: { totalRecords: authors.length, pages: 1, page: 1 }, results: authors });
+
+describe('EventscribeConnector — each event\'s records stay apart (EventScope in the key)', () => {
+    it('the same Cadmium id read for two events is TWO rows, not one the last sync overwrote', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 522471, AuthorFirstName: 'Ada' }]) });
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 522471, AuthorFirstName: 'Ada (2026)' }]) });
+
+        const in2025 = await c.FetchChanges(fetchCtx(connection('ci-scorecard-2025', EVENT_A), 'Author'));
+        const in2026 = await c.FetchChanges(fetchCtx(connection('ci-scorecard-2026', EVENT_B), 'Author'));
+
+        expect(in2025.Records[0].Fields.EventScope).toBe(EVENT_A);
+        expect(in2026.Records[0].Fields.EventScope).toBe(EVENT_B);
+        expect(rowKey(authorScopedIOFs, in2025.Records[0])).not.toBe(rowKey(authorScopedIOFs, in2026.Records[0]));
+        // Without the event in the key, both records claim the same row — the defect this closes.
+        expect(rowKey(authorIOFs, in2025.Records[0])).toBe(rowKey(authorIOFs, in2026.Records[0]));
+    });
+
+    it('keeps ExternalID on the vendor key — it is what update/delete paths and read-one send to Cadmium', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 522471 }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        expect(batch.Records[0].ExternalID).toBe('522471');
+    });
+
+    it('with NO eID, stamps the connection\'s own ID — two such connections can never share a row', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        const first = await c.FetchChanges(fetchCtx(connection('ci-first'), 'Author'));
+        const second = await c.FetchChanges(fetchCtx(connection('ci-second'), 'Author'));
+        expect(first.Records[0].Fields.EventScope).toBe('ci-first');
+        expect(second.Records[0].Fields.EventScope).toBe('ci-second');
+        expect(rowKey(authorScopedIOFs, first.Records[0])).not.toBe(rowKey(authorScopedIOFs, second.Records[0]));
+        // The fallback is a stamp only — nothing extra goes on the wire.
+        for (const u of c.URLs()) expect(new URL(u).searchParams.has('eID')).toBe(false);
+    });
+
+    it('two connections naming the SAME eID share rows — they are the same event', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        const first = await c.FetchChanges(fetchCtx(connection('ci-first', EVENT_A), 'Author'));
+        const recreated = await c.FetchChanges(fetchCtx(connection('ci-recreated', EVENT_A), 'Author'));
+        expect(rowKey(authorScopedIOFs, first.Records[0])).toBe(rowKey(authorScopedIOFs, recreated.Records[0]));
+    });
+
+    it('REFUSES to read rather than stamp an empty scope (which would merge every such connection)', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        await expect(c.FetchChanges(fetchCtx(connection('   '), 'Author'))).rejects.toThrow(/Cannot key this connection's records/);
+        expect(c.Captured).toHaveLength(0);
+    });
+
+    it('stamps nested rows too (Booth under the Exhibitor door), keyed on BoothID + EventScope', async () => {
+        const c = makeConnector([[exhibitorIO, exhibitorScopedIOFs], [boothIO, boothScopedIOFs]]);
+        c.Canned.push({ response: ok([{ ExhibitorID: 900, Booths: [{ BoothID: 4001, BoothNumber: '12A' }] }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-expo', EVENT_B), 'Booth'));
+        expect(batch.Records[0].Fields).toMatchObject({ BoothID: 4001, ExhibitorID: 900, EventScope: EVENT_B });
+        expect(batch.Records[0].ExternalID).toBe('4001');
+    });
+
+    it('makes a KEYLESS object\'s content-hash identity per event too', async () => {
+        const c = makeConnector([[assetIO, assetScopedIOFs], [handoutIO, handoutScopedIOFs]]);
+        const payload = [{ HarvesterID: 11, Handouts: [{ Pdf: 'https://cdn.example.invalid/h.pdf', PresenterID: 5 }] }];
+        c.Canned.push({ response: ok(payload) });
+        c.Canned.push({ response: ok(payload) });
+        const a = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Handout'));
+        const b = await c.FetchChanges(fetchCtx(connection('ci-b', EVENT_B), 'Handout'));
+        expect(a.Records[0].Fields.EventScope).toBe(EVENT_A);
+        expect(a.Records[0].ExternalID).not.toBe(b.Records[0].ExternalID);
+    });
+
+    it('keeps the base identity rules when the vendor key is missing: hash identity, hash stored in the key', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorFirstName: 'no id' }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        const rec = batch.Records[0];
+        expect(rec.ExternalID).toMatch(/^[0-9a-f]{16,}$/);
+        // The row still has a complete, storable key: the hash in AuthorID, the scope in EventScope.
+        expect(rec.Fields.AuthorID).toBe(rec.ExternalID);
+        expect(rec.Fields.EventScope).toBe(EVENT_A);
+    });
+
+    it('replaces a same-named value in the vendor payload — the key depends on the stamp', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 1, EventScope: 'vendor-said-this' }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        expect(batch.Records[0].Fields.EventScope).toBe(EVENT_A);
+    });
+
+    it('leaves an object that declares no event-scope field exactly as before', async () => {
+        const c = makeConnector([[authorIO, authorIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 9 }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        expect(batch.Records[0].Fields).toEqual({ AuthorID: 9 });
+        expect(batch.Records[0].ExternalID).toBe('9');
+    });
+
+    it('stamps a single-record re-read, and still reads it by the vendor key alone', async () => {
+        const c = makeConnector([[accountIO, accountScopedIOFs]]);
+        c.Canned.push({ response: ok([{ AccountID: '42', EmailAddress: 'a@example.test' }]) });
+        const ci = connection('ci-web', EVENT_A);
+        const rec = await c.GetRecord(crudCtx(ci, 'Account', { ExternalID: '42' }) as Parameters<EventscribeConnector['GetRecord']>[0]);
+        const url = new URL(c.URLs()[0]);
+        expect(url.searchParams.get('AccountID')).toBe('42');
+        expect(url.searchParams.has('EventScope')).toBe(false);
+        expect(rec?.ExternalID).toBe('42');
+        expect(rec?.Fields.EventScope).toBe(EVENT_A);
+    });
+
+    it('never sends the stamp to Cadmium: single create, update and batch bodies are vendor fields only', async () => {
+        const c = makeConnector([[accountIO, accountScopedIOFs]]);
+        const ci = connection('ci-web', EVENT_A);
+        const attributes = { EmailAddress: 'a@example.org', EventScope: EVENT_A };
+
+        c.Canned.push({ response: ok([{ AccountID: 1 }]) });
+        await c.CreateRecord(crudCtx(ci, 'Account', { Attributes: attributes }) as CreateRecordContext);
+        expect(c.LastBody()).toEqual([{ EmailAddress: 'a@example.org' }]);
+
+        c.Canned.push({ response: ok([{ AccountID: 1 }]) });
+        await c.UpdateRecord(crudCtx(ci, 'Account', { ExternalID: '1', Attributes: attributes }) as UpdateRecordContext);
+        expect(c.LastBody()).toEqual([{ EmailAddress: 'a@example.org' }]);
+        expect(new URL(c.URLs()[1]).searchParams.get('AccountID')).toBe('1');
+
+        c.Canned.push({ response: ok([{ AccountID: 1 }, { AccountID: 2 }]) });
+        await c.BatchCreateRecords([
+            crudCtx(ci, 'Account', { Attributes: attributes }) as CreateRecordContext,
+            crudCtx(ci, 'Account', { Attributes: { EmailAddress: 'b@example.org', EventScope: EVENT_A } }) as CreateRecordContext,
+        ]);
+        expect(c.LastBody()).toEqual([{ EmailAddress: 'a@example.org' }, { EmailAddress: 'b@example.org' }]);
+        // The caller's attributes are not mutated.
+        expect(attributes.EventScope).toBe(EVENT_A);
+    });
+
+    it('tells the operator how rows will be keyed, without printing the eID', async () => {
+        const withEID = makeConnector([[authorIO, authorScopedIOFs]]);
+        answerHost(withEID, HOSTS.scorecard, scorecardPage([]));
+        const keyed = await withEID.TestConnection(connection('ci-a', FIXTURE_EVENT), contextUser);
+        expect(keyed.Success).toBe(true);
+        expect(keyed.Message).toContain('keyed by its configured eID (EventScope)');
+        expect(keyed.Message).not.toContain(FIXTURE_EVENT);
+
+        const noEID = makeConnector([[authorIO, authorScopedIOFs]]);
+        answerHost(noEID, HOSTS.scorecard, scorecardPage([]));
+        const fallback = await noEID.TestConnection(connection('ci-b'), contextUser);
+        expect(fallback.Message).toContain('No eID is configured, so records from this connection are keyed to the connection itself');
+    });
+});
+
+describe('EventscribeConnector — the SHIPPED catalog keys every active object by event', () => {
+    type FieldRecord = { fields: Record<string, unknown>; primaryKey: { ID: string } };
+    type ObjectRecord = { fields: Record<string, unknown>; relatedEntities?: Record<string, FieldRecord[]> };
+    const path = fileURLToPath(new URL('../../metadata/integration/.eventscribe.integration.json', import.meta.url));
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    const root = (Array.isArray(parsed) ? parsed[0] : parsed) as { relatedEntities: Record<string, ObjectRecord[]> };
+    const objects = root.relatedEntities['MJ: Integration Objects'];
+    const fieldsOf = (o: ObjectRecord): FieldRecord[] => o.relatedEntities?.['MJ: Integration Object Fields'] ?? [];
+    const isStamp = (f: FieldRecord): boolean =>
+        typeof f.fields.Configuration === 'string' && JSON.parse(f.fields.Configuration).connectorStamped === 'event-scope';
+
+    it('every ACTIVE object declares exactly one event-scope field, and no disabled object does', () => {
+        for (const o of objects) {
+            const stamps = fieldsOf(o).filter(isStamp);
+            const active = (o.fields.Status ?? 'Active') === 'Active';
+            expect(`${o.fields.Name}:${stamps.length}`).toBe(`${o.fields.Name}:${active ? 1 : 0}`);
+        }
+    });
+
+    it('on every keyed active object the event scope is PART of the primary key, alongside the vendor key', () => {
+        let keyed = 0;
+        for (const o of objects.filter(x => (x.fields.Status ?? 'Active') === 'Active')) {
+            const pks = fieldsOf(o).filter(f => f.fields.IsPrimaryKey === true);
+            const vendorKeys = pks.filter(f => !isStamp(f));
+            if (vendorKeys.length === 0) {
+                // Keyless objects stay keyless: an event-only key would collapse each event to ONE row.
+                expect(`${o.fields.Name}:${pks.length}`).toBe(`${o.fields.Name}:0`);
+                continue;
+            }
+            keyed++;
+            expect(pks.filter(isStamp).map(f => f.fields.Name)).toEqual(['EventScope']);
+        }
+        expect(keyed).toBe(17);
+    });
+});

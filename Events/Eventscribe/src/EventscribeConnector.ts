@@ -177,6 +177,16 @@ const ZObjectConfig = z
 
 type EventscribeObjectConfig = z.infer<typeof ZObjectConfig>;
 
+/**
+ * `IntegrationObjectField.Configuration` — only the one key this connector acts on. A field whose
+ * `connectorStamped` is {@link EVENT_SCOPE_STAMP} carries no vendor data: the connector writes the
+ * connection's event scope into it on every record it reads (see {@link EventscribeConnector.EventScopeFor}).
+ */
+const ZFieldConfig = z.object({ connectorStamped: z.string().optional() }).passthrough();
+
+/** The `connectorStamped` marker value that names the event-scope field. Vocabulary, not catalog. */
+const EVENT_SCOPE_STAMP = 'event-scope';
+
 const ZFamilyBaseURL = z.object({ family: z.string(), baseUrl: z.string() }).passthrough();
 
 const ZRateLimitOverride = z
@@ -242,6 +252,11 @@ interface EventscribeCallScope {
      * object's `Configuration.watermark` plus the engine-supplied watermark value. Absent = full pull.
      */
     WindowParams?: Record<string, string>;
+    /**
+     * The event scope every record read in this call chain is stamped with (see
+     * {@link EventscribeConnector.EventScopeFor}). Absent on the write verbs, which stamp nothing.
+     */
+    EventScope?: string;
 }
 
 /** A classified vendor failure, kept structured so the engine can route it. */
@@ -525,6 +540,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
                             this.UnprobeableSentence(plan.Unprobeable),
                             'Objects of a family this key does not cover will fail at sync, so apply only the ' +
                             `"${probe.Family}" objects on this connection unless the key is known to cover more.`,
+                            this.EventScopeSentence(objects, auth),
                         ]),
                     };
                 }
@@ -630,6 +646,20 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
         return `No probe exists for: ${unprobeable.map((u) => `${u.Family} (${u.Reason})`).join('; ')}.`;
     }
 
+    /**
+     * How this connection's records will be keyed, for the connection-test message — so an operator
+     * sees the no-eID fallback before the first sync, not after. Never prints the eID itself (it is
+     * redacted everywhere else too). Empty when no active object declares an event-scope field.
+     */
+    private EventScopeSentence(objects: MJIntegrationObjectEntity[], auth: EventscribeAuthContext): string {
+        if (!objects.some((o) => this.EventScopeFieldNames(this.GetCachedFields(o.ID)).length > 0)) return '';
+        return auth.EventID?.trim()
+            ? 'Records from this connection are keyed by its configured eID (EventScope), so each event\'s rows stay apart.'
+            : 'No eID is configured, so records from this connection are keyed to the connection itself (EventScope = ' +
+              'this connection\'s ID): they never merge with another connection\'s rows, but re-creating the connection, ' +
+              'or adding an eID after the first sync, starts a new set of rows.';
+    }
+
     /** Joins the non-empty sentences of a message with single spaces. */
     private Sentences(parts: string[]): string {
         return parts.filter((p) => p.length > 0).join(' ');
@@ -662,6 +692,10 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
      * batch limiting and record assembly are used AS IS. Two metadata-declared refusals run FIRST
      * ({@link WireFormatGate}, {@link RecordKeyGate}) so an object this connector cannot honestly read
      * reports a structured warning instead of a silent, green, zero-row batch.
+     *
+     * Every record read here is stamped with the connection's event scope ({@link EventScopeFor}) on
+     * the object's declared event-scope field, and — on the depth-0 path, whose record assembly is the
+     * base class's — re-keyed on the SOURCE key alone ({@link RekeyOnSourceKey}).
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         const companyIntegration = ctx.CompanyIntegration;
@@ -674,18 +708,150 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
         const gate = this.RecordKeyGate(companyIntegration, obj, cfg);
         if (gate) return { Records: [], HasMore: false, Warnings: [gate] };
 
+        const auth = await this.Authenticate(companyIntegration, ctx.ContextUser);
         const callScope: EventscribeCallScope = {
             IntegrationID: companyIntegration.IntegrationID,
             ObjectName: ctx.ObjectName,
             Verb: 'read',
             WindowParams: this.WindowParamsFor(obj, cfg, ctx),
+            EventScope: this.EventScopeFor(companyIntegration, auth),
         };
         const batch = this.DepthOf(cfg) === 0
-            ? await this.scope.run(callScope, () => super.FetchChanges(ctx))
+            ? this.RekeyOnSourceKey(
+                await this.scope.run(callScope, () => super.FetchChanges(ctx)),
+                this.GetCachedFields(obj.ID),
+            )
             : await this.scope.run(callScope, () => this.FetchNestedViaDoor(ctx, obj, cfg));
         // Reached ONLY on a batch that completed without throwing — a mid-iteration failure propagates
         // out of the awaits above, so the watermark is never advanced over a partial read.
         return this.WithMaxSeenWatermark(batch, obj, ctx);
+    }
+
+    // ── Event scope: keeping each event's records apart ───────────────────────
+    //
+    // All connections of this connector write into the same tables, and the engine matches an incoming
+    // row to an existing one by the entity's primary key across the WHOLE table (no connection filter).
+    // A client with one connection per product per event therefore needs the event IN the key, or the
+    // same Cadmium id read for two events is one row that the last sync overwrote. Each active object
+    // declares an `EventScope` field (IntegrationObjectField.Configuration.connectorStamped =
+    // "event-scope"); on keyed objects it is part of the declared primary key. This connector writes
+    // the value into every record it reads, and keeps it off everything it sends.
+
+    /**
+     * The value every record read through this connection is stamped with: the connection's configured
+     * `eID` when it has one — the same value, resolved the same way, that {@link Authenticate} sends on
+     * the wire — and otherwise the connection's own `CompanyIntegration.ID`.
+     *
+     * The fallback is the point. A connection with no eID is still exactly one event (Cadmium keys are
+     * per product per event unless provisioned for several, and a multi-event key needs eID to be
+     * scoped at all), so its own ID is a value no other connection can produce: two connections can
+     * share an event scope only by naming the same eID, i.e. the same event. Stamping a shared constant,
+     * or leaving the field empty, would merge every connection's rows exactly as before; refusing to run
+     * without an eID would also be safe, but would block single-event keys on a value Cadmium does not
+     * require of them. The cost of the fallback: re-creating a connection starts a new scope, and adding
+     * an eID to a connection that has already synced changes its scope — set eID before the first sync.
+     *
+     * Throws rather than stamp an empty value, which would put every such record in one shared scope.
+     */
+    protected EventScopeFor(companyIntegration: MJCompanyIntegrationEntity, auth: EventscribeAuthContext): string {
+        const eventID = auth.EventID?.trim();
+        if (eventID) return eventID;
+        const connectionID = companyIntegration.ID?.trim();
+        if (connectionID) return connectionID;
+        throw new Error(
+            '[eventscribe] Cannot key this connection\'s records: it has no eID and no CompanyIntegration ID. ' +
+            'An empty event scope would merge its rows with every other connection\'s, so nothing is read.',
+        );
+    }
+
+    /** Names of the object's fields the connector stamps with the event scope, from their Configuration. */
+    private EventScopeFieldNames(fields: MJIntegrationObjectFieldEntity[]): string[] {
+        return fields.filter((f) => this.IsEventScopeField(f)).map((f) => f.Name);
+    }
+
+    private IsEventScopeField(field: MJIntegrationObjectFieldEntity): boolean {
+        const parsed = this.ParseJSONObject(field.Configuration);
+        if (!parsed) return false;
+        const result = ZFieldConfig.safeParse(parsed);
+        return result.success && result.data.connectorStamped === EVENT_SCOPE_STAMP;
+    }
+
+    /**
+     * The record-assembly hook both read paths run every row through (the base's flat/paged read and
+     * {@link FetchNestedViaDoor}), so this is where the event scope is stamped. Identity when nothing is
+     * in scope or the object declares no event-scope field. The stamp always wins over a same-named key
+     * in the payload: the record's identity depends on it, and Cadmium documents no such field.
+     */
+    protected override TransformRecord(
+        raw: Record<string, unknown>,
+        _obj: MJIntegrationObjectEntity,
+        fields: MJIntegrationObjectFieldEntity[],
+    ): Record<string, unknown> {
+        const scope = this.scope.getStore()?.EventScope;
+        if (scope == null) return raw;
+        const names = this.EventScopeFieldNames(fields);
+        if (names.length === 0) return raw;
+        const out: Record<string, unknown> = { ...raw };
+        for (const name of names) {
+            if (name in raw && raw[name] != null && String(raw[name]) !== scope) {
+                this.WarnOnce(
+                    `event-scope-collision:${name}`,
+                    `[eventscribe] The vendor payload carried its own "${name}" value; it was replaced by this ` +
+                    'connection\'s event scope, which the record\'s primary key depends on.',
+                );
+            }
+            out[name] = scope;
+        }
+        return out;
+    }
+
+    /**
+     * The depth-0 path's records come out of the base class's record assembly, which keys `ExternalID`
+     * on EVERY declared primary-key column — the stamped event scope included. `ExternalID` is the
+     * connector's vendor-facing identity (it is substituted into update/delete paths and read back by
+     * `GetRecord`), and the engine keeps it per connection, where the event is already fixed; the event
+     * belongs in the MJ row's key (which it is: the declared PK), not in the vendor id. So this re-keys
+     * each record on the source key alone — exactly what the base would have produced had the event
+     * scope not been declared, including its content-hash fallback when the source key is missing and,
+     * for a single source key, writing that hash into the key column so the row still has a storable key.
+     */
+    private RekeyOnSourceKey(batch: FetchBatchResult, fields: MJIntegrationObjectFieldEntity[]): FetchBatchResult {
+        if (!fields.some((f) => f.IsPrimaryKey && this.IsEventScopeField(f))) return batch;
+        const sourceKeys = this.SourceKeyNames(fields);
+        if (sourceKeys.length === 0) return batch;
+        return {
+            ...batch,
+            Records: batch.Records.map((record) => {
+                const values = record.Fields;
+                const allPresent = sourceKeys.every((n) => values[n] != null && serializeKeyValue(values[n]).length > 0);
+                if (allPresent) {
+                    return { ...record, ExternalID: sourceKeys.map((n) => serializeKeyValue(values[n])).join('|') };
+                }
+                // The base already fell back to a content hash (a key with a missing part is not an
+                // identity); a single missing source key gets that hash as its value, as the base does.
+                if (sourceKeys.length === 1) return { ...record, Fields: { ...values, [sourceKeys[0]]: record.ExternalID } };
+                return record;
+            }),
+        };
+    }
+
+    /** A copy of outbound write attributes without the event-scope fields — never vendor data. */
+    private WithoutEventScope(
+        attributes: Record<string, unknown>,
+        integrationID: string,
+        objectName: string,
+    ): Record<string, unknown> {
+        let fields: MJIntegrationObjectFieldEntity[];
+        try {
+            fields = this.GetCachedFields(this.GetCachedObject(integrationID, objectName).ID);
+        } catch {
+            return attributes;
+        }
+        const names = this.EventScopeFieldNames(fields).filter((n) => n in attributes);
+        if (names.length === 0) return attributes;
+        const out = { ...attributes };
+        for (const name of names) delete out[name];
+        return out;
     }
 
     /**
@@ -830,7 +996,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
 
         const doorRows = this.NormalizeResponse(response.Body, obj.ResponseDataKey ?? doorObject?.ResponseDataKey ?? null);
         const fields = this.GetCachedFields(obj.ID);
-        const pkNames = this.PrimaryKeyNames(fields);
+        const pkNames = this.SourceKeyNames(fields);
         const records: ExternalRecord[] = [];
 
         for (const doorRow of doorRows) {
@@ -1322,8 +1488,12 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
             );
         }
 
-        return this.scope.run(this.ScopeFor(companyIntegration, ctx.ObjectName, 'get'), async () => {
-            const auth = await this.Authenticate(companyIntegration, contextUser);
+        const auth = await this.Authenticate(companyIntegration, contextUser);
+        const getScope: EventscribeCallScope = {
+            ...this.ScopeFor(companyIntegration, ctx.ObjectName, 'get'),
+            EventScope: this.EventScopeFor(companyIntegration, auth),
+        };
+        return this.scope.run(getScope, async () => {
             const doorURL = this.DoorURL(companyIntegration, auth, obj, door);
             const url = `${doorURL}${doorURL.includes('?') ? '&' : '?'}${encodeURIComponent(keyParam)}=${encodeURIComponent(ctx.ExternalID)}`;
             const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
@@ -1333,7 +1503,13 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
             const rows = this.NormalizeResponse(response.Body, obj.ResponseDataKey);
             if (rows.length === 0) return null;
             const fields = this.GetCachedFields(obj.ID);
-            return this.ToEventscribeRecord(rows[0], ctx.ObjectName, this.PrimaryKeyNames(fields), obj);
+            // Stamped like every other read, so a re-read row carries the same key as the synced one.
+            return this.ToEventscribeRecord(
+                this.applyTransformPreservingKeys(rows[0], obj, fields),
+                ctx.ObjectName,
+                this.SourceKeyNames(fields),
+                obj,
+            );
         });
     }
 
@@ -1347,7 +1523,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
     private RecordKeyParamFor(obj: MJIntegrationObjectEntity, cfg: EventscribeObjectConfig | null): string | null {
         const declared = cfg?.writeOperation?.idParam ?? cfg?.deleteOperation?.idParam;
         if (declared) return declared;
-        const pks = this.PrimaryKeyNames(this.GetCachedFields(obj.ID));
+        const pks = this.SourceKeyNames(this.GetCachedFields(obj.ID));
         return pks.length === 1 ? pks[0] : null;
     }
 
@@ -1358,14 +1534,20 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
      * object instead is a malformed request for those operations. Everything else keeps the base
      * class's shape untouched — the decision is per-operation and read from metadata (see
      * {@link UsesArrayBody}), never a list of vendor operation names written into this file.
+     *
+     * The event-scope field is removed first: it is this connector's stamp, not vendor data, and a
+     * connection-ID fallback value sent to an `addUpdate*` operation would be an invented parameter.
      */
     protected override BuildOperationBody(
         attributes: Record<string, unknown>,
         bodyShape: string | null,
         bodyKey: string | null,
     ): unknown {
-        const body = super.BuildOperationBody(attributes, bodyShape, bodyKey);
         const store = this.scope.getStore();
+        const outbound = store && store.Verb !== 'read' && store.Verb !== 'get'
+            ? this.WithoutEventScope(attributes, store.IntegrationID, store.ObjectName)
+            : attributes;
+        const body = super.BuildOperationBody(outbound, bodyShape, bodyKey);
         if (!store || store.Verb === 'read' || store.Verb === 'get') return body;
         return this.UsesArrayBody(store.IntegrationID, store.ObjectName, store.Verb) ? [body] : body;
     }
@@ -1461,7 +1643,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
                 continue;
             }
 
-            const bodies = indexes.map(i => ctxs[i].Attributes);
+            const bodies = indexes.map(i => this.WithoutEventScope(ctxs[i].Attributes, companyIntegration.IntegrationID, objectName));
             const auth = await this.Authenticate(companyIntegration, contextUser);
             const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth, objectName), path as string);
             // Same per-call object scope the single-record path establishes, so the per-record id is read
@@ -1569,7 +1751,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
         const names: string[] = [];
         const declared = store.Verb === 'delete' ? cfg?.deleteOperation?.idParam : cfg?.writeOperation?.idParam;
         if (declared) names.push(declared);
-        for (const name of this.PrimaryKeyNames(this.GetCachedFields(obj.ID))) {
+        for (const name of this.SourceKeyNames(this.GetCachedFields(obj.ID))) {
             if (!names.includes(name)) names.push(name);
         }
         return names;
@@ -1909,18 +2091,26 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * The DECLARED primary-key names in Sequence order — and NOTHING else. Deliberately does NOT use
-     * the base class's synthetic `['ID']` fallback: the frozen contract WITHDREW seven weakly-evidenced
-     * keys (they survive as ordinary nullable columns, and the `StableOrderingKey` columns that pointed
-     * at them were nulled to match), and its no-identity path is explicit that a PK-less object must
-     * make NO idempotent-identity claim and must NOT substitute a guessed alternative. Returning `['ID']`
-     * here would be exactly that guess — and would silently start claiming identity the day a tenant's
-     * payload happens to carry a column literally named `ID`. An empty list routes the object to the
-     * content-hash identity in {@link ToEventscribeRecord}, i.e. the append/full-refresh path the
-     * contract prescribes, where the engine's own hash idempotency does the deduplication.
+     * The SOURCE key: the DECLARED primary-key names in Sequence order, minus the stamped event scope —
+     * the key the vendor itself knows. It names a record on the wire (`ExternalID`, the single-record
+     * read parameter, the id read back from a write); the full declared key, event scope included, is
+     * the MJ row's key, which the engine matches on.
+     *
+     * Deliberately does NOT use the base class's synthetic `['ID']` fallback: the frozen contract
+     * WITHDREW seven weakly-evidenced keys (they survive as ordinary nullable columns, and the
+     * `StableOrderingKey` columns that pointed at them were nulled to match), and its no-identity path
+     * is explicit that a PK-less object must make NO idempotent-identity claim and must NOT substitute a
+     * guessed alternative. Returning `['ID']` here would be exactly that guess — and would silently start
+     * claiming identity the day a tenant's payload happens to carry a column literally named `ID`. An
+     * empty list routes the object to the content-hash identity in {@link ToEventscribeRecord}, i.e. the
+     * append/full-refresh path the contract prescribes, where the engine's own hash idempotency does the
+     * deduplication (and the hash covers the stamped event scope, so it too is per event).
      */
-    private PrimaryKeyNames(fields: MJIntegrationObjectFieldEntity[]): string[] {
-        return fields.filter(f => f.IsPrimaryKey).sort((a, b) => a.Sequence - b.Sequence).map(f => f.Name);
+    private SourceKeyNames(fields: MJIntegrationObjectFieldEntity[]): string[] {
+        return fields
+            .filter((f) => f.IsPrimaryKey && !this.IsEventScopeField(f))
+            .sort((a, b) => a.Sequence - b.Sequence)
+            .map((f) => f.Name);
     }
 
     // ── Credential resolution ─────────────────────────────────────────────────
