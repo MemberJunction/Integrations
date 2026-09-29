@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type {
     RESTAuthContext,
     RESTResponse,
@@ -1631,6 +1633,226 @@ describe('EventscribeConnector — TestConnection', () => {
         const result = await c.TestConnection(ci, contextUser);
         expect(result.Success).toBe(false);
         expect(result.Message).toMatch(/No ACTIVE IntegrationObjects/);
+    });
+});
+
+// ── The connection test is KEY-AWARE: one cheap probe per product family ──────
+//
+// Cadmium issues one API key per PRODUCT, and ACR holds one per product per event ("EVENTSCRIBE
+// 2026", "EDUCATION HARVESTER 2026", "SCORECARD 2026"). Every connection sees the objects of all five
+// families, so a test pinned to one object (it used to be the first by Sequence: Scorecard's Author)
+// failed every key that is not a Scorecard key. The fixtures below mirror the shipped catalog's
+// family layout and Sequence numbers: the heavy doors (Presentation, Exhibitor: 1 per minute) sit in
+// front of the cheap ones in their families, and eventscribe-web has no credential-only read at all.
+
+const presenterIO = makeIO({
+    ID: 'io-presenter', Name: 'Presenter', Category: 'education-harvester',
+    APIPath: '/HarvesterJsonAPI.asp', Sequence: 27,
+    StableOrderingKey: 'PresenterID',
+    DefaultQueryParams: JSON.stringify({ Method: 'getPresenters' }),
+    Configuration: JSON.stringify({
+        family: 'education-harvester',
+        absoluteEndpoint: 'https://www.conferenceharvester.com/conferenceportal3/webservices/HarvesterJsonAPI.asp',
+        dispatch: { mechanism: 'query-param:Method', methodParamName: 'Method', methodValue: 'getPresenters' },
+        accessPath: { doorOperation: 'getPresenters', doorObject: 'Presenter', nestingFieldPath: '', depth: 0, isArray: true },
+        rateLimit: vendorRate,
+    }),
+});
+const exhibitorStaffIO = makeIO({
+    ID: 'io-exhibitorstaff', Name: 'ExhibitorStaff', Category: 'expo-harvester',
+    APIPath: '/HarvesterJsonAPI.asp', Sequence: 8,
+    StableOrderingKey: 'StaffID',
+    DefaultQueryParams: JSON.stringify({ Method: 'getAllExhibitorStaff' }),
+    Configuration: JSON.stringify({
+        family: 'expo-harvester',
+        absoluteEndpoint: 'https://www.conferenceharvester.com/conferenceportal3/webservices/HarvesterJsonAPI.asp',
+        dispatch: { mechanism: 'query-param:Method', methodParamName: 'Method', methodValue: 'getAllExhibitorStaff' },
+        accessPath: { doorOperation: 'getAllExhibitorStaff', doorObject: 'ExhibitorStaff', nestingFieldPath: '', depth: 0, isArray: true },
+        rateLimit: vendorRate,
+    }),
+});
+
+/** Every family, with the shipped catalog's Sequence numbers. */
+function allFamiliesConnector(): MockedEventscribeConnector {
+    return makeConnector([
+        [{ ...authorIO, Sequence: 0 } as MJIntegrationObjectEntity, authorIOFs],
+        [{ ...accountIO, Sequence: 4 } as MJIntegrationObjectEntity, accountIOFs],
+        [{ ...presentationIO, Sequence: 5 } as MJIntegrationObjectEntity, presentationIOFs],
+        [{ ...assetIO, Sequence: 6 } as MJIntegrationObjectEntity, assetIOFs],
+        [{ ...exhibitorIO, Sequence: 7 } as MJIntegrationObjectEntity, exhibitorIOFs],
+        [exhibitorStaffIO, []],
+        [{ ...boothIO, Sequence: 9 } as MJIntegrationObjectEntity, boothIOFs],
+        [{ ...favoriteDeleteIO, Sequence: 26 } as MJIntegrationObjectEntity, favoriteDeleteIOFs],
+        [presenterIO, []],
+    ]);
+}
+
+/** A canned answer for every request to one host. `times` = how many requests it may absorb. */
+function answerHost(c: MockedEventscribeConnector, host: string, response: RESTResponse, times = 1): void {
+    for (let i = 0; i < times; i++) {
+        c.Canned.push({ match: (req) => new URL(req.url).host === host, response });
+    }
+}
+
+const HOSTS = {
+    mycadmium: 'mycadmium.com',
+    harvester: 'www.conferenceharvester.com',
+    scorecard: 'www.conferenceabstracts.com',
+};
+
+/**
+ * A connector over the catalog this package actually ships — `metadata/integration/
+ * .eventscribe.integration.json`, ACTIVE objects only, as the engine serves them — so a metadata edit
+ * that would change what the connection test fires shows up here rather than on a tenant.
+ */
+function shippedCatalogConnector(): MockedEventscribeConnector {
+    const path = fileURLToPath(new URL('../../metadata/integration/.eventscribe.integration.json', import.meta.url));
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    const root = (Array.isArray(parsed) ? parsed[0] : parsed) as {
+        fields: Record<string, unknown>;
+        relatedEntities: Record<string, Array<{
+            fields: Record<string, unknown>;
+            primaryKey: { ID: string };
+            relatedEntities?: Record<string, Array<{ fields: Record<string, unknown>; primaryKey: { ID: string } }>>;
+        }>>;
+    };
+    const c = new MockedEventscribeConnector();
+    c.IntegrationConfigJSON = JSON.stringify(root.fields.Configuration);
+    for (const o of root.relatedEntities['MJ: Integration Objects']) {
+        if ((o.fields.Status ?? 'Active') !== 'Active') continue;
+        const io = { ...o.fields, ID: o.primaryKey.ID, IntegrationID: 'int-eventscribe' } as unknown as MJIntegrationObjectEntity;
+        const iofs = (o.relatedEntities?.['MJ: Integration Object Fields'] ?? [])
+            .map(f => ({ ...f.fields, ID: f.primaryKey.ID, IntegrationObjectID: o.primaryKey.ID }) as unknown as MJIntegrationObjectFieldEntity);
+        c.IOFixtures.set(io.Name, io);
+        c.IOFFixtures.set(io.ID, iofs);
+    }
+    return c;
+}
+
+describe('EventscribeConnector — TestConnection is key-aware (one probe per product family)', () => {
+    const ci = makeCI();
+    const methods = (c: MockedEventscribeConnector): Array<string | null> => c.URLs().map(u => new URL(u).searchParams.get('Method'));
+
+    it('PASSES for a key that is good only for Education Harvester', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, ok([{ PresenterID: 1 }]));
+
+        const result = await c.TestConnection(ci, contextUser);
+
+        expect(result.Success).toBe(true);
+        // One request per family, in BaseURLsByFamily order, stopping at the first that answered.
+        expect(methods(c)).toEqual(['Assets', 'getPresenters']);
+        expect(result.Message).toContain('authenticated against the "education-harvester" family');
+        expect(result.Message).toContain('door "Presenter"');
+        expect(result.Message).toMatch(/Tried first without success: asset \(door "Asset", Method=Assets: HTTP 401: Invalid API Key\)/);
+        expect(result.Message).toMatch(/Not probed.*expo-harvester, abstract-scorecard/);
+        expect(result.Message).not.toContain(FIXTURE_KEY);
+        expect(result.Message).not.toContain(FIXTURE_EVENT);
+    });
+
+    it('FAILS for a key good for no family, naming every family it tried', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, ok({ error: 'API key not authorized for this product' }), 2);
+        answerHost(c, HOSTS.scorecard, status(403, { error: 'Forbidden' }));
+
+        const result = await c.TestConnection(ci, contextUser);
+
+        expect(result.Success).toBe(false);
+        expect(methods(c)).toEqual(['Assets', 'getPresenters', 'getAllExhibitorStaff', 'getAuthors']);
+        for (const family of ['asset', 'education-harvester', 'expo-harvester', 'abstract-scorecard']) {
+            expect(result.Message).toContain(`${family} (door "`);
+        }
+        expect(result.Message).toContain('Tried 4 families, one request each');
+        expect(result.Message).toContain('Method=getAuthors: HTTP 403: Forbidden');
+        // A 2xx carrying the vendor's error envelope is a failure, not a pass.
+        expect(result.Message).toContain('Method=getPresenters: HTTP 200: API key not authorized for this product');
+        // The family with no credential-only read is named too, with the reason.
+        expect(result.Message).toMatch(/No probe exists for: eventscribe-web \(every ACTIVE object needs a caller-supplied record key/);
+        expect(result.Message).not.toContain(FIXTURE_KEY);
+        expect(result.Message).not.toContain(FIXTURE_EVENT);
+    });
+
+    it('never probes a heavy (1 per minute) door, and never a record-keyed or nested one', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, status(401, { error: 'Invalid API Key' }), 2);
+        answerHost(c, HOSTS.scorecard, status(401, { error: 'Invalid API Key' }));
+        await c.TestConnection(ci, contextUser);
+        const sent = methods(c);
+        for (const forbidden of ['getAllExhibitorsWithBooth', 'getPresentations', 'getAccount']) {
+            expect(sent).not.toContain(forbidden);
+        }
+    });
+
+    it('reports a family whose only readable door is heavy as having no probe', async () => {
+        const c = makeConnector([[exhibitorIO, exhibitorIOFs], [authorIO, authorIOFs]]);
+        answerHost(c, HOSTS.scorecard, ok({ metadata: { totalRecords: 0, pages: 0, page: 1 }, results: [] }));
+        const result = await c.TestConnection(ci, contextUser);
+        expect(result.Success).toBe(true);
+        expect(methods(c)).toEqual(['getAuthors']);
+        expect(result.Message).toMatch(/expo-harvester \(its only directly-readable doors are heavy/);
+    });
+
+    it('spaces consecutive probes by the vendor-wide standard window (1 request per second)', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, status(401, { error: 'Invalid API Key' }), 2);
+        answerHost(c, HOSTS.scorecard, status(401, { error: 'Invalid API Key' }));
+        await c.TestConnection(ci, contextUser);
+        // Four probes, three gaps, each waiting out (up to) the declared 1000 ms window.
+        expect(c.Slept).toHaveLength(3);
+        for (const ms of c.Slept) {
+            expect(ms).toBeGreaterThan(0);
+            expect(ms).toBeLessThanOrEqual(1000);
+        }
+    });
+
+    it('sends exactly one request when the first family answers (an eventScribe key)', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(404, []));
+        const result = await c.TestConnection(ci, contextUser);
+        // The Asset API's documented 404 + [] is an EMPTY result, so the key is good.
+        expect(result.Success).toBe(true);
+        expect(c.URLs()).toHaveLength(1);
+        expect(c.Slept).toHaveLength(0);
+        expect(result.Message).toContain('"asset" family');
+    });
+
+    it('carries the connection\'s APIKey and eID on every probe', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, ok([]));
+        await c.TestConnection(ci, contextUser);
+        for (const u of c.URLs()) {
+            expect(new URL(u).searchParams.get('APIKey')).toBe(FIXTURE_KEY);
+            expect(new URL(u).searchParams.get('eID')).toBe(FIXTURE_EVENT);
+        }
+    });
+
+    it('against the SHIPPED catalog: one cheap probe per family, never a heavy or keyed door', async () => {
+        const c = shippedCatalogConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, status(401, { error: 'Invalid API Key' }), 2);
+        answerHost(c, HOSTS.scorecard, status(401, { error: 'Invalid API Key' }));
+        const result = await c.TestConnection(ci, contextUser);
+        expect(result.Success).toBe(false);
+        expect(methods(c)).toEqual(['Assets', 'getPresenters', 'getAllExhibitorStaff', 'getAuthors']);
+        expect(c.URLs().map(u => new URL(u).host)).toEqual([HOSTS.mycadmium, HOSTS.harvester, HOSTS.harvester, HOSTS.scorecard]);
+        expect(result.Message).toMatch(/No probe exists for: eventscribe-web/);
+    });
+
+    it('keeps going when one family\'s host cannot be reached at all', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        // No canned answer for the Harvester host: the transport throws, as a DNS failure would.
+        answerHost(c, HOSTS.scorecard, ok({ metadata: { totalRecords: 0, pages: 0, page: 1 }, results: [] }));
+        const result = await c.TestConnection(ci, contextUser);
+        expect(result.Success).toBe(true);
+        expect(methods(c)).toEqual(['Assets', 'getPresenters', 'getAllExhibitorStaff', 'getAuthors']);
+        expect(result.Message).toContain('"abstract-scorecard" family');
+        expect(result.Message).toMatch(/education-harvester \(door "Presenter", Method=getPresenters: MockedEventscribeConnector: no canned response/);
     });
 });
 

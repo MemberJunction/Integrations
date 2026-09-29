@@ -29,6 +29,24 @@ silently syncs nothing:
 - Roughly half the objects have **no read door of their own** — they arrive nested inside a parent's
   response under a declared container key, walked via `Configuration.accessPath`.
 
+### Connecting: credential type and connection test (added 2026-09-28)
+
+- **Credential type `Eventscribe API`** (`81521198-EB2F-4691-87D0-FAD574914C0D`) ships in
+  `metadata/credential-type/`: `APIKey` (required, secret) and `eID` (optional — the event id, needed only
+  for a key provisioned for several events). Before this, the seed referenced that id without creating it,
+  and a fresh install failed on `FK_Integration_CredentialType` (reproduced on a scratch MJ 5.51
+  PostgreSQL database; the corrected seed installs 38 objects and 658 fields there).
+- **Cadmium issues one key per product.** The connection test fires one cheap read per product family —
+  `asset` → `Assets`, `education-harvester` → `getPresenters`, `expo-harvester` → `getAllExhibitorStaff`,
+  `abstract-scorecard` → `getAuthors` — one second apart, and passes at the first family that answers. The
+  message names the family that answered and every family tried. It never probes the 1-per-minute
+  methods. `eventscribe-web` has no credential-only read (`getAccount` needs an account id), so it is
+  never probed.
+- A connection still sees **every family's objects**, whatever its key covers. Apply only the objects of
+  the family the test named; the others fail at sync (401/403 → `CONFIGURATION_ERROR`).
+- **Unproven live:** which product(s) a given key authenticates against, and what Cadmium answers when a
+  key is used on another product's host. Unit tests cover the logic (119 in this package).
+
 ### Object matrix
 
 `Push` is a **capability declaration, not proven behaviour** — no write has been executed against a

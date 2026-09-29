@@ -266,6 +266,20 @@ export class EventscribeAPIError extends Error {
     }
 }
 
+/** The one cheap read {@link EventscribeConnector.TestConnection} fires for one product family. */
+interface ConnectionProbe {
+    Family: string;
+    Object: MJIntegrationObjectEntity;
+    /** The `Method` value the probe dispatches. */
+    Door: string;
+}
+
+/** The connection test's plan: one probe per family that has one, and why the rest have none. */
+interface ConnectionProbePlan {
+    Probes: ConnectionProbe[];
+    Unprobeable: Array<{ Family: string; Reason: string }>;
+}
+
 /** One per-record outcome read back out of a non-atomic array-body write. */
 interface BatchItemOutcome {
     Success: boolean;
@@ -435,10 +449,27 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
     // ── Connection test ───────────────────────────────────────────────────────
 
     /**
-     * Runs the cheapest real read this connection can make: the first ACTIVE, directly-queryable
-     * object's own door. Objects whose only door needs a caller-supplied record key
-     * (`Configuration.requiresRecordKeyToRead`) are skipped — calling them unkeyed proves nothing.
-     * The message never carries credential bytes.
+     * Passes when the API key authenticates against ANY product family this connector declares.
+     *
+     * Cadmium issues one API key per PRODUCT (eventScribe website/app and Assets on mycadmium.com,
+     * Education and Expo Harvester on conferenceharvester.com, Scorecard on conferenceabstracts.com),
+     * and every connection sees the objects of all five families. A test that probed one fixed object
+     * — the first active one by Sequence, which is a Scorecard door — could only ever pass for a
+     * Scorecard key; an eventScribe or Harvester key failed it, and since discovery and both
+     * connection wizards run this test first, those connections could not be created at all.
+     *
+     * So the test walks the families in `Integration.Configuration.BaseURLsByFamily` order (then any
+     * family an active object carries that the table does not list) and fires ONE cheap probe per
+     * family, stopping at the first that answers 2xx. The probe for a family is its lowest-Sequence
+     * active object that is directly queryable (depth 0), needs no caller-supplied record key, speaks
+     * JSON, and is NOT one of the vendor's heavy methods: an object whose documented window is longer
+     * than the vendor-wide standard (`getAllExhibitorsWithBooth`, `getPresentations`, 1 per minute) is
+     * never used as a probe. Consecutive probes are spaced by the standard window (1 request per
+     * second), so a key that fits no family costs at most one request per family, one second apart.
+     *
+     * The message names the family that answered, every family tried before it and why each failed,
+     * the families not probed, and the families that have no credential-only probe at all. It never
+     * carries credential bytes.
      */
     public override async TestConnection(
         companyIntegration: MJCompanyIntegrationEntity,
@@ -454,43 +485,165 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
                         'no door to probe. Push metadata/integrations/eventscribe before testing the connection.',
                 };
             }
-            const probe = objects.find((o) => {
-                const cfg = this.ObjectConfig(o);
-                return this.DepthOf(cfg) === 0 && cfg?.requiresRecordKeyToRead == null && this.DoorOperationFor(o, cfg) != null;
-            });
-            if (!probe) {
+            const plan = this.ConnectionProbePlan(objects);
+            if (plan.Probes.length === 0) {
                 return {
                     Success: false,
-                    Message:
-                        '[eventscribe] Every ACTIVE object either has no read door or declares ' +
-                        'requiresRecordKeyToRead, so no credential-only probe exists. Enable an enumerable object ' +
-                        '(for example one of the abstract-scorecard get* doors) before testing.',
+                    Message: this.Sentences([
+                        '[eventscribe] No product family has a credential-only probe: every ACTIVE object either has ' +
+                        'no read door, declares requiresRecordKeyToRead, sits under another object\'s door, or is one ' +
+                        'of the vendor\'s heavy (1 per minute) methods. Enable an enumerable object (for example one of ' +
+                        'the abstract-scorecard get* doors) before testing.',
+                        this.UnprobeableSentence(plan.Unprobeable),
+                    ]),
                 };
             }
+
             const auth = await this.Authenticate(companyIntegration, contextUser);
-            const url = this.DoorURL(
-                companyIntegration,
-                auth,
-                probe,
-                this.DoorOperationFor(probe, this.ObjectConfig(probe))!,
-            );
-            const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
-            if (response.Status >= 200 && response.Status < 300) {
-                return {
-                    Success: true,
-                    Message: `[eventscribe] Reachable: door "${probe.Name}" answered HTTP ${response.Status} for this API key.`,
-                };
+            const spacingMs = this.StandardWindowMs();
+            const failures: string[] = [];
+            let lastSentAt: number | null = null;
+            for (let i = 0; i < plan.Probes.length; i++) {
+                const probe = plan.Probes[i];
+                if (lastSentAt != null && spacingMs > 0) {
+                    const wait = lastSentAt + spacingMs - Date.now();
+                    if (wait > 0) await this.Sleep(wait);
+                }
+                lastSentAt = Date.now();
+                const outcome = await this.RunConnectionProbe(companyIntegration, auth, probe);
+                if (outcome.Success) {
+                    const notProbed = plan.Probes.slice(i + 1).map((p) => p.Family);
+                    return {
+                        Success: true,
+                        Message: this.Sentences([
+                            `[eventscribe] Reachable: this API key authenticated against the "${probe.Family}" family ` +
+                            `(door "${probe.Object.Name}", Method=${probe.Door}, HTTP ${outcome.Status}).`,
+                            failures.length > 0 ? `Tried first without success: ${failures.join('; ')}.` : '',
+                            notProbed.length > 0
+                                ? `Not probed, because the test stops at the first family that answers: ${notProbed.join(', ')}.`
+                                : '',
+                            this.UnprobeableSentence(plan.Unprobeable),
+                            'Objects of a family this key does not cover will fail at sync, so apply only the ' +
+                            `"${probe.Family}" objects on this connection unless the key is known to cover more.`,
+                        ]),
+                    };
+                }
+                failures.push(`${probe.Family} (door "${probe.Object.Name}", Method=${probe.Door}: ${outcome.Detail})`);
             }
             return {
                 Success: false,
-                Message:
-                    `[eventscribe] Door "${probe.Name}" answered HTTP ${response.Status}` +
-                    `${this.VendorMessage(response.Body) ? `: ${this.VendorMessage(response.Body)}` : ''}. ` +
+                Message: this.Sentences([
+                    '[eventscribe] This API key did not authenticate against any product family the connector ' +
+                    `declares. Tried ${plan.Probes.length} famil${plan.Probes.length === 1 ? 'y' : 'ies'}, one request ` +
+                    `each: ${failures.join('; ')}.`,
+                    this.UnprobeableSentence(plan.Unprobeable),
                     'Check the API key and, for a multi-event key, the event id (eID) on this connection.',
+                ]),
             };
         } catch (err) {
             return { Success: false, Message: `[eventscribe] Connection test failed: ${this.SafeMessage(err)}` };
         }
+    }
+
+    /**
+     * One probe per product family, in the order {@link TestConnection} documents, plus the families
+     * that have no usable probe (with the reason). Everything is read from metadata.
+     */
+    private ConnectionProbePlan(objects: MJIntegrationObjectEntity[]): ConnectionProbePlan {
+        const ordered = [...objects].sort((a, b) => (a.Sequence ?? 0) - (b.Sequence ?? 0));
+        const families: string[] = [];
+        for (const entry of this.IntegrationConfig()?.BaseURLsByFamily ?? []) {
+            if (entry.family && !families.includes(entry.family)) families.push(entry.family);
+        }
+        for (const obj of ordered) {
+            const family = this.FamilyOf(obj);
+            if (family && !families.includes(family)) families.push(family);
+        }
+
+        const standardWindow = this.StandardWindowMs();
+        const probes: ConnectionProbe[] = [];
+        const unprobeable: Array<{ Family: string; Reason: string }> = [];
+        for (const family of families) {
+            const members = ordered.filter((o) => this.FamilyOf(o) === family);
+            if (members.length === 0) {
+                unprobeable.push({ Family: family, Reason: 'no ACTIVE object' });
+                continue;
+            }
+            let heavySkipped = false;
+            const probe = members.find((o) => {
+                const cfg = this.ObjectConfig(o);
+                if (this.DepthOf(cfg) !== 0 || cfg?.requiresRecordKeyToRead != null) return false;
+                const format = cfg?.responseFormat;
+                if (format && format.trim().toLowerCase() !== 'json') return false;
+                const door = this.DoorOperationFor(o, cfg);
+                if (door == null) return false;
+                if (this.RateWindowFor(door) > standardWindow) {
+                    heavySkipped = true;
+                    return false;
+                }
+                return true;
+            });
+            if (probe) {
+                probes.push({ Family: family, Object: probe, Door: this.DoorOperationFor(probe, this.ObjectConfig(probe))! });
+            } else {
+                unprobeable.push({
+                    Family: family,
+                    Reason: heavySkipped
+                        ? 'its only directly-readable doors are heavy (1 per minute) methods, which are never used as a probe'
+                        : 'every ACTIVE object needs a caller-supplied record key or sits under another object\'s door',
+                });
+            }
+        }
+        return { Probes: probes, Unprobeable: unprobeable };
+    }
+
+    /**
+     * Fires one probe. 2xx (without the vendor's `{"error": ...}` envelope) is success; anything else —
+     * a non-2xx, an error envelope, a transport failure — is a failure for THIS family only, reported
+     * with the status and the vendor's own message, credential bytes redacted.
+     */
+    private async RunConnectionProbe(
+        companyIntegration: MJCompanyIntegrationEntity,
+        auth: EventscribeAuthContext,
+        probe: ConnectionProbe,
+    ): Promise<{ Success: true; Status: number } | { Success: false; Detail: string }> {
+        try {
+            const url = this.DoorURL(companyIntegration, auth, probe.Object, probe.Door);
+            const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+            if (response.Status >= 200 && response.Status < 300) return { Success: true, Status: response.Status };
+            const vendorMessage = this.VendorMessage(response.Body);
+            return { Success: false, Detail: this.SafeMessage(`HTTP ${response.Status}${vendorMessage ? `: ${vendorMessage}` : ''}`) };
+        } catch (err) {
+            if (err instanceof EventscribeAPIError) {
+                return {
+                    Success: false,
+                    Detail: this.SafeMessage(`HTTP ${err.Status}: ${err.VendorMessage ?? err.Classification.Reason}`),
+                };
+            }
+            return { Success: false, Detail: this.SafeMessage(err) };
+        }
+    }
+
+    /** The families with no credential-only probe, as one sentence (empty when there are none). */
+    private UnprobeableSentence(unprobeable: Array<{ Family: string; Reason: string }>): string {
+        if (unprobeable.length === 0) return '';
+        return `No probe exists for: ${unprobeable.map((u) => `${u.Family} (${u.Reason})`).join('; ')}.`;
+    }
+
+    /** Joins the non-empty sentences of a message with single spaces. */
+    private Sentences(parts: string[]): string {
+        return parts.filter((p) => p.length > 0).join(' ');
+    }
+
+    /** An object's product family: its own `Configuration.family`, else its `Category` tag. */
+    private FamilyOf(obj: MJIntegrationObjectEntity): string | null {
+        return this.ObjectConfig(obj)?.family ?? obj.Category ?? null;
+    }
+
+    /** The vendor-wide standard window from `Configuration.RateLimits.standard`, or 0 when undeclared. */
+    private StandardWindowMs(): number {
+        const windowMs = this.IntegrationConfig()?.RateLimits?.standard?.windowMs;
+        return Number.isFinite(windowMs) && (windowMs as number) > 0 ? (windowMs as number) : 0;
     }
 
     // ── The READ path ─────────────────────────────────────────────────────────
