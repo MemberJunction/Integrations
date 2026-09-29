@@ -1,0 +1,22 @@
+{
+    "page": 2,
+    "pageSize": 2,
+    "count": 1,
+    "links": {
+        "self": {
+            "href": "/v1/campaigns?$page=2&$pagesize=2&$orderby=Name ASC&$orderBy=Name+Asc"
+        }
+    },
+    "items": [
+        {
+            "id": "505",
+            "createdDate": "2012-12-12T09:59:42",
+            "modifiedDate": "2012-12-12T09:59:42",
+            "name": "Annual Sale 2012",
+            "description": "Yearly sale",
+            "campaignCode": "annual2012",
+            "color": "0000ff",
+            "favorite": false
+        }
+    ]
+}

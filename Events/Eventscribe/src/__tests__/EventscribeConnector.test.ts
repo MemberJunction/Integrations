@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type {
     RESTAuthContext,
     RESTResponse,
@@ -1634,6 +1636,226 @@ describe('EventscribeConnector — TestConnection', () => {
     });
 });
 
+// ── The connection test is KEY-AWARE: one cheap probe per product family ──────
+//
+// Cadmium issues one API key per PRODUCT, and ACR holds one per product per event ("EVENTSCRIBE
+// 2026", "EDUCATION HARVESTER 2026", "SCORECARD 2026"). Every connection sees the objects of all five
+// families, so a test pinned to one object (it used to be the first by Sequence: Scorecard's Author)
+// failed every key that is not a Scorecard key. The fixtures below mirror the shipped catalog's
+// family layout and Sequence numbers: the heavy doors (Presentation, Exhibitor: 1 per minute) sit in
+// front of the cheap ones in their families, and eventscribe-web has no credential-only read at all.
+
+const presenterIO = makeIO({
+    ID: 'io-presenter', Name: 'Presenter', Category: 'education-harvester',
+    APIPath: '/HarvesterJsonAPI.asp', Sequence: 27,
+    StableOrderingKey: 'PresenterID',
+    DefaultQueryParams: JSON.stringify({ Method: 'getPresenters' }),
+    Configuration: JSON.stringify({
+        family: 'education-harvester',
+        absoluteEndpoint: 'https://www.conferenceharvester.com/conferenceportal3/webservices/HarvesterJsonAPI.asp',
+        dispatch: { mechanism: 'query-param:Method', methodParamName: 'Method', methodValue: 'getPresenters' },
+        accessPath: { doorOperation: 'getPresenters', doorObject: 'Presenter', nestingFieldPath: '', depth: 0, isArray: true },
+        rateLimit: vendorRate,
+    }),
+});
+const exhibitorStaffIO = makeIO({
+    ID: 'io-exhibitorstaff', Name: 'ExhibitorStaff', Category: 'expo-harvester',
+    APIPath: '/HarvesterJsonAPI.asp', Sequence: 8,
+    StableOrderingKey: 'StaffID',
+    DefaultQueryParams: JSON.stringify({ Method: 'getAllExhibitorStaff' }),
+    Configuration: JSON.stringify({
+        family: 'expo-harvester',
+        absoluteEndpoint: 'https://www.conferenceharvester.com/conferenceportal3/webservices/HarvesterJsonAPI.asp',
+        dispatch: { mechanism: 'query-param:Method', methodParamName: 'Method', methodValue: 'getAllExhibitorStaff' },
+        accessPath: { doorOperation: 'getAllExhibitorStaff', doorObject: 'ExhibitorStaff', nestingFieldPath: '', depth: 0, isArray: true },
+        rateLimit: vendorRate,
+    }),
+});
+
+/** Every family, with the shipped catalog's Sequence numbers. */
+function allFamiliesConnector(): MockedEventscribeConnector {
+    return makeConnector([
+        [{ ...authorIO, Sequence: 0 } as MJIntegrationObjectEntity, authorIOFs],
+        [{ ...accountIO, Sequence: 4 } as MJIntegrationObjectEntity, accountIOFs],
+        [{ ...presentationIO, Sequence: 5 } as MJIntegrationObjectEntity, presentationIOFs],
+        [{ ...assetIO, Sequence: 6 } as MJIntegrationObjectEntity, assetIOFs],
+        [{ ...exhibitorIO, Sequence: 7 } as MJIntegrationObjectEntity, exhibitorIOFs],
+        [exhibitorStaffIO, []],
+        [{ ...boothIO, Sequence: 9 } as MJIntegrationObjectEntity, boothIOFs],
+        [{ ...favoriteDeleteIO, Sequence: 26 } as MJIntegrationObjectEntity, favoriteDeleteIOFs],
+        [presenterIO, []],
+    ]);
+}
+
+/** A canned answer for every request to one host. `times` = how many requests it may absorb. */
+function answerHost(c: MockedEventscribeConnector, host: string, response: RESTResponse, times = 1): void {
+    for (let i = 0; i < times; i++) {
+        c.Canned.push({ match: (req) => new URL(req.url).host === host, response });
+    }
+}
+
+const HOSTS = {
+    mycadmium: 'mycadmium.com',
+    harvester: 'www.conferenceharvester.com',
+    scorecard: 'www.conferenceabstracts.com',
+};
+
+/**
+ * A connector over the catalog this package actually ships — `metadata/integration/
+ * .eventscribe.integration.json`, ACTIVE objects only, as the engine serves them — so a metadata edit
+ * that would change what the connection test fires shows up here rather than on a tenant.
+ */
+function shippedCatalogConnector(): MockedEventscribeConnector {
+    const path = fileURLToPath(new URL('../../metadata/integration/.eventscribe.integration.json', import.meta.url));
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    const root = (Array.isArray(parsed) ? parsed[0] : parsed) as {
+        fields: Record<string, unknown>;
+        relatedEntities: Record<string, Array<{
+            fields: Record<string, unknown>;
+            primaryKey: { ID: string };
+            relatedEntities?: Record<string, Array<{ fields: Record<string, unknown>; primaryKey: { ID: string } }>>;
+        }>>;
+    };
+    const c = new MockedEventscribeConnector();
+    c.IntegrationConfigJSON = JSON.stringify(root.fields.Configuration);
+    for (const o of root.relatedEntities['MJ: Integration Objects']) {
+        if ((o.fields.Status ?? 'Active') !== 'Active') continue;
+        const io = { ...o.fields, ID: o.primaryKey.ID, IntegrationID: 'int-eventscribe' } as unknown as MJIntegrationObjectEntity;
+        const iofs = (o.relatedEntities?.['MJ: Integration Object Fields'] ?? [])
+            .map(f => ({ ...f.fields, ID: f.primaryKey.ID, IntegrationObjectID: o.primaryKey.ID }) as unknown as MJIntegrationObjectFieldEntity);
+        c.IOFixtures.set(io.Name, io);
+        c.IOFFixtures.set(io.ID, iofs);
+    }
+    return c;
+}
+
+describe('EventscribeConnector — TestConnection is key-aware (one probe per product family)', () => {
+    const ci = makeCI();
+    const methods = (c: MockedEventscribeConnector): Array<string | null> => c.URLs().map(u => new URL(u).searchParams.get('Method'));
+
+    it('PASSES for a key that is good only for Education Harvester', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, ok([{ PresenterID: 1 }]));
+
+        const result = await c.TestConnection(ci, contextUser);
+
+        expect(result.Success).toBe(true);
+        // One request per family, in BaseURLsByFamily order, stopping at the first that answered.
+        expect(methods(c)).toEqual(['Assets', 'getPresenters']);
+        expect(result.Message).toContain('authenticated against the "education-harvester" family');
+        expect(result.Message).toContain('door "Presenter"');
+        expect(result.Message).toMatch(/Tried first without success: asset \(door "Asset", Method=Assets: HTTP 401: Invalid API Key\)/);
+        expect(result.Message).toMatch(/Not probed.*expo-harvester, abstract-scorecard/);
+        expect(result.Message).not.toContain(FIXTURE_KEY);
+        expect(result.Message).not.toContain(FIXTURE_EVENT);
+    });
+
+    it('FAILS for a key good for no family, naming every family it tried', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, ok({ error: 'API key not authorized for this product' }), 2);
+        answerHost(c, HOSTS.scorecard, status(403, { error: 'Forbidden' }));
+
+        const result = await c.TestConnection(ci, contextUser);
+
+        expect(result.Success).toBe(false);
+        expect(methods(c)).toEqual(['Assets', 'getPresenters', 'getAllExhibitorStaff', 'getAuthors']);
+        for (const family of ['asset', 'education-harvester', 'expo-harvester', 'abstract-scorecard']) {
+            expect(result.Message).toContain(`${family} (door "`);
+        }
+        expect(result.Message).toContain('Tried 4 families, one request each');
+        expect(result.Message).toContain('Method=getAuthors: HTTP 403: Forbidden');
+        // A 2xx carrying the vendor's error envelope is a failure, not a pass.
+        expect(result.Message).toContain('Method=getPresenters: HTTP 200: API key not authorized for this product');
+        // The family with no credential-only read is named too, with the reason.
+        expect(result.Message).toMatch(/No probe exists for: eventscribe-web \(every ACTIVE object needs a caller-supplied record key/);
+        expect(result.Message).not.toContain(FIXTURE_KEY);
+        expect(result.Message).not.toContain(FIXTURE_EVENT);
+    });
+
+    it('never probes a heavy (1 per minute) door, and never a record-keyed or nested one', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, status(401, { error: 'Invalid API Key' }), 2);
+        answerHost(c, HOSTS.scorecard, status(401, { error: 'Invalid API Key' }));
+        await c.TestConnection(ci, contextUser);
+        const sent = methods(c);
+        for (const forbidden of ['getAllExhibitorsWithBooth', 'getPresentations', 'getAccount']) {
+            expect(sent).not.toContain(forbidden);
+        }
+    });
+
+    it('reports a family whose only readable door is heavy as having no probe', async () => {
+        const c = makeConnector([[exhibitorIO, exhibitorIOFs], [authorIO, authorIOFs]]);
+        answerHost(c, HOSTS.scorecard, ok({ metadata: { totalRecords: 0, pages: 0, page: 1 }, results: [] }));
+        const result = await c.TestConnection(ci, contextUser);
+        expect(result.Success).toBe(true);
+        expect(methods(c)).toEqual(['getAuthors']);
+        expect(result.Message).toMatch(/expo-harvester \(its only directly-readable doors are heavy/);
+    });
+
+    it('spaces consecutive probes by the vendor-wide standard window (1 request per second)', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, status(401, { error: 'Invalid API Key' }), 2);
+        answerHost(c, HOSTS.scorecard, status(401, { error: 'Invalid API Key' }));
+        await c.TestConnection(ci, contextUser);
+        // Four probes, three gaps, each waiting out (up to) the declared 1000 ms window.
+        expect(c.Slept).toHaveLength(3);
+        for (const ms of c.Slept) {
+            expect(ms).toBeGreaterThan(0);
+            expect(ms).toBeLessThanOrEqual(1000);
+        }
+    });
+
+    it('sends exactly one request when the first family answers (an eventScribe key)', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(404, []));
+        const result = await c.TestConnection(ci, contextUser);
+        // The Asset API's documented 404 + [] is an EMPTY result, so the key is good.
+        expect(result.Success).toBe(true);
+        expect(c.URLs()).toHaveLength(1);
+        expect(c.Slept).toHaveLength(0);
+        expect(result.Message).toContain('"asset" family');
+    });
+
+    it('carries the connection\'s APIKey and eID on every probe', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, ok([]));
+        await c.TestConnection(ci, contextUser);
+        for (const u of c.URLs()) {
+            expect(new URL(u).searchParams.get('APIKey')).toBe(FIXTURE_KEY);
+            expect(new URL(u).searchParams.get('eID')).toBe(FIXTURE_EVENT);
+        }
+    });
+
+    it('against the SHIPPED catalog: one cheap probe per family, never a heavy or keyed door', async () => {
+        const c = shippedCatalogConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        answerHost(c, HOSTS.harvester, status(401, { error: 'Invalid API Key' }), 2);
+        answerHost(c, HOSTS.scorecard, status(401, { error: 'Invalid API Key' }));
+        const result = await c.TestConnection(ci, contextUser);
+        expect(result.Success).toBe(false);
+        expect(methods(c)).toEqual(['Assets', 'getPresenters', 'getAllExhibitorStaff', 'getAuthors']);
+        expect(c.URLs().map(u => new URL(u).host)).toEqual([HOSTS.mycadmium, HOSTS.harvester, HOSTS.harvester, HOSTS.scorecard]);
+        expect(result.Message).toMatch(/No probe exists for: eventscribe-web/);
+    });
+
+    it('keeps going when one family\'s host cannot be reached at all', async () => {
+        const c = allFamiliesConnector();
+        answerHost(c, HOSTS.mycadmium, status(401, { error: 'Invalid API Key' }));
+        // No canned answer for the Harvester host: the transport throws, as a DNS failure would.
+        answerHost(c, HOSTS.scorecard, ok({ metadata: { totalRecords: 0, pages: 0, page: 1 }, results: [] }));
+        const result = await c.TestConnection(ci, contextUser);
+        expect(result.Success).toBe(true);
+        expect(methods(c)).toEqual(['Assets', 'getPresenters', 'getAllExhibitorStaff', 'getAuthors']);
+        expect(result.Message).toContain('"abstract-scorecard" family');
+        expect(result.Message).toMatch(/education-harvester \(door "Presenter", Method=getPresenters: MockedEventscribeConnector: no canned response/);
+    });
+});
+
 describe('EventscribeConnector — no catalog lives in the connector source', () => {
     /** Seeds the engine cache the INHERITED discovery reads, so the test exercises the real source. */
     function seedEngine(objects: MJIntegrationObjectEntity[], fields: MJIntegrationObjectFieldEntity[]): void {
@@ -1801,5 +2023,235 @@ describe('EventscribeConnector — declared incremental window + max-seen waterm
         c.Canned = [{ response: ok([{ HarvesterID: 1, StartDateTime: '2024-05-09T12:00:00Z' }]) }];
         const result = await c.FetchChanges(fetchCtx(ci, 'Asset'));
         expect(result.NewWatermarkValue).toBeUndefined();
+    });
+});
+
+// ── Event scope: each event's records stay apart ─────────────────────────────
+//
+// All connections of one connector write into the same tables, and the engine matches an incoming
+// row to an existing one by the entity's primary key across the WHOLE table. A client with one
+// connection per product per event needs the event IN that key. Each active object declares an
+// `EventScope` field marked `connectorStamped: "event-scope"`; on keyed objects it is part of the
+// declared primary key. These fixtures add it the way the shipped metadata does: last in Sequence.
+
+const EVENT_A = 'fixture-event-2025';
+const EVENT_B = 'fixture-event-2026';
+
+function eventScopeIOF(isPrimaryKey: boolean, sequence: number): MJIntegrationObjectFieldEntity {
+    return makeIOF({
+        Name: 'EventScope', Type: 'nvarchar', Length: 100, AllowsNull: false, IsReadOnly: true,
+        IsPrimaryKey: isPrimaryKey, Sequence: sequence,
+        Configuration: JSON.stringify({ connectorStamped: 'event-scope' }),
+    });
+}
+
+const authorScopedIOFs = [...authorIOFs, eventScopeIOF(true, 2)];
+const accountScopedIOFs = [...accountIOFs, eventScopeIOF(true, 2)];
+const boothScopedIOFs = [...boothIOFs, eventScopeIOF(true, 2)];
+const exhibitorScopedIOFs = [...exhibitorIOFs, eventScopeIOF(true, 1)];
+const handoutScopedIOFs = [...handoutIOFs, eventScopeIOF(false, 2)];
+const assetScopedIOFs = [...assetIOFs, eventScopeIOF(true, 2)];
+
+/** A connection: its own ID, the API key, and (optionally) an eID. */
+function connection(id: string, eID?: string): MJCompanyIntegrationEntity {
+    const configuration: Record<string, unknown> = { APIKey: FIXTURE_KEY };
+    if (eID !== undefined) configuration.eID = eID;
+    return { ...(makeCI(configuration) as unknown as Record<string, unknown>), ID: id } as unknown as MJCompanyIntegrationEntity;
+}
+
+/**
+ * The engine's identity for a row: the entity's DECLARED primary key (soft PKs included), values
+ * joined in key order — what MatchEngine matches on across the whole table. Mirrors it here so the
+ * tests assert the property that matters, not an implementation detail.
+ */
+function rowKey(fields: MJIntegrationObjectFieldEntity[], record: { Fields: Record<string, unknown> }): string {
+    return fields.filter(f => f.IsPrimaryKey).sort((a, b) => a.Sequence - b.Sequence)
+        .map(f => String(record.Fields[f.Name])).join('|');
+}
+
+const scorecardPage = (authors: Array<Record<string, unknown>>): RESTResponse =>
+    ok({ metadata: { totalRecords: authors.length, pages: 1, page: 1 }, results: authors });
+
+describe('EventscribeConnector — each event\'s records stay apart (EventScope in the key)', () => {
+    it('the same Cadmium id read for two events is TWO rows, not one the last sync overwrote', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 522471, AuthorFirstName: 'Ada' }]) });
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 522471, AuthorFirstName: 'Ada (2026)' }]) });
+
+        const in2025 = await c.FetchChanges(fetchCtx(connection('ci-scorecard-2025', EVENT_A), 'Author'));
+        const in2026 = await c.FetchChanges(fetchCtx(connection('ci-scorecard-2026', EVENT_B), 'Author'));
+
+        expect(in2025.Records[0].Fields.EventScope).toBe(EVENT_A);
+        expect(in2026.Records[0].Fields.EventScope).toBe(EVENT_B);
+        expect(rowKey(authorScopedIOFs, in2025.Records[0])).not.toBe(rowKey(authorScopedIOFs, in2026.Records[0]));
+        // Without the event in the key, both records claim the same row — the defect this closes.
+        expect(rowKey(authorIOFs, in2025.Records[0])).toBe(rowKey(authorIOFs, in2026.Records[0]));
+    });
+
+    it('keeps ExternalID on the vendor key — it is what update/delete paths and read-one send to Cadmium', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 522471 }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        expect(batch.Records[0].ExternalID).toBe('522471');
+    });
+
+    it('with NO eID, stamps the connection\'s own ID — two such connections can never share a row', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        const first = await c.FetchChanges(fetchCtx(connection('ci-first'), 'Author'));
+        const second = await c.FetchChanges(fetchCtx(connection('ci-second'), 'Author'));
+        expect(first.Records[0].Fields.EventScope).toBe('ci-first');
+        expect(second.Records[0].Fields.EventScope).toBe('ci-second');
+        expect(rowKey(authorScopedIOFs, first.Records[0])).not.toBe(rowKey(authorScopedIOFs, second.Records[0]));
+        // The fallback is a stamp only — nothing extra goes on the wire.
+        for (const u of c.URLs()) expect(new URL(u).searchParams.has('eID')).toBe(false);
+    });
+
+    it('two connections naming the SAME eID share rows — they are the same event', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        const first = await c.FetchChanges(fetchCtx(connection('ci-first', EVENT_A), 'Author'));
+        const recreated = await c.FetchChanges(fetchCtx(connection('ci-recreated', EVENT_A), 'Author'));
+        expect(rowKey(authorScopedIOFs, first.Records[0])).toBe(rowKey(authorScopedIOFs, recreated.Records[0]));
+    });
+
+    it('REFUSES to read rather than stamp an empty scope (which would merge every such connection)', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 7 }]) });
+        await expect(c.FetchChanges(fetchCtx(connection('   '), 'Author'))).rejects.toThrow(/Cannot key this connection's records/);
+        expect(c.Captured).toHaveLength(0);
+    });
+
+    it('stamps nested rows too (Booth under the Exhibitor door), keyed on BoothID + EventScope', async () => {
+        const c = makeConnector([[exhibitorIO, exhibitorScopedIOFs], [boothIO, boothScopedIOFs]]);
+        c.Canned.push({ response: ok([{ ExhibitorID: 900, Booths: [{ BoothID: 4001, BoothNumber: '12A' }] }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-expo', EVENT_B), 'Booth'));
+        expect(batch.Records[0].Fields).toMatchObject({ BoothID: 4001, ExhibitorID: 900, EventScope: EVENT_B });
+        expect(batch.Records[0].ExternalID).toBe('4001');
+    });
+
+    it('makes a KEYLESS object\'s content-hash identity per event too', async () => {
+        const c = makeConnector([[assetIO, assetScopedIOFs], [handoutIO, handoutScopedIOFs]]);
+        const payload = [{ HarvesterID: 11, Handouts: [{ Pdf: 'https://cdn.example.invalid/h.pdf', PresenterID: 5 }] }];
+        c.Canned.push({ response: ok(payload) });
+        c.Canned.push({ response: ok(payload) });
+        const a = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Handout'));
+        const b = await c.FetchChanges(fetchCtx(connection('ci-b', EVENT_B), 'Handout'));
+        expect(a.Records[0].Fields.EventScope).toBe(EVENT_A);
+        expect(a.Records[0].ExternalID).not.toBe(b.Records[0].ExternalID);
+    });
+
+    it('keeps the base identity rules when the vendor key is missing: hash identity, hash stored in the key', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorFirstName: 'no id' }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        const rec = batch.Records[0];
+        expect(rec.ExternalID).toMatch(/^[0-9a-f]{16,}$/);
+        // The row still has a complete, storable key: the hash in AuthorID, the scope in EventScope.
+        expect(rec.Fields.AuthorID).toBe(rec.ExternalID);
+        expect(rec.Fields.EventScope).toBe(EVENT_A);
+    });
+
+    it('replaces a same-named value in the vendor payload — the key depends on the stamp', async () => {
+        const c = makeConnector([[authorIO, authorScopedIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 1, EventScope: 'vendor-said-this' }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        expect(batch.Records[0].Fields.EventScope).toBe(EVENT_A);
+    });
+
+    it('leaves an object that declares no event-scope field exactly as before', async () => {
+        const c = makeConnector([[authorIO, authorIOFs]]);
+        c.Canned.push({ response: scorecardPage([{ AuthorID: 9 }]) });
+        const batch = await c.FetchChanges(fetchCtx(connection('ci-a', EVENT_A), 'Author'));
+        expect(batch.Records[0].Fields).toEqual({ AuthorID: 9 });
+        expect(batch.Records[0].ExternalID).toBe('9');
+    });
+
+    it('stamps a single-record re-read, and still reads it by the vendor key alone', async () => {
+        const c = makeConnector([[accountIO, accountScopedIOFs]]);
+        c.Canned.push({ response: ok([{ AccountID: '42', EmailAddress: 'a@example.test' }]) });
+        const ci = connection('ci-web', EVENT_A);
+        const rec = await c.GetRecord(crudCtx(ci, 'Account', { ExternalID: '42' }) as Parameters<EventscribeConnector['GetRecord']>[0]);
+        const url = new URL(c.URLs()[0]);
+        expect(url.searchParams.get('AccountID')).toBe('42');
+        expect(url.searchParams.has('EventScope')).toBe(false);
+        expect(rec?.ExternalID).toBe('42');
+        expect(rec?.Fields.EventScope).toBe(EVENT_A);
+    });
+
+    it('never sends the stamp to Cadmium: single create, update and batch bodies are vendor fields only', async () => {
+        const c = makeConnector([[accountIO, accountScopedIOFs]]);
+        const ci = connection('ci-web', EVENT_A);
+        const attributes = { EmailAddress: 'a@example.org', EventScope: EVENT_A };
+
+        c.Canned.push({ response: ok([{ AccountID: 1 }]) });
+        await c.CreateRecord(crudCtx(ci, 'Account', { Attributes: attributes }) as CreateRecordContext);
+        expect(c.LastBody()).toEqual([{ EmailAddress: 'a@example.org' }]);
+
+        c.Canned.push({ response: ok([{ AccountID: 1 }]) });
+        await c.UpdateRecord(crudCtx(ci, 'Account', { ExternalID: '1', Attributes: attributes }) as UpdateRecordContext);
+        expect(c.LastBody()).toEqual([{ EmailAddress: 'a@example.org' }]);
+        expect(new URL(c.URLs()[1]).searchParams.get('AccountID')).toBe('1');
+
+        c.Canned.push({ response: ok([{ AccountID: 1 }, { AccountID: 2 }]) });
+        await c.BatchCreateRecords([
+            crudCtx(ci, 'Account', { Attributes: attributes }) as CreateRecordContext,
+            crudCtx(ci, 'Account', { Attributes: { EmailAddress: 'b@example.org', EventScope: EVENT_A } }) as CreateRecordContext,
+        ]);
+        expect(c.LastBody()).toEqual([{ EmailAddress: 'a@example.org' }, { EmailAddress: 'b@example.org' }]);
+        // The caller's attributes are not mutated.
+        expect(attributes.EventScope).toBe(EVENT_A);
+    });
+
+    it('tells the operator how rows will be keyed, without printing the eID', async () => {
+        const withEID = makeConnector([[authorIO, authorScopedIOFs]]);
+        answerHost(withEID, HOSTS.scorecard, scorecardPage([]));
+        const keyed = await withEID.TestConnection(connection('ci-a', FIXTURE_EVENT), contextUser);
+        expect(keyed.Success).toBe(true);
+        expect(keyed.Message).toContain('keyed by its configured eID (EventScope)');
+        expect(keyed.Message).not.toContain(FIXTURE_EVENT);
+
+        const noEID = makeConnector([[authorIO, authorScopedIOFs]]);
+        answerHost(noEID, HOSTS.scorecard, scorecardPage([]));
+        const fallback = await noEID.TestConnection(connection('ci-b'), contextUser);
+        expect(fallback.Message).toContain('No eID is configured, so records from this connection are keyed to the connection itself');
+    });
+});
+
+describe('EventscribeConnector — the SHIPPED catalog keys every active object by event', () => {
+    type FieldRecord = { fields: Record<string, unknown>; primaryKey: { ID: string } };
+    type ObjectRecord = { fields: Record<string, unknown>; relatedEntities?: Record<string, FieldRecord[]> };
+    const path = fileURLToPath(new URL('../../metadata/integration/.eventscribe.integration.json', import.meta.url));
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    const root = (Array.isArray(parsed) ? parsed[0] : parsed) as { relatedEntities: Record<string, ObjectRecord[]> };
+    const objects = root.relatedEntities['MJ: Integration Objects'];
+    const fieldsOf = (o: ObjectRecord): FieldRecord[] => o.relatedEntities?.['MJ: Integration Object Fields'] ?? [];
+    const isStamp = (f: FieldRecord): boolean =>
+        typeof f.fields.Configuration === 'string' && JSON.parse(f.fields.Configuration).connectorStamped === 'event-scope';
+
+    it('every ACTIVE object declares exactly one event-scope field, and no disabled object does', () => {
+        for (const o of objects) {
+            const stamps = fieldsOf(o).filter(isStamp);
+            const active = (o.fields.Status ?? 'Active') === 'Active';
+            expect(`${o.fields.Name}:${stamps.length}`).toBe(`${o.fields.Name}:${active ? 1 : 0}`);
+        }
+    });
+
+    it('on every keyed active object the event scope is PART of the primary key, alongside the vendor key', () => {
+        let keyed = 0;
+        for (const o of objects.filter(x => (x.fields.Status ?? 'Active') === 'Active')) {
+            const pks = fieldsOf(o).filter(f => f.fields.IsPrimaryKey === true);
+            const vendorKeys = pks.filter(f => !isStamp(f));
+            if (vendorKeys.length === 0) {
+                // Keyless objects stay keyless: an event-only key would collapse each event to ONE row.
+                expect(`${o.fields.Name}:${pks.length}`).toBe(`${o.fields.Name}:0`);
+                continue;
+            }
+            keyed++;
+            expect(pks.filter(isStamp).map(f => f.fields.Name)).toEqual(['EventScope']);
+        }
+        expect(keyed).toBe(17);
     });
 });

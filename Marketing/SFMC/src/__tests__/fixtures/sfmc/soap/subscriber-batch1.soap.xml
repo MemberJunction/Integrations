@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:RetrieveResponseMsg>
+      <par:OverallStatus>MoreDataAvailable</par:OverallStatus>
+      <par:RequestID>a5d36471-e636-478c-a29b-fd3571714602</par:RequestID>
+      <par:Results xsi:type="par:Subscriber">
+        <par:Client>
+          <par:ID>12345</par:ID>
+        </par:Client>
+        <par:PartnerKey xsi:nil="true"/>
+        <par:CreatedDate>2018-01-04T11:02:19.000</par:CreatedDate>
+        <par:ModifiedDate>2018-03-01T08:15:44.000</par:ModifiedDate>
+        <par:ID>1001</par:ID>
+        <par:ObjectID>9f2c1b08-0f06-4f4e-9b2f-6bb9d3f0a001</par:ObjectID>
+        <par:EmailAddress>acruz@example.com</par:EmailAddress>
+        <par:SubscriberKey>acruz@example.com</par:SubscriberKey>
+        <par:Status>Active</par:Status>
+        <par:EmailTypePreference>HTML</par:EmailTypePreference>
+        <par:Attributes>
+          <par:Name>First Name</par:Name>
+          <par:Value>Angela</par:Value>
+        </par:Attributes>
+        <par:Attributes>
+          <par:Name>Last Name</par:Name>
+          <par:Value>Cruz</par:Value>
+        </par:Attributes>
+      </par:Results>
+      <par:Results xsi:type="par:Subscriber">
+        <par:Client>
+          <par:ID>12345</par:ID>
+        </par:Client>
+        <par:PartnerKey xsi:nil="true"/>
+        <par:CreatedDate>2018-01-06T09:41:02.000</par:CreatedDate>
+        <par:ModifiedDate>2018-03-01T09:22:10.000</par:ModifiedDate>
+        <par:ID>1002</par:ID>
+        <par:ObjectID>9f2c1b08-0f06-4f4e-9b2f-6bb9d3f0a002</par:ObjectID>
+        <par:EmailAddress>bpatel@example.com</par:EmailAddress>
+        <par:SubscriberKey>bpatel@example.com</par:SubscriberKey>
+        <par:Status>Active</par:Status>
+        <par:EmailTypePreference>HTML</par:EmailTypePreference>
+        <par:Attributes>
+          <par:Name>First Name</par:Name>
+          <par:Value>Bhavna</par:Value>
+        </par:Attributes>
+        <par:Attributes>
+          <par:Name>Last Name</par:Name>
+          <par:Value>Patel</par:Value>
+        </par:Attributes>
+      </par:Results>
+    </par:RetrieveResponseMsg>
+  </soap:Body>
+</soap:Envelope>
