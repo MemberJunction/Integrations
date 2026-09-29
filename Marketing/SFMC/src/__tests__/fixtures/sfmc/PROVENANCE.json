@@ -1,0 +1,124 @@
+{
+  "Vendor": "Salesforce Marketing Cloud Engagement",
+  "Origin": "Copied byte-for-byte from packages/Integration/connectors-registry/sfmc/fixtures/ (the connector-builder registry the connector was built in). Only the files SFMCConnector.test.ts reads are vendored here; each entry below is that file's _provenance record from the registry's fixtures.json, verbatim.",
+  "Notes": [
+    "PROVENANCE (per file, in _provenance): a response body is either (a) vendor-published - descended from an",
+    "example payload in the pinned Atlas snapshot (packages/Integration/connectors-registry/sfmc/sources/",
+    "atlas-mc-apis-snapshot/) or from the pinned etframework.partnerAPI.wsdl - or (b) derived-from-declared-fields,",
+    "for an object the vendor publishes no response sample for: the ELEMENT/MEMBER NAMES are the vendor’s own",
+    "declared fields from .sfmc.integration.json and only the VALUES are synthesized, typed by the declared field",
+    "Type. No column is invented anywhere, and nothing is synthesized from the connector’s own output.",
+    "PII: every email address is scrubbed to example.com.",
+    "TENANT CUSTOMS: soap/dataextensionobject-airlines-rows.soap.xml carries Tenant_Promo_Segment__c, a column in",
+    "NO declared metadata and NO discovery result, so the custom-column capture assertion cannot pass vacuously."
+  ],
+  "Entries": [
+    {
+      "File": "auth/token.json",
+      "Provenance": "vendor-documented-shape",
+      "Source": "v2/token client_credentials response. Request params are documented verbatim (sources/rest-parsed.json routes: grant_type/client_id/client_secret/scope/account_id); the RESPONSE members rest_instance_url/soap_instance_url are the same tenant-instance URLs the two fully-documented sibling auth endpoints return (atlas-mc-apis-snapshot/getUserInfo.json -> rest.rest_instance_url + rest.soap_instance_url; getBaseURLs.json -> links[].href). Recorded in metadata Configuration.BaseURIModel with that evidence.",
+      "Scrubbed": "access_token replaced with a literal REPLAY-ONLY placeholder"
+    },
+    {
+      "File": "objects/soap/SentEvent.soap.xml",
+      "Provenance": "derived-from-declared-fields",
+      "Source": "partnerAPI RetrieveResponseMsg envelope (sources/etframework.partnerAPI.wsdl + the vendor's documented response envelope in atlas-mc-apis-snapshot/reviewing_soap_envelopes_to_retrieve_information.json); element names are the declared IOF set for \"SentEvent\" in .sfmc.integration.json, values synthesized by declared Type",
+      "Scrubbed": "email addresses -> example.com"
+    },
+    {
+      "File": "rest/campaign-created.json",
+      "Provenance": "vendor-published",
+      "Source": "atlas-mc-apis-snapshot/createCampaign.json - Example Response, VERBATIM (HTTP 202 with the created campaign and its id)."
+    },
+    {
+      "File": "rest/campaigns-page1.json",
+      "Provenance": "vendor-published",
+      "Source": "atlas-mc-apis-snapshot/getCampaignCollection.json - Example Response, VERBATIM (page/pageSize/count/links.self/links.next/items). This is also the page whose Example REQUEST sends $page=1&$pageSize=2&$orderBy=Name ASC, the table-vs-example disagreement the connector resolves in favour of the $-prefixed example form."
+    },
+    {
+      "File": "rest/campaigns-page2.json",
+      "Provenance": "vendor-published",
+      "Source": "atlas-mc-apis-snapshot/getCampaignCollection.json envelope shape with the TERMINAL page state (no links.next); its single item is the campaign from createCampaign.json's own Example Response, so the two fixtures are FK-consistent."
+    },
+    {
+      "File": "rest/error-400-10002.json",
+      "Provenance": "derived-from-vendor-error-table",
+      "Source": "atlas-mc-apis-snapshot/error-handling.json Validation table row \"Missing Required Field / 400 / 10002\"; body assembled on the vendor’s own documented {message, errorcode, documentation} REST error shape."
+    },
+    {
+      "File": "rest/error-429-50100.json",
+      "Provenance": "vendor-published",
+      "Source": "atlas-mc-apis-snapshot/rate-limiting-errors.json - Error Code 50100 body, VERBATIM (served with the page’s own Retry-After: 5 header)."
+    },
+    {
+      "File": "rest/error-429-50200.json",
+      "Provenance": "vendor-published",
+      "Source": "atlas-mc-apis-snapshot/rate-limiting-errors.json - Error Code 50200 body, VERBATIM (no Retry-After, per the page)."
+    },
+    {
+      "File": "soap/create-subscriber-response.soap.xml",
+      "Provenance": "derived-from-wsdl",
+      "Source": "sources/etframework.partnerAPI.wsdl element CreateResponse (Results: tns:CreateResult, RequestID, OverallStatus) and complexType CreateResult (StatusCode/StatusMessage/OrdinalID/NewID/NewObjectID/Object), which is exactly the shape the connector reads its created ExternalID from.",
+      "Scrubbed": "email addresses -> example.com"
+    },
+    {
+      "File": "soap/dataextension-list.soap.xml",
+      "Provenance": "derived-from-vendor-samples",
+      "Source": "partnerAPI RetrieveResponseMsg envelope; DataExtension member names are the WSDL complexType DataExtension members. The DE is named \"Airlines\" because that is the data extension the vendor’s own retrieving_data_from_a_data_extension.json worked example uses (request.ObjectType = \"DataExtensionObject[Airlines]\")."
+    },
+    {
+      "File": "soap/dataextensionfield-airlines.soap.xml",
+      "Provenance": "derived-from-vendor-samples",
+      "Source": "partnerAPI RetrieveResponseMsg envelope; DataExtensionField member names are the WSDL complexType DataExtensionField members. Columns IATA-Code / Airline / Country are the vendor’s own Airlines example columns (retrieving_data_from_a_data_extension.json request.Properties).",
+      "TenantCustomElements": [
+        "Loyalty_Tier__c"
+      ]
+    },
+    {
+      "File": "soap/dataextensionobject-airlines-rows.soap.xml",
+      "Provenance": "vendor-published",
+      "Source": "DataExtensionObject rowset shape VERBATIM from atlas-mc-apis-snapshot/reviewing_soap_envelopes_to_retrieve_information.json (par:Results / par:Properties / par:Property{Name,Value}); the Airlines columns and row values follow retrieving_data_from_a_data_extension.json’s worked example.",
+      "TenantCustomElements": [
+        "Loyalty_Tier__c",
+        "Tenant_Promo_Segment__c"
+      ],
+      "MandatoryCustomColumnFixture": true,
+      "Note": "Tenant_Promo_Segment__c appears ONLY in this rowset - in NO declared metadata and in NO discovery result - so the custom-column capture gate cannot pass vacuously. Every SFMC Data Extension is customer-defined, so this connector can never claim the vendor-confirmed-no-customs waiver."
+    },
+    {
+      "File": "soap/fault-invalid-token.soap.xml",
+      "Provenance": "derived-from-vendor-error-table",
+      "Source": "SOAP Fault/apifault envelope from rate-limiting.json; Code/Message text from error-handling.json Authentication row \"Not Authorized - the token was not found in the request, or it is invalid or expired\". The NEGATIVE control for the throttle classifier: same 500-shaped fault, NOT retryable."
+    },
+    {
+      "File": "soap/fault-rate-limited-500.soap.xml",
+      "Provenance": "vendor-published",
+      "Source": "atlas-mc-apis-snapshot/rate-limiting.json - \"Sample HTTP 500 Error Payload\", VERBATIM (faultstring=Rate Limited, apifault Code=17). THE throttle-shaped 500 the connector must classify as retryable rather than fatal.",
+      "Scrubbed": "faultactor host replaced with YOUR_SUBDOMAIN (the vendor’s own placeholder form)"
+    },
+    {
+      "File": "soap/subscriber-batch1.soap.xml",
+      "Provenance": "vendor-published",
+      "Source": "partnerAPI RetrieveResponseMsg envelope (sources/etframework.partnerAPI.wsdl element RetrieveResponseMsg: OverallStatus/RequestID/Results) with the par:Results record shape from atlas-mc-apis-snapshot/reviewing_soap_envelopes_to_retrieve_information.json; Subscriber element names are the WSDL complexType Subscriber members. OverallStatus=MoreDataAvailable + RequestID per continuerequest_2500records.json.",
+      "Scrubbed": "email addresses -> example.com",
+      "TenantCustomElements": [
+        "First Name",
+        "Last Name"
+      ]
+    },
+    {
+      "File": "soap/subscriber-batch2.soap.xml",
+      "Provenance": "vendor-published",
+      "Source": "Same envelope; the TERMINAL batch returned for the ContinueRequest carrying batch 1’s RequestID (continuerequest_2500records.json .NET/PHP samples: rr.ContinueRequest = requestID; loop while OverallStatus == \"MoreDataAvailable\").",
+      "Scrubbed": "email addresses -> example.com",
+      "TenantCustomElements": [
+        "First Name"
+      ]
+    },
+    {
+      "File": "soap/update-subscriber-error.soap.xml",
+      "Provenance": "derived-from-wsdl",
+      "Source": "sources/etframework.partnerAPI.wsdl element UpdateResponse + complexType Result (StatusCode/StatusMessage/ErrorCode). A partnerAPI APPLICATION failure arrives with HTTP 200 and StatusCode=Error - the case HTTP status alone cannot detect."
+    }
+  ]
+}
