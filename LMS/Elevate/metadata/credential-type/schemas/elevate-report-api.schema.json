@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "SiteUrl": {
+      "type": "string",
+      "title": "Elevate Site URL",
+      "description": "Your organisation's own Elevate address, e.g. 'https://elevate.your-org.org'. The connector calls '{SiteUrl}/api/reports' - Elevate is hosted per organisation, so there is no shared default.",
+      "format": "uri",
+      "order": 0
+    },
+    "ApiKey": {
+      "type": "string",
+      "title": "Report API Key",
+      "description": "An Elevate Report API key, issued by your Elevate administrator. One key covers every report; the connector sends it in the request body as 'api_key' and never logs it. The reports it can reach are the ones listed at '{SiteUrl}/api/reports'.",
+      "isSecret": true,
+      "order": 1
+    }
+  },
+  "required": [
+    "SiteUrl",
+    "ApiKey"
+  ]
+}
