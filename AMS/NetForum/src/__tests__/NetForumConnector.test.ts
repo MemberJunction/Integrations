@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type {
     RESTAuthContext,
     RESTResponse,
@@ -10,6 +13,12 @@ import type {
 import type { MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity, MJCompanyIntegrationEntity } from '@memberjunction/core-entities';
 import type { UserInfo } from '@memberjunction/core';
 import { NetForumConnector } from '../NetForumConnector.js';
+
+// Every test runs with OperatorRoot in a throwaway directory: the connector now WRITES there (.nf-learned.json, what
+// faults taught) and a file left in the package directory would teach the next test something it never saw.
+let operatorRootForTest = '';
+beforeEach(() => { operatorRootForTest = mkdtempSync(join(tmpdir(), 'nf-root-')); NetForumConnector.OperatorRoot = operatorRootForTest; });
+afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(operatorRootForTest, { recursive: true, force: true }); });
 
 /**
  * READ-ONLY / MOCKED-ONLY vitest (T4). NEVER hits a live netFORUM instance and NEVER mutates data.
@@ -350,11 +359,12 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         // BatchSize bounds the page. Previously this was a hardcoded `@TOP -1`, which pulled the
         // entire result set into memory in a single SOAP call regardless of BatchSize.
         expect(req!.body).toContain('<szObjectName>Individual @TOP 100</szObjectName>');
-        // EMPTY szColumnList. The vendor documents `*` as an invalid value that FAULTS the call (and
-        // xWeb counts every fault toward the daily limit that locks the account); an empty list returns
-        // the object's default columns with the primary key first. `*` is what locked us out in 2026-09.
-        expect(req!.body).toContain('<szColumnList></szColumnList>');
+        // The object's definition lists its columns, so ALL of them are named — never `*` (the vendor
+        // documents it as an invalid value that FAULTS the call, and faults are the budget that locks the
+        // account), and never the empty list (the tenant's default list is a handful of columns).
+        expect(req!.body).toContain('<szColumnList>co_individual.ind_cst_key,');
         expect(req!.body).not.toContain('<szColumnList>*');
+        expect(req!.body).not.toContain('<szColumnList></szColumnList>');
         // no watermark → no szWhereClause
         expect(req!.body).not.toContain('szWhereClause');
 
@@ -445,8 +455,9 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         expect(req!.body).toContain('<szColumnList>ind_first_name,IND_CST_KEY,ind_last_name,ind_change_date</szColumnList>');
     });
 
-    it('sends an EMPTY szColumnList when no columnList is declared (the tenant default list)', async () => {
+    it('sends an EMPTY szColumnList only when the object has no definition and no declared columnList (the tenant default list)', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };   // no definition → the tenant default list
         const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
         await c.FetchChanges(ctx);
         const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
@@ -472,6 +483,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('retries with an EXPLICIT column list when the door rejects its own `*` default list', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };   // no definition → the tenant default list
         c.ResponseQueue['GetQuery'] = [
             INVALID_DEFAULT_FAULT,
             { Status: 200, Body: GETQUERY_XML, Headers: {} },
@@ -520,6 +532,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('pays the fault ONCE per connection — the second fetch leads with the explicit list', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };   // no definition → the tenant default list
         // Only the FIRST GetQuery faults. If the second fetch still opened with an empty list it would
         // consume the 200 queued here and then have nothing for its retry, so a regression cannot pass
         // this by accident — the request count is checked directly besides.
@@ -545,6 +558,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('latches per connection — a different connection is not assumed broken', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };   // no definition → the tenant default list
         c.ResponseQueue['GetQuery'] = [
             INVALID_DEFAULT_FAULT,                                  // A: empty -> fault
             { Status: 200, Body: GETQUERY_XML, Headers: {} },       // A: explicit -> ok
@@ -582,6 +596,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('does NOT latch when a DECLARED list is what the door rejected', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };   // no definition → the tenant default list
         // Same fault wording, different cause: the operator's own list was refused. Latching on it
         // would silently narrow what every later object sends, hiding a real declaration bug.
         c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_last_name'] }) };
@@ -994,6 +1009,7 @@ const INDIVIDUAL_DEF_REAL_XML = `<?xml version="1.0" encoding="utf-8"?>
 <Column><mdc_name>ind_prf_code</mdc_name><mdc_description>Prefix</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>20</mdc_width_max></Column>
 <Column><mdc_name>ind_first_name</mdc_name><mdc_description>First Name</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>50</mdc_width_max></Column>
 <Column><mdc_name>ind_change_date</mdc_name><mdc_description>Change Date</mdc_description><mdc_data_type>av_date_small</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+<Column><mdc_name>ind_delete_flag</mdc_name><mdc_description>Delete Flag</mdc_description><mdc_data_type>av_flag</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>co_individual</mdc_table_name><mdc_width_max>1</mdc_width_max></Column>
 </Columns>
 <ListFromTableColumns>
 <ListFromTableColumn><lsc_mdc_name>ind_first_name</lsc_mdc_name><lsc_name_alias>First</lsc_name_alias><lsc_order>1</lsc_order></ListFromTableColumn>
@@ -1019,6 +1035,8 @@ const INDIVIDUAL_DEF_REAL_XML = `<?xml version="1.0" encoding="utf-8"?>
 <mdt_description>Membership</mdt_description>
 <Columns>
 <Column><mdc_name>mbr_src_code</mdc_name><mdc_description>Source Code</mdc_description><mdc_data_type>nvarchar</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>50</mdc_width_max></Column>
+<Column><mdc_name>mbr_cst_key</mdc_name><mdc_description>Customer</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
+<Column><mdc_name>mbr_mbt_key</mdc_name><mdc_description>Member Type</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>0</mdc_ext><mdc_nullable>1</mdc_nullable><mdc_table_name>mb_membership</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>
 </Columns>
 </ListFromTable>
 <ListFromTable>
@@ -1171,11 +1189,11 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         const q = getQueries(c)[0];
         expect(q.body).toContain('<szObjectName>WidgetLog @TOP 50</szObjectName>');
         expect(q.body).not.toContain('szOrderBy');
-        expect(q.body).toContain('<szColumnList></szColumnList>');
+        expect(q.body).toContain('<szColumnList>cu_widget_log.wlg_message,cu_widget_log.wlg_when');   // the definition's columns, all of them
         const codes = (res.Warnings ?? []).map(w => w.Code);
         expect(codes).toContain('SAMPLE_BOUNDED_WITHOUT_KEY');
         expect(codes).toContain('KEY_FROM_DEFAULT_LIST_FIRST_COLUMN');
-        // the vendor: with an empty szColumnList the primary key is the first child of every row
+        // xWeb prepends the primary key to every row whichever list was sent
         expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
         expect(res.HasMore).toBe(false);
     });
@@ -1185,11 +1203,9 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         c.Keyless = true;
         c.Caps.Configuration = KEYLESS_CONFIG('Individual');
         c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
-        c.ResponseQueue['GetQuery'] = [FAULT_500("'*' is not a valid value for szColumnList"), { Status: 200, Body: GETQUERY_XML, Headers: {} }];
         await c.FetchChanges(sampleCtx('Individual'));
-        const [first, second] = getQueries(c);
-        expect(first.body).toContain('<szColumnList></szColumnList>');
-        const list = /<szColumnList>([^<]*)<\/szColumnList>/.exec(second.body)![1];
+        const [first] = getQueries(c);
+        const list = /<szColumnList>([^<]*)<\/szColumnList>/.exec(first.body)![1];
         const cols = list.split(',');
         expect(cols[0]).toBe('co_individual.ind_cst_key');
         expect(cols).toContain('co_customer.cst_key');
@@ -1204,9 +1220,12 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         const c = makeConnector();
         c.Responses['GetQuery'] = FAULT_500('Invalid query.');
         const ctx = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: '2026-01-01T00:00:00', BatchSize: 500, ContextUser: CU, AfterKeyValue: '2222-secret' } as unknown as FetchContext;
-        await expect(c.FetchChanges(ctx)).rejects.toThrow(/Invalid query\./);
-        await expect(c.FetchChanges(ctx)).rejects.toThrow(/\[sent: szObjectName="Individual @TOP 500"; szColumnList=default list \(empty szColumnList\); szOrderBy=ind_cst_key; szWhereClause=2 predicate\(s\)\]/);
-        await expect(c.FetchChanges(ctx)).rejects.not.toThrow(/2222-secret|2026-01-01/);
+        const err = await c.FetchChanges(ctx).catch((e: Error) => e) as Error;
+        expect(err.message).toMatch(/Invalid query\./);
+        expect(err.message).toMatch(/\[sent: szObjectName="Individual @TOP 500"; szColumnList=4 named column\(s\); szOrderBy=co_individual.ind_cst_key; szWhereClause=2 predicate\(s\)\]/);
+        expect(err.message).not.toMatch(/2222-secret|2026-01-01/);
+        // a fault that taught nothing is not paid again: the same object now refuses locally, without a request
+        await expect(c.FetchChanges(ctx)).rejects.toThrow(/not attempted.*Nothing valid to send/);
     });
 
     it('"not authorized to perform Select" is learned once per object on a connection and never retried', async () => {
@@ -1299,7 +1318,8 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
     });
 
     it('with no definition for the object, ORDER BY stays the bare key (nothing to qualify with)', async () => {
-        const c = makeConnector();                                          // declared key ind_cst_key, no definition fetched
+        const c = makeConnector();                                          // declared key ind_cst_key
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };   // no definition → the tenant default list
         await c.FetchChanges(sampleCtx('Individual'));
         expect(getQueries(c)[0].body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
     });
@@ -1335,7 +1355,7 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
         const c = makeConnector();
         await c.FetchChanges(sampleCtx());
         expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
-        expect(getQuery(c).body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
+        expect(getQuery(c).body).toContain('<szOrderBy>co_individual.ind_cst_key</szOrderBy>');
     });
 
     it('keyed object with a page SMALLER than the target keeps its page (the engine walks pages to the target)', async () => {
@@ -1362,5 +1382,447 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
         const res = await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 500, ContextUser: CU });
         expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP -1</szObjectName>');
         expect((res.Warnings ?? []).map(w => w.Code)).toContain('UNPAGINATED_FETCH');
+    });
+});
+
+describe('NetForumConnector — operator hooks: definition dump and definitions-only mode', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string): FetchContext => ({
+        CompanyIntegration: { ...CI, ID: 'ci-ops' }, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+    let root = '';
+    beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'nf-ops-')); NetForumConnector.OperatorRoot = root; });
+    afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(root, { recursive: true, force: true }); });
+
+    it('writes every definition it fetches as <object>.xml when the dump directory exists, and nothing otherwise', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set();
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        await c.DiscoverFields(CI, 'Individual', CU);
+        expect(existsSync(join(root, 'logs', 'netforum-definitions', 'Individual.xml'))).toBe(false);
+        mkdirSync(join(root, 'logs', 'netforum-definitions'), { recursive: true });
+        const d = makeConnector();
+        d.KnownObjects = new Set();
+        d.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        await d.DiscoverFields(CI, 'Individual', CU);
+        expect(readFileSync(join(root, 'logs', 'netforum-definitions', 'Individual.xml'), 'utf8')).toBe(INDIVIDUAL_DEF_REAL_XML);
+    });
+
+    it('with the definitions-only marker present, FetchChanges stops before any GetQuery; without it, it sends', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.Responses['GetQuery'] = { Status: 200, Body: GETQUERY_XML, Headers: {} };
+        writeFileSync(join(root, '.nf-definitions-only'), '');
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted: definitions-only mode/);
+        expect(getQueries(c)).toHaveLength(0);
+        rmSync(join(root, '.nf-definitions-only'));
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)).toHaveLength(1);
+    });
+});
+
+describe('NetForumConnector — a fault is paid once, never per page or per sync (1.6.7)', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string, over: Record<string, unknown> = {}): FetchContext => ({
+        CompanyIntegration: { ...CI, ID: 'ci-167' }, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50, ...over,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+    const listOf = (body: string): string[] => (/<szColumnList>([^<]*)<\/szColumnList>/.exec(body)?.[1] ?? '').split(',').filter(x => x.length > 0);
+    const OK = (): RESTResponse => ({ Status: 200, Body: GETQUERY_XML, Headers: {} });
+    const STAR_FAULT = () => FAULT_500("'*' is not a valid value for szColumnList");
+    /** SQL Server lists EVERY unresolvable column of the statement, one line each — as xWeb relays it. */
+    const INVALID_COLUMNS_FAULT = () => FAULT_500("Check the Error Log for more details: Invalid column name 'cst_type'.\nInvalid column name 'mbr_src_code'.");
+
+    it('columns a fault names are learned for the object and dropped: one retry now, and never sent again on this instance', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [INVALID_COLUMNS_FAULT(), OK(), OK()];
+        const first = await c.FetchChanges(sampleCtx('Individual'));
+        expect(first.Records.length).toBeGreaterThan(0);
+        const q = getQueries(c);
+        expect(q).toHaveLength(2);                                          // full list → full list minus the named columns
+        expect(listOf(q[0].body)).toContain('co_customer.cst_type');
+        expect(listOf(q[0].body)).toContain('Membership.mbr_src_code');
+        expect(listOf(q[1].body)).not.toContain('co_customer.cst_type');
+        expect(listOf(q[1].body)).not.toContain('Membership.mbr_src_code');
+        expect(listOf(q[1].body)[0]).toBe('co_individual.ind_cst_key');       // the key still leads
+        // the next page of the same object: ONE request, already without them — the fault was paid once
+        await c.FetchChanges(sampleCtx('Individual', { AfterKeyValue: '11111111-1111-1111-1111-111111111111' }));
+        const q3 = getQueries(c);
+        expect(q3).toHaveLength(3);
+        expect(listOf(q3[2].body)).not.toContain('co_customer.cst_type');
+        expect(listOf(q3[2].body)).not.toContain('Membership.mbr_src_code');
+    });
+
+    it('a fault that names no column but broke the SQL is learned the other way: that list is never sent again', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [FAULT_500("Check the Error Log for more details: Incorrect syntax near '='.\nIncorrect syntax near the keyword 'with'.")];
+        const err = await c.FetchChanges(sampleCtx('Individual')).catch((e: Error) => e);
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toMatch(/Incorrect syntax near '='/);
+        expect((err as Error).message).toMatch(/\[qualifiers: "co_individual", "co_customer", "Membership", "mb_member_type"\]/);
+        expect(getQueries(c)).toHaveLength(1);
+        // the same object again: nothing is sent — a request known to fault is not a request
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted.*Nothing valid to send/);
+        expect(getQueries(c)).toHaveLength(1);
+    });
+
+    it('a qualifier that is not a plain identifier is dropped and the column sent bare — it cannot go into the statement unquoted', async () => {
+        const ODD_ALIAS_DEF_XML = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_alias>Membership</lsf_from_alias>', '<lsf_from_alias>Member Ship=1</lsf_from_alias>');
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: ODD_ALIAS_DEF_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const cols = listOf(getQueries(c)[0].body);
+        expect(cols).toContain('mbr_src_code');
+        expect(cols.some(x => /Member Ship/.test(x) || /=/.test(x))).toBe(false);
+        expect(cols[0]).toBe('co_individual.ind_cst_key');
+    });
+
+    it('while the default-list verdict is unknown, concurrent objects share ONE probe: the fault is paid once, not once per object', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };   // no definition: the default list is what is probed
+        c.ResponseQueue['GetQuery'] = [STAR_FAULT(), OK(), OK()];
+        const [a, b] = await Promise.all([c.FetchChanges(sampleCtx('Individual')), c.FetchChanges(sampleCtx('Individual2'))]);
+        expect(a.Records.length).toBeGreaterThan(0);
+        expect(b.Records.length).toBeGreaterThan(0);
+        const q = getQueries(c);
+        expect(q).toHaveLength(3);
+        expect(q.filter(r => r.body.includes('<szColumnList></szColumnList>'))).toHaveLength(1);   // exactly one empty-list request
+        expect(listOf(q[1].body).length).toBeGreaterThan(0);
+        expect(listOf(q[2].body).length).toBeGreaterThan(0);
+    });
+
+    it('once the verdict is known (a usable default list), concurrent objects are not serialised and send their empty lists at once', async () => {
+        const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = { Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault>', Headers: {} };
+        c.ResponseQueue['GetQuery'] = [OK(), OK(), OK()];
+        await c.FetchChanges(sampleCtx('Individual'));                                       // the verdict: fine
+        await Promise.all([c.FetchChanges(sampleCtx('Individual2')), c.FetchChanges(sampleCtx('Individual3'))]);
+        const q = getQueries(c);
+        expect(q).toHaveLength(3);
+        expect(q.filter(r => r.body.includes('<szColumnList></szColumnList>'))).toHaveLength(3);
+    });
+});
+
+describe('NetForumConnector — what the definition alone decides (v3, PLUS 2026-09-25: 875 definitions vs 31 explicit reads)', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string): FetchContext => ({
+        CompanyIntegration: { ...CI, ID: 'ci-v3' }, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+    const listOf = (body: string): string[] => (/<szColumnList>([^<]*)<\/szColumnList>/.exec(body)?.[1] ?? '').split(',').filter(x => x.length > 0);
+    const OK = (): RESTResponse => ({ Status: 200, Body: GETQUERY_XML, Headers: {} });
+    const EXT_COL = (name: string, table: string) =>
+        `<Column><mdc_name>${name}</mdc_name><mdc_description>Extender Key</mdc_description><mdc_data_type>av_key</mdc_data_type><mdc_ext>1</mdc_ext><mdc_nullable>0</mdc_nullable><mdc_table_name>${table}_ext</mdc_table_name><mdc_width_max>16</mdc_width_max></Column>`;
+    /** Individual's real definition with Extender keys on the UNALIASED co_customer join and on the ALIASED Membership join. */
+    const DEF_WITH_EXT = INDIVIDUAL_DEF_REAL_XML
+        .replace('<Column><mdc_name>cst_type</mdc_name>', EXT_COL('cst_key_ext', 'co_customer') + '<Column><mdc_name>cst_type</mdc_name>')
+        .replace('<Column><mdc_name>mbr_src_code</mdc_name>', EXT_COL('mbr_key_ext', 'mb_membership') + '<Column><mdc_name>mbr_src_code</mdc_name>');
+
+    it('an Extender column is sent qualified by its _ext table when its base table is joined without an alias, and not sent at all under an alias', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: DEF_WITH_EXT, Headers: {} };
+        await c.FetchChanges(sampleCtx('Individual'));
+        const cols = listOf(getQueries(c)[0].body);
+        expect(cols).toContain('co_customer_ext.cst_key_ext');                 // unaliased join: selectable (24 of 24 live)
+        expect(cols.some(x => /mbr_key_ext$/i.test(x))).toBe(false);          // aliased join: "Invalid column name" every time live
+        expect(cols).toContain('Membership.mbr_src_code');                     // the alias itself is fine for ordinary columns
+    });
+
+    it('a list whose join names a main-table key the table does not carry is never queried: no request, the reason names the column', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        const broken = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join>cst_key=ind_whs_key and ind_delete_flag=0</lsf_from_join>');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: broken, Headers: {} };
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted: this object's list definition cannot compile — join on co_customer names "ind_whs_key", which the definition lists nowhere/);
+        expect(getQueries(c)).toHaveLength(0);
+    });
+
+    it('a function call, a keyword, a table or alias name or a string literal in a join is not a column — the list is fine', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        const fine = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_join>Membership.mbr_mbt_key=mbt_key</lsf_from_join>', "<lsf_from_join>Membership.mbr_mbt_key=mbt_key and mbt_key is not null and Membership.mbr_src_code &lt;&gt; 'x_y_z' and nf_get_date() &gt; ind_change_date</lsf_from_join>");
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: fine, Headers: {} };
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)).toHaveLength(1);
+    });
+
+    it('a key compared with a date or a code column, a second root table, or an unclosed quote is a broken list: no request', async () => {
+        const run = async (mutate: (x: string) => string, expected: RegExp) => {
+            const c = makeConnector();
+            c.Keyless = true;
+            c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+            c.Responses['GetQueryDefinition'] = { Status: 200, Body: mutate(INDIVIDUAL_DEF_REAL_XML), Headers: {} };
+            await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(expected);
+            expect(getQueries(c)).toHaveLength(0);
+        };
+        await run(x => x.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join>cst_key=ind_change_date</lsf_from_join>'), /compares "cst_key" \(av_key\) with "ind_change_date" \(av_date_small\)/);
+        await run(x => x.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join>cst_key=ind_prf_code</lsf_from_join>'), /compares "cst_key" \(av_key\) with "ind_prf_code" \(nvarchar\)/);
+        await run(x => x.replace('<lsf_from_join>cst_key=ind_cst_key and ind_delete_flag=0</lsf_from_join>', '<lsf_from_join></lsf_from_join>'), /"co_customer" is a second root table with no join text/);
+        await run(x => x.replace('<lsf_from_join>Membership.mbr_mbt_key=mbt_key</lsf_from_join>', "<lsf_from_join>Membership.mbr_mbt_key=mbt_key and mbt_code='sched</lsf_from_join>"), /unbalanced quote in the join on mb_member_type/);
+    });
+
+    it('an unexposed table is learned from "could not be bound": its columns go bare, our key is left out, one retry — and it stays learned', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+        c.ResponseQueue['GetQuery'] = [FAULT_500('Check the Error Log for more details: The multi-part identifier "co_individual.ind_cst_key" could not be bound.'), OK(), OK()];
+        const res = await c.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(c);
+        expect(q).toHaveLength(2);
+        const cols = listOf(q[1].body);
+        expect(cols).toContain('ind_first_name');                              // co_individual's columns bare
+        expect(cols).not.toContain('co_individual.ind_first_name');
+        expect(cols.some(x => /(^|\.)ind_cst_key$/.test(x))).toBe(false);      // our key left out: xWeb prepends it
+        expect(cols).toContain('co_customer.cst_key');                         // other tables still qualified
+        expect(q[1].body).not.toContain('<szOrderBy>co_individual.');
+        expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');   // identified by the row's key
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)).toHaveLength(3);                                 // no re-learning
+        expect(listOf(getQueries(c)[2].body)).not.toContain('co_individual.ind_first_name');
+    });
+
+    it('HTTP 429 is waited out and retried, never failed and never learned', async () => {
+        const c = makeConnector();
+        const waits: number[] = [];
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async (ms: number) => { waits.push(ms); };
+        c.ResponseQueue['GetQuery'] = [{ Status: 429, Body: '', Headers: { 'retry-after': '2' } }, { Status: 429, Body: '', Headers: {} }, OK()];
+        const res = await c.FetchChanges(sampleCtx('Individual'));
+        expect(res.Records.length).toBeGreaterThan(0);
+        expect(getQueries(c)).toHaveLength(3);
+        expect(waits).toEqual([2000, 8000]);
+    });
+
+    it('a malformed join (a = b = \'x\') is never queried', async () => {
+        const c = makeConnector();
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        const malformed = INDIVIDUAL_DEF_REAL_XML.replace('<lsf_from_join>Membership.mbr_mbt_key=mbt_key</lsf_from_join>', "<lsf_from_join>ida_ivd_key_product = ivd_type = 'discount'</lsf_from_join>");
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: malformed, Headers: {} };
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/cannot compile — malformed join on mb_member_type/);
+        expect(getQueries(c)).toHaveLength(0);
+    });
+
+    it('a defined object never sends the empty (default) list — even before any fault has taught the connection anything', async () => {
+        const c = makeConnector();                                             // declared key, definition available
+        await c.FetchChanges(sampleCtx('Individual'));
+        await c.FetchChanges(sampleCtx('Individual2'));
+        const q = getQueries(c);
+        expect(q).toHaveLength(2);
+        expect(q.every(r => !r.body.includes('<szColumnList></szColumnList>'))).toBe(true);
+    });
+});
+
+describe('NetForumConnector — a throttled definition is not "no definition" (v5.1, PLUS 2026-09-25: 58 of 878 objects lost their columns)', () => {
+    const THROTTLED = (): RESTResponse => ({ Status: 429, Body: '', Headers: { 'retry-after': '0' } });
+    const NOT_AUTH = (): RESTResponse => ({ Status: 500, Body: '<soap:Fault><faultstring>Account is not authorized to perform GetQueryDefinition</faultstring></soap:Fault>', Headers: {} });
+    const defs = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQueryDefinition');
+    let root = '';
+    beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'nf-def-')); NetForumConnector.OperatorRoot = root; });
+    afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(root, { recursive: true, force: true }); });
+
+    it('an HTTP 429 on GetQueryDefinition is waited out and retried, and the definition is used', async () => {
+        const c = makeConnector();
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async () => undefined;   // no real waiting in a unit test
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [THROTTLED(), { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} }];
+        const fields = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(fields.length).toBeGreaterThan(5);
+        expect(defs(c)).toHaveLength(2);
+    });
+
+    it('a throttle that outlasts the retries is NOT remembered as a refusal: the next call asks again', async () => {
+        const c = makeConnector();
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async () => undefined;   // no real waiting in a unit test
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [THROTTLED(), THROTTLED(), THROTTLED(), THROTTLED(), { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} }];
+        const first = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(defs(c)).toHaveLength(4);                                    // one send + three retries, all throttled
+        const second = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(defs(c)).toHaveLength(5);                                    // asked again, answered
+        expect(second.length).toBeGreaterThan(first.length);
+    });
+
+    it('a definite refusal ("Account is not authorized") IS remembered: one request, never again on this instance', async () => {
+        const c = makeConnector();
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [NOT_AUTH(), { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} }];
+        await c.DiscoverFields(CI, 'Individual', CU);
+        await c.DiscoverFields(CI, 'Individual', CU);
+        expect(defs(c)).toHaveLength(1);
+    });
+
+    it('when the live fetch is refused or throttled but the operator dump holds the object, the dumped definition stands in', async () => {
+        mkdirSync(join(root, 'logs', 'netforum-definitions'), { recursive: true });
+        writeFileSync(join(root, 'logs', 'netforum-definitions', 'Individual.xml'), INDIVIDUAL_DEF_REAL_XML);
+        const c = makeConnector();
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async () => undefined;   // no real waiting in a unit test
+        c.KnownObjects = new Set();
+        c.ResponseQueue['GetQueryDefinition'] = [THROTTLED(), THROTTLED(), THROTTLED(), THROTTLED()];
+        const fields = await c.DiscoverFields(CI, 'Individual', CU);
+        expect(fields.length).toBeGreaterThan(5);
+        expect(fields.some(f => f.Name === 'ind_cst_key')).toBe(true);
+    });
+});
+
+describe('NetForumConnector — what a fault taught is kept for the connection and across processes (v5, PLUS 2026-09-25)', () => {
+    const KEYLESS_CONFIG = (name: string) => JSON.stringify({
+        accessPath: { door: 'GetQuery', queryObject: name, nestingPath: [], doorArgs: { szObjectName: name, topModifier: '@TOP -1' } },
+        soapEndpoint: '/xweb/secure/netForumXML.asmx',
+    });
+    const sampleCtx = (name: string, over: Record<string, unknown> = {}): FetchContext => ({
+        CompanyIntegration: { ...CI, ID: 'ci-v5' }, ObjectName: name, WatermarkValue: null, BatchSize: 500, ContextUser: CU,
+        IsDiscoverySample: true, SampleTargetRecords: 50, ...over,
+    } as unknown as FetchContext);
+    const getQueries = (c: MockedNetForumConnector) => c.Requests.filter(r => r.headers['SOAPAction'] === GETQUERY_ACTION);
+    const listOf = (body: string): string[] => (/<szColumnList>([^<]*)<\/szColumnList>/.exec(body)?.[1] ?? '').split(',').filter(x => x.length > 0);
+    const OK = (): RESTResponse => ({ Status: 200, Body: GETQUERY_XML, Headers: {} });
+    const defined = (c: MockedNetForumConnector): void => {
+        c.Keyless = true;
+        c.Caps.Configuration = KEYLESS_CONFIG('Individual');
+        c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
+    };
+    let root = '';
+    beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'nf-learned-')); NetForumConnector.OperatorRoot = root; });
+    afterEach(() => { NetForumConnector.OperatorRoot = process.cwd(); rmSync(root, { recursive: true, force: true }); });
+    const learnedFile = () => (JSON.parse(readFileSync(join(root, '.nf-learned.json'), 'utf8')) as {
+        connections: Record<string, { missingTables: string[]; unresolvable: string[]; objects: Record<string, { unselectable?: string[]; unexposed?: string[]; unsendable?: boolean; refused?: string }> }>;
+    }).connections['ci-v5'];
+
+    it('a fault is paid ONCE per installation: what one process learned, the next process reads from disk and never sends', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [FAULT_500("Check the Error Log for more details: Invalid column name 'cst_type'.\nInvalid column name 'mbr_src_code'."), OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        expect(getQueries(c)).toHaveLength(2);
+        const f = learnedFile();
+        expect(f.objects['individual'].unselectable).toEqual(['cst_type', 'mbr_src_code']);
+        expect(f.unresolvable).toEqual(['co_customer.cst_type', 'mb_membership.mbr_src_code']);   // the fact, attributed to its table
+        // a NEW process (a new instance) on the same installation: the first request already leaves them out
+        const d = makeConnector();
+        defined(d);
+        d.ResponseQueue['GetQuery'] = [OK()];
+        await d.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(d);
+        expect(q).toHaveLength(1);
+        expect(listOf(q[0].body)).not.toContain('co_customer.cst_type');
+        expect(listOf(q[0].body)).not.toContain('Membership.mbr_src_code');
+        expect(listOf(q[0].body)[0]).toBe('co_individual.ind_cst_key');
+    });
+
+    it('every qualifier one fault names is learned at once and the retry sends them bare — one fault, not one per table', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [FAULT_500(
+            'Check the Error Log for more details: The multi-part identifier "co_customer.cst_type" could not be bound.\n' +
+            'The multi-part identifier "Membership.mbr_src_code" could not be bound.\nThe multi-part identifier "Membership.mbr_mbt_key" could not be bound.'), OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(c);
+        expect(q).toHaveLength(2);
+        const cols = listOf(q[1].body);
+        expect(cols).toContain('cst_type');
+        expect(cols).toContain('mbr_src_code');
+        expect(cols).not.toContain('co_customer.cst_type');
+        expect(cols).not.toContain('Membership.mbr_src_code');
+        expect(learnedFile().objects['individual'].unexposed).toEqual(['co_customer', 'membership']);
+    });
+
+    it('a table xWeb says does not exist is learned for the whole connection: its columns leave every list, and an object that JOINS it is refused', async () => {
+        const c = makeConnector();
+        defined(c);
+        // Individual's definition attributes mbr_* columns to mb_membership (aliased Membership); pretend the tenant lacks it
+        c.ResponseQueue['GetQuery'] = [FAULT_500("Check the Error Log for more details: Invalid object name 'mb_membership'.")];
+        const err = await c.FetchChanges(sampleCtx('Individual')).catch((e: Error) => e);
+        expect((err as Error).message).toMatch(/Invalid object name 'mb_membership'/);
+        expect(getQueries(c)).toHaveLength(1);                             // it joins the table: no rebuild can help, no retry sent
+        const f = learnedFile();
+        expect(f.missingTables).toEqual(['mb_membership']);
+        expect(f.objects['individual'].refused).toMatch(/joins "mb_membership"/);
+        // the same object, a new process: refused before any request, with the learned reason
+        const d = makeConnector();
+        defined(d);
+        await expect(d.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted: it joins "mb_membership"/);
+        expect(getQueries(d)).toHaveLength(0);
+    });
+
+    it('a fault that teaches nothing ("Invalid query.") is not paid twice: the list is marked unsendable and the object refused from then on', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [FAULT_500('Invalid query.')];
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/Invalid query/);
+        expect(getQueries(c)).toHaveLength(1);
+        await expect(c.FetchChanges(sampleCtx('Individual'))).rejects.toThrow(/not attempted.*Nothing valid to send/);
+        expect(getQueries(c)).toHaveLength(1);
+        expect(learnedFile().objects['individual'].unsendable).toBe(true);
+    });
+
+    it('a second class hiding behind the first is learned in the next round: columns fall away, then the key on their table, three requests at most', async () => {
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [
+            FAULT_500("Check the Error Log for more details: Invalid column name 'mbr_src_code'."),
+            FAULT_500("Check the Error Log for more details: Invalid column name 'mbr_cst_key'."),
+            OK(),
+        ];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const q = getQueries(c);
+        expect(q).toHaveLength(3);
+        expect(listOf(q[2].body)).not.toContain('Membership.mbr_src_code');
+        expect(listOf(q[2].body)).not.toContain('Membership.mbr_cst_key');
+        // and the rebuilt list that equals the refused one ends it instead of looping
+        const d = makeConnector();
+        defined(d);
+        d.ResponseQueue['GetQuery'] = [FAULT_500("Check the Error Log for more details: Invalid column name 'nowhere_col'.")];
+        await expect(d.FetchChanges(sampleCtx('Individual2'))).rejects.toThrow(/nowhere_col/);
+        expect(getQueries(d)).toHaveLength(1);
+        expect(learnedFile().objects['individual2'].unsendable).toBe(true);
+    });
+
+    it('a seed file written by an operator is honoured: seeded unselectable columns and unsendable objects cost no request', async () => {
+        writeFileSync(join(root, '.nf-learned.json'), JSON.stringify({
+            version: 1, connections: { '*': {
+                missingTables: [], unresolvable: ['co_customer.cst_type'],
+                objects: { individual: { unselectable: ['mbr_src_code'] }, individual2: { unsendable: true } },
+            } },
+        }));
+        const c = makeConnector();
+        defined(c);
+        c.ResponseQueue['GetQuery'] = [OK()];
+        await c.FetchChanges(sampleCtx('Individual'));
+        const cols = listOf(getQueries(c)[0].body);
+        expect(cols).not.toContain('co_customer.cst_type');
+        expect(cols).not.toContain('Membership.mbr_src_code');
+        await expect(c.FetchChanges(sampleCtx('Individual2'))).rejects.toThrow(/not attempted.*Nothing valid to send/);
+        expect(getQueries(c)).toHaveLength(1);
     });
 });
