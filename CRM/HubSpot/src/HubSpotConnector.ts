@@ -158,6 +158,8 @@ const HUBSPOT_OBJECTS: IntegrationObjectInfo[] = [
             { Name: 'associatedcompanyid', DisplayName: 'Associated Company ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'ID of associated company' },
             { Name: 'notes_last_contacted', DisplayName: 'Last Contacted', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When last contacted' },
             { Name: 'notes_last_updated', DisplayName: 'Notes Last Updated', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When notes were last updated' },
+            { Name: 'hubspot_owner_id', DisplayName: 'Owner', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'HubSpot owner user ID' },
+            { Name: 'hs_last_sales_activity_timestamp', DisplayName: 'Last Engagement Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When the contact last engaged with a sales activity' },
             { Name: 'hs_email_optout', DisplayName: 'Email Opt-out', Type: 'boolean', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Whether contact has opted out of email' },
             { Name: 'hs_object_id', DisplayName: 'Object ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'HubSpot internal object ID' },
             { Name: 'createdate', DisplayName: 'Created Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When the contact was created' },
@@ -208,6 +210,7 @@ const HUBSPOT_OBJECTS: IntegrationObjectInfo[] = [
             { Name: 'hubspot_owner_id', DisplayName: 'Owner', Type: 'string', IsRequired: false, IsReadOnly: false, IsPrimaryKey: false, Description: 'HubSpot owner user ID' },
             { Name: 'notes_last_contacted', DisplayName: 'Last Contacted', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When last contacted' },
             { Name: 'num_associated_contacts', DisplayName: 'Associated Contacts', Type: 'number', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'Number of associated contacts' },
+            { Name: 'hs_primary_associated_company', DisplayName: 'Primary Company', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'HubSpot ID of the primary associated company' },
             { Name: 'hs_object_id', DisplayName: 'Object ID', Type: 'string', IsRequired: false, IsReadOnly: true, IsPrimaryKey: true, Description: 'HubSpot internal object ID' },
             { Name: 'createdate', DisplayName: 'Created Date', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When the deal was created' },
             { Name: 'hs_lastmodifieddate', DisplayName: 'Last Modified', Type: 'datetime', IsRequired: false, IsReadOnly: true, IsPrimaryKey: false, Description: 'When last modified' },
@@ -3594,11 +3597,11 @@ export class HubSpotConnector extends BaseRESTIntegrationConnector {
     /**
      * Returns the effective property list for a HubSpot CRM request.
      *
-     * When `requestedFields` (from FetchContext.RequestedSourceFields) is provided it
-     * contains the source fields from active field maps, including any custom properties.
-     * We merge those with the essential system properties so watermark tracking always works.
-     *
-     * Falls back to the static HUBSPOT_OBJECTS field list when no requestedFields are given.
+     * Always starts from the static HUBSPOT_OBJECTS field list. When `requestedFields` (from
+     * FetchContext.RequestedSourceFields) is provided it contains the source fields from active
+     * field maps, including any custom properties; those are added on top, never in place of the
+     * static list, so unmapped default properties keep arriving (and keep flowing into
+     * CustomOverflow) once the engine starts sending mapped fields (Integrations #425).
      *
      * Note: hs_object_id is NOT included — it's the top-level `id` field on every HubSpot
      * response and is injected by FlattenHubSpotRecord regardless of `?properties=`.
@@ -3608,12 +3611,13 @@ export class HubSpotConnector extends BaseRESTIntegrationConnector {
      * - createdate — creation timestamp
      */
     private BuildEffectiveProperties(objectName: string, requestedFields?: string[]): string[] {
-        const essentialProperties = [this.GetWatermarkField(objectName), 'createdate'];
+        const staticFields = this.GetObjectFieldNames(objectName);
         if (requestedFields && requestedFields.length > 0) {
-            const merged = new Set([...requestedFields, ...essentialProperties]);
+            const essentialProperties = [this.GetWatermarkField(objectName), 'createdate'];
+            const merged = new Set([...staticFields, ...requestedFields, ...essentialProperties]);
             return [...merged];
         }
-        return this.GetObjectFieldNames(objectName);
+        return staticFields;
     }
 
     /**

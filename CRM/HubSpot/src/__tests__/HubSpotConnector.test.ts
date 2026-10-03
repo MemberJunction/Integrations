@@ -636,3 +636,80 @@ describe('HubSpotConnector — search keyset pagination (10k window cap fix)', (
         });
     });
 });
+
+// --- Requested properties (Integrations #425) ---
+
+/** Exposes the two CRM read paths so tests can assert the properties each one asks HubSpot for. */
+class PropertiesTestHubSpot extends TestHubSpotConnector {
+    public runFullLoad(ctx: FetchContext): Promise<FetchBatchResult> {
+        return (this as unknown as { FetchCRMFullLoad(c: FetchContext): Promise<FetchBatchResult> }).FetchCRMFullLoad(ctx);
+    }
+    public runFetchViaSearch(ctx: FetchContext): Promise<FetchBatchResult> {
+        return this.FetchChangesViaSearch(ctx);
+    }
+}
+
+function propsCtx(objectName: string, watermark: string | null, requested?: string[]): FetchContext {
+    return {
+        CompanyIntegration: {},
+        ContextUser: {},
+        ObjectName: objectName,
+        WatermarkValue: watermark,
+        BatchSize: 100,
+        RequestedSourceFields: requested,
+    } as unknown as FetchContext;
+}
+
+/** The `properties=` list of a full-load GET URL. */
+function urlProperties(url: string): string[] {
+    return (new URL(url).searchParams.get('properties') ?? '').split(',');
+}
+
+const EMPTY_LIST: RESTResponse = { Status: 200, Body: { results: [] }, Headers: {} };
+const EMPTY_SEARCH: RESTResponse = { Status: 200, Body: { results: [], total: 0 }, Headers: {} };
+
+describe('HubSpotConnector requested properties (#425)', () => {
+    it('full load requests a mapped custom property alongside the default list', async () => {
+        const connector = new PropertiesTestHubSpot();
+        connector.Responses.push(EMPTY_LIST);
+        await connector.runFullLoad(propsCtx('contacts', null, ['email', 'custom_member_tier']));
+
+        const props = urlProperties(connector.Captured[0].url);
+        expect(props).toContain('custom_member_tier');
+        expect(props).toContain('firstname');        // unmapped default property is kept
+        expect(props).toContain('lastmodifieddate'); // watermark field
+        expect(new Set(props).size).toBe(props.length);
+    });
+
+    it('incremental search requests a mapped custom property alongside the default list', async () => {
+        const connector = new PropertiesTestHubSpot();
+        connector.Responses.push(EMPTY_SEARCH, EMPTY_SEARCH); // active page, then archived (delete) scan
+        await connector.runFetchViaSearch(propsCtx('contacts', '2026-01-01T00:00:00.000Z', ['custom_member_tier']));
+
+        for (const req of connector.Captured) {
+            const props = (req.body as { properties: string[] }).properties;
+            expect(props).toContain('custom_member_tier');
+            expect(props).toContain('firstname');
+        }
+    });
+
+    it('requests the default list when no fields are requested', async () => {
+        const connector = new PropertiesTestHubSpot();
+        connector.Responses.push(EMPTY_LIST);
+        await connector.runFullLoad(propsCtx('deals', null));
+
+        expect(urlProperties(connector.Captured[0].url)).toContain('dealname');
+    });
+
+    it('requests the deal primary company and contact owner/last-engaged by default', async () => {
+        const connector = new PropertiesTestHubSpot();
+        connector.Responses.push(EMPTY_LIST, EMPTY_LIST);
+        await connector.runFullLoad(propsCtx('deals', null));
+        await connector.runFullLoad(propsCtx('contacts', null));
+
+        expect(urlProperties(connector.Captured[0].url)).toContain('hs_primary_associated_company');
+        const contactProps = urlProperties(connector.Captured[1].url);
+        expect(contactProps).toContain('hubspot_owner_id');
+        expect(contactProps).toContain('hs_last_sales_activity_timestamp');
+    });
+});
