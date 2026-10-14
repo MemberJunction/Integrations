@@ -855,6 +855,9 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
         const seen = new Set<string>();
         let maxWatermark: string | null = null;
         const batchLimit = ctx.BatchSize > 0 ? ctx.BatchSize : Number.MAX_SAFE_INTEGER;
+        const rules = ParseRecordRules(obj.Configuration);
+        const parentCodes = new Map<string, Map<string, string>>();
+        let filteredOut = 0;
 
         while (currentURL) {
             const response = await this.MakeHTTPRequest(auth, currentURL, 'GET', this.BuildHeaders(auth));
@@ -876,6 +879,15 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
 
             for (const raw of this.NormalizeResponse(response.Body, obj.ResponseDataKey)) {
                 const transformed = this.applyTransformPreservingKeys(raw, obj, fields);
+                if (rules.RecordFilter && !RecordPassesFilter(transformed, rules.RecordFilter)) {
+                    // Still advances the watermark, so a skipped row is not re-read every run.
+                    maxWatermark = this.trackWatermark(maxWatermark, transformed, obj.IncrementalWatermarkField);
+                    filteredOut++;
+                    continue;
+                }
+                if (rules.ParentCode) {
+                    await this.attachParentCode(auth, currentURL, transformed, rules.ParentCode, parentCodes, warnings);
+                }
                 const record = this.BuildExternalRecord(transformed, obj.Name, pkNames);
                 if (seen.has(record.ExternalID)) continue; // dedupe by PK across pages/companies
                 seen.add(record.ExternalID);
@@ -889,11 +901,68 @@ export class BusinessCentralConnector extends BaseRESTIntegrationConnector {
 
             if (records.length >= batchLimit && currentURL) {
                 // Per-page checkpoint: a long first sync resumes exactly here.
+                this.logFilteredOut(obj.Name, filteredOut);
                 return this.buildFetchResult(records, warnings, maxWatermark, true, EncodeResumeCursor({ u: currentURL, r: pending }));
             }
         }
 
+        this.logFilteredOut(obj.Name, filteredOut);
         return this.buildFetchResult(records, warnings, maxWatermark, false, undefined);
+    }
+
+    private logFilteredOut(objectName: string, count: number): void {
+        if (count > 0) console.log(`[BusinessCentral] ${objectName}: ${count} row(s) skipped by the object's recordFilter`);
+    }
+
+    /**
+     * `Configuration.parentCode`: copies the parent's code onto a child row, e.g. a dimension value's
+     * `dimensionCode` from its `dimensionId`. Business Central gives a child only the parent's GUID, and
+     * GUIDs are per company, so the code is what a shared target (AIDP's Dimension, keyed on Code) can
+     * match. The parent collection is read once per company per fetch call; a parent missing from it
+     * leaves the code null and adds one warning.
+     */
+    private async attachParentCode(
+        auth: BusinessCentralAuthContext,
+        collectionURL: string,
+        row: Record<string, unknown>,
+        rule: ParentCodeRule,
+        cache: Map<string, Map<string, string>>,
+        warnings: FetchWarning[],
+    ): Promise<void> {
+        const companyBase = /^(.*?\/companies\([^)]+\))\//i.exec(collectionURL)?.[1];
+        const parentId = row[rule.IdField];
+        if (!companyBase || typeof parentId !== 'string') {
+            row[rule.As] = null;
+            return;
+        }
+        let codes = cache.get(companyBase);
+        if (!codes) {
+            codes = new Map<string, string>();
+            let url: string | undefined = `${companyBase}/${rule.Object}?$select=id,${rule.CodeField}`;
+            for (let page = 0; url && page < PARENT_CODE_MAX_PAGES; page++) {
+                const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+                if (response.Status < 200 || response.Status >= 300) {
+                    throw new Error(`Business Central fetch of "${rule.Object}" (for parentCode) failed: HTTP ${response.Status} ${this.ExtractErrorMessage(response) ?? ''}`.trim());
+                }
+                for (const parent of this.NormalizeResponse(response.Body, 'value')) {
+                    if (typeof parent.id === 'string' && typeof parent[rule.CodeField] === 'string') {
+                        codes.set(parent.id.toLowerCase(), parent[rule.CodeField] as string);
+                    }
+                }
+                const state = this.ExtractPaginationInfo(response.Body, 'Cursor', 1, 0, 0);
+                url = state.HasMore ? state.NextCursor : undefined;
+            }
+            cache.set(companyBase, codes);
+        }
+        const code = codes.get(parentId.toLowerCase()) ?? null;
+        if (code === null) {
+            warnings.push({
+                Code: 'PARENT_CODE_MISSING',
+                Message: `"${rule.Object}" ${parentId} was not found, so ${rule.As} is null on this row.`,
+                Data: { parentId, object: rule.Object },
+            });
+        }
+        row[rule.As] = code;
     }
 
     // ── CRUD ──────────────────────────────────────────────────────────
@@ -2066,6 +2135,56 @@ function escapeRegExp(value: string): string {
 // ─── JSON/config helpers ────────────────────────────────────────────────
 
 /** Parses a JSON object, returning null for invalid or non-object JSON. */
+/** Page cap for a parent-code lookup (dimensions are a handful of rows per company). */
+const PARENT_CODE_MAX_PAGES = 50;
+
+/** `Configuration.recordFilter`: keep a row only when `field` is (or is not) one of the listed values. */
+export interface RecordFilterRule {
+    Field: string;
+    In?: string[];
+    NotIn?: string[];
+}
+
+/** `Configuration.parentCode`: copy `parent[codeField]` onto the row as `as`, found by `row[idField]`. */
+export interface ParentCodeRule {
+    Object: string;
+    IdField: string;
+    CodeField: string;
+    As: string;
+}
+
+/**
+ * Reads the per-object record rules from an IntegrationObject's Configuration (JSON text or object).
+ * Unknown or malformed rules are ignored, so a bad value never stops a sync:
+ *   "recordFilter": { "field": "accountType", "in": ["Posting"] }
+ *   "parentCode":   { "object": "dimensions", "idField": "dimensionId", "codeField": "code", "as": "dimensionCode" }
+ */
+export function ParseRecordRules(configuration: unknown): { RecordFilter?: RecordFilterRule; ParentCode?: ParentCodeRule } {
+    const cfg = typeof configuration === 'string' ? parseJsonObject(configuration)
+        : configuration && typeof configuration === 'object' ? configuration as Record<string, unknown> : null;
+    if (!cfg) return {};
+    const out: { RecordFilter?: RecordFilterRule; ParentCode?: ParentCodeRule } = {};
+    const strings = (v: unknown): string[] | undefined => Array.isArray(v) && v.every(x => typeof x === 'string') ? v as string[] : undefined;
+    const rf = cfg.recordFilter as Record<string, unknown> | undefined;
+    if (rf && typeof rf.field === 'string' && (strings(rf.in) || strings(rf.notIn))) {
+        out.RecordFilter = { Field: rf.field, In: strings(rf.in), NotIn: strings(rf.notIn) };
+    }
+    const pc = cfg.parentCode as Record<string, unknown> | undefined;
+    if (pc && ['object', 'idField', 'codeField', 'as'].every(k => typeof pc[k] === 'string' && (pc[k] as string).length > 0)
+        && /^[A-Za-z][A-Za-z0-9]*$/.test(pc.object as string) && /^[A-Za-z][A-Za-z0-9]*$/.test(pc.codeField as string)) {
+        out.ParentCode = { Object: pc.object as string, IdField: pc.idField as string, CodeField: pc.codeField as string, As: pc.as as string };
+    }
+    return out;
+}
+
+/** True when the row should be kept under the rule (a missing field counts as the empty string). */
+export function RecordPassesFilter(row: Record<string, unknown>, rule: RecordFilterRule): boolean {
+    const value = row[rule.Field] == null ? '' : String(row[rule.Field]);
+    if (rule.In && !rule.In.includes(value)) return false;
+    if (rule.NotIn && rule.NotIn.includes(value)) return false;
+    return true;
+}
+
 function parseJsonObject(json: string): Record<string, unknown> | null {
     try {
         const parsed: unknown = JSON.parse(json);
