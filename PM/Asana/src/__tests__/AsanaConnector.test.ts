@@ -8,7 +8,7 @@ import type {
     MJIntegrationObjectFieldEntity,
 } from '@memberjunction/core-entities';
 import type { UserInfo } from '@memberjunction/core';
-import { AsanaConnector, maxModifiedAt, toAsanaTimestamp } from '../AsanaConnector.js';
+import { AsanaConnector, DeletedParentAsEmpty, maxModifiedAt, toAsanaTimestamp } from '../AsanaConnector.js';
 
 /**
  * The SHIPPED catalog, not a hand-made stub.
@@ -518,3 +518,29 @@ describe('shipped catalog', () => {
         for (const o of OBJECTS) expect(o.fields.SupportsWrite).toBe(false);
     });
 });
+
+describe('deleted parents', () => {
+    const notFound: RESTResponse = { Status: 404, Body: { errors: [{ message: 'task: Unknown object: 1218788287275194' }] }, Headers: {} };
+    const BASE = 'https://app.asana.com/api/1.0';
+
+    it('answers a deleted task\'s subtasks as an empty page, so the object keeps going', () => {
+        const r = DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194/subtasks?limit=100&opt_fields=gid`, 'GET', notFound);
+        expect(r.Status).toBe(200);
+        expect(c.callNormalize(r.Body, 'data')).toEqual([]);
+        expect(c.callPagination(r.Body, 'Cursor')).toEqual({ HasMore: false });
+    });
+
+    it('answers a deleted project\'s tasks as an empty page', () => {
+        const r = DeletedParentAsEmpty(`${BASE}/tasks?project=1200000000000001&limit=100`, 'GET', notFound);
+        expect(r.Status).toBe(200);
+    });
+
+    it('leaves a 404 on a single record, an unscoped list, a write, or a non-404 alone', () => {
+        expect(DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194`, 'GET', notFound)).toBe(notFound);
+        expect(DeletedParentAsEmpty(`${BASE}/users?workspace=111`, 'GET', notFound)).toBe(notFound);
+        expect(DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194/subtasks`, 'POST', notFound)).toBe(notFound);
+        const forbidden: RESTResponse = { ...notFound, Status: 403 };
+        expect(DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194/subtasks`, 'GET', forbidden)).toBe(forbidden);
+    });
+});
+
