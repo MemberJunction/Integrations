@@ -556,6 +556,13 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         const companyIntegration = ctx.CompanyIntegration;
+        // Load this site's /api/reports catalog BEFORE resolving the route. ReadRouteFor's third resource
+        // source (CatalogResourceFor) reads the per-instance page cache, which was only filled later in this
+        // method (RequestableSelectorsFor). The connector instance is new per run, so every config-less
+        // DISCOVERED object a run started before some other object had loaded the page failed "declares no
+        // Configuration.resourceWireValue" (6 objects per run on a live tenant, 2026-10-13). LoadCatalogPage is
+        // memoised per connection and never throws (an unusable page is null).
+        await this.LoadCatalogPage(companyIntegration, ctx.ContextUser);
         // ALWAYS-STREAM. Discovery samples an object BEFORE persisting it, so a runtime-discovered
         // object has no cached IntegrationObject on first contact — and this method used to open by
         // throwing on exactly that. The stream never ran for those objects: no statistical PK, no
@@ -1063,9 +1070,15 @@ export class ElevateConnector extends BaseRESTIntegrationConnector {
         for (let repair = 0; repair <= MAX_SELECTOR_REPAIRS; repair++) {
             const selectors = this.SelectorsFor(companyIntegration, obj, columns, ctx, requestable);
             if (selectors.length === 0) {
+                // Say WHICH input was empty: "no fields reached the connector" (columns=0 — a cold or empty field
+                // read) and "fields filtered out" (columns>0) are different bugs with the same message otherwise.
+                const rejectedCount = (this.rejectedFieldNames.get(key) ?? new Set<string>()).size;
+                const wantedCount = ctx?.RequestedSourceFields?.length ?? 0;
                 throw new Error(
                     `[elevate] No read-surface columns are declared for "${obj.Name}", so no \`fields\` allow-list ` +
-                    'can be built. Elevate returns ONLY the columns a request names, so a fieldless query is useless.',
+                    'can be built. Elevate returns ONLY the columns a request names, so a fieldless query is useless. ' +
+                    `[diag: object=${obj.ID} columns=${columns.length} requestable=${requestable ? requestable.size : 'none'} ` +
+                    `rejected=${rejectedCount} requestedSourceFields=${wantedCount}]`,
                 );
             }
             const body = this.BuildEnvelope(companyIntegration, route.Resource, selectors, filters);

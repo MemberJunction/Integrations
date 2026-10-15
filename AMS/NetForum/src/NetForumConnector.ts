@@ -42,7 +42,7 @@
  *       - The "Locked" fault seen alongside those failures was NOT a lock — see the Auth section:
  *         a token read from the wrong element. 1.3.4's changelog attributed it to
  *         MethodsFaultLimitPerDay; that diagnosis was wrong.
- *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" where the watermark column is
+ *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" (wm normalised by WatermarkLiteral) where the watermark column is
  *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date).
  *         There is NO canonical `LastModifiedDate` column — the field is per-facade and is read
  *         from metadata, never hardcoded.
@@ -77,6 +77,8 @@
  *   - xWeb Overview   : https://documentation.abila.com/netforum-enterprise/2017.1/Content/xWeb/XWeb_Overview.htm
  *   - GetQuery        : https://documentation.abila.com/netforum-enterprise/2017.1/Content/xWeb/Methods/GetQuery.htm
  */
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type {
@@ -180,6 +182,19 @@ interface NFDefinedColumn {
     Description: string | undefined;
     AllowsNull: boolean | undefined;
     MaxLength: number | null;
+    /**
+     * `mdc_ext` = 1: an Extender column. xWeb's generated SQL cannot select one under an ALIASED join,
+     * so ExplicitColumnListFor leaves those out.
+     */
+    IsExtension: boolean;
+}
+
+/** One `<ListFromTable>` of a GetQueryDefinition response: the table, its alias, and its join text. */
+interface NFFromTable {
+    Table: string | null;
+    Alias: string | null;
+    /** `<lsf_from_join>`; '' when the response states none. */
+    Join: string;
 }
 
 /**
@@ -197,6 +212,60 @@ interface NFQueryDefinition {
     Columns: NFDefinedColumn[];
     /** `<lsc_mdc_name>` of the default list — what GetQuery returns for an empty szColumnList. */
     DefaultListColumns: string[];
+    /** Every `<ListFromTable>`, document order. */
+    FromTables: NFFromTable[];
+    /** Why no GetQuery on the object can compile, read off its own join text (BrokenJoinReason); else undefined. */
+    BrokenJoin: string | undefined;
+}
+
+/** A per-day budget of probe faults (see NetForumConnector.ProbeFaults). */
+type NFProbeKind = 'default' | 'legacy' | 'own';
+
+/** Faults spent on one probe kind on one UTC day. */
+interface NFProbeFaultCount {
+    day: string;
+    count: number;
+}
+
+/** One object's entry in `.nf-learned.json` (version 2). */
+interface NFLearnedObject {
+    unselectable?: unknown;
+    unexposed?: unknown;
+    unresolvable?: unknown;
+    defaultListUnusable?: unknown;
+    defaultListUsable?: unknown;
+    legacyCleared?: unknown;
+    unsendable?: unknown;
+    ownListUnsendable?: unknown;
+    ownListUsable?: unknown;
+    refused?: unknown;
+    injectedKey?: unknown;
+}
+
+/** One connection's section (or the `*` seed) of `.nf-learned.json`. */
+interface NFLearnedSection {
+    missingTables?: unknown;
+    unresolvable?: unknown;
+    legacyUnresolvable?: unknown;
+    defaultListUnusable?: unknown;
+    defaultListFaultSeen?: unknown;
+    probeFaults?: Record<string, NFProbeFaultCount | null>;
+    objects?: Record<string, NFLearnedObject | null>;
+    [key: string]: unknown;
+}
+
+/** The `.nf-learned.json` file. */
+interface NFLearnedFile {
+    version?: number;
+    savedAt?: string;
+    connections?: Record<string, NFLearnedSection | undefined>;
+}
+
+/** The KeysOnlyCollapse verdict: the names sent, and how many defined columns were left out. */
+interface NFKeysOnlyCollapse {
+    Sent: string[];
+    LeftOut: number;
+    Defined: number;
 }
 
 /**
@@ -210,6 +279,15 @@ interface NFQueryDefinition {
  */
 function IsQueryableColumn(name: string): boolean {
     return !/_entity_key/i.test(name);
+}
+
+/**
+ * A name xWeb can be handed as a bare SQL identifier. Column names, tables and aliases go into the
+ * statement unquoted, so anything else ("Incorrect syntax near '='." on a live tenant's 711-column
+ * object) breaks the whole query; such a qualifier is dropped and the column sent bare.
+ */
+function IsPlainIdentifier(s: string): boolean {
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s);
 }
 
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-netforum-enterprise')
@@ -390,6 +468,467 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * tenant's data. Remembering the answer costs one fault instead of hundreds.
      */
     private readonly DefaultColumnListUnusable = new Set<string>();
+
+    /*
+     * What the set above means NOW (2026-10): a connection-wide HINT, never a refusal. netFORUM configures the
+     * default list PER OBJECT, so one object's '*' says nothing about another's — latching it connection-wide
+     * refused 326 of a live tenant's 820 objects on every sync (2026-09-27/28) for a fault none of them had paid. The
+     * hint only makes an object that HAS a known explicit list send it instead of its own default list (a full
+     * read, and no fault risked); the refusal is per object (DefaultListUnusableByObject).
+     */
+    /**
+     * `<connection>|<object>` → the fault its OWN default list (empty szColumnList) drew: "'*' is not a valid
+     * value…", or any other SOAP fault on that fixed request (it would draw the same fault on every 5-minute
+     * sync). Learned from that object's own fault, persisted; the object then sends its explicit list when one
+     * is known, else nothing.
+     */
+    private readonly DefaultListUnusableByObject = new Map<string, string>();
+
+    /** `<connection>|<object>` whose own default list answered 2xx — persisted, so it never needs a budgeted probe again. */
+    private readonly DefaultListUsable = new Set<string>();
+
+    /**
+     * The one in-flight default-list probe per OBJECT. Sampling runs objects in parallel: without this, two
+     * concurrent first requests on one object each paid their own "'*' is not a valid value" fault.
+     */
+    private readonly DefaultListProbe = new Map<string, Promise<void>>();
+
+    /**
+     * Requests that can fault for a reason nothing has taught yet — an object's first default-list probe, an
+     * object's first read without v1's connection-wide pairs — are BUDGETED: at most PROBE_FAULTS_PER_DAY[kind]
+     * of them may fault per connection per UTC day. `<connection>|<kind>` → { day, count }, persisted, so a
+     * restart does not hand out a fresh budget. In-flight probes hold a reservation, so concurrency cannot
+     * overrun it.
+     */
+    private readonly ProbeFaults = new Map<string, NFProbeFaultCount>();
+    private readonly ProbesInFlight = new Map<string, number>();
+
+    /** `<connection>|<object>` whose keys-only collapse was already logged this process. */
+    private readonly KeysOnlyWarned = new Set<string>();
+
+    /**
+     * Columns xWeb's SQL cannot select for an object on a connection, learned from a fault that named
+     * them ("Invalid column name 'x'." — SQL Server lists every unresolvable column of the statement).
+     * The object's definition lists them, the list query's FROM cannot reach them: the vendor's own
+     * caveat — GetQuery follows the List Table / From Table setup, not the object's data objects, "and
+     * there might be a mismatch in some cases" (6 of a live run's 10 faults, e.g. an Extender key
+     * `cst_key_ext` attributed to a joined table that does not carry it). Keyed
+     * `<companyIntegrationID>|<object>`; once learned, never sent again on this instance — the fault
+     * is paid once per object per process, not on every page of every sync.
+     */
+    private readonly UnselectableColumns = new Map<string, Set<string>>();
+
+    /**
+     * Objects whose explicit column list broke xWeb's SQL ("Incorrect syntax near …") on a connection.
+     * The fault names no column, so nothing can be dropped; the list is not sent again on this instance.
+     */
+    private readonly ExplicitListUnsendable = new Set<string>();
+
+    /**
+     * The OWN-TABLE fallback for an object whose full explicit list is unsendable (see OwnTableColumnListFor).
+     * It is the joined tables' columns that break xWeb's SQL: the platform's direct loader read ~15M rows from
+     * 800+ objects (a live tenant, 2026-09) by asking only each object's main-table columns, while the connector refused
+     * 100 of that tenant's 820 objects (2026-10-13) because their full lists had faulted once. `<connection>|<object>`
+     * whose own-table list answered 2xx (sent directly from then on), and whose own-table list ALSO broke
+     * (refused as before, no further request). Both persisted (`ownListUsable` / `ownListUnsendable`).
+     */
+    private readonly OwnListUsable = new Set<string>();
+    private readonly OwnListUnsendable = new Set<string>();
+
+    /** The one in-flight own-table probe per object: a concurrent caller waits for its verdict instead of paying a second fault. */
+    private readonly OwnListProbe = new Map<string, Promise<void>>();
+
+    /** `<connection>|<object>` whose own-table-only read was already logged this process. */
+    private readonly OwnOnlyWarned = new Set<string>();
+
+    /**
+     * Tables (or aliases) xWeb's generated SQL does not expose under the name the definition gives them, learned
+     * from `The multi-part identifier "T.col" could not be bound` (live: `ev_session_fee`, `oe_price`,
+     * `oe_product_type`, `ac_ar_period_scheduler` — nothing in those definitions differs from the ones that
+     * bind). Keyed `<connection>|<object>`; a column under such a table is sent bare. When the KEY's table is
+     * unexposed the key is left out of the list (xWeb prepends the object's primary key to every query anyway)
+     * so a bare ORDER BY on it is not ambiguous.
+     */
+    private readonly UnexposedQualifiers = new Map<string, Set<string>>();
+
+    /** Per `<connection>|<object>`: the name xWeb gave the first column when our key was not in the row. */
+    private readonly InjectedKeyByObject = new Map<string, string>();
+
+    /**
+     * Tables xWeb's SQL says do not exist in this database ("Invalid object name 'T'"), learned CONNECTION-WIDE from
+     * one fault: an Extender table the tenant never created (`np_member_ext`), or a placeholder a list joins
+     * (`zz_dummy`). Every column the definitions attribute to T is dropped from every object's list; an object that
+     * JOINS T cannot compile at all and is refused before a request (see LearnedRefusals).
+     */
+    private readonly MissingTables = new Map<string, Set<string>>();
+
+    /**
+     * `table.column` pairs SQL Server could not resolve ("Invalid column name 'c'" for a column the definition puts on
+     * `table`), keyed `<connection>|<object>` — scoped to the object whose fault named them. They were once kept
+     * CONNECTION-wide on the theory that an attribution wrong in one list is wrong in all; a live tenant disproved it
+     * (2026-09-28): `oe_price.*` / `oe_product_type.*` learned from three Price* sub-objects stripped Price,
+     * ProductType and ProductGeneric to their keys and InvoiceDetail of 63 prc_ columns, all of which those
+     * objects select fine. A pair never removes the object's own key or watermark (see ProtectedColumns).
+     */
+    private readonly UnresolvablePairs = new Map<string, Set<string>>();
+
+    /**
+     * v1's connection-wide pairs, read from an old learned file (`unresolvable` on a connection section or the
+     * seed). NOT applied as facts: an object whose definition carries one sends it in a budgeted probe (kind
+     * `legacy`); only when today's budget is spent is the pair left out, as v1 did. A 2xx clears the object
+     * (LegacyCleared); a fault teaches the object its own facts. Kept on disk as `legacyUnresolvable`.
+     */
+    private readonly LegacyUnresolvable = new Map<string, Set<string>>();
+
+    /** `<connection>|<object>` that has read successfully without v1's connection-wide pairs. */
+    private readonly LegacyCleared = new Set<string>();
+
+    /** `<connection>|<object>` refused from a learned fact (a FROM table that does not exist), with the reason. */
+    private readonly LearnedRefusals = new Map<string, string>();
+
+    /** Connections whose learned state has been read from disk this process. */
+    private readonly LearnedLoadedFor = new Set<string>();
+
+    /** The learned file's `*` seed section, carried through every rewrite (v1 column facts renamed). */
+    private LearnedSeed: NFLearnedSection | undefined;
+
+    /**
+     * GetQuery requests in flight per instance, bounded: eight parallel samplers drew a burst of 31 HTTP 429
+     * answers from the vendor's web server (a live tenant, 2026-09-25). A 429 is throttling, not a fault — it is waited out
+     * and retried, never learned from and never surfaced as a failure until the retries are spent.
+     */
+    private GetQueryInFlight = 0;
+    private readonly GetQueryWaiters: Array<() => void> = [];
+    private static readonly GETQUERY_MAX_IN_FLIGHT = 8;
+    private static readonly RETRY_AFTER_429_MS = [3000, 8000, 20000];
+
+    /**
+     * Faults per connection per UTC day that requests nothing has vouched for may spend (see ProbeFaults). xWeb
+     * locks the account at ~100 faults a day (MethodsFaultLimitPerDay, cleared only by the vendor); these three
+     * kinds together may spend 40 ('own': an unsendable object's first own-table list, and the learn rounds that
+     * follow it), leaving the rest for faults that teach. An object refused for the budget is tried on a later
+     * day — slower, never a lock.
+     */
+    private static readonly PROBE_FAULTS_PER_DAY: Record<NFProbeKind, number> = { default: 15, legacy: 10, own: 15 };
+
+    /** One GetQuery round trip under the concurrency bound, with 429 waited out and retried. */
+    private async SendGetQuery(url: string, args: Record<string, string>, token: string): Promise<RESTResponse> {
+        return this.SendSoap('GetQuery', url, args, token);
+    }
+
+    /**
+     * One xWeb round trip under the shared concurrency bound, with HTTP 429 waited out and retried. GetQuery and
+     * GetQueryDefinition both go through here: the vendor's web server throttles the METADATA calls too, and a
+     * throttled GetQueryDefinition read as "no definition" left 58 of 878 objects with no columns on a live run
+     * (a live tenant, 2026-09-25) — eight definitions in flight, every 429 cached as a refusal.
+     */
+    private async SendSoap(action: string, url: string, args: Record<string, unknown>, token: string): Promise<RESTResponse> {
+        if (this.GetQueryInFlight >= NetForumConnector.GETQUERY_MAX_IN_FLIGHT) {
+            await new Promise<void>(resolve => this.GetQueryWaiters.push(resolve));
+        }
+        this.GetQueryInFlight++;
+        try {
+            let response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders(action), this.BuildSoapEnvelope(action, args, token));
+            for (const delay of NetForumConnector.RETRY_AFTER_429_MS) {
+                if (response.Status !== 429) break;
+                const hinted = Number((response.Headers ?? {})['retry-after'] ?? (response.Headers ?? {})['Retry-After']);
+                await this.Sleep(Number.isFinite(hinted) && hinted > 0 ? Math.min(hinted * 1000, 60000) : delay);
+                response = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders(action), this.BuildSoapEnvelope(action, args, token));
+            }
+            return response;
+        } finally {
+            this.GetQueryInFlight--;
+            const next = this.GetQueryWaiters.shift();
+            if (next) next();
+        }
+    }
+
+    /**
+     * Operator hooks, filesystem-keyed so they need no configuration or restart to arm:
+     *   - `<OperatorRoot>/logs/netforum-definitions/` exists → every GetQueryDefinition answer is written there as
+     *     `<object>.xml` (the vendor's per-object list definition: from-tables, aliases, join text, columns). It is the
+     *     only input that explains which listed columns a tenant's list query can actually select, and fetching it
+     *     never faults — the way to learn a tenant's rules without spending the daily fault budget.
+     *   - `<OperatorRoot>/.nf-definitions-only` exists → FetchChanges stops locally before any GetQuery, so a discovery
+     *     run collects the definitions above and costs zero faults. Remove the file to sample and sync again.
+     * OperatorRoot defaults to the process working directory (MJAPI: the release's apps/MJAPI). Tests point it elsewhere.
+     */
+    public static OperatorRoot: string = process.cwd();
+
+    /**
+     * `<OperatorRoot>/.nf-learned.json` — what the faults taught, kept ACROSS processes. xWeb counts every fault
+     * against its daily lock budget; a fault paid once per PROCESS is paid again after every restart (the RSU
+     * restarts the API between discovery and the first sync), so on a large tenant the same ~70 facts cost ~70
+     * faults per process. Written after every learn (small file, rare event), read once per connection per process,
+     * keyed by object name (one installation, one tenant). Delete the file to forget everything and re-pay.
+     *
+     * Version 2 scopes every column fact to the object that learned it: `objects[o].unresolvable` (pairs),
+     * `objects[o].defaultListUnusable` (the fault text) / `defaultListUsable`, `objects[o].ownListUsable` /
+     * `ownListUnsendable` (the own-table fallback's verdict; absent in older files = never tried), and the daily
+     * probe counters in `probeFaults`. A version-1 file still loads: its connection-wide `defaultListUnusable` becomes the hint
+     * `defaultListFaultSeen`, and its connection-wide `unresolvable` becomes `legacyUnresolvable` (see
+     * LegacyUnresolvable) — neither refuses or strips an object. Both are rewritten under the new names, so
+     * rolling back to the v1 code cannot read them as connection-wide facts again.
+     */
+    /**
+     * Where `.nf-learned.json` lives. Under MJAPI the working directory is a RELEASE directory
+     * (`<root>/releases/<sha>/apps/MJAPI`) that every deploy replaces, so a file kept there was wiped on each deploy and
+     * every learned fault was paid again against xWeb's ~100/day lock (a live tenant, 2026-10-13: ~75 faults per deploy). The
+     * state therefore lives beside the releases, in `<root>/state/netforum`, which a deploy never touches. Any other
+     * working directory (tests, a dev box) keeps the old place, OperatorRoot. Null = OperatorRoot.
+     */
+    public static StateRootFor(cwd: string | null | undefined): string | null {
+        const m = /^(.*)\/releases\/[^/]+\/apps\/MJAPI\/?$/.exec(String(cwd ?? ''));
+        return m ? join(m[1], 'state', 'netforum') : null;
+    }
+    public static LearnedRoot: string | null;
+    static { this.LearnedRoot = this.StateRootFor(process.cwd()); }
+
+    private LearnedFilePath(): string { return join(NetForumConnector.LearnedRoot ?? NetForumConnector.OperatorRoot, '.nf-learned.json'); }
+
+    /** The pre-move location (the release directory). Read once when the state file does not exist yet. */
+    private LegacyLearnedFilePath(): string | null {
+        const legacy = join(NetForumConnector.OperatorRoot, '.nf-learned.json');
+        return legacy === this.LearnedFilePath() ? null : legacy;
+    }
+
+    private LoadLearned(faultKey: string): void {
+        if (this.LearnedLoadedFor.has(faultKey)) return;
+        this.LearnedLoadedFor.add(faultKey);
+        let raw: string;
+        try {
+            const path = existsSync(this.LearnedFilePath()) ? this.LearnedFilePath()
+                : (this.LegacyLearnedFilePath() && existsSync(this.LegacyLearnedFilePath()!) ? this.LegacyLearnedFilePath() : null);
+            if (!path) return;
+            raw = readFileSync(path, 'utf8');
+        } catch {
+            return;
+        }
+        let file: NFLearnedFile;
+        try {
+            file = JSON.parse(raw) as NFLearnedFile;
+        } catch {
+            return;
+        }
+        if (!file || typeof file !== 'object' || !file.connections) return;
+        if (file.connections['*'] && typeof file.connections['*'] === 'object') this.LearnedSeed = this.SeedWithoutConnectionWideColumnFacts(file.connections['*']);
+        const mergeInto = (map: Map<string, Set<string>>, key: string, values: unknown): void => {
+            if (!Array.isArray(values)) return;
+            const set = map.get(key) ?? new Set<string>();
+            for (const v of values as unknown[]) if (typeof v === 'string' && v) set.add(v.toLowerCase());
+            map.set(key, set);
+        };
+        for (const section of [file.connections['*'], file.connections[faultKey]]) {
+            if (!section || typeof section !== 'object') continue;
+            mergeInto(this.MissingTables, faultKey, section.missingTables);
+            // v1 connection-wide pairs (and their v2 name): suspects, never facts — see LegacyUnresolvable.
+            mergeInto(this.LegacyUnresolvable, faultKey, section.unresolvable);
+            mergeInto(this.LegacyUnresolvable, faultKey, section.legacyUnresolvable);
+            // v1's connection-wide '*' latch (and its v2 name): a hint only — see DefaultColumnListUnusable.
+            if (section.defaultListUnusable === true || section.defaultListFaultSeen === true) this.DefaultColumnListUnusable.add(faultKey);
+            if (section === file.connections[faultKey] && section.probeFaults && typeof section.probeFaults === 'object') {
+                for (const [kind, e] of Object.entries(section.probeFaults)) {
+                    if (e && typeof e.day === 'string' && Number.isFinite(e.count)) this.ProbeFaults.set(`${faultKey}|${kind}`, { day: e.day, count: e.count });
+                }
+            }
+            for (const [name, o] of Object.entries(section.objects ?? {})) {
+                if (!o || typeof o !== 'object') continue;
+                const key = `${faultKey}|${name.toLowerCase()}`;
+                mergeInto(this.UnselectableColumns, key, o.unselectable);
+                mergeInto(this.UnexposedQualifiers, key, o.unexposed);
+                mergeInto(this.UnresolvablePairs, key, o.unresolvable);
+                if (typeof o.defaultListUnusable === 'string' || o.defaultListUnusable === true) this.DefaultListUnusableByObject.set(key, typeof o.defaultListUnusable === 'string' ? o.defaultListUnusable : "'*' is not a valid value for szColumnList");
+                else if (o.defaultListUsable === true) this.DefaultListUsable.add(key);
+                if (o.legacyCleared === true) this.LegacyCleared.add(key);
+                if (o.unsendable === true) this.ExplicitListUnsendable.add(key);
+                if (o.ownListUnsendable === true) this.OwnListUnsendable.add(key);
+                else if (o.ownListUsable === true) this.OwnListUsable.add(key);
+                if (typeof o.refused === 'string' && o.refused) this.LearnedRefusals.set(key, o.refused);
+                if (typeof o.injectedKey === 'string' && o.injectedKey && !this.InjectedKeyByObject.has(key)) this.InjectedKeyByObject.set(key, o.injectedKey);
+            }
+        }
+    }
+
+    private SaveLearned(): void {
+        try {
+            const connections: Record<string, NFLearnedSection> = {};
+            if (this.LearnedSeed) connections['*'] = this.LearnedSeed;
+            const conn = (faultKey: string): NFLearnedSection => (connections[faultKey] ??= {});
+            const at = (grantKey: string): NFLearnedObject => {
+                const bar = grantKey.indexOf('|');
+                const c = conn(grantKey.slice(0, bar));
+                return ((c.objects ??= {})[grantKey.slice(bar + 1)] ??= {});
+            };
+            for (const k of this.DefaultColumnListUnusable) conn(k).defaultListFaultSeen = true;
+            for (const [k, v] of this.MissingTables) if (v.size > 0) conn(k).missingTables = [...v].sort();
+            for (const [k, v] of this.LegacyUnresolvable) if (v.size > 0) conn(k).legacyUnresolvable = [...v].sort();
+            for (const [k, e] of this.ProbeFaults) {
+                const bar = k.lastIndexOf('|');
+                (conn(k.slice(0, bar)).probeFaults ??= {})[k.slice(bar + 1)] = e;
+            }
+            for (const [k, v] of this.UnresolvablePairs) if (v.size > 0) at(k).unresolvable = [...v].sort();
+            for (const [k, v] of this.DefaultListUnusableByObject) at(k).defaultListUnusable = v;
+            for (const k of this.DefaultListUsable) if (!this.DefaultListUnusableByObject.has(k)) at(k).defaultListUsable = true;
+            for (const k of this.LegacyCleared) at(k).legacyCleared = true;
+            for (const [k, v] of this.UnselectableColumns) if (v.size > 0) at(k).unselectable = [...v].sort();
+            for (const [k, v] of this.UnexposedQualifiers) if (v.size > 0) at(k).unexposed = [...v].sort();
+            for (const k of this.ExplicitListUnsendable) at(k).unsendable = true;
+            for (const k of this.OwnListUnsendable) at(k).ownListUnsendable = true;
+            for (const k of this.OwnListUsable) if (!this.OwnListUnsendable.has(k)) at(k).ownListUsable = true;
+            for (const [k, v] of this.LearnedRefusals) at(k).refused = v;
+            for (const [k, v] of this.InjectedKeyByObject) at(k).injectedKey = v;
+            const file: NFLearnedFile = { version: 2, savedAt: new Date().toISOString(), connections };
+            const path = this.LearnedFilePath();
+            if (NetForumConnector.LearnedRoot) mkdirSync(NetForumConnector.LearnedRoot, { recursive: true });
+            writeFileSync(`${path}.tmp`, JSON.stringify(file, null, 1));
+            renameSync(`${path}.tmp`, path);
+        } catch {
+            // best effort: the in-memory state still protects this process
+        }
+    }
+
+    /** Why this object's list cannot compile because of a table learned missing, else undefined. */
+    private MissingFromTableReason(def: NFQueryDefinition | null, faultKey: string): string | undefined {
+        const missing = this.MissingTables.get(faultKey);
+        if (!def || !missing || missing.size === 0) return undefined;
+        const t = def.FromTables.find(f => f.Table && missing.has(f.Table.toLowerCase()));
+        return t?.Table ? `it joins "${t.Table}", a table xWeb's SQL reported as not existing in this database` : undefined;
+    }
+
+    /** The seed section with v1's connection-wide column facts renamed so that nothing reads them as facts again. */
+    private SeedWithoutConnectionWideColumnFacts(seed: NFLearnedSection): NFLearnedSection {
+        const out: NFLearnedSection = { ...seed };
+        if (Array.isArray(out.unresolvable)) {
+            out.legacyUnresolvable = [...new Set<unknown>([...(Array.isArray(out.legacyUnresolvable) ? out.legacyUnresolvable as unknown[] : []), ...out.unresolvable as unknown[]])].sort();
+            delete out.unresolvable;
+        }
+        if (out.defaultListUnusable === true) {
+            out.defaultListFaultSeen = true;
+            delete out.defaultListUnusable;
+        }
+        return out;
+    }
+
+    /** True when a defined column's table is learned missing from this database (a connection-wide DB fact). */
+    private ColumnOnMissingTable(c: NFDefinedColumn, learnKey: string | undefined): boolean {
+        if (!learnKey) return false;
+        const table = (c.Table ?? '').toLowerCase();
+        return !!table && (this.MissingTables.get(learnKey.slice(0, learnKey.indexOf('|')))?.has(table) ?? false);
+    }
+
+    /** True when a defined column is known unselectable FOR THIS OBJECT (its table is missing, or this object learned the pair). */
+    private ColumnUnresolvable(c: NFDefinedColumn, learnKey: string | undefined): boolean {
+        if (!learnKey) return false;
+        if (this.ColumnOnMissingTable(c, learnKey)) return true;
+        return this.UnresolvablePairs.get(learnKey)?.has(`${(c.Table ?? '').toLowerCase()}.${c.Name.toLowerCase()}`) ?? false;
+    }
+
+    /** The object's own key and watermark (and ordering key), lowercased: what no learned column fact may remove from its list. */
+    private ProtectedColumns(def: NFQueryDefinition | null, required: Array<string | undefined>): Set<string> {
+        return new Set([def?.KeyColumn, ...required].filter((n): n is string => typeof n === 'string' && n.length > 0).map(n => n.toLowerCase()));
+    }
+
+    /** How many of the object's defined columns only v1's connection-wide pairs would remove (0 once the object read without them). */
+    private LegacySuspectCount(def: NFQueryDefinition | null, grantKey: string, protectedNames: Set<string>): number {
+        const legacy = this.LegacyUnresolvable.get(grantKey.slice(0, grantKey.indexOf('|')));
+        if (!def || !legacy || legacy.size === 0 || this.LegacyCleared.has(grantKey)) return 0;
+        const own = this.UnselectableColumns.get(grantKey);
+        return def.Columns.filter(c => {
+            const n = c.Name.toLowerCase();
+            return !protectedNames.has(n) && !own?.has(n) && !this.ColumnUnresolvable(c, grantKey)
+                && legacy.has(`${(c.Table ?? '').toLowerCase()}.${n}`);
+        }).length;
+    }
+
+    private UtcDay(): string { return new Date().toISOString().slice(0, 10); }
+
+    /** Probe faults of `kind` still allowed today on this connection, net of the probes in flight. */
+    private ProbeBudgetLeft(faultKey: string, kind: NFProbeKind): number {
+        const k = `${faultKey}|${kind}`;
+        const e = this.ProbeFaults.get(k);
+        const spent = e && e.day === this.UtcDay() ? e.count : 0;
+        return (NetForumConnector.PROBE_FAULTS_PER_DAY?.[kind] ?? 0) - spent - (this.ProbesInFlight.get(k) ?? 0);
+    }
+
+    /**
+     * One GetQuery that nothing has vouched for, under the daily probe-fault budget: null (and nothing sent) when the
+     * budget is spent; otherwise the response, with a SOAP fault counted against today's budget and persisted.
+     */
+    private async SendBudgetedGetQuery(
+        faultKey: string,
+        kind: NFProbeKind,
+        url: string,
+        args: Record<string, string>,
+        token: string,
+    ): Promise<RESTResponse | null> {
+        if (this.ProbeBudgetLeft(faultKey, kind) <= 0) return null;
+        const k = `${faultKey}|${kind}`;
+        this.ProbesInFlight.set(k, (this.ProbesInFlight.get(k) ?? 0) + 1);
+        try {
+            const r = await this.SendGetQuery(url, args, token);
+            if (r.Status >= 400 && this.FaultText(r.Body)) {
+                const day = this.UtcDay();
+                const e = this.ProbeFaults.get(k);
+                this.ProbeFaults.set(k, { day, count: (e && e.day === day ? e.count : 0) + 1 });
+                this.SaveLearned();
+            }
+            return r;
+        } finally {
+            this.ProbesInFlight.set(k, (this.ProbesInFlight.get(k) ?? 1) - 1);
+        }
+    }
+
+    /**
+     * Records what an EMPTY szColumnList (the object's own default list) drew, for that object only: 2xx → usable;
+     * a SOAP fault → unusable, with its text. Not a verdict: no SOAP fault (gateway, timeout), a 429, a deadlock,
+     * or "not authorized to perform Select" (a grant, not the list — SelectNotAuthorized owns that).
+     */
+    private RecordDefaultListAnswer(faultKey: string, grantKey: string, response: RESTResponse): void {
+        if (response.Status >= 200 && response.Status < 300) {
+            if (!this.DefaultListUsable.has(grantKey)) {
+                this.DefaultListUsable.add(grantKey);
+                this.SaveLearned();
+            }
+            return;
+        }
+        const fault = this.FaultText(response.Body);
+        if (!fault || response.Status === 429 || /deadlock/i.test(fault) || this.IsSelectNotAuthorizedFault(response)) return;
+        this.DefaultListUsable.delete(grantKey);
+        this.DefaultListUnusableByObject.set(grantKey, fault.replace(/\s+/g, ' ').slice(0, 200));
+        if (this.IsInvalidDefaultColumnListFault(response)) this.DefaultColumnListUnusable.add(faultKey);
+        this.SaveLearned();
+    }
+
+    /**
+     * The sent list named nothing but the object's key / ordering key / watermark while its definition lists other
+     * columns — every other column was left out by what faults taught. Undefined otherwise.
+     */
+    private KeysOnlyCollapse(def: NFQueryDefinition | null, sentList: string | undefined, protectedNames: Set<string>): NFKeysOnlyCollapse | undefined {
+        if (!def || !sentList) return undefined;
+        const sent = sentList.split(',').map(x => x.split('.').pop()!.trim()).filter(x => x.length > 0);
+        if (sent.some(n => !protectedNames.has(n.toLowerCase()))) return undefined;
+        const others = new Set(def.Columns.map(c => c.Name.toLowerCase()).filter(n => !protectedNames.has(n) && IsQueryableColumn(n)));
+        return others.size > 0 ? { Sent: sent, LeftOut: others.size, Defined: def.Columns.length } : undefined;
+    }
+
+    private DefinitionsOnlyMode(): boolean {
+        try {
+            return existsSync(join(NetForumConnector.OperatorRoot, '.nf-definitions-only'));
+        } catch {
+            return false;
+        }
+    }
+
+    private DumpDefinition(objectName: string, xml: string): void {
+        try {
+            const dir = join(NetForumConnector.OperatorRoot, 'logs', 'netforum-definitions');
+            if (!existsSync(dir)) return;
+            const safe = objectName.replace(/[^A-Za-z0-9_.-]+/g, '_').slice(0, 120);
+            writeFileSync(join(dir, `${safe}.xml`), xml, 'utf8');
+        } catch {
+            // best-effort diagnostics: never let a dump failure change what the connector does
+        }
+    }
 
     // ─── Discovery — Declared cache + runtime GetQueryDefinition ──────
 
@@ -576,9 +1115,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * The parsed GetQueryDefinition for `objectName`, fetched once per instance per object. A non-2xx
-     * answer is remembered as `null` (not asked again — faults are the budget xWeb locks the account
-     * on); a thrown network error is not remembered, so the next caller asks again.
+     * The parsed GetQueryDefinition for `objectName`, fetched once per instance per object, under the shared
+     * concurrency bound with 429 waited out. Only a DEFINITE refusal — a SOAP fault, e.g. "Account is not
+     * authorized" — is remembered as `null` (faults are the budget xWeb locks the account on, so it is not asked
+     * again). A throttle that outlasts the retries, a gateway error or a thrown network error is NOT remembered:
+     * the next caller asks again — and when the operator dump directory holds this object's earlier answer
+     * (`logs/netforum-definitions/<object>.xml`, the vendor's own words), that answer stands in meanwhile.
      */
     private async DefinitionFor(ci: MJCompanyIntegrationEntity, cu: UserInfo, objectName: string): Promise<NFQueryDefinition | null> {
         const key = objectName.toLowerCase();
@@ -586,19 +1128,36 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         try {
             const auth = await this.Authenticate(ci, cu) as NFAuthContext;
             const url = `${auth.Config.BaseURL}${DEFAULT_SOAP_PATH}`;
-            const body = this.BuildSoapEnvelope('GetQueryDefinition', { szObjectName: objectName }, auth.Token);
-            const r = await this.MakeRawHTTPRequest(url, 'POST', this.SoapHeaders('GetQueryDefinition'), body);
+            const r = await this.SendSoap('GetQueryDefinition', url, { szObjectName: objectName }, auth.Token);
             if (r.Status >= 200 && r.Status < 300) {
+                this.DumpDefinition(objectName, this.AsText(r.Body));
                 const parsed = this.ParseQueryDefinition(this.AsText(r.Body));
                 const def = parsed.Columns.length > 0 ? parsed : null;
                 this.DefinitionByObject.set(key, def);
                 return def;
             }
-            this.DefinitionByObject.set(key, null);   // a definite refusal — not retried per call
+            const dumped = this.DumpedDefinition(objectName);
+            if (dumped) {
+                this.DefinitionByObject.set(key, dumped);
+                return dumped;
+            }
+            if (r.Status !== 429 && this.FaultText(r.Body)) this.DefinitionByObject.set(key, null);   // a definite refusal — not retried per call
         } catch {
             // credential-free / network / parse failure → nothing cached, nothing known
         }
         return null;
+    }
+
+    /** The object's definition from the operator dump directory, when a live fetch is refused or throttled; null when absent. */
+    private DumpedDefinition(objectName: string): NFQueryDefinition | null {
+        try {
+            const path = join(NetForumConnector.OperatorRoot, 'logs', 'netforum-definitions', `${objectName}.xml`);
+            if (!existsSync(path)) return null;
+            const parsed = this.ParseQueryDefinition(readFileSync(path, 'utf8'));
+            return parsed.Columns.length > 0 ? parsed : null;
+        } catch {
+            return null;
+        }
     }
 
     /**
@@ -719,14 +1278,17 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     // AllowsNull provable-only: 'mdc_nullable' is an explicit source flag. "0"/"false"/"no" ⇒ NOT NULL.
                     AllowsNull: nullable == null ? undefined : !/^(0|false|no|n)$/i.test(nullable.trim()),
                     MaxLength: widthRaw && /^\d+$/.test(widthRaw) ? Number(widthRaw) : null,
+                    IsExtension: (this.ParseSoapScalar(colXml, 'mdc_ext') ?? '').trim() === '1',
                 });
             }
         };
+        const from: NFFromTable[] = [];
         const fromTables = this.ExtractElements(xml, 'ListFromTable');
         if (fromTables.length > 0) {
             for (const lft of fromTables) {
                 const table = this.ParseSoapScalar(lft, 'lsf_from_table') ?? null;
                 const alias = this.ParseSoapScalar(lft, 'lsf_from_alias') || null;   // <lsf_from_alias xsi:nil="true"/> → null
+                from.push({ Table: table, Alias: alias, Join: this.ParseSoapScalar(lft, 'lsf_from_join') ?? '' });
                 readColumns(lft, table, alias);
                 for (const dl of this.ExtractElements(lft, 'ListFromTableColumn')) {
                     const n = this.ParseSoapScalar(dl, 'lsc_mdc_name');
@@ -750,7 +1312,64 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             KeyColumn: this.KeyColumnFromDefinition(mainTable, deduped),
             Columns: deduped,
             DefaultListColumns: defaultList,
+            FromTables: from,
+            BrokenJoin: this.BrokenJoinReason(mainTable, from, columns),
         };
+    }
+
+    /**
+     * The reason no GetQuery on this object can compile, read off its own definition — or undefined.
+     *
+     * Five shapes, all seen live (a live tenant, 2026-09-25, 875 definitions against ~430 explicit reads) and all
+     * predictable without a request: a second root table with no join text (Customer, Certificant); an
+     * unbalanced quote or parenthesis in join text (DeferralHeader); a chained comparison `a = b = 'x'`
+     * (EventsRegistrant and four siblings); a key compared with a date or text column (`aco_add_date=avt_key`,
+     * `cot_cra_code=cra_key` — "Operand type clash" / "Conversion failed"); a join naming a column the
+     * definition lists nowhere (`ivd_whs_key`, `spk_key`, `kit_key`, `zz_dummy` — "Invalid column name").
+     * Each would otherwise cost a fault per object per process; the fix is in netFORUM's List Table setup.
+     */
+    private BrokenJoinReason(mainTable: string | null, from: NFFromTable[], columns: NFDefinedColumn[]): string | undefined {
+        const typeOf = new Map<string, string>();
+        for (const c of columns) if (!typeOf.has(c.Name.toLowerCase())) typeOf.set(c.Name.toLowerCase(), (c.DataType ?? '').toLowerCase());
+        const tables = new Set(from.map(f => (f.Table ?? '').toLowerCase()).filter(t => t.length > 0));
+        const aliases = new Set(from.map(f => (f.Alias ?? '').toLowerCase()).filter(a => a.length > 0));
+        const KEYWORDS = new Set(['and', 'or', 'not', 'null', 'is', 'in', 'like', 'exists', 'between', 'left', 'right', 'inner', 'outer',
+            'join', 'on', 'as', 'case', 'when', 'then', 'else', 'end', 'select', 'from', 'where', 'top', 'distinct', 'dbo', 'with', 'nolock']);
+        const isKey = (t: string): boolean => /^(av_key|uniqueidentifier)$/.test(t);
+        const isDate = (t: string): boolean => /date|time/.test(t);
+        const isText = (t: string): boolean => /char|text/.test(t);
+        for (const [i, f] of from.entries()) {
+            const raw = f.Join ?? '';
+            const who = f.Alias ?? f.Table ?? '?';
+            // (a) a second root: a from-table after the first with no join text is not joined to anything
+            if (i > 0 && raw.trim().length === 0) return `"${who}" is a second root table with no join text`;
+            // (b) unbalanced quotes / parentheses — the text cannot be parsed as SQL
+            if (((raw.match(/'/g) ?? []).length % 2) === 1) return `unbalanced quote in the join on ${who}: "${raw.trim().slice(0, 80)}"`;
+            if ((raw.match(/\(/g) ?? []).length !== (raw.match(/\)/g) ?? []).length) return `unbalanced parenthesis in the join on ${who}: "${raw.trim().slice(0, 80)}"`;
+            const join = raw.replace(/'[^']*'/g, "''");
+            for (const conjunct of join.split(/\b(?:and|or)\b/i)) {
+                // (c) a chained comparison (a = b = 'x') is not T-SQL
+                if ((conjunct.match(/(?<![<>!])=(?!=)/g) ?? []).length > 1) return `malformed join on ${who}: "${conjunct.trim().slice(0, 80)}"`;
+                // (d) a key compared with a date or text column: the server converts and fails on the first real row
+                const cmp = /([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*([A-Za-z_][A-Za-z0-9_.]*)/.exec(conjunct);
+                if (cmp) {
+                    const tl = typeOf.get(cmp[1].split('.').pop()!.toLowerCase());
+                    const tr = typeOf.get(cmp[2].split('.').pop()!.toLowerCase());
+                    if (tl && tr && ((isKey(tl) && (isDate(tr) || isText(tr))) || (isKey(tr) && (isDate(tl) || isText(tl))))) {
+                        return `join on ${who} compares "${cmp[1]}" (${tl}) with "${cmp[2]}" (${tr})`;
+                    }
+                }
+            }
+            // (e) a column the definition does not list anywhere: the join cannot bind. Function calls, keywords,
+            //     table and alias names, and string literals are not columns.
+            const withoutCalls = join.replace(/[A-Za-z_][A-Za-z0-9_]*\s*\(/g, '(');
+            for (const tok of withoutCalls.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []) {
+                const t = tok.toLowerCase();
+                if (!t.includes('_') || KEYWORDS.has(t) || tables.has(t) || aliases.has(t) || typeOf.has(t)) continue;
+                return `join on ${who} names "${tok}", which the definition lists nowhere`;
+            }
+        }
+        return undefined;
     }
 
     /**
@@ -862,6 +1481,30 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * (WATERMARK_COLUMN_ABSENT) rather than silently never advancing.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
+        // An own-table probe (see OwnListUsable) holds its object's OwnListProbe entry until its verdict is
+        // recorded — through the learn rounds — and is released here whatever the call ends in.
+        const ownProbe: { settle: (() => void) | undefined; key: string | undefined } = { settle: undefined, key: undefined };
+        try {
+            return await this.FetchChangesOnce(ctx, ownProbe);
+        } finally {
+            if (ownProbe.settle) {
+                this.OwnListProbe.delete(ownProbe.key!);
+                ownProbe.settle();
+            }
+        }
+    }
+
+    private async FetchChangesOnce(
+        ctx: FetchContext,
+        ownProbe: { settle: (() => void) | undefined; key: string | undefined },
+    ): Promise<FetchBatchResult> {
+        if (this.DefinitionsOnlyMode()) {
+            throw new Error(
+                `NetForum GetQuery(${ctx.ObjectName}) not attempted: definitions-only mode ` +
+                `(${join(NetForumConnector.OperatorRoot, '.nf-definitions-only')} exists) — this run collects the objects' ` +
+                `GetQueryDefinition answers and sends no GetQuery. Remove the file to sample and sync.`,
+            );
+        }
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as NFAuthContext;
         const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
         const cfg = this.ParseObjectConfig(obj);
@@ -874,12 +1517,25 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // persisted. NEVER the enumeration's obj_key: that is the facade object's GUID, not a column,
         // and sending it as one is what faulted every read on a live tenant (EnumeratedObjectIdByObject).
         const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const faultKey = ctx.CompanyIntegration?.ID ?? '';
+        const grantKey = `${faultKey}|${ctx.ObjectName.toLowerCase()}`;
+        // The object's definition is consulted for EVERY read (one GetQueryDefinition per object per instance): it
+        // names the key when nothing is persisted, it is the column list that carries every column, and it says
+        // when no query on the object can compile at all.
+        this.LoadLearned(faultKey);
+        const def = await this.DefinitionFor(ci, ctx.ContextUser as UserInfo, ctx.ObjectName);
+        const learnedRefusal = this.LearnedRefusals.get(grantKey) ?? this.MissingFromTableReason(def, faultKey);
+        if (learnedRefusal) {
+            throw new Error(
+                `NetForum GetQuery(${ctx.ObjectName}) not attempted: ${learnedRefusal}. Every GetQuery on it faults, ` +
+                `so none is sent (learned from an earlier fault on this installation; see .nf-learned.json); ` +
+                `the fix is in netFORUM's List Table setup for "${ctx.ObjectName}".`,
+            );
+        }
         const persistedKey = this.PrimaryKeyFieldName(obj);
-        const definedKey = persistedKey
-            ? undefined
-            : (await this.DefinitionFor(ci, ctx.ContextUser as UserInfo, ctx.ObjectName))?.KeyColumn;
+        const definedKey = persistedKey ? undefined : def?.KeyColumn;
         const pkField = persistedKey ?? definedKey;
-        const orderingKey = cfg.stableOrderingKey ?? pkField;
+        const orderingKey = cfg.stableOrderingKey ?? this.InjectedKeyByObject.get(grantKey) ?? pkField;
 
         // Keyset pagination requires a total order to seek on. With one, we page via
         // `@TOP <BatchSize>` + `WHERE <key> > <AfterKeyValue> ORDER BY <key>`; the metadata
@@ -921,6 +1577,47 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             szObjectName,
             szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField]),
         };
+        // An object whose definition lists its columns is read with ALL of them. The empty list would return the
+        // tenant's default list — a handful of columns (2–18 of up to 300 on a live tenant), which is a partial
+        // read presented as a full one — or fault on a `*` default. Declared Configuration.columnList still wins.
+        const required = [pkField, orderingKey, watermarkField];
+        const protectedNames = this.ProtectedColumns(def, required);
+        // `probeKind` marks this call's requests as ones nothing has vouched for, sent under the daily probe-fault
+        // budget (SendBudgetedGetQuery): 'default' — the object's own default list, never tried on this installation;
+        // 'legacy' — its full list, which v1's connection-wide pairs would have cut (LegacyUnresolvable).
+        let probeKind: NFProbeKind | null = null;
+        let applyLegacy = false;
+        // `ownOnly`: this call sends the object's OWN-TABLE list (its full list is unsendable) — see OwnListUsable.
+        let ownOnly = false;
+        const listFor = (): string => ownOnly
+            ? this.OwnTableColumnListFor(obj, required, grantKey)
+            : this.ExplicitColumnListFor(obj, required, grantKey, applyLegacy);
+        if (!args.szColumnList && def && def.Columns.length > 0 && this.ExplicitListUnsendable.has(grantKey)) {
+            // The full list broke xWeb's SQL. The default list is no fallback for a broken statement, but the
+            // object's OWN-TABLE columns are: the joined tables' columns are what break it. Tried ONCE per object as
+            // a budgeted probe ('own'); its verdict is persisted, so a usable own list is then sent directly and an
+            // unsendable one is refused without a request.
+            while (this.OwnListProbe.has(grantKey)) await this.OwnListProbe.get(grantKey);
+            if (this.OwnListUnsendable.has(grantKey)) throw this.NothingValidToSend(ctx.ObjectName, 'own');
+            ownOnly = true;
+            const own = listFor();
+            if (!own) throw this.NothingValidToSend(ctx.ObjectName, 'unsendable');
+            if (!this.OwnListUsable.has(grantKey)) {
+                if (this.ProbeBudgetLeft(faultKey, 'own') <= 0) throw this.OwnProbeBudgetSpent(ctx.ObjectName);
+                probeKind = 'own';
+                ownProbe.key = grantKey;
+                this.OwnListProbe.set(grantKey, new Promise<void>(resolve => { ownProbe.settle = resolve; }));
+            }
+            args.szColumnList = own;
+        } else if (!args.szColumnList && def && def.Columns.length > 0) {
+            if (this.LegacySuspectCount(def, grantKey, protectedNames) > 0) {
+                if (this.ProbeBudgetLeft(faultKey, 'legacy') > 0) probeKind = 'legacy';
+                else applyLegacy = true;
+            }
+            const full = listFor();
+            if (full) args.szColumnList = full;
+            else probeKind = null;
+        }
 
         // ORDER BY and WHERE name the key and the watermark QUALIFIED by their table (or alias) whenever
         // the object's definition knows it. xWeb adds its own copy of the object's primary key to every
@@ -929,15 +1626,20 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // a live tenant's first explicit-list run (2026-09-24). The default-list reads never hit it (the
         // key appears once). A qualified reference resolves in both cases.
         const predicates: string[] = [];
-        if (ctx.WatermarkValue && watermarkField) {
-            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField)} >= '${this.EscapeSqlLiteral(ctx.WatermarkValue)}'`);
+        // A watermark value that is not a date (a row key left on the watermark row by a keyset resume — see
+        // StableOrderingKey) is never sent as a date: SQL Server answers "Conversion failed", which nothing can
+        // learn from. The object is read without the predicate (a full read, so nothing is skipped) and says so;
+        // the engine then saves a real date watermark from the rows.
+        const watermarkLiteral = ctx.WatermarkValue && watermarkField ? this.DateWatermarkLiteral(ctx.WatermarkValue) : null;
+        if (watermarkLiteral) {
+            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= '${this.EscapeSqlLiteral(watermarkLiteral)}'`);
         }
         if (canPaginate && ctx.AfterKeyValue) {
-            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
+            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
         }
         if (predicates.length > 0) args.szWhereClause = predicates.join(' AND ');
 
-        if (orderingKey) args.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey);
+        if (orderingKey) args.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey, grantKey);
 
         const url = `${auth.Config.BaseURL}${this.SoapEndpoint(cfg)}`;
 
@@ -949,8 +1651,6 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // through to the original empty request unchanged. So a tenant whose defaults are fine never
         // reaches it, and — because netFORUM configures the default list PER OBJECT — an object whose
         // own default is fine on a tenant where others are not still gets its normal request.
-        const faultKey = ctx.CompanyIntegration?.ID ?? '';
-        const grantKey = `${faultKey}|${ctx.ObjectName.toLowerCase()}`;
         if (this.SelectNotAuthorized.has(grantKey)) {
             throw new Error(
                 `NetForum GetQuery(${ctx.ObjectName}) not attempted: this xWeb account is not authorized to ` +
@@ -958,33 +1658,76 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 `between calls, and each retry is a fault against the daily budget that locks the account).`,
             );
         }
+        //
+        // A HINT, not a refusal: another object's '*' says nothing about this object's own default list. An object
+        // with nothing to send instead goes on to its own (budgeted, once-per-object) default-list probe below.
         if (!args.szColumnList && this.DefaultColumnListUnusable.has(faultKey)) {
-            const known = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
-            if (known) {
-                args.szColumnList = known;
-            } else {
-                // The tenant's default list is known to be unusable and nothing describes this object's
-                // columns (no definition, no persisted fields). The only request left is one that will
-                // fault, and faults are what lock the account — so it is not sent.
-                throw new Error(
-                    `NetForum GetQuery(${ctx.ObjectName}) not attempted: this connection's default column list is ` +
-                    `unusable ('*' faulted earlier) and no column list is known for "${ctx.ObjectName}" — ` +
-                    `GetQueryDefinition described no columns and none are persisted. Nothing valid to send.`,
-                );
-            }
+            const known = listFor();
+            if (known) args.szColumnList = known;
         }
         // The vendor: "@TOP -1 ... specific, named fields must be passed ... in szColumnList". The
         // legacy unbounded fetch of a keyless object therefore names its columns when it can.
         if (!args.szColumnList && /@TOP\s+-1\b/i.test(szObjectName)) {
-            const named = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            const named = listFor();
             if (named) args.szColumnList = named;
         }
-        const sentEmptyColumnList = !args.szColumnList;
+        let sentEmptyColumnList = !args.szColumnList;
+        if (sentEmptyColumnList) {
+            // One probe of an object's default list at a time: a concurrent caller on the SAME object waits for its
+            // verdict and decides as if it had come later, rather than pay a second fault for the same answer.
+            while (this.DefaultListProbe.has(grantKey)) await this.DefaultListProbe.get(grantKey);
+            const unusable = this.DefaultListUnusableByObject.get(grantKey);
+            if (unusable !== undefined) {
+                // THIS object's default list faulted before (persisted): its explicit list when one is known, else
+                // nothing — the one request left would fault again, and faults are what lock the account.
+                const known = listFor();
+                if (!known) throw this.NothingValidToSend(ctx.ObjectName, 'default', unusable);
+                args.szColumnList = known;
+                sentEmptyColumnList = false;
+            } else if (!this.DefaultListUsable.has(grantKey)) {
+                // Never tried on this installation: ONE probe, under the daily budget. With the budget spent, the
+                // object's explicit list when one is known; else it waits for a later day.
+                if (this.ProbeBudgetLeft(faultKey, 'default') > 0) {
+                    probeKind = 'default';
+                } else {
+                    const known = listFor();
+                    if (!known) throw this.ProbeBudgetSpent(ctx.ObjectName, faultKey);
+                    args.szColumnList = known;
+                    sentEmptyColumnList = false;
+                }
+            }
+        }
         let sentArgs: Record<string, string> = args;
 
-        let response = await this.MakeRawHTTPRequest(
-            url, 'POST', this.SoapHeaders('GetQuery'), this.BuildSoapEnvelope('GetQuery', args, auth.Token),
-        );
+        const resend = (a: Record<string, string>): Promise<RESTResponse | null> => probeKind
+            ? this.SendBudgetedGetQuery(faultKey, probeKind, url, a, auth.Token)
+            : this.SendGetQuery(url, a, auth.Token);
+        let settleProbe: (() => void) | undefined;
+        if (probeKind === 'default') this.DefaultListProbe.set(grantKey, new Promise<void>(resolve => { settleProbe = resolve; }));
+        let response: RESTResponse | null;
+        try {
+            response = await resend(args);
+            if (!response) {
+                // The budget ran out between the decision and the send (a concurrent probe faulted): fall back as above.
+                // An own-table probe has nothing to fall back to — it waits for a later day, unsent.
+                if (probeKind === 'own') throw this.OwnProbeBudgetSpent(ctx.ObjectName);
+                const wasDefault = probeKind === 'default';
+                if (probeKind === 'legacy') applyLegacy = true;
+                probeKind = null;
+                const known = listFor();
+                if (!known) throw wasDefault ? this.ProbeBudgetSpent(ctx.ObjectName, faultKey) : this.NothingValidToSend(ctx.ObjectName, 'empty');
+                args.szColumnList = known;
+                sentEmptyColumnList = false;
+                response = await this.SendGetQuery(url, args, auth.Token);
+            }
+            // The verdict is recorded BEFORE a waiter on this object wakes, so it reads it rather than re-probes.
+            if (sentEmptyColumnList) this.RecordDefaultListAnswer(faultKey, grantKey, response);
+        } finally {
+            if (settleProbe) {
+                this.DefaultListProbe.delete(grantKey);
+                settleProbe();
+            }
+        }
 
         // The door can reject ITS OWN default list. An empty szColumnList asks xWeb for the object's
         // configured default columns, and on a tenant where that default is `*` the request faults with
@@ -1001,28 +1744,197 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             // Configuration.columnList drawing this same fault is a different defect and must keep
             // surfacing per call, rather than silently changing what every later object sends.
             if (sentEmptyColumnList) this.DefaultColumnListUnusable.add(faultKey);
-            const explicit = this.ExplicitColumnListFor(obj, [pkField, orderingKey, watermarkField]);
+            const explicit = listFor();
             if (explicit) {
-                sentArgs = { ...args, szColumnList: explicit };
-                response = await this.MakeRawHTTPRequest(
-                    url, 'POST', this.SoapHeaders('GetQuery'),
-                    this.BuildSoapEnvelope('GetQuery', sentArgs, auth.Token),
+                const next = await resend({ ...args, szColumnList: explicit });
+                if (next) {
+                    sentArgs = { ...args, szColumnList: explicit };
+                    response = next;
+                }
+            }
+        }
+
+        // A fault teaches, and what it teaches is kept for THE OBJECT and on disk (a missing table, a DB fact, for the
+        // connection): SQL Server
+        // names EVERY column it could not resolve and EVERY qualifier it could not bind, xWeb names a table that
+        // does not exist. Learn all of it at once, rebuild the list and retry — up to three rounds, because one
+        // fault can hide the next class (a table's columns fall away, then the key on it). A fault that teaches
+        // nothing new (the statement broke, "Invalid query.", or the rebuilt list would be the one just refused)
+        // ends it: that list is not sent again on this installation. Every learn is persisted (SaveLearned), so a
+        // restart — the RSU restarts the API between discovery and the first sync — does not re-pay a single fault.
+        //
+        // The verdict lands on the list that was sent: the full list → ExplicitListUnsendable (the next call tries the
+        // object's own-table list); the own-table list → OwnListUnsendable (refused from then on, no request). A
+        // throttle, a deadlock or a missing grant is not a verdict on the own-table list. Three rounds that each
+        // learned and still faulted are the same verdict: the list does not converge.
+        const markUnsendable = (fault: string): void => {
+            if (ownOnly) {
+                if (response!.Status === 429 || /deadlock/i.test(fault) || this.IsSelectNotAuthorizedFault(response!)) return;
+                this.OwnListUsable.delete(grantKey);
+                this.OwnListUnsendable.add(grantKey);
+            } else {
+                this.ExplicitListUnsendable.add(grantKey);
+            }
+            this.SaveLearned();
+        };
+        let learnRounds = 0;
+        // "Conversion failed when converting date and/or time" on a request that carried a watermark predicate is a fault
+        // in the PREDICATE's value, not in the column list: learning it as "this list breaks xWeb's SQL" refused 26 live-tenant
+        // objects on every run (2026-10-14). It ends the call loudly and teaches nothing.
+        const watermarkFault = response.Status >= 400 && !!sentArgs.szWhereClause && watermarkLiteral !== null
+            && /Conversion failed when converting date and\/or time/i.test(this.FaultText(response.Body) ?? '');
+        for (let round = 0; round < 3 && !watermarkFault && response.Status >= 400 && sentArgs.szColumnList; round++) {
+            const faultText = this.FaultText(response.Body);
+            if (!faultText) break;   // no SOAP fault (gateway, timeout): nothing to learn
+            if (this.IsSqlSyntaxFault(response.Body)) {
+                markUnsendable(faultText);
+                break;
+            }
+            let learned = false;
+            const invalid = this.InvalidColumnNames(response.Body);
+            if (invalid.length > 0) {
+                const own = this.UnselectableColumns.get(grantKey) ?? new Set<string>();
+                for (const n of invalid) {
+                    own.add(n);
+                    const col = def?.Columns.find(c => c.Name.toLowerCase() === n);
+                    if (col?.Table) {
+                        const pairs = this.UnresolvablePairs.get(grantKey) ?? new Set<string>();
+                        pairs.add(`${col.Table.toLowerCase()}.${n}`);
+                        this.UnresolvablePairs.set(grantKey, pairs);
+                    }
+                }
+                this.UnselectableColumns.set(grantKey, own);
+                learned = true;
+            }
+            const missing = this.InvalidObjectNames(response.Body);
+            if (missing.length > 0) {
+                const tables = this.MissingTables.get(faultKey) ?? new Set<string>();
+                for (const t of missing) tables.add(t);
+                this.MissingTables.set(faultKey, tables);
+                learned = true;
+                const reason = this.MissingFromTableReason(def, faultKey);
+                if (reason) {
+                    this.LearnedRefusals.set(grantKey, reason);
+                    this.SaveLearned();
+                    break;
+                }
+            }
+            const unbound = this.UnboundQualifiers(response.Body);
+            if (unbound.length > 0) {
+                const own = this.UnexposedQualifiers.get(grantKey) ?? new Set<string>();
+                for (const t of unbound) own.add(t);
+                this.UnexposedQualifiers.set(grantKey, own);
+                learned = true;
+            }
+            if (!learned) {
+                markUnsendable(faultText);
+                break;
+            }
+            const rebuilt = listFor();
+            if (!rebuilt || rebuilt === sentArgs.szColumnList) {
+                markUnsendable(faultText);
+                break;
+            }
+            this.SaveLearned();
+            sentArgs = { ...sentArgs, szColumnList: rebuilt };
+            if (sentArgs.szOrderBy && orderingKey) sentArgs.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey, grantKey);
+            if (sentArgs.szWhereClause) {
+                const predicates: string[] = [];
+                if (watermarkLiteral) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= '${this.EscapeSqlLiteral(watermarkLiteral)}'`);
+                if (canPaginate && ctx.AfterKeyValue) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
+                sentArgs.szWhereClause = predicates.join(' AND ');
+            }
+            const next = await resend(sentArgs);
+            if (!next) {
+                throw new Error(
+                    `NetForum GetQuery(${ctx.ObjectName}) stopped learning: today's budget of probe faults on this ` +
+                    `connection is spent (UTC ${this.UtcDay()}). What the faults so far taught "${ctx.ObjectName}" is kept ` +
+                    `(.nf-learned.json); the rebuilt list is tried on a later day.`,
                 );
             }
+            response = next;
+            learnRounds++;
+        }
+        if (learnRounds === 3 && response.Status >= 400 && response.Status !== 429 && sentArgs.szColumnList) {
+            const faultText = this.FaultText(response.Body);
+            if (faultText && !/deadlock/i.test(faultText) && !this.IsSelectNotAuthorizedFault(response)) markUnsendable(faultText);
         }
 
         if (response.Status < 200 || response.Status >= 300) {
             if (this.IsSelectNotAuthorizedFault(response)) this.SelectNotAuthorized.add(grantKey);
             // The fault text is SQL Server's or xWeb's; the SHAPE of what we sent is ours to report, or
-            // the next reader of the run log is left guessing which parameter the door rejected.
+            // the next reader of the run log is left guessing which parameter the door rejected. A broken
+            // statement also reports the qualifiers the list used — the next log line names the culprit.
+            const syntaxHint = this.IsSqlSyntaxFault(response.Body) ? ` [qualifiers: ${this.QualifierSummary(obj)}]` : '';
+            const watermarkHint = watermarkFault
+                ? ` [the watermark predicate "${watermarkField} >= '${watermarkLiteral}'" is what failed to convert; nothing was learned against the column list]`
+                : '';
             throw new Error(
                 `NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}` +
-                ` [sent: ${this.DescribeRequestShape(sentArgs)}]`,
+                ` [sent: ${this.DescribeRequestShape(sentArgs)}]${syntaxHint}${watermarkHint}`,
             );
+        }
+        if (probeKind === 'legacy' && !this.LegacyCleared.has(grantKey)) {
+            this.LegacyCleared.add(grantKey);
+            this.SaveLearned();
+        }
+        if (ownOnly && !this.OwnListUsable.has(grantKey)) {
+            this.OwnListUsable.add(grantKey);
+            this.SaveLearned();
         }
 
         const rows = this.NormalizeResponse(response.Body, null);
         const warnings: FetchWarning[] = [];
+        if (ctx.WatermarkValue && watermarkField && !watermarkLiteral) {
+            warnings.push({
+                Code: 'WATERMARK_NOT_A_DATE',
+                Message:
+                    `NetForum "${ctx.ObjectName}": the stored watermark "${String(ctx.WatermarkValue).slice(0, 64)}" is not a date, so ` +
+                    `it was not sent as "${watermarkField} >= …" (SQL Server would answer "Conversion failed"); this read is ` +
+                    `unfiltered and the engine saves a date watermark from its rows.`,
+                Data: { ObjectName: ctx.ObjectName, WatermarkField: watermarkField, WatermarkValue: String(ctx.WatermarkValue).slice(0, 64) },
+            });
+        }
+        // An object read through its own-table list carries none of its joined tables' columns: say so, by name, on
+        // every batch, and log it once per process.
+        if (ownOnly) {
+            const sentCount = sentArgs.szColumnList.split(',').filter(x => x.trim().length > 0).length;
+            // The own table is the key's (ExplicitColumnListFor), which is not always the definition's MainTable.
+            const ownTable = def?.Columns.find(c => !!pkField && c.Name.toLowerCase() === pkField.toLowerCase())?.Table ?? def?.MainTable ?? null;
+            const message =
+                `NetForum "${ctx.ObjectName}" reads its own-table columns only (${ownTable ?? '?'}: ` +
+                `${sentCount} of the ${def?.Columns.length ?? 0} columns its definition lists): its full column list broke ` +
+                `xWeb's SQL earlier on this installation, so the joined tables' columns are left out ` +
+                `(.nf-learned.json, objects["${ctx.ObjectName.toLowerCase()}"].ownListUsable).`;
+            warnings.push({
+                Code: 'COLUMN_LIST_OWN_TABLE_ONLY',
+                Message: message,
+                Data: { ObjectName: ctx.ObjectName, MainTable: def?.MainTable ?? null, OwnTable: ownTable, Sent: sentCount, Defined: def?.Columns.length ?? 0 },
+            });
+            if (!this.OwnOnlyWarned.has(grantKey)) {
+                this.OwnOnlyWarned.add(grantKey);
+                console.warn(message);
+            }
+        }
+        // A list cut down to the key (and watermark) reads every record with none of its data: say so, by name,
+        // rather than land keys-only rows silently (a live tenant: Price 1 of 45, ProductType 1 of 14 columns populated).
+        const collapsed = this.KeysOnlyCollapse(def, sentArgs.szColumnList, protectedNames);
+        if (collapsed) {
+            const message =
+                `NetForum "${ctx.ObjectName}": the column list sent names only its key/watermark ` +
+                `(${collapsed.Sent.join(', ')}) — ${collapsed.LeftOut} of the ${collapsed.Defined} columns its definition lists ` +
+                `were left out by what faults on "${ctx.ObjectName}" taught (.nf-learned.json, objects["${ctx.ObjectName.toLowerCase()}"]). ` +
+                `Its rows carry keys only until that entry is cleared.`;
+            warnings.push({
+                Code: 'COLUMN_LIST_COLLAPSED_TO_KEY',
+                Message: message,
+                Data: { ObjectName: ctx.ObjectName, Sent: collapsed.Sent, LeftOut: collapsed.LeftOut, Defined: collapsed.Defined },
+            });
+            if (!this.KeysOnlyWarned.has(grantKey)) {
+                this.KeysOnlyWarned.add(grantKey);
+                console.warn(message);
+            }
+        }
         if (rows.length === 0) {
             warnings.push({ Code: 'ZERO_ROWS', Message: `GetQuery(${szObjectName}) returned no rows.` });
         }
@@ -1066,7 +1978,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // With no key known and the tenant's default list sent, the vendor guarantees "the primary key
         // for the object will still be returned in the node as the first child" — so the first column
         // of each row identifies the record, and its NAME is reported for the key classifier.
-        const firstColumn = !pkField && sentEmptyColumnList && rows.length > 0 ? Object.keys(rows[0])[0] : undefined;
+        // xWeb prepends the object's primary key to EVERY query it builds (INT-45: the explicit list carried it
+        // twice), so the first column of a row identifies the record whichever list was sent — and when our
+        // key was left out of the list (its table unexposed), that injected column is the key from here on.
+        if (pkField && rows.length > 0 && !(pkField in rows[0]) && !(pkField.toLowerCase() in rows[0])) {
+            this.InjectedKeyByObject.set(grantKey, Object.keys(rows[0])[0]);
+            this.SaveLearned();
+        }
+        const firstColumn = !pkField && rows.length > 0 ? Object.keys(rows[0])[0] : undefined;
         if (firstColumn) {
             warnings.push({
                 Code: 'KEY_FROM_DEFAULT_LIST_FIRST_COLUMN',
@@ -1077,11 +1996,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 Data: { ObjectName: ctx.ObjectName, FirstColumn: firstColumn },
             });
         }
+        const injected = this.InjectedKeyByObject.get(grantKey);
+        const idColumn = pkField && rows.length > 0 && !(pkField in rows[0]) && injected ? injected : pkField;
+        const seekColumn = orderingKey && rows.length > 0 && !(orderingKey in rows[0]) && injected ? injected : orderingKey;
         let maxKey: string | undefined;
         const records: ExternalRecord[] = rows.map(row => {
-            const externalID = pkField ? String(row[pkField] ?? '') : (firstColumn ? String(row[firstColumn] ?? '') : '');
-            if (orderingKey) {
-                const v = row[orderingKey];
+            const externalID = idColumn ? String(row[idColumn] ?? '') : (firstColumn ? String(row[firstColumn] ?? '') : '');
+            if (seekColumn) {
+                const v = row[seekColumn];
                 if (v != null) { const s = String(v); if (maxKey === undefined || s > maxKey) maxKey = s; }
             }
             return { ExternalID: externalID, ObjectType: ctx.ObjectName, Fields: row };
@@ -1099,7 +2021,11 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (watermarkField && !hasMore) {
             for (const row of rows) {
                 const v = row[watermarkField];
-                if (v != null) { const s = String(v); if (newWatermark === undefined || s > newWatermark) newWatermark = s; }
+                if (v != null) {
+                    // US-form datetimes compare as ISO (see UsDateTimeToIso); ISO values are kept exactly as xWeb sent them.
+                    const s = NetForumConnector.UsDateTimeToIso(v) ?? String(v);
+                    if (newWatermark === undefined || s > newWatermark) newWatermark = s;
+                }
             }
         }
 
@@ -1113,6 +2039,62 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     private EscapeSqlLiteral(v: string): string { return v.replace(/'/g, "''"); }
+
+    /**
+     * The incremental predicate's value as a literal netFORUM's SQL Server parses.
+     *
+     * xWeb serialises its datetimes with the SERVER's UTC offset appended to netFORUM's local wall clock
+     * (`2026-08-19T14:37:00-05:00`), and the engine stores that text as the watermark. Echoed back into
+     * `szWhereClause`, SQL Server cannot convert it: `datetime` rejects any offset ("Conversion failed when
+     * converting date and/or time from character string") and `smalldatetime` rejects it too — a live tenant,
+     * 2026-10-12: ~43 objects faulted on every run, each fault counted against xWeb's ~100/day lock.
+     *
+     * Emits `YYYYMMDD HH:MM:00`, the one form SQL Server reads identically under every language/DATEFORMAT:
+     *  - an offset is DROPPED, keeping netFORUM's own wall clock (the offset is the server's, not a shift);
+     *  - a `Z` value backs off 24 h — its wall clock is UTC, not netFORUM's, and an earlier literal is safe;
+     *  - seconds and fractions are FLOORED to the minute, so smalldatetime rounding can never move it later.
+     * The predicate is inclusive (`>=`), so an earlier literal only re-reads a few rows; it never skips one.
+     * Anything that is not a recognisable date-time is returned unchanged.
+     */
+    /** WatermarkLiteral for a value that IS a date (ISO, or xWeb's US form); null for anything else (a row key, garbage). */
+    private DateWatermarkLiteral(v: unknown): string | null {
+        const s = String(v ?? '');
+        if (/^\s*\d{4}-\d{2}-\d{2}/.test(s)) return this.WatermarkLiteral(s);
+        const iso = NetForumConnector.UsDateTimeToIso(s);
+        return iso ? this.WatermarkLiteral(iso) : null;
+    }
+
+    /**
+     * xWeb returns some objects' datetimes in the server's US form — "9/9/2024 1:29:00 PM" (MembershipChapter on a live tenant,
+     * 2026-10-14) — instead of ISO. As text those neither pass DateWatermarkLiteral (every run then dropped its predicate
+     * and re-read the object) nor ORDER: "9/9/2024" outranks "10/1/2024". Rewritten as zone-less ISO wall clock
+     * ("2024-09-09T13:29:00"), the same local time WatermarkLiteral sends back; null when the text is not that form.
+     */
+    private static UsDateTimeToIso(v: unknown): string | null {
+        const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?\s*([AP]M)?)?\s*$/i.exec(String(v ?? ''));
+        if (!m) return null;
+        const [, mo, d, y, h = '0', mi = '00', sec = '00', ampm] = m;
+        let hh = +h;
+        if (ampm) {
+            if (hh < 1 || hh > 12) return null;
+            hh = (hh % 12) + (/p/i.test(ampm) ? 12 : 0);
+        }
+        if (+mo < 1 || +mo > 12 || +d < 1 || +d > 31 || hh > 23 || +mi > 59 || +sec > 59) return null;
+        const p2 = (n: string | number): string => String(n).padStart(2, '0');
+        return `${y}-${p2(mo)}-${p2(d)}T${p2(hh)}:${mi}:${p2(sec)}`;
+    }
+
+    private WatermarkLiteral(v: string): string {
+        const m = /^\s*(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?\s*(Z|[+-]\d{2}:?\d{2})?\s*$/i.exec(String(v));
+        if (!m) return String(v);
+        const [, y, mo, d, hh = '00', mi = '00', zone] = m;
+        if (zone && zone.toUpperCase() === 'Z') {
+            const t = new Date(Date.UTC(+y, +mo - 1, +d, +hh, +mi) - 24 * 3600 * 1000);
+            const p2 = (n: number): string => String(n).padStart(2, '0');
+            return `${t.getUTCFullYear()}${p2(t.getUTCMonth() + 1)}${p2(t.getUTCDate())} ${p2(t.getUTCHours())}:${p2(t.getUTCMinutes())}:00`;
+        }
+        return `${y}${mo}${d} ${hh}:${mi}:00`;
+    }
 
     /**
      * The szColumnList for one fetch: empty (tenant default list) unless the IO declares
@@ -1133,6 +2115,101 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         return typeof fault === 'string' && /not a valid value for szColumnList/i.test(fault);
     }
 
+    /** The SOAP faultstring, unescaped; '' when the body carries none. */
+    private FaultText(body: unknown): string {
+        return this.ParseSoapScalar(this.AsText(body), 'faultstring') ?? '';
+    }
+
+    /**
+     * Every column SQL Server reported unresolvable in a fault ("Invalid column name 'x'." — one line per
+     * column, all of them in one answer), lowercased, each once. Empty when the fault says something else.
+     */
+    private InvalidColumnNames(body: unknown): string[] {
+        const out = new Set<string>();
+        const re = /Invalid column name '([^']+)'/gi;
+        const text = this.FaultText(body);
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) out.add(m[1].trim().toLowerCase());
+        return [...out];
+    }
+
+    /** "Incorrect syntax near …" — the statement itself broke; no column is named, nothing can be dropped. */
+    /** Every table xWeb's SQL reported as not existing ("Invalid object name 'T'."), lowercased, each once. */
+    private InvalidObjectNames(body: unknown): string[] {
+        const out = new Set<string>();
+        const re = /Invalid object name '([^']+)'/gi;
+        const text = this.FaultText(body);
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) out.add(m[1].trim().toLowerCase());
+        return [...out];
+    }
+
+    /** Every qualifier SQL Server could not bind (`The multi-part identifier "T.col" could not be bound`), lowercased, each once. */
+    private UnboundQualifiers(body: unknown): string[] {
+        const out = new Set<string>();
+        const re = /multi-part identifier "([^".]+)\.[^"]+" could not be bound/gi;
+        const text = this.FaultText(body);
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) out.add(m[1].trim().toLowerCase());
+        return [...out];
+    }
+
+    private IsSqlSyntaxFault(body: unknown): boolean {
+        return /Incorrect syntax near/i.test(this.FaultText(body));
+    }
+
+    /** The distinct qualifiers (alias or table) the object's definition supplies — names only, for a fault message. */
+    private QualifierSummary(obj: MJIntegrationObjectEntity): string {
+        const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
+        if (!def) return 'none (no definition for the object)';
+        const qs = [...new Set(def.Columns.map(c => c.Alias ?? c.Table ?? '').filter(q => q.length > 0))];
+        return qs.slice(0, 20).map(q => `"${q}"`).join(', ') + (qs.length > 20 ? `, … (${qs.length} distinct)` : '');
+    }
+
+    /**
+     * The refusal to send a request known to fault, naming THIS object and why: 'unsendable' — its explicit list broke
+     * xWeb's SQL and no own-table list can be built for it; 'own' — its own-table list broke xWeb's SQL too; 'default'
+     * — its own default list faulted (`detail`: the fault) and no list is known for it; 'empty' — no column survives
+     * what its faults taught.
+     */
+    private NothingValidToSend(objectName: string, why: 'unsendable' | 'own' | 'default' | 'empty', detail?: string): Error {
+        const reason = why === 'unsendable'
+            ? `the column list for "${objectName}" broke xWeb's SQL earlier on this installation (a fault that named no ` +
+                `column to leave out), its default list is no fallback for a broken statement, and its definition names no ` +
+                `main-table column beyond its key/watermark to read on their own`
+            : why === 'own'
+                ? `both the full column list for "${objectName}" and its own-table list (its main table's columns only) broke ` +
+                    `xWeb's SQL earlier on this installation, and its default list is no fallback for a broken statement`
+            : why === 'default'
+                ? `"${objectName}"'s own default column list faulted earlier on this installation (${detail ?? "'*'"}) and no ` +
+                    `column list is known for it — GetQueryDefinition described no columns and none are persisted`
+                : `no column of "${objectName}" survives what its earlier faults taught`;
+        return new Error(
+            `NetForum GetQuery(${objectName}) not attempted: ${reason}. Nothing valid to send ` +
+            `(see .nf-learned.json, objects["${objectName.toLowerCase()}"]).`,
+        );
+    }
+
+    /** The refusal to probe an unsendable object's own-table list once today's 'own' probe-fault budget is spent. */
+    private OwnProbeBudgetSpent(objectName: string): Error {
+        return new Error(
+            `NetForum GetQuery(${objectName}) not attempted: the full column list for "${objectName}" broke ` +
+            `xWeb's SQL earlier on this installation and its own-table list has never been tried, but today's budget of ` +
+            `${NetForumConnector.PROBE_FAULTS_PER_DAY?.own ?? 0} own-table probe faults on this connection is spent ` +
+            `(UTC ${this.UtcDay()}; xWeb locks the account at ~100 faults a day). It is probed on a later day.`,
+        );
+    }
+
+    /** The refusal to probe an object's never-tried default list once today's probe-fault budget is spent. */
+    private ProbeBudgetSpent(objectName: string, faultKey: string): Error {
+        return new Error(
+            `NetForum GetQuery(${objectName}) not attempted: "${objectName}"'s default column list has never ` +
+            `been tried on this installation and nothing else describes its columns, but today's budget of ` +
+            `${NetForumConnector.PROBE_FAULTS_PER_DAY?.default ?? 0} default-list probe faults on this connection is spent ` +
+            `(UTC ${this.UtcDay()}; xWeb locks the account at ~100 faults a day). It is probed on a later day.`,
+        );
+    }
+
     /**
      * An explicit, non-empty column list for an object whose tenant default is unusable, drawn from the
      * best source available at the moment of the call:
@@ -1143,30 +2220,105 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * primary key, the ordering key and the watermark. Empty when nothing is known, which leaves the
      * original fault to surface rather than sending a request we cannot justify.
      */
-    private ExplicitColumnListFor(obj: MJIntegrationObjectEntity, required: Array<string | undefined>): string {
+    /**
+     * The object's OWN-TABLE list: its definition's main-table columns only (`MainTable`, unaliased — the table the
+     * key belongs to), plus its key, ordering key and watermark wherever they live, built and qualified exactly as
+     * the full list is (ExplicitColumnListFor) and under every fact this object learned. Never `*_entity_key`. ''
+     * when there is no main table, when the own list ALSO broke (OwnListUnsendable), or when it would name nothing
+     * but the key/watermark — a keys-only read is not worth a probe fault.
+     */
+    private OwnTableColumnListFor(obj: MJIntegrationObjectEntity, required: Array<string | undefined>, learnKey?: string): string {
+        if (learnKey && this.OwnListUnsendable.has(learnKey)) return '';
+        return this.ExplicitColumnListFor(obj, required, learnKey, false, true);
+    }
+
+    private ExplicitColumnListFor(
+        obj: MJIntegrationObjectEntity,
+        required: Array<string | undefined>,
+        learnKey?: string,
+        applyLegacy = false,
+        ownOnly = false,
+    ): string {
         // Preferred source: the object's definition, which knows each column's table and alias. The
         // vendor requires the alias (or table) prefix wherever a table is joined more than once
         // ("ambiguous column name" / "Object Reference Not Set" otherwise), so every column is sent
         // qualified — `Membership.mbr_src_code`, `co_individual.ind_cst_key` — and each name once.
         // The key column leads, so a row's first element is the key whichever list was sent.
+        //
+        // `learnKey` (`<connection>|<object>`) applies what earlier faults taught about this object on
+        // this connection: columns xWeb could not resolve are left out, and a list that broke xWeb's SQL
+        // is not rebuilt at all ('' — the callers' "nothing to send" paths then speak, without a request).
+        // Every learned fact is THIS object's (learnKey), and none removes the object's own key, ordering key or
+        // watermark (ProtectedColumns) — FetchChanges reads those, and a learned drop of them only ever produced a
+        // keys-less or keys-only read. `applyLegacy` also leaves out v1's connection-wide pairs (LegacyUnresolvable):
+        // only when today's probe budget is spent.
+        if (learnKey && !ownOnly && this.ExplicitListUnsendable.has(learnKey)) return '';
+        const unselectable = learnKey ? this.UnselectableColumns.get(learnKey) : undefined;
         const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
+        const protectedNames = this.ProtectedColumns(def, required);
+        const legacy = applyLegacy && learnKey ? this.LegacyUnresolvable.get(learnKey.slice(0, learnKey.indexOf('|'))) : undefined;
         const out: string[] = [];
         const seen = new Set<string>();
         const add = (name: string | undefined, qualifier: string | null): void => {
-            if (!name || !IsQueryableColumn(name)) return;
+            if (!name || !IsQueryableColumn(name) || !IsPlainIdentifier(name)) return;
             const key = name.toLowerCase();
-            if (seen.has(key)) return;
+            if (seen.has(key) || (unselectable?.has(key) && !protectedNames.has(key))) return;
             seen.add(key);
-            out.push(qualifier ? `${qualifier}.${name}` : name);
+            const q = qualifier && IsPlainIdentifier(qualifier) ? qualifier : null;
+            out.push(q ? `${q}.${name}` : name);
         };
         if (def && def.Columns.length > 0) {
-            const qualifierOf = (c: NFDefinedColumn): string | null => c.Alias ?? c.Table;
-            const lead = def.Columns.find(c => !!def.KeyColumn && c.Name.toLowerCase() === def.KeyColumn!.toLowerCase());
-            if (lead) add(lead.Name, qualifierOf(lead));
-            for (const c of def.Columns) add(c.Name, qualifierOf(c));
-            for (const r of required) add(r, null);
+            const unexposed = learnKey ? this.UnexposedQualifiers.get(learnKey) : undefined;
+            const qualifierOf = (c: NFDefinedColumn): string | null => {
+                const q = c.Alias ?? c.Table;
+                return q && unexposed?.has(q.toLowerCase()) ? null : q;
+            };
+            // An Extender column under an ALIASED join is unselectable (see NFDefinedColumn.IsExtension). A column on a
+            // table missing from the database is gone for every object; a learned pair is this object's, and never
+            // takes its key or watermark.
+            const dropped = (c: NFDefinedColumn): boolean => {
+                if (c.IsExtension && c.Alias) return true;
+                if (this.ColumnOnMissingTable(c, learnKey)) return true;
+                const n = c.Name.toLowerCase();
+                if (protectedNames.has(n)) return false;
+                return this.ColumnUnresolvable(c, learnKey) || !!legacy?.has(`${(c.Table ?? '').toLowerCase()}.${n}`);
+            };
+            // `ownOnly` (OwnTableColumnListFor): the OWN table's columns, and this read's key/ordering key/watermark
+            // wherever they live. The own table is the one holding the object's key (`required[0]`, the persisted
+            // primary key when there is one, else the definition's): netFORUM's MainTable is not always it — a live tenant's
+            // EventsRegistrant names ev_registration_dem (rdm_*) as main table but is keyed on ev_registrant.reg_key,
+            // and an rdm_-only list both broke xWeb's SQL and left the registrant columns unread. With no key column
+            // in the definition, MainTable (unaliased). The definition's KeyColumn is protected here only when it is
+            // that key: a different table's key is a joined column like any other.
+            const ownKey = (required[0] ?? def.KeyColumn ?? '').toLowerCase();
+            const keyCol = ownOnly && ownKey ? def.Columns.find(c => c.Name.toLowerCase() === ownKey && !!c.Table) : undefined;
+            const mainTable = (keyCol ? keyCol.Table! : (def.MainTable ?? '')).toLowerCase();
+            const mainAlias = (keyCol?.Alias ?? '').toLowerCase();
+            const isOwn = (c: NFDefinedColumn): boolean => !!mainTable && !!c.Table && c.Table.toLowerCase() === mainTable && (c.Alias ?? '').toLowerCase() === mainAlias;
+            const ownProtected = ownOnly ? new Set(required.filter(n => typeof n === 'string' && n.length > 0).map(n => n!.toLowerCase())) : protectedNames;
+            const sendable = def.Columns.filter(c => !dropped(c) && (!ownOnly || isOwn(c) || ownProtected.has(c.Name.toLowerCase())));
+            if (ownOnly && !sendable.some(c => isOwn(c) && !ownProtected.has(c.Name.toLowerCase()) && IsQueryableColumn(c.Name)
+                && IsPlainIdentifier(c.Name) && !unselectable?.has(c.Name.toLowerCase()))) return '';
+            const leadName = ownOnly ? ownKey : (def.KeyColumn ?? '').toLowerCase();
+            const lead = sendable.find(c => !!leadName && c.Name.toLowerCase() === leadName);
+            // The key leads — unless its table is unexposed: then it is left out (xWeb prepends the object's
+            // primary key to every query) so that a bare ORDER BY on it names one column, not two.
+            const keyOmitted = !!lead && qualifierOf(lead) === null && !!(lead.Alias ?? lead.Table);
+            if (lead && !keyOmitted) add(lead.Name, qualifierOf(lead));
+            for (const c of sendable) {
+                if (keyOmitted && lead && c.Name.toLowerCase() === lead.Name.toLowerCase()) {
+                    seen.add(c.Name.toLowerCase());
+                    continue;
+                }
+                add(c.Name, qualifierOf(c));
+            }
+            for (const r of required) {
+                if (keyOmitted && lead && r && r.toLowerCase() === lead.Name.toLowerCase()) continue;
+                add(r, null);
+            }
             return out.join(',');
         }
+        if (ownOnly) return '';
         const discovered = this.DiscoveredColumnsByObject.get(obj.Name.toLowerCase()) ?? [];
         const known = discovered.length > 0
             ? discovered
@@ -1181,11 +2333,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * carries the column, else the bare column name. Rows still come back with the bare, lowercased column
      * name, so readers keep using `name`; only the SQL sent qualifies.
      */
-    private QualifiedColumn(objectName: string, name: string): string {
+    private QualifiedColumn(objectName: string, name: string, learnKey?: string): string {
         const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
         const col = def?.Columns.find(c => c.Name.toLowerCase() === name.toLowerCase());
         const q = col ? (col.Alias ?? col.Table) : null;
-        return q ? `${q}.${name}` : name;
+        if (q && learnKey && this.UnexposedQualifiers.get(learnKey)?.has(q.toLowerCase())) return name;
+        return q && IsPlainIdentifier(q) ? `${q}.${name}` : name;
     }
 
     /** "Account is not authorized to perform Select on <object> object" — a grant, not a query, failed. */
@@ -1328,6 +2481,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (!ci) return null;
         try {
             const obj = this.GetCachedObject(ci, objectName);
+            // An object with an incremental watermark is read by that watermark, never resumed by key: the engine
+            // treats "has a StableOrderingKey" and "uses a timestamp watermark" as mutually exclusive, nulls the
+            // watermark for a keyset object and parks the last ROW KEY on its watermark row (WatermarkType='Cursor').
+            // Answering with the key here made every watermarked object a full scan, and — because this answer
+            // depended on LastIntegrationID, set only by the first FetchChanges — flip between the two modes within
+            // a run, so a later timestamp-mode run sent `<change_date> >= '<row key GUID>'` (a live tenant, 2026-10-14).
+            if (obj?.IncrementalWatermarkField) return null;
             const cfg = this.ParseObjectConfig(obj);
             return cfg.stableOrderingKey ?? this.PrimaryKeyFieldName(obj) ?? null;
         } catch {
