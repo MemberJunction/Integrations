@@ -1066,10 +1066,10 @@
       "objectCount": 4,
       "className": "@memberjunction/connector-asana",
       "npmPackage": "@memberjunction/connector-asana",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "PM/Asana",
-      "installTag": "PM-Asana@0.2.2"
+      "installTag": "PM-Asana@0.2.3"
     },
     {
       "name": "Everhour",
