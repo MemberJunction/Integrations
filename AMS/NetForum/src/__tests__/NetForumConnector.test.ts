@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type {
     RESTAuthContext,
     RESTResponse,
@@ -10,6 +13,23 @@ import type {
 import type { MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity, MJCompanyIntegrationEntity } from '@memberjunction/core-entities';
 import type { UserInfo } from '@memberjunction/core';
 import { NetForumConnector } from '../NetForumConnector.js';
+
+// Test isolation: the connector persists what faults teach to `<OperatorRoot>/.nf-learned.json` (LearnedRoot is
+// null outside a release cwd). Every test gets its own empty temp dir, so nothing is written into the package and
+// no learned state leaks from one test into the next.
+const ORIGINAL_OPERATOR_ROOT = NetForumConnector.OperatorRoot;
+const ORIGINAL_LEARNED_ROOT = NetForumConnector.LearnedRoot;
+let testOperatorRoot = '';
+beforeEach(() => {
+    testOperatorRoot = mkdtempSync(join(tmpdir(), 'nf-test-'));
+    NetForumConnector.OperatorRoot = testOperatorRoot;
+    NetForumConnector.LearnedRoot = null;
+});
+afterEach(() => {
+    NetForumConnector.OperatorRoot = ORIGINAL_OPERATOR_ROOT;
+    NetForumConnector.LearnedRoot = ORIGINAL_LEARNED_ROOT;
+    rmSync(testOperatorRoot, { recursive: true, force: true });
+});
 
 /**
  * READ-ONLY / MOCKED-ONLY vitest (T4). NEVER hits a live netFORUM instance and NEVER mutates data.
@@ -350,10 +370,10 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         // BatchSize bounds the page. Previously this was a hardcoded `@TOP -1`, which pulled the
         // entire result set into memory in a single SOAP call regardless of BatchSize.
         expect(req!.body).toContain('<szObjectName>Individual @TOP 100</szObjectName>');
-        // EMPTY szColumnList. The vendor documents `*` as an invalid value that FAULTS the call (and
-        // xWeb counts every fault toward the daily limit that locks the account); an empty list returns
-        // the object's default columns with the primary key first. `*` is what locked us out in 2026-09.
-        expect(req!.body).toContain('<szColumnList></szColumnList>');
+        // Contract change: the object's GetQueryDefinition is read on every fetch and its FULL explicit list is
+        // sent (key first, qualified) instead of an empty szColumnList. Never `*`: the vendor documents it as an
+        // invalid value that FAULTS the call, and faults count toward the daily lock. `*` locked us out in 2026-09.
+        expect(req!.body).toContain('<szColumnList>co_individual.ind_cst_key,co_individual.ind_first_name,co_individual.ind_custom_loyalty_tier,ind_change_date</szColumnList>');
         expect(req!.body).not.toContain('<szColumnList>*');
         // no watermark → no szWhereClause
         expect(req!.body).not.toContain('szWhereClause');
@@ -405,7 +425,9 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         await c.FetchChanges(ctx);
         const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
         // szWhereClause value is XML-escaped in the envelope (>= → &gt;=, ' → &apos;)
-        expect(req!.body).toContain('ind_change_date &gt;= &apos;2026-01-01T00:00:00&apos;');
+        // Contract change: the value goes through WatermarkLiteral (`YYYYMMDD HH:MM:00`, the form SQL Server reads
+        // under every DATEFORMAT); the column stays bare here only because this definition does not list it.
+        expect(req!.body).toContain('ind_change_date &gt;= &apos;20260101 00:00:00&apos;');
         expect(req!.body).not.toContain('LastModifiedDate');
     });
 
@@ -445,12 +467,19 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
         expect(req!.body).toContain('<szColumnList>ind_first_name,IND_CST_KEY,ind_last_name,ind_change_date</szColumnList>');
     });
 
-    it('sends an EMPTY szColumnList when no columnList is declared (the tenant default list)', async () => {
+    it('sends the definition\'s FULL explicit column list when no columnList is declared (key first, qualified, never `*`)', async () => {
         const c = makeConnector();
         const ctx: FetchContext = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU };
         await c.FetchChanges(ctx);
         const req = c.Requests.find(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQuery');
-        expect(req!.body).toContain('<szColumnList></szColumnList>');
+        // Contract change: the empty list (the tenant's default — 2 to 18 of up to 300 columns on a live tenant, a
+        // partial read posing as a full one) is no longer sent when the definition lists the object's columns.
+        const list = /<szColumnList>([^<]*)<\/szColumnList>/.exec(req!.body!)![1];
+        const cols = list.split(',');
+        expect(cols[0]).toBe('co_individual.ind_cst_key');
+        expect(cols).toContain('co_individual.ind_custom_loyalty_tier');   // customer-added columns ride along
+        expect(cols).toContain('ind_change_date');                         // the watermark the fetch reads
+        expect(list).not.toContain('*');
     });
 
     /**
@@ -464,6 +493,16 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
      * the retry makes FetchChanges throw and both fail. That is deliberate — the 1.6.0 test for the
      * sibling fix passed with the fix removed, because the sampler's fallback reached the same endpoint.
      */
+    /**
+     * The empty-list path now runs only for an object with no GetQueryDefinition (a refused definition is remembered
+     * as none); with a definition the full explicit list is sent up front. The `*` tests below are about that empty
+     * path, so their object has no definition — and the explicit retry list comes from the cached fields.
+     */
+    const NO_DEFINITION = {
+        Status: 500,
+        Body: `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultstring>Account is not authorized</faultstring></soap:Fault></soap:Body></soap:Envelope>`,
+        Headers: {},
+    };
     const INVALID_DEFAULT_FAULT = {
         Status: 500,
         Body: `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Server</faultcode><faultstring>'*' is not a valid value for szColumnList.</faultstring></soap:Fault></soap:Body></soap:Envelope>`,
@@ -472,6 +511,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('retries with an EXPLICIT column list when the door rejects its own `*` default list', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = NO_DEFINITION;   // contract change: only a definition-less object sends the empty list
         c.ResponseQueue['GetQuery'] = [
             INVALID_DEFAULT_FAULT,
             { Status: 200, Body: GETQUERY_XML, Headers: {} },
@@ -520,6 +560,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('pays the fault ONCE per connection — the second fetch leads with the explicit list', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = NO_DEFINITION;   // contract change: only a definition-less object sends the empty list
         // Only the FIRST GetQuery faults. If the second fetch still opened with an empty list it would
         // consume the 200 queued here and then have nothing for its retry, so a regression cannot pass
         // this by accident — the request count is checked directly besides.
@@ -545,6 +586,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('latches per connection — a different connection is not assumed broken', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = NO_DEFINITION;   // contract change: only a definition-less object sends the empty list
         c.ResponseQueue['GetQuery'] = [
             INVALID_DEFAULT_FAULT,                                  // A: empty -> fault
             { Status: 200, Body: GETQUERY_XML, Headers: {} },       // A: explicit -> ok
@@ -582,6 +624,7 @@ describe('NetForumConnector — FetchChanges (GetQuery door + per-facade waterma
 
     it('does NOT latch when a DECLARED list is what the door rejected', async () => {
         const c = makeConnector();
+        c.Responses['GetQueryDefinition'] = NO_DEFINITION;   // contract change: only a definition-less object sends the empty list
         // Same fault wording, different cause: the operator's own list was refused. Latching on it
         // would silently narrow what every later object sends, hiding a real declaration bug.
         c.Caps = { ...c.Caps, Configuration: JSON.stringify({ ...JSON.parse(c.Caps.Configuration!), columnList: ['ind_last_name'] }) };
@@ -694,9 +737,15 @@ describe('NetForumConnector — DeleteRecord (unsupported)', () => {
 describe('NetForumConnector — StableOrderingKey', () => {
     it('returns the IO stableOrderingKey for keyset resume', async () => {
         const c = makeConnector();
+        // Contract change: an object with an IncrementalWatermarkField is read by its watermark, never resumed by key
+        // (the engine treats the two as exclusive), so StableOrderingKey answers null for it. Keyset resume is for
+        // watermark-less objects — this one.
+        c.Caps = { ...c.Caps, IncrementalWatermarkField: null };
         // prime LastIntegrationID via a fetch
         await c.FetchChanges({ CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: null, BatchSize: 100, ContextUser: CU });
         expect(c.StableOrderingKey('Individual')).toBe('ind_cst_key');
+        c.Caps = { ...c.Caps, IncrementalWatermarkField: 'ind_change_date' };
+        expect(c.StableOrderingKey('Individual')).toBeNull();
     });
 });
 
@@ -1162,7 +1211,7 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         expect(c.Requests.filter(r => r.headers['SOAPAction'] === 'http://www.avectra.com/2005/GetQueryDefinition')).toHaveLength(1);
     });
 
-    it('a main table with no key-typed column is keyless: sampled unordered, records identified by the default list\'s first column', async () => {
+    it('a main table with no key-typed column is keyless: sampled unordered, records identified by the row\'s first column', async () => {
         const c = makeConnector();
         c.Keyless = true;
         c.Caps.Configuration = KEYLESS_CONFIG('WidgetLog');
@@ -1171,11 +1220,13 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         const q = getQueries(c)[0];
         expect(q.body).toContain('<szObjectName>WidgetLog @TOP 50</szObjectName>');
         expect(q.body).not.toContain('szOrderBy');
-        expect(q.body).toContain('<szColumnList></szColumnList>');
+        // Contract change: the definition's columns are sent explicitly (not the empty default list).
+        expect(q.body).toContain('<szColumnList>cu_widget_log.wlg_message,cu_widget_log.wlg_when,ind_change_date</szColumnList>');
         const codes = (res.Warnings ?? []).map(w => w.Code);
         expect(codes).toContain('SAMPLE_BOUNDED_WITHOUT_KEY');
         expect(codes).toContain('KEY_FROM_DEFAULT_LIST_FIRST_COLUMN');
-        // the vendor: with an empty szColumnList the primary key is the first child of every row
+        // xWeb prepends the object's primary key to every query it builds (with an empty list the vendor says so
+        // outright), so the first child of every row identifies the record whichever list was sent
         expect(res.Records[0].ExternalID).toBe('11111111-1111-1111-1111-111111111111');
         expect(res.HasMore).toBe(false);
     });
@@ -1185,11 +1236,10 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         c.Keyless = true;
         c.Caps.Configuration = KEYLESS_CONFIG('Individual');
         c.Responses['GetQueryDefinition'] = { Status: 200, Body: INDIVIDUAL_DEF_REAL_XML, Headers: {} };
-        c.ResponseQueue['GetQuery'] = [FAULT_500("'*' is not a valid value for szColumnList"), { Status: 200, Body: GETQUERY_XML, Headers: {} }];
+        // Contract change: the explicit list is the FIRST request (no empty-list `*` fault to retry from).
         await c.FetchChanges(sampleCtx('Individual'));
-        const [first, second] = getQueries(c);
-        expect(first.body).toContain('<szColumnList></szColumnList>');
-        const list = /<szColumnList>([^<]*)<\/szColumnList>/.exec(second.body)![1];
+        expect(getQueries(c)).toHaveLength(1);
+        const list = /<szColumnList>([^<]*)<\/szColumnList>/.exec(getQueries(c)[0].body!)![1];
         const cols = list.split(',');
         expect(cols[0]).toBe('co_individual.ind_cst_key');
         expect(cols).toContain('co_customer.cst_key');
@@ -1204,9 +1254,14 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
         const c = makeConnector();
         c.Responses['GetQuery'] = FAULT_500('Invalid query.');
         const ctx = { CompanyIntegration: CI, ObjectName: 'Individual', WatermarkValue: '2026-01-01T00:00:00', BatchSize: 500, ContextUser: CU, AfterKeyValue: '2222-secret' } as unknown as FetchContext;
-        await expect(c.FetchChanges(ctx)).rejects.toThrow(/Invalid query\./);
-        await expect(c.FetchChanges(ctx)).rejects.toThrow(/\[sent: szObjectName="Individual @TOP 500"; szColumnList=default list \(empty szColumnList\); szOrderBy=ind_cst_key; szWhereClause=2 predicate\(s\)\]/);
-        await expect(c.FetchChanges(ctx)).rejects.not.toThrow(/2222-secret|2026-01-01/);
+        // Contract change: the first request names the definition's 4 columns and a qualified ORDER BY (not the empty
+        // default list), and a fault that teaches nothing ends further sends of that list — so the shape is read off
+        // the FIRST call; later calls (refused or not) must still never echo a literal.
+        const first = await c.FetchChanges(ctx).then(() => null, (e: unknown) => (e instanceof Error ? e : new Error(String(e))));
+        expect(first?.message).toMatch(/Invalid query\./);
+        expect(first?.message).toMatch(/\[sent: szObjectName="Individual @TOP 500"; szColumnList=4 named column\(s\); szOrderBy=co_individual\.ind_cst_key; szWhereClause=2 predicate\(s\)\]/);
+        expect(first?.message).not.toMatch(/2222-secret|2026-01-01|20260101/);
+        await expect(c.FetchChanges(ctx)).rejects.not.toThrow(/2222-secret|2026-01-01|20260101/);
     });
 
     it('"not authorized to perform Select" is learned once per object on a connection and never retried', async () => {
@@ -1299,7 +1354,9 @@ describe('NetForumConnector — obj_key is the facade object\'s GUID, never a co
     });
 
     it('with no definition for the object, ORDER BY stays the bare key (nothing to qualify with)', async () => {
-        const c = makeConnector();                                          // declared key ind_cst_key, no definition fetched
+        const c = makeConnector();                                          // declared key ind_cst_key
+        // Contract change: the definition is now read on every fetch, so "no definition" must be a refused one.
+        c.Responses['GetQueryDefinition'] = FAULT_500('Account is not authorized');
         await c.FetchChanges(sampleCtx('Individual'));
         expect(getQueries(c)[0].body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
     });
@@ -1335,7 +1392,8 @@ describe('NetForumConnector — a discovery sample is bounded by its target, key
         const c = makeConnector();
         await c.FetchChanges(sampleCtx());
         expect(getQuery(c).body).toContain('<szObjectName>Individual @TOP 50</szObjectName>');
-        expect(getQuery(c).body).toContain('<szOrderBy>ind_cst_key</szOrderBy>');
+        // Contract change: ORDER BY is table-qualified now that the definition (read on every fetch) names the key's table.
+        expect(getQuery(c).body).toContain('<szOrderBy>co_individual.ind_cst_key</szOrderBy>');
     });
 
     it('keyed object with a page SMALLER than the target keeps its page (the engine walks pages to the target)', async () => {
