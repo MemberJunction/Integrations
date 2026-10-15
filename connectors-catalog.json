@@ -249,10 +249,10 @@
       "objectCount": 168,
       "className": "@memberjunction/connector-hubspot",
       "npmPackage": "@memberjunction/connector-hubspot",
-      "version": "1.1.5",
+      "version": "1.1.6",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "CRM/HubSpot",
-      "installTag": "CRM-HubSpot@1.1.5"
+      "installTag": "CRM-HubSpot@1.1.6"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
