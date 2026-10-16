@@ -116,7 +116,18 @@ const SOAP_NS = 'http://www.avectra.com/2005/';
 /** Canonical xWeb SOAP endpoint path (per-tenant host; path is constant). */
 const DEFAULT_SOAP_PATH = '/xweb/secure/netForumXML.asmx';
 const MAX_RETRIES = 3;
+/**
+ * Per-request HTTP timeout (time to response headers) when the connection declares none. A connection whose list
+ * queries run longer on xWeb's side raises it with `CompanyIntegration.Configuration.requestTimeoutMs` (a JSON
+ * number of milliseconds, clamped to REQUEST_TIMEOUT_MIN_MS – REQUEST_TIMEOUT_MAX_MS; see RequestTimeoutMsFrom).
+ *
+ * The engine abandons a whole FetchChanges page at its own `fetchTimeoutMs` (same Configuration; 30 s when unset),
+ * and one page can send several requests (Authenticate, GetQueryDefinition, GetQuery and up to three learn rounds),
+ * so a raised `requestTimeoutMs` needs `fetchTimeoutMs` set ABOVE it — otherwise the page is still cut first.
+ */
 const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MIN_MS = 5_000;
+const REQUEST_TIMEOUT_MAX_MS = 600_000;
 const MIN_REQUEST_INTERVAL_MS = 200;
 /** Session-token TTL. netFORUM does not publish a token lifetime; re-auth on 401 covers expiry. */
 const TOKEN_TTL_MS = 3_600_000;
@@ -240,6 +251,7 @@ interface NFLearnedObject {
     ownListUsable?: unknown;
     refused?: unknown;
     injectedKey?: unknown;
+    ambiguous?: unknown;
 }
 
 /** One connection's section (or the `*` seed) of `.nf-learned.json`. */
@@ -294,6 +306,48 @@ function IsPlainIdentifier(s: string): boolean {
 export class NetForumConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
     private lastRequestTime = 0;
+    /** This instance's per-request timeout, read from the connection on every Authenticate (see REQUEST_TIMEOUT_MS). */
+    private requestTimeoutMs = REQUEST_TIMEOUT_MS;
+    private requestTimeoutWarned = false;
+
+    /**
+     * `requestTimeoutMs` from a CompanyIntegration.Configuration JSON string: a JSON number of milliseconds, clamped to
+     * 5 s – 10 min. Anything else — absent, a string, not positive, unparseable Configuration — is the 30 s default.
+     */
+    public static RequestTimeoutMsFrom(configuration: string | null | undefined): number {
+        if (!configuration) return REQUEST_TIMEOUT_MS;
+        let raw: unknown;
+        try {
+            const parsed: unknown = JSON.parse(configuration);
+            raw = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>).requestTimeoutMs : undefined;
+        } catch {
+            return REQUEST_TIMEOUT_MS;
+        }
+        if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) return REQUEST_TIMEOUT_MS;
+        return Math.min(REQUEST_TIMEOUT_MAX_MS, Math.max(REQUEST_TIMEOUT_MIN_MS, Math.floor(raw)));
+    }
+
+    /**
+     * Adopts the connection's `requestTimeoutMs`. A value raised above the default is pointless while the engine's own
+     * page timeout (`fetchTimeoutMs`, same Configuration, 30 s when unset) is not above it, so that is said once.
+     */
+    private ApplyRequestTimeout(ci: MJCompanyIntegrationEntity): void {
+        this.requestTimeoutMs = NetForumConnector.RequestTimeoutMsFrom(ci?.Configuration);
+        if (this.requestTimeoutMs <= REQUEST_TIMEOUT_MS || this.requestTimeoutWarned) return;
+        let fetchTimeoutMs: unknown;
+        try {
+            fetchTimeoutMs = (JSON.parse(ci.Configuration ?? '{}') as Record<string, unknown>)?.fetchTimeoutMs;
+        } catch {
+            fetchTimeoutMs = undefined;
+        }
+        if (typeof fetchTimeoutMs === 'number' && fetchTimeoutMs > this.requestTimeoutMs) return;
+        this.requestTimeoutWarned = true;
+        console.warn(
+            `NetForum: Configuration.requestTimeoutMs is ${this.requestTimeoutMs} but the engine's fetchTimeoutMs is ` +
+            `${typeof fetchTimeoutMs === 'number' ? fetchTimeoutMs : 'unset (30000)'}: the engine abandons a page at fetchTimeoutMs, ` +
+            `so set fetchTimeoutMs above requestTimeoutMs or the longer request never gets to finish.`,
+        );
+    }
 
     public override get IntegrationName(): string { return 'NetForum Enterprise'; }
 
@@ -327,6 +381,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * in the SOAP body elements — there is no HTTP Basic / Bearer here.
      */
     protected async Authenticate(ci: MJCompanyIntegrationEntity, cu: UserInfo): Promise<RESTAuthContext> {
+        // Every operation authenticates first, so this is where the connection's request timeout is adopted.
+        this.ApplyRequestTimeout(ci);
         const config = await this.ParseConfig(ci, cu);
         if (this.tokenCache && this.tokenCache.ExpiresAt > Date.now() + 60_000) {
             return { Token: this.tokenCache.Token, Config: config } as NFAuthContext;
@@ -555,6 +611,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     private readonly InjectedKeyByObject = new Map<string, string>();
 
     /**
+     * Column names SQL Server called ambiguous on an object's request ("Ambiguous column name 'x'."), lowercased.
+     * Keyed `<connection>|<object>`, persisted as `objects[o].ambiguous`. The fault names the column, so it teaches
+     * something instead of condemning the list: the object's KEY is left out of every list built for it (xWeb prepends
+     * its own copy of the primary key to every query, so ours is the duplicate), and any other name a list would send
+     * bare is qualified by the table (or alias) the definition gives it. See ResolveAmbiguous.
+     */
+    private readonly AmbiguousColumns = new Map<string, Set<string>>();
+
+    /**
      * Tables xWeb's SQL says do not exist in this database ("Invalid object name 'T'"), learned CONNECTION-WIDE from
      * one fault: an Extender table the tenant never created (`np_member_ext`), or a placeholder a list joins
      * (`zz_dummy`). Every column the definitions attribute to T is dropped from every object's list; an object that
@@ -737,6 +802,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 mergeInto(this.UnselectableColumns, key, o.unselectable);
                 mergeInto(this.UnexposedQualifiers, key, o.unexposed);
                 mergeInto(this.UnresolvablePairs, key, o.unresolvable);
+                mergeInto(this.AmbiguousColumns, key, o.ambiguous);
                 if (typeof o.defaultListUnusable === 'string' || o.defaultListUnusable === true) this.DefaultListUnusableByObject.set(key, typeof o.defaultListUnusable === 'string' ? o.defaultListUnusable : "'*' is not a valid value for szColumnList");
                 else if (o.defaultListUsable === true) this.DefaultListUsable.add(key);
                 if (o.legacyCleared === true) this.LegacyCleared.add(key);
@@ -772,6 +838,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             for (const k of this.LegacyCleared) at(k).legacyCleared = true;
             for (const [k, v] of this.UnselectableColumns) if (v.size > 0) at(k).unselectable = [...v].sort();
             for (const [k, v] of this.UnexposedQualifiers) if (v.size > 0) at(k).unexposed = [...v].sort();
+            for (const [k, v] of this.AmbiguousColumns) if (v.size > 0) at(k).ambiguous = [...v].sort();
             for (const k of this.ExplicitListUnsendable) at(k).unsendable = true;
             for (const k of this.OwnListUnsendable) at(k).ownListUnsendable = true;
             for (const k of this.OwnListUsable) if (!this.OwnListUnsendable.has(k)) at(k).ownListUsable = true;
@@ -1575,12 +1642,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // key and the watermark — the three columns this method itself reads.
         const args: Record<string, string> = {
             szObjectName,
-            szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField]),
+            szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField], ctx.ObjectName, grantKey),
         };
         // An object whose definition lists its columns is read with ALL of them. The empty list would return the
         // tenant's default list — a handful of columns (2–18 of up to 300 on a live tenant), which is a partial
         // read presented as a full one — or fault on a `*` default. Declared Configuration.columnList still wins.
         const required = [pkField, orderingKey, watermarkField];
+        // The declared Configuration.columnList is what this call sends (until a fallback below replaces it): a fault
+        // that teaches something rebuilds THAT list, not the definition's.
+        let sentDeclared = !!args.szColumnList;
         const protectedNames = this.ProtectedColumns(def, required);
         // `probeKind` marks this call's requests as ones nothing has vouched for, sent under the daily probe-fault
         // budget (SendBudgetedGetQuery): 'default' — the object's own default list, never tried on this installation;
@@ -1749,6 +1819,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 const next = await resend({ ...args, szColumnList: explicit });
                 if (next) {
                     sentArgs = { ...args, szColumnList: explicit };
+                    sentDeclared = false;
                     response = next;
                 }
             }
@@ -1819,6 +1890,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     break;
                 }
             }
+            // "Ambiguous column name 'x'": x went out bare where two columns carry the name — the object's key next to
+            // the copy xWeb prepends, or a column two joined tables share. Learned for the object (see ResolveAmbiguous).
+            const ambiguous = this.AmbiguousColumnNames(response.Body);
+            if (ambiguous.length > 0) {
+                const own = this.AmbiguousColumns.get(grantKey) ?? new Set<string>();
+                for (const n of ambiguous) own.add(n);
+                this.AmbiguousColumns.set(grantKey, own);
+                learned = true;
+            }
             const unbound = this.UnboundQualifiers(response.Body);
             if (unbound.length > 0) {
                 const own = this.UnexposedQualifiers.get(grantKey) ?? new Set<string>();
@@ -1830,7 +1910,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 markUnsendable(faultText);
                 break;
             }
-            const rebuilt = listFor();
+            const rebuilt = sentDeclared ? this.ColumnListFor(cfg, required, ctx.ObjectName, grantKey) : listFor();
             if (!rebuilt || rebuilt === sentArgs.szColumnList) {
                 markUnsendable(faultText);
                 break;
@@ -2154,6 +2234,37 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         return [...out];
     }
 
+    /** Every column SQL Server called ambiguous in a fault ("Ambiguous column name 'x'."), lowercased, each once. */
+    private AmbiguousColumnNames(body: unknown): string[] {
+        const out = new Set<string>();
+        const re = /Ambiguous column name '([^']+)'/gi;
+        const text = this.FaultText(body);
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) out.add(m[1].trim().toLowerCase());
+        return [...out];
+    }
+
+    /**
+     * How a list names `name` once the object learned it ambiguous: null — leave it out (it is the object's KEY, which
+     * xWeb prepends to every query itself; ours was the duplicate); `<alias-or-table>.<name>` — a bare name the
+     * definition can qualify; otherwise `name` unchanged (nothing better is known, so the fault stands as before).
+     * A name the object never learned ambiguous is returned as given.
+     */
+    private ResolveAmbiguous(objectName: string, name: string, learnKey: string | undefined, keyNames: Set<string>): string | null {
+        const bare = name.split('.').pop() ?? name;
+        const k = bare.toLowerCase();
+        if (!learnKey || !this.AmbiguousColumns.get(learnKey)?.has(k)) return name;
+        if (keyNames.has(k)) return null;
+        if (name.includes('.')) return name;
+        return this.QualifiedColumn(objectName, bare, learnKey);
+    }
+
+    /** The object's key names, lowercased: the persisted key (`required[0]`) and the definition's KeyColumn. */
+    private KeyNamesOf(objectName: string, required: Array<string | undefined>): Set<string> {
+        const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
+        return new Set([required[0], def?.KeyColumn].filter((n): n is string => typeof n === 'string' && n.length > 0).map(n => n.toLowerCase()));
+    }
+
     private IsSqlSyntaxFault(body: unknown): boolean {
         return /Incorrect syntax near/i.test(this.FaultText(body));
     }
@@ -2254,6 +2365,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // only when today's probe budget is spent.
         if (learnKey && !ownOnly && this.ExplicitListUnsendable.has(learnKey)) return '';
         const unselectable = learnKey ? this.UnselectableColumns.get(learnKey) : undefined;
+        const keyNames = this.KeyNamesOf(obj.Name, required);
         const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
         const protectedNames = this.ProtectedColumns(def, required);
         const legacy = applyLegacy && learnKey ? this.LegacyUnresolvable.get(learnKey.slice(0, learnKey.indexOf('|'))) : undefined;
@@ -2265,7 +2377,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (seen.has(key) || (unselectable?.has(key) && !protectedNames.has(key))) return;
             seen.add(key);
             const q = qualifier && IsPlainIdentifier(qualifier) ? qualifier : null;
-            out.push(q ? `${q}.${name}` : name);
+            const named = q ? `${q}.${name}` : name;
+            // Learned ambiguous (AmbiguousColumns): the key is left out (xWeb prepends its own copy of it); a name that
+            // would still go out bare cannot be named unambiguously, so it is left out too unless this read needs it.
+            const resolved = this.ResolveAmbiguous(obj.Name, named, learnKey, keyNames);
+            if (resolved === null) return;
+            if (!resolved.includes('.') && this.AmbiguousColumns.get(learnKey ?? '')?.has(key) && !protectedNames.has(key)) return;
+            out.push(resolved);
         };
         if (def && def.Columns.length > 0) {
             const unexposed = learnKey ? this.UnexposedQualifiers.get(learnKey) : undefined;
@@ -2363,19 +2481,23 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         return `szObjectName="${args.szObjectName}"; szColumnList=${cols}; szOrderBy=${args.szOrderBy ?? 'none'}; szWhereClause=${where}`;
     }
 
-    private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>): string {
+    private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>, objectName?: string, learnKey?: string): string {
         const declared = Array.isArray(cfg.columnList)
             ? cfg.columnList.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).map(c => c.trim())
             : [];
         if (declared.length === 0) return '';
         const out: string[] = [];
         const seen = new Set<string>();
+        // A declared list names its columns as the operator wrote them (bare, as a by-hand request that read does);
+        // only a name this object learned ambiguous is changed — left out when it is the key, qualified otherwise.
+        const keyNames = objectName ? this.KeyNamesOf(objectName, required) : new Set<string>();
         for (const c of [...declared, ...required]) {
             if (!c) continue;
             const key = c.toLowerCase();
             if (seen.has(key)) continue;
             seen.add(key);
-            out.push(c);
+            const resolved = objectName ? this.ResolveAmbiguous(objectName, c, learnKey, keyNames) : c;
+            if (resolved !== null) out.push(resolved);
         }
         return out.join(',');
     }
@@ -2721,9 +2843,10 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         body?: string,
     ): Promise<RESTResponse> {
         await this.Throttle();
+        const timeoutMs = this.requestTimeoutMs;
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
             try {
                 const opts: RequestInit = { method, headers, signal: controller.signal };
                 if (body !== undefined && method !== 'GET') opts.body = body;
@@ -2745,7 +2868,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 return { Status: response.status, Body: text, Headers: h };
             } catch (e) {
                 clearTimeout(timer);
-                if (e instanceof Error && e.name === 'AbortError') throw new Error(`NetForum request timed out: ${url}`);
+                if (e instanceof Error && e.name === 'AbortError') throw new Error(`NetForum request timed out after ${timeoutMs}ms: ${url}`);
                 if (attempt >= MAX_RETRIES) throw e;
                 await this.Sleep(Math.min(1000 * Math.pow(2, attempt), 30_000));
             }
