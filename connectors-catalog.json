@@ -701,7 +701,7 @@
     {
       "name": "rasa",
       "displayName": "rasa.io Connector",
-      "description": "rasa.io newsletter and audience-engagement platform. Syncs subscribers (persons and their actions, topics, sends and attributes), newsletter content (posts, content pool, communities) and the v2 messaging/list surface via the rasa.io REST API.",
+      "description": "rasa.io newsletter and audience-engagement platform (v2 API). Syncs contacts, lists, newsletters, blasts, sequences, subscriptions and segments, plus newsletter/blast/sequence engagement events (opens, clicks, deliveries).",
       "category": "Marketing",
       "tags": [
         "rasa-io",
@@ -711,7 +711,7 @@
       ],
       "logo": "fa-solid fa-newspaper",
       "navigationBaseURL": "https://rasa.io",
-      "objectCount": 34,
+      "objectCount": 25,
       "className": "@memberjunction/connector-rasa-io",
       "npmPackage": "@memberjunction/connector-rasa-io",
       "version": "2.0.2",
