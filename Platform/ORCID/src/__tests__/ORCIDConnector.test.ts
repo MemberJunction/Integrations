@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { extractSectionRawItems, extractMs } from '../orcidRecordExtraction.js';
 import type {
     RESTResponse,
     RESTAuthContext,
@@ -56,6 +58,17 @@ const WORKS_FIXTURE = {
         },
     ],
 };
+
+// ORCID's published sample record (Josiah Carberry, ORCID's fictional test researcher), as served by
+// GET /0000-0002-1825-0097/record: real activities-summary + person envelopes for every section.
+const FULL_RECORD = JSON.parse(
+    readFileSync(new URL('./fixtures/record-0000-0002-1825-0097.json', import.meta.url), 'utf8')
+) as Record<string, unknown>;
+
+/** A valid-looking, distinct ORCID iD for synthetic universes (checksum digit unchecked by the connector). */
+function syntheticId(n: number): string {
+    return `0000-0009-${String(Math.floor(n / 10000)).padStart(4, '0')}-${String(n % 10000).padStart(4, '0')}`;
+}
 
 // ─── Mock metadata builders ───────────────────────────────────────────
 
@@ -116,6 +129,21 @@ class TestORCIDConnector extends ORCIDConnector {
     public Responder: (url: string) => RESTResponse = () => ({ Status: 200, Body: {}, Headers: {} });
     /** PascalCase ORCIDConnectionConfig overrides — the shape parseConfig would produce. */
     public Config: Record<string, unknown> = { SearchQuery: 'affiliation-org-name:"Test University"' };
+    /** The canned "already synced" record store a derived section reads from (iD → /record JSON). */
+    public Stored: Map<string, Record<string, unknown>> = new Map();
+    /** Simulated per-request latency (ms), so concurrency is observable. 0 = resolve immediately. */
+    public Latency = 0;
+    public InFlight = 0;
+    public MaxInFlight = 0;
+
+    protected override async LoadStoredRecords(_ctx: FetchContext, orcidIds: string[]): Promise<Map<string, Record<string, unknown>>> {
+        const out = new Map<string, Record<string, unknown>>();
+        for (const iD of orcidIds) {
+            const rec = this.Stored.get(iD);
+            if (rec) out.set(iD, rec);
+        }
+        return out;
+    }
 
     protected override async Authenticate(): Promise<RESTAuthContext> {
         return {
@@ -133,7 +161,14 @@ class TestORCIDConnector extends ORCIDConnector {
         headers: Record<string, string>
     ): Promise<RESTResponse> {
         this.Calls.push({ url, method, headers });
-        return this.Responder(url);
+        this.InFlight++;
+        this.MaxInFlight = Math.max(this.MaxInFlight, this.InFlight);
+        try {
+            if (this.Latency > 0) await new Promise(resolve => setTimeout(resolve, this.Latency));
+            return this.Responder(url);
+        } finally {
+            this.InFlight--;
+        }
     }
 
     protected override GetCachedObject(_integrationID: string, objectName: string): MJIntegrationObjectEntity {
@@ -146,13 +181,14 @@ class TestORCIDConnector extends ORCIDConnector {
     }
 }
 
-function ctx(objectName: string, watermark: string | null = null): FetchContext {
+function ctx(objectName: string, watermark: string | null = null, over: Partial<FetchContext> = {}): FetchContext {
     return {
-        CompanyIntegration: { IntegrationID: 'int-1' } as MJCompanyIntegrationEntity,
+        CompanyIntegration: { ID: 'ci-1', IntegrationID: 'int-1' } as MJCompanyIntegrationEntity,
         ObjectName: objectName,
         WatermarkValue: watermark,
         BatchSize: 1000,
         ContextUser: {} as never,
+        ...over,
     };
 }
 
@@ -410,24 +446,117 @@ describe('ORCIDConnector — per-iD failure isolation', () => {
     });
 });
 
-describe('ORCIDConnector — FetchChanges (works section fan-out)', () => {
+// ─── Derived sections: built from the stored record, no per-section API call ──
+
+const SAMPLE = '0000-0002-1825-0097';
+const SAMPLE_WORKS = extractSectionRawItems(FULL_RECORD, 'works', SAMPLE);
+const SAMPLE_WORK_LMDS = SAMPLE_WORKS.map(w => extractMs(w['last-modified-date'])!).sort((a, b) => a - b);
+
+describe('ORCIDConnector — FetchChanges (derived section: works)', () => {
     let c: TestORCIDConnector;
-    beforeEach(() => { c = new TestORCIDConnector(); c.Responder = respond; c.Config = { OrcidIds: ['0000-0002-1825-0097'] }; });
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respond;
+        c.Config = { OrcidIds: [SAMPLE] };
+        c.Stored.set(SAMPLE, FULL_RECORD);
+    });
+
+    it('makes NO ORCID call: every item comes out of the stored record', async () => {
+        const result = await c.FetchChanges(ctx('works'));
+        expect(c.Calls).toHaveLength(0);
+        expect(result.Records.length).toBe(SAMPLE_WORKS.length);
+        expect(result.Records.length).toBeGreaterThan(0);
+        expect(result.Warnings?.some(w => w.Code === 'RECORD_FALLBACK_FETCH')).toBeFalsy();
+    });
 
     it('expands the group envelope into individual put-code items tagged with orcid-id', async () => {
         const result = await c.FetchChanges(ctx('works'));
-        expect(result.Records.length).toBe(2);
-        const putCodes = result.Records.map(r => r.Fields['put-code']).sort();
-        expect(putCodes).toEqual([111, 222]);
-        for (const r of result.Records) {
-            expect(r.Fields['orcid-id']).toBe('0000-0002-1825-0097');
-        }
+        const putCodes = result.Records.map(r => r.Fields['put-code']);
+        expect(new Set(putCodes).size).toBe(putCodes.length);
+        for (const r of result.Records) expect(r.Fields['orcid-id']).toBe(SAMPLE);
     });
 
     it('put-code drives the ExternalID per item', async () => {
         const result = await c.FetchChanges(ctx('works'));
-        const ids = result.Records.map(r => r.ExternalID).sort();
-        expect(ids).toEqual(['111', '222']);
+        for (const r of result.Records) expect(r.ExternalID).toBe(String(r.Fields['put-code']));
+    });
+
+    it('flattens the nested shapes into the declared column-shaped keys', async () => {
+        const result = await c.FetchChanges(ctx('works'));
+        const titled = result.Records.find(r => r.Fields['work-title'] === 'A Methodology for the Emulation of Architecture');
+        expect(titled).toBeDefined();
+        expect(titled!.Fields['work-subtitle']).toBe('Journal of Psychoceramics');
+        expect(typeof titled!.Fields['publication-year']).toBe('number');
+        expect(typeof titled!.Fields['source-name']).toBe('string');
+        // Dates are coerced to ISO strings for the DateTime columns, as before.
+        expect(typeof titled!.Fields['last-modified-date']).toBe('string');
+        // The nested title blob is still there — nothing the API returned is dropped.
+        expect(titled!.Fields['title']).toBeDefined();
+    });
+
+    it('falls back to ONE /record fetch for an iD with no stored record, and says so', async () => {
+        const other = '0000-0001-2345-6789';
+        c.Config = { OrcidIds: [SAMPLE, other] };
+        c.Responder = (url: string) => url.includes('/record')
+            ? { Status: 200, Body: FULL_RECORD, Headers: {} }
+            : respond(url);
+        const result = await c.FetchChanges(ctx('works'));
+        const recordCalls = c.Calls.filter(x => x.url.includes('/record'));
+        expect(recordCalls).toHaveLength(1);
+        expect(recordCalls[0].url).toContain(other);
+        expect(c.Calls.some(x => x.url.includes('/works'))).toBe(false);
+        // Both people's works are present: the stored one and the live-fetched one.
+        expect(result.Records.filter(r => r.Fields['orcid-id'] === SAMPLE)).toHaveLength(SAMPLE_WORKS.length);
+        expect(result.Records.filter(r => r.Fields['orcid-id'] === other)).toHaveLength(SAMPLE_WORKS.length);
+        const warning = result.Warnings?.find(w => w.Code === 'RECORD_FALLBACK_FETCH');
+        expect(warning).toBeDefined();
+        expect(warning!.Data?.['count']).toBe(1);
+        expect(warning!.Data?.['orcidIds']).toEqual([other]);
+    });
+
+    it('a stored record with no such section yields no items and no error', async () => {
+        c.Stored.set(SAMPLE, { person: FULL_RECORD['person'], 'activities-summary': {} });
+        const result = await c.FetchChanges(ctx('works'));
+        expect(result.Records).toEqual([]);
+        expect(c.Calls).toHaveLength(0);
+    });
+});
+
+describe('ORCIDConnector — FetchChanges (derived person sections)', () => {
+    let c: TestORCIDConnector;
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respond;
+        c.Config = { OrcidIds: [SAMPLE] };
+        c.Stored.set(SAMPLE, FULL_RECORD);
+        OBJECTS['keywords'] = { obj: mockObject('keywords'), fields: WORKS_FIELDS };
+        OBJECTS['external-identifiers'] = { obj: mockObject('external-identifiers'), fields: WORKS_FIELDS };
+        OBJECTS['email'] = { obj: mockObject('email'), fields: WORKS_FIELDS };
+    });
+
+    it('keywords come out of the person block with content as a plain string', async () => {
+        const result = await c.FetchChanges(ctx('keywords'));
+        expect(c.Calls).toHaveLength(0);
+        expect(result.Records.length).toBeGreaterThan(0);
+        for (const r of result.Records) {
+            expect(typeof r.Fields['content']).toBe('string');
+            expect(r.Fields['orcid-id']).toBe(SAMPLE);
+            expect(r.ExternalID).toBe(String(r.Fields['put-code']));
+        }
+    });
+
+    it('external identifiers carry type/value and an unwrapped url', async () => {
+        const result = await c.FetchChanges(ctx('external-identifiers'));
+        const scopus = result.Records.find(r => r.Fields['external-id-type'] === 'Scopus Author ID');
+        expect(scopus).toBeDefined();
+        expect(scopus!.Fields['external-id-value']).toBe('7007156898');
+        expect(typeof scopus!.Fields['external-id-url']).toBe('string');
+    });
+
+    it('an empty person list (email) is a clean empty result', async () => {
+        const result = await c.FetchChanges(ctx('email'));
+        expect(result.Records).toEqual([]);
+        expect(result.Warnings).toBeUndefined();
     });
 });
 
@@ -435,25 +564,31 @@ describe('ORCIDConnector — FetchChanges (works section fan-out)', () => {
 
 describe('ORCIDConnector — incremental sync', () => {
     let c: TestORCIDConnector;
-    beforeEach(() => { c = new TestORCIDConnector(); c.Responder = respond; c.Config = { OrcidIds: ['0000-0002-1825-0097'] }; });
+    const oldest = SAMPLE_WORK_LMDS[0];
+    const newest = SAMPLE_WORK_LMDS[SAMPLE_WORK_LMDS.length - 1];
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respond;
+        c.Config = { OrcidIds: [SAMPLE] };
+        c.Stored.set(SAMPLE, FULL_RECORD);
+    });
 
     it('first sync (no watermark) returns all items and a NewWatermarkValue = max last-modified', async () => {
         const result = await c.FetchChanges(ctx('works', null));
-        expect(result.Records.length).toBe(2);
-        // max of 1600000000000 and 1800000000000
-        expect(result.NewWatermarkValue).toBe('1800000000000');
+        expect(result.Records.length).toBe(SAMPLE_WORKS.length);
+        expect(result.NewWatermarkValue).toBe(String(newest));
     });
 
     it('subsequent sync narrows to items strictly newer than the watermark', async () => {
-        // watermark = 1600000000000 → only the 1800000000000 item (put-code 222) is newer.
-        const result = await c.FetchChanges(ctx('works', '1600000000000'));
-        expect(result.Records.length).toBe(1);
-        expect(result.Records[0].Fields['put-code']).toBe(222);
-        expect(result.NewWatermarkValue).toBe('1800000000000');
+        expect(oldest).toBeLessThan(newest); // the fixture has to span more than one modification time
+        const result = await c.FetchChanges(ctx('works', String(oldest)));
+        const expected = SAMPLE_WORK_LMDS.filter(t => t > oldest).length;
+        expect(result.Records.length).toBe(expected);
+        expect(result.NewWatermarkValue).toBe(String(newest));
     });
 
     it('no advancement when nothing is newer than the watermark (NewWatermarkValue omitted)', async () => {
-        const result = await c.FetchChanges(ctx('works', '1800000000000'));
+        const result = await c.FetchChanges(ctx('works', String(newest)));
         expect(result.Records.length).toBe(0);
         expect(result.NewWatermarkValue).toBeUndefined();
     });
@@ -462,6 +597,93 @@ describe('ORCIDConnector — incremental sync', () => {
         const a = await c.FetchChanges(ctx('works', null));
         const b = await c.FetchChanges(ctx('works', null));
         expect(a.Records.map(r => r.ExternalID).sort()).toEqual(b.Records.map(r => r.ExternalID).sort());
+        expect(a.Records.map(r => r.Fields)).toEqual(b.Records.map(r => r.Fields));
+    });
+});
+
+// ─── Root page: concurrency, page cap, universe caching ───────────────
+
+describe('ORCIDConnector — root fetch concurrency and paging', () => {
+    let c: TestORCIDConnector;
+    const universe = Array.from({ length: 12 }, (_, i) => syntheticId(i + 1));
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respond;
+        c.Config = { OrcidIds: universe };
+    });
+
+    it('caps a root page at 10 iDs regardless of BatchSize, so a page fits the engine timeout at concurrency 1', async () => {
+        const page1 = await c.FetchChanges(ctx('record', null, { BatchSize: 1000 }));
+        expect(page1.Records).toHaveLength(10);
+        expect(page1.HasMore).toBe(true);
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(10);
+        const page2 = await c.FetchChanges(ctx('record', null, { BatchSize: 1000, AfterKeyValue: page1.NextAfterKeyValue }));
+        expect(page2.Records).toHaveLength(2);
+        expect(page2.HasMore).toBe(false);
+    });
+
+    it('a derived page is not capped at 10: all 12 stored iDs come back in one page', async () => {
+        for (const iD of universe) c.Stored.set(iD, FULL_RECORD);
+        const page = await c.FetchChanges(ctx('works', null, { BatchSize: 1000 }));
+        expect(page.HasMore).toBe(false);
+        expect(new Set(page.Records.map(r => r.Fields['orcid-id'])).size).toBe(12);
+        expect(c.Calls).toHaveLength(0);
+    });
+
+    it('fans the page across MaxConcurrency in-flight requests, each gated by RateLimitAcquire', async () => {
+        c.Latency = 5;
+        let acquired = 0;
+        const reports: unknown[] = [];
+        await c.FetchChanges(ctx('record', null, {
+            MaxConcurrency: 4,
+            RateLimitAcquire: async () => { acquired++; },
+            RateLimitReport: (err?: unknown) => { reports.push(err); },
+        }));
+        expect(c.MaxInFlight).toBe(4);
+        expect(acquired).toBe(10);
+        expect(reports).toHaveLength(10);
+        expect(reports.every(r => r === undefined)).toBe(true);
+    });
+
+    it('with no engine hooks it runs one request at a time (old behaviour)', async () => {
+        c.Latency = 2;
+        await c.FetchChanges(ctx('record'));
+        expect(c.MaxInFlight).toBe(1);
+    });
+
+    it('a throttled iD (429) is reported to the rate limiter with its headers, and still isolated', async () => {
+        const bad = universe[3];
+        c.Responder = (url: string) => url.includes(bad)
+            ? { Status: 429, Body: null, Headers: { 'retry-after': '3' } }
+            : respond(url);
+        c.Config = { ...c.Config, MaxRetries: 0 };
+        const reports: unknown[] = [];
+        const result = await c.FetchChanges(ctx('record', null, { MaxConcurrency: 3, RateLimitReport: (e?: unknown) => { reports.push(e); } }));
+        expect(result.Records).toHaveLength(9);
+        const throttles = reports.filter(r => r !== undefined);
+        expect(throttles).toHaveLength(1);
+        // The engine reads Retry-After off the reported error via ExtractRetryAfterMs.
+        expect(c.ExtractRetryAfterMs(throttles[0])).toBe(3000);
+        expect(result.Warnings?.find(w => w.Code === 'ID_FETCH_FAILED')?.Data?.['orcidId']).toBe(bad);
+    });
+
+    it('a plain failure (500) is isolated but NOT reported as a throttle — the engine would back off the whole connection', async () => {
+        const bad = universe[3];
+        c.Responder = (url: string) => url.includes(bad) ? { Status: 500, Body: null, Headers: {} } : respond(url);
+        c.Config = { ...c.Config, MaxRetries: 0 };
+        const reports: unknown[] = [];
+        const result = await c.FetchChanges(ctx('record', null, { MaxConcurrency: 3, RateLimitReport: (e?: unknown) => { reports.push(e); } }));
+        expect(result.Records).toHaveLength(9);
+        expect(reports).toHaveLength(9); // one clean report per success, nothing for the 500
+        expect(reports.every(r => r === undefined)).toBe(true);
+        expect(result.Warnings?.find(w => w.Code === 'ID_FETCH_FAILED')?.Data?.['orcidId']).toBe(bad);
+    });
+
+    it('resolves a search-scoped universe once and reuses it across pages', async () => {
+        c.Config = { SearchQuery: 'affiliation-org-name:"Test University"' };
+        const page1 = await c.FetchChanges(ctx('record', null, { BatchSize: 1 }));
+        await c.FetchChanges(ctx('record', null, { BatchSize: 1, AfterKeyValue: page1.NextAfterKeyValue }));
+        expect(c.Calls.filter(x => x.url.includes('/search'))).toHaveLength(1);
     });
 });
 

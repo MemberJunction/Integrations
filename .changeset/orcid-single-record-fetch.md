@@ -1,0 +1,19 @@
+---
+"@memberjunction/connector-orcid": minor
+---
+
+One ORCID call per person, sections derived from the stored record and flattened into real columns.
+
+Ported from a production consumer that subclasses `ORCIDConnector` over a ~38k-iD universe, whose earlier findings became 1.1.3 and 1.2.0. What was still only in that subclass comes into stock here, so it can drop its overrides and new deployments start on the stock connector.
+
+**One call per person.** Each section object (works, employments, fundings, …) issued its own `GET /{iD}/<section>` per person: 12 calls per member, and at ORCID's ~10 req/s a 50k-member association was a multi-day initial load. `GET /{iD}/record` already carries every section summary under `activities-summary` and `person`. Now only the `record` object calls ORCID; it stores `activities-summary` (new json field) beside the existing `person`, and every section object is derived by reading the page's stored records back through the engine's entity and field maps — one local query per page, no API call. The record object is the FK parent of every section, so the engine's dependency ordering syncs it first. An iD with no stored record yet (section-only run, a record whose own fetch failed) is fetched live, once, and reported as `RECORD_FALLBACK_FETCH` so the section is never silently empty.
+
+**Concurrent, rate-governed root pages.** The root page is fetched across `ctx.MaxConcurrency` workers, each request gated by the engine's `RateLimitAcquire` and reported back through `RateLimitReport`, so throughput reaches the rate ceiling instead of the sequential-latency floor (~0.7 req/s at ORCID's ~1.4s latency). The root page is capped at 10 iDs regardless of `BatchSize`: the engine's 30s `FetchChanges` timeout has to hold even after it cuts concurrency to 1, and a bigger page under that cut times out on every attempt. A derived page carries up to 100 iDs. A search-scoped universe is resolved once per run rather than once per page.
+
+**Flattened fields.** Section items arrived with ORCID's nesting intact, so `title`, `organization`, `start-date` and the `{value}` wrappers landed as JSON in their columns. Every section now also carries flat fields: the asserting source (`source-name`, `source-orcid`), organization (`organization-name`, `-city`, `-region`, `-country`, `-disambiguated-id`, `-disambiguation-source`), partial dates as integer parts (`start-`/`end-`/`publication-`/`completion-year`/`-month`/`-day`), titles (`work-title`, `work-subtitle`, `funding-title`, `translated-title`, `resource-title`), funding `amount-value`/`amount-currency`, and the peer-review subject. Top-level `{value}` wrappers are unwrapped in place, so declared String columns such as `journal-title` and `review-url` receive the string. The nested json fields are unchanged; nothing the API returns is dropped. Funding `amount` exists only on ORCID's per-item detail endpoint, so it is null on a derived item.
+
+**Six person-section objects.** `other-names`, `keywords`, `email`, `address`, `researcher-urls`, `external-identifiers` (Scopus Author ID, ResearcherID, …), each keyed by `put-code` with an `orcid-id` FK to `record`, derived from the stored record's `person` block. 12 objects become 18.
+
+Ships as `V202610182210__orcid__SingleRecordFetchAndFlattenedFields` (+ its Postgres twin): 6 new objects, 221 new fields, and the 12 existing objects' Configuration notes updated to describe the derived fetch model. Additive only; no existing row is removed or renamed.
+
+Storage note: the record row now holds the full `activities-summary` block, and the engine's snapshot column holds the mapped fields again, so a prolific author's record row can reach several hundred KB. The consumer above saw its database roughly double over ~40k records; size the database for it.

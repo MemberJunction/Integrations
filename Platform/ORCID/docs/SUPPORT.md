@@ -2,26 +2,34 @@
 
 > **Evidence tier:** 🥇 Production-live (real production system, real data)  ·  **Last verified:** 2026-07-26  ·  **Proof DB(s):** MJ_CT48
 >
-> **Known issues:** In production use with a client today, and still needs work — treat it as live but not finished.
+> **Known issues:** In production use with a client today, and still needs work — treat it as live but not finished. The single-record-fetch model (1.3.0) and the flattened fields and person-section objects it added have not yet been run against a live tenant; the proof below predates them.
 
 ## What this connector supports
 
-**12 objects** declared across **192 fields** (source: `metadata/integration/.orcid.integration.json`). 0 declare a write path; 12 are read-only (pull). 12 support incremental sync.
+**18 objects** declared across **413 fields** (source: `metadata/integration/.orcid.integration.json`). 0 declare a write path; 18 are read-only (pull). 18 support incremental sync.
 
-| Object | Pull | Push (C/U/D) | Incremental |
-|---|---|---|---|
-| distinctions | ✓ | — (read-only) | ✓ |
-| educations | ✓ | — (read-only) | ✓ |
-| employments | ✓ | — (read-only) | ✓ |
-| fundings | ✓ | — (read-only) | ✓ |
-| invited-positions | ✓ | — (read-only) | ✓ |
-| memberships | ✓ | — (read-only) | ✓ |
-| peer-reviews | ✓ | — (read-only) | ✓ |
-| qualifications | ✓ | — (read-only) | ✓ |
-| record | ✓ | — (read-only) | ✓ |
-| research-resources | ✓ | — (read-only) | ✓ |
-| services | ✓ | — (read-only) | ✓ |
-| works | ✓ | — (read-only) | ✓ |
+Only the `record` object calls ORCID (`GET /{iD}/record`). Every other object is **derived** from the stored record — its `activities-summary` and `person` blocks — with no API call of its own, so a sync costs one request per person rather than one per section per person. The derived objects carry flat, column-shaped fields (source, organization, partial dates, titles, amounts, review subject) beside the nested json ORCID returns.
+
+| Object | Source | Pull | Push (C/U/D) | Incremental |
+|---|---|---|---|---|
+| record | `GET /{iD}/record` | ✓ | — (read-only) | ✓ |
+| works | derived (`activities-summary.works`) | ✓ | — (read-only) | ✓ |
+| employments | derived (`activities-summary.employments`) | ✓ | — (read-only) | ✓ |
+| educations | derived (`activities-summary.educations`) | ✓ | — (read-only) | ✓ |
+| qualifications | derived (`activities-summary.qualifications`) | ✓ | — (read-only) | ✓ |
+| distinctions | derived (`activities-summary.distinctions`) | ✓ | — (read-only) | ✓ |
+| invited-positions | derived (`activities-summary.invited-positions`) | ✓ | — (read-only) | ✓ |
+| memberships | derived (`activities-summary.memberships`) | ✓ | — (read-only) | ✓ |
+| services | derived (`activities-summary.services`) | ✓ | — (read-only) | ✓ |
+| fundings | derived (`activities-summary.fundings`) | ✓ | — (read-only) | ✓ |
+| peer-reviews | derived (`activities-summary.peer-reviews`) | ✓ | — (read-only) | ✓ |
+| research-resources | derived (`activities-summary.research-resources`) | ✓ | — (read-only) | ✓ |
+| other-names | derived (`person.other-names`) | ✓ | — (read-only) | ✓ |
+| keywords | derived (`person.keywords`) | ✓ | — (read-only) | ✓ |
+| email | derived (`person.emails`) | ✓ | — (read-only) | ✓ |
+| address | derived (`person.addresses`) | ✓ | — (read-only) | ✓ |
+| researcher-urls | derived (`person.researcher-urls`) | ✓ | — (read-only) | ✓ |
+| external-identifiers | derived (`person.external-identifiers`) | ✓ | — (read-only) | ✓ |
 
 > **"Declares a write path" is a capability declaration, not a proven behaviour.** What has actually
 > been executed against a live system is in the next section, and nothing else should be read as proven.
@@ -37,6 +45,11 @@
 
 **Total proven rows: 45** across 2 distinct objects.
 
+These rows were pulled by the per-section fetch model (pre-1.3.0). The derived model, the flattened
+fields and the six person-section objects are verified against ORCID's published sample record
+(`src/__tests__/fixtures/record-0000-0002-1825-0097.json`, every envelope shape) in the unit suite,
+not yet against a live tenant.
+
 ### Push (write / bidirectional)
 
 - **Status: Heavily experimental.** Write not verified.
@@ -44,12 +57,15 @@
 
 ## Residual gap (honest)
 
+- **Live run of the derived model** — the read-back of stored records through the engine's entity/field maps has not been exercised against a real tenant on either SQL dialect.
+- **Funding `amount`** — exists only on ORCID's per-item detail endpoint, so it is null on a derived item. A detail pass is a future opt-in.
 - Live **write side-effects** — never executed against a real tenant (needs `allowWrite` + a disposable record).
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
-- **Rate-limit / backoff under load** — not stress-tested.
+- **Rate-limit / backoff under load** — the concurrent root page is governed by the engine's adaptive limiter, but not stress-tested live.
+- **Storage** — the record row now holds the full `activities-summary` block (plus the engine's snapshot copy); a prolific author's row runs to several hundred KB. A production consumer saw its database roughly double over ~40k records.
 
 ---
 
-_Capability section derived from this connector's own metadata on 2026-07-28. Proof numbers are DB ground
+_Capability section derived from this connector's own metadata on 2026-10-18. Proof numbers are DB ground
 truth as of 2026-07-26 (`gen-support-docs.mjs`), and are re-stated verbatim — they change only when a
 new live sync is run and the doc is regenerated._

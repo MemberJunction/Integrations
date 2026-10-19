@@ -1,5 +1,5 @@
 import { RegisterClass } from '@memberjunction/global';
-import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
+import { Metadata, RunView, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type { MJCompanyIntegrationEntity, MJCredentialEntity, MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity } from '@memberjunction/core-entities';
 import {
     BaseIntegrationConnector,
@@ -15,6 +15,14 @@ import {
     type FetchWarning,
     type RateLimitPolicy,
 } from '@memberjunction/integration-engine';
+import {
+    ROOT_OBJECT_NAME,
+    collectPutCodeItems,
+    extractSectionRawItems,
+    flattenSectionItem,
+    extractMs as extractMsFromNode,
+    valueOf as unwrapValue,
+} from './orcidRecordExtraction.js';
 
 // ─── Connection configuration ─────────────────────────────────────────
 
@@ -123,8 +131,43 @@ const SEARCH_PAGE_ROWS = 1000;
 /** ORCID documented burst limit is 40 req/s; stay comfortably under it. */
 const RATE_LIMIT_TOKENS_PER_SEC = 10;
 
-/** The root IO whose template var {iD} is satisfied directly from the Configuration-scoped universe. */
-const ROOT_OBJECT_NAME = 'record';
+/**
+ * iDs per `FetchChanges` page for the ROOT object — the one that calls ORCID. The engine kills any
+ * FetchChanges call that runs past its 30s timeout, and its adaptive controller cuts concurrency to 1
+ * after failures, so a page must finish under 30s even when fetched SEQUENTIALLY: 10 iDs × ~1.5s
+ * worst-case ≈ 15s. A page sized for the concurrent-happy case plus a concurrency cut times out on
+ * every page (death spiral); concurrency only makes a small page faster. Also bounds memory to one
+ * page of records. Sized from a production deployment that learned this live.
+ */
+const RECORD_IDS_PER_PAGE = 10;
+/**
+ * iDs per page for a DERIVED section: one local read for the stored records plus in-memory
+ * extraction, no ORCID call, so the page can be larger. Still bounded: a prolific author's works
+ * section alone can run to thousands of items.
+ */
+const DERIVED_IDS_PER_PAGE = 100;
+
+/** Source fields of the record object that a derived section is rebuilt from. */
+const RECORD_PERSON_FIELD = 'person';
+const RECORD_ACTIVITIES_FIELD = 'activities-summary';
+
+/** One iD's root fetch: its items, or the error that was already turned into an ID_FETCH_FAILED warning. */
+interface FetchOneOutcome {
+    Items?: Record<string, unknown>[];
+    Error?: unknown;
+}
+
+/** Where the engine stores synced `record` rows for one connection, resolved once per connection. */
+interface RecordStorage {
+    /** MJ entity the `record` object is mapped to (its name, for RunView). */
+    EntityName: string;
+    /** The entity's ID, for the record-map lookup. */
+    EntityID: string;
+    /** Destination column holding the source `person` block. */
+    PersonColumn: string;
+    /** Destination column holding the source `activities-summary` block. */
+    ActivitiesColumn: string;
+}
 
 // ─── Connector implementation ─────────────────────────────────────────
 
@@ -139,9 +182,18 @@ const ROOT_OBJECT_NAME = 'record';
  * ORCID is NOT enumerable — there is no
  * "list all records" endpoint — so every sync is SCOPED per connection via
  * `CompanyIntegration.Configuration` (`searchQuery` Lucene query and/or an
- * explicit `orcidIds` array). FetchChanges resolves the in-scope iD set, then
- * fetches `GET /{iD}/record` (root IO) or `GET /{iD}/<section>` (child IOs)
- * per resolved iD.
+ * explicit `orcidIds` array).
+ *
+ * ONE CALL PER PERSON. Only the root `record` object calls ORCID (`GET /{iD}/record`,
+ * fetched concurrently within a page under the engine's adaptive rate limiter). The
+ * record payload already carries every section summary under `activities-summary` and
+ * `person`, and the engine stores those blocks on the synced record row, so every child
+ * object (works, employments, keywords, …) is DERIVED by reading the stored record back
+ * and extracting its items — no API call. Previously each section issued its own
+ * `GET /{iD}/<section>` per person, which at ~10 req/s made a 50k-member universe a
+ * multi-day load (12 calls/person) instead of ~1.5 hours (1 call/person). An iD whose
+ * record is not stored yet (section-only sync, failed record) falls back to one
+ * `/record` call so a section is never silently empty.
  *
  * Pull-only: SupportsCreate/Update/Delete are false (the Public API is
  * read-only; writes require the Member API which is out of scope). Incremental
@@ -150,10 +202,8 @@ const ROOT_OBJECT_NAME = 'record';
  * rides content-hash idempotency in the base ToExternalRecord path.
  *
  * Rides BaseRESTIntegrationConnector (JSON over HTTP via Accept:
- * application/json). The standard FetchChanges template-var mechanism resolves
- * child sections off ALREADY-SYNCED parent iDs; we override FetchChanges so the
- * ROOT (record) iD set is sourced from the Configuration universe rather than a
- * parent table, then delegate child sections to the same per-iD fan-out.
+ * application/json). FetchChanges is overridden so the ROOT iD set is sourced from
+ * the Configuration universe rather than a parent table.
  */
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-orcid')
 export class ORCIDConnector extends BaseRESTIntegrationConnector {
@@ -162,6 +212,14 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     private authState: ORCIDAuthContext | null = null;
     /** Timestamp of the last outbound request, used for throttling. */
     private lastRequestTime = 0;
+    /**
+     * The resolved iD universe, keyed by the scope config that produced it. FetchChanges runs once
+     * per page — thousands of times over a large universe — and a search-scoped universe would
+     * otherwise re-run its Lucene query (up to 10 pages of 1000) on every one of them.
+     */
+    private universeCache: { Key: string; Ids: string[] } | null = null;
+    /** Where this connection's `record` rows live, resolved once per CompanyIntegration. */
+    private recordStorageCache: { CompanyIntegrationID: string; Storage: RecordStorage | null } | null = null;
 
     // ── Capability getters (PULL-ONLY) ──────────────────────────────────
 
@@ -258,9 +316,10 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * Fetches records for the given object, sourcing the iD universe from
      * CompanyIntegration.Configuration (search query and/or explicit list).
      *
-     * - ROOT IO ('record'): fetch GET /{iD}/record for each resolved iD.
-     * - CHILD section IOs ('works', 'employments', ...): fetch GET /{iD}/<section>
-     *   for each resolved iD and expand the group envelope into individual items.
+     * - ROOT IO ('record'): GET /{iD}/record for each iD in the page, concurrently.
+     * - DERIVED IOs (every section): read the page's stored records back from the
+     *   engine's synced rows and extract the section's items — no ORCID call. An iD
+     *   with no stored record falls back to one /record fetch.
      *
      * Incremental: for sections that carry `last-modified-date`, narrow client-side
      * to records strictly newer than ctx.WatermarkValue, and return the max-seen
@@ -285,15 +344,20 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             return { Records: [], HasMore: false, Warnings: warnings };
         }
 
-        // Keyset window over the sorted iD universe. BatchSize is interpreted as iDs-per-batch:
-        // one iD expands to an unbounded number of section items, so bounding the iD count is what
-        // actually bounds memory and request volume. Previously the universe was sliced to BatchSize
-        // and the remainder was DISCARDED while still reporting HasMore:false — every iD past the
-        // first BatchSize was silently unsyncable.
+        const section = ctx.ObjectName === ROOT_OBJECT_NAME ? null : ctx.ObjectName;
+
+        // Keyset window over the sorted iD universe. The page is counted in iDs, not records: one
+        // iD expands to an unbounded number of section items, so bounding the iD count is what
+        // actually bounds memory and request volume. The root page is capped hard at
+        // RECORD_IDS_PER_PAGE regardless of BatchSize (see that constant: the engine's 30s timeout
+        // must hold with concurrency cut to 1); a derived page makes no API call and can be larger.
+        // Previously the universe was sliced to BatchSize and the remainder DISCARDED while still
+        // reporting HasMore:false — every iD past the first BatchSize was silently unsyncable.
         const remaining = ctx.AfterKeyValue
             ? universe.filter(id => id > ctx.AfterKeyValue!)
             : universe;
-        const pageSize = ctx.BatchSize > 0 ? ctx.BatchSize : remaining.length;
+        const cap = section == null ? RECORD_IDS_PER_PAGE : DERIVED_IDS_PER_PAGE;
+        const pageSize = ctx.BatchSize > 0 ? Math.min(ctx.BatchSize, cap) : cap;
         const orcidIds = remaining.slice(0, pageSize);
         const hasMore = remaining.length > orcidIds.length;
 
@@ -301,7 +365,6 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             return { Records: [], HasMore: false, Warnings: warnings.length > 0 ? warnings : undefined };
         }
 
-        const section = ctx.ObjectName === ROOT_OBJECT_NAME ? null : ctx.ObjectName;
         const watermark = this.parseWatermark(ctx.WatermarkValue);
         const pkFieldNames = fields.filter(f => f.IsPrimaryKey).map(f => f.Name);
 
@@ -309,15 +372,24 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         let maxSeen = watermark;
         let skippedIdCount = 0;
 
-        for (const iD of orcidIds) {
-            // Per-iD isolation: one bad iD (persistent 5xx, malformed record) must not abort the
-            // whole page. This matters more since the switch to keyset paging — the engine can only
-            // step past a failed page for offset/page pagination (`canSkipPage`), so a throw here
-            // would stall the scan at this iD on EVERY subsequent run, permanently. 403/404 are
-            // already handled as empty inside FetchForId; this catches everything else.
-            let items: Record<string, unknown>[];
+        const addItems = (items: Record<string, unknown>[]): void => {
+            for (const raw of items) {
+                const lmd = this.extractLastModifiedMs(raw);
+                // Incremental narrowing: skip records not newer than the watermark.
+                if (watermark != null && lmd != null && lmd <= watermark) continue;
+                if (lmd != null && (maxSeen == null || lmd > maxSeen)) maxSeen = lmd;
+                out.push(this.toRecord(raw, obj, fields, pkFieldNames));
+            }
+        };
+
+        // Per-iD isolation: one bad iD (persistent 5xx, malformed record) must not abort the whole
+        // page. This matters more under keyset paging — the engine can only step past a failed
+        // page for offset/page pagination (`canSkipPage`), so a throw here would stall the scan at
+        // this iD on EVERY subsequent run, permanently. 403/404 are already handled as empty inside
+        // FetchForId; this catches everything else.
+        const fetchRecordIsolated = async (iD: string): Promise<FetchOneOutcome> => {
             try {
-                items = await this.FetchForId(auth, obj, iD, section);
+                return { Items: await this.FetchForId(auth, obj, iD, null) };
             } catch (err) {
                 skippedIdCount++;
                 warnings.push({
@@ -327,14 +399,43 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
                         `${err instanceof Error ? err.message : String(err)}`,
                     Data: { orcidId: iD, objectName: ctx.ObjectName },
                 });
-                continue;
+                return { Error: err };
             }
-            for (const raw of items) {
-                const lmd = this.extractLastModifiedMs(raw);
-                // Incremental narrowing: skip records not newer than the watermark.
-                if (watermark != null && lmd != null && lmd <= watermark) continue;
-                if (lmd != null && (maxSeen == null || lmd > maxSeen)) maxSeen = lmd;
-                out.push(this.toRecord(raw, obj, fields, pkFieldNames));
+        };
+
+        if (section == null) {
+            // ROOT: the only object that calls ORCID. Fan the page across the engine's in-flight
+            // budget so throughput reaches the rate ceiling instead of the sequential-latency floor.
+            const fetched = await this.fetchRecordsConcurrently(ctx, orcidIds, fetchRecordIsolated);
+            for (const iD of orcidIds) {
+                const items = fetched.get(iD);
+                if (items) addItems(items);
+            }
+        } else {
+            // DERIVED: rebuild this section from the stored records — one local read per page, no
+            // ORCID call. The record object is the FK parent of every section, so the engine's
+            // dependency ordering has already synced it; an iD that is nevertheless missing (a
+            // section-only run, a record that failed its own fetch) is fetched live so the section
+            // is never silently empty for it.
+            const stored = await this.LoadStoredRecords(ctx, orcidIds);
+            const missing = orcidIds.filter(iD => !stored.has(iD));
+            if (missing.length > 0) {
+                const fetched = await this.fetchRecordsConcurrently(ctx, missing, fetchRecordIsolated);
+                for (const [iD, items] of fetched) {
+                    const record = items[0];
+                    if (record) stored.set(iD, record);
+                }
+                warnings.push({
+                    Code: 'RECORD_FALLBACK_FETCH',
+                    Message:
+                        `ORCID "${ctx.ObjectName}": ${missing.length} of ${orcidIds.length} iDs had no stored record ` +
+                        `and were fetched live. Sync the record object first to avoid the extra calls.`,
+                    Data: { objectName: ctx.ObjectName, count: missing.length, orcidIds: missing },
+                });
+            }
+            for (const iD of orcidIds) {
+                const record = stored.get(iD);
+                if (record) addItems(extractSectionRawItems(record, section, iD));
             }
         }
 
@@ -358,8 +459,164 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
+     * Runs `fetchOne` over `orcidIds` with up to `ctx.MaxConcurrency` in flight, each request paced by
+     * the engine's adaptive token bucket: `RateLimitAcquire` before each call, and afterwards either a
+     * clean report (ramps the shared rate back up) or, when the failure was a throttle (429/503, after
+     * the transport's own retries), the error itself so the engine backs off and honours Retry-After.
+     * Any other failure (a 500, a malformed record) is NOT reported: the engine treats every reported
+     * error as a throttle, and a bad record is no reason to slow the whole connection down. Order of
+     * completion is irrelevant — results are keyed by iD. With no engine hooks (tests, older engines)
+     * this degrades to one in flight, the old behaviour.
+     */
+    private async fetchRecordsConcurrently(
+        ctx: FetchContext,
+        orcidIds: string[],
+        fetchOne: (iD: string) => Promise<FetchOneOutcome>
+    ): Promise<Map<string, Record<string, unknown>[]>> {
+        const results = new Map<string, Record<string, unknown>[]>();
+        const concurrency = Math.max(1, Math.min(ctx.MaxConcurrency ?? 1, orcidIds.length));
+        let next = 0;
+        const worker = async (): Promise<void> => {
+            while (next < orcidIds.length) {
+                const iD = orcidIds[next++];
+                if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
+                const outcome = await fetchOne(iD);
+                if (outcome.Items) {
+                    ctx.RateLimitReport?.();
+                    results.set(iD, outcome.Items);
+                } else if (this.isThrottleError(outcome.Error)) {
+                    ctx.RateLimitReport?.(outcome.Error);
+                }
+            }
+        };
+        await Promise.all(Array.from({ length: concurrency }, worker));
+        return results;
+    }
+
+    /** True for the HTTP statuses ORCID uses to say "slow down" (FetchForId attaches the status). */
+    private isThrottleError(err: unknown): boolean {
+        const status = (err as { Status?: unknown } | null)?.Status;
+        return status === 429 || status === 503;
+    }
+
+    /**
+     * Reads the stored `record` rows for a page of iDs back from the engine's synced entity, as
+     * `{ person, 'activities-summary' }` payloads a derived section can be extracted from. Resolves
+     * where the rows live from the connection's own entity map and field maps (so the destination
+     * column names are whatever the engine wrote, on either SQL dialect), then goes iD → MJ row via
+     * the engine's record map and reads the two blocks by row ID. Returns only the iDs found; the
+     * caller fetches the rest live. Protected so a test can substitute a canned store.
+     */
+    protected async LoadStoredRecords(ctx: FetchContext, orcidIds: string[]): Promise<Map<string, Record<string, unknown>>> {
+        const out = new Map<string, Record<string, unknown>>();
+        if (orcidIds.length === 0) return out;
+        const storage = await this.resolveRecordStorage(ctx);
+        if (!storage) return out;
+
+        const quote = (s: string): string => `'${s.replace(/'/g, "''")}'`;
+        const rv = new RunView();
+        const maps = await rv.RunView<{ ExternalSystemRecordID: string; EntityRecordID: string }>({
+            EntityName: 'MJ: Company Integration Record Maps',
+            ExtraFilter:
+                `CompanyIntegrationID=${quote(ctx.CompanyIntegration.ID)} AND EntityID=${quote(storage.EntityID)} ` +
+                `AND ExternalSystemRecordID IN (${orcidIds.map(quote).join(',')})`,
+            Fields: ['ExternalSystemRecordID', 'EntityRecordID'],
+            ResultType: 'simple',
+        }, ctx.ContextUser);
+        if (!maps.Success || maps.Results.length === 0) return out;
+
+        const idByRow = new Map<string, string>();
+        for (const row of maps.Results) {
+            const ext = String(row.ExternalSystemRecordID ?? '').trim().toUpperCase();
+            const mj = String(row.EntityRecordID ?? '').trim();
+            if (ext && mj) idByRow.set(mj, ext);
+        }
+        if (idByRow.size === 0) return out;
+
+        const rows = await rv.RunView<Record<string, unknown>>({
+            EntityName: storage.EntityName,
+            ExtraFilter: `ID IN (${[...idByRow.keys()].map(quote).join(',')})`,
+            Fields: ['ID', storage.PersonColumn, storage.ActivitiesColumn],
+            ResultType: 'simple',
+        }, ctx.ContextUser);
+        if (!rows.Success) return out;
+
+        for (const row of rows.Results) {
+            const iD = idByRow.get(String(row['ID'] ?? ''));
+            if (!iD) continue;
+            const person = this.parseStoredJson(row[storage.PersonColumn]);
+            const activities = this.parseStoredJson(row[storage.ActivitiesColumn]);
+            if (!person && !activities) continue; // a row synced before activities-summary existed
+            out.set(iD, { [RECORD_PERSON_FIELD]: person, [RECORD_ACTIVITIES_FIELD]: activities });
+        }
+        return out;
+    }
+
+    /** A stored json column arrives as an object (PG) or its string form (SQL Server); either → object. */
+    private parseStoredJson(value: unknown): Record<string, unknown> | undefined {
+        if (value == null) return undefined;
+        if (typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>;
+        if (typeof value === 'string' && value.trim().startsWith('{')) {
+            try {
+                const parsed: unknown = JSON.parse(value);
+                return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : undefined;
+            } catch { return undefined; }
+        }
+        return undefined;
+    }
+
+    /**
+     * Resolves the connection's `record` storage once: its entity map (`ExternalObjectName='record'`),
+     * then the active source→destination field maps for the two blocks. A missing map for a block
+     * falls back to the source name, which is what the engine uses when no map renames it. Null when
+     * the record object has no entity map on this connection (nothing to read back from).
+     */
+    private async resolveRecordStorage(ctx: FetchContext): Promise<RecordStorage | null> {
+        const ciID = ctx.CompanyIntegration.ID;
+        if (this.recordStorageCache && this.recordStorageCache.CompanyIntegrationID === ciID) {
+            return this.recordStorageCache.Storage;
+        }
+
+        let storage: RecordStorage | null = null;
+        const rv = new RunView();
+        const entityMap = await rv.RunView<{ ID: string; EntityID: string; Entity: string }>({
+            EntityName: 'MJ: Company Integration Entity Maps',
+            ExtraFilter: `CompanyIntegrationID='${ciID.replace(/'/g, "''")}' AND ExternalObjectName='${ROOT_OBJECT_NAME}'`,
+            Fields: ['ID', 'EntityID', 'Entity'],
+            MaxRows: 1,
+            ResultType: 'simple',
+        }, ctx.ContextUser);
+        const map = entityMap.Success ? entityMap.Results[0] : undefined;
+        if (map?.Entity && map.EntityID) {
+            const dest = new Map<string, string>();
+            const fieldMaps = await rv.RunView<{ SourceFieldName: string; DestinationFieldName: string }>({
+                EntityName: 'MJ: Company Integration Field Maps',
+                ExtraFilter: `EntityMapID='${String(map.ID).replace(/'/g, "''")}' AND Status='Active'`,
+                Fields: ['SourceFieldName', 'DestinationFieldName'],
+                ResultType: 'simple',
+            }, ctx.ContextUser);
+            if (fieldMaps.Success) {
+                for (const fm of fieldMaps.Results) {
+                    if (fm.SourceFieldName && fm.DestinationFieldName) dest.set(fm.SourceFieldName, fm.DestinationFieldName);
+                }
+            }
+            storage = {
+                EntityName: String(map.Entity),
+                EntityID: String(map.EntityID),
+                PersonColumn: dest.get(RECORD_PERSON_FIELD) ?? RECORD_PERSON_FIELD,
+                ActivitiesColumn: dest.get(RECORD_ACTIVITIES_FIELD) ?? RECORD_ACTIVITIES_FIELD,
+            };
+        }
+        this.recordStorageCache = { CompanyIntegrationID: ciID, Storage: storage };
+        return storage;
+    }
+
+    /**
      * Fetches the raw item array for a single iD + object. For the root record IO this is
      * a single-element array (the record itself); for a section it is the expanded group items.
+     * A section fetch here hits ORCID's per-section endpoint directly; the sync path no longer
+     * uses it (sections derive from the stored record), but GetRecord-style callers and
+     * subclasses still can.
      */
     protected async FetchForId(
         auth: ORCIDAuthContext,
@@ -402,23 +659,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * item is tagged with the parent `orcid-id` (the FK to record).
      */
     protected expandSection(body: Record<string, unknown>, _section: string, iD: string): Record<string, unknown>[] {
-        const items: Record<string, unknown>[] = [];
-        const visit = (node: unknown): void => {
-            if (Array.isArray(node)) {
-                for (const el of node) visit(el);
-                return;
-            }
-            if (node && typeof node === 'object') {
-                const obj = node as Record<string, unknown>;
-                if ('put-code' in obj && obj['put-code'] != null) {
-                    items.push({ ...obj, 'orcid-id': iD });
-                    return; // a leaf item — do not descend further into its own children
-                }
-                for (const v of Object.values(obj)) visit(v);
-            }
-        };
-        visit(body);
-        return items;
+        return collectPutCodeItems(body).map(item => ({ ...item, 'orcid-id': iD }));
     }
 
     // ─── iD universe resolution ──────────────────────────────────────
@@ -436,6 +677,8 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      */
     protected async ResolveOrcidIdUniverse(auth: ORCIDAuthContext): Promise<string[]> {
         const cfg = auth.Config;
+        const cacheKey = JSON.stringify([cfg.SearchQuery ?? '', cfg.UseExpandedSearch === true, cfg.MaxSearchResults ?? null, cfg.OrcidIds ?? []]);
+        if (this.universeCache?.Key === cacheKey) return this.universeCache.Ids;
         const ids = new Set<string>();
 
         for (const explicit of cfg.OrcidIds ?? []) {
@@ -448,7 +691,9 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             for (const id of fromSearch) ids.add(id);
         }
 
-        return Array.from(ids).sort();
+        const sorted = Array.from(ids).sort();
+        this.universeCache = { Key: cacheKey, Ids: sorted };
+        return sorted;
     }
 
     /**
@@ -528,13 +773,21 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * Per-record reshaping: ORCID returns deeply-nested JSON; pull the declared scalar
      * convenience fields up to the top level so the generated columns are populated, while
      * the full raw record (every nested blob) is preserved by applyTransformPreservingKeys.
+     *
+     * Root record: the person/history scalars (name, biography, claimed, …). Section item: the
+     * shared flatten in orcidRecordExtraction — `{value}` wrappers unwrapped in place, the
+     * asserting source lifted to `source-name`/`source-orcid`, and the section's nested shapes
+     * (title, organization, partial dates, amount, review subject) lifted into flat keys that
+     * match the declared fields.
      */
     protected override TransformRecord(
         raw: Record<string, unknown>,
         obj: MJIntegrationObjectEntity,
         _fields: MJIntegrationObjectFieldEntity[]
     ): Record<string, unknown> {
-        const out: Record<string, unknown> = { ...raw };
+        const out: Record<string, unknown> = obj.Name === ROOT_OBJECT_NAME
+            ? { ...raw }
+            : flattenSectionItem(raw, obj.Name);
 
         // Common to record + sections: ORCID wraps a millis timestamp as { value: <ms> }.
         out['last-modified-date'] = this.coerceDate(raw['last-modified-date']);
@@ -580,9 +833,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
 
     /** ORCID scalar wrapper: { value: <x> } → <x>; otherwise returns the value as-is. */
     private valueOf(node: unknown): unknown {
-        const obj = this.asObject(node);
-        if (obj && 'value' in obj) return obj['value'];
-        return node;
+        return unwrapValue(node);
     }
 
     /** ORCID date wrapper: { value: <millis> } → ISO string; passthrough on already-scalar/empty. */
@@ -599,17 +850,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
 
     /** Pulls a millisecond epoch out of an ORCID timestamp wrapper or a scalar number/ISO string. */
     private extractMs(node: unknown): number | null {
-        const obj = this.asObject(node);
-        const value = obj && 'value' in obj ? obj['value'] : node;
-        if (value == null) return null;
-        if (typeof value === 'number' && Number.isFinite(value)) return value;
-        if (typeof value === 'string') {
-            const asNum = Number(value);
-            if (Number.isFinite(asNum) && value.trim() !== '') return asNum;
-            const parsed = Date.parse(value);
-            return Number.isNaN(parsed) ? null : parsed;
-        }
-        return null;
+        return extractMsFromNode(node);
     }
 
     private asObject(node: unknown): Record<string, unknown> | undefined {
