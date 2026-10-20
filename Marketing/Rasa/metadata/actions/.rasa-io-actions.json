@@ -1,15 +1,15 @@
 [
   {
     "fields": {
-      "Name": "Rasa.io - Get Person",
-      "Description": "Retrieves a single Person record from Rasa.io by its external ID",
+      "Name": "Rasa.io - Get Contact",
+      "Description": "Retrieves a single Contact record from rasa by its external ID",
       "Type": "Custom",
       "Status": "Active",
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
         "IntegrationName": "rasa",
-        "ObjectName": "Person",
+        "ObjectName": "Contact",
         "Verb": "Get"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -24,14 +24,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": true,
-            "Description": "The unique ID of the Person record to retrieve"
+            "Description": "The unique ID of the Contact record to retrieve"
           },
           "primaryKey": {
-            "ID": "2A16D27E-CCB9-4253-A9F0-5BD388023536"
+            "ID": "F6058B08-024F-46B1-99B6-E4034E49419B"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.594Z",
-            "checksum": "99b8a3e0a0674854171b0870f397f0d71719afd850b7766191fde41ea1003025"
+            "lastModified": "2026-10-16T18:42:43.721Z",
+            "checksum": "b2796d41badb0513e00c5cb6f6fc7a1080a92e7c9aa0f348ec9dba176c94b589"
           }
         },
         {
@@ -45,10 +45,10 @@
             "Description": "Optional: specific CompanyIntegration to use"
           },
           "primaryKey": {
-            "ID": "E9006F35-C59A-4377-BF66-CD9461549FB0"
+            "ID": "A5A3D974-AD40-4F10-9789-9124C2D6C275"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.604Z",
+            "lastModified": "2026-10-16T18:42:43.751Z",
             "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
           }
         },
@@ -60,14 +60,32 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "The retrieved Person record with all fields"
+            "Description": "The retrieved Contact record with all fields"
           },
           "primaryKey": {
-            "ID": "5F162A56-36C0-4449-B914-76D2D0238A4E"
+            "ID": "C77CB2EE-31C3-49CB-9FB7-FA5F4F68EAE4"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.615Z",
-            "checksum": "ee44b4f7813594861bbe69806b108905cd02c9f3e59c4f9e4ac30009d345352e"
+            "lastModified": "2026-10-16T18:42:43.778Z",
+            "checksum": "1edff8c7e90ebbfce3d3137b36c6bd4b2d03b45046e44c9ab04d0bfa074f8fff"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "id",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Contact GUID — use this as the identifier in all API calls"
+          },
+          "primaryKey": {
+            "ID": "EF40E408-9106-49C8-ABA9-0D49ABA2ACBD"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:43.808Z",
+            "checksum": "0c85d32fa6bc135d4d9c2febed2c5600c0d3a6908ccb16365a1749278f6ee643"
           }
         },
         {
@@ -78,14 +96,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Subscriber email address"
+            "Description": "Email — Contact field 'email' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "ECF41400-FD42-4065-A4EF-E2E18C7881C7"
+            "ID": "129E2D12-47C8-4270-B38E-F3A0D12EC877"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.625Z",
-            "checksum": "8e2048207d9ee96a789cc79813e087eadf06b367c9652c84626daa4d0b892985"
+            "lastModified": "2026-10-16T18:42:43.834Z",
+            "checksum": "d4ccb32537c68a985d5fc3841f2db1a9014f8cdd22be0c6b7daea0cdd8beace2"
           }
         },
         {
@@ -96,14 +114,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Subscriber first name"
+            "Description": "First Name — Contact field 'first_name' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "2ED21051-B196-40AE-942B-51CDDD1E8C29"
+            "ID": "D9A4BFE6-29AB-4043-ADF7-2FF5D6B4AD9B"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.636Z",
-            "checksum": "67f81d1312c6f7ded9dd2dd242b6c345de4d2884cd8f8f94fc41daf102468fa4"
+            "lastModified": "2026-10-16T18:42:43.859Z",
+            "checksum": "90ae4f3efdfb514c09380cb95c94016dd338610ab3db6e1e90d646ccc2ac9bcf"
           }
         },
         {
@@ -114,86 +132,140 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Subscriber last name"
+            "Description": "Last Name — Contact field 'last_name' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "9860ABFD-A535-43D2-9D36-B7547D54C7C8"
+            "ID": "92248CF9-07CA-4F77-B17C-28FEB7E70E6A"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.647Z",
-            "checksum": "dc805d31df1ae365b16ce28618539c2b786af6a091704e457461d63d80db55f8"
+            "lastModified": "2026-10-16T18:42:43.882Z",
+            "checksum": "b33145cb227cc3179959cffed67068b63e17f6e23c966898a539ecbef0bdf066"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "external_id",
+            "Name": "can_email",
             "Type": "Output",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "External ID from source system"
+            "Description": "Can Email — Contact field 'can_email' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "83BF9266-3191-46B6-893A-D4C9F32FB1B9"
+            "ID": "9932F8C3-2D60-4FE6-8FAA-420F61D54E14"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.658Z",
-            "checksum": "062640d9734e97b9cf23a5dea3a3dca748a70417a8775536cce93cb0ee8831d2"
+            "lastModified": "2026-10-16T18:42:43.907Z",
+            "checksum": "721799cdf11988639cf628f7591158e2ef65216b04d43b17f28c954f1b6b2c37"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "is_active",
+            "Name": "can_email_updated",
             "Type": "Output",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Whether the subscriber is active"
+            "Description": "Can Email Updated — Contact field 'can_email_updated' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "B972E127-5761-44DE-9511-AB82B238F9B4"
+            "ID": "B94341DC-E418-43FF-93B1-53C6B18D154A"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.669Z",
-            "checksum": "97ec5dad411cd47e786ca4a661088b101e54d77a94c3dc542699acddba6f1041"
+            "lastModified": "2026-10-16T18:42:43.929Z",
+            "checksum": "c78016fe2b147e329744265a4895b779d0788230969fffe4445fde99c3721d43"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "is_subscribed",
+            "Name": "can_email_code",
             "Type": "Output",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Whether the subscriber is subscribed"
+            "Description": "Machine-readable code indicating why can_email was changed (e.g. 'manual', 'bounce', 'unsubscribe')"
           },
           "primaryKey": {
-            "ID": "37DAE440-4DF6-4D77-9F71-D7ACAE09FA71"
+            "ID": "1A906CF3-2483-4DAF-BAF9-53273115EFBC"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.678Z",
-            "checksum": "9357c6df62028547e270af2f28c3a2acfe22ce40fb676f7567fa3fd0578f69dd"
+            "lastModified": "2026-10-16T18:42:43.951Z",
+            "checksum": "f416a1663fbda691041c2d1f3f50b20d11d60c7d60e618773ee195a92f1872a6"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "id",
+            "Name": "can_email_message",
             "Type": "Output",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Rasa.io internal person ID"
+            "Description": "Human-readable message describing why can_email was changed"
           },
           "primaryKey": {
-            "ID": "7661A1C5-D761-438A-B133-15652C54B701"
+            "ID": "8C61F564-7885-4C45-AD64-087B0DD854F0"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.686Z",
-            "checksum": "b55ab8ed04de1250fb272d96baedeaad59d1f9fa136e94bce98e4c40d42f67bd"
+            "lastModified": "2026-10-16T18:42:43.979Z",
+            "checksum": "896f9805f7806072f97359c9ef757ab776a9079ae28b165fada941a5f3a251c9"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "source",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Source — Contact field 'source' (Contact), rasa.io v2."
+          },
+          "primaryKey": {
+            "ID": "F5055479-EB75-4E2D-81A5-2D72AAB90542"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.001Z",
+            "checksum": "ab1abf66fc0a88c272bb31c9b174fad31433c1bda0d8583a894432910900009a"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "title",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Title — Contact field 'title' (Contact), rasa.io v2."
+          },
+          "primaryKey": {
+            "ID": "71BB6037-7652-4D70-B082-8DBD3CA1C13F"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.024Z",
+            "checksum": "b6d9923621995dcd4661e38875d4b7d5fde09ae0eb369090cb9dd26a4c41d5c0"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "company",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Company — Contact field 'company' (Contact), rasa.io v2."
+          },
+          "primaryKey": {
+            "ID": "71162DA0-787A-4DA6-934C-5D613C622BA6"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.047Z",
+            "checksum": "8714d3ff022dff0c999ac80fa8fe491b119de8a51b7f6bb2e3c52f5ccf37edfc"
           }
         },
         {
@@ -204,14 +276,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "When the person was created"
+            "Description": "Created — Contact field 'created' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "88CCA805-3698-40D4-853C-B19C6BE6B290"
+            "ID": "A7142806-9897-4EE5-8DB7-D48F3F4F2612"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.722Z",
-            "checksum": "9c2d0f7ed7d40d9b2bbcf49001720bff515c7dc5ce3716ce39834451b85197ef"
+            "lastModified": "2026-10-16T18:42:44.068Z",
+            "checksum": "4d830b1616d559f8f7e2ca5aa4f62f05da51d19d4d896abd623786b5d8290e32"
           }
         },
         {
@@ -222,14 +294,104 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "When last updated"
+            "Description": "Updated — Contact field 'updated' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "E1CC2117-BED7-484C-BEE9-7EB892AB23BE"
+            "ID": "F6F74A82-BEA1-4768-96FB-CDC7DFAE19EF"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.734Z",
-            "checksum": "0e9c0b79a258f8258fb30134dea13345229cab290aa34853bd1c9c457d2f0bc2"
+            "lastModified": "2026-10-16T18:42:44.092Z",
+            "checksum": "36fd57569e78f0359aa9ce0edb9461e334ebd16a982244e9ba71e5e26201dcae"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "options",
+            "Type": "Output",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Arbitrary key-value attributes stored on the contact. Present only when set."
+          },
+          "primaryKey": {
+            "ID": "B6EBEB09-35C4-43E6-ADD1-375234E9BE9A"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.126Z",
+            "checksum": "f32690c422e2a776214e272c1b9afafb8db47f55ec96c60554ea4c0aeb36e240"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "list_id",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Add the contact to this list immediately [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "CF28166E-967B-41C0-B205-49D0BEE79DFC"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.149Z",
+            "checksum": "5d0ad3f470c7a70561bb66de0c2e98fda9ea894660f6f0be03992424da539ec0"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "system",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "External system name (e.g. 'hubspot'). Must be provided together with `identifier` to create an external identifier record. [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "C31AD124-BDD2-4BD3-8C5A-0257A952AE6D"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.171Z",
+            "checksum": "1a0d6fee53a2f638a5c5b0b8c80a5ef1c8972682a6f66e3b2222b179c40a9aec"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "identifier",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "The contact's ID in the external system. Must be provided together with `system`. [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "DEF5D102-8C8B-45C2-8B9D-90C30D6567E6"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.190Z",
+            "checksum": "d688fb3b18fea34b157ee799fc2eb18b30733eca665675703874ee5fbee9126f"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "system_identifier",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Optional sub-system identifier (e.g. a HubSpot portal ID). [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "8A193A6C-528F-4D45-81E4-1A4507EAF2DE"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:44.217Z",
+            "checksum": "afbeb0c4d42a94bf5f96859e2aea50caa81a548441eacfab85ae1b2b66ba3d3f"
           }
         }
       ],
@@ -242,10 +404,10 @@
             "Description": "Get operation completed successfully"
           },
           "primaryKey": {
-            "ID": "D9A4CF03-4E93-48E5-818C-BC2F0FB56D67"
+            "ID": "3AA946D2-5513-4D27-8244-4DF8FA1C6A9E"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.745Z",
+            "lastModified": "2026-10-16T18:42:44.257Z",
             "checksum": "479dce77d1533bdeb36e41f3af6f761c1fbda8d16c595867d787bc2b5f9dbd5e"
           }
         },
@@ -257,10 +419,10 @@
             "Description": "Internal executor error"
           },
           "primaryKey": {
-            "ID": "5C36DE0D-5CF6-452E-A444-2DFA7A0EF3E2"
+            "ID": "398C4774-DCE1-419F-8629-A35AA08449C9"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.754Z",
+            "lastModified": "2026-10-16T18:42:44.313Z",
             "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
           }
         },
@@ -272,34 +434,34 @@
             "Description": "Record not found"
           },
           "primaryKey": {
-            "ID": "CA980934-C9EF-4596-BEE6-1A4C3C85232E"
+            "ID": "3196560B-8447-4F34-968B-B79B0AFE4FBC"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.762Z",
+            "lastModified": "2026-10-16T18:42:44.356Z",
             "checksum": "b5db3cbf92e8d90b3fd6c46cf82c66903e1ee8cad66eb0093f6adcb8c30c5ece"
           }
         }
       ]
     },
     "primaryKey": {
-      "ID": "DD07C385-C998-4B6E-BE34-5C3C5D1972DF"
+      "ID": "73490246-AD1A-4F8C-848A-163FAB1023D9"
     },
     "sync": {
-      "lastModified": "2026-08-01T18:57:11.290Z",
-      "checksum": "0ebcbd8fdafc9945aaf7c091c72c7a686f88f6ad8cd389e961ce6082220dfaaa"
+      "lastModified": "2026-10-16T18:42:43.588Z",
+      "checksum": "0021d84fad1781ba7b4026280b2fb082a7eccb9e5692e55c4ec9ac24085271af"
     }
   },
   {
     "fields": {
-      "Name": "Rasa.io - Search Person",
-      "Description": "Searches for Person records in Rasa.io matching the given field filters",
+      "Name": "Rasa.io - Search Contact",
+      "Description": "Searches for Contact records in rasa matching the given field filters",
       "Type": "Custom",
       "Status": "Active",
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
         "IntegrationName": "rasa",
-        "ObjectName": "Person",
+        "ObjectName": "Contact",
         "Verb": "Search"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -317,10 +479,10 @@
             "Description": "Optional: specific CompanyIntegration to use"
           },
           "primaryKey": {
-            "ID": "8BC6C4B8-DF46-4DB4-99EA-E9AF1EF891AF"
+            "ID": "A7D80257-595C-4388-8DA8-5F1D1A62F9EA"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.773Z",
+            "lastModified": "2026-10-16T18:42:44.384Z",
             "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
           }
         },
@@ -335,10 +497,10 @@
             "Description": "Maximum number of records to return (default: 100)"
           },
           "primaryKey": {
-            "ID": "5ECB6090-2D79-4CA1-9F4A-971CFF9DCFF4"
+            "ID": "4B5F3790-401F-4731-8F79-B851B2E09C91"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.783Z",
+            "lastModified": "2026-10-16T18:42:44.411Z",
             "checksum": "be65ebfae6d6d9b79916066f5d1603c598684648084c7c813b4ba7717e9ffa4e"
           }
         },
@@ -353,10 +515,10 @@
             "Description": "Page number for paginated results (1-based)"
           },
           "primaryKey": {
-            "ID": "17799164-A7E6-4883-8085-AAD5B9839836"
+            "ID": "15E8CD74-5E22-45FE-9BBE-B286FC6AACEE"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.793Z",
+            "lastModified": "2026-10-16T18:42:44.442Z",
             "checksum": "8f84e0bd7b7700ea2cc93079917652a21424a3cd566251f61f3431094327af5d"
           }
         },
@@ -371,10 +533,10 @@
             "Description": "Sort expression (connector-specific format)"
           },
           "primaryKey": {
-            "ID": "3B751950-54C5-4842-9354-CB6E4D4B0F11"
+            "ID": "FC42E844-8C7D-4396-A04A-D6D7E9C26286"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.805Z",
+            "lastModified": "2026-10-16T18:42:44.473Z",
             "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
           }
         },
@@ -386,14 +548,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Subscriber email address"
+            "Description": "Email — Contact field 'email' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "9E820680-6A10-44D9-995A-F284D4AEE857"
+            "ID": "7E2A561D-3EC8-4840-96B8-F8526389B040"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.815Z",
-            "checksum": "c3c390fb709db236e85cb44e8d6b0a0812ee005c873385881d4213117ffd8231"
+            "lastModified": "2026-10-16T18:42:44.552Z",
+            "checksum": "9bb4e24d6ecda4e47995fd4870beffc20a89a615413624086eebb713dd3f4b94"
           }
         },
         {
@@ -404,14 +566,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Subscriber first name"
+            "Description": "First Name — Contact field 'first_name' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "1F4CE8DB-EC51-4496-9837-285327D7929F"
+            "ID": "25EB42F4-C3C0-4561-98D2-38D828BF98DC"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.850Z",
-            "checksum": "8051d252de70affe6ff50685531a80d681cd8e7a0eb052ce656dd15a4f2ea170"
+            "lastModified": "2026-10-16T18:42:44.656Z",
+            "checksum": "f677d36ad19860dbde7cbd59cc78d441c575cf1a84dd81aee387e86378cd872b"
           }
         },
         {
@@ -422,800 +584,104 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Subscriber last name"
+            "Description": "Last Name — Contact field 'last_name' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "04C36370-08EE-4D56-86DE-2BBC30B97D81"
+            "ID": "5A692724-7067-4AD2-8CC6-7664E153E0BC"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.859Z",
-            "checksum": "c46ec6e981b4b192426e4f21e268af41a1b0e476e7c25b3d9f6bcddc86ab4c07"
+            "lastModified": "2026-10-16T18:42:44.735Z",
+            "checksum": "7f43033243499f1a4e765aff23b9c7326bb4aade8ddefc548290a60b9f7de8de"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "external_id",
+            "Name": "can_email",
             "Type": "Input",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "External ID from source system"
+            "Description": "Can Email — Contact field 'can_email' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "C224DAD0-67E3-40AE-AE87-28A290B85BE9"
+            "ID": "C65DF408-2D79-4F6D-A6EC-E9226E987AE5"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.869Z",
-            "checksum": "27edea724e766dc8996e021b41ed20abed081a7f8086d7acf14e70728779f2fa"
+            "lastModified": "2026-10-16T18:42:44.780Z",
+            "checksum": "21ee878c6fa56b5c344225573b69f89c18ed70c5d31987be31a0f297eec70944"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "is_active",
+            "Name": "can_email_updated",
             "Type": "Input",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Whether the subscriber is active"
+            "Description": "Can Email Updated — Contact field 'can_email_updated' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "64124D14-2E87-4269-9971-33A4165BA8AE"
+            "ID": "E5FF0DFE-3E4F-46EC-ADD7-1C13843C525B"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.880Z",
-            "checksum": "c3757d20425a9fa316fe848accf685bd7d9ca8e801d6fc52e6b6a70461bfe780"
+            "lastModified": "2026-10-16T18:42:44.877Z",
+            "checksum": "b803b6a0b42a73e396be1c7c117cd03daf09acef6a02f8fe06c441ff9842c57c"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "is_subscribed",
+            "Name": "can_email_code",
             "Type": "Input",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Whether the subscriber is subscribed"
+            "Description": "Machine-readable code indicating why can_email was changed (e.g. 'manual', 'bounce', 'unsubscribe')"
           },
           "primaryKey": {
-            "ID": "6CEE6F1A-21B6-4D1D-9880-C97589567B99"
+            "ID": "E2725D11-C592-4234-8BCE-027F57844EF7"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.892Z",
-            "checksum": "45ad23f835522547e4382f3d8c4155b6ddf5daa037a88b6b922b4eaf312351bb"
+            "lastModified": "2026-10-16T18:42:44.916Z",
+            "checksum": "aeb85422e052586a6ef398566cd7c24539fa09a9a86cfe0cbba2f46512545b3b"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "created",
+            "Name": "can_email_message",
             "Type": "Input",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "When the person was created"
+            "Description": "Human-readable message describing why can_email was changed"
           },
           "primaryKey": {
-            "ID": "6967D524-22E3-48A6-A9C5-4FFB31CB0C12"
+            "ID": "5A65E526-26C4-4C3B-9BAE-F4818E337596"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.903Z",
-            "checksum": "7ed99df11ec8a2df3d2db478f2e2688ded69ee29ef928526191791c96f02c2c1"
+            "lastModified": "2026-10-16T18:42:44.951Z",
+            "checksum": "c1036c16414e99417bb213b7d36af96b861e0c62c71faa4cb0331e39a51a2bbd"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "updated",
+            "Name": "source",
             "Type": "Input",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "When last updated"
+            "Description": "Source — Contact field 'source' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "F037D8E0-2BC1-4C92-BB5D-6EF8ECBC84ED"
+            "ID": "BA44C999-7550-4061-9B31-88E000B03F57"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:11.912Z",
-            "checksum": "fffc37fd66f2411e9aa61b5a6fd784d54da79f77936ce2314c10d4ab6fbf103d"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Records",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Array of matching Person records"
-          },
-          "primaryKey": {
-            "ID": "7DC1F842-F8B4-4C7B-BE31-8838360801FB"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:11.922Z",
-            "checksum": "1cfaa0be03732045e96d32f352eb09d88361b5522ff80bb3a8cc4fdeef16ce73"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "TotalCount",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Total number of matching records"
-          },
-          "primaryKey": {
-            "ID": "4146AE24-A204-4615-AA73-9CA22CAEE9BB"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:11.931Z",
-            "checksum": "e02109f4e3da6b87024abcdb745df12bdfb6fdb913214629b90a5c3a910bb69c"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "HasMore",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Whether more pages of results exist"
-          },
-          "primaryKey": {
-            "ID": "F6B95B2E-0B23-4B6E-A934-6E33C281B574"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:11.940Z",
-            "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
-          }
-        }
-      ],
-      "MJ: Action Result Codes": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "SUCCESS",
-            "IsSuccess": true,
-            "Description": "Search operation completed successfully"
-          },
-          "primaryKey": {
-            "ID": "4B8BFAE4-C427-4FA2-B578-A12E416577F6"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:11.973Z",
-            "checksum": "3373be2cb2bed713fed8b1032f4786ce62272ee6f57a43c943c2c313a90b8e72"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "EXECUTOR_ERROR",
-            "IsSuccess": false,
-            "Description": "Internal executor error"
-          },
-          "primaryKey": {
-            "ID": "A7A55F25-C5C1-40B2-8CBD-BA8252A1EC3B"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:11.982Z",
-            "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
-          }
-        }
-      ]
-    },
-    "primaryKey": {
-      "ID": "002BD7D0-7F30-401F-83D3-8C5C652149C0"
-    },
-    "sync": {
-      "lastModified": "2026-08-01T18:57:11.308Z",
-      "checksum": "48aa040c737efddb9012841e7e641591074c6c05b01e19dbe92cdbd1064e74f4"
-    }
-  },
-  {
-    "fields": {
-      "Name": "Rasa.io - List Person",
-      "Description": "Lists Person records from Rasa.io with cursor-based pagination",
-      "Type": "Custom",
-      "Status": "Active",
-      "DriverClass": "IntegrationActionExecutor",
-      "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
-      "Config": {
-        "IntegrationName": "rasa",
-        "ObjectName": "Person",
-        "Verb": "List"
-      },
-      "IconClass": "fa-solid fa-envelope-open-text"
-    },
-    "relatedEntities": {
-      "MJ: Action Params": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "CompanyIntegrationID",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Optional: specific CompanyIntegration to use"
-          },
-          "primaryKey": {
-            "ID": "3DDE1F68-3DCD-4D93-B62E-4F55BE4D0447"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:11.994Z",
-            "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "PageSize",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Maximum number of records to return per page (default: 100)"
-          },
-          "primaryKey": {
-            "ID": "C8F732F8-7733-4B0E-A84C-400F246576D1"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.005Z",
-            "checksum": "8e913e91c402c85e6d53f08d0c7b27fd7620e3e6511d6002c59ba10f0c9b7ff0"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Cursor",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Opaque cursor for fetching the next page (from previous ListResult)"
-          },
-          "primaryKey": {
-            "ID": "2F24B8C2-3304-49B2-8550-75DC0C9DA4F5"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.018Z",
-            "checksum": "e0c29e2cdcaa8e533d6d475725916498510b6b241d6c88caec7b5f1dcb443a75"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Sort",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Sort expression (connector-specific format)"
-          },
-          "primaryKey": {
-            "ID": "E252083D-397A-40B0-AEB4-33518752B2DF"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.028Z",
-            "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Records",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Array of Person records in this page"
-          },
-          "primaryKey": {
-            "ID": "1F4440A8-49A6-4F72-B4B4-67484C55EB6A"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.038Z",
-            "checksum": "0e59566f8a73e145c153701cc8f2bfda4a335d94187ed94e4d3a280bff6315ac"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "HasMore",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Whether more pages of results exist"
-          },
-          "primaryKey": {
-            "ID": "AF1B7D4D-CAF5-41E4-8901-006E9BD16268"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.051Z",
-            "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "NextCursor",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Cursor to pass for the next page"
-          },
-          "primaryKey": {
-            "ID": "5C4229B4-6B63-4A24-8A83-0976F5EF6D0B"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.063Z",
-            "checksum": "d3229530acb0652abc213ca10e5821fecafceb12919d68536aa1c24bce23529a"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "TotalCount",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Total number of records, if known"
-          },
-          "primaryKey": {
-            "ID": "85596C0B-54A3-4664-A437-5B6DFBCC74A7"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.072Z",
-            "checksum": "3b2be011036e5347488cc91720e0139c054bffcf4316f8d30f6e4ca2137db301"
-          }
-        }
-      ],
-      "MJ: Action Result Codes": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "SUCCESS",
-            "IsSuccess": true,
-            "Description": "List operation completed successfully"
-          },
-          "primaryKey": {
-            "ID": "E10D05B1-D450-4897-964A-614CE2CD0AEF"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.102Z",
-            "checksum": "be42b070cb47b3b4c7b6666ee69c74810bde6ec0637542c75235cbf8c17faac3"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "EXECUTOR_ERROR",
-            "IsSuccess": false,
-            "Description": "Internal executor error"
-          },
-          "primaryKey": {
-            "ID": "33642DAF-CE12-4BE4-A0B3-6AA19D79167B"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.112Z",
-            "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
-          }
-        }
-      ]
-    },
-    "primaryKey": {
-      "ID": "D89EC8E2-1384-40A0-8B8B-87AFDEC547A7"
-    },
-    "sync": {
-      "lastModified": "2026-08-01T18:57:11.326Z",
-      "checksum": "8b68b170d8dc119d90121f7102f4155c80d116df428bd242be056cc9a7dcfbc5"
-    }
-  },
-  {
-    "fields": {
-      "Name": "Rasa.io - Get Post",
-      "Description": "Retrieves a single Post record from Rasa.io by its external ID",
-      "Type": "Custom",
-      "Status": "Active",
-      "DriverClass": "IntegrationActionExecutor",
-      "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
-      "Config": {
-        "IntegrationName": "rasa",
-        "ObjectName": "Post",
-        "Verb": "Get"
-      },
-      "IconClass": "fa-solid fa-envelope-open-text"
-    },
-    "relatedEntities": {
-      "MJ: Action Params": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "ExternalID",
-            "Type": "Both",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": true,
-            "Description": "The unique ID of the Post record to retrieve"
-          },
-          "primaryKey": {
-            "ID": "9F8182AE-C66C-4ED2-B942-67BF29D7FC26"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.123Z",
-            "checksum": "79c79906bb0d73cfb04d867d077e67473385a07e9f7cba13af65158c076903ee"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "CompanyIntegrationID",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Optional: specific CompanyIntegration to use"
-          },
-          "primaryKey": {
-            "ID": "E3187B44-5C57-446C-987E-B06820EA6959"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.134Z",
-            "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Record",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "The retrieved Post record with all fields"
-          },
-          "primaryKey": {
-            "ID": "0FAA7055-9177-4CE8-AB67-FFE2236EACDD"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.145Z",
-            "checksum": "4ee8fe4317cd11002317b6fc9b3e5f5e929e4559e2264fb83a9689b2797fd8ac"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "title",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Post title"
-          },
-          "primaryKey": {
-            "ID": "286F5426-DCE9-4FD4-8CC5-06E4016A4285"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.156Z",
-            "checksum": "52160092b84ffa3b380319cb6a9d52724559c98c36cc153d1da6de403e124225"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "description",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Post description/summary"
-          },
-          "primaryKey": {
-            "ID": "CB7103DA-CA53-4A61-8895-2D7EB2C47CDD"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.165Z",
-            "checksum": "035c78764ff7320b708ca12cfbd3ae6c7594e98a96d550c7c965c4d6134f4b29"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "url",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Post URL"
-          },
-          "primaryKey": {
-            "ID": "76C32FBA-7FB2-46DC-875E-027B1E7BB657"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.175Z",
-            "checksum": "a5e5d08022aa65fd0f917b0415d27c9ed3c661cb6ba9f8628dd87859782d50b0"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "source_url",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Original source URL"
-          },
-          "primaryKey": {
-            "ID": "40044FB2-8714-480C-ADEC-0C4F6364950C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.184Z",
-            "checksum": "487d556bd151123e7dea2c2e85f0d2e8fbe7fac5f9a532598d7ae43003d693f8"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "image_url",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Post image URL"
-          },
-          "primaryKey": {
-            "ID": "4BB0F466-6360-4796-B3EE-888278C13612"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.193Z",
-            "checksum": "1b4d85d2e42154d1b5cf09fa806f97912416edc4c8321d46f2216fef15bdc952"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "quality_score",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Content quality score"
-          },
-          "primaryKey": {
-            "ID": "8B05CDEB-7152-4940-8B65-7648A6E2722B"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.226Z",
-            "checksum": "794ce3170a916eecfc091afbac7a73995e7ba60e1a044d250e57f45b9737e36e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "is_active",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Whether the post is active"
-          },
-          "primaryKey": {
-            "ID": "76FE4030-17E5-4094-804F-FEAF02E8F5D5"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.248Z",
-            "checksum": "4e78a907f3cae58791a6e26b7ef59936adce27bf15ceb87e52a7c09d590370ac"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "id",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Rasa.io internal post ID"
-          },
-          "primaryKey": {
-            "ID": "18686D10-EC9A-4C59-9700-FA969B18B0CB"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.258Z",
-            "checksum": "4919fb8f2d972a90b48389ae930b97f57739522858d3142b8c651e8ff4cc8e0e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "created",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "When the post was created"
-          },
-          "primaryKey": {
-            "ID": "A7735A50-4E04-46DA-82AC-40548A8441BA"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.269Z",
-            "checksum": "37f45e66232d40587da11074eb9f1419681e9cb8514dbe1dc8c4348d37dd02ce"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "updated",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "When last updated"
-          },
-          "primaryKey": {
-            "ID": "8A4FD893-6508-4FD0-B679-DE4F9AA2F0B6"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.278Z",
-            "checksum": "0e9c0b79a258f8258fb30134dea13345229cab290aa34853bd1c9c457d2f0bc2"
-          }
-        }
-      ],
-      "MJ: Action Result Codes": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "SUCCESS",
-            "IsSuccess": true,
-            "Description": "Get operation completed successfully"
-          },
-          "primaryKey": {
-            "ID": "CEC3B5E9-07AA-4C7C-9B19-990F833121C8"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.290Z",
-            "checksum": "479dce77d1533bdeb36e41f3af6f761c1fbda8d16c595867d787bc2b5f9dbd5e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "EXECUTOR_ERROR",
-            "IsSuccess": false,
-            "Description": "Internal executor error"
-          },
-          "primaryKey": {
-            "ID": "4EFEC0CD-E207-4BE8-806C-B231C0E2BB20"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.300Z",
-            "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "NOT_FOUND",
-            "IsSuccess": false,
-            "Description": "Record not found"
-          },
-          "primaryKey": {
-            "ID": "C4FCB0B2-2BE8-4027-ABCF-E983E2DCA358"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.309Z",
-            "checksum": "b5db3cbf92e8d90b3fd6c46cf82c66903e1ee8cad66eb0093f6adcb8c30c5ece"
-          }
-        }
-      ]
-    },
-    "primaryKey": {
-      "ID": "88D4D813-4208-44F9-AE60-09F36E694860"
-    },
-    "sync": {
-      "lastModified": "2026-08-01T18:57:11.342Z",
-      "checksum": "8535248d069d6f56251fd64437fd6a57ae73521ca2249cec8abf3d6c87faa925"
-    }
-  },
-  {
-    "fields": {
-      "Name": "Rasa.io - Search Post",
-      "Description": "Searches for Post records in Rasa.io matching the given field filters",
-      "Type": "Custom",
-      "Status": "Active",
-      "DriverClass": "IntegrationActionExecutor",
-      "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
-      "Config": {
-        "IntegrationName": "rasa",
-        "ObjectName": "Post",
-        "Verb": "Search"
-      },
-      "IconClass": "fa-solid fa-envelope-open-text"
-    },
-    "relatedEntities": {
-      "MJ: Action Params": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "CompanyIntegrationID",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Optional: specific CompanyIntegration to use"
-          },
-          "primaryKey": {
-            "ID": "1F3C6B1D-EC91-4DC8-952B-26427A916115"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.321Z",
-            "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "PageSize",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Maximum number of records to return (default: 100)"
-          },
-          "primaryKey": {
-            "ID": "A85A4D96-4482-4743-AE52-372CB50BE6F7"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.329Z",
-            "checksum": "be65ebfae6d6d9b79916066f5d1603c598684648084c7c813b4ba7717e9ffa4e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Page",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Page number for paginated results (1-based)"
-          },
-          "primaryKey": {
-            "ID": "9F7ACA86-BDD7-40F3-A029-CF880D7918EE"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.364Z",
-            "checksum": "8f84e0bd7b7700ea2cc93079917652a21424a3cd566251f61f3431094327af5d"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Sort",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Sort expression (connector-specific format)"
-          },
-          "primaryKey": {
-            "ID": "076FCC14-2576-42DC-8BB5-DA8416526941"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.375Z",
-            "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
+            "lastModified": "2026-10-16T18:42:44.979Z",
+            "checksum": "d99ee05c1e5f7b2df03cc039d1b1691afc92456186a0d4a482fe2d3519df7831"
           }
         },
         {
@@ -1226,122 +692,32 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Post title"
+            "Description": "Title — Contact field 'title' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "2863F4DD-BBC7-4002-AA6C-C3C43616C746"
+            "ID": "4E2E1FD8-879C-4A6C-8A67-4227BFD2A655"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.386Z",
-            "checksum": "58b2f779cb2607b8843db68e672058072588805f8397db9d90291e062dfaca01"
+            "lastModified": "2026-10-16T18:42:45.007Z",
+            "checksum": "4ec4e23392cae32fdc58be8efcfe0a177a899b5bdb6479dad5026d52d493d332"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "description",
+            "Name": "company",
             "Type": "Input",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Post description/summary"
+            "Description": "Company — Contact field 'company' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "7D893AAA-DA61-4592-84CF-0A02646A256E"
+            "ID": "39EFD815-8E0D-489E-A66C-52FA59BDCFD4"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.396Z",
-            "checksum": "15c365b6587bce0429627cd3daaf6b5d99762a43fed32fecfa27fc7a58081400"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "url",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Post URL"
-          },
-          "primaryKey": {
-            "ID": "EAF61700-AF52-4D88-9983-E3C9B9C022DB"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.407Z",
-            "checksum": "77e1e7967d1ae1c15e6288b01f573f48e8113746e126d134fe3dfb2c796b6bb5"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "source_url",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Original source URL"
-          },
-          "primaryKey": {
-            "ID": "903AAEA0-A669-49AF-978B-2E34FC4D22B6"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.418Z",
-            "checksum": "9b858b40436eb6986f468c344452ad2454e691a30dc82a44797e9e66a36438b3"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "image_url",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Post image URL"
-          },
-          "primaryKey": {
-            "ID": "907EB2F8-CC33-46DF-86F9-2E5BEB397A26"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.430Z",
-            "checksum": "a9ce0baffda4663ecec7e0ee17dba0f126a5a28405c2e203c7da52a12893b0fd"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "quality_score",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Content quality score"
-          },
-          "primaryKey": {
-            "ID": "6E70DC86-85A7-42BF-9C21-FECE8507EA7D"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.441Z",
-            "checksum": "c65c25445536c6624ed3d4b11bcd62bb2c31f0646823db7097f9656488ac994d"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "is_active",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Whether the post is active"
-          },
-          "primaryKey": {
-            "ID": "70851E8D-E54C-46A8-872D-4E06F43B55ED"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.451Z",
-            "checksum": "23294e68dc195b0593ddd4585708a83578a244cac2ea1087086f2a63c8c39af8"
+            "lastModified": "2026-10-16T18:42:45.033Z",
+            "checksum": "4b87e2b6a3b0b3e5e8745ec87e74d6b9c85972df1b128f2c8460facda9d61272"
           }
         },
         {
@@ -1352,14 +728,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "When the post was created"
+            "Description": "Created — Contact field 'created' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "561D8462-FFC8-41B7-B889-3C04EF7DA7A5"
+            "ID": "0CEFE607-3AEE-4542-AD57-86B19766D696"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.461Z",
-            "checksum": "43789efc7a0d5e7b34f1de6863f53d5c1c2f75063a6c68a8fe89f2ea5d7c8137"
+            "lastModified": "2026-10-16T18:42:45.061Z",
+            "checksum": "f3d696a1708c781f021cc554e2c1abb52512a86ea1c484b66e52ea581b1d58f9"
           }
         },
         {
@@ -1370,14 +746,104 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "When last updated"
+            "Description": "Updated — Contact field 'updated' (Contact), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "B7865A90-0AC8-485F-B18D-3B0ACF125342"
+            "ID": "38203082-E227-4ADC-A3A3-DB9327772CBE"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.495Z",
-            "checksum": "fffc37fd66f2411e9aa61b5a6fd784d54da79f77936ce2314c10d4ab6fbf103d"
+            "lastModified": "2026-10-16T18:42:45.083Z",
+            "checksum": "88b1b687279792b2c7e92bcded4a9bc46d10183bc448b7c04561320c47d20af1"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "options",
+            "Type": "Input",
+            "ValueType": "Simple Object",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Arbitrary key-value attributes stored on the contact. Present only when set."
+          },
+          "primaryKey": {
+            "ID": "17125770-A62B-42CF-97EF-B14A98C18996"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.110Z",
+            "checksum": "5612785a1fce1bca81d456ed6437f50639cf9081a6ee2312d2078c88ec95ef2c"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "list_id",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Add the contact to this list immediately [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "E59E0EF0-0690-4C76-B864-7E50915F96FD"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.133Z",
+            "checksum": "349949fb65816388507959b200d14f771ef150b485ca177342e193c501e3c05d"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "system",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "External system name (e.g. 'hubspot'). Must be provided together with `identifier` to create an external identifier record. [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "25389280-0575-4286-A0D5-A3584DA1D69B"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.156Z",
+            "checksum": "3bdeb24da54d9c7082791f55558f49a840f3820ab925c507f1282ff5f1c7d39b"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "identifier",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "The contact's ID in the external system. Must be provided together with `system`. [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "0AB0D0DC-F7F9-4735-BEA2-F8B977147C37"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.179Z",
+            "checksum": "7b7c924dbfa48a88e26e78285626b80ab7b32342da29c3d066519633d740285e"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "system_identifier",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Optional sub-system identifier (e.g. a HubSpot portal ID). [write-only (accepted on the write body; not returned on read)]"
+          },
+          "primaryKey": {
+            "ID": "8C21D87C-1F4B-4E5D-892B-A145CECEB607"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.203Z",
+            "checksum": "7212cb25ada7462f7f774842d02edb6c74bc00c82549cda39ab931da8c0e6e69"
           }
         },
         {
@@ -1388,14 +854,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Array of matching Post records"
+            "Description": "Array of matching Contact records"
           },
           "primaryKey": {
-            "ID": "3C02270C-F3EF-4320-8C87-DCCDC2EF8E41"
+            "ID": "32CA1611-8790-459C-9410-B379C0968479"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.506Z",
-            "checksum": "e23de1b3368a8a96d8890c78f97a101b8df318dad762f6a22e562af013db52f2"
+            "lastModified": "2026-10-16T18:42:45.226Z",
+            "checksum": "4bf751e7f3dfef00bffd6adddee1486aa991655a3366c01b21a7e62133515739"
           }
         },
         {
@@ -1409,10 +875,10 @@
             "Description": "Total number of matching records"
           },
           "primaryKey": {
-            "ID": "500D3861-E91D-4EF5-AF87-F0A93D2CFBFA"
+            "ID": "162CEF90-4C0F-43B7-B325-76C050A21D58"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.517Z",
+            "lastModified": "2026-10-16T18:42:45.252Z",
             "checksum": "e02109f4e3da6b87024abcdb745df12bdfb6fdb913214629b90a5c3a910bb69c"
           }
         },
@@ -1427,10 +893,10 @@
             "Description": "Whether more pages of results exist"
           },
           "primaryKey": {
-            "ID": "51C94602-19D9-4116-A01C-9DA6A1980734"
+            "ID": "DF6863DC-9976-41B0-AFDF-D9B26B83D21D"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.527Z",
+            "lastModified": "2026-10-16T18:42:45.277Z",
             "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
           }
         }
@@ -1444,10 +910,10 @@
             "Description": "Search operation completed successfully"
           },
           "primaryKey": {
-            "ID": "06D53125-C554-495E-A371-B5AD79BCB359"
+            "ID": "9D5FEF0A-C586-409D-BDF2-8FBF999E3B4F"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.538Z",
+            "lastModified": "2026-10-16T18:42:45.301Z",
             "checksum": "3373be2cb2bed713fed8b1032f4786ce62272ee6f57a43c943c2c313a90b8e72"
           }
         },
@@ -1459,34 +925,34 @@
             "Description": "Internal executor error"
           },
           "primaryKey": {
-            "ID": "5261453B-346A-4238-A8B3-30AED32DEB62"
+            "ID": "F55521F8-FE88-4946-95C1-8F3BC0E86918"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.548Z",
+            "lastModified": "2026-10-16T18:42:45.318Z",
             "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
           }
         }
       ]
     },
     "primaryKey": {
-      "ID": "DD46EDA9-8C92-4331-9E75-F8582A21BCCD"
+      "ID": "3E8D36D1-D11C-434A-B829-74F51E55C56E"
     },
     "sync": {
-      "lastModified": "2026-08-01T18:57:11.359Z",
-      "checksum": "249cd6d08888a1c5ddc9fd31e57787dbd172730e3c8a8ebdca16511280253ac0"
+      "lastModified": "2026-10-16T18:42:43.608Z",
+      "checksum": "554691824a745a1287dc2d2ef1557de1412e9df39bc603dfb635f744d9942903"
     }
   },
   {
     "fields": {
-      "Name": "Rasa.io - List Post",
-      "Description": "Lists Post records from Rasa.io with cursor-based pagination",
+      "Name": "Rasa.io - List Contact",
+      "Description": "Lists Contact records from rasa with cursor-based pagination",
       "Type": "Custom",
       "Status": "Active",
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
         "IntegrationName": "rasa",
-        "ObjectName": "Post",
+        "ObjectName": "Contact",
         "Verb": "List"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -1504,10 +970,10 @@
             "Description": "Optional: specific CompanyIntegration to use"
           },
           "primaryKey": {
-            "ID": "AE0CC6C2-C3F5-476D-B57A-445D4DC402C2"
+            "ID": "38E438C7-C8AA-4BEC-907C-3E537F144DC9"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.559Z",
+            "lastModified": "2026-10-16T18:42:45.344Z",
             "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
           }
         },
@@ -1522,10 +988,10 @@
             "Description": "Maximum number of records to return per page (default: 100)"
           },
           "primaryKey": {
-            "ID": "A748FB22-4AF6-4CF9-AAB9-F6A1E170B062"
+            "ID": "544E2DD1-CBD9-4D6A-A8A6-1079DACD46C5"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.571Z",
+            "lastModified": "2026-10-16T18:42:45.368Z",
             "checksum": "8e913e91c402c85e6d53f08d0c7b27fd7620e3e6511d6002c59ba10f0c9b7ff0"
           }
         },
@@ -1540,10 +1006,10 @@
             "Description": "Opaque cursor for fetching the next page (from previous ListResult)"
           },
           "primaryKey": {
-            "ID": "48EB4077-1ED2-4799-B349-23EA313448EB"
+            "ID": "F00BA850-6F7F-4347-99CF-4205998A1B3F"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.581Z",
+            "lastModified": "2026-10-16T18:42:45.393Z",
             "checksum": "e0c29e2cdcaa8e533d6d475725916498510b6b241d6c88caec7b5f1dcb443a75"
           }
         },
@@ -1558,10 +1024,10 @@
             "Description": "Sort expression (connector-specific format)"
           },
           "primaryKey": {
-            "ID": "B66DEC97-C37B-4136-B7FB-A383BDA6E834"
+            "ID": "B635B705-1E78-4582-BF01-1A5C0502F2E3"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.590Z",
+            "lastModified": "2026-10-16T18:42:45.416Z",
             "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
           }
         },
@@ -1573,14 +1039,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Array of Post records in this page"
+            "Description": "Array of Contact records in this page"
           },
           "primaryKey": {
-            "ID": "5867B864-8F1B-4E39-8465-96D93DB785F5"
+            "ID": "972B26A4-DC51-4F12-97DD-66D8A536D30F"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.625Z",
-            "checksum": "f0c8cc20808fd530c1a28e4ce5af1a82081a92ff1a934a238074afcaea82728e"
+            "lastModified": "2026-10-16T18:42:45.437Z",
+            "checksum": "88fa59a3cb1541b6ee8280b392bfb1c094ad3a4f13e452b520be2316394357c3"
           }
         },
         {
@@ -1594,10 +1060,10 @@
             "Description": "Whether more pages of results exist"
           },
           "primaryKey": {
-            "ID": "C4854E37-8B26-4BE5-9BF9-78D8526C97CC"
+            "ID": "6E884A33-B87A-4DC6-8DD1-0D5C6630157A"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.636Z",
+            "lastModified": "2026-10-16T18:42:45.460Z",
             "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
           }
         },
@@ -1612,10 +1078,10 @@
             "Description": "Cursor to pass for the next page"
           },
           "primaryKey": {
-            "ID": "9D0CAC4A-14C8-4731-95E0-45A75EA5F602"
+            "ID": "A32CE4B7-DD48-45E3-9840-AAEAB8685000"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.646Z",
+            "lastModified": "2026-10-16T18:42:45.486Z",
             "checksum": "d3229530acb0652abc213ca10e5821fecafceb12919d68536aa1c24bce23529a"
           }
         },
@@ -1630,10 +1096,10 @@
             "Description": "Total number of records, if known"
           },
           "primaryKey": {
-            "ID": "B7DF33AC-7F85-4F1F-828F-2E9896EC1F7B"
+            "ID": "FD36D340-DC72-4AA4-A99C-E5E774DC2F8C"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.656Z",
+            "lastModified": "2026-10-16T18:42:45.516Z",
             "checksum": "3b2be011036e5347488cc91720e0139c054bffcf4316f8d30f6e4ca2137db301"
           }
         }
@@ -1647,10 +1113,10 @@
             "Description": "List operation completed successfully"
           },
           "primaryKey": {
-            "ID": "88543B47-DDE1-40D9-B5B3-667F3C597926"
+            "ID": "A6F5A255-4FDF-4708-B27A-E593F215FF84"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.665Z",
+            "lastModified": "2026-10-16T18:42:45.540Z",
             "checksum": "be42b070cb47b3b4c7b6666ee69c74810bde6ec0637542c75235cbf8c17faac3"
           }
         },
@@ -1662,34 +1128,34 @@
             "Description": "Internal executor error"
           },
           "primaryKey": {
-            "ID": "229446F8-5328-4BCF-ACB6-16A5F867FB97"
+            "ID": "21C239CF-397B-4CF2-9B18-3895D08F4238"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.675Z",
+            "lastModified": "2026-10-16T18:42:45.559Z",
             "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
           }
         }
       ]
     },
     "primaryKey": {
-      "ID": "5436D85E-E2A2-4C56-A503-9C3574AB4E5E"
+      "ID": "DF76F40D-036A-4D87-AEF7-31435FD4497D"
     },
     "sync": {
-      "lastModified": "2026-08-01T18:57:11.375Z",
-      "checksum": "0fb50a2887565e97aefad207874258a06533f975df214bdf99c7337244023387"
+      "lastModified": "2026-10-16T18:42:43.629Z",
+      "checksum": "3df251eb33d131c86ef35ed7900edf775d38dd9cb729ec75e2b1cd55870a56fa"
     }
   },
   {
     "fields": {
-      "Name": "Rasa.io - Get Insight Action",
-      "Description": "Retrieves a single Insight Action record from Rasa.io by its external ID",
+      "Name": "Rasa.io - Get Newsletter Action",
+      "Description": "Retrieves a single Newsletter Action record from rasa by its external ID",
       "Type": "Custom",
       "Status": "Active",
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
         "IntegrationName": "rasa",
-        "ObjectName": "Insight Action",
+        "ObjectName": "Newsletter Action",
         "Verb": "Get"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -1704,14 +1170,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": true,
-            "Description": "The unique ID of the Insight Action record to retrieve"
+            "Description": "The unique ID of the Newsletter Action record to retrieve"
           },
           "primaryKey": {
-            "ID": "C769BE08-1C8A-4533-902A-2C44B93E5155"
+            "ID": "B892A685-9BF6-4DC6-A96D-57DAA92792D0"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.684Z",
-            "checksum": "5f3413cd7d5581017f70f8f638ffdeaac23a17d7daae7db0a26406736bfacb89"
+            "lastModified": "2026-10-16T18:42:45.591Z",
+            "checksum": "d5d036c8557fa47dbde825d0915b9cfad5cf702980b90d74cfd9c6c80563b741"
           }
         },
         {
@@ -1725,10 +1191,10 @@
             "Description": "Optional: specific CompanyIntegration to use"
           },
           "primaryKey": {
-            "ID": "CD69D3E7-07CF-48AF-8D77-D88A616CD874"
+            "ID": "08A05129-48A9-4A87-916F-B0443A3DDD65"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.694Z",
+            "lastModified": "2026-10-16T18:42:45.618Z",
             "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
           }
         },
@@ -1740,86 +1206,32 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "The retrieved Insight Action record with all fields"
+            "Description": "The retrieved Newsletter Action record with all fields"
           },
           "primaryKey": {
-            "ID": "528DD39B-AEDD-4E5F-BA2F-1AA8A13D3B07"
+            "ID": "54ABB0D9-366A-4920-96C7-D37D78910C40"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.707Z",
-            "checksum": "02e2fbf81f5e3e198caba38bb290fd06509f8ee61f317bfc788530b85e991239"
+            "lastModified": "2026-10-16T18:42:45.647Z",
+            "checksum": "7b8dfcbcba9912641a5642f423b199d496c9b12d29ba1e3eaab9761a7bfa914a"
           }
         },
         {
           "fields": {
             "ActionID": "@parent:ID",
-            "Name": "person_id",
+            "Name": "newsletter_id",
             "Type": "Output",
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Associated person ID"
+            "Description": "Newsletter Id — owning record's rasa.io id, injected by the framework from the parent door /v2/insights/newsletter/{id}/actions. Part of this child's composite identity."
           },
           "primaryKey": {
-            "ID": "758F35C3-2C12-4666-AC56-69331205A9CD"
+            "ID": "ACDB59C7-44D5-4C33-ADC1-5F37997F4113"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.718Z",
-            "checksum": "fa37e0f7dca27f580c635a1c96ff1edf63638b6872e1f8fbd1beebbc1deca111"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "email",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Person email"
-          },
-          "primaryKey": {
-            "ID": "EB7245FF-F78A-4BC9-AB1D-00AF8CF73C6C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.751Z",
-            "checksum": "8ecaf38c64defb195bc88362952f46792c9ceb43b0e94ecaf60d18eae69a64e2"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "action_type",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Type of action (click, open, etc.)"
-          },
-          "primaryKey": {
-            "ID": "45B87D59-71C6-4B20-911A-EB615D8E6F60"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.761Z",
-            "checksum": "0cdd38ac25c00f638e4456eb3559d4b0cf56388001a1b02efa17f8e37f4bdcdb"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "created",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "When the action occurred"
-          },
-          "primaryKey": {
-            "ID": "175E7B8C-FAD1-47E0-B1FB-7FA27D2336AA"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.771Z",
-            "checksum": "d425997b18c1d8814b262882072f834a18b2c4cd902fe44a62697c65ade9db76"
+            "lastModified": "2026-10-16T18:42:45.669Z",
+            "checksum": "7b7fdbf63403f5a0e6300959034c4b5003c62709decd4454b9b437a74b02c052"
           }
         },
         {
@@ -1830,14 +1242,248 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Action event ID"
+            "Description": "Id — Newsletter Action field 'id' (InsightsAction), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "6598A3F1-1075-40FC-82E8-78E8402F6A4A"
+            "ID": "ADD5BD70-681C-4531-A418-C2D7F30DEB31"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.781Z",
-            "checksum": "27b8f12a8042760f3b793785df5f94aa48452fc9aaa6a601b9e82b4e338ccaa2"
+            "lastModified": "2026-10-16T18:42:45.693Z",
+            "checksum": "bdb88eba18c7c9bf40d0c58707ca416b89e21bede9f62e61e356e2a678976726"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "action_type",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Action Type — Newsletter Action field 'action_type' (InsightsAction), rasa.io v2. click, open, delivered, ..."
+          },
+          "primaryKey": {
+            "ID": "83E57CDE-B25B-4429-BDC8-51BF8416D80E"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.716Z",
+            "checksum": "6387d34c9200507ceba1db68d46504c7c37154d952f033b4804d4033dfedafce"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "created",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Created — Newsletter Action field 'created' (InsightsAction), rasa.io v2."
+          },
+          "primaryKey": {
+            "ID": "4707E336-C22B-45B4-A710-DC3BA4B2A310"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.738Z",
+            "checksum": "0f3da0fe5769f4900df0ba10991e3d82dab283d618cc45df5fb303ceb43e1e76"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "timestamp",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Timestamp — Newsletter Action field 'timestamp' (InsightsAction), rasa.io v2. Epoch seconds"
+          },
+          "primaryKey": {
+            "ID": "50BC55C0-8139-4B8D-96CC-FB2E6ADE926E"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.761Z",
+            "checksum": "a36f385eb52121e5cd3d1173b78b1fa48bc08114585b163295f538f4336288c4"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "confidence",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Confidence — Newsletter Action field 'confidence' (InsightsAction), rasa.io v2. 0 when the click looked automated, else 1"
+          },
+          "primaryKey": {
+            "ID": "805DBACF-1762-459B-A03B-99BED587BE81"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.783Z",
+            "checksum": "ca59221dc75105ee500312e7a2b49cc6951f039ea9f7d65f144f907ddfb137fb"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "url",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Url — Newsletter Action field 'url' (InsightsAction), rasa.io v2. Clicks only"
+          },
+          "primaryKey": {
+            "ID": "FFA280F8-BEEB-40D5-9C29-FE2EFFCA651E"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.805Z",
+            "checksum": "6e4fd7a680bdfc04d60f0c8ff33a2962ff17931fbc1a31f77755589808ef6209"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "issue_date",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Issue Date — Newsletter Action field 'issue_date' (InsightsAction), rasa.io v2. Newsletter events only"
+          },
+          "primaryKey": {
+            "ID": "BD6FF912-C38B-40F3-8D88-BFC98DECA9C0"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.836Z",
+            "checksum": "93e221211d9efc522c6ad0ce92a0fd044f787b68a720621dd52c23eb600728b8"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "email_subject",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Email Subject — Newsletter Action field 'email_subject' (InsightsAction), rasa.io v2. Newsletter events only"
+          },
+          "primaryKey": {
+            "ID": "A0EAD22F-621C-4E64-949F-75E0194FB65E"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.860Z",
+            "checksum": "e4e495538cc73b9beda2788854ea5d3043de7b23b32d75970754faadd8653d74"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "title",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Title — Newsletter Action field 'title' (InsightsAction), rasa.io v2. Newsletter events only"
+          },
+          "primaryKey": {
+            "ID": "754805ED-9989-484E-8994-5BFFEF4D5D7B"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.886Z",
+            "checksum": "29518684cd4de0fd490a8bb00fa2583659b31b7e15afb169a1ebfce622727daa"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "useragent",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Useragent — Newsletter Action field 'useragent' (InsightsAction), rasa.io v2."
+          },
+          "primaryKey": {
+            "ID": "8F984A9B-3785-41F8-BCEB-1B974DB4692E"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.912Z",
+            "checksum": "261b77c971d174ef0e76dc47f906952a30858bd780e27012568cc7bf00ee06b0"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "source",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Source — Newsletter Action field 'source' (InsightsAction), rasa.io v2. newsletter, sequence or blast"
+          },
+          "primaryKey": {
+            "ID": "70256F8A-A74A-470A-BD57-61028A7FF269"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.935Z",
+            "checksum": "ea27a53ffdf59a3eef3be3948d0994d76bd63226d7e75532e2a1c1effa546325"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "newsletter",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Newsletter — Newsletter Action field 'newsletter' (InsightsAction), rasa.io v2. Set when source is newsletter"
+          },
+          "primaryKey": {
+            "ID": "30A131F6-ED5E-48C4-A90F-858F134D4343"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.958Z",
+            "checksum": "bc3dba7c63332576432273a667c43dbef0d15ed779f11d27765697dca81ebca7"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "sequence",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Sequence — Newsletter Action field 'sequence' (InsightsAction), rasa.io v2. Set when source is sequence"
+          },
+          "primaryKey": {
+            "ID": "8B77747D-D626-4C77-AAFD-7D6AE5158477"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:45.983Z",
+            "checksum": "513654314e1b5a1b4ac0300cf0be455a8086c4bff2d66c6d0e7e4001ba41c2a8"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "blast",
+            "Type": "Output",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Blast — Newsletter Action field 'blast' (InsightsAction), rasa.io v2. Set when source is blast"
+          },
+          "primaryKey": {
+            "ID": "D540DDA5-6463-4F29-A6AA-AEEC3812874D"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.010Z",
+            "checksum": "d30820d36f1ea8d3bdf63411f88587208a3390f9408ec210c1ee6d5bab29174a"
           }
         }
       ],
@@ -1850,10 +1496,10 @@
             "Description": "Get operation completed successfully"
           },
           "primaryKey": {
-            "ID": "96186C1B-F515-43E8-BC83-6B194E2A7E7B"
+            "ID": "17F18524-AC3A-40A5-8888-2AD7AAB3AEB8"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.790Z",
+            "lastModified": "2026-10-16T18:42:46.035Z",
             "checksum": "479dce77d1533bdeb36e41f3af6f761c1fbda8d16c595867d787bc2b5f9dbd5e"
           }
         },
@@ -1865,10 +1511,10 @@
             "Description": "Internal executor error"
           },
           "primaryKey": {
-            "ID": "F027E54F-0A23-4C8A-A335-8128EBC4929D"
+            "ID": "E99C182E-CBAF-4890-85B7-2A1706FB1D3E"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.798Z",
+            "lastModified": "2026-10-16T18:42:46.054Z",
             "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
           }
         },
@@ -1880,34 +1526,34 @@
             "Description": "Record not found"
           },
           "primaryKey": {
-            "ID": "69095EC9-5F34-413A-BE5C-BFF433F52A1B"
+            "ID": "3F74A498-BE47-4798-A66B-1D941408727B"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.806Z",
+            "lastModified": "2026-10-16T18:42:46.078Z",
             "checksum": "b5db3cbf92e8d90b3fd6c46cf82c66903e1ee8cad66eb0093f6adcb8c30c5ece"
           }
         }
       ]
     },
     "primaryKey": {
-      "ID": "A06C4837-3CA9-446A-B670-DDC971648927"
+      "ID": "AB4D2DB8-816E-4E2A-8335-D869B0414ACB"
     },
     "sync": {
-      "lastModified": "2026-08-01T18:57:11.392Z",
-      "checksum": "e09fcb785a7f774fb10ebc5bb8d786c96911408d720ca3e22be0e60e7b4a26cc"
+      "lastModified": "2026-10-16T18:42:43.649Z",
+      "checksum": "8c53aded23623114df25b517dcbfb003f62d24af0f05501daed8066c60668b19"
     }
   },
   {
     "fields": {
-      "Name": "Rasa.io - Search Insight Action",
-      "Description": "Searches for Insight Action records in Rasa.io matching the given field filters",
+      "Name": "Rasa.io - Search Newsletter Action",
+      "Description": "Searches for Newsletter Action records in rasa matching the given field filters",
       "Type": "Custom",
       "Status": "Active",
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
         "IntegrationName": "rasa",
-        "ObjectName": "Insight Action",
+        "ObjectName": "Newsletter Action",
         "Verb": "Search"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -1925,10 +1571,10 @@
             "Description": "Optional: specific CompanyIntegration to use"
           },
           "primaryKey": {
-            "ID": "55E0F70B-6CBD-4B9F-84B1-129214FABE82"
+            "ID": "11C7CC4A-5D5C-4A93-A380-E356E4F8136A"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.816Z",
+            "lastModified": "2026-10-16T18:42:46.099Z",
             "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
           }
         },
@@ -1943,10 +1589,10 @@
             "Description": "Maximum number of records to return (default: 100)"
           },
           "primaryKey": {
-            "ID": "FA669D3D-0D3C-4432-962C-8D269CCF025F"
+            "ID": "1770E2E1-BC3F-4D0F-A0CB-6A61153BC131"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.827Z",
+            "lastModified": "2026-10-16T18:42:46.125Z",
             "checksum": "be65ebfae6d6d9b79916066f5d1603c598684648084c7c813b4ba7717e9ffa4e"
           }
         },
@@ -1961,10 +1607,10 @@
             "Description": "Page number for paginated results (1-based)"
           },
           "primaryKey": {
-            "ID": "A29F9034-F31E-46E6-9834-FFC665BD85E5"
+            "ID": "5DE81264-0E57-4F71-9780-A037D2C215E8"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.836Z",
+            "lastModified": "2026-10-16T18:42:46.149Z",
             "checksum": "8f84e0bd7b7700ea2cc93079917652a21424a3cd566251f61f3431094327af5d"
           }
         },
@@ -1979,65 +1625,11 @@
             "Description": "Sort expression (connector-specific format)"
           },
           "primaryKey": {
-            "ID": "2239CE48-609E-4FFD-A541-DCA906A3D537"
+            "ID": "72F3A61B-F502-49B7-8889-DFD402B34A7D"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.869Z",
+            "lastModified": "2026-10-16T18:42:46.174Z",
             "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "person_id",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Associated person ID"
-          },
-          "primaryKey": {
-            "ID": "4A4F5046-FD9A-43E2-B0D0-CD65504E388B"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.880Z",
-            "checksum": "b9395809696f6094393791ed2ed886eba26fb7e29293d39fa65fe06008c85573"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "email",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Person email"
-          },
-          "primaryKey": {
-            "ID": "E5118F9D-6A3A-45BC-9CD8-197A9A9088EE"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.889Z",
-            "checksum": "16bdc0ef18dcf0cf90394facac07238991fd2e1dea80a2964703115e8ed6a626"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "action_type",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Type of action (click, open, etc.)"
-          },
-          "primaryKey": {
-            "ID": "25445BFE-2377-4E62-9869-1F912381E2FE"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:12.899Z",
-            "checksum": "861a2b9b14fb4421cbdf6104986fc13ce95c3e27cb1577faeae0088fe7811c3b"
           }
         },
         {
@@ -2048,14 +1640,176 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "When the action occurred"
+            "Description": "Created — Newsletter Action field 'created' (InsightsAction), rasa.io v2."
           },
           "primaryKey": {
-            "ID": "7377862E-E727-4D88-9EDB-3C48ECC8A2C5"
+            "ID": "0E1D10E8-587B-44A1-B0A6-ECF4CB492A1C"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.909Z",
-            "checksum": "def48c3492b761424a2177a4f3e8c2dc39886f9c3aa986ec05e59ef9c36ff5d4"
+            "lastModified": "2026-10-16T18:42:46.200Z",
+            "checksum": "3f72835b8ca6cec20c424912622755538bd7488ad1fa3c2c53fc1a42a4577646"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "confidence",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Confidence — Newsletter Action field 'confidence' (InsightsAction), rasa.io v2. 0 when the click looked automated, else 1"
+          },
+          "primaryKey": {
+            "ID": "FCEA2825-CB58-4344-84C8-FD744738759B"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.224Z",
+            "checksum": "5f6c42fdd27360745e9898129c53b4889adc6ffac4185bf47b71171c2a974949"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "issue_date",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Issue Date — Newsletter Action field 'issue_date' (InsightsAction), rasa.io v2. Newsletter events only"
+          },
+          "primaryKey": {
+            "ID": "07999C53-6767-4E6D-A21B-3DC1428D2B20"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.256Z",
+            "checksum": "fb2cbb06eae8d521c67bff8721e6540b49a934cdf505e4db06ef4a447312fd00"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "email_subject",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Email Subject — Newsletter Action field 'email_subject' (InsightsAction), rasa.io v2. Newsletter events only"
+          },
+          "primaryKey": {
+            "ID": "ACCA4FF7-AB80-4283-92B6-AEC8324A082E"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.280Z",
+            "checksum": "faf7281b8d05f5edd363caaec650313c796b444b1d6c40502f55c0c668e0f099"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "title",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Title — Newsletter Action field 'title' (InsightsAction), rasa.io v2. Newsletter events only"
+          },
+          "primaryKey": {
+            "ID": "46C46C6A-F53F-45DD-A9A2-25AC83308904"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.302Z",
+            "checksum": "b538c2d809ea0a788d4358e58c2b220b136bcaec0f4e5555e7176755f9a84f1c"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "useragent",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Useragent — Newsletter Action field 'useragent' (InsightsAction), rasa.io v2."
+          },
+          "primaryKey": {
+            "ID": "DB5EDB66-5B5C-4FC7-9C37-3A20BB2B7248"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.337Z",
+            "checksum": "82b9c72bbb5cc1f75844d1667177509647198eeb0031bf4312376a6e794f401a"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "source",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Source — Newsletter Action field 'source' (InsightsAction), rasa.io v2. newsletter, sequence or blast"
+          },
+          "primaryKey": {
+            "ID": "0403E29A-5B29-4959-BEBA-4DF5BBF7103C"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.366Z",
+            "checksum": "b8c511ac884da2f46b66463fe8da149eb272ffbe264ec224e66c32941989ba65"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "newsletter",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Newsletter — Newsletter Action field 'newsletter' (InsightsAction), rasa.io v2. Set when source is newsletter"
+          },
+          "primaryKey": {
+            "ID": "ADB5BD47-E26B-43AB-BD71-6513D4910246"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.396Z",
+            "checksum": "19379d95b4256ddae1ddd8c49912430bfe7b4f896a9da6302e0dafa5f7ccf34c"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "sequence",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Sequence — Newsletter Action field 'sequence' (InsightsAction), rasa.io v2. Set when source is sequence"
+          },
+          "primaryKey": {
+            "ID": "E0108890-9840-4ACB-A6B4-24E55A0E0F3A"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.424Z",
+            "checksum": "bdba949b887edb0b457209c27e023898e5a0b9d17531f23a0d5d79f6aa8cd4b3"
+          }
+        },
+        {
+          "fields": {
+            "ActionID": "@parent:ID",
+            "Name": "blast",
+            "Type": "Input",
+            "ValueType": "Scalar",
+            "IsArray": false,
+            "IsRequired": false,
+            "Description": "Blast — Newsletter Action field 'blast' (InsightsAction), rasa.io v2. Set when source is blast"
+          },
+          "primaryKey": {
+            "ID": "5482E7CF-C059-4D0A-A9B5-A6414900E2C0"
+          },
+          "sync": {
+            "lastModified": "2026-10-16T18:42:46.451Z",
+            "checksum": "5e532483560b67b8a874b91b3211bed582dcd1a8a655cd7ff9dccbd5137cf493"
           }
         },
         {
@@ -2066,14 +1820,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Array of matching Insight Action records"
+            "Description": "Array of matching Newsletter Action records"
           },
           "primaryKey": {
-            "ID": "1ECE7AC9-AB0D-4C08-8CDA-26FC35552B09"
+            "ID": "992380D8-527D-4F36-BE09-3B8016572C7D"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.919Z",
-            "checksum": "732acf0499b16eaedc4a5bfdddfdf0c74878b5413006292e82347dfb048dfb9a"
+            "lastModified": "2026-10-16T18:42:46.474Z",
+            "checksum": "c7df72e53c4cb30c8e323c96f47d7ad0f0fc5307471c6aa9761e962cb583c9d4"
           }
         },
         {
@@ -2087,10 +1841,10 @@
             "Description": "Total number of matching records"
           },
           "primaryKey": {
-            "ID": "EEF75E86-63E9-4722-8491-2F43EB1EF187"
+            "ID": "85268E42-5728-4281-82BE-4777CC58BD49"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.929Z",
+            "lastModified": "2026-10-16T18:42:46.498Z",
             "checksum": "e02109f4e3da6b87024abcdb745df12bdfb6fdb913214629b90a5c3a910bb69c"
           }
         },
@@ -2105,10 +1859,10 @@
             "Description": "Whether more pages of results exist"
           },
           "primaryKey": {
-            "ID": "7346A3CD-3C6A-464A-ADCF-99F2D9FF7393"
+            "ID": "918D1E30-DBFE-4BAF-B3CF-1B625D3F06A3"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.939Z",
+            "lastModified": "2026-10-16T18:42:46.523Z",
             "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
           }
         }
@@ -2122,10 +1876,10 @@
             "Description": "Search operation completed successfully"
           },
           "primaryKey": {
-            "ID": "C95D6046-1B33-4229-B8F5-35C61788E82E"
+            "ID": "244CA75B-B2D0-482D-AB69-96EB6F3E3354"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.948Z",
+            "lastModified": "2026-10-16T18:42:46.547Z",
             "checksum": "3373be2cb2bed713fed8b1032f4786ce62272ee6f57a43c943c2c313a90b8e72"
           }
         },
@@ -2137,34 +1891,34 @@
             "Description": "Internal executor error"
           },
           "primaryKey": {
-            "ID": "E5EF7239-F0F5-43D4-8F4D-634008EEAEE9"
+            "ID": "021699CB-8E8B-4E1E-BE1B-52B748219ABF"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.956Z",
+            "lastModified": "2026-10-16T18:42:46.567Z",
             "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
           }
         }
       ]
     },
     "primaryKey": {
-      "ID": "FE15D2AA-8CE1-4B90-A3E5-01F5CFAB7E17"
+      "ID": "4AAD49FE-54A5-4615-9F0B-4486448B4FAA"
     },
     "sync": {
-      "lastModified": "2026-08-01T18:57:11.410Z",
-      "checksum": "163a718f4030787b4de7d2ba53fefe7038f9bb4d890c00f5f9b9f083eb475fb4"
+      "lastModified": "2026-10-16T18:42:43.669Z",
+      "checksum": "e6e248684a65cc124b16d5e057965f7fd63243152eb213d20751b0aadb127b60"
     }
   },
   {
     "fields": {
-      "Name": "Rasa.io - List Insight Action",
-      "Description": "Lists Insight Action records from Rasa.io with cursor-based pagination",
+      "Name": "Rasa.io - List Newsletter Action",
+      "Description": "Lists Newsletter Action records from rasa with cursor-based pagination",
       "Type": "Custom",
       "Status": "Active",
       "DriverClass": "IntegrationActionExecutor",
       "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
       "Config": {
         "IntegrationName": "rasa",
-        "ObjectName": "Insight Action",
+        "ObjectName": "Newsletter Action",
         "Verb": "List"
       },
       "IconClass": "fa-solid fa-envelope-open-text"
@@ -2182,10 +1936,10 @@
             "Description": "Optional: specific CompanyIntegration to use"
           },
           "primaryKey": {
-            "ID": "DDC80EDA-90A7-40E1-986C-2AECF4332644"
+            "ID": "1D270AD2-DB23-45F3-8146-788779B27C96"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:12.991Z",
+            "lastModified": "2026-10-16T18:42:46.591Z",
             "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
           }
         },
@@ -2200,10 +1954,10 @@
             "Description": "Maximum number of records to return per page (default: 100)"
           },
           "primaryKey": {
-            "ID": "48B7DD4F-55BA-4621-8370-84D011156BE4"
+            "ID": "D9FF7D57-A15E-4356-B107-7A70C61905A5"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.002Z",
+            "lastModified": "2026-10-16T18:42:46.614Z",
             "checksum": "8e913e91c402c85e6d53f08d0c7b27fd7620e3e6511d6002c59ba10f0c9b7ff0"
           }
         },
@@ -2218,10 +1972,10 @@
             "Description": "Opaque cursor for fetching the next page (from previous ListResult)"
           },
           "primaryKey": {
-            "ID": "07C8904F-F0B1-42E5-B03D-DE73FF587978"
+            "ID": "722AA59F-1C32-42FE-93A7-02366F6787B2"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.012Z",
+            "lastModified": "2026-10-16T18:42:46.635Z",
             "checksum": "e0c29e2cdcaa8e533d6d475725916498510b6b241d6c88caec7b5f1dcb443a75"
           }
         },
@@ -2236,10 +1990,10 @@
             "Description": "Sort expression (connector-specific format)"
           },
           "primaryKey": {
-            "ID": "5C2258A2-5B8B-4C4F-A57D-0CCBBBA128F7"
+            "ID": "67852D96-656D-4AFE-AE9C-A1CA8C232DB8"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.024Z",
+            "lastModified": "2026-10-16T18:42:46.658Z",
             "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
           }
         },
@@ -2251,14 +2005,14 @@
             "ValueType": "Scalar",
             "IsArray": false,
             "IsRequired": false,
-            "Description": "Array of Insight Action records in this page"
+            "Description": "Array of Newsletter Action records in this page"
           },
           "primaryKey": {
-            "ID": "CB8844AE-ECF5-4D2D-97DB-325821D5C4B0"
+            "ID": "5FEF3D21-8512-4115-B8E8-EEAA861C2EF0"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.036Z",
-            "checksum": "df4b843bd02aee6bc0c2cbef8525094252273744d7cb7d5a6383b8f82436a303"
+            "lastModified": "2026-10-16T18:42:46.684Z",
+            "checksum": "a3edd0135b720cdfd0dc6aa5a500bdb831b5fa974b47a2ddffd6e4536a5bcb2d"
           }
         },
         {
@@ -2272,10 +2026,10 @@
             "Description": "Whether more pages of results exist"
           },
           "primaryKey": {
-            "ID": "ED373B6F-CC9E-4A4B-9D66-EB7F98B70CD8"
+            "ID": "E9C88F35-0CF9-40E0-9A35-8328EEB675A3"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.045Z",
+            "lastModified": "2026-10-16T18:42:46.709Z",
             "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
           }
         },
@@ -2290,10 +2044,10 @@
             "Description": "Cursor to pass for the next page"
           },
           "primaryKey": {
-            "ID": "3260A127-7BA9-426A-834E-A17207E3D529"
+            "ID": "F2BF8164-F846-4926-9868-FB89FDEF99A1"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.055Z",
+            "lastModified": "2026-10-16T18:42:46.732Z",
             "checksum": "d3229530acb0652abc213ca10e5821fecafceb12919d68536aa1c24bce23529a"
           }
         },
@@ -2308,10 +2062,10 @@
             "Description": "Total number of records, if known"
           },
           "primaryKey": {
-            "ID": "5022AC2A-CEA9-48C7-BAA4-A7BBC0219CBD"
+            "ID": "960987C6-D15B-4B43-9A29-7E3106C0CD71"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.064Z",
+            "lastModified": "2026-10-16T18:42:46.755Z",
             "checksum": "3b2be011036e5347488cc91720e0139c054bffcf4316f8d30f6e4ca2137db301"
           }
         }
@@ -2325,10 +2079,10 @@
             "Description": "List operation completed successfully"
           },
           "primaryKey": {
-            "ID": "714CDE1B-2448-4AC3-8FC0-09AC146498D8"
+            "ID": "27F5D334-DCD7-46CF-9AF7-BB2200C332D9"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.072Z",
+            "lastModified": "2026-10-16T18:42:46.776Z",
             "checksum": "be42b070cb47b3b4c7b6666ee69c74810bde6ec0637542c75235cbf8c17faac3"
           }
         },
@@ -2340,771 +2094,21 @@
             "Description": "Internal executor error"
           },
           "primaryKey": {
-            "ID": "E7FAF758-76C1-475F-B517-3E4C034EB9ED"
+            "ID": "2347A536-EC2D-4D0B-8A20-323923191E56"
           },
           "sync": {
-            "lastModified": "2026-03-17T18:14:13.080Z",
+            "lastModified": "2026-10-16T18:42:46.791Z",
             "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
           }
         }
       ]
     },
     "primaryKey": {
-      "ID": "B7358517-DBAF-440D-925B-A1E855832898"
+      "ID": "1970C0D3-1A61-4254-BCAA-9B7A2C0BF0E1"
     },
     "sync": {
-      "lastModified": "2026-08-01T18:57:11.426Z",
-      "checksum": "ad141d4fdbbdf0671dd2443f4d1b1cfeb01655c369623de110154ca239b5b018"
-    }
-  },
-  {
-    "fields": {
-      "Name": "Rasa.io - Get Insight Topic",
-      "Description": "Retrieves a single Insight Topic record from Rasa.io by its external ID",
-      "Type": "Custom",
-      "Status": "Active",
-      "DriverClass": "IntegrationActionExecutor",
-      "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
-      "Config": {
-        "IntegrationName": "rasa",
-        "ObjectName": "Insight Topic",
-        "Verb": "Get"
-      },
-      "IconClass": "fa-solid fa-envelope-open-text"
-    },
-    "relatedEntities": {
-      "MJ: Action Params": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "ExternalID",
-            "Type": "Both",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": true,
-            "Description": "The unique ID of the Insight Topic record to retrieve"
-          },
-          "primaryKey": {
-            "ID": "3BF86620-16F3-4DA1-9237-E2360B014287"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.119Z",
-            "checksum": "868315c15d625291522dba28cb7b1c1860ff27d26f6bd4c11c9b80b7b1145ac8"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "CompanyIntegrationID",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Optional: specific CompanyIntegration to use"
-          },
-          "primaryKey": {
-            "ID": "1C4342AF-BB5D-4FF1-8F40-2015763CD36C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.130Z",
-            "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Record",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "The retrieved Insight Topic record with all fields"
-          },
-          "primaryKey": {
-            "ID": "D57FD24D-CD08-4FFF-BCB1-E18F6C880AD3"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.140Z",
-            "checksum": "26629bac176f61a6aca30f288056c5a64226f3472ba0aa095bb9c7de5f1c6924"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "person_id",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Associated person ID"
-          },
-          "primaryKey": {
-            "ID": "300FD041-AD42-4558-8833-692E1242D35F"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.151Z",
-            "checksum": "fa37e0f7dca27f580c635a1c96ff1edf63638b6872e1f8fbd1beebbc1deca111"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "email",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Person email"
-          },
-          "primaryKey": {
-            "ID": "32B02D21-0D1E-4C6D-960C-9D4ACB00C283"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.160Z",
-            "checksum": "8ecaf38c64defb195bc88362952f46792c9ceb43b0e94ecaf60d18eae69a64e2"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "topic",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Topic name"
-          },
-          "primaryKey": {
-            "ID": "6985D626-DA9F-4F05-A177-D0844FEDBC8E"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.170Z",
-            "checksum": "d106f9f1392a2daf18429eed70b521338c96b33768544b1f4f1f69c99f580b30"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "weight",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Interest weight/score"
-          },
-          "primaryKey": {
-            "ID": "574A2688-14D1-4847-84BC-A3FB1A7DF18C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.182Z",
-            "checksum": "96e9cd84b866990e8126c7b1f4af06d0f1ed03dc9ccdc8daba80e2621752a4fd"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "first_click",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "First interaction with this topic"
-          },
-          "primaryKey": {
-            "ID": "8860C12E-3FDF-4DB4-86F6-2ADF09291763"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.192Z",
-            "checksum": "b69283ddf7926d9f9cb48c6f21779570f28bfcb232c9fedbcd4ae58166d62685"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "last_click",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Most recent interaction"
-          },
-          "primaryKey": {
-            "ID": "93FA6FE0-A857-4826-AFCD-B106F169C4DA"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.202Z",
-            "checksum": "e001fb008fe2da5bb2f7adb15c387d652432c19d005cf5e2f8b39c65256880d3"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "id",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Topic interest ID"
-          },
-          "primaryKey": {
-            "ID": "332A9398-F6DE-436F-9BEF-690E5F1B2930"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.210Z",
-            "checksum": "a9b461848af64159dad102e05b9aa3e9437f5ad37d41ba601bb3259709bb4d17"
-          }
-        }
-      ],
-      "MJ: Action Result Codes": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "SUCCESS",
-            "IsSuccess": true,
-            "Description": "Get operation completed successfully"
-          },
-          "primaryKey": {
-            "ID": "8D3F21E1-6133-42BC-AE6B-C9EA2E7E6701"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.241Z",
-            "checksum": "479dce77d1533bdeb36e41f3af6f761c1fbda8d16c595867d787bc2b5f9dbd5e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "EXECUTOR_ERROR",
-            "IsSuccess": false,
-            "Description": "Internal executor error"
-          },
-          "primaryKey": {
-            "ID": "E9ADB207-0672-4278-93CB-EAF306C9957C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.249Z",
-            "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "NOT_FOUND",
-            "IsSuccess": false,
-            "Description": "Record not found"
-          },
-          "primaryKey": {
-            "ID": "FBC514F8-2414-4F91-81F4-28B596F7E337"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.259Z",
-            "checksum": "b5db3cbf92e8d90b3fd6c46cf82c66903e1ee8cad66eb0093f6adcb8c30c5ece"
-          }
-        }
-      ]
-    },
-    "primaryKey": {
-      "ID": "7CF75CCD-4DB4-4A8F-8C99-12B5900219BD"
-    },
-    "sync": {
-      "lastModified": "2026-08-01T18:57:11.442Z",
-      "checksum": "22003b1173b4d1f942cda9bd0932b29a5f1a120f091e1ceafeb814f2b7f030ed"
-    }
-  },
-  {
-    "fields": {
-      "Name": "Rasa.io - Search Insight Topic",
-      "Description": "Searches for Insight Topic records in Rasa.io matching the given field filters",
-      "Type": "Custom",
-      "Status": "Active",
-      "DriverClass": "IntegrationActionExecutor",
-      "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
-      "Config": {
-        "IntegrationName": "rasa",
-        "ObjectName": "Insight Topic",
-        "Verb": "Search"
-      },
-      "IconClass": "fa-solid fa-envelope-open-text"
-    },
-    "relatedEntities": {
-      "MJ: Action Params": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "CompanyIntegrationID",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Optional: specific CompanyIntegration to use"
-          },
-          "primaryKey": {
-            "ID": "D9492474-69CE-485A-9CFF-1057ABAC958C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.271Z",
-            "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "PageSize",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Maximum number of records to return (default: 100)"
-          },
-          "primaryKey": {
-            "ID": "02896020-CFC6-4069-ADB5-D97457547C4B"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.281Z",
-            "checksum": "be65ebfae6d6d9b79916066f5d1603c598684648084c7c813b4ba7717e9ffa4e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Page",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Page number for paginated results (1-based)"
-          },
-          "primaryKey": {
-            "ID": "EDD09115-F9B9-4237-96AA-D2CC850DA9F1"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.292Z",
-            "checksum": "8f84e0bd7b7700ea2cc93079917652a21424a3cd566251f61f3431094327af5d"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Sort",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Sort expression (connector-specific format)"
-          },
-          "primaryKey": {
-            "ID": "B690B6DD-97A3-4048-935C-050807EA9353"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.302Z",
-            "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "person_id",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Associated person ID"
-          },
-          "primaryKey": {
-            "ID": "443A5626-5DAD-4839-81C0-0D4E255041D3"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.311Z",
-            "checksum": "b9395809696f6094393791ed2ed886eba26fb7e29293d39fa65fe06008c85573"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "email",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Person email"
-          },
-          "primaryKey": {
-            "ID": "AB40A388-F8D5-461E-93BD-1369677A29D3"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.322Z",
-            "checksum": "16bdc0ef18dcf0cf90394facac07238991fd2e1dea80a2964703115e8ed6a626"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "topic",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Topic name"
-          },
-          "primaryKey": {
-            "ID": "B17EFA79-4851-4C97-83DA-6BB29866C33F"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.330Z",
-            "checksum": "27abe8b4914362edeff914cb0a559fed82e1cb1937861a8f2db75d52528fcc0c"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "weight",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Interest weight/score"
-          },
-          "primaryKey": {
-            "ID": "19DA757A-9F19-4846-B0F2-CDF0F376D235"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.364Z",
-            "checksum": "f3c9e2c57a2a9f40852120b24ec441f7dfc8bfadac9ad260e2f348b917b90682"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "first_click",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "First interaction with this topic"
-          },
-          "primaryKey": {
-            "ID": "8FA608F7-529D-4FED-9F33-A6DAFB4F36C8"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.375Z",
-            "checksum": "60cbbdff6bdd824426dd673e5572a0edb20a730c9309316b4d73870c6a2c1a97"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "last_click",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Most recent interaction"
-          },
-          "primaryKey": {
-            "ID": "487F80E6-052B-4520-BE06-0B181E973EA3"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.384Z",
-            "checksum": "8ea65515a4b2e131fcab8ddab235ddfb2ab83dabed81bece537646b067069286"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Records",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Array of matching Insight Topic records"
-          },
-          "primaryKey": {
-            "ID": "C00166EC-5BF4-4031-8D1A-7C7FFB0214FF"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.395Z",
-            "checksum": "5977de985bc263f9114d22a2a7c013ba873ffcbcc7bd0a41964a9c7aa6856f08"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "TotalCount",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Total number of matching records"
-          },
-          "primaryKey": {
-            "ID": "48F48A14-7305-41A9-9F89-8B5ABB97CB21"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.406Z",
-            "checksum": "e02109f4e3da6b87024abcdb745df12bdfb6fdb913214629b90a5c3a910bb69c"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "HasMore",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Whether more pages of results exist"
-          },
-          "primaryKey": {
-            "ID": "CE24D2E8-B98B-4ABE-B682-9A39232E1CC1"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.416Z",
-            "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
-          }
-        }
-      ],
-      "MJ: Action Result Codes": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "SUCCESS",
-            "IsSuccess": true,
-            "Description": "Search operation completed successfully"
-          },
-          "primaryKey": {
-            "ID": "AD0F8645-C46C-423D-9669-768AB5F7909D"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.426Z",
-            "checksum": "3373be2cb2bed713fed8b1032f4786ce62272ee6f57a43c943c2c313a90b8e72"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "EXECUTOR_ERROR",
-            "IsSuccess": false,
-            "Description": "Internal executor error"
-          },
-          "primaryKey": {
-            "ID": "79D8A12C-B89C-4545-8476-832FADF66AEE"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.436Z",
-            "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
-          }
-        }
-      ]
-    },
-    "primaryKey": {
-      "ID": "6F638653-F270-4D7A-9573-49D29513E89F"
-    },
-    "sync": {
-      "lastModified": "2026-08-01T18:57:11.467Z",
-      "checksum": "5baf9767382ff6d869de7efa817ba73dbb83fc5f16a58bc7daaab5981d03ca00"
-    }
-  },
-  {
-    "fields": {
-      "Name": "Rasa.io - List Insight Topic",
-      "Description": "Lists Insight Topic records from Rasa.io with cursor-based pagination",
-      "Type": "Custom",
-      "Status": "Active",
-      "DriverClass": "IntegrationActionExecutor",
-      "CategoryID": "@lookup:MJ: Action Categories.Name=Rasa.io",
-      "Config": {
-        "IntegrationName": "rasa",
-        "ObjectName": "Insight Topic",
-        "Verb": "List"
-      },
-      "IconClass": "fa-solid fa-envelope-open-text"
-    },
-    "relatedEntities": {
-      "MJ: Action Params": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "CompanyIntegrationID",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Optional: specific CompanyIntegration to use"
-          },
-          "primaryKey": {
-            "ID": "284713DA-C3CF-4D0D-B59E-DD379C0B5D80"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.448Z",
-            "checksum": "612d8102020e79588e21b28d18f54079390c6b6347a63c8f7a51d207e7c7375e"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "PageSize",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Maximum number of records to return per page (default: 100)"
-          },
-          "primaryKey": {
-            "ID": "C3FC9FC5-7BED-4301-A855-492050BDED5C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.456Z",
-            "checksum": "8e913e91c402c85e6d53f08d0c7b27fd7620e3e6511d6002c59ba10f0c9b7ff0"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Cursor",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Opaque cursor for fetching the next page (from previous ListResult)"
-          },
-          "primaryKey": {
-            "ID": "443D7C24-E56B-4190-8B72-9CAFCB63F64D"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.486Z",
-            "checksum": "e0c29e2cdcaa8e533d6d475725916498510b6b241d6c88caec7b5f1dcb443a75"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Sort",
-            "Type": "Input",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Sort expression (connector-specific format)"
-          },
-          "primaryKey": {
-            "ID": "4B20DEA8-3534-4C4B-A3BB-303FA7029C2A"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.498Z",
-            "checksum": "679c6f2c6bbd91910e9efb15a756442ca6c2fa4ad5dee94737faa43cc5ab56e5"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "Records",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Array of Insight Topic records in this page"
-          },
-          "primaryKey": {
-            "ID": "FC85EE8A-CB14-40FA-91A6-50B9E745BB6C"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.509Z",
-            "checksum": "c16b9dd59ed738729b3f555b77c5ca1325a8c25574507edfe3a2ea3a1d04f3da"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "HasMore",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Whether more pages of results exist"
-          },
-          "primaryKey": {
-            "ID": "1FAD8921-0392-477D-9E41-3FDA133178CF"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.520Z",
-            "checksum": "209a424f02e57038acec1056529416be5821d1576f013ff2284b144a74e66359"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "NextCursor",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Cursor to pass for the next page"
-          },
-          "primaryKey": {
-            "ID": "4DF6B064-B640-4424-9D03-17C904B27BED"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.531Z",
-            "checksum": "d3229530acb0652abc213ca10e5821fecafceb12919d68536aa1c24bce23529a"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "Name": "TotalCount",
-            "Type": "Output",
-            "ValueType": "Scalar",
-            "IsArray": false,
-            "IsRequired": false,
-            "Description": "Total number of records, if known"
-          },
-          "primaryKey": {
-            "ID": "9E7A0685-4C7F-404E-88FB-5E419FA50C4B"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.540Z",
-            "checksum": "3b2be011036e5347488cc91720e0139c054bffcf4316f8d30f6e4ca2137db301"
-          }
-        }
-      ],
-      "MJ: Action Result Codes": [
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "SUCCESS",
-            "IsSuccess": true,
-            "Description": "List operation completed successfully"
-          },
-          "primaryKey": {
-            "ID": "5AD99F8B-CE09-4036-A3D4-0122598237BB"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.549Z",
-            "checksum": "be42b070cb47b3b4c7b6666ee69c74810bde6ec0637542c75235cbf8c17faac3"
-          }
-        },
-        {
-          "fields": {
-            "ActionID": "@parent:ID",
-            "ResultCode": "EXECUTOR_ERROR",
-            "IsSuccess": false,
-            "Description": "Internal executor error"
-          },
-          "primaryKey": {
-            "ID": "D6ECE7F5-E6F5-4237-A21F-95220A228307"
-          },
-          "sync": {
-            "lastModified": "2026-03-17T18:14:13.557Z",
-            "checksum": "828371f451d8db6c0fda4c2ba434942110fce4ccde91e196c38cd1287e3b0f5f"
-          }
-        }
-      ]
-    },
-    "primaryKey": {
-      "ID": "FF768FA6-7B07-4C5B-A0C3-8A9D67B40BA0"
-    },
-    "sync": {
-      "lastModified": "2026-08-01T18:57:11.482Z",
-      "checksum": "64680b2432b36477cacc2e3851a04b9ba4df0afbb2675cb0ccd83bc7c211e465"
+      "lastModified": "2026-10-16T18:42:43.688Z",
+      "checksum": "4369d971f0e16ebc28d15b21b6dd6e6e5636fd6156b86b530281ca36f2349774"
     }
   }
 ]
