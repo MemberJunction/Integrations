@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 51,
+  "count": 52,
   "connectors": [
     {
       "name": "Fonteva",
@@ -421,6 +421,27 @@
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Events/PheedLoop",
       "installTag": "Events-PheedLoop@1.4.6"
+    },
+    {
+      "name": "Spektrix",
+      "displayName": "Spektrix Connector",
+      "description": "Spektrix provides a connected solution purpose-built for audience engagement.",
+      "category": "Events",
+      "tags": [
+        "spektrix",
+        "events",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-ticket",
+      "navigationBaseURL": "https://www.spektrix.com/",
+      "objectCount": 65,
+      "className": "SpektrixConnector",
+      "npmPackage": "@memberjunction/connector-spektrix",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <7.0.0",
+      "repoSubpath": "Events/Spektrix",
+      "installTag": "Events-Spektrix@0.1.0"
     },
     {
       "name": "Bill.com",
