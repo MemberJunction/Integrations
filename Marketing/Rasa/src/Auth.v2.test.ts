@@ -89,11 +89,11 @@ describe('RasaConnector v2 auth', () => {
         expect(calls.some(c => c.url.includes('/v1/'))).toBe(false);
     });
 
-    it('presents the token as both rasa-token and Authorization: Bearer', () => {
+    it('presents the token as Authorization: Bearer only (the live API rejects rasa-token)', () => {
         const connector = new RasaConnector() as unknown as Internals;
         const headers = connector.BuildHeaders({ Token: 'jwt-1' });
-        expect(headers['rasa-token']).toBe('jwt-1');
         expect(headers.Authorization).toBe('Bearer jwt-1');
+        expect(headers['rasa-token']).toBeUndefined();
     });
 
     it('reuses the token until shortly before expires_in, then re-mints', async () => {
@@ -127,7 +127,6 @@ describe('RasaConnector v2 auth', () => {
 
         expect(res.Status).toBe(200);
         const replay = calls[calls.length - 1];
-        expect(replay.headers['rasa-token']).toBe('jwt-2');
         expect(replay.headers.Authorization).toBe('Bearer jwt-2');
     });
 
@@ -169,6 +168,6 @@ describe('RasaConnector v2 auth', () => {
         expect(result.Success).toBe(true);
         const read = calls[1];
         expect(read.url).toBe(`${HOST}/v2/lists?limit=1`);
-        expect(read.headers['rasa-token']).toBe('jwt-1');
+        expect(read.headers.Authorization).toBe('Bearer jwt-1');
     });
 });

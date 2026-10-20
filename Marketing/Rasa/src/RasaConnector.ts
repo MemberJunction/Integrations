@@ -59,6 +59,8 @@ const DEFAULT_TOKEN_TTL_MS = 45 * 60 * 1000;
 /** Re-mint this long before the vendor-declared expiry so an in-flight page never carries a dead token. */
 const TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
 
+const DAY_MS = 86_400_000;
+
 /** Per-request timeout. */
 const REQUEST_TIMEOUT_MS = 60_000;
 
@@ -105,11 +107,13 @@ const RasaObjectConfigSchema = z.object({
     /** Query-param name carrying the incremental watermark (`updated_since` / `created_since` / …). */
     watermarkParam: z.string().optional(),
     /**
-     * Value sent for `watermarkParam` when there is NO stored watermark (first sync / reset). rasa.io's
-     * v2 insights feeds default `created_since` to seven days ago, so omitting the param on a first sync
-     * would silently keep only the last week. The vendor caps the value at the plan's reporting lookback.
+     * How far back, in days, the vendor accepts `watermarkParam`. rasa.io's v2 insights feeds reject a
+     * `created_since` more than 24 months ago (HTTP 400 "created_since must not be more than 24 months
+     * ago") and default it to seven days ago when omitted, so a first sync with no param would silently
+     * keep only the last week. With this set, the connector sends `now − maxLookbackDays` on a first
+     * sync, and clamps a stored watermark older than that up to it.
      */
-    watermarkFloor: z.string().optional(),
+    maxLookbackDays: z.number().int().positive().optional(),
     /**
      * RealityProbe `recordEnvelopeShape` verdict, materialized by the extractor: the per-record path to
      * unwrap BEFORE field mapping (e.g. `data` → `results[].data`). ABSENT means the verdict is
@@ -357,10 +361,9 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * Presents the JWT on every request. The v2 spec disagrees with itself about where:
-     * `securityDefinitions.RasaToken` names a custom `rasa-token` header, while the token response
-     * describes a "Bearer token to use in Authorization header". Until a live call settles it, send
-     * both — the gateway reads the one it is configured for and ignores the other.
+     * Presents the JWT on every request as `Authorization: Bearer`. The v2 spec's
+     * `securityDefinitions.RasaToken` names a custom `rasa-token` header, but the live v2 API rejects it
+     * (HTTP 401 on `GET /v2/lists` with `rasa-token` alone, 200 with Bearer; verified 2026-10-20).
      */
     protected BuildHeaders(auth: RESTAuthContext): Record<string, string> {
         return {
@@ -372,7 +375,7 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
 
     /** The token-bearing headers (see {@link BuildHeaders}). */
     private TokenHeaders(token: string): Record<string, string> {
-        return { 'rasa-token': token, Authorization: `Bearer ${token}` };
+        return { Authorization: `Bearer ${token}` };
     }
 
     /** Host root for every request; APIPath supplies its own `/v2` segment. */
@@ -615,21 +618,49 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * Appends the object's declared incremental filter — `Configuration.watermarkParam`
      * (`updated_since` / `created_since` / `archived_since`) — to every request of a watermarked
      * object. Applied HERE rather than in {@link BuildPaginatedURL} so it also reaches non-paginated
-     * single-page fetches. Never invents a param name: silent metadata ⇒ full pull. With no stored
-     * watermark, the object's declared `watermarkFloor` (if any) is sent instead, so a vendor-side
-     * default window cannot truncate the first sync.
+     * single-page fetches. Never invents a param name: silent metadata ⇒ full pull. When the object
+     * declares `maxLookbackDays`, the value is bounded by the vendor's lookback window (see
+     * {@link EffectiveWatermark}).
      */
     protected override AppendDefaultQueryParams(url: string, obj: MJIntegrationObjectEntity): string {
         const withDefaults = super.AppendDefaultQueryParams(url, obj);
         if (!obj.SupportsIncrementalSync) return withDefaults;
         const config = this.ObjectConfig(obj);
-        const watermark = this.currentWatermark ?? config.watermarkFloor;
+        const watermark = this.EffectiveWatermark(config);
         if (!watermark) return withDefaults;
         const param = config.watermarkParam;
         if (!param) return withDefaults;
         if (new RegExp(`[?&]${param}=`, 'i').test(withDefaults)) return withDefaults;
         const separator = withDefaults.includes('?') ? '&' : '?';
         return `${withDefaults}${separator}${encodeURIComponent(param)}=${encodeURIComponent(watermark)}`;
+    }
+
+    /**
+     * The watermark to send. Without `maxLookbackDays` it is the stored watermark (or none). With it, the
+     * vendor's oldest accepted instant (`now − maxLookbackDays`) is sent on a first sync, so the vendor's
+     * seven-day default cannot truncate history, and replaces a stored watermark older than it, which the
+     * vendor would reject outright (HTTP 400) and stall the object. A clamp drops events between the old
+     * watermark and the window; the vendor no longer serves them, so the warning only records the gap.
+     */
+    private EffectiveWatermark(config: RasaObjectConfig): string | null {
+        const days = config.maxLookbackDays;
+        if (!days) return this.currentWatermark;
+        // Rounded UP to the next UTC midnight: stays inside the window, and every page of a pass sends the same value.
+        const floorMs = Math.ceil((Date.now() - days * DAY_MS) / DAY_MS) * DAY_MS;
+        const floor = new Date(floorMs).toISOString().replace(/\.\d{3}Z$/, 'Z');
+        if (!this.currentWatermark) return floor;
+        const stored = Date.parse(this.currentWatermark);
+        if (Number.isNaN(stored) || stored >= floorMs) return this.currentWatermark;
+        if (!this.pendingWarnings.some(w => w.Code === 'WATERMARK_CLAMPED')) {
+            this.pendingWarnings.push({
+                Code: 'WATERMARK_CLAMPED',
+                Message:
+                    `Stored watermark ${this.currentWatermark} is older than the vendor's ${days}-day lookback; ` +
+                    `fetching from ${floor}. Events before that are no longer available from rasa.io.`,
+                Data: { watermark: this.currentWatermark, floor, maxLookbackDays: days },
+            });
+        }
+        return floor;
     }
 
     // ── Fetch orchestration ──────────────────────────────────────────

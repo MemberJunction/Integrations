@@ -22,9 +22,12 @@ The `rasa.io API` Credential Type keeps its ID and name, so `Integration.Credent
 its field schema and description change. **Existing credentials stop working**: re-enter the connection with
 a v2 client ID and secret. A v1-shaped credential fails with a message saying exactly that.
 
-Header: the v2 spec names a custom `rasa-token` header in its security definition but calls the token a
-"Bearer token to use in Authorization header" in the token response. Until a live call settles it, the
-connector sends both.
+Header: the token is sent as `Authorization: Bearer`. The v2 spec's security definition names a custom
+`rasa-token` header, but the live API rejects it (HTTP 401 with `rasa-token` alone, verified 2026-10-20).
+
+The customer's rasa.io account needs **API access** turned on for the engagement feeds. Without it, every
+`/v2/insights/*` call answers HTTP 403 `insufficient_scope`. rasa.io says it is generally on for enterprise
+clients; confirm before connecting.
 
 ## 2. The Integration row is unchanged
 
@@ -49,7 +52,7 @@ hardcoded ID. **Their destination tables are not dropped and no synced data is d
 | Community | Newsletter is the closest v2 resource (already in 2.x); fields not compared |
 | Section, Post, Content Pool Item, Lead Post | None in v2 yet |
 
-## 4. 9 v2 objects are added (25 total)
+## 4. 8 v2 objects are added (23 total)
 
 | Object | Endpoint | Sync |
 |---|---|---|
@@ -61,17 +64,28 @@ hardcoded ID. **Their destination tables are not dropped and no synced data is d
 | Sequence Contact | `/v2/messaging/sequence/{id}/contacts` | Full pull |
 | Newsletter Deleted Contact | `/v2/messaging/newsletter/{id}/contacts/deleted` | Deletion feed on `archived_date` |
 | Segment | `/v2/segments` | Full pull |
-| Integration Run | `/v2/integration-runs` | Full pull |
 
 The action feeds are rasa.io's recommended bulk engagement source (one call per newsletter/blast/sequence,
 not per contact). Each row is keyed on the parent id plus `id + action_type + timestamp + url`.
 
-**First sync:** rasa.io defaults `created_since` to seven days ago. With no stored watermark the connector
-sends the object's `Configuration.watermarkFloor` (`2000-01-01T00:00:00Z`) instead, which rasa.io caps at the
-plan's reporting lookback. Without this, a first sync would silently keep only the last week.
+**History window:** rasa.io defaults `created_since` to seven days ago and rejects a value more than 24 months
+ago (HTTP 400 "created_since must not be more than 24 months ago"). The action feeds declare
+`Configuration.maxLookbackDays: 725`: a first sync sends `now − 725 days` (rounded up to UTC midnight), and a
+stored watermark older than that is moved up to it with a `WATERMARK_CLAMPED` warning. Events older than
+24 months are not available from rasa.io.
 
 **To verify against real data:** the spec's action record has no contact field. Its `id` is undocumented and
 may be the contact id; confirm before relying on it for per-person engagement.
+
+## 4a. Changed or removed after the first live run
+
+- **Deleted Contact** (`/v2/contacts/deleted`) is fetched once per List: rasa.io requires `list_id` (HTTP 400
+  without it). It now depends on List being synced first, and its key is `list_id + id`.
+- **Subscription** is removed by `V202610201700__rasa-io__Retire_Subscription_And_Integration_Run`:
+  `GET /v2/subscriptions` requires a `contact_id`, so a sync would make one request per contact. Its
+  create/update writes go with it. Newsletter / Blast / Sequence Contact rows still carry each contact's
+  `subscriptions`.
+- **Integration Run** is removed by the same migration: it is internal to rasa.io (per the vendor).
 
 ## 5. Actions: 12 disabled, 6 added
 
