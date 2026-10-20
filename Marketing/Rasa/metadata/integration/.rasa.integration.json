@@ -2,7 +2,7 @@
   {
     "fields": {
       "Name": "rasa",
-      "Description": "rasa.io newsletter and audience-engagement platform (v2 API). Syncs contacts, lists, newsletters, blasts, sequences, subscriptions and segments, plus newsletter/blast/sequence engagement events (opens, clicks, deliveries).",
+      "Description": "rasa.io newsletter and audience-engagement platform (v2 API). Syncs contacts, lists, newsletters, blasts, sequences and segments, plus newsletter/blast/sequence engagement events (opens, clicks, deliveries).",
       "ClassName": "@memberjunction/connector-rasa-io",
       "ImportPath": "@memberjunction/connector-rasa-io",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=rasa.io API",
@@ -10,8 +10,8 @@
       "Configuration": {
         "AuthFlow": "oauth2-client-credentials",
         "AuthFlowNote": "v2 only (3.0.0; rasa.io directs integrations to v2, and the customer generates the client ID + secret in the rasa.io dashboard, replacing the legacy-dashboard v1 API key). POST /v2/tokens with a JSON body { grant_type: 'client_credentials', client_id, client_secret } (definitions.TokenCreateBody) returns { access_token, token_type: 'Bearer', expires_in } (definitions.ApiResponseTokenCreated). The connector caches the token until 60 s before expires_in and re-mints once on a 401. Super-user clients (account_guid / X-Account-GUID) are not used. The v1 username/password/API-key exchange (POST /v1/tokens) is no longer implemented.",
-        "AuthHeaderPattern": "rasa-token: <jwt> (also sent as Authorization: Bearer <jwt>)",
-        "AuthHeaderPatternNote": "The v2 spec is internally inconsistent: securityDefinitions.RasaToken names a custom 'rasa-token' header ('JWT token obtained from POST /v2/tokens'), while ApiResponseTokenCreated.access_token says 'Bearer token to use in Authorization header'. Until a live call settles it the connector sends both; the gateway reads the one it is configured for.",
+        "AuthHeaderPattern": "Authorization: Bearer <jwt>",
+        "AuthHeaderPatternNote": "The v2 spec's securityDefinitions.RasaToken names a custom 'rasa-token' header, but the live API rejects it: GET /v2/lists answers 401 with rasa-token alone and 200 with Authorization: Bearer (verified 2026-10-20 on api-dev.rasa.io).",
         "TokenExchangeEndpoint": {
           "v2": {
             "path": "POST /tokens",
@@ -40,8 +40,8 @@
           "supported": true,
           "supportedNote": "Per-endpoint, via *_since query params.",
           "perObject": {
-            "Newsletter/Blast/Sequence Action": "created_since (watermark field 'created'). The vendor DEFAULTS created_since to seven days ago (capped by the plan's reporting lookback), so a first sync with no stored watermark sends the object's Configuration.watermarkFloor instead of omitting the param.",
-            "Deleted Contact / Newsletter Deleted Contact": "archived_since (watermark field 'archived_date').",
+            "Newsletter/Blast/Sequence Action": "created_since (watermark field 'created'). The vendor defaults created_since to seven days ago and rejects a value more than 24 months ago, so the connector sends now − Configuration.maxLookbackDays (725) on a first sync and clamps an older stored watermark up to it.",
+            "Deleted Contact / Newsletter Deleted Contact": "archived_since (watermark field 'archived_date'). Deleted Contact is fetched once per List (list_id is required).",
             "everything else": "full pull + content-hash diff."
           }
         },
@@ -74,10 +74,6 @@
               },
               "Contact-List membership": {
                 "delete": "DELETE /contact-lists/{id}/list/{list_id}"
-              },
-              "Subscription": {
-                "createOrUpdate": "POST /subscriptions",
-                "update": "PUT /subscriptions/{id}"
               }
             },
             "note": "Confirmed via direct enumeration of every path.<method> in {post,put,patch,delete} across all v2 paths (rasa-v2-openapi.json). Newsletter, Blast, Sequence, and Sequence Message are GET-only in the v2 spec -- no POST/PUT/DELETE documented for any of them (SOURCE_STUDY.md Gaps: 'v2's messaging surface appears read-only by design')."
@@ -102,6 +98,16 @@
             "evidence": "rasa.io (Paul), 2026-10; MIGRATION-v3.md"
           },
           {
+            "family": "Subscriptions (/v2/subscriptions)",
+            "reason": "Removed in 3.0.1: the list endpoint requires contact_id (HTTP 400 'contact_id query parameter is required'), so a bulk sync would make one request per contact. Subscription create/update writes go with it.",
+            "evidence": "api-dev.rasa.io, 2026-10-20"
+          },
+          {
+            "family": "Integration runs (/v2/integration-runs)",
+            "reason": "Removed in 3.0.1: internal rasa.io endpoint, not for integrations.",
+            "evidence": "rasa.io (Paul), 2026-10-20"
+          },
+          {
             "family": "v2 analytics aggregates",
             "reason": "Deferred: windowed roll-ups derivable from the action events.",
             "evidence": "/analytics/{newsletter,sequence,blast}/{id}/{activities,articles,images,topics}: date_range enum tops out at last_three_months"
@@ -118,11 +124,11 @@
           },
           {
             "family": "Write-payload / request-body shapes",
-            "reason": "INFORMATIONAL — they describe the writable field subset of leaves already in scope (Person, Post, Lead Post, Contact, List, Subscription), not new resources.",
+            "reason": "INFORMATIONAL — they describe the writable field subset of leaves already in scope (Person, Post, Lead Post, Contact, List), not new resources.",
             "evidence": "*CreateBody / *BodyForPost / *BodyForPut / *UpdateBody definitions, all reached only via parameters[].in == 'body' on write operations in both specs."
           }
         ],
-        "ScopeReason": "v2-only catalog (3.0.0): the 16 v2 objects carried from 2.x plus 9 new v2 objects — Newsletter/Blast/Sequence Action (insights event feeds, the vendor-recommended bulk engagement source), Newsletter/Blast/Sequence Contact, Newsletter Deleted Contact, Segment, Integration Run. The 18 v1 objects (Person and its children, Post, Lead Post, Content Pool Item, Community, Section, Insight Action/Topic/Topic Score, Analytics Activity/Article/Image/Topic) are retired; see MIGRATION-v3.md. The v2 analytics aggregates (/analytics/{newsletter,sequence,blast}/{id}/…) are deferred: they are windowed roll-ups (date_range up to last_three_months) derivable from the action events.",
+        "ScopeReason": "v2-only catalog (3.0.0): 15 v2 objects carried from 2.x plus 8 new v2 objects — Newsletter/Blast/Sequence Action (insights event feeds, the vendor-recommended bulk engagement source), Newsletter/Blast/Sequence Contact, Newsletter Deleted Contact, Segment. The 18 v1 objects (Person and its children, Post, Lead Post, Content Pool Item, Community, Section, Insight Action/Topic/Topic Score, Analytics Activity/Article/Image/Topic) are retired; see MIGRATION-v3.md. The v2 analytics aggregates (/analytics/{newsletter,sequence,blast}/{id}/…) are deferred: they are windowed roll-ups (date_range up to last_three_months) derivable from the action events. Removed in 3.0.1: Subscription (GET /v2/subscriptions requires contact_id, so a sync would make one call per contact) and Integration Run (an internal rasa.io endpoint, per the vendor).",
         "DiscoveryIsAuthoritative": false,
         "DiscoveryIsAuthoritativeNote": "Default false per the brand study — neither v1 nor v2 documents a complete-enumeration/schema-discovery endpoint (e.g. no GET /schema, no GET /objects listing all resource types), so nothing observed as absent during a live sync can be treated as proof of non-existence, and no previously-declared object/field may ever be silently deactivated on the strength of a sync run alone.",
         "APIBaseURL": "https://api.rasa.io",
@@ -1025,8 +1031,8 @@
           "fields": {
             "Name": "Deleted Contact",
             "DisplayName": "Deleted Contact",
-            "Description": "Tombstone counterpart to GET /contacts?list_id=<id>. Returns contacts that have left the list — either dropped from it (ContactList.is_archived) or archived globally (Contact.is_archived) — so a sync consumer can reconcile removals incrementally via archived_since instead of diffing a full snapshot. is_archived distinguishes the two modes (gone globally vs only off this list). NOTE: archived_date is a proxy (Contact.updated / ContactList.updated — the row's last-modified time, which for an archival is the archival time) until a dedicated archived_at column exists, mirroring the v1 /persons/deleted feed. (rasa.io v2 — /v2/contacts/deleted).",
-            "APIPath": "/v2/contacts/deleted",
+            "Description": "Tombstone counterpart to GET /contacts?list_id=<id>. Returns contacts that have left the list — either dropped from it (ContactList.is_archived) or archived globally (Contact.is_archived) — so a sync consumer can reconcile removals incrementally via archived_since instead of diffing a full snapshot. is_archived distinguishes the two modes (gone globally vs only off this list). NOTE: archived_date is a proxy (Contact.updated / ContactList.updated — the row's last-modified time, which for an archival is the archival time) until a dedicated archived_at column exists, mirroring the v1 /persons/deleted feed. (rasa.io v2 — /v2/contacts/deleted, called once per List: list_id is required).",
+            "APIPath": "/v2/contacts/deleted?list_id={id}",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
             "Category": "v2 Contacts",
@@ -1056,25 +1062,53 @@
                   "/v2/messaging/newsletter/{id}/contacts/deleted"
                 ],
                 "nesting": [],
-                "parentObject": null,
-                "parentKeyField": null,
+                "parentObject": "List",
+                "parentKeyField": "id",
                 "doorArgs": [
+                  "list_id",
                   "archived_since",
                   "skip",
                   "limit"
                 ]
               },
               "watermarkParam": "archived_since",
-              "pkField": "id",
-              "pkStrength": "Definitive",
+              "pkField": "list_id+id",
+              "pkStrength": "FullTuple",
               "apiBaseURLPrior": "https://api.rasa.io/v2",
               "apiBaseURLNote": "Corrected by ProbeAmend: APIPath already carries the version segment (rasa-v1-openapi.json host='api.rasa.io' basePath='/v1'; rasa-v2-openapi.json basePath='/v2'), so a version-scoped base double-prefixes (…/v1 + /v2/lists → /v1/v2/lists → HTTP 404). The composable base is the host root; both /v1/* and /v2/* hang off it.",
-              "liveVerificationStatus": "auth-gated-exists",
-              "liveVerificationEvidence": "Read-only probe 2026-07-29: HTTP 401 on GET /v2/contacts/deleted with a valid v1 session token. 401 (not 404) proves the path is real and auth-gated; the test credential simply lacks v2 scope. This is a TESTING-coverage limitation, not a catalog limitation — the object stays declared."
+              "liveVerificationEvidence": "2026-10-20, v2 client credentials on api-dev.rasa.io: GET /v2/contacts/deleted without list_id → HTTP 400 'list_id query parameter is required'. Fetched once per synced List (list_id={id} in the query string).",
+              "parentObjectName": "List",
+              "parentObjectIDFieldName": "list_id"
             }
           },
           "relatedEntities": {
             "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "list_id",
+                  "DisplayName": "List Id",
+                  "Description": "List Id — the rasa.io list these removals belong to, injected by the framework from the list_id the request was made for. Part of this child's composite identity.",
+                  "Type": "string",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=List&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "86A8EA35-3DC7-43D9-9523-6486305A50CA"
+                },
+                "sync": {
+                  "lastModified": "2026-10-20T17:03:01.174Z",
+                  "checksum": "9628ce0711860a4d2986957d4baed4ee1aa12ed157c769af5e06f8ee74d9f481"
+                }
+              },
               {
                 "fields": {
                   "Name": "id",
@@ -1084,13 +1118,13 @@
                   "IsRequired": true,
                   "IsReadOnly": true,
                   "IsPrimaryKey": true,
-                  "IsUniqueKey": true,
+                  "IsUniqueKey": false,
                   "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contact&IntegrationID=@parent:IntegrationID",
                   "RelatedIntegrationObjectFieldName": "id",
                   "Length": null,
                   "AllowsNull": false,
                   "Status": "Active",
-                  "Sequence": 1,
+                  "Sequence": 2,
                   "IntegrationObjectID": "@parent:ID",
                   "Configuration": {
                     "ReferencedType": "Contact"
@@ -1100,8 +1134,8 @@
                   "ID": "7E004493-8C39-416A-BDAB-731B927F0775"
                 },
                 "sync": {
-                  "lastModified": "2026-08-01T18:59:19.586Z",
-                  "checksum": "4ac6df6c53bc54343caec9bb452e12d3013c2d7906bf8e30357867fc9943e900"
+                  "lastModified": "2026-10-20T17:03:01.216Z",
+                  "checksum": "619b2e3a517524746649fbf41ab9a8c859bfd7a9549cb5dc6114ae61218cdd47"
                 }
               },
               {
@@ -1117,15 +1151,15 @@
                   "Length": null,
                   "AllowsNull": true,
                   "Status": "Active",
-                  "Sequence": 2,
+                  "Sequence": 3,
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "70C2450B-F9BF-4D7E-A8C9-7CF5B8401254"
                 },
                 "sync": {
-                  "lastModified": "2026-08-01T18:59:19.597Z",
-                  "checksum": "ed129334f920864cb02f5be2c521f89907c81be5ee632d060da30ff52a1cb74f"
+                  "lastModified": "2026-10-20T17:03:01.247Z",
+                  "checksum": "634240469c0e36a003c3a9e6f2dbc3c8645e483199d1ebf7769587c0018882d5"
                 }
               },
               {
@@ -1141,15 +1175,15 @@
                   "Length": null,
                   "AllowsNull": true,
                   "Status": "Active",
-                  "Sequence": 3,
+                  "Sequence": 4,
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "403CFB44-7B94-4550-A235-C2FEDBA42DF1"
                 },
                 "sync": {
-                  "lastModified": "2026-08-01T18:59:19.627Z",
-                  "checksum": "ef3b3d5188c3120d6cb7144f9614967b9bddedf79e71e1bbe52e286abb00adab"
+                  "lastModified": "2026-10-20T17:03:01.266Z",
+                  "checksum": "b21f3430e43bce746a4c512cf53aa2455113d2030ed264c09346a24cd86df92b"
                 }
               },
               {
@@ -1165,15 +1199,15 @@
                   "Length": null,
                   "AllowsNull": true,
                   "Status": "Active",
-                  "Sequence": 4,
+                  "Sequence": 5,
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "116EB6EB-73EE-4092-BF1F-0FB0D6DC4676"
                 },
                 "sync": {
-                  "lastModified": "2026-08-01T18:59:19.641Z",
-                  "checksum": "85a073642aaa3fdc7a99685d50c386254eb7cbc6bd11ca7cc8d3be2dd12d996b"
+                  "lastModified": "2026-10-20T17:03:01.286Z",
+                  "checksum": "92e76704b8418043dfc3483e272b488439257c33791c45b2b3be77d759985dad"
                 }
               },
               {
@@ -1189,15 +1223,15 @@
                   "Length": null,
                   "AllowsNull": true,
                   "Status": "Active",
-                  "Sequence": 5,
+                  "Sequence": 6,
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
                   "ID": "7D63B393-8881-4D92-A4B6-D7EFD67C42BD"
                 },
                 "sync": {
-                  "lastModified": "2026-08-01T18:59:19.656Z",
-                  "checksum": "fa8a6d5b6d7c5e0aa36ae086c65b700fc96f864c431612bb4b692b42bfb8d9ee"
+                  "lastModified": "2026-10-20T17:03:01.303Z",
+                  "checksum": "b31a5df2e084c2eaacd290b4108b35ff325614ef56e197df5aa548ef3d61daa4"
                 }
               }
             ]
@@ -1206,8 +1240,8 @@
             "ID": "D7325710-7D0E-4486-8405-3AC5D3210D7E"
           },
           "sync": {
-            "lastModified": "2026-08-01T18:59:17.357Z",
-            "checksum": "697cef6f0ba8af37ad20ce29b2edcda28f1a4437fbf8677401d904fa79240dd3"
+            "lastModified": "2026-10-20T17:03:01.014Z",
+            "checksum": "c768cd3c4c128b789660682588d1d8714a5817763285ecdb08f0963268c9d4f5"
           }
         },
         {
@@ -2352,356 +2386,6 @@
         },
         {
           "fields": {
-            "Name": "Subscription",
-            "DisplayName": "Subscription",
-            "Description": "Returns all subscriptions for a given contact (identified by integer contact_id). (rasa.io v2 — /v2/subscriptions).",
-            "APIPath": "/v2/subscriptions",
-            "SupportsWrite": true,
-            "SupportsIncrementalSync": false,
-            "Category": "v2 Subscriptions",
-            "ResponseDataKey": "results",
-            "PaginationType": "Offset",
-            "DefaultPageSize": 50,
-            "SupportsPagination": false,
-            "IncrementalWatermarkField": null,
-            "SupportsCreate": true,
-            "SupportsUpdate": true,
-            "SupportsDelete": false,
-            "SyncStrategy": "FullPullHashDiff",
-            "ContentHashApplicable": true,
-            "StableOrderingKey": "id",
-            "Sequence": 25,
-            "Status": "Active",
-            "IntegrationID": "@parent:ID",
-            "Configuration": {
-              "apiVersion": "v2",
-              "apiBaseURL": "https://api.rasa.io",
-              "recordSchemas": [
-                "SubscriptionFull",
-                "Subscription"
-              ],
-              "accessPath": {
-                "door": "/v2/subscriptions",
-                "alternateDoors": [
-                  "/v2/subscriptions/{id}"
-                ],
-                "nesting": [
-                  "subscriptions"
-                ],
-                "parentObject": "Contact",
-                "parentKeyField": null,
-                "doorArgs": []
-              },
-              "watermarkParam": null,
-              "nestedAccessPaths": [
-                "Contact -> subscriptions[]"
-              ],
-              "pkField": "id",
-              "pkStrength": "Definitive",
-              "apiBaseURLPrior": "https://api.rasa.io/v2",
-              "apiBaseURLNote": "Corrected by ProbeAmend: APIPath already carries the version segment (rasa-v1-openapi.json host='api.rasa.io' basePath='/v1'; rasa-v2-openapi.json basePath='/v2'), so a version-scoped base double-prefixes (…/v1 + /v2/lists → /v1/v2/lists → HTTP 404). The composable base is the host root; both /v1/* and /v2/* hang off it.",
-              "liveVerificationStatus": "auth-gated-exists",
-              "liveVerificationEvidence": "Read-only probe 2026-07-29: HTTP 401 on GET /v2/subscriptions with a valid v1 session token. 401 (not 404) proves the path is real and auth-gated; the test credential simply lacks v2 scope. This is a TESTING-coverage limitation, not a catalog limitation — the object stays declared."
-            },
-            "CreateAPIPath": "/v2/subscriptions",
-            "CreateMethod": "POST",
-            "CreateBodyShape": "flat",
-            "CreateBodyKey": null,
-            "CreateIDLocation": "body",
-            "UpdateAPIPath": "/v2/subscriptions/{id}",
-            "UpdateMethod": "PUT",
-            "UpdateBodyShape": "flat",
-            "UpdateBodyKey": null,
-            "UpdateIDLocation": "path"
-          },
-          "relatedEntities": {
-            "MJ: Integration Object Fields": [
-              {
-                "fields": {
-                  "Name": "id",
-                  "DisplayName": "Id",
-                  "Description": "Id — Subscription field 'id' (SubscriptionFull), rasa.io v2.",
-                  "Type": "int",
-                  "IsRequired": true,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": true,
-                  "IsUniqueKey": true,
-                  "Length": null,
-                  "AllowsNull": false,
-                  "Status": "Active",
-                  "Sequence": 1,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "A05BA461-D3C9-4DEB-8D26-66C30ED4DE06"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.204Z",
-                  "checksum": "ea74a141d8c6b98fccc24d6861ea0ad272f8c5d46add1296e10d9e03b424e935"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "contact_id",
-                  "DisplayName": "Contact Id",
-                  "Description": "Contact Id — Subscription field 'contact_id' (SubscriptionFull), rasa.io v2.",
-                  "Type": "int",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contact&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id",
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 2,
-                  "IntegrationObjectID": "@parent:ID",
-                  "Configuration": {
-                    "ReferencedType": "Contact"
-                  }
-                },
-                "primaryKey": {
-                  "ID": "682B9288-8A09-4028-9957-FFE66CB85374"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.215Z",
-                  "checksum": "185fec92477841005a7cacda956b45636f30d496ee11a767cc3c4a101a29e78f"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "subscription_type_id",
-                  "DisplayName": "Subscription Type Id",
-                  "Description": "Subscription Type Id — Subscription field 'subscription_type_id' (SubscriptionFull), rasa.io v2.",
-                  "Type": "int",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription Type&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id",
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 3,
-                  "IntegrationObjectID": "@parent:ID",
-                  "Configuration": {
-                    "ReferencedType": "Subscription Type"
-                  }
-                },
-                "primaryKey": {
-                  "ID": "97F0BF34-D241-4CA9-BD2A-F315439AFCAF"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.227Z",
-                  "checksum": "9070c7896906d96edcdb97dd929da1b5b251493bf266b206e7e764a751d07267"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "integration_id",
-                  "DisplayName": "Integration Id",
-                  "Description": "Integration Id — Subscription field 'integration_id' (SubscriptionFull), rasa.io v2.",
-                  "Type": "int",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 4,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "50554256-302E-4451-B567-8E6D5B69B738"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.238Z",
-                  "checksum": "aaf119803b98a45180e9ca187efb440a0cf702e8ed10ecc65f07ccfd9497a040"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "can_email",
-                  "DisplayName": "Can Email",
-                  "Description": "Can Email — Subscription field 'can_email' (SubscriptionFull), rasa.io v2.",
-                  "Type": "boolean",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 5,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "9285DC0B-B6D0-4110-934D-2AE09AAF955B"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.250Z",
-                  "checksum": "25786a531795d4be1257e6970eab82a0b68c7479eb91bce3922af077d06ecc25"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "is_active",
-                  "DisplayName": "Is Active",
-                  "Description": "Is Active — Subscription field 'is_active' (SubscriptionFull), rasa.io v2.",
-                  "Type": "boolean",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 6,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "234CE57F-BE33-450B-92D0-BCFA972D8AAF"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.262Z",
-                  "checksum": "e6bdad13ccc2b220b8cacdab5e02ec68f99d8098b12b3634b2859f06abff9e46"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "synced_at",
-                  "DisplayName": "Synced At",
-                  "Description": "Synced At — Subscription field 'synced_at' (SubscriptionFull), rasa.io v2.",
-                  "Type": "datetime",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 7,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "C6F68630-59F3-4617-AC98-0DFF75956C9C"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.273Z",
-                  "checksum": "38ae897ff705ad4e8492727e411079e9a13f0772d5ea48f4a945fe92039d9fe0"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "status_changed",
-                  "DisplayName": "Status Changed",
-                  "Description": "Status Changed — Subscription field 'status_changed' (SubscriptionFull), rasa.io v2.",
-                  "Type": "datetime",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 8,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "AC6EE2A0-3207-4048-BE3F-E52D423A9CD1"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.285Z",
-                  "checksum": "85a522dad78ab8301cf97c7f81e621bd04bf443838ac8793de254860242f59d2"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "unsubscribe_code",
-                  "DisplayName": "Unsubscribe Code",
-                  "Description": "Machine-readable unsubscribe reason code",
-                  "Type": "string",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 9,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "95E77621-F83A-4ED9-A6A4-A34C64FD20D4"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.300Z",
-                  "checksum": "50b2f6643b454b3c29ac3b8763f842fd8a09d09516dce1a501ffe89fdf04d1b8"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "unsubscribe_message",
-                  "DisplayName": "Unsubscribe Message",
-                  "Description": "Human-readable unsubscribe reason message",
-                  "Type": "text",
-                  "IsRequired": false,
-                  "IsReadOnly": false,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 10,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "58C3ECF6-E475-40B0-ADE0-6EE1F24354DC"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.310Z",
-                  "checksum": "f5230f2939e18fbc87a311f550c44d3cacf510924525402a4cf5d0f820b3c35b"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "subscription_type",
-                  "DisplayName": "Subscription Type",
-                  "Description": "Subscription Type — Subscription field 'subscription_type' (SubscriptionFull), rasa.io v2.",
-                  "Type": "string",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 11,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "27AAD528-A9C7-4A3C-A134-5F6E4F6D8A62"
-                },
-                "sync": {
-                  "lastModified": "2026-08-01T18:59:20.341Z",
-                  "checksum": "b7b5601d8e8e3199914e1e1f342943ccb2e56f9164de3db0e2f0bb6368263f7b"
-                }
-              }
-            ]
-          },
-          "primaryKey": {
-            "ID": "8C8BF540-10F8-40F4-A6A5-13F5D829FDE0"
-          },
-          "sync": {
-            "lastModified": "2026-08-01T18:59:17.453Z",
-            "checksum": "daf4d6842d785d7e70695ec5304a5e8baa4914f6843337f36018da9d9f051c0a"
-          }
-        },
-        {
-          "fields": {
             "Name": "Newsletter List",
             "DisplayName": "Newsletter List",
             "Description": "Newsletter List — record collection nested on Newsletter.lists[] (Newsletter). (rasa.io v2 — /v2/messaging/newsletter).",
@@ -3719,8 +3403,9 @@
               "pkStrength": "FullTuple",
               "parentObjectName": "Newsletter",
               "parentObjectIDFieldName": "newsletter_id",
-              "watermarkFloor": "2000-01-01T00:00:00Z",
-              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it."
+              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it.",
+              "maxLookbackDays": 725,
+              "maxLookbackNote": "rasa.io rejects created_since more than 24 months ago (HTTP 400 'created_since must not be more than 24 months ago', verified 2026-10-20) and defaults it to 7 days ago when omitted. The connector sends now − 725 days (rounded up to UTC midnight) on a first sync and clamps an older stored watermark up to it."
             }
           },
           "relatedEntities": {
@@ -4091,8 +3776,8 @@
             "ID": "CAA8C6B2-9DB2-4A43-BD63-89EF359A2055"
           },
           "sync": {
-            "lastModified": "2026-10-16T18:42:40.582Z",
-            "checksum": "04e97dc79980b1c6726b35d81754742bf700f15a101a8c7966ebe9681e5f8f4a"
+            "lastModified": "2026-10-20T17:03:01.060Z",
+            "checksum": "ef7e81640deed2fb080960830e92b9b470961a55b17431d8caa8973d0abbf1f7"
           }
         },
         {
@@ -4664,8 +4349,9 @@
               "pkStrength": "FullTuple",
               "parentObjectName": "Blast",
               "parentObjectIDFieldName": "blast_id",
-              "watermarkFloor": "2000-01-01T00:00:00Z",
-              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it."
+              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it.",
+              "maxLookbackDays": 725,
+              "maxLookbackNote": "rasa.io rejects created_since more than 24 months ago (HTTP 400 'created_since must not be more than 24 months ago', verified 2026-10-20) and defaults it to 7 days ago when omitted. The connector sends now − 725 days (rounded up to UTC midnight) on a first sync and clamps an older stored watermark up to it."
             }
           },
           "relatedEntities": {
@@ -5036,8 +4722,8 @@
             "ID": "F3B63652-9B6C-4B17-BADD-210EA3388A3A"
           },
           "sync": {
-            "lastModified": "2026-10-16T18:42:40.625Z",
-            "checksum": "c8ec07616ce221a6e1c9ddb0563627cf78abe909904a9b691b4c5eaac8db3263"
+            "lastModified": "2026-10-20T17:03:01.084Z",
+            "checksum": "7df609073cfd428b759dc8690bafaf9a4ea2938737aa57adbbc130501124c829"
           }
         },
         {
@@ -5607,8 +5293,9 @@
               "pkStrength": "FullTuple",
               "parentObjectName": "Sequence",
               "parentObjectIDFieldName": "sequence_id",
-              "watermarkFloor": "2000-01-01T00:00:00Z",
-              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it."
+              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it.",
+              "maxLookbackDays": 725,
+              "maxLookbackNote": "rasa.io rejects created_since more than 24 months ago (HTTP 400 'created_since must not be more than 24 months ago', verified 2026-10-20) and defaults it to 7 days ago when omitted. The connector sends now − 725 days (rounded up to UTC midnight) on a first sync and clamps an older stored watermark up to it."
             }
           },
           "relatedEntities": {
@@ -5979,8 +5666,8 @@
             "ID": "C8A9C2EF-BAA5-4C11-8A50-6F188807CDD7"
           },
           "sync": {
-            "lastModified": "2026-10-16T18:42:40.679Z",
-            "checksum": "450f4a11a11d98f29fb6c9ff6c181f45e61542af14806d0ab9907d0dc8fa97e8"
+            "lastModified": "2026-10-20T17:03:01.106Z",
+            "checksum": "426007a3143c975a42d23ad50282a8cae35258729ae15841d28153b0d09423f3"
           }
         },
         {
@@ -6878,314 +6565,12 @@
             "lastModified": "2026-10-16T18:42:40.748Z",
             "checksum": "66bc0f6762842befc3327fd91cfc9539fe1f7a95dbd021c07dd22b278a5de85b"
           }
-        },
-        {
-          "fields": {
-            "Name": "Integration Run",
-            "DisplayName": "Integration Run",
-            "Description": "Get integration run history",
-            "APIPath": "/v2/integration-runs",
-            "SupportsWrite": false,
-            "SupportsIncrementalSync": false,
-            "Category": "v2 Integrations",
-            "ResponseDataKey": "results",
-            "PaginationType": "Offset",
-            "DefaultPageSize": 50,
-            "SupportsPagination": true,
-            "IncrementalWatermarkField": null,
-            "SupportsCreate": false,
-            "SupportsUpdate": false,
-            "SupportsDelete": false,
-            "SyncStrategy": "FullPullHashDiff",
-            "ContentHashApplicable": true,
-            "StableOrderingKey": "id",
-            "Sequence": 43,
-            "Status": "Active",
-            "IntegrationID": "@parent:ID",
-            "Configuration": {
-              "apiVersion": "v2",
-              "apiBaseURL": "https://api.rasa.io",
-              "recordSchemas": [
-                "IntegrationRun"
-              ],
-              "accessPath": {
-                "door": "/v2/integration-runs",
-                "alternateDoors": [],
-                "nesting": [],
-                "parentObject": null,
-                "parentKeyField": null,
-                "doorArgs": [
-                  "integration_type",
-                  "entity",
-                  "status",
-                  "system",
-                  "since",
-                  "skip",
-                  "limit"
-                ]
-              },
-              "watermarkParam": null,
-              "pkField": "id",
-              "pkStrength": "Definitive"
-            }
-          },
-          "relatedEntities": {
-            "MJ: Integration Object Fields": [
-              {
-                "fields": {
-                  "Name": "id",
-                  "DisplayName": "Id",
-                  "Description": "Id — Integration Run field 'id' (IntegrationRun), rasa.io v2.",
-                  "Type": "int",
-                  "IsRequired": true,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": true,
-                  "IsUniqueKey": true,
-                  "Length": null,
-                  "AllowsNull": false,
-                  "Status": "Active",
-                  "Sequence": 1,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "799E13EC-81F6-4A9F-B0D7-3AA113A6C56C"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.094Z",
-                  "checksum": "d03783a1244937539c906158f802930b8db7fc7baafcacebb3e0fcc72760ed46"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "entity",
-                  "DisplayName": "Entity",
-                  "Description": "Entity — Integration Run field 'entity' (IntegrationRun), rasa.io v2. The run's subject: campaign_integration ID for crm_sync, newsletter GUID for newsletter syncs",
-                  "Type": "string",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 2,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "F21586F4-5FFC-4686-AAE5-1A4BAAE9437B"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.112Z",
-                  "checksum": "6e2c1f897e6ee5996918ab18f14174a419ab1fb4998130352418955a2df44db6"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "integration_type",
-                  "DisplayName": "Integration Type",
-                  "Description": "Integration Type — Integration Run field 'integration_type' (IntegrationRun), rasa.io v2. Run category, e.g. 'crm_sync', 'newsletter_v2_v1_sync'",
-                  "Type": "string",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 3,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "20FF1888-2700-4237-B1B5-5666AB0C95E1"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.131Z",
-                  "checksum": "0ff470ffdf701c93cdc49fb5fda3a459baa5a01d329b1193ce83414c9653afa8"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "system",
-                  "DisplayName": "System",
-                  "Description": "System — Integration Run field 'system' (IntegrationRun), rasa.io v2. External system the run synced against, e.g. 'HubSpot'; null when not applicable",
-                  "Type": "string",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 4,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "F9DC58F4-E220-4396-82B7-0404287A97F4"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.149Z",
-                  "checksum": "c57642b187d4d53c9a8348a9a00d995c2a42d69fe9171eec78bcc9bc92105f1e"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "run_type",
-                  "DisplayName": "Run Type",
-                  "Description": "Run Type — Integration Run field 'run_type' (IntegrationRun), rasa.io v2. 'scheduled' | 'on_demand' for crm_sync; 'full' | 'incremental' for newsletter syncs",
-                  "Type": "string",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 5,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "DB5DAD3F-D923-4A9E-ADF4-34F65B9D293E"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.178Z",
-                  "checksum": "177182cddaa389470dc7197242f106fbf6d21a0bd30a8bc451bdb67e0c4dadd2"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "status",
-                  "DisplayName": "Status",
-                  "Description": "Status — Integration Run field 'status' (IntegrationRun), rasa.io v2. 'In-Progress' | 'Complete' | 'Failed'",
-                  "Type": "string",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 6,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "BDDDDC40-A186-4D7A-BA3A-6B152E212563"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.195Z",
-                  "checksum": "feb114bf3c2eec005a63df28f62722e2ab0e2edc24a6c1509aaca040d4f766e9"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "options",
-                  "DisplayName": "Options",
-                  "Description": "Options — Integration Run field 'options' (IntegrationRun), rasa.io v2. Run inputs (JSON)",
-                  "Type": "json",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 7,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "364823F2-9539-4367-A83B-D6D8248CF4DB"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.215Z",
-                  "checksum": "70771bfd2b61c2aaf6380dffb81477f64b1fc2a08e66107dd0bb405d90449221"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "run_attributes",
-                  "DisplayName": "Run Attributes",
-                  "Description": "Run Attributes — Integration Run field 'run_attributes' (IntegrationRun), rasa.io v2. Run results: counts, error summary, artifact paths (JSON)",
-                  "Type": "json",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 8,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "E6C50B3B-335D-42C6-9F15-604F9C5E881E"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.236Z",
-                  "checksum": "c3e4ec82e8c39374f18119b30aa9ee78a70d9fbb924323be4543a3808a8c67d0"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "started_at",
-                  "DisplayName": "Started At",
-                  "Description": "Started At — Integration Run field 'started_at' (IntegrationRun), rasa.io v2.",
-                  "Type": "datetime",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 9,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "02F132D8-15FB-42F1-A7B7-F6A7B5F2D282"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.255Z",
-                  "checksum": "ff9a32607e62c6d9057ba8628cf68cb66ff5b61e8737d64201b2c91802e42a80"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "completed_at",
-                  "DisplayName": "Completed At",
-                  "Description": "Completed At — Integration Run field 'completed_at' (IntegrationRun), rasa.io v2.",
-                  "Type": "datetime",
-                  "IsRequired": false,
-                  "IsReadOnly": true,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "Length": null,
-                  "AllowsNull": true,
-                  "Status": "Active",
-                  "Sequence": 10,
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "7E0598FB-90D5-48FD-A13A-35FABC75EB71"
-                },
-                "sync": {
-                  "lastModified": "2026-10-16T18:42:43.271Z",
-                  "checksum": "7dd0f93b791c3aae6579500a81a632579eebdbbe14dbbb0717f4ae4c82609221"
-                }
-              }
-            ]
-          },
-          "primaryKey": {
-            "ID": "05A9DD11-DC88-4C0C-9D5F-6EDA34188877"
-          },
-          "sync": {
-            "lastModified": "2026-10-16T18:42:40.768Z",
-            "checksum": "81dc3c2f19ac54846d43d429ca7c30acbd9a4b8f91dd1f185bf9f09231c38a84"
-          }
         }
       ]
     },
     "sync": {
-      "lastModified": "2026-10-16T18:42:40.519Z",
-      "checksum": "57a7ba86ca36bc1689d666be810fb945a2f40332bbdca546cf5b77a3c90b9717"
+      "lastModified": "2026-10-20T17:03:00.946Z",
+      "checksum": "57d7f6cee2d10d637b55002e719845154cc455375205a86e696746f83582c014"
     }
   }
 ]

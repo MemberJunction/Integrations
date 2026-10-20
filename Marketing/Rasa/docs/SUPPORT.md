@@ -3,7 +3,7 @@
 <!-- baseline-stub: no live or mock sync has been run for this connector. Replace this whole file
      with real evidence when one is, and delete this marker — the overview pages key on it. -->
 
-> **Evidence tier:** 🟡 Honest-NA (untested for a documented, non-defect reason)  ·  **Last verified:** 2026-09-28  ·  **Proof DB(s):** —
+> **Evidence tier:** 🟡 Honest-NA (untested for a documented, non-defect reason)  ·  **Last verified:** 2026-10-16  ·  **Proof DB(s):** —
 
 > 🟡 **Baseline — format-verified, no credential.** This connector was built through the
 > build-connector pipeline for AIDP (Blue Cypress's AI Data Platform), whose default gate is the
@@ -14,7 +14,7 @@
 
 ## What this connector supports
 
-**25 objects** declared across **226 fields** (source: `metadata/integration/.rasa.integration.json`). 3 declare a write path; 22 are read-only (pull). 5 support incremental sync.
+**23 objects** declared across **206 fields** (source: `metadata/integration/.rasa.integration.json`). 2 declare a write path; 21 are read-only (pull). 5 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
@@ -24,7 +24,6 @@
 | Contact | ✓ | `CUD` | — |
 | Contact External Identifier | ✓ | — (read-only) | — |
 | Deleted Contact | ✓ | — (read-only) | ✓ |
-| Integration Run | ✓ | — (read-only) | — |
 | List | ✓ | `C` | — |
 | Newsletter | ✓ | — (read-only) | — |
 | Newsletter Action | ✓ | — (read-only) | ✓ |
@@ -40,7 +39,6 @@
 | Sequence List | ✓ | — (read-only) | — |
 | Sequence Message | ✓ | — (read-only) | — |
 | Sequence Subscription Type | ✓ | — (read-only) | — |
-| Subscription | ✓ | `CU` | — |
 | Subscription Type | ✓ | — (read-only) | — |
 | Subscription Type Mapping | ✓ | — (read-only) | — |
 
@@ -65,7 +63,7 @@
   row count, field-shape sample, or write side-effect has been observed against a real tenant.
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
-- **Coverage:** 0 of 25 declared objects have proven rows.
+- **Coverage:** 0 of 23 declared objects have proven rows.
 
 ---
 
