@@ -6,7 +6,7 @@
       "ClassName": "@memberjunction/connector-asana",
       "ImportPath": "@memberjunction/connector-asana",
       "NavigationBaseURL": "https://app.asana.com",
-      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=API Key",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Asana API",
       "Icon": "fa-solid fa-diagram-project"
     },
     "relatedEntities": {
