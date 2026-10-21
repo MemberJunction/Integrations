@@ -119,3 +119,52 @@ describe('DiscoverObjects scoping', () => {
         }
     });
 });
+
+describe('404 on a per-parent read', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    type Transport = {
+        responseCtx: { ObjectName: string; DataPath: string | null; UnwrapDeclared: boolean; ParentScoped: boolean } | null;
+        pendingWarnings: { Code: string; Message: string }[];
+        MakeHTTPRequest(auth: unknown, url: string, method: string, headers: Record<string, string>): Promise<{ Status: number; Body: unknown }>;
+    };
+
+    // The live payload (2026-10-20): /v2/messaging/blast lists sequence 144, whose blast feed 404s.
+    const wrongType = {
+        code: 404,
+        metadata: { errors: "'144' is a sequence, not a blast. Use /v2/insights/sequence/144/<report>", next_link: '' },
+        results: [],
+    };
+
+    function connectorAnswering404(parentScoped: boolean): Transport {
+        vi.stubGlobal('fetch', async () => new Response(JSON.stringify(wrongType), { status: 404 }));
+        const c = new RasaConnector() as unknown as Transport;
+        c.responseCtx = { ObjectName: 'Blast Action', DataPath: 'results', UnwrapDeclared: false, ParentScoped: parentScoped };
+        c.pendingWarnings = [];
+        return c;
+    }
+
+    it('answers an empty page and warns with the vendor message, so the sync moves to the next parent', async () => {
+        const c = connectorAnswering404(true);
+        const res = await c.MakeHTTPRequest({ Token: 't' }, 'https://h/v2/insights/blast/144/actions?limit=500', 'GET', {});
+        expect(res.Status).toBe(200);
+        expect(res.Body).toMatchObject({ results: [] });
+        expect(c.pendingWarnings).toHaveLength(1);
+        expect(c.pendingWarnings[0].Code).toBe('PARENT_NOT_FOUND');
+        expect(c.pendingWarnings[0].Message).toContain('/v2/insights/blast/144/actions');
+        expect(c.pendingWarnings[0].Message).toContain("'144' is a sequence, not a blast");
+    });
+
+    it('leaves a 404 on a top-level object to fail as before', async () => {
+        const c = connectorAnswering404(false);
+        const res = await c.MakeHTTPRequest({ Token: 't' }, 'https://h/v2/lists', 'GET', {});
+        expect(res.Status).toBe(404);
+        expect(c.pendingWarnings).toHaveLength(0);
+    });
+
+    it('does not mask a 404 on a write', async () => {
+        const c = connectorAnswering404(true);
+        const res = await c.MakeHTTPRequest({ Token: 't' }, 'https://h/v2/insights/blast/144/actions', 'POST', {});
+        expect(res.Status).toBe(404);
+    });
+});

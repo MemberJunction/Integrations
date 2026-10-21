@@ -171,6 +171,8 @@ interface RasaResponseContext {
     DataPath: string | null;
     /** Whether an envelope-unwrap verdict was DECLARED for this object. */
     UnwrapDeclared: boolean;
+    /** Whether the object is fetched once per parent (`{var}` in its APIPath). */
+    ParentScoped: boolean;
 }
 
 // ─── Connector ───────────────────────────────────────────────────────
@@ -391,7 +393,8 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
 
     /**
      * HTTP transport with bounded retry: network blips, a 401 (mint a fresh JWT and replay once the
-     * cached one has aged out), and 429 honouring `Retry-After` when the vendor sends one.
+     * cached one has aged out), and 429 honouring `Retry-After` when the vendor sends one. A 404 on a
+     * per-parent read is answered as an empty page (see {@link EmptyPageForMissingParent}).
      */
     protected async MakeHTTPRequest(
         auth: RESTAuthContext,
@@ -423,9 +426,40 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
                 await this.Sleep(this.RetryAfterMs(response.headers) ?? 2000 * 2 ** attempt);
                 continue;
             }
-            return this.ToRESTResponse(response);
+            const result = await this.ToRESTResponse(response);
+            if (result.Status === 404 && method.toUpperCase() === 'GET' && this.responseCtx?.ParentScoped) {
+                return this.EmptyPageForMissingParent(result, url);
+            }
+            return result;
         }
         throw new Error(`[rasa] request failed after ${MAX_RETRIES} retries: ${method} ${url}`);
+    }
+
+    /**
+     * A per-parent read (`/v2/insights/blast/{id}/actions`) answering 404 means that one parent has no
+     * such resource, not that the object is broken. Without this the base throws and the whole object's
+     * sync stops at the first such parent. Seen live (2026-10-20): `/v2/messaging/blast` and
+     * `/v2/messaging/sequence` each list some of the other's ids, and the insights feed answers
+     * "'144' is a sequence, not a blast" (HTTP 404). The parent is skipped with a warning carrying the
+     * vendor's message, and the sync moves on to the next parent.
+     */
+    private EmptyPageForMissingParent(result: RESTResponse, url: string): RESTResponse {
+        const metadata = this.AsRecord(this.AsRecord(result.Body)?.metadata);
+        const vendorMessage = typeof metadata?.errors === 'string' && metadata.errors.length > 0 ? metadata.errors : null;
+        let path = url;
+        try {
+            path = new URL(url).pathname;
+        } catch {
+            /* keep the raw url */
+        }
+        this.pendingWarnings.push({
+            Code: 'PARENT_NOT_FOUND',
+            Message:
+                `"${this.responseCtx?.ObjectName}": HTTP 404 on GET ${path}; skipped this parent` +
+                (vendorMessage ? ` (rasa.io: ${vendorMessage})` : '') + '.',
+            Data: { object: this.responseCtx?.ObjectName, path, vendorMessage },
+        });
+        return { Status: 200, Body: { results: [], metadata: { next_link: '', record_count: 0 } }, Headers: result.Headers };
     }
 
     private BuildRequestInit(method: string, headers: Record<string, string>, body?: unknown): RequestInit {
@@ -730,6 +764,7 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
             ObjectName: objectName,
             DataPath: this.EffectiveDataPath(obj, config),
             UnwrapDeclared: !!config.recordUnwrapPath,
+            ParentScoped: /\{\w+\}/.test(obj.APIPath ?? ''),
         };
     }
 

@@ -74,9 +74,6 @@ ago (HTTP 400 "created_since must not be more than 24 months ago"). The action f
 stored watermark older than that is moved up to it with a `WATERMARK_CLAMPED` warning. Events older than
 24 months are not available from rasa.io.
 
-**To verify against real data:** the spec's action record has no contact field. Its `id` is undocumented and
-may be the contact id; confirm before relying on it for per-person engagement.
-
 ## 4a. Changed or removed after the first live run
 
 - **Deleted Contact** (`/v2/contacts/deleted`) is fetched once per List: rasa.io requires `list_id` (HTTP 400
@@ -86,6 +83,14 @@ may be the contact id; confirm before relying on it for per-person engagement.
   create/update writes go with it. Newsletter / Blast / Sequence Contact rows still carry each contact's
   `subscriptions`.
 - **Integration Run** is removed by the same migration: it is internal to rasa.io (per the vendor).
+
+**Known vendor issue (2026-10-20):** `/v2/messaging/blast` returns sequence messages (with the sequence's
+`id`, repeated once per message) as well as blasts, and `/v2/messaging/sequence` includes blasts. rasa.io is
+fixing it. Until then the Blast and Sequence objects hold mixed rows, and Blast / Sequence Action skip each
+wrong-type parent (HTTP 404) with a `PARENT_NOT_FOUND` warning instead of failing.
+
+**Contact link:** the action rows carry no contact identifier. Their `id` is unique per event and is not a
+contact id (`/v2/contacts/{id}` answers 404). Per-member engagement needs rasa.io to add one.
 
 ## 5. Actions: 12 disabled, 6 added
 
