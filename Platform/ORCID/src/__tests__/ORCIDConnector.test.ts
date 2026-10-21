@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { ClassifyError, IsRetryableError } from '@memberjunction/integration-engine';
 import { extractSectionRawItems, extractMs } from '../orcidRecordExtraction.js';
 import type {
     RESTResponse,
@@ -684,6 +685,176 @@ describe('ORCIDConnector — root fetch concurrency and paging', () => {
         const page1 = await c.FetchChanges(ctx('record', null, { BatchSize: 1 }));
         await c.FetchChanges(ctx('record', null, { BatchSize: 1, AfterKeyValue: page1.NextAfterKeyValue }));
         expect(c.Calls.filter(x => x.url.includes('/search'))).toHaveLength(1);
+    });
+});
+
+// ─── Upgrade / partial re-sync: a stored row with person but no activities-summary ──
+// Every record row synced before activities-summary was a field carries `person` only, and so does the
+// not-yet-refreshed tail of an interrupted record re-sync. Deriving an activity section from such a row
+// must NOT yield a clean zero — on a full sync the engine deletes the rows a clean fetch didn't return.
+
+/** The stored shape of a row synced before 1.3.0: the person block, no activities-summary. */
+const PERSON_ONLY: Record<string, unknown> = { person: FULL_RECORD['person'] };
+
+/** Serves the full sample record for every /record call. */
+function respondFullRecord(url: string): RESTResponse {
+    if (url.includes('/record')) return { Status: 200, Body: FULL_RECORD, Headers: {} };
+    return respond(url);
+}
+
+describe('ORCIDConnector — stored row with person but no activities-summary', () => {
+    let c: TestORCIDConnector;
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respondFullRecord;
+        c.Config = { OrcidIds: [SAMPLE] };
+        c.Stored.set(SAMPLE, PERSON_ONLY);
+        OBJECTS['employments'] = { obj: mockObject('employments'), fields: WORKS_FIELDS };
+        OBJECTS['keywords'] = { obj: mockObject('keywords'), fields: WORKS_FIELDS };
+    });
+
+    it('an activity section treats the row as not stored: one live /record fetch, full works, and a warning naming the block', async () => {
+        const result = await c.FetchChanges(ctx('works'));
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(1);
+        expect(result.Records).toHaveLength(SAMPLE_WORKS.length);
+        const warning = result.Warnings?.find(w => w.Code === 'RECORD_FALLBACK_FETCH');
+        expect(warning).toBeDefined();
+        expect(warning!.Data?.['block']).toBe('activities-summary');
+        expect(warning!.Message).toContain('activities-summary');
+    });
+
+    it('a person section derives from the same row with no fetch — its block IS stored', async () => {
+        const result = await c.FetchChanges(ctx('keywords'));
+        expect(c.Calls).toHaveLength(0);
+        expect(result.Records.length).toBeGreaterThan(0);
+        expect(result.Warnings).toBeUndefined();
+    });
+
+    it('an interrupted re-sync (some rows refreshed, some not) still yields every person\'s works', async () => {
+        const fresh = [syntheticId(1), syntheticId(2)];
+        const stale = syntheticId(3);
+        c.Config = { OrcidIds: [...fresh, stale] };
+        for (const iD of fresh) c.Stored.set(iD, FULL_RECORD);
+        c.Stored.set(stale, PERSON_ONLY);
+        const result = await c.FetchChanges(ctx('works'));
+        // Only the stale row is fetched live; the refreshed ones come from storage.
+        const recordCalls = c.Calls.filter(x => x.url.includes('/record'));
+        expect(recordCalls).toHaveLength(1);
+        expect(recordCalls[0].url).toContain(stale);
+        for (const iD of [...fresh, stale]) {
+            expect(result.Records.filter(r => r.Fields['orcid-id'] === iD)).toHaveLength(SAMPLE_WORKS.length);
+        }
+        expect(result.HasMore).toBe(false);
+    });
+
+    it('a record fetched live for one section is reused by the next, not refetched', async () => {
+        await c.FetchChanges(ctx('works'));
+        const employments = await c.FetchChanges(ctx('employments'));
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(1);
+        expect(employments.Records.length).toBeGreaterThan(0);
+        const warning = employments.Warnings?.find(w => w.Code === 'RECORD_FALLBACK_FETCH');
+        expect(warning!.Data?.['fetched']).toBe(0);
+        expect(warning!.Data?.['reused']).toBe(1);
+    });
+
+    it('the reuse cache is bounded to one derived page: older records are refetched, never held for the whole universe', async () => {
+        const universe = Array.from({ length: 150 }, (_, i) => syntheticId(i + 1));
+        c.Config = { OrcidIds: universe };
+        for (const iD of universe) c.Stored.set(iD, PERSON_ONLY);
+
+        // works scans the whole universe: 100 + 50, every one fetched live.
+        const p1 = await c.FetchChanges(ctx('works'));
+        await c.FetchChanges(ctx('works', null, { AfterKeyValue: p1.NextAfterKeyValue }));
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(150);
+
+        // employments page 1 covers iDs 1–100. The cache kept the last 100 fetched (51–150), so 51–100
+        // are reused and 1–50 are fetched again.
+        c.Calls = [];
+        const e1 = await c.FetchChanges(ctx('employments'));
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(50);
+        const warning = e1.Warnings?.find(w => w.Code === 'RECORD_FALLBACK_FETCH');
+        expect(warning!.Data?.['fetched']).toBe(50);
+        expect(warning!.Data?.['reused']).toBe(50);
+    });
+
+    it('a 404 on the live fetch is a real empty (record gone), not an unread iD', async () => {
+        c.Responder = () => ({ Status: 404, Body: null, Headers: {} });
+        const result = await c.FetchChanges(ctx('works'));
+        expect(result.Records).toEqual([]);
+        expect(result.HasMore).toBe(false);
+        expect(result.Warnings?.some(w => w.Code === 'ID_FETCH_FAILED')).toBeFalsy();
+    });
+});
+
+// ─── A scan that left iDs unread must not end "clean" ─────────────────
+// The engine only treats a fetch as incomplete when FetchChanges throws; warnings don't count. A clean
+// full sync deletes every row the scan didn't return and advances the watermark to now. So an unread iD
+// must end its object's scan with a thrown error — after every page has been returned and written.
+
+describe('ORCIDConnector — incomplete scan is reported, not finished clean', () => {
+    let c: TestORCIDConnector;
+    const GOOD = '0000-0002-1825-0097';
+    // Contains "429": the end-of-scan error must not carry iDs, or the engine would read it as a throttle.
+    const BAD = '0000-0001-4290-0429';
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Config = { OrcidIds: [GOOD, BAD], MaxRetries: 0 };
+        c.Responder = (url: string) => url.includes(BAD) && url.includes('/record')
+            ? { Status: 500, Body: null, Headers: {} }
+            : respond(url);
+    });
+
+    it('the last page keeps its records but reports one more page instead of finishing, with no watermark', async () => {
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.Records).toHaveLength(1);
+        expect(page.HasMore).toBe(true);
+        expect(page.NextAfterKeyValue).toBeDefined();
+        expect(page.NewWatermarkValue).toBeUndefined();
+    });
+
+    it('that final, empty call throws — which is what makes the engine skip delete detection and hold the watermark', async () => {
+        const page = await c.FetchChanges(ctx('record'));
+        await expect(c.FetchChanges(ctx('record', null, { AfterKeyValue: page.NextAfterKeyValue }))).rejects.toThrow(/could not be read/);
+    });
+
+    it('the error is not retryable and not a throttle, even when an unread iD contains "429"', async () => {
+        const page = await c.FetchChanges(ctx('record'));
+        const err = await c.FetchChanges(ctx('record', null, { AfterKeyValue: page.NextAfterKeyValue })).catch((e: unknown) => e);
+        expect(err).toBeInstanceOf(Error);
+        const code = ClassifyError(err).Code;
+        expect(IsRetryableError(code)).toBe(false);
+        expect(code).not.toBe('RATE_LIMIT_EXCEEDED');
+        expect((err as Error).message).not.toContain(BAD);
+    });
+
+    it('an engine retry of the final call fails the same way (the unread set is kept)', async () => {
+        const page = await c.FetchChanges(ctx('record'));
+        const finalCtx = ctx('record', null, { AfterKeyValue: page.NextAfterKeyValue });
+        await expect(c.FetchChanges(finalCtx)).rejects.toThrow();
+        await expect(c.FetchChanges(finalCtx)).rejects.toThrow();
+    });
+
+    it('a new scan from the top starts clean: once the iD recovers, the run finishes with a watermark', async () => {
+        await c.FetchChanges(ctx('record')); // scan 1 leaves BAD unread
+        c.Responder = respond;               // BAD recovers
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.HasMore).toBe(false);
+        expect(page.NewWatermarkValue).toBeDefined();
+    });
+
+    it('a failed live fetch in a derived section makes THAT section incomplete, and only that one', async () => {
+        OBJECTS['keywords'] = { obj: mockObject('keywords'), fields: WORKS_FIELDS };
+        c.Stored.set(GOOD, FULL_RECORD);
+        c.Stored.set(BAD, PERSON_ONLY); // works must fetch BAD live, and that fetch fails
+        const works = await c.FetchChanges(ctx('works'));
+        expect(works.HasMore).toBe(true);
+        expect(works.Records.every(r => r.Fields['orcid-id'] === GOOD)).toBe(true);
+        await expect(c.FetchChanges(ctx('works', null, { AfterKeyValue: works.NextAfterKeyValue }))).rejects.toThrow();
+
+        // keywords on the same run: BAD's person block is stored, nothing is unread, the scan ends clean.
+        const keywords = await c.FetchChanges(ctx('keywords'));
+        expect(keywords.HasMore).toBe(false);
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(1);
     });
 });
 

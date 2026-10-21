@@ -48,6 +48,25 @@ export function isDerivedSection(section: string): boolean {
     return ACTIVITY_SECTIONS.has(section) || section in PERSON_SECTION_KEYS;
 }
 
+/** The two `/record` blocks the derived sections are built from. */
+export type RecordBlock = 'person' | 'activities-summary';
+
+/** Which `/record` block a section's items live under (the same rule {@link sectionSubtree} navigates by). */
+export function sectionSourceBlock(section: string): RecordBlock {
+    return section in PERSON_SECTION_KEYS ? 'person' : 'activities-summary';
+}
+
+/**
+ * True when a stored record actually carries the block `section` derives from. A record row can hold one
+ * block and not the other — a row synced before `activities-summary` was a field has `person` only — and
+ * deriving an activity section from it would yield zero items that look exactly like "this person has
+ * none". The caller must treat a false here as NOT STORED and fetch the record live. A present-but-empty
+ * block (`{}`) is stored: that genuinely is a person with nothing in the section.
+ */
+export function hasSectionSource(record: Record<string, unknown> | undefined, section: string): boolean {
+    return record != null && asObj(record[sectionSourceBlock(section)]) != null;
+}
+
 // ── structural helpers ───────────────────────────────────────────────────────
 
 export function asObj(v: unknown): Record<string, unknown> | undefined {

@@ -4,6 +4,8 @@ import {
     ROOT_OBJECT_NAME,
     AFFILIATION_SECTIONS,
     isDerivedSection,
+    sectionSourceBlock,
+    hasSectionSource,
     valueOf,
     str,
     datePart,
@@ -63,6 +65,24 @@ describe('orcidRecordExtraction — scalar helpers', () => {
         }
         expect(isDerivedSection(ROOT_OBJECT_NAME)).toBe(false);
         expect(isDerivedSection('nonsense')).toBe(false);
+    });
+
+    it('sectionSourceBlock: person sections live in person, everything else in activities-summary', () => {
+        for (const s of ['other-names', 'keywords', 'email', 'address', 'researcher-urls', 'external-identifiers']) {
+            expect(sectionSourceBlock(s)).toBe('person');
+        }
+        for (const s of ['works', 'employments', 'fundings', 'peer-reviews', 'research-resources']) {
+            expect(sectionSourceBlock(s)).toBe('activities-summary');
+        }
+    });
+
+    it('hasSectionSource: judged per section, an empty block counts, a missing one does not', () => {
+        const personOnly = { person: { keywords: {} } };
+        expect(hasSectionSource(personOnly, 'keywords')).toBe(true);
+        expect(hasSectionSource(personOnly, 'works')).toBe(false);
+        expect(hasSectionSource({ person: {}, 'activities-summary': {} }, 'works')).toBe(true);
+        expect(hasSectionSource({ 'activities-summary': null }, 'works')).toBe(false);
+        expect(hasSectionSource(undefined, 'works')).toBe(false);
     });
 });
 

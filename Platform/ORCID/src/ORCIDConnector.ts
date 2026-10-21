@@ -18,6 +18,8 @@ import {
 import {
     ROOT_OBJECT_NAME,
     collectPutCodeItems,
+    hasSectionSource,
+    sectionSourceBlock,
     extractSectionRawItems,
     flattenSectionItem,
     extractMs as extractMsFromNode,
@@ -146,6 +148,15 @@ const RECORD_IDS_PER_PAGE = 10;
  * section alone can run to thousands of items.
  */
 const DERIVED_IDS_PER_PAGE = 100;
+/**
+ * Records fetched live by the derived-section fallback, kept for the rest of the run so the other
+ * sections reuse them instead of refetching the same person once per section. Bounded, oldest out:
+ * sections run one after another over the WHOLE universe, so an unbounded cache would end up holding
+ * every missing person's record at once (a full upgrade can be the entire universe, at up to a few
+ * hundred KB each). One derived page is enough for the cases the cache is for: a handful of records
+ * whose own fetch failed, and sections of one layer running side by side over the same page.
+ */
+const FALLBACK_CACHE_SIZE = DERIVED_IDS_PER_PAGE;
 
 /** Source fields of the record object that a derived section is rebuilt from. */
 const RECORD_PERSON_FIELD = 'person';
@@ -163,10 +174,13 @@ interface RecordStorage {
     EntityName: string;
     /** The entity's ID, for the record-map lookup. */
     EntityID: string;
-    /** Destination column holding the source `person` block. */
-    PersonColumn: string;
-    /** Destination column holding the source `activities-summary` block. */
-    ActivitiesColumn: string;
+    /** Destination column holding the source `person` block; null when this connection does not map it. */
+    PersonColumn: string | null;
+    /**
+     * Destination column holding the source `activities-summary` block; null when this connection does
+     * not map it — every connection created before the field existed, until its field map is added.
+     */
+    ActivitiesColumn: string | null;
 }
 
 // ─── Connector implementation ─────────────────────────────────────────
@@ -220,6 +234,14 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     private universeCache: { Key: string; Ids: string[] } | null = null;
     /** Where this connection's `record` rows live, resolved once per CompanyIntegration. */
     private recordStorageCache: { CompanyIntegrationID: string; Storage: RecordStorage | null } | null = null;
+    /**
+     * iDs whose data could not be read during the current scan of each object (object name → iDs). A
+     * connector instance lives for one run, and objects of one layer can scan side by side on it, so
+     * this is keyed by object and reset when that object's scan starts again from the top.
+     */
+    private incompleteScans = new Map<string, Set<string>>();
+    /** Records the derived-section fallback fetched live, by iD. See FALLBACK_CACHE_SIZE. */
+    private fallbackRecords = new Map<string, Record<string, unknown>>();
 
     // ── Capability getters (PULL-ONLY) ──────────────────────────────────
 
@@ -345,6 +367,8 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         }
 
         const section = ctx.ObjectName === ROOT_OBJECT_NAME ? null : ctx.ObjectName;
+        // A scan starts from the top with no AfterKeyValue; failures from an earlier scan don't carry over.
+        if (!ctx.AfterKeyValue) this.incompleteScans.delete(ctx.ObjectName);
 
         // Keyset window over the sorted iD universe. The page is counted in iDs, not records: one
         // iD expands to an unbounded number of section items, so bounding the iD count is what
@@ -362,6 +386,9 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         const hasMore = remaining.length > orcidIds.length;
 
         if (orcidIds.length === 0) {
+            // The end of the scan. If any iD went unread along the way, fail this (empty) call rather
+            // than finish clean — see throwIfScanIncomplete.
+            this.throwIfScanIncomplete(ctx.ObjectName);
             return { Records: [], HasMore: false, Warnings: warnings.length > 0 ? warnings : undefined };
         }
 
@@ -370,7 +397,6 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
 
         const out: ExternalRecord[] = [];
         let maxSeen = watermark;
-        let skippedIdCount = 0;
 
         const addItems = (items: Record<string, unknown>[]): void => {
             for (const raw of items) {
@@ -386,12 +412,13 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         // page. This matters more under keyset paging — the engine can only step past a failed
         // page for offset/page pagination (`canSkipPage`), so a throw here would stall the scan at
         // this iD on EVERY subsequent run, permanently. 403/404 are already handled as empty inside
-        // FetchForId; this catches everything else.
+        // FetchForId; this catches everything else. The iD is remembered so the scan as a whole is
+        // reported incomplete at its end (throwIfScanIncomplete).
         const fetchRecordIsolated = async (iD: string): Promise<FetchOneOutcome> => {
             try {
                 return { Items: await this.FetchForId(auth, obj, iD, null) };
             } catch (err) {
-                skippedIdCount++;
+                this.markUnread(ctx.ObjectName, iD);
                 warnings.push({
                     Code: 'ID_FETCH_FAILED',
                     Message:
@@ -414,23 +441,45 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         } else {
             // DERIVED: rebuild this section from the stored records — one local read per page, no
             // ORCID call. The record object is the FK parent of every section, so the engine's
-            // dependency ordering has already synced it; an iD that is nevertheless missing (a
-            // section-only run, a record that failed its own fetch) is fetched live so the section
-            // is never silently empty for it.
+            // dependency ordering has already synced it. "Stored" is judged per section: the row must
+            // carry the block this section lives in. A row with `person` but no `activities-summary`
+            // (every row synced before that field existed, and the tail of an interrupted re-sync)
+            // would otherwise derive zero works/employments/fundings that look like "none" — and on a
+            // full sync the engine deletes the rows a clean fetch didn't return. Any iD without its
+            // block is fetched live instead, so the section is complete or says why it isn't.
             const stored = await this.LoadStoredRecords(ctx, orcidIds);
-            const missing = orcidIds.filter(iD => !stored.has(iD));
+            const missing = orcidIds.filter(iD => !hasSectionSource(stored.get(iD), section));
             if (missing.length > 0) {
-                const fetched = await this.fetchRecordsConcurrently(ctx, missing, fetchRecordIsolated);
-                for (const [iD, items] of fetched) {
-                    const record = items[0];
-                    if (record) stored.set(iD, record);
+                const toFetch: string[] = [];
+                for (const iD of missing) {
+                    const cached = this.fallbackRecords.get(iD);
+                    if (cached) stored.set(iD, cached);
+                    else toFetch.push(iD);
                 }
+                if (toFetch.length > 0) {
+                    const fetched = await this.fetchRecordsConcurrently(ctx, toFetch, fetchRecordIsolated);
+                    for (const [iD, items] of fetched) {
+                        const record = items[0];
+                        if (!record) continue; // 404/403: the record is gone or not public — a real empty
+                        stored.set(iD, record);
+                        this.rememberFallbackRecord(iD, record);
+                    }
+                }
+                const block = sectionSourceBlock(section);
                 warnings.push({
                     Code: 'RECORD_FALLBACK_FETCH',
                     Message:
-                        `ORCID "${ctx.ObjectName}": ${missing.length} of ${orcidIds.length} iDs had no stored record ` +
-                        `and were fetched live. Sync the record object first to avoid the extra calls.`,
-                    Data: { objectName: ctx.ObjectName, count: missing.length, orcidIds: missing },
+                        `ORCID "${ctx.ObjectName}": ${missing.length} of ${orcidIds.length} iDs had no stored ${block} ` +
+                        `and were read live (${toFetch.length} fetched, ${missing.length - toFetch.length} reused from earlier this run). ` +
+                        `Run the record object first; on a connection set up before 1.3.0, also map its ${block} field.`,
+                    Data: {
+                        objectName: ctx.ObjectName,
+                        block,
+                        count: missing.length,
+                        fetched: toFetch.length,
+                        reused: missing.length - toFetch.length,
+                        orcidIds: missing,
+                    },
                 });
             }
             for (const iD of orcidIds) {
@@ -439,23 +488,70 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             }
         }
 
-        const result: FetchBatchResult = { Records: out, HasMore: hasMore };
-        if (hasMore) result.NextAfterKeyValue = orcidIds[orcidIds.length - 1];
+        // A scan that left iDs unread does not end on this page: it reports one more page, and that
+        // final, empty call fails (throwIfScanIncomplete). Ending here would hand the engine a clean
+        // but partial result, and failing here would discard this page's records.
+        const scanIncomplete = (this.incompleteScans.get(ctx.ObjectName)?.size ?? 0) > 0;
+        const reportMore = hasMore || scanIncomplete;
+        const result: FetchBatchResult = { Records: out, HasMore: reportMore };
+        if (reportMore) result.NextAfterKeyValue = orcidIds[orcidIds.length - 1];
 
-        // Advance the watermark ONLY on the final page. Advancing mid-scan is unsafe: if the run
-        // dies after page 1, page 2's records older than the new watermark would be skipped forever.
-        // Deriving it from the last page alone can UNDER-advance, which is safe — it costs a re-fetch
-        // that content-hash idempotency in ToExternalRecord dedups.
-        //
-        // Also HOLD the watermark when any iD was skipped above. Swallowing a per-iD failure means
-        // the engine sees a clean fetch, so it can't hold the watermark for us — advancing here would
-        // permanently strand the skipped iD's updates below the new watermark. Holding costs a
-        // re-fetch next run (content-hash dedups it) and lets the failed iD self-heal.
-        if (!hasMore && skippedIdCount === 0 && maxSeen != null && maxSeen !== watermark) {
+        // Advance the watermark ONLY on the final page of a COMPLETE scan. Advancing mid-scan is
+        // unsafe: if the run dies after page 1, page 2's records older than the new watermark would
+        // be skipped forever. Deriving it from the last page alone can UNDER-advance, which is safe —
+        // it costs a re-fetch that content-hash idempotency in ToExternalRecord dedups. An incomplete
+        // scan never reaches here with reportMore false, so its watermark is held.
+        if (!reportMore && maxSeen != null && maxSeen !== watermark) {
             result.NewWatermarkValue = String(maxSeen);
         }
         if (warnings.length > 0) result.Warnings = warnings;
         return result;
+    }
+
+    /** Records that `iD` could not be read during the current scan of `objectName`. */
+    private markUnread(objectName: string, iD: string): void {
+        let unread = this.incompleteScans.get(objectName);
+        if (!unread) {
+            unread = new Set<string>();
+            this.incompleteScans.set(objectName, unread);
+        }
+        unread.add(iD);
+    }
+
+    /**
+     * Fails the final call of a scan that left iDs unread. A per-iD failure is swallowed into an
+     * ID_FETCH_FAILED warning so one bad iD can't stall the page, but the engine only treats a fetch as
+     * incomplete when FetchChanges THROWS: warnings alone leave it "clean". A clean full sync then runs
+     * delete detection — every row whose external ID this scan didn't return is archived or deleted —
+     * and advances the watermark to now. For an unread iD that means deleting rows that still exist in
+     * ORCID (its record, or its works/employments/... in a derived section) and skipping its updates
+     * on the next incremental. Throwing on the last, empty call costs nothing already fetched (every
+     * earlier page was written) and makes the engine hold the watermark and skip delete detection, so
+     * the unread iDs are simply read again next run.
+     *
+     * The message deliberately carries no iDs or counts and avoids the engine's retry keywords: its
+     * error classifier reads the text, and a "429" inside an ORCID iD would be taken for a throttle.
+     * The iDs are on the ID_FETCH_FAILED warnings. The set is kept, so an engine retry fails the same way.
+     */
+    private throwIfScanIncomplete(objectName: string): void {
+        if ((this.incompleteScans.get(objectName)?.size ?? 0) === 0) return;
+        throw new Error(
+            `ORCID "${objectName}": some iDs could not be read during this run and were skipped (see the ` +
+            `ID_FETCH_FAILED warnings). Everything else was synced. The fetch is reported incomplete on purpose, ` +
+            `so their existing rows are kept rather than treated as deleted; they are read again next run.`
+        );
+    }
+
+    /** Keeps a fallback-fetched record for the rest of the run, oldest out past FALLBACK_CACHE_SIZE. */
+    private rememberFallbackRecord(iD: string, record: Record<string, unknown>): void {
+        // Only the two blocks sections derive from; the rest of the record is not needed again.
+        this.fallbackRecords.delete(iD);
+        this.fallbackRecords.set(iD, { person: record['person'], 'activities-summary': record['activities-summary'] });
+        while (this.fallbackRecords.size > FALLBACK_CACHE_SIZE) {
+            const oldest = this.fallbackRecords.keys().next().value;
+            if (oldest === undefined) break;
+            this.fallbackRecords.delete(oldest);
+        }
     }
 
     /**
@@ -504,14 +600,19 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * `{ person, 'activities-summary' }` payloads a derived section can be extracted from. Resolves
      * where the rows live from the connection's own entity map and field maps (so the destination
      * column names are whatever the engine wrote, on either SQL dialect), then goes iD → MJ row via
-     * the engine's record map and reads the two blocks by row ID. Returns only the iDs found; the
-     * caller fetches the rest live. Protected so a test can substitute a canned store.
+     * the engine's record map and reads the two blocks by row ID. Only the blocks this connection maps
+     * are read; a block it doesn't map is absent from the result. Returns only the iDs found, and an
+     * entry may carry one block without the other — the caller judges per section whether it has what
+     * it needs (hasSectionSource) and fetches the rest live. Protected so a test can substitute a
+     * canned store.
      */
     protected async LoadStoredRecords(ctx: FetchContext, orcidIds: string[]): Promise<Map<string, Record<string, unknown>>> {
         const out = new Map<string, Record<string, unknown>>();
         if (orcidIds.length === 0) return out;
         const storage = await this.resolveRecordStorage(ctx);
         if (!storage) return out;
+        const columns = [storage.PersonColumn, storage.ActivitiesColumn].filter((c): c is string => c != null);
+        if (columns.length === 0) return out;
 
         const quote = (s: string): string => `'${s.replace(/'/g, "''")}'`;
         const rv = new RunView();
@@ -536,7 +637,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         const rows = await rv.RunView<Record<string, unknown>>({
             EntityName: storage.EntityName,
             ExtraFilter: `ID IN (${[...idByRow.keys()].map(quote).join(',')})`,
-            Fields: ['ID', storage.PersonColumn, storage.ActivitiesColumn],
+            Fields: ['ID', ...columns],
             ResultType: 'simple',
         }, ctx.ContextUser);
         if (!rows.Success) return out;
@@ -544,9 +645,9 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         for (const row of rows.Results) {
             const iD = idByRow.get(String(row['ID'] ?? ''));
             if (!iD) continue;
-            const person = this.parseStoredJson(row[storage.PersonColumn]);
-            const activities = this.parseStoredJson(row[storage.ActivitiesColumn]);
-            if (!person && !activities) continue; // a row synced before activities-summary existed
+            const person = storage.PersonColumn ? this.parseStoredJson(row[storage.PersonColumn]) : undefined;
+            const activities = storage.ActivitiesColumn ? this.parseStoredJson(row[storage.ActivitiesColumn]) : undefined;
+            if (!person && !activities) continue;
             out.set(iD, { [RECORD_PERSON_FIELD]: person, [RECORD_ACTIVITIES_FIELD]: activities });
         }
         return out;
@@ -567,9 +668,11 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Resolves the connection's `record` storage once: its entity map (`ExternalObjectName='record'`),
-     * then the active source→destination field maps for the two blocks. A missing map for a block
-     * falls back to the source name, which is what the engine uses when no map renames it. Null when
-     * the record object has no entity map on this connection (nothing to read back from).
+     * then the active source→destination field maps for the two blocks. A block with no active field
+     * map has no column — the engine writes a source field only through its map — so it is recorded as
+     * null and never requested; asking for a column that doesn't exist would fail the whole read, and
+     * with it the sections whose block IS stored. Null when the record object has no entity map on
+     * this connection (nothing to read back from).
      */
     private async resolveRecordStorage(ctx: FetchContext): Promise<RecordStorage | null> {
         const ciID = ctx.CompanyIntegration.ID;
@@ -603,8 +706,8 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             storage = {
                 EntityName: String(map.Entity),
                 EntityID: String(map.EntityID),
-                PersonColumn: dest.get(RECORD_PERSON_FIELD) ?? RECORD_PERSON_FIELD,
-                ActivitiesColumn: dest.get(RECORD_ACTIVITIES_FIELD) ?? RECORD_ACTIVITIES_FIELD,
+                PersonColumn: dest.get(RECORD_PERSON_FIELD) ?? null,
+                ActivitiesColumn: dest.get(RECORD_ACTIVITIES_FIELD) ?? null,
             };
         }
         this.recordStorageCache = { CompanyIntegrationID: ciID, Storage: storage };

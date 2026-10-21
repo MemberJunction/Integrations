@@ -10,6 +10,18 @@
 
 Only the `record` object calls ORCID (`GET /{iD}/record`). Every other object is **derived** from the stored record — its `activities-summary` and `person` blocks — with no API call of its own, so a sync costs one request per person rather than one per section per person. The derived objects carry flat, column-shaped fields (source, organization, partial dates, titles, amounts, review subject) beside the nested json ORCID returns.
 
+A person whose stored row lacks the block a section needs is fetched live (`RECORD_FALLBACK_FETCH`). A person who can't be read at all (`ID_FETCH_FAILED`) makes that object's fetch end with an error, on purpose: the engine then keeps the existing rows instead of treating them as deleted, and reads the person again next run.
+
+### Upgrading a connection set up before 1.3.0
+
+Its record rows have `person` but no `activities-summary`. Until they are refreshed, every activity section reads each person live, which is the pre-1.3.0 call cost. To go straight to the one-call model:
+
+1. Map the record object's `activities-summary` field (and the six new person-section objects, if wanted).
+2. Run the `record` object once on its own.
+3. Sync the sections as usual. They now read from storage.
+
+Skipping these steps is safe, just slow.
+
 | Object | Source | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|---|
 | record | `GET /{iD}/record` | ✓ | — (read-only) | ✓ |
@@ -58,6 +70,7 @@ not yet against a live tenant.
 ## Residual gap (honest)
 
 - **Live run of the derived model** — the read-back of stored records through the engine's entity/field maps has not been exercised against a real tenant on either SQL dialect.
+- **A persistently unreadable iD** (an ORCID record that always returns 5xx or 409-locked) fails its object's fetch on every run, so delete detection never runs for that object until the iD is removed from scope or starts answering. That is deliberate (keeping rows beats deleting live ones), but such iDs should be watched for in the `ID_FETCH_FAILED` warnings.
 - **Funding `amount`** — exists only on ORCID's per-item detail endpoint, so it is null on a derived item. A detail pass is a future opt-in.
 - Live **write side-effects** — never executed against a real tenant (needs `allowWrite` + a disposable record).
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
