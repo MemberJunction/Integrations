@@ -13,7 +13,7 @@ v2 paths. v2 does not accept v1 tokens, so every v2 object failed (recorded in 2
 
 | | 2.x | 3.0.0 |
 |---|---|---|
-| Fields | `username`, `password`, `apiKey` (+ optional `communityIdentifier`) | `clientId`, `clientSecret` |
+| Fields | `username`, `password`, `apiKey` (+ optional `communityIdentifier`) | `clientId`, `clientSecret` (+ optional `baseUrl`, from 3.0.2) |
 | Where the customer gets them | API key from the legacy rasa.io dashboard | Generated in the rasa.io dashboard |
 | Token exchange | `POST /v1/tokens`, HTTP Basic + `{ key }` | `POST /v2/tokens`, JSON `{ grant_type: "client_credentials", client_id, client_secret }` |
 | Token lifetime | fixed 45 min | the response's `expires_in`, refreshed 60 s early |
@@ -24,6 +24,11 @@ a v2 client ID and secret. A v1-shaped credential fails with a message saying ex
 
 Header: the token is sent as `Authorization: Bearer`. The v2 spec's security definition names a custom
 `rasa-token` header, but the live API rejects it (HTTP 401 with `rasa-token` alone, verified 2026-10-20).
+
+API host (3.0.2): the credential's optional **API host** (`baseUrl`) defaults to rasa.io production,
+`https://api.rasa.io`. Client credentials generated in rasa.io's dev dashboard only work against
+`https://api-dev.rasa.io` (production's `/v2/tokens` rejects them), so a test connection to rasa.io dev sets
+it. A bare host (`api-dev.rasa.io`) gets `https://`.
 
 The customer's rasa.io account needs **API access** turned on for the engagement feeds. Without it, every
 `/v2/insights/*` call answers HTTP 403 `insufficient_scope`. rasa.io says it is generally on for enterprise

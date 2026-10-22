@@ -40,6 +40,13 @@ import { z } from 'zod';
  */
 const RASA_API_HOST = 'https://api.rasa.io';
 
+/** The credential form's optional host accepts `api-dev.rasa.io` as typed; a bare host gets `https://`. */
+function WithScheme(host: string | undefined): string | undefined {
+    const trimmed = host?.trim();
+    if (!trimmed) return undefined;
+    return /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 /**
  * Credential-free schema-of-record. rasa.io publishes the v2 API as a public Swagger 2.0 document
  * (HTTP 200 unauthenticated). Discovery reads it — a live credential is purely ADDITIVE (it only
@@ -1253,7 +1260,7 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
         const parsed = RasaConnectionConfigSchema.safeParse({
             ClientId: read('clientid', 'client_id'),
             ClientSecret: read('clientsecret', 'client_secret'),
-            BaseURL: read('baseurl', 'base_url', 'host'),
+            BaseURL: WithScheme(read('baseurl', 'base_url', 'host')),
         });
         if (!parsed.success) {
             const missing = parsed.error.issues.map(i => i.path.join('.')).join(', ');
