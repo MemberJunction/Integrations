@@ -15,6 +15,13 @@
       "description": "rasa.io v2 API client secret, generated alongside the client ID",
       "isSecret": true,
       "order": 1
+    },
+    "baseUrl": {
+      "type": "string",
+      "title": "API host (optional)",
+      "description": "Leave blank for rasa.io production (https://api.rasa.io). Set only to reach another rasa.io environment, e.g. https://api-dev.rasa.io for keys generated in rasa.io's dev dashboard.",
+      "isSecret": false,
+      "order": 2
     }
   },
   "required": [
