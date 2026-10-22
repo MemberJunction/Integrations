@@ -161,6 +161,10 @@ const FALLBACK_CACHE_SIZE = DERIVED_IDS_PER_PAGE;
 /** Source fields of the record object that a derived section is rebuilt from. */
 const RECORD_PERSON_FIELD = 'person';
 const RECORD_ACTIVITIES_FIELD = 'activities-summary';
+/** The record object's key field: its destination column is how a stored row is found by iD. */
+const RECORD_KEY_FIELD = 'orcid-id';
+/** A column name safe to put in a filter: what MJ's integration schema builder allows for any column. */
+const SAFE_COLUMN_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /** One iD's root fetch: its items, or the error that was already turned into an ID_FETCH_FAILED warning. */
 interface FetchOneOutcome {
@@ -172,8 +176,12 @@ interface FetchOneOutcome {
 interface RecordStorage {
     /** MJ entity the `record` object is mapped to (its name, for RunView). */
     EntityName: string;
-    /** The entity's ID, for the record-map lookup. */
-    EntityID: string;
+    /**
+     * Destination column of the record's `orcid-id`. Tables the integration engine builds keep the
+     * source's own key as their (soft) primary key — there is no surrogate `ID` column — so this is
+     * the column a stored row is looked up by.
+     */
+    KeyColumn: string;
     /** Destination column holding the source `person` block; null when this connection does not map it. */
     PersonColumn: string | null;
     /**
@@ -598,53 +606,35 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     /**
      * Reads the stored `record` rows for a page of iDs back from the engine's synced entity, as
      * `{ person, 'activities-summary' }` payloads a derived section can be extracted from. Resolves
-     * where the rows live from the connection's own entity map and field maps (so the destination
-     * column names are whatever the engine wrote, on either SQL dialect), then goes iD → MJ row via
-     * the engine's record map and reads the two blocks by row ID. Only the blocks this connection maps
-     * are read; a block it doesn't map is absent from the result. Returns only the iDs found, and an
-     * entry may carry one block without the other — the caller judges per section whether it has what
-     * it needs (hasSectionSource) and fetches the rest live. Protected so a test can substitute a
-     * canned store.
+     * where the rows live from the connection's own entity map and field maps (so the column names
+     * are whatever the engine wrote, on either SQL dialect), then reads the page's rows in one query
+     * by the record's key column — the mapped `orcid-id`, which IS the row's key on an engine-built
+     * table. Only the blocks this connection maps are read; a block it doesn't map is absent from the
+     * result. Returns only the iDs found, and an entry may carry one block without the other — the
+     * caller judges per section whether it has what it needs (hasSectionSource) and fetches the rest
+     * live. Protected so a test can substitute a canned store.
      */
     protected async LoadStoredRecords(ctx: FetchContext, orcidIds: string[]): Promise<Map<string, Record<string, unknown>>> {
         const out = new Map<string, Record<string, unknown>>();
         if (orcidIds.length === 0) return out;
         const storage = await this.resolveRecordStorage(ctx);
         if (!storage) return out;
-        const columns = [storage.PersonColumn, storage.ActivitiesColumn].filter((c): c is string => c != null);
-        if (columns.length === 0) return out;
+        const blockColumns = [storage.PersonColumn, storage.ActivitiesColumn].filter((c): c is string => c != null);
+        if (blockColumns.length === 0) return out;
 
         const quote = (s: string): string => `'${s.replace(/'/g, "''")}'`;
-        const rv = new RunView();
-        const maps = await rv.RunView<{ ExternalSystemRecordID: string; EntityRecordID: string }>({
-            EntityName: 'MJ: Company Integration Record Maps',
-            ExtraFilter:
-                `CompanyIntegrationID=${quote(ctx.CompanyIntegration.ID)} AND EntityID=${quote(storage.EntityID)} ` +
-                `AND ExternalSystemRecordID IN (${orcidIds.map(quote).join(',')})`,
-            Fields: ['ExternalSystemRecordID', 'EntityRecordID'],
-            ResultType: 'simple',
-        }, ctx.ContextUser);
-        if (!maps.Success || maps.Results.length === 0) return out;
-
-        const idByRow = new Map<string, string>();
-        for (const row of maps.Results) {
-            const ext = String(row.ExternalSystemRecordID ?? '').trim().toUpperCase();
-            const mj = String(row.EntityRecordID ?? '').trim();
-            if (ext && mj) idByRow.set(mj, ext);
-        }
-        if (idByRow.size === 0) return out;
-
-        const rows = await rv.RunView<Record<string, unknown>>({
+        const rows = await new RunView().RunView<Record<string, unknown>>({
             EntityName: storage.EntityName,
-            ExtraFilter: `ID IN (${[...idByRow.keys()].map(quote).join(',')})`,
-            Fields: ['ID', ...columns],
+            ExtraFilter: `${storage.KeyColumn} IN (${orcidIds.map(quote).join(',')})`,
+            Fields: [storage.KeyColumn, ...blockColumns],
             ResultType: 'simple',
         }, ctx.ContextUser);
         if (!rows.Success) return out;
 
+        const wanted = new Set(orcidIds);
         for (const row of rows.Results) {
-            const iD = idByRow.get(String(row['ID'] ?? ''));
-            if (!iD) continue;
+            const iD = String(row[storage.KeyColumn] ?? '').trim().toUpperCase();
+            if (!wanted.has(iD)) continue;
             const person = storage.PersonColumn ? this.parseStoredJson(row[storage.PersonColumn]) : undefined;
             const activities = storage.ActivitiesColumn ? this.parseStoredJson(row[storage.ActivitiesColumn]) : undefined;
             if (!person && !activities) continue;
@@ -672,7 +662,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * map has no column — the engine writes a source field only through its map — so it is recorded as
      * null and never requested; asking for a column that doesn't exist would fail the whole read, and
      * with it the sections whose block IS stored. Null when the record object has no entity map on
-     * this connection (nothing to read back from).
+     * this connection, or its `orcid-id` has no usable column (nothing to look a row up by).
      */
     private async resolveRecordStorage(ctx: FetchContext): Promise<RecordStorage | null> {
         const ciID = ctx.CompanyIntegration.ID;
@@ -682,15 +672,15 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
 
         let storage: RecordStorage | null = null;
         const rv = new RunView();
-        const entityMap = await rv.RunView<{ ID: string; EntityID: string; Entity: string }>({
+        const entityMap = await rv.RunView<{ ID: string; Entity: string }>({
             EntityName: 'MJ: Company Integration Entity Maps',
             ExtraFilter: `CompanyIntegrationID='${ciID.replace(/'/g, "''")}' AND ExternalObjectName='${ROOT_OBJECT_NAME}'`,
-            Fields: ['ID', 'EntityID', 'Entity'],
+            Fields: ['ID', 'Entity'],
             MaxRows: 1,
             ResultType: 'simple',
         }, ctx.ContextUser);
         const map = entityMap.Success ? entityMap.Results[0] : undefined;
-        if (map?.Entity && map.EntityID) {
+        if (map?.Entity) {
             const dest = new Map<string, string>();
             const fieldMaps = await rv.RunView<{ SourceFieldName: string; DestinationFieldName: string }>({
                 EntityName: 'MJ: Company Integration Field Maps',
@@ -700,15 +690,22 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             }, ctx.ContextUser);
             if (fieldMaps.Success) {
                 for (const fm of fieldMaps.Results) {
-                    if (fm.SourceFieldName && fm.DestinationFieldName) dest.set(fm.SourceFieldName, fm.DestinationFieldName);
+                    // Every column we read or filter on must be a plain identifier — it is interpolated
+                    // into the filter, and MJ's integration schema builder never makes any other kind.
+                    if (fm.SourceFieldName && fm.DestinationFieldName && SAFE_COLUMN_RE.test(fm.DestinationFieldName)) {
+                        dest.set(fm.SourceFieldName, fm.DestinationFieldName);
+                    }
                 }
             }
-            storage = {
-                EntityName: String(map.Entity),
-                EntityID: String(map.EntityID),
-                PersonColumn: dest.get(RECORD_PERSON_FIELD) ?? null,
-                ActivitiesColumn: dest.get(RECORD_ACTIVITIES_FIELD) ?? null,
-            };
+            const keyColumn = dest.get(RECORD_KEY_FIELD);
+            if (keyColumn) {
+                storage = {
+                    EntityName: String(map.Entity),
+                    KeyColumn: keyColumn,
+                    PersonColumn: dest.get(RECORD_PERSON_FIELD) ?? null,
+                    ActivitiesColumn: dest.get(RECORD_ACTIVITIES_FIELD) ?? null,
+                };
+            }
         }
         this.recordStorageCache = { CompanyIntegrationID: ciID, Storage: storage };
         return storage;
