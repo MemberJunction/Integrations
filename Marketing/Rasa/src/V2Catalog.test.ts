@@ -168,3 +168,30 @@ describe('404 on a per-parent read', () => {
         expect(res.Status).toBe(404);
     });
 });
+
+describe('engagement events carry the contact (rasa.io 2026-10-20)', () => {
+    it('declares contact_id (linked to Contact) and email on every action feed', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { fileURLToPath } = await import('node:url');
+        const path = fileURLToPath(new URL('../metadata/integration/.rasa.integration.json', import.meta.url));
+        const [integration] = JSON.parse(readFileSync(path, 'utf8')) as Array<{
+            relatedEntities: { 'MJ: Integration Objects': Array<{
+                fields: { Name: string };
+                relatedEntities: { 'MJ: Integration Object Fields': Array<{ fields: Record<string, unknown> }> };
+            }> };
+        }>;
+        for (const name of ['Newsletter Action', 'Blast Action', 'Sequence Action']) {
+            const obj = integration.relatedEntities['MJ: Integration Objects'].find(o => o.fields.Name === name);
+            const fields = obj?.relatedEntities['MJ: Integration Object Fields'].map(f => f.fields) ?? [];
+            const contact = fields.find(f => f.Name === 'contact_id');
+            expect(contact, `${name}.contact_id`).toMatchObject({
+                Type: 'string',
+                AllowsNull: true,
+                IsPrimaryKey: false,
+                RelatedIntegrationObjectFieldName: 'id',
+            });
+            expect(String(contact?.RelatedIntegrationObjectID)).toContain('Name=Contact&');
+            expect(fields.find(f => f.Name === 'email'), `${name}.email`).toMatchObject({ Type: 'string', AllowsNull: true });
+        }
+    });
+});
