@@ -156,6 +156,35 @@ describe('RasaConnector v2 auth', () => {
         expect(calls[0].body).toMatchObject({ client_id: 'a', client_secret: 'b' });
     });
 
+    it("routes the token and every read to the credential form's optional API host", async () => {
+        responder = call =>
+            call.url.endsWith('/v2/tokens')
+                ? jsonResponse(200, { access_token: 'jwt-1', expires_in: 3600 })
+                : jsonResponse(200, { results: [] });
+        const connector = new RasaConnector();
+        // Credential-form key casing (`baseUrl`), typed without a scheme and with a trailing slash.
+        const ci = { IntegrationID: 'int-1', CredentialID: null,
+            Configuration: JSON.stringify({ clientId: 'a', clientSecret: 'b', baseUrl: ' api-dev.rasa.io/ ' }) } as never;
+
+        await connector.TestConnection(ci, user);
+
+        expect(calls.map(c => c.url)).toEqual([
+            'https://api-dev.rasa.io/v2/tokens',
+            'https://api-dev.rasa.io/v2/lists?limit=1',
+        ]);
+    });
+
+    it('defaults to the production host when the API host is left blank', async () => {
+        responder = () => jsonResponse(200, { access_token: 'jwt-1', expires_in: 3600 });
+        const connector = new RasaConnector() as unknown as Internals;
+        const ci = { IntegrationID: 'int-1', CredentialID: null,
+            Configuration: JSON.stringify({ clientId: 'a', clientSecret: 'b', baseUrl: '' }) } as never;
+
+        await connector.Authenticate(ci, user);
+
+        expect(calls[0].url).toBe('https://api.rasa.io/v2/tokens');
+    });
+
     it('TestConnection mints and reads GET /v2/lists', async () => {
         responder = call =>
             call.url.endsWith('/v2/tokens')

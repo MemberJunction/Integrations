@@ -14,7 +14,7 @@
 
 ## What this connector supports
 
-**23 objects** declared across **206 fields** (source: `metadata/integration/.rasa.integration.json`). 2 declare a write path; 21 are read-only (pull). 5 support incremental sync.
+**23 objects** declared across **212 fields** (source: `metadata/integration/.rasa.integration.json`). 2 declare a write path; 21 are read-only (pull). 5 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
