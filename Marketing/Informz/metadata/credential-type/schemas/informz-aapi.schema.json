@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "Username": {
+      "type": "string",
+      "title": "AAPI User",
+      "description": "Informz AAPI user name. Sent as the <User> element inside the SOAP document body.",
+      "isSecret": false,
+      "order": 0
+    },
+    "Password": {
+      "type": "string",
+      "title": "AAPI Password",
+      "description": "Informz AAPI password. Sent as the <Password> element inside the SOAP document body.",
+      "isSecret": true,
+      "order": 1
+    },
+    "BrandID": {
+      "type": "string",
+      "title": "Brand ID",
+      "description": "Informz brand account ID. Sent as the id attribute of the <Brand> element. Validated by Higher Logic against the IP address registered to the brand.",
+      "isSecret": false,
+      "order": 2
+    },
+    "BrandName": {
+      "type": "string",
+      "title": "Brand Name",
+      "description": "Optional brand name. Sent as the text of the <Brand> element; may be left empty.",
+      "isSecret": false,
+      "order": 3
+    }
+  },
+  "required": ["Username", "Password", "BrandID"]
+}
