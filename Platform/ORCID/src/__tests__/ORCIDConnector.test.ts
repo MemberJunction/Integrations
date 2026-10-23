@@ -6,6 +6,7 @@ import type {
     RESTResponse,
     RESTAuthContext,
     FetchContext,
+    FetchBatchResult,
     PaginationType,
 } from '@memberjunction/integration-engine';
 import type { MJCompanyIntegrationEntity, MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity } from '@memberjunction/core-entities';
@@ -136,8 +137,11 @@ class TestORCIDConnector extends ORCIDConnector {
     public Latency = 0;
     public InFlight = 0;
     public MaxInFlight = 0;
+    /** When set, the canned store fails the way an unreadable real store does. */
+    public StoreError: string | null = null;
 
     protected override async LoadStoredRecords(_ctx: FetchContext, orcidIds: string[]): Promise<Map<string, Record<string, unknown>>> {
+        if (this.StoreError) throw new Error(this.StoreError);
         const out = new Map<string, Record<string, unknown>>();
         for (const iD of orcidIds) {
             const rec = this.Stored.get(iD);
@@ -702,6 +706,19 @@ function respondFullRecord(url: string): RESTResponse {
     return respond(url);
 }
 
+/** Runs one object's scan to the end, page by page, the way the engine does. Returns every page. */
+async function scanAll(c: TestORCIDConnector, objectName: string, over: Partial<FetchContext> = {}): Promise<FetchBatchResult[]> {
+    const pages: FetchBatchResult[] = [];
+    let after: string | undefined;
+    for (let guard = 0; guard < 10_000; guard++) {
+        const page = await c.FetchChanges(ctx(objectName, null, { ...over, AfterKeyValue: after }));
+        pages.push(page);
+        if (!page.HasMore) return pages;
+        after = page.NextAfterKeyValue;
+    }
+    throw new Error('scan did not end');
+}
+
 describe('ORCIDConnector — stored row with person but no activities-summary', () => {
     let c: TestORCIDConnector;
     beforeEach(() => {
@@ -757,24 +774,27 @@ describe('ORCIDConnector — stored row with person but no activities-summary', 
         expect(warning!.Data?.['reused']).toBe(1);
     });
 
-    it('the reuse cache is bounded to one derived page: older records are refetched, never held for the whole universe', async () => {
+    it('the reuse cache is bounded to one derived page: it keeps the first 100 people, never the whole universe', async () => {
         const universe = Array.from({ length: 150 }, (_, i) => syntheticId(i + 1));
         c.Config = { OrcidIds: universe };
         for (const iD of universe) c.Stored.set(iD, PERSON_ONLY);
 
-        // works scans the whole universe: 100 + 50, every one fetched live.
-        const p1 = await c.FetchChanges(ctx('works'));
-        await c.FetchChanges(ctx('works', null, { AfterKeyValue: p1.NextAfterKeyValue }));
+        // works scans the whole universe, every person fetched live.
+        await scanAll(c, 'works');
         expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(150);
 
-        // employments page 1 covers iDs 1–100. The cache kept the last 100 fetched (51–150), so 51–100
-        // are reused and 1–50 are fetched again.
+        // The cache kept the first 100 fetched (1–100): employments reuses those and refetches 101–150.
         c.Calls = [];
-        const e1 = await c.FetchChanges(ctx('employments'));
+        await scanAll(c, 'employments');
+        const refetched = c.Calls.filter(x => x.url.includes('/record'));
+        expect(refetched).toHaveLength(50);
+        expect(refetched.every(x => universe.slice(100).some(iD => x.url.includes(iD)))).toBe(true);
+
+        // ...and so does every later section: an oldest-out cache would give these scans no hits at all.
+        OBJECTS['fundings'] = { obj: mockObject('fundings'), fields: WORKS_FIELDS };
+        c.Calls = [];
+        await scanAll(c, 'fundings');
         expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(50);
-        const warning = e1.Warnings?.find(w => w.Code === 'RECORD_FALLBACK_FETCH');
-        expect(warning!.Data?.['fetched']).toBe(50);
-        expect(warning!.Data?.['reused']).toBe(50);
     });
 
     it('a 404 on the live fetch is a real empty (record gone), not an unread iD', async () => {
@@ -1024,5 +1044,236 @@ describe('ORCIDConnector — anonymous Public API mode', () => {
         expect(res.Success).toBe(false);
         expect(calls.filter(x => x.url.includes('/oauth/token'))).toHaveLength(0);
         expect(calls.filter(x => x.url.includes('/record'))).toHaveLength(1);
+    });
+});
+
+// ─── Page sizing: any universe fits the engine's per-object page ceiling ──
+// The engine stops an object after 5,000 FetchChanges calls in a run and the next run starts the scan
+// from the top, so a fixed 10-iD root page could never read past the 50,000th iD. Pages grow with the
+// universe just enough to stay under 4,000 pages.
+
+describe('ORCIDConnector — page size grows with the universe to fit the engine page ceiling', () => {
+    let c: TestORCIDConnector;
+    const universeOf = (n: number): string[] => Array.from({ length: n }, (_, i) => syntheticId(i + 1));
+    beforeEach(() => { c = new TestORCIDConnector(); c.Responder = respond; });
+
+    it('a universe up to 40,000 keeps the 10-iD root page', async () => {
+        c.Config = { OrcidIds: universeOf(10_000) };
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.Records).toHaveLength(10);
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(10);
+        expect(page.Warnings?.some(w => w.Code === 'UNIVERSE_EXCEEDS_RUN')).toBeFalsy();
+    });
+
+    it('60,000 iDs: the root page grows to 15, so the scan is 4,000 pages — inside the 5,000 ceiling', async () => {
+        c.Config = { OrcidIds: universeOf(60_000) };
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.Records).toHaveLength(15);
+        expect(page.HasMore).toBe(true);
+        expect(page.Warnings?.some(w => w.Code === 'UNIVERSE_EXCEEDS_RUN')).toBeFalsy();
+    });
+
+    it('past 200,000 iDs the page stops at 50 and the scan says plainly that one run cannot read them all', async () => {
+        c.Config = { OrcidIds: universeOf(250_000) };
+        const page1 = await c.FetchChanges(ctx('record'));
+        expect(page1.Records).toHaveLength(50);
+        const warning = page1.Warnings?.find(w => w.Code === 'UNIVERSE_EXCEEDS_RUN');
+        expect(warning).toBeDefined();
+        expect(warning!.Data?.['maxReachable']).toBe(250_000); // 5,000 pages × 50
+        // Said once, at the start of the scan — not on every page.
+        const page2 = await c.FetchChanges(ctx('record', null, { AfterKeyValue: page1.NextAfterKeyValue }));
+        expect(page2.Warnings?.some(w => w.Code === 'UNIVERSE_EXCEEDS_RUN')).toBeFalsy();
+    });
+
+    it('a derived page grows too: 450,000 iDs read 113 stored people per page', async () => {
+        const universe = universeOf(450_000);
+        c.Config = { OrcidIds: universe };
+        for (const iD of universe.slice(0, 200)) c.Stored.set(iD, FULL_RECORD);
+        const page = await c.FetchChanges(ctx('works'));
+        expect(new Set(page.Records.map(r => r.Fields['orcid-id'])).size).toBe(113);
+        expect(c.Calls).toHaveLength(0);
+    });
+});
+
+// ─── The live fallback is capped per section page ─────────────────────
+// A section page is up to 100 iDs because reading stored records costs no API call. When people are
+// not stored (an upgrade, an unreadable store), each needs a live /record call — capped at the root
+// page's size so the page keeps the same 30s budget; the rest roll to the next page.
+
+describe('ORCIDConnector — live fallback is capped per section page', () => {
+    let c: TestORCIDConnector;
+    const universe = Array.from({ length: 30 }, (_, i) => syntheticId(i + 1));
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respondFullRecord;
+        c.Config = { OrcidIds: universe };
+        universe.forEach((iD, i) => c.Stored.set(iD, i < 5 ? FULL_RECORD : PERSON_ONLY));
+    });
+
+    it('a page stops at the 10th live fetch: 5 stored + 10 live, the rest on the next page', async () => {
+        const page = await c.FetchChanges(ctx('works'));
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(10);
+        expect(new Set(page.Records.map(r => r.Fields['orcid-id'])).size).toBe(15);
+        expect(page.HasMore).toBe(true);
+        expect(page.NextAfterKeyValue).toBe(universe[14]);
+    });
+
+    it('the whole scan still covers everyone, each person fetched once', async () => {
+        const pages = await scanAll(c, 'works');
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(25);
+        const people = new Set(pages.flatMap(p => p.Records.map(r => r.Fields['orcid-id'])));
+        expect(people.size).toBe(30);
+        expect(pages[pages.length - 1].HasMore).toBe(false);
+    });
+
+    it('with no engine concurrency the capped page is ten sequential calls, not a hundred', async () => {
+        c.Latency = 1;
+        await c.FetchChanges(ctx('works'));
+        expect(c.MaxInFlight).toBe(1);
+        expect(c.Calls).toHaveLength(10);
+    });
+});
+
+// ─── Records ORCID will never serve: locked, deactivated, gone, merged ──
+// ORCID answers a locked or deactivated account with 409 and a merged one with a 301 to the surviving
+// iD. Retrying never changes either, so they must not hold the scan open: they are empty, like a 404,
+// reported once with the reason.
+
+describe('ORCIDConnector — records ORCID will never serve', () => {
+    let c: TestORCIDConnector;
+    const GOOD = '0000-0002-1825-0097';
+    const LOCKED = '0000-0001-1111-1111';
+    const MERGED = '0000-0001-2222-2222';
+    const SURVIVOR = '0000-0002-9999-0001';
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Config = { OrcidIds: [GOOD, LOCKED], MaxRetries: 0 };
+        c.Responder = (url: string) => url.includes(LOCKED)
+            ? { Status: 409, Body: { 'developer-message': 'Account locked' }, Headers: {} }
+            : respond(url);
+    });
+
+    it('409 (locked/deactivated) is an empty with a reason — the scan finishes clean and keeps its watermark', async () => {
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.Records).toHaveLength(1);
+        expect(page.HasMore).toBe(false);
+        expect(page.NewWatermarkValue).toBeDefined();
+        const warning = page.Warnings?.find(w => w.Code === 'ID_UNAVAILABLE');
+        expect(warning!.Data?.['orcidId']).toBe(LOCKED);
+        expect(warning!.Data?.['reason']).toBe('locked or deactivated');
+        expect(page.Warnings?.some(w => w.Code === 'ID_FETCH_FAILED')).toBeFalsy();
+    });
+
+    it('410 is "gone"', async () => {
+        c.Responder = (url: string) => url.includes(LOCKED) ? { Status: 410, Body: null, Headers: {} } : respond(url);
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.Warnings?.find(w => w.Code === 'ID_UNAVAILABLE')?.Data?.['reason']).toBe('gone');
+        expect(page.HasMore).toBe(false);
+    });
+
+    it('301 (merged) names the surviving iD from the Location header and says to update the source', async () => {
+        c.Config = { OrcidIds: [GOOD, MERGED], MaxRetries: 0 };
+        c.Responder = (url: string) => url.includes(MERGED)
+            ? { Status: 301, Body: null, Headers: { location: `https://pub.orcid.org/v3.0/${SURVIVOR}/record` } }
+            : respond(url);
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.Records.map(r => r.Fields['orcid-id'])).toEqual([GOOD]);
+        const warning = page.Warnings?.find(w => w.Code === 'ID_UNAVAILABLE');
+        expect(warning!.Data?.['reason']).toBe('merged');
+        expect(warning!.Data?.['mergedInto']).toBe(SURVIVOR);
+        expect(warning!.Message).toContain(`Update the source list to ${SURVIVOR}`);
+    });
+
+    it('301 with no Location still finds the surviving iD in the deprecation body', async () => {
+        c.Config = { OrcidIds: [MERGED], MaxRetries: 0 };
+        c.Responder = () => ({ Status: 301, Body: { 'primary-record': { orcid: { path: SURVIVOR } } }, Headers: {} });
+        const page = await c.FetchChanges(ctx('record'));
+        expect(page.Warnings?.find(w => w.Code === 'ID_UNAVAILABLE')?.Data?.['mergedInto']).toBe(SURVIVOR);
+    });
+
+    it('later objects in the run neither call ORCID for it again nor repeat the warning — and a stale stored row contributes nothing', async () => {
+        OBJECTS['keywords'] = { obj: mockObject('keywords'), fields: WORKS_FIELDS };
+        await c.FetchChanges(ctx('record'));
+        c.Calls = [];
+        c.Stored.set(GOOD, FULL_RECORD);
+        c.Stored.set(LOCKED, FULL_RECORD); // synced before the account was locked
+        const works = await c.FetchChanges(ctx('works'));
+        expect(c.Calls).toHaveLength(0);
+        expect(works.Records.every(r => r.Fields['orcid-id'] === GOOD)).toBe(true);
+        expect(works.Warnings?.some(w => w.Code === 'ID_UNAVAILABLE')).toBeFalsy();
+        expect(works.HasMore).toBe(false);
+
+        c.Stored.set(LOCKED, PERSON_ONLY); // not stored for this block: still no live fetch
+        const keywords = await c.FetchChanges(ctx('keywords'));
+        expect(c.Calls).toHaveLength(0);
+        expect(keywords.Records.every(r => r.Fields['orcid-id'] === GOOD)).toBe(true);
+    });
+
+    it('a section that meets the locked iD first (no stored row) reports it once and finishes clean', async () => {
+        c.Stored.set(GOOD, FULL_RECORD);
+        const works = await c.FetchChanges(ctx('works'));
+        expect(c.Calls.filter(x => x.url.includes('/record'))).toHaveLength(1);
+        expect(works.Warnings?.filter(w => w.Code === 'ID_UNAVAILABLE')).toHaveLength(1);
+        expect(works.HasMore).toBe(false);
+    });
+});
+
+// ─── An unreadable store is reported once, not blamed on sync order ────
+
+describe('ORCIDConnector — an unreadable stored-record store', () => {
+    let c: TestORCIDConnector;
+    const universe = Array.from({ length: 25 }, (_, i) => syntheticId(i + 1));
+    beforeEach(() => {
+        c = new TestORCIDConnector();
+        c.Responder = respondFullRecord;
+        c.Config = { OrcidIds: universe };
+        c.StoreError = "reading \"ORCID Record\" by orcid_id failed: Invalid column name 'ID'.";
+    });
+
+    it('every person is still read (live), the real cause is reported once per scan, and the fallback warning points to it', async () => {
+        const pages = await scanAll(c, 'works');
+        const people = new Set(pages.flatMap(p => p.Records.map(r => r.Fields['orcid-id'])));
+        expect(people.size).toBe(25);
+        const readBack = pages.flatMap(p => p.Warnings ?? []).filter(w => w.Code === 'RECORD_READBACK_FAILED');
+        expect(readBack).toHaveLength(1);
+        expect(readBack[0].Message).toContain("Invalid column name 'ID'");
+        const fallbacks = pages.flatMap(p => p.Warnings ?? []).filter(w => w.Code === 'RECORD_FALLBACK_FETCH');
+        expect(fallbacks.length).toBeGreaterThan(1);
+        for (const w of fallbacks) {
+            expect(w.Message).toContain('could not be read');
+            expect(w.Data?.['readBackFailed']).toBe(true);
+        }
+    });
+
+    it('a new scan reports it again (once per scan, not once per connector)', async () => {
+        await scanAll(c, 'works');
+        const again = await c.FetchChanges(ctx('works'));
+        expect(again.Warnings?.filter(w => w.Code === 'RECORD_READBACK_FAILED')).toHaveLength(1);
+    });
+});
+
+// ─── Redirects are not followed ───────────────────────────────────────
+
+describe('ORCIDConnector — transport does not follow redirects', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('passes redirect: "manual" so a merged iD surfaces as its 301 instead of the surviving record', async () => {
+        const inits: Array<{ redirect?: string }> = [];
+        vi.stubGlobal('fetch', async (_url: string, init?: { redirect?: string }) => {
+            inits.push(init ?? {});
+            return {
+                ok: false,
+                status: 301,
+                headers: { forEach: (fn: (v: string, k: string) => void) => { fn('https://pub.orcid.org/v3.0/0000-0002-9999-0001/record', 'location'); } },
+                text: async () => '',
+                json: async () => ({}),
+            };
+        });
+        const c = new WireORCIDConnector();
+        const ci = ciWithConfig({ orcidIds: ['0000-0001-2222-2222'], maxRetries: 0 });
+        const page = await c.FetchChanges({ ...ctx('record'), CompanyIntegration: ci });
+        expect(inits.length).toBeGreaterThan(0);
+        expect(inits.every(i => i.redirect === 'manual')).toBe(true);
+        expect(page.Warnings?.find(w => w.Code === 'ID_UNAVAILABLE')?.Data?.['mergedInto']).toBe('0000-0002-9999-0001');
     });
 });

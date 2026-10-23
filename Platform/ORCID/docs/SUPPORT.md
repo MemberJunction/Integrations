@@ -10,7 +10,9 @@
 
 Only the `record` object calls ORCID (`GET /{iD}/record`). Every other object is **derived** from the stored record — its `activities-summary` and `person` blocks — with no API call of its own, so a sync costs one request per person rather than one per section per person. The derived objects carry flat, column-shaped fields (source, organization, partial dates, titles, amounts, review subject) beside the nested json ORCID returns.
 
-A person whose stored row lacks the block a section needs is fetched live (`RECORD_FALLBACK_FETCH`). A person who can't be read at all (`ID_FETCH_FAILED`) makes that object's fetch end with an error, on purpose: the engine then keeps the existing rows instead of treating them as deleted, and reads the person again next run.
+A person whose stored row lacks the block a section needs is fetched live (`RECORD_FALLBACK_FETCH`), at most 10 per page. If the stored records can't be read at all, every person is fetched live and the cause is reported once per scan (`RECORD_READBACK_FAILED`). A person ORCID will never serve — locked or deactivated (409), gone (410), merged into another iD (301) — is treated as having nothing to sync and reported once per run (`ID_UNAVAILABLE`, naming the surviving iD for a merge). A person who can't be read for any other reason (`ID_FETCH_FAILED`) makes that object's fetch end with an error, on purpose: the engine then keeps the existing rows instead of treating them as deleted, and reads the person again next run.
+
+Pages are sized so a scan stays under 4,000 pages (the engine stops an object at 5,000): 10 people per `record` page up to 40,000 iDs, growing to 50 per page at 200,000. A larger universe is reported as `UNIVERSE_EXCEEDS_RUN`; split it across connections.
 
 ### Upgrading a connection set up before 1.3.0
 
@@ -70,7 +72,8 @@ not yet against a live tenant.
 ## Residual gap (honest)
 
 - **Live run of the derived model** — the read-back of stored records through the engine's entity/field maps has not been exercised against a real tenant on either SQL dialect.
-- **A persistently unreadable iD** (an ORCID record that always returns 5xx or 409-locked) fails its object's fetch on every run, so delete detection never runs for that object until the iD is removed from scope or starts answering. That is deliberate (keeping rows beats deleting live ones), but such iDs should be watched for in the `ID_FETCH_FAILED` warnings.
+- **A persistently failing iD** (one ORCID answers with a 5xx run after run — locked, deactivated and merged records are handled as unavailable, not failures) fails its object's fetch on every run, so delete detection never runs for that object until the iD is removed from scope or starts answering. That is deliberate (keeping rows beats deleting live ones), but such iDs should be watched for in the `ID_FETCH_FAILED` warnings.
+- **Larger pages under throttling** — above 40,000 iDs the root page grows past 10; if ORCID throttles hard enough that the rate limiter backs far off, a large page can exceed the engine's 30s call limit and be retried.
 - **Funding `amount`** — exists only on ORCID's per-item detail endpoint, so it is null on a derived item. A detail pass is a future opt-in.
 - Live **write side-effects** — never executed against a real tenant (needs `allowWrite` + a disposable record).
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.

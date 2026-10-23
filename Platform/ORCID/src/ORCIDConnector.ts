@@ -134,14 +134,28 @@ const SEARCH_PAGE_ROWS = 1000;
 const RATE_LIMIT_TOKENS_PER_SEC = 10;
 
 /**
- * iDs per `FetchChanges` page for the ROOT object — the one that calls ORCID. The engine kills any
- * FetchChanges call that runs past its 30s timeout, and its adaptive controller cuts concurrency to 1
- * after failures, so a page must finish under 30s even when fetched SEQUENTIALLY: 10 iDs × ~1.5s
- * worst-case ≈ 15s. A page sized for the concurrent-happy case plus a concurrency cut times out on
- * every page (death spiral); concurrency only makes a small page faster. Also bounds memory to one
- * page of records. Sized from a production deployment that learned this live.
+ * The smallest number of ORCID calls one `FetchChanges` page makes: the root page's iD count, and the
+ * most live fetches a derived page's fallback makes. Every call must finish inside the engine's 30s
+ * FetchChanges limit, and requests are paced by the engine's adaptive rate limiter, which slows well
+ * below the 10 req/s policy after ORCID throttles — so the page is kept small: past the limit the
+ * engine abandons the call and retries it while the first attempt is still running, adding load to an
+ * API that is already pushing back. Sized from a production deployment that learned this live.
  */
 const RECORD_IDS_PER_PAGE = 10;
+/**
+ * The engine stops an object after this many FetchChanges calls in one run (IntegrationEngine's
+ * MAX_BATCHES_PER_MAP) and the next run starts the scan again from the top — so anything past the
+ * ceiling is never read. The page plan stays well under it (PAGE_BUDGET), leaving room for engine
+ * retries and the scan's final empty call.
+ */
+const ENGINE_MAX_PAGES_PER_OBJECT = 5000;
+const PAGE_BUDGET = 4000;
+/**
+ * The largest the root page grows to so a big universe still fits PAGE_BUDGET: ~5s of requests at
+ * the 10 req/s policy. Past MAX_RECORD_IDS_PER_PAGE × PAGE_BUDGET iDs (200,000) one run cannot cover
+ * the universe, and the scan says so (UNIVERSE_EXCEEDS_RUN).
+ */
+const MAX_RECORD_IDS_PER_PAGE = 50;
 /**
  * iDs per page for a DERIVED section: one local read for the stored records plus in-memory
  * extraction, no ORCID call, so the page can be larger. Still bounded: a prolific author's works
@@ -150,13 +164,52 @@ const RECORD_IDS_PER_PAGE = 10;
 const DERIVED_IDS_PER_PAGE = 100;
 /**
  * Records fetched live by the derived-section fallback, kept for the rest of the run so the other
- * sections reuse them instead of refetching the same person once per section. Bounded, oldest out:
- * sections run one after another over the WHOLE universe, so an unbounded cache would end up holding
- * every missing person's record at once (a full upgrade can be the entire universe, at up to a few
- * hundred KB each). One derived page is enough for the cases the cache is for: a handful of records
- * whose own fetch failed, and sections of one layer running side by side over the same page.
+ * sections reuse them instead of refetching the same person once per section. Bounded: sections run
+ * one after another over the WHOLE universe, so an unbounded cache would end up holding every missing
+ * person's record at once (a full upgrade can be the entire universe, at up to a few hundred KB each).
+ * First-come, never evicted: every section walks the iDs in the same sorted order, so dropping the
+ * oldest entry would throw away exactly the people the next section asks for first — with more people
+ * missing than the cache holds, an oldest-out cache never gets a hit. Kept first-come, it saves every
+ * later section FALLBACK_CACHE_SIZE calls, and holds a handful of failed records outright.
  */
 const FALLBACK_CACHE_SIZE = DERIVED_IDS_PER_PAGE;
+
+/**
+ * ORCID calls per page for a universe of `universeSize` iDs: RECORD_IDS_PER_PAGE, grown only as far
+ * as needed to keep the scan inside PAGE_BUDGET pages, up to MAX_RECORD_IDS_PER_PAGE. Used for the
+ * root page and for the derived fallback's live fetches, so an upgrade (every person fetched live
+ * by every section) fits the engine's page ceiling too.
+ */
+function recordCallsPerPage(universeSize: number): number {
+    return Math.min(MAX_RECORD_IDS_PER_PAGE, Math.max(RECORD_IDS_PER_PAGE, Math.ceil(universeSize / PAGE_BUDGET)));
+}
+
+/** iDs per derived page: DERIVED_IDS_PER_PAGE, grown to keep the scan inside PAGE_BUDGET pages. */
+function derivedIdsPerPage(universeSize: number): number {
+    return Math.max(DERIVED_IDS_PER_PAGE, Math.ceil(universeSize / PAGE_BUDGET));
+}
+
+/**
+ * ORCID will never serve this iD's record: the account is locked or deactivated (HTTP 409), gone
+ * (410), or was merged into another iD (301/302/307/308, which `doFetch` does not follow). Not a
+ * transient failure, so it must not hold the scan open run after run; it is treated like a 404 —
+ * nothing to sync for this iD — and reported once with the reason.
+ */
+export class ORCIDRecordUnavailableError extends Error {
+    constructor(
+        public readonly OrcidId: string,
+        public readonly Status: number,
+        public readonly Reason: 'locked or deactivated' | 'gone' | 'merged',
+        public readonly MergedInto: string | null,
+    ) {
+        super(
+            Reason === 'merged'
+                ? `ORCID iD ${OrcidId} was merged into ${MergedInto ?? 'another iD'} (HTTP ${Status})`
+                : `ORCID iD ${OrcidId} is ${Reason} (HTTP ${Status})`
+        );
+        this.name = 'ORCIDRecordUnavailableError';
+    }
+}
 
 /** Source fields of the record object that a derived section is rebuilt from. */
 const RECORD_PERSON_FIELD = 'person';
@@ -241,7 +294,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      */
     private universeCache: { Key: string; Ids: string[] } | null = null;
     /** Where this connection's `record` rows live, resolved once per CompanyIntegration. */
-    private recordStorageCache: { CompanyIntegrationID: string; Storage: RecordStorage | null } | null = null;
+    private recordStorageCache: { CompanyIntegrationID: string; Resolved: RecordStorage | string } | null = null;
     /**
      * iDs whose data could not be read during the current scan of each object (object name → iDs). A
      * connector instance lives for one run, and objects of one layer can scan side by side on it, so
@@ -250,6 +303,13 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
     private incompleteScans = new Map<string, Set<string>>();
     /** Records the derived-section fallback fetched live, by iD. See FALLBACK_CACHE_SIZE. */
     private fallbackRecords = new Map<string, Record<string, unknown>>();
+    /**
+     * iDs ORCID will never serve this run (locked, deactivated, gone, merged), so later objects treat
+     * them as empty without calling ORCID again, and the reason is reported once rather than per object.
+     */
+    private unavailableIds = new Set<string>();
+    /** Objects whose stored-record read-back problem has been reported this scan (once, not per page). */
+    private readBackReported = new Set<string>();
 
     // ── Capability getters (PULL-ONLY) ──────────────────────────────────
 
@@ -375,23 +435,39 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         }
 
         const section = ctx.ObjectName === ROOT_OBJECT_NAME ? null : ctx.ObjectName;
-        // A scan starts from the top with no AfterKeyValue; failures from an earlier scan don't carry over.
-        if (!ctx.AfterKeyValue) this.incompleteScans.delete(ctx.ObjectName);
+        const callsPerPage = recordCallsPerPage(universe.length);
+        // A scan starts from the top with no AfterKeyValue; state from an earlier scan doesn't carry over.
+        if (!ctx.AfterKeyValue) {
+            this.incompleteScans.delete(ctx.ObjectName);
+            this.readBackReported.delete(ctx.ObjectName);
+            const maxReachable = ENGINE_MAX_PAGES_PER_OBJECT * callsPerPage;
+            if (universe.length > MAX_RECORD_IDS_PER_PAGE * PAGE_BUDGET) {
+                warnings.push({
+                    Code: 'UNIVERSE_EXCEEDS_RUN',
+                    Message:
+                        `ORCID "${ctx.ObjectName}": ${universe.length} iDs is more than one run can read. The engine stops an ` +
+                        `object after ${ENGINE_MAX_PAGES_PER_OBJECT} pages, so roughly the first ${maxReachable} iDs (in sorted ` +
+                        `order) are read and the rest are not. Split the iDs across connections.`,
+                    Data: { objectName: ctx.ObjectName, universe: universe.length, idsPerPage: callsPerPage, maxReachable },
+                });
+            }
+        }
 
         // Keyset window over the sorted iD universe. The page is counted in iDs, not records: one
         // iD expands to an unbounded number of section items, so bounding the iD count is what
-        // actually bounds memory and request volume. The root page is capped hard at
-        // RECORD_IDS_PER_PAGE regardless of BatchSize (see that constant: the engine's 30s timeout
-        // must hold with concurrency cut to 1); a derived page makes no API call and can be larger.
-        // Previously the universe was sliced to BatchSize and the remainder DISCARDED while still
-        // reporting HasMore:false — every iD past the first BatchSize was silently unsyncable.
+        // actually bounds memory and request volume. The root page makes one ORCID call per iD, so it
+        // is sized by recordCallsPerPage regardless of BatchSize; a derived page makes no API call and
+        // can be larger (its live fallback is capped separately below). Both grow with the universe
+        // just enough to stay inside the engine's page ceiling. Previously the universe was sliced to
+        // BatchSize and the remainder DISCARDED while still reporting HasMore:false — every iD past
+        // the first BatchSize was silently unsyncable.
         const remaining = ctx.AfterKeyValue
             ? universe.filter(id => id > ctx.AfterKeyValue!)
             : universe;
-        const cap = section == null ? RECORD_IDS_PER_PAGE : DERIVED_IDS_PER_PAGE;
+        const cap = section == null ? callsPerPage : derivedIdsPerPage(universe.length);
         const pageSize = ctx.BatchSize > 0 ? Math.min(ctx.BatchSize, cap) : cap;
-        const orcidIds = remaining.slice(0, pageSize);
-        const hasMore = remaining.length > orcidIds.length;
+        let orcidIds = remaining.slice(0, pageSize);
+        let hasMore = remaining.length > orcidIds.length;
 
         if (orcidIds.length === 0) {
             // The end of the scan. If any iD went unread along the way, fail this (empty) call rather
@@ -420,12 +496,26 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         // page. This matters more under keyset paging — the engine can only step past a failed
         // page for offset/page pagination (`canSkipPage`), so a throw here would stall the scan at
         // this iD on EVERY subsequent run, permanently. 403/404 are already handled as empty inside
-        // FetchForId; this catches everything else. The iD is remembered so the scan as a whole is
-        // reported incomplete at its end (throwIfScanIncomplete).
+        // FetchForId, and a record ORCID will never serve (locked, deactivated, merged) is empty too,
+        // reported once. Anything else is remembered so the scan as a whole is reported incomplete at
+        // its end (throwIfScanIncomplete).
         const fetchRecordIsolated = async (iD: string): Promise<FetchOneOutcome> => {
+            if (this.unavailableIds.has(iD)) return { Items: [] };
             try {
                 return { Items: await this.FetchForId(auth, obj, iD, null) };
             } catch (err) {
+                if (err instanceof ORCIDRecordUnavailableError) {
+                    this.unavailableIds.add(iD);
+                    warnings.push({
+                        Code: 'ID_UNAVAILABLE',
+                        Message:
+                            `ORCID "${ctx.ObjectName}": ${err.message}. Nothing is synced for it, and rows already synced ` +
+                            `for it are treated as deleted on a full sync.` +
+                            (err.MergedInto ? ` Update the source list to ${err.MergedInto}.` : ''),
+                        Data: { orcidId: iD, objectName: ctx.ObjectName, status: err.Status, reason: err.Reason, mergedInto: err.MergedInto },
+                    });
+                    return { Items: [] };
+                }
                 this.markUnread(ctx.ObjectName, iD);
                 warnings.push({
                     Code: 'ID_FETCH_FAILED',
@@ -455,8 +545,46 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             // would otherwise derive zero works/employments/fundings that look like "none" — and on a
             // full sync the engine deletes the rows a clean fetch didn't return. Any iD without its
             // block is fetched live instead, so the section is complete or says why it isn't.
-            const stored = await this.LoadStoredRecords(ctx, orcidIds);
-            const missing = orcidIds.filter(iD => !hasSectionSource(stored.get(iD), section));
+            let stored = new Map<string, Record<string, unknown>>();
+            let readBackProblem: string | null = null;
+            try {
+                stored = await this.LoadStoredRecords(ctx, orcidIds);
+            } catch (err) {
+                // Not "nothing stored yet": the stored records could not be read at all. Every iD falls
+                // back to a live fetch (correct, but every person costs a call per section), so say why
+                // — once per scan, with the real error — instead of letting the fallback warning blame
+                // the order objects ran in.
+                readBackProblem = err instanceof Error ? err.message : String(err);
+                if (!this.readBackReported.has(ctx.ObjectName)) {
+                    this.readBackReported.add(ctx.ObjectName);
+                    warnings.push({
+                        Code: 'RECORD_READBACK_FAILED',
+                        Message:
+                            `ORCID "${ctx.ObjectName}": the stored records could not be read, so every iD is being fetched ` +
+                            `live from ORCID instead (correct data, far more API calls). Cause: ${readBackProblem}`,
+                        Data: { objectName: ctx.ObjectName, cause: readBackProblem },
+                    });
+                }
+            }
+
+            // An iD needs a live fetch when its block isn't stored, it isn't cached from earlier this run,
+            // and ORCID hasn't already said it will never serve it. Those fetches are capped per page at
+            // the root page's size — the same 30s budget — so the page is cut short at the first iD past
+            // the cap and the rest roll to the next page.
+            const needsLive = (iD: string): boolean =>
+                !hasSectionSource(stored.get(iD), section) && !this.fallbackRecords.has(iD) && !this.unavailableIds.has(iD);
+            let live = 0;
+            for (let i = 0; i < orcidIds.length; i++) {
+                if (!needsLive(orcidIds[i])) continue;
+                if (live === callsPerPage) {
+                    hasMore = true;
+                    orcidIds = orcidIds.slice(0, i);
+                    break;
+                }
+                live++;
+            }
+
+            const missing = orcidIds.filter(iD => !hasSectionSource(stored.get(iD), section) && !this.unavailableIds.has(iD));
             if (missing.length > 0) {
                 const toFetch: string[] = [];
                 for (const iD of missing) {
@@ -468,7 +596,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
                     const fetched = await this.fetchRecordsConcurrently(ctx, toFetch, fetchRecordIsolated);
                     for (const [iD, items] of fetched) {
                         const record = items[0];
-                        if (!record) continue; // 404/403: the record is gone or not public — a real empty
+                        if (!record) continue; // 404/403/unavailable: nothing to sync for this iD — a real empty
                         stored.set(iD, record);
                         this.rememberFallbackRecord(iD, record);
                     }
@@ -479,18 +607,24 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
                     Message:
                         `ORCID "${ctx.ObjectName}": ${missing.length} of ${orcidIds.length} iDs had no stored ${block} ` +
                         `and were read live (${toFetch.length} fetched, ${missing.length - toFetch.length} reused from earlier this run). ` +
-                        `Run the record object first; on a connection set up before 1.3.0, also map its ${block} field.`,
+                        (readBackProblem
+                            ? `The stored records could not be read (see RECORD_READBACK_FAILED).`
+                            : `Run the record object first; on a connection set up before 1.3.0, also map its ${block} field.`),
                     Data: {
                         objectName: ctx.ObjectName,
                         block,
                         count: missing.length,
                         fetched: toFetch.length,
                         reused: missing.length - toFetch.length,
+                        readBackFailed: readBackProblem != null,
                         orcidIds: missing,
                     },
                 });
             }
             for (const iD of orcidIds) {
+                // An iD ORCID will never serve contributes nothing, even from a row stored before it
+                // became unavailable — the same answer the record object gave for it this run.
+                if (this.unavailableIds.has(iD)) continue;
                 const record = stored.get(iD);
                 if (record) addItems(extractSectionRawItems(record, section, iD));
             }
@@ -550,16 +684,11 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         );
     }
 
-    /** Keeps a fallback-fetched record for the rest of the run, oldest out past FALLBACK_CACHE_SIZE. */
+    /** Keeps a fallback-fetched record for the rest of the run, until FALLBACK_CACHE_SIZE are held (see there). */
     private rememberFallbackRecord(iD: string, record: Record<string, unknown>): void {
+        if (!this.fallbackRecords.has(iD) && this.fallbackRecords.size >= FALLBACK_CACHE_SIZE) return;
         // Only the two blocks sections derive from; the rest of the record is not needed again.
-        this.fallbackRecords.delete(iD);
         this.fallbackRecords.set(iD, { person: record['person'], 'activities-summary': record['activities-summary'] });
-        while (this.fallbackRecords.size > FALLBACK_CACHE_SIZE) {
-            const oldest = this.fallbackRecords.keys().next().value;
-            if (oldest === undefined) break;
-            this.fallbackRecords.delete(oldest);
-        }
     }
 
     /**
@@ -612,15 +741,21 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * table. Only the blocks this connection maps are read; a block it doesn't map is absent from the
      * result. Returns only the iDs found, and an entry may carry one block without the other — the
      * caller judges per section whether it has what it needs (hasSectionSource) and fetches the rest
-     * live. Protected so a test can substitute a canned store.
+     * live.
+     *
+     * THROWS when the stored records cannot be read at all — no record mapping to read through, or a
+     * failed query — with the cause in the message. That is deliberately not an empty result: "nothing
+     * stored yet" and "the read is broken" need different fixes, and an empty result would make every
+     * section fetch every person live while blaming sync order. Protected so a test can substitute a
+     * canned store.
      */
     protected async LoadStoredRecords(ctx: FetchContext, orcidIds: string[]): Promise<Map<string, Record<string, unknown>>> {
         const out = new Map<string, Record<string, unknown>>();
         if (orcidIds.length === 0) return out;
-        const storage = await this.resolveRecordStorage(ctx);
-        if (!storage) return out;
+        const resolved = await this.resolveRecordStorage(ctx);
+        if (typeof resolved === 'string') throw new Error(resolved);
+        const storage = resolved;
         const blockColumns = [storage.PersonColumn, storage.ActivitiesColumn].filter((c): c is string => c != null);
-        if (blockColumns.length === 0) return out;
 
         const quote = (s: string): string => `'${s.replace(/'/g, "''")}'`;
         const rows = await new RunView().RunView<Record<string, unknown>>({
@@ -629,7 +764,9 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             Fields: [storage.KeyColumn, ...blockColumns],
             ResultType: 'simple',
         }, ctx.ContextUser);
-        if (!rows.Success) return out;
+        if (!rows.Success) {
+            throw new Error(`reading "${storage.EntityName}" by ${storage.KeyColumn} failed: ${rows.ErrorMessage || 'no error message'}`);
+        }
 
         const wanted = new Set(orcidIds);
         for (const row of rows.Results) {
@@ -661,54 +798,70 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
      * then the active source→destination field maps for the two blocks. A block with no active field
      * map has no column — the engine writes a source field only through its map — so it is recorded as
      * null and never requested; asking for a column that doesn't exist would fail the whole read, and
-     * with it the sections whose block IS stored. Null when the record object has no entity map on
-     * this connection, or its `orcid-id` has no usable column (nothing to look a row up by).
+     * with it the sections whose block IS stored. Returns a sentence saying why instead when there is
+     * nothing to read through: no active record mapping, no usable column for `orcid-id` (nothing to
+     * look a row up by), neither block mapped, or a failed metadata query. Resolved once per
+     * connection either way.
      */
-    private async resolveRecordStorage(ctx: FetchContext): Promise<RecordStorage | null> {
+    private async resolveRecordStorage(ctx: FetchContext): Promise<RecordStorage | string> {
         const ciID = ctx.CompanyIntegration.ID;
         if (this.recordStorageCache && this.recordStorageCache.CompanyIntegrationID === ciID) {
-            return this.recordStorageCache.Storage;
+            return this.recordStorageCache.Resolved;
         }
+        const resolved = await this.lookUpRecordStorage(ctx, ciID);
+        this.recordStorageCache = { CompanyIntegrationID: ciID, Resolved: resolved };
+        return resolved;
+    }
 
-        let storage: RecordStorage | null = null;
+    private async lookUpRecordStorage(ctx: FetchContext, ciID: string): Promise<RecordStorage | string> {
         const rv = new RunView();
         const entityMap = await rv.RunView<{ ID: string; Entity: string }>({
             EntityName: 'MJ: Company Integration Entity Maps',
-            ExtraFilter: `CompanyIntegrationID='${ciID.replace(/'/g, "''")}' AND ExternalObjectName='${ROOT_OBJECT_NAME}'`,
+            ExtraFilter:
+                `CompanyIntegrationID='${ciID.replace(/'/g, "''")}' AND ExternalObjectName='${ROOT_OBJECT_NAME}' ` +
+                `AND Status='Active'`,
             Fields: ['ID', 'Entity'],
             MaxRows: 1,
             ResultType: 'simple',
         }, ctx.ContextUser);
-        const map = entityMap.Success ? entityMap.Results[0] : undefined;
-        if (map?.Entity) {
-            const dest = new Map<string, string>();
-            const fieldMaps = await rv.RunView<{ SourceFieldName: string; DestinationFieldName: string }>({
-                EntityName: 'MJ: Company Integration Field Maps',
-                ExtraFilter: `EntityMapID='${String(map.ID).replace(/'/g, "''")}' AND Status='Active'`,
-                Fields: ['SourceFieldName', 'DestinationFieldName'],
-                ResultType: 'simple',
-            }, ctx.ContextUser);
-            if (fieldMaps.Success) {
-                for (const fm of fieldMaps.Results) {
-                    // Every column we read or filter on must be a plain identifier — it is interpolated
-                    // into the filter, and MJ's integration schema builder never makes any other kind.
-                    if (fm.SourceFieldName && fm.DestinationFieldName && SAFE_COLUMN_RE.test(fm.DestinationFieldName)) {
-                        dest.set(fm.SourceFieldName, fm.DestinationFieldName);
-                    }
-                }
-            }
-            const keyColumn = dest.get(RECORD_KEY_FIELD);
-            if (keyColumn) {
-                storage = {
-                    EntityName: String(map.Entity),
-                    KeyColumn: keyColumn,
-                    PersonColumn: dest.get(RECORD_PERSON_FIELD) ?? null,
-                    ActivitiesColumn: dest.get(RECORD_ACTIVITIES_FIELD) ?? null,
-                };
+        if (!entityMap.Success) {
+            return `looking up the record object's mapping failed: ${entityMap.ErrorMessage || 'no error message'}`;
+        }
+        const map = entityMap.Results[0];
+        if (!map?.Entity) {
+            return `the record object has no active mapping on this connection, so there is no stored record to read. ` +
+                `Map and sync the record object.`;
+        }
+
+        const fieldMaps = await rv.RunView<{ SourceFieldName: string; DestinationFieldName: string }>({
+            EntityName: 'MJ: Company Integration Field Maps',
+            ExtraFilter: `EntityMapID='${String(map.ID).replace(/'/g, "''")}' AND Status='Active'`,
+            Fields: ['SourceFieldName', 'DestinationFieldName'],
+            ResultType: 'simple',
+        }, ctx.ContextUser);
+        if (!fieldMaps.Success) {
+            return `looking up the record object's field maps failed: ${fieldMaps.ErrorMessage || 'no error message'}`;
+        }
+        const dest = new Map<string, string>();
+        for (const fm of fieldMaps.Results) {
+            // Every column we read or filter on must be a plain identifier — it is interpolated into the
+            // filter, and MJ's integration schema builder never makes any other kind.
+            if (fm.SourceFieldName && fm.DestinationFieldName && SAFE_COLUMN_RE.test(fm.DestinationFieldName)) {
+                dest.set(fm.SourceFieldName, fm.DestinationFieldName);
             }
         }
-        this.recordStorageCache = { CompanyIntegrationID: ciID, Storage: storage };
-        return storage;
+        const keyColumn = dest.get(RECORD_KEY_FIELD);
+        if (!keyColumn) {
+            return `the record object's ${RECORD_KEY_FIELD} field has no active field map to a plain column on "${map.Entity}", ` +
+                `so a stored record cannot be found by iD. Map ${RECORD_KEY_FIELD}.`;
+        }
+        const personColumn = dest.get(RECORD_PERSON_FIELD) ?? null;
+        const activitiesColumn = dest.get(RECORD_ACTIVITIES_FIELD) ?? null;
+        if (!personColumn && !activitiesColumn) {
+            return `neither ${RECORD_PERSON_FIELD} nor ${RECORD_ACTIVITIES_FIELD} is mapped on the record object, so a stored ` +
+                `record has nothing to derive sections from. Map both.`;
+        }
+        return { EntityName: String(map.Entity), KeyColumn: keyColumn, PersonColumn: personColumn, ActivitiesColumn: activitiesColumn };
     }
 
     /**
@@ -733,6 +886,14 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             console.warn(`[ORCID] HTTP 403 for "${obj.Name}" iD ${iD} — skipping (insufficient scope/visibility).`);
             return [];
         }
+        // Permanent states, per ORCID's own exception mapping: a locked or deactivated account answers
+        // 409 Conflict, a merged (deprecated) one 301 Moved Permanently to the surviving iD. Retrying
+        // never changes either, so they are not failures to hold the scan open for.
+        if (resp.Status === 409) throw new ORCIDRecordUnavailableError(iD, resp.Status, 'locked or deactivated', null);
+        if (resp.Status === 410) throw new ORCIDRecordUnavailableError(iD, resp.Status, 'gone', null);
+        if (resp.Status === 301 || resp.Status === 302 || resp.Status === 307 || resp.Status === 308) {
+            throw new ORCIDRecordUnavailableError(iD, resp.Status, 'merged', this.mergedIntoId(resp, iD));
+        }
         if (resp.Status < 200 || resp.Status >= 300) {
             throw Object.assign(
                 new Error(`ORCID fetch failed for "${obj.Name}" iD ${iD}: HTTP ${resp.Status}`),
@@ -747,6 +908,22 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
             return [body];
         }
         return this.expandSection(body, section, iD);
+    }
+
+    /**
+     * The iD a merged record now lives at: from the redirect's Location (`…/v3.0/<iD>/record`), else from
+     * the deprecation body ORCID sends with it. Null when neither names a different iD.
+     */
+    private mergedIntoId(resp: RESTResponse, fromId: string): string | null {
+        const candidates = [resp.Headers?.['location'], typeof resp.Body === 'string' ? resp.Body : JSON.stringify(resp.Body ?? '')];
+        for (const text of candidates) {
+            if (typeof text !== 'string') continue;
+            for (const m of text.matchAll(/\d{4}-\d{4}-\d{4}-\d{3}[\dX]/gi)) {
+                const id = m[0].toUpperCase();
+                if (id !== fromId.toUpperCase()) return id;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1148,7 +1325,12 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
         throw new Error(`ORCID request to ${url} exhausted ${maxRetries + 1} attempts`);
     }
 
-    /** Single fetch() with an AbortController-backed timeout. */
+    /**
+     * Single fetch() with an AbortController-backed timeout. Redirects are NOT followed: ORCID only
+     * redirects a merged (deprecated) iD to the surviving one, and following it would quietly store the
+     * surviving account's record under the old iD — and, when both iDs are in scope, have two people
+     * claim the same works. FetchForId turns the 3xx into a reported "merged" instead.
+     */
     private async doFetch(
         url: string,
         method: string,
@@ -1164,6 +1346,7 @@ export class ORCIDConnector extends BaseRESTIntegrationConnector {
                 headers,
                 body: body !== undefined ? JSON.stringify(body) : undefined,
                 signal: controller.signal,
+                redirect: 'manual',
             });
             const respHeaders: Record<string, string> = {};
             resp.headers.forEach((value, key) => { respHeaders[key.toLowerCase()] = value; });

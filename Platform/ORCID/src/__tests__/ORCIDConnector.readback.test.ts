@@ -168,11 +168,42 @@ describe('ORCIDConnector — reading stored records back (engine-built table, no
         expect(tableQuery.Fields).toEqual([KEY, PERSON]);
     });
 
-    it('with no column for orcid-id there is nothing to look rows up by: no table query, nothing stored', async () => {
+    it('with no column for orcid-id there is nothing to look rows up by: no table query, and it says so', async () => {
         state.handler = engineStore({ mapped: ['person', 'activities-summary'] });
-        const stored = await c.Load([SAMPLE]);
-        expect(stored.size).toBe(0);
+        await expect(c.Load([SAMPLE])).rejects.toThrow(/orcid-id field has no active field map/);
         expect(state.calls.some(p => p.EntityName === RECORD_ENTITY)).toBe(false);
+    });
+
+    it('a failed table query is an error carrying the database\'s message, not "nothing stored"', async () => {
+        state.handler = engineStore({ tableFails: true });
+        await expect(c.Load([SAMPLE])).rejects.toThrow(/Invalid column name/);
+    });
+
+    it('no active record mapping on the connection is an error that says to map the record object', async () => {
+        state.handler = (p) => p.EntityName === 'MJ: Company Integration Entity Maps'
+            ? { Success: true, Results: [] }
+            : engineStore()(p);
+        await expect(c.Load([SAMPLE])).rejects.toThrow(/no active mapping/);
+        const mapQuery = state.calls.find(p => p.EntityName === 'MJ: Company Integration Entity Maps')!;
+        expect(mapQuery.ExtraFilter).toContain(`Status='Active'`);
+    });
+
+    it('neither block mapped is an error: a stored row would have nothing to derive from', async () => {
+        state.handler = engineStore({ mapped: ['orcid-id'] });
+        await expect(c.Load([SAMPLE])).rejects.toThrow(/neither person nor activities-summary/);
+    });
+
+    it('end to end: an unreadable store still yields complete works (fetched live), with the cause reported once per scan', async () => {
+        state.handler = engineStore({ tableFails: true });
+        const result = await c.FetchChanges(ctx());
+        expect(result.Records).toHaveLength(SAMPLE_WORKS.length);
+        expect(c.Calls).toHaveLength(1);
+        const readBack = result.Warnings?.find(w => w.Code === 'RECORD_READBACK_FAILED');
+        expect(readBack).toBeDefined();
+        expect(readBack!.Message).toContain('Invalid column name');
+        const fallback = result.Warnings?.find(w => w.Code === 'RECORD_FALLBACK_FETCH');
+        expect(fallback!.Message).toContain('could not be read');
+        expect(fallback!.Message).not.toContain('Run the record object first');
     });
 
     it('ignores rows the query returns for iDs outside the page', async () => {
