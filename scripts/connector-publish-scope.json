@@ -21,6 +21,7 @@
     "Events/Eventscribe",
     "Events/OpenWater",
     "Events/PheedLoop",
+    "Events/Spektrix",
     "Finance/BillCom",
     "Finance/BusinessCentral",
     "Finance/NetSuite",

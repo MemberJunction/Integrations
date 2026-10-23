@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 51,
+  "count": 52,
   "connectors": [
     {
       "name": "Fonteva",
@@ -423,6 +423,27 @@
       "installTag": "Events-PheedLoop@1.4.6"
     },
     {
+      "name": "Spektrix",
+      "displayName": "Spektrix Connector",
+      "description": "Spektrix provides a connected solution purpose-built for audience engagement.",
+      "category": "Events",
+      "tags": [
+        "spektrix",
+        "events",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-ticket",
+      "navigationBaseURL": "https://www.spektrix.com/",
+      "objectCount": 65,
+      "className": "SpektrixConnector",
+      "npmPackage": "@memberjunction/connector-spektrix",
+      "version": "0.2.0",
+      "mjVersionRange": ">=5.43.0 <7.0.0",
+      "repoSubpath": "Events/Spektrix",
+      "installTag": "Events-Spektrix@0.2.0"
+    },
+    {
       "name": "Bill.com",
       "displayName": "Bill.com Connector",
       "description": "Bill.com (BILL) v3 Connect API — accounts receivable. Session-based auth; 3 concurrent requests per developer key per organization.",
@@ -701,7 +722,7 @@
     {
       "name": "rasa",
       "displayName": "rasa.io Connector",
-      "description": "rasa.io newsletter and audience-engagement platform. Syncs subscribers (persons and their actions, topics, sends and attributes), newsletter content (posts, content pool, communities) and the v2 messaging/list surface via the rasa.io REST API.",
+      "description": "rasa.io newsletter and audience-engagement platform (v2 API). Syncs contacts, lists, newsletters, blasts, sequences and segments, plus newsletter/blast/sequence engagement events (opens, clicks, deliveries).",
       "category": "Marketing",
       "tags": [
         "rasa-io",
@@ -711,13 +732,13 @@
       ],
       "logo": "fa-solid fa-newspaper",
       "navigationBaseURL": "https://rasa.io",
-      "objectCount": 34,
+      "objectCount": 23,
       "className": "@memberjunction/connector-rasa-io",
       "npmPackage": "@memberjunction/connector-rasa-io",
-      "version": "2.0.2",
+      "version": "3.0.0",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Marketing/Rasa",
-      "installTag": "Marketing-Rasa@2.0.2"
+      "installTag": "Marketing-Rasa@3.0.0"
     },
     {
       "name": "Reply",
@@ -1024,10 +1045,10 @@
       "objectCount": 84,
       "className": "WordPressConnector",
       "npmPackage": "@memberjunction/connector-wordpress",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "Platform/WordPress",
-      "installTag": "Platform-WordPress@1.2.1"
+      "installTag": "Platform-WordPress@1.3.0"
     },
     {
       "name": "zendesk",
@@ -1066,10 +1087,10 @@
       "objectCount": 4,
       "className": "@memberjunction/connector-asana",
       "npmPackage": "@memberjunction/connector-asana",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "PM/Asana",
-      "installTag": "PM-Asana@0.2.3"
+      "installTag": "PM-Asana@0.2.4"
     },
     {
       "name": "Everhour",

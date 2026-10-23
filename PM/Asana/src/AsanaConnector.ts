@@ -110,7 +110,8 @@ export class AsanaConnector extends BaseRESTIntegrationConnector {
         if (!workspace) {
             throw new Error(
                 'Asana workspace is not configured. Every Asana listing is workspace-scoped; set the ' +
-                'workspace gid on CompanyIntegration.ExternalSystemID (or "workspace" in the Configuration JSON).'
+                'Workspace GID on the "Asana API" credential, on CompanyIntegration.ExternalSystemID, ' +
+                'or as "workspace" in the Configuration JSON.'
             );
         }
         return { Token: resolved.Token, Workspace: String(workspace) };
@@ -400,8 +401,8 @@ export class AsanaConnector extends BaseRESTIntegrationConnector {
         }
         if (!token) {
             throw new Error(
-                'No Asana credential found — link an "API Key" credential holding a personal access ' +
-                'token, or supply one as "token" in the CompanyIntegration.Configuration JSON.'
+                'No Asana credential found — link an "Asana API" credential (personal access token + ' +
+                'workspace gid), or supply "token" in the CompanyIntegration.Configuration JSON.'
             );
         }
         return { Token: token, Workspace: workspace };

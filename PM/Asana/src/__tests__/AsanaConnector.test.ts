@@ -207,6 +207,28 @@ describe('pagination', () => {
     });
 });
 
+describe('credential values', () => {
+    // The "Asana API" credential type's two fields are named apiKey and workspace (metadata/credential-type/
+    // schemas/asana-api.schema.json). This pins that the connector reads BOTH from a credential's Values —
+    // the workspace used to be reachable only through ExternalSystemID or the Configuration JSON, which the
+    // connect wizard never asks for, so a connection could be created that then refused to run.
+    type Parser = { ParseCredentialJson(json: string): { Token?: string; Workspace?: string } | null };
+    const parse = (json: string) => (c as unknown as Parser).ParseCredentialJson(json);
+
+    it('resolves the token and the workspace from the credential type\'s own field names', () => {
+        expect(parse(JSON.stringify({ apiKey: 'pat-1', workspace: '1200000000000001' })))
+            .toEqual({ Token: 'pat-1', Workspace: '1200000000000001' });
+    });
+
+    it('keeps a numeric workspace gid as a string', () => {
+        expect(parse(JSON.stringify({ apiKey: 'pat-1', workspace: 1200000000000001 }))?.Workspace).toBe('1200000000000001');
+    });
+
+    it('returns null for values that carry neither', () => {
+        expect(parse(JSON.stringify({ unrelated: true }))).toBeNull();
+    });
+});
+
 describe('per-run query params', () => {
     it('scopes the workspace-level listings, and only those', () => {
         expect(c.callAppendParams('Users', '/users?limit=100', '111', null)).toContain('workspace=111');
