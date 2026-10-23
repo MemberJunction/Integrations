@@ -1,5 +1,12 @@
 # @memberjunction/connector-rasa-io
 
+## 3.0.2
+
+### Patch Changes
+
+- 7cc5258: Newsletter, Blast and Sequence Action now declare `contact_id` (linked to Contact) and `email`. rasa.io added both to every insights action event on 2026-10-20 (they aren't in the published spec), so engagement can now be tied to the contact in MJ. Without the declaration the sync dropped them, since it keeps only declared fields. Existing installs pick up the two new columns on the next schema refresh; a full resync backfills older events, which the incremental watermark won't revisit.
+- 8a3f2c3: The rasa.io credential gains an optional **API host** field (`baseUrl`). Leave it blank for rasa.io production (`https://api.rasa.io`); set it to reach another rasa.io environment, e.g. `https://api-dev.rasa.io` for client credentials generated in rasa.io's dev dashboard, which production rejects. A host typed without a scheme gets `https://`. The connector already honored this key; the credential form just never showed it, so a connection made in MJ Central could only target production.
+
 ## 3.0.1
 
 ### Patch Changes
