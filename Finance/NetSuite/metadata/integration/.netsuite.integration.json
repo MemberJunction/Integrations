@@ -196,6 +196,7 @@
         {
           "fields": {
             "Name": "Event",
+            "Description": "Disabled: 'event' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: event\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'calendarevent' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/event",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -205,7 +206,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/event",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -2952,6 +2953,7 @@
         {
           "fields": {
             "Name": "Unit of Measure",
+            "Description": "Disabled: 'unitofmeasure' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: unitofmeasure\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'unitstype' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/unitofmeasure",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -2961,7 +2963,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/unitofmeasure",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -4952,6 +4954,7 @@
         {
           "fields": {
             "Name": "Class",
+            "Description": "Disabled: 'class' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: class\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'classification' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/class",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -4961,7 +4964,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/class",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -7505,6 +7508,7 @@
         {
           "fields": {
             "Name": "GL Audit Numbering Sequence",
+            "Description": "Disabled: 'glauditnumberingsequence' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: glauditnumberingsequence\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'glnumberingsequence' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/glauditnumberingsequence",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -7514,7 +7518,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/glauditnumberingsequence",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -11342,6 +11346,7 @@
         {
           "fields": {
             "Name": "Other Charge for Purchase Item",
+            "Description": "Disabled: 'otherchargeforpurchaseitem' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: otherchargeforpurchaseitem\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'otherchargepurchaseitem' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/otherchargeforpurchaseitem",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -11351,7 +11356,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/otherchargeforpurchaseitem",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -11453,6 +11458,7 @@
         {
           "fields": {
             "Name": "Other Charge for Resale Item",
+            "Description": "Disabled: 'otherchargeforresaleitem' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: otherchargeforresaleitem\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'otherchargeresaleitem' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/otherchargeforresaleitem",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -11462,7 +11468,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/otherchargeforresaleitem",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -11564,6 +11570,7 @@
         {
           "fields": {
             "Name": "Other Charge for Sale Item",
+            "Description": "Disabled: 'otherchargeforsaleitem' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: otherchargeforsaleitem\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'otherchargesaleitem' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/otherchargeforsaleitem",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -11573,7 +11580,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/otherchargeforsaleitem",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -12452,6 +12459,7 @@
         {
           "fields": {
             "Name": "Period End Journal Entry",
+            "Description": "Disabled: 'periodendjournalentry' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: periodendjournalentry\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'periodendjournal' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/periodendjournalentry",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -12461,7 +12469,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/periodendjournalentry",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -13119,6 +13127,7 @@
         {
           "fields": {
             "Name": "Revenue Recognition Schedule",
+            "Description": "Disabled: 'revenuerecognitionschedule' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: revenuerecognitionschedule\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'revrecschedule' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/revenuerecognitionschedule",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -13128,7 +13137,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/revenuerecognitionschedule",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -13230,6 +13239,7 @@
         {
           "fields": {
             "Name": "Revenue Recognition Template",
+            "Description": "Disabled: 'revenuerecognitiontemplate' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: revenuerecognitiontemplate\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'revrectemplate' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/revenuerecognitiontemplate",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -13239,7 +13249,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/revenuerecognitiontemplate",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -15117,6 +15127,7 @@
         {
           "fields": {
             "Name": "Tax Control Account",
+            "Description": "Disabled: 'taxcontrolaccount' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: taxcontrolaccount\" (INVALID_PARAMETER) on every account, so this object could never sync. The real record type is 'taxacct' (NetSuite's SuiteScript record.Type id), which DiscoverObjects surfaces from the account's live metadata-catalog.",
             "APIPath": "/services/rest/record/v1/taxcontrolaccount",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -15126,7 +15137,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/taxcontrolaccount",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
@@ -19447,6 +19458,7 @@
         {
           "fields": {
             "Name": "Change Order",
+            "Description": "Disabled: 'changeorder' is not a NetSuite record type — SuiteQL rejects it with HTTP 400 \"Invalid search type: changeorder\" (INVALID_PARAMETER) on every account, so this object could never sync. No standard NetSuite record carries this id, so there is nothing to remap to; DiscoverObjects surfaces whatever the account actually has.",
             "APIPath": "/services/rest/record/v1/changeorder",
             "SupportsWrite": true,
             "SupportsIncrementalSync": true,
@@ -19456,7 +19468,7 @@
             "SupportsUpdate": true,
             "SupportsDelete": true,
             "IncrementalWatermarkField": "lastModifiedDate",
-            "Status": "Active",
+            "Status": "Disabled",
             "CreateAPIPath": "/services/rest/record/v1/changeorder",
             "CreateMethod": "POST",
             "CreateBodyShape": "flat",
