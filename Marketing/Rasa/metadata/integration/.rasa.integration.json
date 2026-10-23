@@ -3403,7 +3403,7 @@
               "pkStrength": "FullTuple",
               "parentObjectName": "Newsletter",
               "parentObjectIDFieldName": "newsletter_id",
-              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it.",
+              "buildNote": "v2 bulk engagement feed (rasa.io: use the per-newsletter/blast/sequence feeds for bulk). The published InsightsAction schema has no contact field, but since rasa.io's 2026-10-20 update each event carries contact_id (resolves via GET /v2/contacts/{id}) and email; 'id' is per event, not the contact.",
               "maxLookbackDays": 725,
               "maxLookbackNote": "rasa.io rejects created_since more than 24 months ago (HTTP 400 'created_since must not be more than 24 months ago', verified 2026-10-20) and defaults it to 7 days ago when omitted. The connector sends now − 725 days (rounded up to UTC midnight) on a first sync and clamps an older stored watermark up to it."
             }
@@ -3769,6 +3769,59 @@
                   "lastModified": "2026-10-16T18:42:41.122Z",
                   "checksum": "754f53520b27ba72524b1a954592eb8432acf341bec682ca019def1dfe1012be"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "contact_id",
+                  "DisplayName": "Contact Id",
+                  "Description": "Contact Id — the rasa.io contact behind this event (Newsletter Action field 'contact_id'). Not in the published InsightsAction schema; returned live since rasa.io's 2026-10-20 update (resolves via GET /v2/contacts/{id}). Null on some events.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contact&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "ReferencedType": "Contact"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "8423EFDE-CF92-49F6-B7DA-FB2B534E6277"
+                },
+                "sync": {
+                  "lastModified": "2026-10-22T21:08:55.279Z",
+                  "checksum": "9312f92493ea214683fa8bb3d184da8c8135ffbab5fe160e616807aa6391d658"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Email — the contact's email address on this event (Newsletter Action field 'email'). Returned live since rasa.io's 2026-10-20 update; null when contact_id is.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 17,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A63B9360-FC48-4FC3-A2A6-D6D05CB24D1D"
+                },
+                "sync": {
+                  "lastModified": "2026-10-22T21:08:55.293Z",
+                  "checksum": "349965ad1c9363488ed39d1940efcb88bcd83da5956b5fa0636da35a2acf41d8"
+                }
               }
             ]
           },
@@ -3776,8 +3829,8 @@
             "ID": "CAA8C6B2-9DB2-4A43-BD63-89EF359A2055"
           },
           "sync": {
-            "lastModified": "2026-10-20T17:03:01.060Z",
-            "checksum": "ef7e81640deed2fb080960830e92b9b470961a55b17431d8caa8973d0abbf1f7"
+            "lastModified": "2026-10-22T21:08:55.157Z",
+            "checksum": "f983b269c9c7c283bbc97e05f72993bc6137005130eb0a7df4393c90e63ab6bb"
           }
         },
         {
@@ -4349,7 +4402,7 @@
               "pkStrength": "FullTuple",
               "parentObjectName": "Blast",
               "parentObjectIDFieldName": "blast_id",
-              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it.",
+              "buildNote": "v2 bulk engagement feed (rasa.io: use the per-newsletter/blast/sequence feeds for bulk). The published InsightsAction schema has no contact field, but since rasa.io's 2026-10-20 update each event carries contact_id (resolves via GET /v2/contacts/{id}) and email; 'id' is per event, not the contact.",
               "maxLookbackDays": 725,
               "maxLookbackNote": "rasa.io rejects created_since more than 24 months ago (HTTP 400 'created_since must not be more than 24 months ago', verified 2026-10-20) and defaults it to 7 days ago when omitted. The connector sends now − 725 days (rounded up to UTC midnight) on a first sync and clamps an older stored watermark up to it."
             }
@@ -4715,6 +4768,59 @@
                   "lastModified": "2026-10-16T18:42:41.819Z",
                   "checksum": "0e31d2ca7f0aaee4edd752867a066c2dcd12491b5799a5982ddb936236a82e74"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "contact_id",
+                  "DisplayName": "Contact Id",
+                  "Description": "Contact Id — the rasa.io contact behind this event (Blast Action field 'contact_id'). Not in the published InsightsAction schema; returned live since rasa.io's 2026-10-20 update (resolves via GET /v2/contacts/{id}). Null on some events.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contact&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "ReferencedType": "Contact"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "39643944-9B08-4D5A-986C-7E881BD5233C"
+                },
+                "sync": {
+                  "lastModified": "2026-10-22T21:08:55.331Z",
+                  "checksum": "7f40e0dd60a1e25e7819c05bf1274130ead2ab5bd1f8b463a448b4f5bb72fd9c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Email — the contact's email address on this event (Blast Action field 'email'). Returned live since rasa.io's 2026-10-20 update; null when contact_id is.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 17,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1B279237-9041-4CBF-A05C-8ADF33B1D3CB"
+                },
+                "sync": {
+                  "lastModified": "2026-10-22T21:08:55.345Z",
+                  "checksum": "b07f5029b12ea0dbe11fa602de1efa70d24cdacd50b2b4d81b9744a377f5c6b6"
+                }
               }
             ]
           },
@@ -4722,8 +4828,8 @@
             "ID": "F3B63652-9B6C-4B17-BADD-210EA3388A3A"
           },
           "sync": {
-            "lastModified": "2026-10-20T17:03:01.084Z",
-            "checksum": "7df609073cfd428b759dc8690bafaf9a4ea2938737aa57adbbc130501124c829"
+            "lastModified": "2026-10-22T21:08:55.178Z",
+            "checksum": "3982a05266148258c33d62ca48c94c39e5d1b62b0a27611a85a7f9f70eb2d9a9"
           }
         },
         {
@@ -5293,7 +5399,7 @@
               "pkStrength": "FullTuple",
               "parentObjectName": "Sequence",
               "parentObjectIDFieldName": "sequence_id",
-              "buildNote": "v2 bulk engagement feed (rasa.io: use the ID-less-per-contact feeds for bulk). The spec's InsightsAction has no contact field; 'id' is undocumented and may be the contact id. Verify against real data before relying on it.",
+              "buildNote": "v2 bulk engagement feed (rasa.io: use the per-newsletter/blast/sequence feeds for bulk). The published InsightsAction schema has no contact field, but since rasa.io's 2026-10-20 update each event carries contact_id (resolves via GET /v2/contacts/{id}) and email; 'id' is per event, not the contact.",
               "maxLookbackDays": 725,
               "maxLookbackNote": "rasa.io rejects created_since more than 24 months ago (HTTP 400 'created_since must not be more than 24 months ago', verified 2026-10-20) and defaults it to 7 days ago when omitted. The connector sends now − 725 days (rounded up to UTC midnight) on a first sync and clamps an older stored watermark up to it."
             }
@@ -5659,6 +5765,59 @@
                   "lastModified": "2026-10-16T18:42:42.480Z",
                   "checksum": "e0db4b76f2ac102be5c79eac2de8dfc5c3f85ae35bcfb1876066b3e1d7f67eb4"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "contact_id",
+                  "DisplayName": "Contact Id",
+                  "Description": "Contact Id — the rasa.io contact behind this event (Sequence Action field 'contact_id'). Not in the published InsightsAction schema; returned live since rasa.io's 2026-10-20 update (resolves via GET /v2/contacts/{id}). Null on some events.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contact&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 16,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "ReferencedType": "Contact"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "0D15A29E-65DB-4382-8737-5CDB380539BC"
+                },
+                "sync": {
+                  "lastModified": "2026-10-22T21:08:55.381Z",
+                  "checksum": "2a3b7c91ff945d8182daf5586dfc58db43de6f984788d3a4db43685fdaa9834b"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Email — the contact's email address on this event (Sequence Action field 'email'). Returned live since rasa.io's 2026-10-20 update; null when contact_id is.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 17,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "81C4A046-B563-4636-9C1C-2E43E117A849"
+                },
+                "sync": {
+                  "lastModified": "2026-10-22T21:08:55.394Z",
+                  "checksum": "19a730444c57d6301d4e10e5ece57c36e3f37ad97120d5b0b17a14a7d9c72a8f"
+                }
               }
             ]
           },
@@ -5666,8 +5825,8 @@
             "ID": "C8A9C2EF-BAA5-4C11-8A50-6F188807CDD7"
           },
           "sync": {
-            "lastModified": "2026-10-20T17:03:01.106Z",
-            "checksum": "426007a3143c975a42d23ad50282a8cae35258729ae15841d28153b0d09423f3"
+            "lastModified": "2026-10-22T21:08:55.194Z",
+            "checksum": "fad79e80a07deedb2b90d397360102eeb2e557d656c7f7bf4581e18ecb4093d5"
           }
         },
         {

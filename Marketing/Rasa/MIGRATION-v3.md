@@ -89,13 +89,15 @@ stored watermark older than that is moved up to it with a `WATERMARK_CLAMPED` wa
   `subscriptions`.
 - **Integration Run** is removed by the same migration: it is internal to rasa.io (per the vendor).
 
-**Known vendor issue (2026-10-20):** `/v2/messaging/blast` returns sequence messages (with the sequence's
-`id`, repeated once per message) as well as blasts, and `/v2/messaging/sequence` includes blasts. rasa.io is
-fixing it. Until then the Blast and Sequence objects hold mixed rows, and Blast / Sequence Action skip each
-wrong-type parent (HTTP 404) with a `PARENT_NOT_FOUND` warning instead of failing.
+**Vendor issue, fixed 2026-10-20:** `/v2/messaging/blast` returned sequence messages as well as blasts, and
+`/v2/messaging/sequence` included blasts. rasa.io fixed both lists (verified on rasa.io dev 2026-10-20: no
+repeats, no overlap, every id's insights feed answers 200). Blast / Sequence Action still skip a parent that
+answers HTTP 404 (e.g. a deleted blast) with a `PARENT_NOT_FOUND` warning instead of failing.
 
-**Contact link:** the action rows carry no contact identifier. Their `id` is unique per event and is not a
-contact id (`/v2/contacts/{id}` answers 404). Per-member engagement needs rasa.io to add one.
+**Contact link (3.0.3):** since rasa.io's 2026-10-20 update, every Newsletter / Blast / Sequence Action row
+carries `contact_id` and `email` (not in the published spec). `contact_id` resolves via `GET /v2/contacts/{id}`
+and is declared as a link to Contact, so engagement joins to the contact in MJ. It is null on some events
+(17 of 91 newsletter events on rasa.io dev). The row's own `id` is per event, not the contact.
 
 ## 5. Actions: 12 disabled, 6 added
 
