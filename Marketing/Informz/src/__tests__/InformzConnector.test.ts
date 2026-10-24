@@ -103,6 +103,12 @@ function iofNames(ioName: string): string[] {
         .map(r => String(r.fields.Name));
 }
 
+/** The IO's Declared primary-key fields, in the Sequence order the base read loop joins them in. */
+function keyNames(ioName: string): string[] {
+    return iofNames(ioName).filter(name =>
+        (ioRow(ioName).relatedEntities?.['MJ: Integration Object Fields'] ?? []).some(f => f.fields.Name === name && f.fields.IsPrimaryKey === true));
+}
+
 /** Plain-object rows shaped like the entities — the same seeding the offline tier harness performs. */
 function seedRow<T>(fields: Record<string, unknown>, extra: Record<string, unknown>): Partial<T> {
     const row: Record<string, unknown> = {};
@@ -438,12 +444,14 @@ describe('InformzConnector', () => {
             const fields = history.Records[0].Fields;
             expect(fields).toHaveProperty('Was_Clicked');
             expect(fields).not.toHaveProperty('was_clicked');
-            // Every wire element (the fixture answers this grid in alias casing) lands on its Declared name.
-            // The only other key is the base read loop's synthetic content-hash `ID`, stamped on keyless
-            // objects (this grid's PK is deferred in the frozen contract) — engine behaviour, not a wire key.
+            // Every wire element (the fixture answers this grid in alias casing) lands on its Declared name,
+            // and nothing else is added: the grid declares a composite key, so the base read loop joins its
+            // parts (in Sequence order) into the ExternalID instead of stamping a synthetic content-hash `ID`.
             const declared = iofNames('SubscriberMailingHistory');
-            expect(Object.keys(fields).filter(k => !declared.includes(k))).toEqual(['ID']);
-            expect(fields.ID).toBe(history.Records[0].ExternalID);
+            expect(Object.keys(fields).filter(k => !declared.includes(k))).toEqual([]);
+            const keys = keyNames('SubscriberMailingHistory');
+            expect(keys).toEqual(['Mailing_instance_id', 'Subscriber_ID']);
+            expect(history.Records[0].ExternalID).toBe(keys.map(k => String(fields[k])).join('|'));
 
             const subscribers = await connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), 'Subscriber'));
             expect(subscribers.Records[0].Fields.fixture_member_level).toBe('Level 1');

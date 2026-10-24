@@ -80,7 +80,7 @@ BEGIN
   p_ID_9a17aedf := '3adc5201-e832-41b8-952c-27ac9dfc6a84';
   p_CredentialTypeID_9a17aedf := 'E55DFBD4-BD81-4777-B131-BECF4EBDE630';
   p_Icon_9a17aedf := 'fa-solid fa-envelope-open-text';
-  p_Configuration_9a17aedf := '{"WriteScope":{"mode":"operator-pull-only","in":[],"out":["Subscribe","BulkUpload","OptOut","Unsubscribe","CreateMailing","CreateMessage","ScheduleMailing","SetMailingOnHold","UpdateContactMessageCategoryPreference"],"reason":"operator decision: unidirectional pull connector"},"WriteCapability":{"capability":"read-write","writeCapable":true,"ops":["ActionRequest:Subscribe (AddOrUpdateSubscribers) - up to 1,000 records, synchronous","ActionRequest:BulkUpload (AddOrUpdateSubscribers, ReplaceAllSubscribers, RemoveSubscribers) - over 1,000 records, synchronous","ActionRequest:OptOut - opt an address out of an interest","ActionRequest:Unsubscribe - set an address to unsubscribed","ActionRequest:CreateMailing (Mailing Designer 1)","ActionRequest:CreateMessage (Message Designer 2)","ActionRequest:ScheduleMailing - schedule a mailing for a target group or test send","ActionRequest:SetMailingOnHold - place a mailing on hold","ActionRequest:UpdateContactMessageCategoryPreference - update a contact message-category preference"],"note":"Vendor capability only. All ops are ActionRequest documents posted via PostInformzMessage; this connector does not use them."},"OutOfScopeObjectFamilies":[{"family":"AAPI ActionRequest documents (write surface)","reason":"operator decision: unidirectional pull connector","opsKnown":"packages/Integration/connectors-registry/informz/sources/derived/informz.grids.openapi.json x-informz-action-requests","promotable":true,"actionRequests":["BulkUpload","CreateMailing","CreateMessage","OptOut","ScheduleMailing","Subscribe","Unsubscribe","SetMailingOnHold","UpdateContactMessageCategoryPreference"]},{"family":"Higher Logic Push API v2 (datapushapi.higherlogic.com/v2)","reason":"different host (datapushapi.higherlogic.com/v2; Canada datapushapi.onlinecommunity.ca/v2), protocol (REST POST) and auth from the AAPI; data direction is inbound only: a source system POSTs data INTO Thrive Marketing Professional, so it is not a read source; this connector reads Informz email-marketing data through the AAPI","opsKnown":"POST /contactinfo (ContactDetails, Groups, Demographics, Education, JobHistory, Addresses, PhoneNumbers, EmailAddresses, Orders), POST /list, POST /meeting, POST /product; context.md lists 13 objects: Addresses, ContactDetails, ContactInfo, Demographics, Education, EmailAddresses, Groups, JobHistory, List, Meeting, Orders, PhoneNumbers, Product","promotable":false,"direction":"inbound-push-only","articleId":41678868854420},{"family":"Other Higher Logic product APIs (Thrive Marketing Enterprise / Real Magnet REST at dna.magnetmail.net/ApiAdapter/Rest/; Thrive Community)","reason":"different products and APIs from Thrive Marketing Professional; Enterprise is the separate Real Magnet product line; no help-center article in the snapshot documents their objects (only the IP allowlisting page names the products)","opsKnown":"none documented in snapshot","promotable":false},{"family":"AAPI payload encryption/compression","reason":"optional transport feature (article 360044600992), not used by this connector; plain HTTPS SOAP is sufficient","opsKnown":"none","promotable":false}],"ReadScope":{"mode":"all-documented-grids","includedGridCount":70,"excludedGrids":[]},"ScopeReason":"READ scope: every documented AAPI grid with a proven selector token (all 70 schemas in informz.grids.openapi.json; zero unproven). WRITE scope: none, operator decision (unidirectional pull). Push API v2, other Higher Logic product APIs and payload encryption/compression are out of scope with reasons in OutOfScopeObjectFamilies.","DefaultSyncDirection":"Pull","DiscoveryIsAuthoritative":false,"DiscoveryNote":"No AAPI endpoint enumerates a brand''s grids; the documented catalog is the only inventory, so runtime discovery is not authoritative (residualMode deferred-documented).","Transport":{"protocol":"SOAP 1.1 document/literal (BasicHttpBinding)","operation":"PostInformzMessage","namespace":"http://tempuri.org/","soapAction":"http://partner.informz.net/aapi/2009/08/IInformzWebServiceContract/PostInformzMessage","requestWrapper":"x (xs:string, XML-escaped AAPI document)","responseWrapper":"PostInformzMessageResult","faultTypes":{"wsdl":"InformzServiceFault (Code, Message, Reason)","docs":"InformzAAPIFault (code, reason)"},"faultTypeNote":"Sources disagree on the fault type name; both recorded. WSDL is authoritative for the wire; help-center naming is likely stale.","wsdlServiceAddress":"https://partner.informz.net/aapi/informzservice.svc","wsdlSnapshot":[{"file":"sources/wsdl-snapshot/InformzService.wsdl.xml","sha256":"c4424bcdc92faa8433e1bf7c9d9a0ba1830fd861b2dd73c4933cb58efb9fbf41"},{"file":"sources/wsdl-snapshot/InformzService.wsdl0.xml","sha256":"643105b5d06711a5b49ad5328da66267c409e917c6ab9dec34cc33adc79085d7"},{"file":"sources/wsdl-snapshot/InformzService.xsd0.xml","sha256":"45f685ae5a15b7adafb26f676e25c591d501bed8ed336d2c50f91042b9db2779"},{"file":"sources/wsdl-snapshot/InformzService.xsd1.xml","sha256":"cff6937e7a1ed4a816ee6cb8525d75c041ff3244d8ca6100f031d20f689a521a"},{"file":"sources/wsdl-snapshot/InformzService.xsd2.xml","sha256":"5ed06679ae345f50745d414b857398c381114b4cc3f9c4d363fd40b9058277d7"}]},"BaseURLTemplate":"https://{RegionHost}/aapi/InformzService.svc","RegionHosts":{"us":"partner.informz.net","ca":"partner.informz.ca","test":"partnertest.informz.net"},"DefaultRegion":"us","BaseURLNote":"Documented, vendor-wide (360033049191). The tenant is the Brand in the document body, never the host. A connection-level ServiceURL overrides the template. The WSDL service address is lowercase (https://partner.informz.net/aapi/informzservice.svc); the documented form is /aapi/InformzService.svc.","AuthScheme":{"credentialElements":["Password","Brand@id (+ optional Brand text)","User"],"headerAuth":false,"userElementNote":"Help-center samples use both <User> and <Username>; GridRequest samples in the grid articles use <User>.","brandIpValidation":"Brand id is validated against the IP address stored with the brand to ensure a valid origin point (360033049191). Unregistered-IP fault code unobserved; NoAvailableIPAddressException is the documented candidate.","ipRegistrationProcedure":"UNDOCUMENTED. Article 28344411130388 lists Higher Logic product egress ranges a customer must allowlist; it is not the procedure for registering a caller IP with a brand. No snapshot article gives the caller-IP registration steps (context.md says it takes a Higher Logic support case; operator statement only)."},"Paging":{"sortField":"SortField (attribute order=asc|desc, default asc)","startRow":"StartRow","numberOfRows":"NumberOfRows","maxRowsPerRequest":1000,"startRowBase":null,"startRowBaseNote":"Not provable from docs: the usage-pattern article shows StartRow 0 for the first 50 rows then StartRow 51 for the second page; response row indexes start at 0 or 1. Needs a live probe.","responseRowNumbers":"Grid Response reflects the appropriate row numbers (Record@row)","countProbe":"Count may be requested as the only ReturnField to size paging (360032692452, 360032692472)."},"Conditions":{"single":"<Condition><Single><DataElement/><Comparator/><DataValue/></Single></Condition>","collection":"<Condition><Collection><DataElement/><DataValue/>...<SetOperator/></Collection></Condition>","between":"<Condition><Between><DataElement/><DataValue>earlier</DataValue><DataValue>later</DataValue></Between></Condition>","comparators":["EQ","NEQ","GT","LT","LTE","GTE"],"setOperators":["EQ","NEQ","IN","NOTIN"],"setOperatorsDocsDisagree":"Grid Requests Overview (360033049251) lists SetOperator values IN, EQ, GT, GTE, LT, LTE, NE; the Conditions article (360032692452) lists EQ, NEQ, IN, NOTIN. Both recorded; the Conditions article is the dedicated reference.","dateTimeRule":"When using EQ or IN a time is required; optional for all others; unspecified time defaults to 00:00:00 UTC (360033049251). Between: earlier value must come first. Count must be the only ReturnField and written <Count />.","multipleConditions":"Conditions collection accommodates multiple Condition elements (360033049251)."},"IncrementalSyncCapability":{"mechanism":"date-element Condition (GTE / Between, earlier value first) on a Conditional=True date element","cursor":false,"changeFeed":false,"webhooks":false,"provenNegativeEvidence":{"cursor":{"pattern":"/cursor-based|paging cursor|next.?page.?token|continuation token|nextCursor/i","articlesSearched":213,"hits":[]},"changeFeed":{"pattern":"/change feed|changes since|modified since|delta (sync|query)/i","articlesSearched":213,"hits":[]},"webhooks":{"pattern":"/webhook/i","articlesSearched":213,"hits":[]}},"note":"cursor/changeFeed/webhooks are proven-negative only as \"searched, not found\" across the 213-article snapshot; absence of documentation, not a vendor denial."},"DateFormat":{"response":"YYYY-MM-DDThh:mm:ss.fffffffZ (UTC)","responseExample":"2017-06-19T15:46:18.8130000Z","databaseTimezone":"EST","responseTimezone":"UTC","dstNote":"UTC does not adjust for DST, so the offset from database time varies between 4 and 5 hours through the year.","requestFormsSeenInDocs":["YYYY-MM-DD","YYYY-MM-DDThh:mm:ss"]},"NullSemantics":{"emptyField":"NULL","selfClosingGrid":"zero rows, not an error","note":"Empty/self-closing <Field/> in sample responses; a self-closing <Grid type=\"...\"/> is the documented no-rows response (360032692472). The NULL reading of an empty Field is ImpliedFromExample (sample responses)."},"CasingPolicy":{"rule":"Element names and grid tokens differ in casing across the docs; match case-insensitively on the wire. IOF.Name = sample-response casing.","evidence":"e.g. Mailing_Date vs mailing_date, MailingInstanceID vs Mailing_Instance_ID in the Conditions and usage articles; 77 catalog properties carry wire-aliases. Server case-sensitivity is unproven."},"ErrorContract":{"transport":"HTTP 500 + SOAP Fault","httpStatusEvidence":"The help center and WSDL document a SOAP Fault but not the HTTP status; 500 comes from the operator context (SOAP 1.1 over HTTP convention), unverified against the live service.","codesDocumentedAs":"some possible (table is NOT exhaustive)","codes":["BrandNotFoundException","ItemNotFoundException","ConfigurationErrorException","MismatchedTargetGroupsException","ConflictingInformationException","MultipleDefaultTargetGroupsException","InsufficientDataToCreateSubscriberException","NoAvailableIPAddressException","InsufficientInformationToCompleteActionException","NoNameSpaceSpecifiedException","InvalidCredentialsException","SystemAccessException","InvalidDataFormatException","UnexpectedInputException","InvalidDocumentException","UnknownActionException","InvalidGridCategoryException","UnknownRequestException","InvalidMessageException","ValidUserNotFoundException"],"classification":{"authOrPrecondition":["InvalidCredentialsException","BrandNotFoundException","ValidUserNotFoundException","NoAvailableIPAddressException","SystemAccessException"],"requestDefect":["InvalidDocumentException","InvalidGridCategoryException","UnknownRequestException","InvalidDataFormatException","UnexpectedInputException","NoNameSpaceSpecifiedException","InvalidMessageException"],"other":"retry only on 429/503/transport"},"classificationNote":"The classification is a connector design decision over documented code names; the vendor does not classify them. ActionRequest-only codes (e.g. MismatchedTargetGroups) fall under other and are not reachable by a read-only connector.","inBandErrors":"None documented inside a successful GridResponse."},"RateLimits":{"documented":false,"provenNegative":{"pattern":"/rate.?limit|throttl|requests per (second|minute|hour)|per minute|Retry-After|\\b429\\b/i","articlesSearched":213,"hits":[]},"policy":"No numeric limit documented. Honour Retry-After and treat HTTP 429/503 adaptively via the engine rate limiter."},"CustomFields":{"mechanism":"Demographics, extended demographics and interests are EAV grid ROWS with vendor-wide columns (category/demographic name and value are row data). Brand-defined names are DATA, never column names.","brandSpecificElements":"Brand-specific elements (sample-only / AMS-specific) are requested per connection via Configuration.ExtraReturnFields {<gridToken>:[elements]} and land through the framework runtime custom-column capture.","extraReturnFieldsShape":"{ \"<gridToken>\": [\"<element>\", ...] }"},"CustomObjectMarkerPattern":null,"CustomFieldMarkerPattern":null,"MultiGridRequests":{"documented":true,"article":360045114311,"usedByConnector":false,"note":"One grid per request in this connector."},"Encryption":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"Compression":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"IPAllowlistPrecondition":{"description":"Brand id must originate from an IP stored against the brand (360033049191); registration procedure undocumented (see AuthScheme.ipRegistrationProcedure). The egress ranges on 28344411130388 are ranges a customer allowlists for Higher Logic traffic, not caller registration.","egressRangesProfessional":{"us":"205.201.40.0/29","ca":"205.201.45.0/29"},"wsdlReachableWithoutRegistration":"context.md [verified live]: WSDL fetch needs no credentials, so reachability says nothing about the allowlist."},"APIVersioningStrategy":"XML namespace date (http://partner.informz.net/aapi/2009/08/); no version in URL or header documented","PaginationDefaults":{"type":"offset (StartRow/NumberOfRows, per grid)","maxPageSize":1000},"WebhooksAvailable":false,"BulkOperationsAvailable":{"available":true,"scope":"writes only (ActionRequest BulkUpload, out of scope)","basePath":null}}';
+  p_Configuration_9a17aedf := '{"WriteScope":{"mode":"operator-pull-only","in":[],"out":["Subscribe","BulkUpload","OptOut","Unsubscribe","CreateMailing","CreateMessage","ScheduleMailing","SetMailingOnHold","UpdateContactMessageCategoryPreference"],"reason":"operator decision: unidirectional pull connector"},"WriteCapability":{"capability":"read-write","writeCapable":true,"ops":["ActionRequest:Subscribe (AddOrUpdateSubscribers) - up to 1,000 records, synchronous","ActionRequest:BulkUpload (AddOrUpdateSubscribers, ReplaceAllSubscribers, RemoveSubscribers) - over 1,000 records, synchronous","ActionRequest:OptOut - opt an address out of an interest","ActionRequest:Unsubscribe - set an address to unsubscribed","ActionRequest:CreateMailing (Mailing Designer 1)","ActionRequest:CreateMessage (Message Designer 2)","ActionRequest:ScheduleMailing - schedule a mailing for a target group or test send","ActionRequest:SetMailingOnHold - place a mailing on hold","ActionRequest:UpdateContactMessageCategoryPreference - update a contact message-category preference"],"note":"Vendor capability only. All ops are ActionRequest documents posted via PostInformzMessage; this connector does not use them."},"OutOfScopeObjectFamilies":[{"family":"AAPI ActionRequest documents (write surface)","reason":"operator decision: unidirectional pull connector","opsKnown":"packages/Integration/connectors-registry/informz/sources/derived/informz.grids.openapi.json x-informz-action-requests","promotable":true,"actionRequests":["BulkUpload","CreateMailing","CreateMessage","OptOut","ScheduleMailing","Subscribe","Unsubscribe","SetMailingOnHold","UpdateContactMessageCategoryPreference"]},{"family":"Higher Logic Push API v2 (datapushapi.higherlogic.com/v2)","reason":"different host (datapushapi.higherlogic.com/v2; Canada datapushapi.onlinecommunity.ca/v2), protocol (REST POST) and auth from the AAPI; data direction is inbound only: a source system POSTs data INTO Thrive Marketing Professional, so it is not a read source; this connector reads Informz email-marketing data through the AAPI","opsKnown":"POST /contactinfo (ContactDetails, Groups, Demographics, Education, JobHistory, Addresses, PhoneNumbers, EmailAddresses, Orders), POST /list, POST /meeting, POST /product; context.md lists 13 objects: Addresses, ContactDetails, ContactInfo, Demographics, Education, EmailAddresses, Groups, JobHistory, List, Meeting, Orders, PhoneNumbers, Product","promotable":false,"direction":"inbound-push-only","articleId":41678868854420},{"family":"Other Higher Logic product APIs (Thrive Marketing Enterprise / Real Magnet REST at dna.magnetmail.net/ApiAdapter/Rest/; Thrive Community)","reason":"different products and APIs from Thrive Marketing Professional; Enterprise is the separate Real Magnet product line; no help-center article in the snapshot documents their objects (only the IP allowlisting page names the products)","opsKnown":"none documented in snapshot","promotable":false},{"family":"AAPI payload encryption/compression","reason":"optional transport feature (article 360044600992), not used by this connector; plain HTTPS SOAP is sufficient","opsKnown":"none","promotable":false}],"ReadScope":{"mode":"all-documented-grids","includedGridCount":70,"excludedGrids":[]},"ScopeReason":"READ scope: every documented AAPI grid with a proven selector token (all 70 schemas in informz.grids.openapi.json; zero unproven). WRITE scope: none, operator decision (unidirectional pull). Push API v2, other Higher Logic product APIs and payload encryption/compression are out of scope with reasons in OutOfScopeObjectFamilies.","DefaultSyncDirection":"Pull","DiscoveryIsAuthoritative":false,"DiscoveryNote":"No AAPI endpoint enumerates a brand''s grids; the documented catalog is the only inventory, so runtime discovery is not authoritative (residualMode deferred-documented).","Transport":{"protocol":"SOAP 1.1 document/literal (BasicHttpBinding)","operation":"PostInformzMessage","namespace":"http://tempuri.org/","soapAction":"http://partner.informz.net/aapi/2009/08/IInformzWebServiceContract/PostInformzMessage","requestWrapper":"x (xs:string, XML-escaped AAPI document)","responseWrapper":"PostInformzMessageResult","faultTypes":{"wsdl":"InformzServiceFault (Code, Message, Reason)","docs":"InformzAAPIFault (code, reason)"},"faultTypeNote":"Sources disagree on the fault type name; both recorded. WSDL is authoritative for the wire; help-center naming is likely stale.","wsdlServiceAddress":"https://partner.informz.net/aapi/informzservice.svc","wsdlSnapshot":[{"file":"sources/wsdl-snapshot/InformzService.wsdl.xml","sha256":"c4424bcdc92faa8433e1bf7c9d9a0ba1830fd861b2dd73c4933cb58efb9fbf41"},{"file":"sources/wsdl-snapshot/InformzService.wsdl0.xml","sha256":"643105b5d06711a5b49ad5328da66267c409e917c6ab9dec34cc33adc79085d7"},{"file":"sources/wsdl-snapshot/InformzService.xsd0.xml","sha256":"45f685ae5a15b7adafb26f676e25c591d501bed8ed336d2c50f91042b9db2779"},{"file":"sources/wsdl-snapshot/InformzService.xsd1.xml","sha256":"cff6937e7a1ed4a816ee6cb8525d75c041ff3244d8ca6100f031d20f689a521a"},{"file":"sources/wsdl-snapshot/InformzService.xsd2.xml","sha256":"5ed06679ae345f50745d414b857398c381114b4cc3f9c4d363fd40b9058277d7"}]},"BaseURLTemplate":"https://{RegionHost}/aapi/InformzService.svc","RegionHosts":{"us":"partner.informz.net","ca":"partner.informz.ca","test":"partnertest.informz.net"},"DefaultRegion":"us","BaseURLNote":"Documented, vendor-wide (360033049191). The tenant is the Brand in the document body, never the host. A connection-level ServiceURL overrides the template. The WSDL service address is lowercase (https://partner.informz.net/aapi/informzservice.svc); the documented form is /aapi/InformzService.svc.","AuthScheme":{"credentialElements":["Password","Brand@id (+ optional Brand text)","User"],"headerAuth":false,"userElementNote":"Help-center samples use both <User> and <Username>; GridRequest samples in the grid articles use <User>.","brandIpValidation":"Brand id is validated against the IP address stored with the brand to ensure a valid origin point (360033049191). Unregistered-IP fault code unobserved; NoAvailableIPAddressException is the documented candidate.","ipRegistrationProcedure":"UNDOCUMENTED. Article 28344411130388 lists Higher Logic product egress ranges a customer must allowlist; it is not the procedure for registering a caller IP with a brand. No snapshot article gives the caller-IP registration steps (context.md says it takes a Higher Logic support case; operator statement only)."},"Paging":{"sortField":"SortField (attribute order=asc|desc, default asc)","startRow":"StartRow","numberOfRows":"NumberOfRows","maxRowsPerRequest":1000,"startRowBase":null,"startRowBaseNote":"Not provable from docs: the usage-pattern article shows StartRow 0 for the first 50 rows then StartRow 51 for the second page; response row indexes start at 0 or 1. Needs a live probe.","responseRowNumbers":"Grid Response reflects the appropriate row numbers (Record@row)","countProbe":"Count may be requested as the only ReturnField to size paging (360032692452, 360032692472)."},"Conditions":{"single":"<Condition><Single><DataElement/><Comparator/><DataValue/></Single></Condition>","collection":"<Condition><Collection><DataElement/><DataValue/>...<SetOperator/></Collection></Condition>","between":"<Condition><Between><DataElement/><DataValue>earlier</DataValue><DataValue>later</DataValue></Between></Condition>","comparators":["EQ","NEQ","GT","LT","LTE","GTE"],"setOperators":["EQ","NEQ","IN","NOTIN"],"setOperatorsDocsDisagree":"Grid Requests Overview (360033049251) lists SetOperator values IN, EQ, GT, GTE, LT, LTE, NE; the Conditions article (360032692452) lists EQ, NEQ, IN, NOTIN. Both recorded; the Conditions article is the dedicated reference.","dateTimeRule":"When using EQ or IN a time is required; optional for all others; unspecified time defaults to 00:00:00 UTC (360033049251). Between: earlier value must come first. Count must be the only ReturnField and written <Count />.","multipleConditions":"Conditions collection accommodates multiple Condition elements (360033049251)."},"IncrementalSyncCapability":{"mechanism":"date-element Condition (GTE / Between, earlier value first) on a Conditional=True date element","cursor":false,"changeFeed":false,"webhooks":false,"provenNegativeEvidence":{"cursor":{"pattern":"/cursor-based|paging cursor|next.?page.?token|continuation token|nextCursor/i","articlesSearched":213,"hits":[]},"changeFeed":{"pattern":"/change feed|changes since|modified since|delta (sync|query)/i","articlesSearched":213,"hits":[]},"webhooks":{"pattern":"/webhook/i","articlesSearched":213,"hits":[]}},"note":"cursor/changeFeed/webhooks are proven-negative only as \"searched, not found\" across the 213-article snapshot; absence of documentation, not a vendor denial."},"DateFormat":{"response":"YYYY-MM-DDThh:mm:ss.fffffffZ (UTC)","responseExample":"2017-06-19T15:46:18.8130000Z","databaseTimezone":"EST","responseTimezone":"UTC","dstNote":"UTC does not adjust for DST, so the offset from database time varies between 4 and 5 hours through the year.","requestFormsSeenInDocs":["YYYY-MM-DD","YYYY-MM-DDThh:mm:ss"]},"NullSemantics":{"emptyField":"NULL","selfClosingGrid":"zero rows, not an error","note":"Empty/self-closing <Field/> in sample responses; a self-closing <Grid type=\"...\"/> is the documented no-rows response (360032692472). The NULL reading of an empty Field is ImpliedFromExample (sample responses)."},"CasingPolicy":{"rule":"Element names and grid tokens differ in casing across the docs; match case-insensitively on the wire. IOF.Name = sample-response casing.","evidence":"e.g. Mailing_Date vs mailing_date, MailingInstanceID vs Mailing_Instance_ID in the Conditions and usage articles; 77 catalog properties carry wire-aliases. Server case-sensitivity is unproven."},"ErrorContract":{"transport":"HTTP 500 + SOAP Fault","httpStatusEvidence":"The help center and WSDL document a SOAP Fault but not the HTTP status; 500 comes from the operator context (SOAP 1.1 over HTTP convention), unverified against the live service.","codesDocumentedAs":"some possible (table is NOT exhaustive)","codes":["BrandNotFoundException","ItemNotFoundException","ConfigurationErrorException","MismatchedTargetGroupsException","ConflictingInformationException","MultipleDefaultTargetGroupsException","InsufficientDataToCreateSubscriberException","NoAvailableIPAddressException","InsufficientInformationToCompleteActionException","NoNameSpaceSpecifiedException","InvalidCredentialsException","SystemAccessException","InvalidDataFormatException","UnexpectedInputException","InvalidDocumentException","UnknownActionException","InvalidGridCategoryException","UnknownRequestException","InvalidMessageException","ValidUserNotFoundException"],"classification":{"authOrPrecondition":["InvalidCredentialsException","BrandNotFoundException","ValidUserNotFoundException","NoAvailableIPAddressException","SystemAccessException"],"requestDefect":["InvalidDocumentException","InvalidGridCategoryException","UnknownRequestException","InvalidDataFormatException","UnexpectedInputException","NoNameSpaceSpecifiedException","InvalidMessageException"],"other":"retry only on 429/503/transport"},"classificationNote":"The classification is a connector design decision over documented code names; the vendor does not classify them. ActionRequest-only codes (e.g. MismatchedTargetGroups) fall under other and are not reachable by a read-only connector.","inBandErrors":"None documented inside a successful GridResponse."},"RateLimits":{"documented":false,"provenNegative":{"pattern":"/rate.?limit|throttl|requests per (second|minute|hour)|per minute|Retry-After|\\b429\\b/i","articlesSearched":213,"hits":[]},"policy":"No numeric limit documented. Honour Retry-After and treat HTTP 429/503 adaptively via the engine rate limiter."},"CustomFields":{"mechanism":"Demographics, extended demographics and interests are EAV grid ROWS with vendor-wide columns (category/demographic name and value are row data). Brand-defined names are DATA, never column names.","brandSpecificElements":"Brand-specific elements (sample-only / AMS-specific) are requested per connection via Configuration.ExtraReturnFields {<gridToken>:[elements]} and land through the framework runtime custom-column capture.","extraReturnFieldsShape":"{ \"<gridToken>\": [\"<element>\", ...] }"},"CustomObjectMarkerPattern":null,"CustomFieldMarkerPattern":null,"MultiGridRequests":{"documented":true,"article":360045114311,"usedByConnector":false,"note":"One grid per request in this connector."},"Encryption":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"Compression":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"IPAllowlistPrecondition":{"description":"Brand id must originate from an IP stored against the brand (360033049191); registration procedure undocumented (see AuthScheme.ipRegistrationProcedure). The egress ranges on 28344411130388 are ranges a customer allowlists for Higher Logic traffic, not caller registration.","egressRangesProfessional":{"us":"205.201.40.0/29","ca":"205.201.45.0/29"},"wsdlReachableWithoutRegistration":"context.md [verified live]: WSDL fetch needs no credentials, so reachability says nothing about the allowlist."},"APIVersioningStrategy":"XML namespace date (http://partner.informz.net/aapi/2009/08/); no version in URL or header documented","PaginationDefaults":{"type":"offset (StartRow/NumberOfRows, per grid)","maxPageSize":1000},"WebhooksAvailable":false,"BulkOperationsAvailable":{"available":true,"scope":"writes only (ActionRequest BulkUpload, out of scope)","basePath":null},"DeclaredAgainst":{"helpCenter":{"url":"https://support.higherlogic.com/hc/en-us/categories/360002086131-Higher-Logic-APIs","accessedAt":"2026-10-22","articlesSnapshotted":213,"definitionalArticles":21,"newestArticleUpdatedAt":"2026-08-28","manifestArtifact":"packages/Integration/connectors-registry/informz/sources/hc-snapshot/MANIFEST.json","manifestSha256":"d94e8c054c3a81a90bd6c3b7113c659d8971d5ff8a3d6c3fe3d1f536c72571c4","role":"The record catalog. Each \"GridRequests\" article defines grid tokens and their data elements; the manifest pins every article’s sha256 and the vendor’s updated_at."},"wsdl":{"url":"https://partner.informz.net/aapi/InformzService.svc?wsdl","accessedAt":"2026-10-22","sha256":{"InformzService.wsdl":"c4424bcdc92faa8433e1bf7c9d9a0ba1830fd861b2dd73c4933cb58efb9fbf41","InformzService.wsdl0":"643105b5d06711a5b49ad5328da66267c409e917c6ab9dec34cc33adc79085d7","InformzService.xsd0":"45f685ae5a15b7adafb26f676e25c591d501bed8ed336d2c50f91042b9db2779","InformzService.xsd1":"cff6937e7a1ed4a816ee6cb8525d75c041ff3244d8ca6100f031d20f689a521a","InformzService.xsd2":"5ed06679ae345f50745d414b857398c381114b4cc3f9c4d363fd40b9058277d7"},"role":"Transport only: one operation (PostInformzMessage, string in, string out). Not a record catalog."},"derivedArtifact":"packages/Integration/connectors-registry/informz/sources/derived/informz.grids.openapi.json","declaredCatalogCounts":{"grids":70,"fields":994},"catalogLastEditedAt":"2026-10-24","note":"Declared from vendor documentation only. No authenticated call to Higher Logic has been made (credential-free build), so the catalog is unverified against a live brand."},"PrimaryKeyBasis":{"decidedAt":"2026-10-24","documented":"The other 21 active grids carry a key the vendor docs name as the record ID.","inferred":{"objects":["CampaignSummary","CampaignSummaryDemo","MailingActivity","MailingActivityDemo","MailingActivityOpensByHour","MailingActivityFirstOpenByHour","MailingActivityDomains","MailingActivityTotals","MailingActivityForwardCount","MailingActivitySubscriberActions","MailingActivitySubscriberArchive","MailingActivityBounces","MailingActivityFirstOpen","MailingActivityOpens","MailingActivityClicks","MailingActivityOptout","MailingActivitySendAFriend","SubscriberMailingHistory","SubscriberMailingHistoryAll","SubscriberInterests","SubscriberInterestsDeleted","GetSubscriberInterestChanges","SubscriberEngagementScore","SubscriberLeadScore","SubscriberPersona","SubscriberPrimaryEmailClient","SubscriberExtendedDemographic","SubscriberFormUsage","GetCampaignSubscriber","GetCampaignSubscriberHistory","GetCampaignDetails","SubscriberWebTracking","SubscriberWebTrackingPages","SubscriberWebTrackingInteractions","SubscriberSummaryHistory","SubscriberSummaryHistoryDemo","LandingPagesSummary","LandingPagesSummaryDemo","WebTrackingSummary","WebTrackingSummaryDemo","WebTrackingPageSummary","WebTrackingPageSummaryDemo","WebTrackingPurchaseSummary","WebTrackingPurchaseSummaryDemo","WebTrackingInteractionsSummary","WebTrackingInteractionsSummaryDemo"],"note":"The vendor docs name no row ID for these grids, so each key was chosen from the grid’s row grain: its own IDs, dimensions and event dates, never user_id (the tenant’s optional remote ID). Every part of a composite key must always be populated, because a row with an empty key part cannot be stored. MailingActivity is keyed on mailing_instance_ID alone because the docs define calculation_date as the stats’ as-of time. Known merge risks: opt-outs from several interests at the same instant (MailingActivityOptout omits Interest_ID, which whole-list opt-outs likely lack), and several SKUs bought on one page at one timestamp (SubscriberWebTracking). Unverified until a live sync: a non-unique key silently merges rows, so confirm uniqueness on the first one."},"disabled":{"objects":["EmailBlockStatus","ScoringSummary","ScoringSummaryDemo"],"note":"No usable key: EmailBlockStatus is the brand’s current email block, and ScoringSummary rows are scoring groups identified only by a description."}}}';
   PERFORM __mj."spCreateIntegration"(p_Name := p_Name_9a17aedf, p_Description := p_Description_9a17aedf, p_NavigationBaseURL := p_NavigationBaseURL_9a17aedf, p_ClassName := p_ClassName_9a17aedf, p_ImportPath := p_ImportPath_9a17aedf, p_BatchMaxRequestCount := p_BatchMaxRequestCount_9a17aedf, p_BatchRequestWaitTime := p_BatchRequestWaitTime_9a17aedf, p_ID := p_ID_9a17aedf, p_CredentialTypeID := p_CredentialTypeID_9a17aedf, p_Icon := p_Icon_9a17aedf, p_Configuration := p_Configuration_9a17aedf);
 END $mj$;
 
@@ -338,7 +338,7 @@ BEGIN
   }
 }';
   p_Sequence_1839199d := 2;
-  p_Status_1839199d := 'Active';
+  p_Status_1839199d := 'Disabled';
   p_IsCustom_1839199d := FALSE;
   p_MetadataSource_1839199d := 'Declared';
   p_SupportsCreate_1839199d := FALSE;
@@ -1548,7 +1548,7 @@ BEGIN
   }
 }';
   p_Sequence_5bfa1cb6 := 11;
-  p_Status_5bfa1cb6 := 'Active';
+  p_Status_5bfa1cb6 := 'Disabled';
   p_IsCustom_5bfa1cb6 := FALSE;
   p_MetadataSource_5bfa1cb6 := 'Declared';
   p_SupportsCreate_5bfa1cb6 := FALSE;
@@ -1687,7 +1687,7 @@ BEGIN
   }
 }';
   p_Sequence_e70c181a := 12;
-  p_Status_e70c181a := 'Active';
+  p_Status_e70c181a := 'Disabled';
   p_IsCustom_e70c181a := FALSE;
   p_MetadataSource_e70c181a := 'Declared';
   p_SupportsCreate_e70c181a := FALSE;
@@ -12274,7 +12274,7 @@ BEGIN
   p_DisplayName_90b07170 := 'Month ID';
   p_Type_90b07170 := 'string';
   p_AllowsNull_90b07170 := TRUE;
-  p_IsPrimaryKey_90b07170 := FALSE;
+  p_IsPrimaryKey_90b07170 := TRUE;
   p_IsUniqueKey_90b07170 := FALSE;
   p_IsReadOnly_90b07170 := TRUE;
   p_IsRequired_90b07170 := FALSE;
@@ -12323,7 +12323,7 @@ BEGIN
   p_DisplayName_11611c7a := 'Year ID';
   p_Type_11611c7a := 'string';
   p_AllowsNull_11611c7a := TRUE;
-  p_IsPrimaryKey_11611c7a := FALSE;
+  p_IsPrimaryKey_11611c7a := TRUE;
   p_IsUniqueKey_11611c7a := FALSE;
   p_IsReadOnly_11611c7a := TRUE;
   p_IsRequired_11611c7a := FALSE;
@@ -12519,7 +12519,7 @@ BEGIN
   p_DisplayName_102fd227 := 'Url';
   p_Type_102fd227 := 'string';
   p_AllowsNull_102fd227 := TRUE;
-  p_IsPrimaryKey_102fd227 := FALSE;
+  p_IsPrimaryKey_102fd227 := TRUE;
   p_IsUniqueKey_102fd227 := FALSE;
   p_IsReadOnly_102fd227 := TRUE;
   p_IsRequired_102fd227 := FALSE;
@@ -12862,7 +12862,7 @@ BEGIN
   p_DisplayName_96573557 := 'Month ID';
   p_Type_96573557 := 'string';
   p_AllowsNull_96573557 := TRUE;
-  p_IsPrimaryKey_96573557 := FALSE;
+  p_IsPrimaryKey_96573557 := TRUE;
   p_IsUniqueKey_96573557 := FALSE;
   p_IsReadOnly_96573557 := TRUE;
   p_IsRequired_96573557 := FALSE;
@@ -12911,7 +12911,7 @@ BEGIN
   p_DisplayName_e69f7f02 := 'Year ID';
   p_Type_e69f7f02 := 'string';
   p_AllowsNull_e69f7f02 := TRUE;
-  p_IsPrimaryKey_e69f7f02 := FALSE;
+  p_IsPrimaryKey_e69f7f02 := TRUE;
   p_IsUniqueKey_e69f7f02 := FALSE;
   p_IsReadOnly_e69f7f02 := TRUE;
   p_IsRequired_e69f7f02 := FALSE;
@@ -13107,7 +13107,7 @@ BEGIN
   p_DisplayName_5f8127f7 := 'Url';
   p_Type_5f8127f7 := 'string';
   p_AllowsNull_5f8127f7 := TRUE;
-  p_IsPrimaryKey_5f8127f7 := FALSE;
+  p_IsPrimaryKey_5f8127f7 := TRUE;
   p_IsUniqueKey_5f8127f7 := FALSE;
   p_IsReadOnly_5f8127f7 := TRUE;
   p_IsRequired_5f8127f7 := FALSE;
@@ -13402,7 +13402,7 @@ BEGIN
   p_Description_9d96b2f0 := 'The date the interaction occurred';
   p_Type_9d96b2f0 := 'datetime';
   p_AllowsNull_9d96b2f0 := TRUE;
-  p_IsPrimaryKey_9d96b2f0 := FALSE;
+  p_IsPrimaryKey_9d96b2f0 := TRUE;
   p_IsUniqueKey_9d96b2f0 := FALSE;
   p_IsReadOnly_9d96b2f0 := TRUE;
   p_IsRequired_9d96b2f0 := FALSE;
@@ -13555,7 +13555,7 @@ BEGIN
   p_Description_3b45786b := 'The unique ID of the mailing''s host folder';
   p_Type_3b45786b := 'integer';
   p_AllowsNull_3b45786b := TRUE;
-  p_IsPrimaryKey_3b45786b := FALSE;
+  p_IsPrimaryKey_3b45786b := TRUE;
   p_IsUniqueKey_3b45786b := FALSE;
   p_IsReadOnly_3b45786b := TRUE;
   p_IsRequired_3b45786b := FALSE;
@@ -17309,7 +17309,7 @@ BEGIN
   p_Description_9e724c5f := 'Month of the year';
   p_Type_9e724c5f := 'integer';
   p_AllowsNull_9e724c5f := TRUE;
-  p_IsPrimaryKey_9e724c5f := FALSE;
+  p_IsPrimaryKey_9e724c5f := TRUE;
   p_IsUniqueKey_9e724c5f := FALSE;
   p_IsReadOnly_9e724c5f := TRUE;
   p_IsRequired_9e724c5f := FALSE;
@@ -17360,7 +17360,7 @@ BEGIN
   p_Description_263e9ddb := 'Year';
   p_Type_263e9ddb := 'integer';
   p_AllowsNull_263e9ddb := TRUE;
-  p_IsPrimaryKey_263e9ddb := FALSE;
+  p_IsPrimaryKey_263e9ddb := TRUE;
   p_IsUniqueKey_263e9ddb := FALSE;
   p_IsReadOnly_263e9ddb := TRUE;
   p_IsRequired_263e9ddb := FALSE;
@@ -18584,7 +18584,7 @@ BEGIN
   p_Description_45529967 := 'Month of the year';
   p_Type_45529967 := 'integer';
   p_AllowsNull_45529967 := TRUE;
-  p_IsPrimaryKey_45529967 := FALSE;
+  p_IsPrimaryKey_45529967 := TRUE;
   p_IsUniqueKey_45529967 := FALSE;
   p_IsReadOnly_45529967 := TRUE;
   p_IsRequired_45529967 := FALSE;
@@ -18635,7 +18635,7 @@ BEGIN
   p_Description_5cbfeda2 := 'Year';
   p_Type_5cbfeda2 := 'integer';
   p_AllowsNull_5cbfeda2 := TRUE;
-  p_IsPrimaryKey_5cbfeda2 := FALSE;
+  p_IsPrimaryKey_5cbfeda2 := TRUE;
   p_IsUniqueKey_5cbfeda2 := FALSE;
   p_IsReadOnly_5cbfeda2 := TRUE;
   p_IsRequired_5cbfeda2 := FALSE;
@@ -21443,7 +21443,7 @@ BEGIN
   p_DisplayName_0a3aba77 := 'Month';
   p_Type_0a3aba77 := 'string';
   p_AllowsNull_0a3aba77 := TRUE;
-  p_IsPrimaryKey_0a3aba77 := FALSE;
+  p_IsPrimaryKey_0a3aba77 := TRUE;
   p_IsUniqueKey_0a3aba77 := FALSE;
   p_IsReadOnly_0a3aba77 := TRUE;
   p_IsRequired_0a3aba77 := FALSE;
@@ -21492,7 +21492,7 @@ BEGIN
   p_DisplayName_69a4049a := 'Year';
   p_Type_69a4049a := 'string';
   p_AllowsNull_69a4049a := TRUE;
-  p_IsPrimaryKey_69a4049a := FALSE;
+  p_IsPrimaryKey_69a4049a := TRUE;
   p_IsUniqueKey_69a4049a := FALSE;
   p_IsReadOnly_69a4049a := TRUE;
   p_IsRequired_69a4049a := FALSE;
@@ -21541,7 +21541,7 @@ BEGIN
   p_DisplayName_67357ccf := 'Category';
   p_Type_67357ccf := 'string';
   p_AllowsNull_67357ccf := TRUE;
-  p_IsPrimaryKey_67357ccf := FALSE;
+  p_IsPrimaryKey_67357ccf := TRUE;
   p_IsUniqueKey_67357ccf := FALSE;
   p_IsReadOnly_67357ccf := TRUE;
   p_IsRequired_67357ccf := FALSE;
@@ -21590,7 +21590,7 @@ BEGIN
   p_DisplayName_7f844581 := 'Action';
   p_Type_7f844581 := 'string';
   p_AllowsNull_7f844581 := TRUE;
-  p_IsPrimaryKey_7f844581 := FALSE;
+  p_IsPrimaryKey_7f844581 := TRUE;
   p_IsUniqueKey_7f844581 := FALSE;
   p_IsReadOnly_7f844581 := TRUE;
   p_IsRequired_7f844581 := FALSE;
@@ -21737,7 +21737,7 @@ BEGIN
   p_DisplayName_08ec3410 := 'Month';
   p_Type_08ec3410 := 'string';
   p_AllowsNull_08ec3410 := TRUE;
-  p_IsPrimaryKey_08ec3410 := FALSE;
+  p_IsPrimaryKey_08ec3410 := TRUE;
   p_IsUniqueKey_08ec3410 := FALSE;
   p_IsReadOnly_08ec3410 := TRUE;
   p_IsRequired_08ec3410 := FALSE;
@@ -21786,7 +21786,7 @@ BEGIN
   p_DisplayName_9e48db93 := 'Year';
   p_Type_9e48db93 := 'string';
   p_AllowsNull_9e48db93 := TRUE;
-  p_IsPrimaryKey_9e48db93 := FALSE;
+  p_IsPrimaryKey_9e48db93 := TRUE;
   p_IsUniqueKey_9e48db93 := FALSE;
   p_IsReadOnly_9e48db93 := TRUE;
   p_IsRequired_9e48db93 := FALSE;
@@ -21835,7 +21835,7 @@ BEGIN
   p_DisplayName_e6b4c91a := 'Category';
   p_Type_e6b4c91a := 'string';
   p_AllowsNull_e6b4c91a := TRUE;
-  p_IsPrimaryKey_e6b4c91a := FALSE;
+  p_IsPrimaryKey_e6b4c91a := TRUE;
   p_IsUniqueKey_e6b4c91a := FALSE;
   p_IsReadOnly_e6b4c91a := TRUE;
   p_IsRequired_e6b4c91a := FALSE;
@@ -21884,7 +21884,7 @@ BEGIN
   p_DisplayName_4f5fb55e := 'Action';
   p_Type_4f5fb55e := 'string';
   p_AllowsNull_4f5fb55e := TRUE;
-  p_IsPrimaryKey_4f5fb55e := FALSE;
+  p_IsPrimaryKey_4f5fb55e := TRUE;
   p_IsUniqueKey_4f5fb55e := FALSE;
   p_IsReadOnly_4f5fb55e := TRUE;
   p_IsRequired_4f5fb55e := FALSE;
@@ -22031,7 +22031,7 @@ BEGIN
   p_DisplayName_3a54c292 := 'Month';
   p_Type_3a54c292 := 'string';
   p_AllowsNull_3a54c292 := TRUE;
-  p_IsPrimaryKey_3a54c292 := FALSE;
+  p_IsPrimaryKey_3a54c292 := TRUE;
   p_IsUniqueKey_3a54c292 := FALSE;
   p_IsReadOnly_3a54c292 := TRUE;
   p_IsRequired_3a54c292 := FALSE;
@@ -22080,7 +22080,7 @@ BEGIN
   p_DisplayName_753503da := 'Year';
   p_Type_753503da := 'string';
   p_AllowsNull_753503da := TRUE;
-  p_IsPrimaryKey_753503da := FALSE;
+  p_IsPrimaryKey_753503da := TRUE;
   p_IsUniqueKey_753503da := FALSE;
   p_IsReadOnly_753503da := TRUE;
   p_IsRequired_753503da := FALSE;
@@ -22129,7 +22129,7 @@ BEGIN
   p_DisplayName_3da333e5 := 'Type';
   p_Type_3da333e5 := 'string';
   p_AllowsNull_3da333e5 := TRUE;
-  p_IsPrimaryKey_3da333e5 := FALSE;
+  p_IsPrimaryKey_3da333e5 := TRUE;
   p_IsUniqueKey_3da333e5 := FALSE;
   p_IsReadOnly_3da333e5 := TRUE;
   p_IsRequired_3da333e5 := FALSE;
@@ -22178,7 +22178,7 @@ BEGIN
   p_DisplayName_85e9b4ea := 'Name';
   p_Type_85e9b4ea := 'string';
   p_AllowsNull_85e9b4ea := TRUE;
-  p_IsPrimaryKey_85e9b4ea := FALSE;
+  p_IsPrimaryKey_85e9b4ea := TRUE;
   p_IsUniqueKey_85e9b4ea := FALSE;
   p_IsReadOnly_85e9b4ea := TRUE;
   p_IsRequired_85e9b4ea := FALSE;
@@ -22668,7 +22668,7 @@ BEGIN
   p_DisplayName_b4f20f0a := 'Month';
   p_Type_b4f20f0a := 'string';
   p_AllowsNull_b4f20f0a := TRUE;
-  p_IsPrimaryKey_b4f20f0a := FALSE;
+  p_IsPrimaryKey_b4f20f0a := TRUE;
   p_IsUniqueKey_b4f20f0a := FALSE;
   p_IsReadOnly_b4f20f0a := TRUE;
   p_IsRequired_b4f20f0a := FALSE;
@@ -22717,7 +22717,7 @@ BEGIN
   p_DisplayName_14c5d8b3 := 'Year';
   p_Type_14c5d8b3 := 'string';
   p_AllowsNull_14c5d8b3 := TRUE;
-  p_IsPrimaryKey_14c5d8b3 := FALSE;
+  p_IsPrimaryKey_14c5d8b3 := TRUE;
   p_IsUniqueKey_14c5d8b3 := FALSE;
   p_IsReadOnly_14c5d8b3 := TRUE;
   p_IsRequired_14c5d8b3 := FALSE;
@@ -22766,7 +22766,7 @@ BEGIN
   p_DisplayName_cbcc931c := 'Type';
   p_Type_cbcc931c := 'string';
   p_AllowsNull_cbcc931c := TRUE;
-  p_IsPrimaryKey_cbcc931c := FALSE;
+  p_IsPrimaryKey_cbcc931c := TRUE;
   p_IsUniqueKey_cbcc931c := FALSE;
   p_IsReadOnly_cbcc931c := TRUE;
   p_IsRequired_cbcc931c := FALSE;
@@ -22815,7 +22815,7 @@ BEGIN
   p_DisplayName_3e1aa911 := 'Name';
   p_Type_3e1aa911 := 'string';
   p_AllowsNull_3e1aa911 := TRUE;
-  p_IsPrimaryKey_3e1aa911 := FALSE;
+  p_IsPrimaryKey_3e1aa911 := TRUE;
   p_IsUniqueKey_3e1aa911 := FALSE;
   p_IsReadOnly_3e1aa911 := TRUE;
   p_IsRequired_3e1aa911 := FALSE;
@@ -23305,7 +23305,7 @@ BEGIN
   p_DisplayName_08181bf3 := 'Month';
   p_Type_08181bf3 := 'string';
   p_AllowsNull_08181bf3 := TRUE;
-  p_IsPrimaryKey_08181bf3 := FALSE;
+  p_IsPrimaryKey_08181bf3 := TRUE;
   p_IsUniqueKey_08181bf3 := FALSE;
   p_IsReadOnly_08181bf3 := TRUE;
   p_IsRequired_08181bf3 := FALSE;
@@ -23354,7 +23354,7 @@ BEGIN
   p_DisplayName_8747532a := 'Year';
   p_Type_8747532a := 'string';
   p_AllowsNull_8747532a := TRUE;
-  p_IsPrimaryKey_8747532a := FALSE;
+  p_IsPrimaryKey_8747532a := TRUE;
   p_IsUniqueKey_8747532a := FALSE;
   p_IsReadOnly_8747532a := TRUE;
   p_IsRequired_8747532a := FALSE;
@@ -23403,7 +23403,7 @@ BEGIN
   p_DisplayName_a5f5123c := 'Sku';
   p_Type_a5f5123c := 'string';
   p_AllowsNull_a5f5123c := TRUE;
-  p_IsPrimaryKey_a5f5123c := FALSE;
+  p_IsPrimaryKey_a5f5123c := TRUE;
   p_IsUniqueKey_a5f5123c := FALSE;
   p_IsReadOnly_a5f5123c := TRUE;
   p_IsRequired_a5f5123c := FALSE;
@@ -23648,7 +23648,7 @@ BEGIN
   p_DisplayName_3d1bee0c := 'Month';
   p_Type_3d1bee0c := 'string';
   p_AllowsNull_3d1bee0c := TRUE;
-  p_IsPrimaryKey_3d1bee0c := FALSE;
+  p_IsPrimaryKey_3d1bee0c := TRUE;
   p_IsUniqueKey_3d1bee0c := FALSE;
   p_IsReadOnly_3d1bee0c := TRUE;
   p_IsRequired_3d1bee0c := FALSE;
@@ -23697,7 +23697,7 @@ BEGIN
   p_DisplayName_910278f8 := 'Year';
   p_Type_910278f8 := 'string';
   p_AllowsNull_910278f8 := TRUE;
-  p_IsPrimaryKey_910278f8 := FALSE;
+  p_IsPrimaryKey_910278f8 := TRUE;
   p_IsUniqueKey_910278f8 := FALSE;
   p_IsReadOnly_910278f8 := TRUE;
   p_IsRequired_910278f8 := FALSE;
@@ -23746,7 +23746,7 @@ BEGIN
   p_DisplayName_7ba50318 := 'Sku';
   p_Type_7ba50318 := 'string';
   p_AllowsNull_7ba50318 := TRUE;
-  p_IsPrimaryKey_7ba50318 := FALSE;
+  p_IsPrimaryKey_7ba50318 := TRUE;
   p_IsUniqueKey_7ba50318 := FALSE;
   p_IsReadOnly_7ba50318 := TRUE;
   p_IsRequired_7ba50318 := FALSE;
@@ -23991,7 +23991,7 @@ BEGIN
   p_DisplayName_fddcef28 := 'Month';
   p_Type_fddcef28 := 'string';
   p_AllowsNull_fddcef28 := TRUE;
-  p_IsPrimaryKey_fddcef28 := FALSE;
+  p_IsPrimaryKey_fddcef28 := TRUE;
   p_IsUniqueKey_fddcef28 := FALSE;
   p_IsReadOnly_fddcef28 := TRUE;
   p_IsRequired_fddcef28 := FALSE;
@@ -24040,7 +24040,7 @@ BEGIN
   p_DisplayName_53dba6ad := 'Year';
   p_Type_53dba6ad := 'string';
   p_AllowsNull_53dba6ad := TRUE;
-  p_IsPrimaryKey_53dba6ad := FALSE;
+  p_IsPrimaryKey_53dba6ad := TRUE;
   p_IsUniqueKey_53dba6ad := FALSE;
   p_IsReadOnly_53dba6ad := TRUE;
   p_IsRequired_53dba6ad := FALSE;
@@ -27617,7 +27617,7 @@ BEGIN
   p_DisplayName_ef91dcb5 := 'Month';
   p_Type_ef91dcb5 := 'string';
   p_AllowsNull_ef91dcb5 := TRUE;
-  p_IsPrimaryKey_ef91dcb5 := FALSE;
+  p_IsPrimaryKey_ef91dcb5 := TRUE;
   p_IsUniqueKey_ef91dcb5 := FALSE;
   p_IsReadOnly_ef91dcb5 := TRUE;
   p_IsRequired_ef91dcb5 := FALSE;
@@ -27715,7 +27715,7 @@ BEGIN
   p_DisplayName_6642321d := 'Year';
   p_Type_6642321d := 'string';
   p_AllowsNull_6642321d := TRUE;
-  p_IsPrimaryKey_6642321d := FALSE;
+  p_IsPrimaryKey_6642321d := TRUE;
   p_IsUniqueKey_6642321d := FALSE;
   p_IsReadOnly_6642321d := TRUE;
   p_IsRequired_6642321d := FALSE;
@@ -31195,7 +31195,7 @@ BEGIN
   p_Description_f8ad39ac := 'Unique campaign ID';
   p_Type_f8ad39ac := 'integer';
   p_AllowsNull_f8ad39ac := TRUE;
-  p_IsPrimaryKey_f8ad39ac := FALSE;
+  p_IsPrimaryKey_f8ad39ac := TRUE;
   p_IsUniqueKey_f8ad39ac := FALSE;
   p_IsReadOnly_f8ad39ac := TRUE;
   p_IsRequired_f8ad39ac := FALSE;
@@ -31353,7 +31353,7 @@ BEGIN
   p_Description_2463d7e9 := 'Unique subscriber ID';
   p_Type_2463d7e9 := 'integer';
   p_AllowsNull_2463d7e9 := TRUE;
-  p_IsPrimaryKey_2463d7e9 := FALSE;
+  p_IsPrimaryKey_2463d7e9 := TRUE;
   p_IsUniqueKey_2463d7e9 := FALSE;
   p_IsReadOnly_2463d7e9 := TRUE;
   p_IsRequired_2463d7e9 := FALSE;
@@ -31407,7 +31407,7 @@ BEGIN
   p_Description_23ebb1b4 := 'Date the campaign was created';
   p_Type_23ebb1b4 := 'datetime';
   p_AllowsNull_23ebb1b4 := TRUE;
-  p_IsPrimaryKey_23ebb1b4 := FALSE;
+  p_IsPrimaryKey_23ebb1b4 := TRUE;
   p_IsUniqueKey_23ebb1b4 := FALSE;
   p_IsReadOnly_23ebb1b4 := TRUE;
   p_IsRequired_23ebb1b4 := FALSE;
@@ -33489,7 +33489,7 @@ BEGIN
   p_Description_dfbbabf8 := 'The unique ID of the subscriber';
   p_Type_dfbbabf8 := 'integer';
   p_AllowsNull_dfbbabf8 := TRUE;
-  p_IsPrimaryKey_dfbbabf8 := FALSE;
+  p_IsPrimaryKey_dfbbabf8 := TRUE;
   p_IsUniqueKey_dfbbabf8 := FALSE;
   p_IsReadOnly_dfbbabf8 := TRUE;
   p_IsRequired_dfbbabf8 := FALSE;
@@ -33596,7 +33596,7 @@ BEGIN
   p_Description_dbc31e88 := 'The unique ID of the Score Type';
   p_Type_dbc31e88 := 'integer';
   p_AllowsNull_dbc31e88 := TRUE;
-  p_IsPrimaryKey_dbc31e88 := FALSE;
+  p_IsPrimaryKey_dbc31e88 := TRUE;
   p_IsUniqueKey_dbc31e88 := FALSE;
   p_IsReadOnly_dbc31e88 := TRUE;
   p_IsRequired_dbc31e88 := FALSE;
@@ -33804,7 +33804,7 @@ BEGIN
   p_Description_8aadb2dc := 'Unique Subscriber ID';
   p_Type_8aadb2dc := 'integer';
   p_AllowsNull_8aadb2dc := TRUE;
-  p_IsPrimaryKey_8aadb2dc := FALSE;
+  p_IsPrimaryKey_8aadb2dc := TRUE;
   p_IsUniqueKey_8aadb2dc := FALSE;
   p_IsReadOnly_8aadb2dc := TRUE;
   p_IsRequired_8aadb2dc := FALSE;
@@ -33962,7 +33962,7 @@ BEGIN
   p_Description_600df32e := 'Unique Demographic Category ID';
   p_Type_600df32e := 'integer';
   p_AllowsNull_600df32e := TRUE;
-  p_IsPrimaryKey_600df32e := FALSE;
+  p_IsPrimaryKey_600df32e := TRUE;
   p_IsUniqueKey_600df32e := FALSE;
   p_IsReadOnly_600df32e := TRUE;
   p_IsRequired_600df32e := FALSE;
@@ -34066,7 +34066,7 @@ BEGIN
   p_Description_663c0aa4 := 'Unique Demographic ID';
   p_Type_663c0aa4 := 'integer';
   p_AllowsNull_663c0aa4 := TRUE;
-  p_IsPrimaryKey_663c0aa4 := FALSE;
+  p_IsPrimaryKey_663c0aa4 := TRUE;
   p_IsUniqueKey_663c0aa4 := FALSE;
   p_IsReadOnly_663c0aa4 := TRUE;
   p_IsRequired_663c0aa4 := FALSE;
@@ -34171,7 +34171,7 @@ BEGIN
   p_Type_f0594bfb := 'string';
   p_Length_f0594bfb := 100;
   p_AllowsNull_f0594bfb := TRUE;
-  p_IsPrimaryKey_f0594bfb := FALSE;
+  p_IsPrimaryKey_f0594bfb := TRUE;
   p_IsUniqueKey_f0594bfb := FALSE;
   p_IsReadOnly_f0594bfb := TRUE;
   p_IsRequired_f0594bfb := FALSE;
@@ -34325,7 +34325,7 @@ BEGIN
   p_Description_2a71f130 := 'The subscriber''s unique ID';
   p_Type_2a71f130 := 'integer';
   p_AllowsNull_2a71f130 := TRUE;
-  p_IsPrimaryKey_2a71f130 := FALSE;
+  p_IsPrimaryKey_2a71f130 := TRUE;
   p_IsUniqueKey_2a71f130 := FALSE;
   p_IsReadOnly_2a71f130 := TRUE;
   p_IsRequired_2a71f130 := FALSE;
@@ -34536,7 +34536,7 @@ BEGIN
   p_Description_6f016508 := 'The unique ID of the form';
   p_Type_6f016508 := 'integer';
   p_AllowsNull_6f016508 := TRUE;
-  p_IsPrimaryKey_6f016508 := FALSE;
+  p_IsPrimaryKey_6f016508 := TRUE;
   p_IsUniqueKey_6f016508 := FALSE;
   p_IsReadOnly_6f016508 := TRUE;
   p_IsRequired_6f016508 := FALSE;
@@ -34640,7 +34640,7 @@ BEGIN
   p_Description_3ddb2f57 := 'The date on which the subscriber used the form';
   p_Type_3ddb2f57 := 'datetime';
   p_AllowsNull_3ddb2f57 := TRUE;
-  p_IsPrimaryKey_3ddb2f57 := FALSE;
+  p_IsPrimaryKey_3ddb2f57 := TRUE;
   p_IsUniqueKey_3ddb2f57 := FALSE;
   p_IsReadOnly_3ddb2f57 := TRUE;
   p_IsRequired_3ddb2f57 := FALSE;
@@ -35056,8 +35056,8 @@ BEGIN
   p_Description_baf14e95 := 'Desired email format';
   p_Type_baf14e95 := 'integer';
   p_AllowsNull_baf14e95 := TRUE;
-  p_IsPrimaryKey_baf14e95 := FALSE;
-  p_IsUniqueKey_baf14e95 := FALSE;
+  p_IsPrimaryKey_baf14e95 := TRUE;
+  p_IsUniqueKey_baf14e95 := TRUE;
   p_IsReadOnly_baf14e95 := TRUE;
   p_IsRequired_baf14e95 := FALSE;
   p_Sequence_baf14e95 := 6;
@@ -35524,8 +35524,8 @@ BEGIN
   p_Description_f053e5f0 := 'Desired email format';
   p_Type_f053e5f0 := 'integer';
   p_AllowsNull_f053e5f0 := TRUE;
-  p_IsPrimaryKey_f053e5f0 := FALSE;
-  p_IsUniqueKey_f053e5f0 := FALSE;
+  p_IsPrimaryKey_f053e5f0 := TRUE;
+  p_IsUniqueKey_f053e5f0 := TRUE;
   p_IsReadOnly_f053e5f0 := TRUE;
   p_IsRequired_f053e5f0 := FALSE;
   p_Sequence_f053e5f0 := 6;
@@ -35833,7 +35833,7 @@ BEGIN
   p_Description_65cfcc5d := 'The unique ID of the subscriber';
   p_Type_65cfcc5d := 'integer';
   p_AllowsNull_65cfcc5d := TRUE;
-  p_IsPrimaryKey_65cfcc5d := FALSE;
+  p_IsPrimaryKey_65cfcc5d := TRUE;
   p_IsUniqueKey_65cfcc5d := FALSE;
   p_IsReadOnly_65cfcc5d := TRUE;
   p_IsRequired_65cfcc5d := FALSE;
@@ -35940,7 +35940,7 @@ BEGIN
   p_Description_3d6329c1 := 'The unique ID of the Score Type';
   p_Type_3d6329c1 := 'integer';
   p_AllowsNull_3d6329c1 := TRUE;
-  p_IsPrimaryKey_3d6329c1 := FALSE;
+  p_IsPrimaryKey_3d6329c1 := TRUE;
   p_IsUniqueKey_3d6329c1 := FALSE;
   p_IsReadOnly_3d6329c1 := TRUE;
   p_IsRequired_3d6329c1 := FALSE;
@@ -36712,7 +36712,7 @@ BEGIN
   p_Description_45052e61 := 'Unique Subscriber ID';
   p_Type_45052e61 := 'integer';
   p_AllowsNull_45052e61 := TRUE;
-  p_IsPrimaryKey_45052e61 := FALSE;
+  p_IsPrimaryKey_45052e61 := TRUE;
   p_IsUniqueKey_45052e61 := FALSE;
   p_IsReadOnly_45052e61 := TRUE;
   p_IsRequired_45052e61 := FALSE;
@@ -36819,7 +36819,7 @@ BEGIN
   p_Description_f7922718 := 'Unique Score Type ID';
   p_Type_f7922718 := 'integer';
   p_AllowsNull_f7922718 := TRUE;
-  p_IsPrimaryKey_f7922718 := FALSE;
+  p_IsPrimaryKey_f7922718 := TRUE;
   p_IsUniqueKey_f7922718 := FALSE;
   p_IsReadOnly_f7922718 := TRUE;
   p_IsRequired_f7922718 := FALSE;
@@ -38382,7 +38382,7 @@ BEGIN
   p_Description_e9a2668e := 'Unique Subscriber ID';
   p_Type_e9a2668e := 'integer';
   p_AllowsNull_e9a2668e := TRUE;
-  p_IsPrimaryKey_e9a2668e := FALSE;
+  p_IsPrimaryKey_e9a2668e := TRUE;
   p_IsUniqueKey_e9a2668e := FALSE;
   p_IsReadOnly_e9a2668e := TRUE;
   p_IsRequired_e9a2668e := FALSE;
@@ -38489,7 +38489,7 @@ BEGIN
   p_Description_1bf1d9a0 := 'Unique Score Type ID';
   p_Type_1bf1d9a0 := 'integer';
   p_AllowsNull_1bf1d9a0 := TRUE;
-  p_IsPrimaryKey_1bf1d9a0 := FALSE;
+  p_IsPrimaryKey_1bf1d9a0 := TRUE;
   p_IsUniqueKey_1bf1d9a0 := FALSE;
   p_IsReadOnly_1bf1d9a0 := TRUE;
   p_IsRequired_1bf1d9a0 := FALSE;
@@ -38697,7 +38697,7 @@ BEGIN
   p_Description_b406ba8f := 'The subscriber''s unique ID';
   p_Type_b406ba8f := 'integer';
   p_AllowsNull_b406ba8f := TRUE;
-  p_IsPrimaryKey_b406ba8f := FALSE;
+  p_IsPrimaryKey_b406ba8f := TRUE;
   p_IsUniqueKey_b406ba8f := FALSE;
   p_IsReadOnly_b406ba8f := TRUE;
   p_IsRequired_b406ba8f := FALSE;
@@ -38805,7 +38805,7 @@ BEGIN
   p_Type_dc7c9dd1 := 'string';
   p_Length_dc7c9dd1 := 2000;
   p_AllowsNull_dc7c9dd1 := TRUE;
-  p_IsPrimaryKey_dc7c9dd1 := FALSE;
+  p_IsPrimaryKey_dc7c9dd1 := TRUE;
   p_IsUniqueKey_dc7c9dd1 := FALSE;
   p_IsReadOnly_dc7c9dd1 := TRUE;
   p_IsRequired_dc7c9dd1 := FALSE;
@@ -39277,7 +39277,7 @@ BEGIN
   p_Description_815c3874 := 'Create date';
   p_Type_815c3874 := 'datetime';
   p_AllowsNull_815c3874 := TRUE;
-  p_IsPrimaryKey_815c3874 := FALSE;
+  p_IsPrimaryKey_815c3874 := TRUE;
   p_IsUniqueKey_815c3874 := FALSE;
   p_IsReadOnly_815c3874 := TRUE;
   p_IsRequired_815c3874 := FALSE;
@@ -39851,7 +39851,7 @@ BEGIN
   p_Type_8dbc86f6 := 'string';
   p_Length_8dbc86f6 := 12;
   p_AllowsNull_8dbc86f6 := TRUE;
-  p_IsPrimaryKey_8dbc86f6 := FALSE;
+  p_IsPrimaryKey_8dbc86f6 := TRUE;
   p_IsUniqueKey_8dbc86f6 := FALSE;
   p_IsReadOnly_8dbc86f6 := TRUE;
   p_IsRequired_8dbc86f6 := FALSE;
@@ -39903,7 +39903,7 @@ BEGIN
   p_Description_024d597a := 'Unique Subscriber ID';
   p_Type_024d597a := 'integer';
   p_AllowsNull_024d597a := TRUE;
-  p_IsPrimaryKey_024d597a := FALSE;
+  p_IsPrimaryKey_024d597a := TRUE;
   p_IsUniqueKey_024d597a := FALSE;
   p_IsReadOnly_024d597a := TRUE;
   p_IsRequired_024d597a := FALSE;
@@ -40062,7 +40062,7 @@ BEGIN
   p_Type_7bfe412f := 'string';
   p_Length_7bfe412f := 2000;
   p_AllowsNull_7bfe412f := TRUE;
-  p_IsPrimaryKey_7bfe412f := FALSE;
+  p_IsPrimaryKey_7bfe412f := TRUE;
   p_IsUniqueKey_7bfe412f := FALSE;
   p_IsReadOnly_7bfe412f := TRUE;
   p_IsRequired_7bfe412f := FALSE;
@@ -40483,7 +40483,7 @@ BEGIN
   p_Description_d4091c2d := 'Create date';
   p_Type_d4091c2d := 'datetime';
   p_AllowsNull_d4091c2d := TRUE;
-  p_IsPrimaryKey_d4091c2d := FALSE;
+  p_IsPrimaryKey_d4091c2d := TRUE;
   p_IsUniqueKey_d4091c2d := FALSE;
   p_IsReadOnly_d4091c2d := TRUE;
   p_IsRequired_d4091c2d := FALSE;
@@ -40535,7 +40535,7 @@ BEGIN
   p_Type_80b3c8e3 := 'string';
   p_Length_80b3c8e3 := 255;
   p_AllowsNull_80b3c8e3 := TRUE;
-  p_IsPrimaryKey_80b3c8e3 := FALSE;
+  p_IsPrimaryKey_80b3c8e3 := TRUE;
   p_IsUniqueKey_80b3c8e3 := FALSE;
   p_IsReadOnly_80b3c8e3 := TRUE;
   p_IsRequired_80b3c8e3 := FALSE;
@@ -40588,7 +40588,7 @@ BEGIN
   p_Type_7dfc3dd4 := 'string';
   p_Length_7dfc3dd4 := 255;
   p_AllowsNull_7dfc3dd4 := TRUE;
-  p_IsPrimaryKey_7dfc3dd4 := FALSE;
+  p_IsPrimaryKey_7dfc3dd4 := TRUE;
   p_IsUniqueKey_7dfc3dd4 := FALSE;
   p_IsReadOnly_7dfc3dd4 := TRUE;
   p_IsRequired_7dfc3dd4 := FALSE;
@@ -40693,7 +40693,7 @@ BEGIN
   p_Description_e699dd6c := 'Unique Subscriber ID';
   p_Type_e699dd6c := 'integer';
   p_AllowsNull_e699dd6c := TRUE;
-  p_IsPrimaryKey_e699dd6c := FALSE;
+  p_IsPrimaryKey_e699dd6c := TRUE;
   p_IsUniqueKey_e699dd6c := FALSE;
   p_IsReadOnly_e699dd6c := TRUE;
   p_IsRequired_e699dd6c := FALSE;
@@ -40852,7 +40852,7 @@ BEGIN
   p_Type_13ba67fd := 'string';
   p_Length_13ba67fd := 2000;
   p_AllowsNull_13ba67fd := TRUE;
-  p_IsPrimaryKey_13ba67fd := FALSE;
+  p_IsPrimaryKey_13ba67fd := TRUE;
   p_IsUniqueKey_13ba67fd := FALSE;
   p_IsReadOnly_13ba67fd := TRUE;
   p_IsRequired_13ba67fd := FALSE;
@@ -41273,7 +41273,7 @@ BEGIN
   p_Description_f8fb39f1 := 'Create date';
   p_Type_f8fb39f1 := 'datetime';
   p_AllowsNull_f8fb39f1 := TRUE;
-  p_IsPrimaryKey_f8fb39f1 := FALSE;
+  p_IsPrimaryKey_f8fb39f1 := TRUE;
   p_IsUniqueKey_f8fb39f1 := FALSE;
   p_IsReadOnly_f8fb39f1 := TRUE;
   p_IsRequired_f8fb39f1 := FALSE;
@@ -44599,8 +44599,8 @@ BEGIN
   p_Description_4d07fabf := 'Unique ID for a mailing instance';
   p_Type_4d07fabf := 'integer';
   p_AllowsNull_4d07fabf := TRUE;
-  p_IsPrimaryKey_4d07fabf := FALSE;
-  p_IsUniqueKey_4d07fabf := FALSE;
+  p_IsPrimaryKey_4d07fabf := TRUE;
+  p_IsUniqueKey_4d07fabf := TRUE;
   p_IsReadOnly_4d07fabf := TRUE;
   p_IsRequired_4d07fabf := FALSE;
   p_RelatedIntegrationObjectID_4d07fabf := '35E44D52-811E-4374-9E1C-6B88D4833377';
@@ -46494,7 +46494,7 @@ BEGIN
   p_Type_76d38da1 := 'string';
   p_Length_76d38da1 := 100;
   p_AllowsNull_76d38da1 := TRUE;
-  p_IsPrimaryKey_76d38da1 := FALSE;
+  p_IsPrimaryKey_76d38da1 := TRUE;
   p_IsUniqueKey_76d38da1 := FALSE;
   p_IsReadOnly_76d38da1 := TRUE;
   p_IsRequired_76d38da1 := FALSE;
@@ -46649,7 +46649,7 @@ BEGIN
   p_Description_1be25c5c := 'Unique mailing instance ID';
   p_Type_1be25c5c := 'integer';
   p_AllowsNull_1be25c5c := TRUE;
-  p_IsPrimaryKey_1be25c5c := FALSE;
+  p_IsPrimaryKey_1be25c5c := TRUE;
   p_IsUniqueKey_1be25c5c := FALSE;
   p_IsReadOnly_1be25c5c := TRUE;
   p_IsRequired_1be25c5c := FALSE;
@@ -47174,7 +47174,7 @@ BEGIN
   p_Type_eb773b30 := 'string';
   p_Length_eb773b30 := 100;
   p_AllowsNull_eb773b30 := TRUE;
-  p_IsPrimaryKey_eb773b30 := FALSE;
+  p_IsPrimaryKey_eb773b30 := TRUE;
   p_IsUniqueKey_eb773b30 := FALSE;
   p_IsReadOnly_eb773b30 := TRUE;
   p_IsRequired_eb773b30 := FALSE;
@@ -47228,7 +47228,7 @@ BEGIN
   p_Description_daed74f4 := 'Unique Link ID';
   p_Type_daed74f4 := 'integer';
   p_AllowsNull_daed74f4 := TRUE;
-  p_IsPrimaryKey_daed74f4 := FALSE;
+  p_IsPrimaryKey_daed74f4 := TRUE;
   p_IsUniqueKey_daed74f4 := FALSE;
   p_IsReadOnly_daed74f4 := TRUE;
   p_IsRequired_daed74f4 := FALSE;
@@ -47336,7 +47336,7 @@ BEGIN
   p_Description_75a98b7a := 'DateTime of click';
   p_Type_75a98b7a := 'datetime';
   p_AllowsNull_75a98b7a := TRUE;
-  p_IsPrimaryKey_75a98b7a := FALSE;
+  p_IsPrimaryKey_75a98b7a := TRUE;
   p_IsUniqueKey_75a98b7a := FALSE;
   p_IsReadOnly_75a98b7a := TRUE;
   p_IsRequired_75a98b7a := FALSE;
@@ -47494,7 +47494,7 @@ BEGIN
   p_Description_c7d69aae := 'Unique mailing instance ID';
   p_Type_c7d69aae := 'integer';
   p_AllowsNull_c7d69aae := TRUE;
-  p_IsPrimaryKey_c7d69aae := FALSE;
+  p_IsPrimaryKey_c7d69aae := TRUE;
   p_IsUniqueKey_c7d69aae := FALSE;
   p_IsReadOnly_c7d69aae := TRUE;
   p_IsRequired_c7d69aae := FALSE;
@@ -47653,7 +47653,7 @@ BEGIN
   p_Type_b8f3488a := 'string';
   p_Length_b8f3488a := 100;
   p_AllowsNull_b8f3488a := TRUE;
-  p_IsPrimaryKey_b8f3488a := FALSE;
+  p_IsPrimaryKey_b8f3488a := TRUE;
   p_IsUniqueKey_b8f3488a := FALSE;
   p_IsReadOnly_b8f3488a := TRUE;
   p_IsRequired_b8f3488a := FALSE;
@@ -47758,7 +47758,7 @@ BEGIN
   p_Description_a992bc94 := 'Unique mailing instance ID';
   p_Type_a992bc94 := 'integer';
   p_AllowsNull_a992bc94 := TRUE;
-  p_IsPrimaryKey_a992bc94 := FALSE;
+  p_IsPrimaryKey_a992bc94 := TRUE;
   p_IsUniqueKey_a992bc94 := FALSE;
   p_IsReadOnly_a992bc94 := TRUE;
   p_IsRequired_a992bc94 := FALSE;
@@ -47813,7 +47813,7 @@ BEGIN
   p_Type_9665459f := 'string';
   p_Length_9665459f := 100;
   p_AllowsNull_9665459f := TRUE;
-  p_IsPrimaryKey_9665459f := FALSE;
+  p_IsPrimaryKey_9665459f := TRUE;
   p_IsUniqueKey_9665459f := FALSE;
   p_IsReadOnly_9665459f := TRUE;
   p_IsRequired_9665459f := FALSE;
@@ -47970,7 +47970,7 @@ BEGIN
   p_Description_c842a841 := 'Unique mailing instance ID';
   p_Type_c842a841 := 'integer';
   p_AllowsNull_c842a841 := TRUE;
-  p_IsPrimaryKey_c842a841 := FALSE;
+  p_IsPrimaryKey_c842a841 := TRUE;
   p_IsUniqueKey_c842a841 := FALSE;
   p_IsReadOnly_c842a841 := TRUE;
   p_IsRequired_c842a841 := FALSE;
@@ -48232,7 +48232,7 @@ BEGIN
   p_Description_4fb6e285 := 'DateTime of first open by a subscriber';
   p_Type_4fb6e285 := 'integer';
   p_AllowsNull_4fb6e285 := TRUE;
-  p_IsPrimaryKey_4fb6e285 := FALSE;
+  p_IsPrimaryKey_4fb6e285 := TRUE;
   p_IsUniqueKey_4fb6e285 := FALSE;
   p_IsReadOnly_4fb6e285 := TRUE;
   p_IsRequired_4fb6e285 := FALSE;
@@ -48285,7 +48285,7 @@ BEGIN
   p_Description_4b4eb52d := 'Hour';
   p_Type_4b4eb52d := 'integer';
   p_AllowsNull_4b4eb52d := TRUE;
-  p_IsPrimaryKey_4b4eb52d := FALSE;
+  p_IsPrimaryKey_4b4eb52d := TRUE;
   p_IsUniqueKey_4b4eb52d := FALSE;
   p_IsReadOnly_4b4eb52d := TRUE;
   p_IsRequired_4b4eb52d := FALSE;
@@ -48392,7 +48392,7 @@ BEGIN
   p_Description_e6aeb7de := 'Unique mailing instance ID';
   p_Type_e6aeb7de := 'integer';
   p_AllowsNull_e6aeb7de := TRUE;
-  p_IsPrimaryKey_e6aeb7de := FALSE;
+  p_IsPrimaryKey_e6aeb7de := TRUE;
   p_IsUniqueKey_e6aeb7de := FALSE;
   p_IsReadOnly_e6aeb7de := TRUE;
   p_IsRequired_e6aeb7de := FALSE;
@@ -48448,7 +48448,7 @@ BEGIN
   p_Description_d6654630 := 'Month';
   p_Type_d6654630 := 'integer';
   p_AllowsNull_d6654630 := TRUE;
-  p_IsPrimaryKey_d6654630 := FALSE;
+  p_IsPrimaryKey_d6654630 := TRUE;
   p_IsUniqueKey_d6654630 := FALSE;
   p_IsReadOnly_d6654630 := TRUE;
   p_IsRequired_d6654630 := FALSE;
@@ -48552,7 +48552,7 @@ BEGIN
   p_Description_cbe4ff2f := 'Year';
   p_Type_cbe4ff2f := 'integer';
   p_AllowsNull_cbe4ff2f := TRUE;
-  p_IsPrimaryKey_cbe4ff2f := FALSE;
+  p_IsPrimaryKey_cbe4ff2f := TRUE;
   p_IsUniqueKey_cbe4ff2f := FALSE;
   p_IsReadOnly_cbe4ff2f := TRUE;
   p_IsRequired_cbe4ff2f := FALSE;
@@ -48711,7 +48711,7 @@ BEGIN
   p_Description_cefebe32 := 'Unique mailing instance ID';
   p_Type_cefebe32 := 'integer';
   p_AllowsNull_cefebe32 := TRUE;
-  p_IsPrimaryKey_cefebe32 := FALSE;
+  p_IsPrimaryKey_cefebe32 := TRUE;
   p_IsUniqueKey_cefebe32 := FALSE;
   p_IsReadOnly_cefebe32 := TRUE;
   p_IsRequired_cefebe32 := FALSE;
@@ -48816,7 +48816,7 @@ BEGIN
   p_Description_4ee06006 := 'Unique subscriber ID';
   p_Type_4ee06006 := 'integer';
   p_AllowsNull_4ee06006 := TRUE;
-  p_IsPrimaryKey_4ee06006 := FALSE;
+  p_IsPrimaryKey_4ee06006 := TRUE;
   p_IsUniqueKey_4ee06006 := FALSE;
   p_IsReadOnly_4ee06006 := TRUE;
   p_IsRequired_4ee06006 := FALSE;
@@ -48871,7 +48871,7 @@ BEGIN
   p_Type_14478b1f := 'string';
   p_Length_14478b1f := 100;
   p_AllowsNull_14478b1f := TRUE;
-  p_IsPrimaryKey_14478b1f := FALSE;
+  p_IsPrimaryKey_14478b1f := TRUE;
   p_IsUniqueKey_14478b1f := FALSE;
   p_IsReadOnly_14478b1f := TRUE;
   p_IsRequired_14478b1f := FALSE;
@@ -48977,7 +48977,7 @@ BEGIN
   p_Description_597faa77 := 'Unique instance ID of the mailing';
   p_Type_597faa77 := 'integer';
   p_AllowsNull_597faa77 := TRUE;
-  p_IsPrimaryKey_597faa77 := FALSE;
+  p_IsPrimaryKey_597faa77 := TRUE;
   p_IsUniqueKey_597faa77 := FALSE;
   p_IsReadOnly_597faa77 := TRUE;
   p_IsRequired_597faa77 := FALSE;
@@ -49031,7 +49031,7 @@ BEGIN
   p_Description_cc0818da := 'The date and time of the open';
   p_Type_cc0818da := 'datetime';
   p_AllowsNull_cc0818da := TRUE;
-  p_IsPrimaryKey_cc0818da := FALSE;
+  p_IsPrimaryKey_cc0818da := TRUE;
   p_IsUniqueKey_cc0818da := FALSE;
   p_IsReadOnly_cc0818da := TRUE;
   p_IsRequired_cc0818da := FALSE;
@@ -49292,7 +49292,7 @@ BEGIN
   p_Description_3b1097e1 := 'The date and time of the first open';
   p_Type_3b1097e1 := 'integer';
   p_AllowsNull_3b1097e1 := TRUE;
-  p_IsPrimaryKey_3b1097e1 := FALSE;
+  p_IsPrimaryKey_3b1097e1 := TRUE;
   p_IsUniqueKey_3b1097e1 := FALSE;
   p_IsReadOnly_3b1097e1 := TRUE;
   p_IsRequired_3b1097e1 := FALSE;
@@ -49345,7 +49345,7 @@ BEGIN
   p_Description_e6cab981 := 'Hour';
   p_Type_e6cab981 := 'integer';
   p_AllowsNull_e6cab981 := TRUE;
-  p_IsPrimaryKey_e6cab981 := FALSE;
+  p_IsPrimaryKey_e6cab981 := TRUE;
   p_IsUniqueKey_e6cab981 := FALSE;
   p_IsReadOnly_e6cab981 := TRUE;
   p_IsRequired_e6cab981 := FALSE;
@@ -49452,7 +49452,7 @@ BEGIN
   p_Description_42e81eaa := 'Unique mailing instance ID';
   p_Type_42e81eaa := 'integer';
   p_AllowsNull_42e81eaa := TRUE;
-  p_IsPrimaryKey_42e81eaa := FALSE;
+  p_IsPrimaryKey_42e81eaa := TRUE;
   p_IsUniqueKey_42e81eaa := FALSE;
   p_IsReadOnly_42e81eaa := TRUE;
   p_IsRequired_42e81eaa := FALSE;
@@ -49508,7 +49508,7 @@ BEGIN
   p_Description_09690bfa := 'Month';
   p_Type_09690bfa := 'integer';
   p_AllowsNull_09690bfa := TRUE;
-  p_IsPrimaryKey_09690bfa := FALSE;
+  p_IsPrimaryKey_09690bfa := TRUE;
   p_IsUniqueKey_09690bfa := FALSE;
   p_IsReadOnly_09690bfa := TRUE;
   p_IsRequired_09690bfa := FALSE;
@@ -49612,7 +49612,7 @@ BEGIN
   p_Description_c1b49a6a := 'Year';
   p_Type_c1b49a6a := 'integer';
   p_AllowsNull_c1b49a6a := TRUE;
-  p_IsPrimaryKey_c1b49a6a := FALSE;
+  p_IsPrimaryKey_c1b49a6a := TRUE;
   p_IsUniqueKey_c1b49a6a := FALSE;
   p_IsReadOnly_c1b49a6a := TRUE;
   p_IsRequired_c1b49a6a := FALSE;
@@ -49666,7 +49666,7 @@ BEGIN
   p_Type_34ccb500 := 'string';
   p_Length_34ccb500 := 100;
   p_AllowsNull_34ccb500 := TRUE;
-  p_IsPrimaryKey_34ccb500 := FALSE;
+  p_IsPrimaryKey_34ccb500 := TRUE;
   p_IsUniqueKey_34ccb500 := FALSE;
   p_IsReadOnly_34ccb500 := TRUE;
   p_IsRequired_34ccb500 := FALSE;
@@ -49824,7 +49824,7 @@ BEGIN
   p_Description_bf100924 := 'Unique mailing instance ID';
   p_Type_bf100924 := 'integer';
   p_AllowsNull_bf100924 := TRUE;
-  p_IsPrimaryKey_bf100924 := FALSE;
+  p_IsPrimaryKey_bf100924 := TRUE;
   p_IsUniqueKey_bf100924 := FALSE;
   p_IsReadOnly_bf100924 := TRUE;
   p_IsRequired_bf100924 := FALSE;
@@ -49929,7 +49929,7 @@ BEGIN
   p_Description_d5cfdf49 := 'DateTime of optout';
   p_Type_d5cfdf49 := 'datetime';
   p_AllowsNull_d5cfdf49 := TRUE;
-  p_IsPrimaryKey_d5cfdf49 := FALSE;
+  p_IsPrimaryKey_d5cfdf49 := TRUE;
   p_IsUniqueKey_d5cfdf49 := FALSE;
   p_IsReadOnly_d5cfdf49 := TRUE;
   p_IsRequired_d5cfdf49 := FALSE;
@@ -50083,7 +50083,7 @@ BEGIN
   p_Type_be368b3f := 'string';
   p_Length_be368b3f := 100;
   p_AllowsNull_be368b3f := TRUE;
-  p_IsPrimaryKey_be368b3f := FALSE;
+  p_IsPrimaryKey_be368b3f := TRUE;
   p_IsUniqueKey_be368b3f := FALSE;
   p_IsReadOnly_be368b3f := TRUE;
   p_IsRequired_be368b3f := FALSE;
@@ -50189,7 +50189,7 @@ BEGIN
   p_Description_4bb4fff3 := 'Unique mailing instance ID';
   p_Type_4bb4fff3 := 'integer';
   p_AllowsNull_4bb4fff3 := TRUE;
-  p_IsPrimaryKey_4bb4fff3 := FALSE;
+  p_IsPrimaryKey_4bb4fff3 := TRUE;
   p_IsUniqueKey_4bb4fff3 := FALSE;
   p_IsReadOnly_4bb4fff3 := TRUE;
   p_IsRequired_4bb4fff3 := FALSE;
@@ -50244,7 +50244,7 @@ BEGIN
   p_Type_155bb6de := 'string';
   p_Length_155bb6de := 100;
   p_AllowsNull_155bb6de := TRUE;
-  p_IsPrimaryKey_155bb6de := FALSE;
+  p_IsPrimaryKey_155bb6de := TRUE;
   p_IsUniqueKey_155bb6de := FALSE;
   p_IsReadOnly_155bb6de := TRUE;
   p_IsRequired_155bb6de := FALSE;
@@ -50552,7 +50552,7 @@ BEGIN
   p_Type_0ab5229e := 'string';
   p_Length_0ab5229e := 100;
   p_AllowsNull_0ab5229e := TRUE;
-  p_IsPrimaryKey_0ab5229e := FALSE;
+  p_IsPrimaryKey_0ab5229e := TRUE;
   p_IsUniqueKey_0ab5229e := FALSE;
   p_IsReadOnly_0ab5229e := TRUE;
   p_IsRequired_0ab5229e := FALSE;
@@ -50606,7 +50606,7 @@ BEGIN
   p_Description_582bac37 := 'Unique mailing instance ID';
   p_Type_582bac37 := 'integer';
   p_AllowsNull_582bac37 := TRUE;
-  p_IsPrimaryKey_582bac37 := FALSE;
+  p_IsPrimaryKey_582bac37 := TRUE;
   p_IsUniqueKey_582bac37 := FALSE;
   p_IsReadOnly_582bac37 := TRUE;
   p_IsRequired_582bac37 := FALSE;
@@ -50865,7 +50865,7 @@ BEGIN
   p_Type_4064224d := 'string';
   p_Length_4064224d := 100;
   p_AllowsNull_4064224d := TRUE;
-  p_IsPrimaryKey_4064224d := FALSE;
+  p_IsPrimaryKey_4064224d := TRUE;
   p_IsUniqueKey_4064224d := FALSE;
   p_IsReadOnly_4064224d := TRUE;
   p_IsRequired_4064224d := FALSE;
@@ -51023,7 +51023,7 @@ BEGIN
   p_Description_9e280bb8 := 'Unique mailing instance ID';
   p_Type_9e280bb8 := 'integer';
   p_AllowsNull_9e280bb8 := TRUE;
-  p_IsPrimaryKey_9e280bb8 := FALSE;
+  p_IsPrimaryKey_9e280bb8 := TRUE;
   p_IsUniqueKey_9e280bb8 := FALSE;
   p_IsReadOnly_9e280bb8 := TRUE;
   p_IsRequired_9e280bb8 := FALSE;
@@ -51553,7 +51553,7 @@ BEGIN
   p_Description_090cad84 := 'Unique Mailing Instance ID';
   p_Type_090cad84 := 'integer';
   p_AllowsNull_090cad84 := TRUE;
-  p_IsPrimaryKey_090cad84 := FALSE;
+  p_IsPrimaryKey_090cad84 := TRUE;
   p_IsUniqueKey_090cad84 := FALSE;
   p_IsReadOnly_090cad84 := TRUE;
   p_IsRequired_090cad84 := FALSE;
@@ -51822,7 +51822,7 @@ BEGIN
   p_DisplayName_f3033620 := 'Subscriber ID';
   p_Type_f3033620 := 'integer';
   p_AllowsNull_f3033620 := TRUE;
-  p_IsPrimaryKey_f3033620 := FALSE;
+  p_IsPrimaryKey_f3033620 := TRUE;
   p_IsUniqueKey_f3033620 := FALSE;
   p_IsReadOnly_f3033620 := TRUE;
   p_IsRequired_f3033620 := FALSE;
@@ -52278,7 +52278,7 @@ BEGIN
   p_Description_a59162aa := 'Unique Mailing Instance ID';
   p_Type_a59162aa := 'integer';
   p_AllowsNull_a59162aa := TRUE;
-  p_IsPrimaryKey_a59162aa := FALSE;
+  p_IsPrimaryKey_a59162aa := TRUE;
   p_IsUniqueKey_a59162aa := FALSE;
   p_IsReadOnly_a59162aa := TRUE;
   p_IsRequired_a59162aa := FALSE;
@@ -52441,7 +52441,7 @@ BEGIN
   p_DisplayName_5ba1f0a6 := 'Subscriber ID';
   p_Type_5ba1f0a6 := 'integer';
   p_AllowsNull_5ba1f0a6 := TRUE;
-  p_IsPrimaryKey_5ba1f0a6 := FALSE;
+  p_IsPrimaryKey_5ba1f0a6 := TRUE;
   p_IsUniqueKey_5ba1f0a6 := FALSE;
   p_IsReadOnly_5ba1f0a6 := TRUE;
   p_IsRequired_5ba1f0a6 := FALSE;
@@ -53150,7 +53150,7 @@ BEGIN
   p_Description_73710cd0 := 'Unique campaign ID';
   p_Type_73710cd0 := 'integer';
   p_AllowsNull_73710cd0 := TRUE;
-  p_IsPrimaryKey_73710cd0 := FALSE;
+  p_IsPrimaryKey_73710cd0 := TRUE;
   p_IsUniqueKey_73710cd0 := FALSE;
   p_IsReadOnly_73710cd0 := TRUE;
   p_IsRequired_73710cd0 := FALSE;
@@ -53362,7 +53362,7 @@ BEGIN
   p_Description_7098fd2b := 'Unique subscriber ID';
   p_Type_7098fd2b := 'integer';
   p_AllowsNull_7098fd2b := TRUE;
-  p_IsPrimaryKey_7098fd2b := FALSE;
+  p_IsPrimaryKey_7098fd2b := TRUE;
   p_IsUniqueKey_7098fd2b := FALSE;
   p_IsReadOnly_7098fd2b := TRUE;
   p_IsRequired_7098fd2b := FALSE;
@@ -53824,7 +53824,7 @@ BEGIN
   p_Description_816f3258 := 'Unique campaign ID';
   p_Type_816f3258 := 'integer';
   p_AllowsNull_816f3258 := TRUE;
-  p_IsPrimaryKey_816f3258 := FALSE;
+  p_IsPrimaryKey_816f3258 := TRUE;
   p_IsUniqueKey_816f3258 := FALSE;
   p_IsReadOnly_816f3258 := TRUE;
   p_IsRequired_816f3258 := FALSE;
@@ -53931,7 +53931,7 @@ BEGIN
   p_Description_ad94e40d := 'Unique step ID';
   p_Type_ad94e40d := 'integer';
   p_AllowsNull_ad94e40d := TRUE;
-  p_IsPrimaryKey_ad94e40d := FALSE;
+  p_IsPrimaryKey_ad94e40d := TRUE;
   p_IsUniqueKey_ad94e40d := FALSE;
   p_IsReadOnly_ad94e40d := TRUE;
   p_IsRequired_ad94e40d := FALSE;
@@ -54036,7 +54036,7 @@ BEGIN
   p_Description_166981e3 := 'Unique subscriber ID';
   p_Type_166981e3 := 'integer';
   p_AllowsNull_166981e3 := TRUE;
-  p_IsPrimaryKey_166981e3 := FALSE;
+  p_IsPrimaryKey_166981e3 := TRUE;
   p_IsUniqueKey_166981e3 := FALSE;
   p_IsReadOnly_166981e3 := TRUE;
   p_IsRequired_166981e3 := FALSE;
@@ -54294,7 +54294,7 @@ BEGIN
   p_Description_022f4652 := 'The start step date';
   p_Type_022f4652 := 'datetime';
   p_AllowsNull_022f4652 := TRUE;
-  p_IsPrimaryKey_022f4652 := FALSE;
+  p_IsPrimaryKey_022f4652 := TRUE;
   p_IsUniqueKey_022f4652 := FALSE;
   p_IsReadOnly_022f4652 := TRUE;
   p_IsRequired_022f4652 := FALSE;
@@ -54691,8 +54691,8 @@ BEGIN
   p_DisplayName_a671bb9a := 'Campaign ID';
   p_Type_a671bb9a := 'string';
   p_AllowsNull_a671bb9a := TRUE;
-  p_IsPrimaryKey_a671bb9a := FALSE;
-  p_IsUniqueKey_a671bb9a := FALSE;
+  p_IsPrimaryKey_a671bb9a := TRUE;
+  p_IsUniqueKey_a671bb9a := TRUE;
   p_IsReadOnly_a671bb9a := TRUE;
   p_IsRequired_a671bb9a := FALSE;
   p_RelatedIntegrationObjectID_a671bb9a := '0272E14A-03AA-4D37-9EBF-E11156425107';
@@ -56074,8 +56074,8 @@ BEGIN
   p_DisplayName_dcbc5b39 := 'Campaign ID';
   p_Type_dcbc5b39 := 'string';
   p_AllowsNull_dcbc5b39 := TRUE;
-  p_IsPrimaryKey_dcbc5b39 := FALSE;
-  p_IsUniqueKey_dcbc5b39 := FALSE;
+  p_IsPrimaryKey_dcbc5b39 := TRUE;
+  p_IsUniqueKey_dcbc5b39 := TRUE;
   p_IsReadOnly_dcbc5b39 := TRUE;
   p_IsRequired_dcbc5b39 := FALSE;
   p_RelatedIntegrationObjectID_dcbc5b39 := '0272E14A-03AA-4D37-9EBF-E11156425107';
@@ -57311,7 +57311,7 @@ BEGIN
   p_DisplayName_48c74032 := 'Subscriber ID';
   p_Type_48c74032 := 'string';
   p_AllowsNull_48c74032 := TRUE;
-  p_IsPrimaryKey_48c74032 := FALSE;
+  p_IsPrimaryKey_48c74032 := TRUE;
   p_IsUniqueKey_48c74032 := FALSE;
   p_IsReadOnly_48c74032 := TRUE;
   p_IsRequired_48c74032 := FALSE;
@@ -57468,7 +57468,7 @@ BEGIN
   p_DisplayName_8f8b951d := 'Interest ID';
   p_Type_8f8b951d := 'string';
   p_AllowsNull_8f8b951d := TRUE;
-  p_IsPrimaryKey_8f8b951d := FALSE;
+  p_IsPrimaryKey_8f8b951d := TRUE;
   p_IsUniqueKey_8f8b951d := FALSE;
   p_IsReadOnly_8f8b951d := TRUE;
   p_IsRequired_8f8b951d := FALSE;
@@ -57566,7 +57566,7 @@ BEGIN
   p_DisplayName_552cc8e0 := 'Action';
   p_Type_552cc8e0 := 'string';
   p_AllowsNull_552cc8e0 := TRUE;
-  p_IsPrimaryKey_552cc8e0 := FALSE;
+  p_IsPrimaryKey_552cc8e0 := TRUE;
   p_IsUniqueKey_552cc8e0 := FALSE;
   p_IsReadOnly_552cc8e0 := TRUE;
   p_IsRequired_552cc8e0 := FALSE;
@@ -57615,7 +57615,7 @@ BEGIN
   p_DisplayName_2689c4ab := 'Action Date';
   p_Type_2689c4ab := 'string';
   p_AllowsNull_2689c4ab := TRUE;
-  p_IsPrimaryKey_2689c4ab := FALSE;
+  p_IsPrimaryKey_2689c4ab := TRUE;
   p_IsUniqueKey_2689c4ab := FALSE;
   p_IsReadOnly_2689c4ab := TRUE;
   p_IsRequired_2689c4ab := FALSE;
@@ -58872,8 +58872,8 @@ BEGIN
   p_Description_b20fb759 := 'Unique ID for a mailing instance';
   p_Type_b20fb759 := 'integer';
   p_AllowsNull_b20fb759 := TRUE;
-  p_IsPrimaryKey_b20fb759 := FALSE;
-  p_IsUniqueKey_b20fb759 := FALSE;
+  p_IsPrimaryKey_b20fb759 := TRUE;
+  p_IsUniqueKey_b20fb759 := TRUE;
   p_IsReadOnly_b20fb759 := TRUE;
   p_IsRequired_b20fb759 := FALSE;
   p_RelatedIntegrationObjectID_b20fb759 := '35E44D52-811E-4374-9E1C-6B88D4833377';

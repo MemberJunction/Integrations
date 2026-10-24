@@ -71,7 +71,7 @@ SET
 SET
   @Icon_9a17aedf = N'fa-solid fa-envelope-open-text'
 SET
-  @Configuration_9a17aedf = N'{"WriteScope":{"mode":"operator-pull-only","in":[],"out":["Subscribe","BulkUpload","OptOut","Unsubscribe","CreateMailing","CreateMessage","ScheduleMailing","SetMailingOnHold","UpdateContactMessageCategoryPreference"],"reason":"operator decision: unidirectional pull connector"},"WriteCapability":{"capability":"read-write","writeCapable":true,"ops":["ActionRequest:Subscribe (AddOrUpdateSubscribers) - up to 1,000 records, synchronous","ActionRequest:BulkUpload (AddOrUpdateSubscribers, ReplaceAllSubscribers, RemoveSubscribers) - over 1,000 records, synchronous","ActionRequest:OptOut - opt an address out of an interest","ActionRequest:Unsubscribe - set an address to unsubscribed","ActionRequest:CreateMailing (Mailing Designer 1)","ActionRequest:CreateMessage (Message Designer 2)","ActionRequest:ScheduleMailing - schedule a mailing for a target group or test send","ActionRequest:SetMailingOnHold - place a mailing on hold","ActionRequest:UpdateContactMessageCategoryPreference - update a contact message-category preference"],"note":"Vendor capability only. All ops are ActionRequest documents posted via PostInformzMessage; this connector does not use them."},"OutOfScopeObjectFamilies":[{"family":"AAPI ActionRequest documents (write surface)","reason":"operator decision: unidirectional pull connector","opsKnown":"packages/Integration/connectors-registry/informz/sources/derived/informz.grids.openapi.json x-informz-action-requests","promotable":true,"actionRequests":["BulkUpload","CreateMailing","CreateMessage","OptOut","ScheduleMailing","Subscribe","Unsubscribe","SetMailingOnHold","UpdateContactMessageCategoryPreference"]},{"family":"Higher Logic Push API v2 (datapushapi.higherlogic.com/v2)","reason":"different host (datapushapi.higherlogic.com/v2; Canada datapushapi.onlinecommunity.ca/v2), protocol (REST POST) and auth from the AAPI; data direction is inbound only: a source system POSTs data INTO Thrive Marketing Professional, so it is not a read source; this connector reads Informz email-marketing data through the AAPI","opsKnown":"POST /contactinfo (ContactDetails, Groups, Demographics, Education, JobHistory, Addresses, PhoneNumbers, EmailAddresses, Orders), POST /list, POST /meeting, POST /product; context.md lists 13 objects: Addresses, ContactDetails, ContactInfo, Demographics, Education, EmailAddresses, Groups, JobHistory, List, Meeting, Orders, PhoneNumbers, Product","promotable":false,"direction":"inbound-push-only","articleId":41678868854420},{"family":"Other Higher Logic product APIs (Thrive Marketing Enterprise / Real Magnet REST at dna.magnetmail.net/ApiAdapter/Rest/; Thrive Community)","reason":"different products and APIs from Thrive Marketing Professional; Enterprise is the separate Real Magnet product line; no help-center article in the snapshot documents their objects (only the IP allowlisting page names the products)","opsKnown":"none documented in snapshot","promotable":false},{"family":"AAPI payload encryption/compression","reason":"optional transport feature (article 360044600992), not used by this connector; plain HTTPS SOAP is sufficient","opsKnown":"none","promotable":false}],"ReadScope":{"mode":"all-documented-grids","includedGridCount":70,"excludedGrids":[]},"ScopeReason":"READ scope: every documented AAPI grid with a proven selector token (all 70 schemas in informz.grids.openapi.json; zero unproven). WRITE scope: none, operator decision (unidirectional pull). Push API v2, other Higher Logic product APIs and payload encryption/compression are out of scope with reasons in OutOfScopeObjectFamilies.","DefaultSyncDirection":"Pull","DiscoveryIsAuthoritative":false,"DiscoveryNote":"No AAPI endpoint enumerates a brand''s grids; the documented catalog is the only inventory, so runtime discovery is not authoritative (residualMode deferred-documented).","Transport":{"protocol":"SOAP 1.1 document/literal (BasicHttpBinding)","operation":"PostInformzMessage","namespace":"http://tempuri.org/","soapAction":"http://partner.informz.net/aapi/2009/08/IInformzWebServiceContract/PostInformzMessage","requestWrapper":"x (xs:string, XML-escaped AAPI document)","responseWrapper":"PostInformzMessageResult","faultTypes":{"wsdl":"InformzServiceFault (Code, Message, Reason)","docs":"InformzAAPIFault (code, reason)"},"faultTypeNote":"Sources disagree on the fault type name; both recorded. WSDL is authoritative for the wire; help-center naming is likely stale.","wsdlServiceAddress":"https://partner.informz.net/aapi/informzservice.svc","wsdlSnapshot":[{"file":"sources/wsdl-snapshot/InformzService.wsdl.xml","sha256":"c4424bcdc92faa8433e1bf7c9d9a0ba1830fd861b2dd73c4933cb58efb9fbf41"},{"file":"sources/wsdl-snapshot/InformzService.wsdl0.xml","sha256":"643105b5d06711a5b49ad5328da66267c409e917c6ab9dec34cc33adc79085d7"},{"file":"sources/wsdl-snapshot/InformzService.xsd0.xml","sha256":"45f685ae5a15b7adafb26f676e25c591d501bed8ed336d2c50f91042b9db2779"},{"file":"sources/wsdl-snapshot/InformzService.xsd1.xml","sha256":"cff6937e7a1ed4a816ee6cb8525d75c041ff3244d8ca6100f031d20f689a521a"},{"file":"sources/wsdl-snapshot/InformzService.xsd2.xml","sha256":"5ed06679ae345f50745d414b857398c381114b4cc3f9c4d363fd40b9058277d7"}]},"BaseURLTemplate":"https://{RegionHost}/aapi/InformzService.svc","RegionHosts":{"us":"partner.informz.net","ca":"partner.informz.ca","test":"partnertest.informz.net"},"DefaultRegion":"us","BaseURLNote":"Documented, vendor-wide (360033049191). The tenant is the Brand in the document body, never the host. A connection-level ServiceURL overrides the template. The WSDL service address is lowercase (https://partner.informz.net/aapi/informzservice.svc); the documented form is /aapi/InformzService.svc.","AuthScheme":{"credentialElements":["Password","Brand@id (+ optional Brand text)","User"],"headerAuth":false,"userElementNote":"Help-center samples use both <User> and <Username>; GridRequest samples in the grid articles use <User>.","brandIpValidation":"Brand id is validated against the IP address stored with the brand to ensure a valid origin point (360033049191). Unregistered-IP fault code unobserved; NoAvailableIPAddressException is the documented candidate.","ipRegistrationProcedure":"UNDOCUMENTED. Article 28344411130388 lists Higher Logic product egress ranges a customer must allowlist; it is not the procedure for registering a caller IP with a brand. No snapshot article gives the caller-IP registration steps (context.md says it takes a Higher Logic support case; operator statement only)."},"Paging":{"sortField":"SortField (attribute order=asc|desc, default asc)","startRow":"StartRow","numberOfRows":"NumberOfRows","maxRowsPerRequest":1000,"startRowBase":null,"startRowBaseNote":"Not provable from docs: the usage-pattern article shows StartRow 0 for the first 50 rows then StartRow 51 for the second page; response row indexes start at 0 or 1. Needs a live probe.","responseRowNumbers":"Grid Response reflects the appropriate row numbers (Record@row)","countProbe":"Count may be requested as the only ReturnField to size paging (360032692452, 360032692472)."},"Conditions":{"single":"<Condition><Single><DataElement/><Comparator/><DataValue/></Single></Condition>","collection":"<Condition><Collection><DataElement/><DataValue/>...<SetOperator/></Collection></Condition>","between":"<Condition><Between><DataElement/><DataValue>earlier</DataValue><DataValue>later</DataValue></Between></Condition>","comparators":["EQ","NEQ","GT","LT","LTE","GTE"],"setOperators":["EQ","NEQ","IN","NOTIN"],"setOperatorsDocsDisagree":"Grid Requests Overview (360033049251) lists SetOperator values IN, EQ, GT, GTE, LT, LTE, NE; the Conditions article (360032692452) lists EQ, NEQ, IN, NOTIN. Both recorded; the Conditions article is the dedicated reference.","dateTimeRule":"When using EQ or IN a time is required; optional for all others; unspecified time defaults to 00:00:00 UTC (360033049251). Between: earlier value must come first. Count must be the only ReturnField and written <Count />.","multipleConditions":"Conditions collection accommodates multiple Condition elements (360033049251)."},"IncrementalSyncCapability":{"mechanism":"date-element Condition (GTE / Between, earlier value first) on a Conditional=True date element","cursor":false,"changeFeed":false,"webhooks":false,"provenNegativeEvidence":{"cursor":{"pattern":"/cursor-based|paging cursor|next.?page.?token|continuation token|nextCursor/i","articlesSearched":213,"hits":[]},"changeFeed":{"pattern":"/change feed|changes since|modified since|delta (sync|query)/i","articlesSearched":213,"hits":[]},"webhooks":{"pattern":"/webhook/i","articlesSearched":213,"hits":[]}},"note":"cursor/changeFeed/webhooks are proven-negative only as \"searched, not found\" across the 213-article snapshot; absence of documentation, not a vendor denial."},"DateFormat":{"response":"YYYY-MM-DDThh:mm:ss.fffffffZ (UTC)","responseExample":"2017-06-19T15:46:18.8130000Z","databaseTimezone":"EST","responseTimezone":"UTC","dstNote":"UTC does not adjust for DST, so the offset from database time varies between 4 and 5 hours through the year.","requestFormsSeenInDocs":["YYYY-MM-DD","YYYY-MM-DDThh:mm:ss"]},"NullSemantics":{"emptyField":"NULL","selfClosingGrid":"zero rows, not an error","note":"Empty/self-closing <Field/> in sample responses; a self-closing <Grid type=\"...\"/> is the documented no-rows response (360032692472). The NULL reading of an empty Field is ImpliedFromExample (sample responses)."},"CasingPolicy":{"rule":"Element names and grid tokens differ in casing across the docs; match case-insensitively on the wire. IOF.Name = sample-response casing.","evidence":"e.g. Mailing_Date vs mailing_date, MailingInstanceID vs Mailing_Instance_ID in the Conditions and usage articles; 77 catalog properties carry wire-aliases. Server case-sensitivity is unproven."},"ErrorContract":{"transport":"HTTP 500 + SOAP Fault","httpStatusEvidence":"The help center and WSDL document a SOAP Fault but not the HTTP status; 500 comes from the operator context (SOAP 1.1 over HTTP convention), unverified against the live service.","codesDocumentedAs":"some possible (table is NOT exhaustive)","codes":["BrandNotFoundException","ItemNotFoundException","ConfigurationErrorException","MismatchedTargetGroupsException","ConflictingInformationException","MultipleDefaultTargetGroupsException","InsufficientDataToCreateSubscriberException","NoAvailableIPAddressException","InsufficientInformationToCompleteActionException","NoNameSpaceSpecifiedException","InvalidCredentialsException","SystemAccessException","InvalidDataFormatException","UnexpectedInputException","InvalidDocumentException","UnknownActionException","InvalidGridCategoryException","UnknownRequestException","InvalidMessageException","ValidUserNotFoundException"],"classification":{"authOrPrecondition":["InvalidCredentialsException","BrandNotFoundException","ValidUserNotFoundException","NoAvailableIPAddressException","SystemAccessException"],"requestDefect":["InvalidDocumentException","InvalidGridCategoryException","UnknownRequestException","InvalidDataFormatException","UnexpectedInputException","NoNameSpaceSpecifiedException","InvalidMessageException"],"other":"retry only on 429/503/transport"},"classificationNote":"The classification is a connector design decision over documented code names; the vendor does not classify them. ActionRequest-only codes (e.g. MismatchedTargetGroups) fall under other and are not reachable by a read-only connector.","inBandErrors":"None documented inside a successful GridResponse."},"RateLimits":{"documented":false,"provenNegative":{"pattern":"/rate.?limit|throttl|requests per (second|minute|hour)|per minute|Retry-After|\\b429\\b/i","articlesSearched":213,"hits":[]},"policy":"No numeric limit documented. Honour Retry-After and treat HTTP 429/503 adaptively via the engine rate limiter."},"CustomFields":{"mechanism":"Demographics, extended demographics and interests are EAV grid ROWS with vendor-wide columns (category/demographic name and value are row data). Brand-defined names are DATA, never column names.","brandSpecificElements":"Brand-specific elements (sample-only / AMS-specific) are requested per connection via Configuration.ExtraReturnFields {<gridToken>:[elements]} and land through the framework runtime custom-column capture.","extraReturnFieldsShape":"{ \"<gridToken>\": [\"<element>\", ...] }"},"CustomObjectMarkerPattern":null,"CustomFieldMarkerPattern":null,"MultiGridRequests":{"documented":true,"article":360045114311,"usedByConnector":false,"note":"One grid per request in this connector."},"Encryption":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"Compression":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"IPAllowlistPrecondition":{"description":"Brand id must originate from an IP stored against the brand (360033049191); registration procedure undocumented (see AuthScheme.ipRegistrationProcedure). The egress ranges on 28344411130388 are ranges a customer allowlists for Higher Logic traffic, not caller registration.","egressRangesProfessional":{"us":"205.201.40.0/29","ca":"205.201.45.0/29"},"wsdlReachableWithoutRegistration":"context.md [verified live]: WSDL fetch needs no credentials, so reachability says nothing about the allowlist."},"APIVersioningStrategy":"XML namespace date (http://partner.informz.net/aapi/2009/08/); no version in URL or header documented","PaginationDefaults":{"type":"offset (StartRow/NumberOfRows, per grid)","maxPageSize":1000},"WebhooksAvailable":false,"BulkOperationsAvailable":{"available":true,"scope":"writes only (ActionRequest BulkUpload, out of scope)","basePath":null}}' EXEC [__mj].spCreateIntegration @Name = @Name_9a17aedf,
+  @Configuration_9a17aedf = N'{"WriteScope":{"mode":"operator-pull-only","in":[],"out":["Subscribe","BulkUpload","OptOut","Unsubscribe","CreateMailing","CreateMessage","ScheduleMailing","SetMailingOnHold","UpdateContactMessageCategoryPreference"],"reason":"operator decision: unidirectional pull connector"},"WriteCapability":{"capability":"read-write","writeCapable":true,"ops":["ActionRequest:Subscribe (AddOrUpdateSubscribers) - up to 1,000 records, synchronous","ActionRequest:BulkUpload (AddOrUpdateSubscribers, ReplaceAllSubscribers, RemoveSubscribers) - over 1,000 records, synchronous","ActionRequest:OptOut - opt an address out of an interest","ActionRequest:Unsubscribe - set an address to unsubscribed","ActionRequest:CreateMailing (Mailing Designer 1)","ActionRequest:CreateMessage (Message Designer 2)","ActionRequest:ScheduleMailing - schedule a mailing for a target group or test send","ActionRequest:SetMailingOnHold - place a mailing on hold","ActionRequest:UpdateContactMessageCategoryPreference - update a contact message-category preference"],"note":"Vendor capability only. All ops are ActionRequest documents posted via PostInformzMessage; this connector does not use them."},"OutOfScopeObjectFamilies":[{"family":"AAPI ActionRequest documents (write surface)","reason":"operator decision: unidirectional pull connector","opsKnown":"packages/Integration/connectors-registry/informz/sources/derived/informz.grids.openapi.json x-informz-action-requests","promotable":true,"actionRequests":["BulkUpload","CreateMailing","CreateMessage","OptOut","ScheduleMailing","Subscribe","Unsubscribe","SetMailingOnHold","UpdateContactMessageCategoryPreference"]},{"family":"Higher Logic Push API v2 (datapushapi.higherlogic.com/v2)","reason":"different host (datapushapi.higherlogic.com/v2; Canada datapushapi.onlinecommunity.ca/v2), protocol (REST POST) and auth from the AAPI; data direction is inbound only: a source system POSTs data INTO Thrive Marketing Professional, so it is not a read source; this connector reads Informz email-marketing data through the AAPI","opsKnown":"POST /contactinfo (ContactDetails, Groups, Demographics, Education, JobHistory, Addresses, PhoneNumbers, EmailAddresses, Orders), POST /list, POST /meeting, POST /product; context.md lists 13 objects: Addresses, ContactDetails, ContactInfo, Demographics, Education, EmailAddresses, Groups, JobHistory, List, Meeting, Orders, PhoneNumbers, Product","promotable":false,"direction":"inbound-push-only","articleId":41678868854420},{"family":"Other Higher Logic product APIs (Thrive Marketing Enterprise / Real Magnet REST at dna.magnetmail.net/ApiAdapter/Rest/; Thrive Community)","reason":"different products and APIs from Thrive Marketing Professional; Enterprise is the separate Real Magnet product line; no help-center article in the snapshot documents their objects (only the IP allowlisting page names the products)","opsKnown":"none documented in snapshot","promotable":false},{"family":"AAPI payload encryption/compression","reason":"optional transport feature (article 360044600992), not used by this connector; plain HTTPS SOAP is sufficient","opsKnown":"none","promotable":false}],"ReadScope":{"mode":"all-documented-grids","includedGridCount":70,"excludedGrids":[]},"ScopeReason":"READ scope: every documented AAPI grid with a proven selector token (all 70 schemas in informz.grids.openapi.json; zero unproven). WRITE scope: none, operator decision (unidirectional pull). Push API v2, other Higher Logic product APIs and payload encryption/compression are out of scope with reasons in OutOfScopeObjectFamilies.","DefaultSyncDirection":"Pull","DiscoveryIsAuthoritative":false,"DiscoveryNote":"No AAPI endpoint enumerates a brand''s grids; the documented catalog is the only inventory, so runtime discovery is not authoritative (residualMode deferred-documented).","Transport":{"protocol":"SOAP 1.1 document/literal (BasicHttpBinding)","operation":"PostInformzMessage","namespace":"http://tempuri.org/","soapAction":"http://partner.informz.net/aapi/2009/08/IInformzWebServiceContract/PostInformzMessage","requestWrapper":"x (xs:string, XML-escaped AAPI document)","responseWrapper":"PostInformzMessageResult","faultTypes":{"wsdl":"InformzServiceFault (Code, Message, Reason)","docs":"InformzAAPIFault (code, reason)"},"faultTypeNote":"Sources disagree on the fault type name; both recorded. WSDL is authoritative for the wire; help-center naming is likely stale.","wsdlServiceAddress":"https://partner.informz.net/aapi/informzservice.svc","wsdlSnapshot":[{"file":"sources/wsdl-snapshot/InformzService.wsdl.xml","sha256":"c4424bcdc92faa8433e1bf7c9d9a0ba1830fd861b2dd73c4933cb58efb9fbf41"},{"file":"sources/wsdl-snapshot/InformzService.wsdl0.xml","sha256":"643105b5d06711a5b49ad5328da66267c409e917c6ab9dec34cc33adc79085d7"},{"file":"sources/wsdl-snapshot/InformzService.xsd0.xml","sha256":"45f685ae5a15b7adafb26f676e25c591d501bed8ed336d2c50f91042b9db2779"},{"file":"sources/wsdl-snapshot/InformzService.xsd1.xml","sha256":"cff6937e7a1ed4a816ee6cb8525d75c041ff3244d8ca6100f031d20f689a521a"},{"file":"sources/wsdl-snapshot/InformzService.xsd2.xml","sha256":"5ed06679ae345f50745d414b857398c381114b4cc3f9c4d363fd40b9058277d7"}]},"BaseURLTemplate":"https://{RegionHost}/aapi/InformzService.svc","RegionHosts":{"us":"partner.informz.net","ca":"partner.informz.ca","test":"partnertest.informz.net"},"DefaultRegion":"us","BaseURLNote":"Documented, vendor-wide (360033049191). The tenant is the Brand in the document body, never the host. A connection-level ServiceURL overrides the template. The WSDL service address is lowercase (https://partner.informz.net/aapi/informzservice.svc); the documented form is /aapi/InformzService.svc.","AuthScheme":{"credentialElements":["Password","Brand@id (+ optional Brand text)","User"],"headerAuth":false,"userElementNote":"Help-center samples use both <User> and <Username>; GridRequest samples in the grid articles use <User>.","brandIpValidation":"Brand id is validated against the IP address stored with the brand to ensure a valid origin point (360033049191). Unregistered-IP fault code unobserved; NoAvailableIPAddressException is the documented candidate.","ipRegistrationProcedure":"UNDOCUMENTED. Article 28344411130388 lists Higher Logic product egress ranges a customer must allowlist; it is not the procedure for registering a caller IP with a brand. No snapshot article gives the caller-IP registration steps (context.md says it takes a Higher Logic support case; operator statement only)."},"Paging":{"sortField":"SortField (attribute order=asc|desc, default asc)","startRow":"StartRow","numberOfRows":"NumberOfRows","maxRowsPerRequest":1000,"startRowBase":null,"startRowBaseNote":"Not provable from docs: the usage-pattern article shows StartRow 0 for the first 50 rows then StartRow 51 for the second page; response row indexes start at 0 or 1. Needs a live probe.","responseRowNumbers":"Grid Response reflects the appropriate row numbers (Record@row)","countProbe":"Count may be requested as the only ReturnField to size paging (360032692452, 360032692472)."},"Conditions":{"single":"<Condition><Single><DataElement/><Comparator/><DataValue/></Single></Condition>","collection":"<Condition><Collection><DataElement/><DataValue/>...<SetOperator/></Collection></Condition>","between":"<Condition><Between><DataElement/><DataValue>earlier</DataValue><DataValue>later</DataValue></Between></Condition>","comparators":["EQ","NEQ","GT","LT","LTE","GTE"],"setOperators":["EQ","NEQ","IN","NOTIN"],"setOperatorsDocsDisagree":"Grid Requests Overview (360033049251) lists SetOperator values IN, EQ, GT, GTE, LT, LTE, NE; the Conditions article (360032692452) lists EQ, NEQ, IN, NOTIN. Both recorded; the Conditions article is the dedicated reference.","dateTimeRule":"When using EQ or IN a time is required; optional for all others; unspecified time defaults to 00:00:00 UTC (360033049251). Between: earlier value must come first. Count must be the only ReturnField and written <Count />.","multipleConditions":"Conditions collection accommodates multiple Condition elements (360033049251)."},"IncrementalSyncCapability":{"mechanism":"date-element Condition (GTE / Between, earlier value first) on a Conditional=True date element","cursor":false,"changeFeed":false,"webhooks":false,"provenNegativeEvidence":{"cursor":{"pattern":"/cursor-based|paging cursor|next.?page.?token|continuation token|nextCursor/i","articlesSearched":213,"hits":[]},"changeFeed":{"pattern":"/change feed|changes since|modified since|delta (sync|query)/i","articlesSearched":213,"hits":[]},"webhooks":{"pattern":"/webhook/i","articlesSearched":213,"hits":[]}},"note":"cursor/changeFeed/webhooks are proven-negative only as \"searched, not found\" across the 213-article snapshot; absence of documentation, not a vendor denial."},"DateFormat":{"response":"YYYY-MM-DDThh:mm:ss.fffffffZ (UTC)","responseExample":"2017-06-19T15:46:18.8130000Z","databaseTimezone":"EST","responseTimezone":"UTC","dstNote":"UTC does not adjust for DST, so the offset from database time varies between 4 and 5 hours through the year.","requestFormsSeenInDocs":["YYYY-MM-DD","YYYY-MM-DDThh:mm:ss"]},"NullSemantics":{"emptyField":"NULL","selfClosingGrid":"zero rows, not an error","note":"Empty/self-closing <Field/> in sample responses; a self-closing <Grid type=\"...\"/> is the documented no-rows response (360032692472). The NULL reading of an empty Field is ImpliedFromExample (sample responses)."},"CasingPolicy":{"rule":"Element names and grid tokens differ in casing across the docs; match case-insensitively on the wire. IOF.Name = sample-response casing.","evidence":"e.g. Mailing_Date vs mailing_date, MailingInstanceID vs Mailing_Instance_ID in the Conditions and usage articles; 77 catalog properties carry wire-aliases. Server case-sensitivity is unproven."},"ErrorContract":{"transport":"HTTP 500 + SOAP Fault","httpStatusEvidence":"The help center and WSDL document a SOAP Fault but not the HTTP status; 500 comes from the operator context (SOAP 1.1 over HTTP convention), unverified against the live service.","codesDocumentedAs":"some possible (table is NOT exhaustive)","codes":["BrandNotFoundException","ItemNotFoundException","ConfigurationErrorException","MismatchedTargetGroupsException","ConflictingInformationException","MultipleDefaultTargetGroupsException","InsufficientDataToCreateSubscriberException","NoAvailableIPAddressException","InsufficientInformationToCompleteActionException","NoNameSpaceSpecifiedException","InvalidCredentialsException","SystemAccessException","InvalidDataFormatException","UnexpectedInputException","InvalidDocumentException","UnknownActionException","InvalidGridCategoryException","UnknownRequestException","InvalidMessageException","ValidUserNotFoundException"],"classification":{"authOrPrecondition":["InvalidCredentialsException","BrandNotFoundException","ValidUserNotFoundException","NoAvailableIPAddressException","SystemAccessException"],"requestDefect":["InvalidDocumentException","InvalidGridCategoryException","UnknownRequestException","InvalidDataFormatException","UnexpectedInputException","NoNameSpaceSpecifiedException","InvalidMessageException"],"other":"retry only on 429/503/transport"},"classificationNote":"The classification is a connector design decision over documented code names; the vendor does not classify them. ActionRequest-only codes (e.g. MismatchedTargetGroups) fall under other and are not reachable by a read-only connector.","inBandErrors":"None documented inside a successful GridResponse."},"RateLimits":{"documented":false,"provenNegative":{"pattern":"/rate.?limit|throttl|requests per (second|minute|hour)|per minute|Retry-After|\\b429\\b/i","articlesSearched":213,"hits":[]},"policy":"No numeric limit documented. Honour Retry-After and treat HTTP 429/503 adaptively via the engine rate limiter."},"CustomFields":{"mechanism":"Demographics, extended demographics and interests are EAV grid ROWS with vendor-wide columns (category/demographic name and value are row data). Brand-defined names are DATA, never column names.","brandSpecificElements":"Brand-specific elements (sample-only / AMS-specific) are requested per connection via Configuration.ExtraReturnFields {<gridToken>:[elements]} and land through the framework runtime custom-column capture.","extraReturnFieldsShape":"{ \"<gridToken>\": [\"<element>\", ...] }"},"CustomObjectMarkerPattern":null,"CustomFieldMarkerPattern":null,"MultiGridRequests":{"documented":true,"article":360045114311,"usedByConnector":false,"note":"One grid per request in this connector."},"Encryption":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"Compression":{"documented":true,"article":360044600992,"optional":true,"usedByConnector":false},"IPAllowlistPrecondition":{"description":"Brand id must originate from an IP stored against the brand (360033049191); registration procedure undocumented (see AuthScheme.ipRegistrationProcedure). The egress ranges on 28344411130388 are ranges a customer allowlists for Higher Logic traffic, not caller registration.","egressRangesProfessional":{"us":"205.201.40.0/29","ca":"205.201.45.0/29"},"wsdlReachableWithoutRegistration":"context.md [verified live]: WSDL fetch needs no credentials, so reachability says nothing about the allowlist."},"APIVersioningStrategy":"XML namespace date (http://partner.informz.net/aapi/2009/08/); no version in URL or header documented","PaginationDefaults":{"type":"offset (StartRow/NumberOfRows, per grid)","maxPageSize":1000},"WebhooksAvailable":false,"BulkOperationsAvailable":{"available":true,"scope":"writes only (ActionRequest BulkUpload, out of scope)","basePath":null},"DeclaredAgainst":{"helpCenter":{"url":"https://support.higherlogic.com/hc/en-us/categories/360002086131-Higher-Logic-APIs","accessedAt":"2026-10-22","articlesSnapshotted":213,"definitionalArticles":21,"newestArticleUpdatedAt":"2026-08-28","manifestArtifact":"packages/Integration/connectors-registry/informz/sources/hc-snapshot/MANIFEST.json","manifestSha256":"d94e8c054c3a81a90bd6c3b7113c659d8971d5ff8a3d6c3fe3d1f536c72571c4","role":"The record catalog. Each \"GridRequests\" article defines grid tokens and their data elements; the manifest pins every article’s sha256 and the vendor’s updated_at."},"wsdl":{"url":"https://partner.informz.net/aapi/InformzService.svc?wsdl","accessedAt":"2026-10-22","sha256":{"InformzService.wsdl":"c4424bcdc92faa8433e1bf7c9d9a0ba1830fd861b2dd73c4933cb58efb9fbf41","InformzService.wsdl0":"643105b5d06711a5b49ad5328da66267c409e917c6ab9dec34cc33adc79085d7","InformzService.xsd0":"45f685ae5a15b7adafb26f676e25c591d501bed8ed336d2c50f91042b9db2779","InformzService.xsd1":"cff6937e7a1ed4a816ee6cb8525d75c041ff3244d8ca6100f031d20f689a521a","InformzService.xsd2":"5ed06679ae345f50745d414b857398c381114b4cc3f9c4d363fd40b9058277d7"},"role":"Transport only: one operation (PostInformzMessage, string in, string out). Not a record catalog."},"derivedArtifact":"packages/Integration/connectors-registry/informz/sources/derived/informz.grids.openapi.json","declaredCatalogCounts":{"grids":70,"fields":994},"catalogLastEditedAt":"2026-10-24","note":"Declared from vendor documentation only. No authenticated call to Higher Logic has been made (credential-free build), so the catalog is unverified against a live brand."},"PrimaryKeyBasis":{"decidedAt":"2026-10-24","documented":"The other 21 active grids carry a key the vendor docs name as the record ID.","inferred":{"objects":["CampaignSummary","CampaignSummaryDemo","MailingActivity","MailingActivityDemo","MailingActivityOpensByHour","MailingActivityFirstOpenByHour","MailingActivityDomains","MailingActivityTotals","MailingActivityForwardCount","MailingActivitySubscriberActions","MailingActivitySubscriberArchive","MailingActivityBounces","MailingActivityFirstOpen","MailingActivityOpens","MailingActivityClicks","MailingActivityOptout","MailingActivitySendAFriend","SubscriberMailingHistory","SubscriberMailingHistoryAll","SubscriberInterests","SubscriberInterestsDeleted","GetSubscriberInterestChanges","SubscriberEngagementScore","SubscriberLeadScore","SubscriberPersona","SubscriberPrimaryEmailClient","SubscriberExtendedDemographic","SubscriberFormUsage","GetCampaignSubscriber","GetCampaignSubscriberHistory","GetCampaignDetails","SubscriberWebTracking","SubscriberWebTrackingPages","SubscriberWebTrackingInteractions","SubscriberSummaryHistory","SubscriberSummaryHistoryDemo","LandingPagesSummary","LandingPagesSummaryDemo","WebTrackingSummary","WebTrackingSummaryDemo","WebTrackingPageSummary","WebTrackingPageSummaryDemo","WebTrackingPurchaseSummary","WebTrackingPurchaseSummaryDemo","WebTrackingInteractionsSummary","WebTrackingInteractionsSummaryDemo"],"note":"The vendor docs name no row ID for these grids, so each key was chosen from the grid’s row grain: its own IDs, dimensions and event dates, never user_id (the tenant’s optional remote ID). Every part of a composite key must always be populated, because a row with an empty key part cannot be stored. MailingActivity is keyed on mailing_instance_ID alone because the docs define calculation_date as the stats’ as-of time. Known merge risks: opt-outs from several interests at the same instant (MailingActivityOptout omits Interest_ID, which whole-list opt-outs likely lack), and several SKUs bought on one page at one timestamp (SubscriberWebTracking). Unverified until a live sync: a non-unique key silently merges rows, so confirm uniqueness on the first one."},"disabled":{"objects":["EmailBlockStatus","ScoringSummary","ScoringSummaryDemo"],"note":"No usable key: EmailBlockStatus is the brand’s current email block, and ScoringSummary rows are scoring groups identified only by a description."}}}' EXEC [__mj].spCreateIntegration @Name = @Name_9a17aedf,
   @Description = @Description_9a17aedf,
   @NavigationBaseURL = @NavigationBaseURL_9a17aedf,
   @ClassName = @ClassName_9a17aedf,
@@ -429,7 +429,7 @@ SET
 SET
   @Sequence_1839199d = 2
 SET
-  @Status_1839199d = N'Active'
+  @Status_1839199d = N'Disabled'
 SET
   @IsCustom_1839199d = 0
 SET
@@ -2345,7 +2345,7 @@ SET
 SET
   @Sequence_5bfa1cb6 = 11
 SET
-  @Status_5bfa1cb6 = N'Active'
+  @Status_5bfa1cb6 = N'Disabled'
 SET
   @IsCustom_5bfa1cb6 = 0
 SET
@@ -2563,7 +2563,7 @@ SET
 SET
   @Sequence_e70c181a = 12
 SET
-  @Status_e70c181a = N'Active'
+  @Status_e70c181a = N'Disabled'
 SET
   @IsCustom_e70c181a = 0
 SET
@@ -19640,7 +19640,7 @@ SET
 SET
   @AllowsNull_90b07170 = 1
 SET
-  @IsPrimaryKey_90b07170 = 0
+  @IsPrimaryKey_90b07170 = 1
 SET
   @IsUniqueKey_90b07170 = 0
 SET
@@ -19731,7 +19731,7 @@ SET
 SET
   @AllowsNull_11611c7a = 1
 SET
-  @IsPrimaryKey_11611c7a = 0
+  @IsPrimaryKey_11611c7a = 1
 SET
   @IsUniqueKey_11611c7a = 0
 SET
@@ -20095,7 +20095,7 @@ SET
 SET
   @AllowsNull_102fd227 = 1
 SET
-  @IsPrimaryKey_102fd227 = 0
+  @IsPrimaryKey_102fd227 = 1
 SET
   @IsUniqueKey_102fd227 = 0
 SET
@@ -20732,7 +20732,7 @@ SET
 SET
   @AllowsNull_96573557 = 1
 SET
-  @IsPrimaryKey_96573557 = 0
+  @IsPrimaryKey_96573557 = 1
 SET
   @IsUniqueKey_96573557 = 0
 SET
@@ -20823,7 +20823,7 @@ SET
 SET
   @AllowsNull_e69f7f02 = 1
 SET
-  @IsPrimaryKey_e69f7f02 = 0
+  @IsPrimaryKey_e69f7f02 = 1
 SET
   @IsUniqueKey_e69f7f02 = 0
 SET
@@ -21187,7 +21187,7 @@ SET
 SET
   @AllowsNull_5f8127f7 = 1
 SET
-  @IsPrimaryKey_5f8127f7 = 0
+  @IsPrimaryKey_5f8127f7 = 1
 SET
   @IsUniqueKey_5f8127f7 = 0
 SET
@@ -21735,7 +21735,7 @@ SET
 SET
   @AllowsNull_9d96b2f0 = 1
 SET
-  @IsPrimaryKey_9d96b2f0 = 0
+  @IsPrimaryKey_9d96b2f0 = 1
 SET
   @IsUniqueKey_9d96b2f0 = 0
 SET
@@ -22014,7 +22014,7 @@ SET
 SET
   @AllowsNull_3b45786b = 1
 SET
-  @IsPrimaryKey_3b45786b = 0
+  @IsPrimaryKey_3b45786b = 1
 SET
   @IsUniqueKey_3b45786b = 0
 SET
@@ -28918,7 +28918,7 @@ SET
 SET
   @AllowsNull_9e724c5f = 1
 SET
-  @IsPrimaryKey_9e724c5f = 0
+  @IsPrimaryKey_9e724c5f = 1
 SET
   @IsUniqueKey_9e724c5f = 0
 SET
@@ -29011,7 +29011,7 @@ SET
 SET
   @AllowsNull_263e9ddb = 1
 SET
-  @IsPrimaryKey_263e9ddb = 0
+  @IsPrimaryKey_263e9ddb = 1
 SET
   @IsUniqueKey_263e9ddb = 0
 SET
@@ -31243,7 +31243,7 @@ SET
 SET
   @AllowsNull_45529967 = 1
 SET
-  @IsPrimaryKey_45529967 = 0
+  @IsPrimaryKey_45529967 = 1
 SET
   @IsUniqueKey_45529967 = 0
 SET
@@ -31336,7 +31336,7 @@ SET
 SET
   @AllowsNull_5cbfeda2 = 1
 SET
-  @IsPrimaryKey_5cbfeda2 = 0
+  @IsPrimaryKey_5cbfeda2 = 1
 SET
   @IsUniqueKey_5cbfeda2 = 0
 SET
@@ -36453,7 +36453,7 @@ SET
 SET
   @AllowsNull_0a3aba77 = 1
 SET
-  @IsPrimaryKey_0a3aba77 = 0
+  @IsPrimaryKey_0a3aba77 = 1
 SET
   @IsUniqueKey_0a3aba77 = 0
 SET
@@ -36544,7 +36544,7 @@ SET
 SET
   @AllowsNull_69a4049a = 1
 SET
-  @IsPrimaryKey_69a4049a = 0
+  @IsPrimaryKey_69a4049a = 1
 SET
   @IsUniqueKey_69a4049a = 0
 SET
@@ -36635,7 +36635,7 @@ SET
 SET
   @AllowsNull_67357ccf = 1
 SET
-  @IsPrimaryKey_67357ccf = 0
+  @IsPrimaryKey_67357ccf = 1
 SET
   @IsUniqueKey_67357ccf = 0
 SET
@@ -36726,7 +36726,7 @@ SET
 SET
   @AllowsNull_7f844581 = 1
 SET
-  @IsPrimaryKey_7f844581 = 0
+  @IsPrimaryKey_7f844581 = 1
 SET
   @IsUniqueKey_7f844581 = 0
 SET
@@ -36999,7 +36999,7 @@ SET
 SET
   @AllowsNull_08ec3410 = 1
 SET
-  @IsPrimaryKey_08ec3410 = 0
+  @IsPrimaryKey_08ec3410 = 1
 SET
   @IsUniqueKey_08ec3410 = 0
 SET
@@ -37090,7 +37090,7 @@ SET
 SET
   @AllowsNull_9e48db93 = 1
 SET
-  @IsPrimaryKey_9e48db93 = 0
+  @IsPrimaryKey_9e48db93 = 1
 SET
   @IsUniqueKey_9e48db93 = 0
 SET
@@ -37181,7 +37181,7 @@ SET
 SET
   @AllowsNull_e6b4c91a = 1
 SET
-  @IsPrimaryKey_e6b4c91a = 0
+  @IsPrimaryKey_e6b4c91a = 1
 SET
   @IsUniqueKey_e6b4c91a = 0
 SET
@@ -37272,7 +37272,7 @@ SET
 SET
   @AllowsNull_4f5fb55e = 1
 SET
-  @IsPrimaryKey_4f5fb55e = 0
+  @IsPrimaryKey_4f5fb55e = 1
 SET
   @IsUniqueKey_4f5fb55e = 0
 SET
@@ -37545,7 +37545,7 @@ SET
 SET
   @AllowsNull_3a54c292 = 1
 SET
-  @IsPrimaryKey_3a54c292 = 0
+  @IsPrimaryKey_3a54c292 = 1
 SET
   @IsUniqueKey_3a54c292 = 0
 SET
@@ -37636,7 +37636,7 @@ SET
 SET
   @AllowsNull_753503da = 1
 SET
-  @IsPrimaryKey_753503da = 0
+  @IsPrimaryKey_753503da = 1
 SET
   @IsUniqueKey_753503da = 0
 SET
@@ -37727,7 +37727,7 @@ SET
 SET
   @AllowsNull_3da333e5 = 1
 SET
-  @IsPrimaryKey_3da333e5 = 0
+  @IsPrimaryKey_3da333e5 = 1
 SET
   @IsUniqueKey_3da333e5 = 0
 SET
@@ -37818,7 +37818,7 @@ SET
 SET
   @AllowsNull_85e9b4ea = 1
 SET
-  @IsPrimaryKey_85e9b4ea = 0
+  @IsPrimaryKey_85e9b4ea = 1
 SET
   @IsUniqueKey_85e9b4ea = 0
 SET
@@ -38728,7 +38728,7 @@ SET
 SET
   @AllowsNull_b4f20f0a = 1
 SET
-  @IsPrimaryKey_b4f20f0a = 0
+  @IsPrimaryKey_b4f20f0a = 1
 SET
   @IsUniqueKey_b4f20f0a = 0
 SET
@@ -38819,7 +38819,7 @@ SET
 SET
   @AllowsNull_14c5d8b3 = 1
 SET
-  @IsPrimaryKey_14c5d8b3 = 0
+  @IsPrimaryKey_14c5d8b3 = 1
 SET
   @IsUniqueKey_14c5d8b3 = 0
 SET
@@ -38910,7 +38910,7 @@ SET
 SET
   @AllowsNull_cbcc931c = 1
 SET
-  @IsPrimaryKey_cbcc931c = 0
+  @IsPrimaryKey_cbcc931c = 1
 SET
   @IsUniqueKey_cbcc931c = 0
 SET
@@ -39001,7 +39001,7 @@ SET
 SET
   @AllowsNull_3e1aa911 = 1
 SET
-  @IsPrimaryKey_3e1aa911 = 0
+  @IsPrimaryKey_3e1aa911 = 1
 SET
   @IsUniqueKey_3e1aa911 = 0
 SET
@@ -39911,7 +39911,7 @@ SET
 SET
   @AllowsNull_08181bf3 = 1
 SET
-  @IsPrimaryKey_08181bf3 = 0
+  @IsPrimaryKey_08181bf3 = 1
 SET
   @IsUniqueKey_08181bf3 = 0
 SET
@@ -40002,7 +40002,7 @@ SET
 SET
   @AllowsNull_8747532a = 1
 SET
-  @IsPrimaryKey_8747532a = 0
+  @IsPrimaryKey_8747532a = 1
 SET
   @IsUniqueKey_8747532a = 0
 SET
@@ -40093,7 +40093,7 @@ SET
 SET
   @AllowsNull_a5f5123c = 1
 SET
-  @IsPrimaryKey_a5f5123c = 0
+  @IsPrimaryKey_a5f5123c = 1
 SET
   @IsUniqueKey_a5f5123c = 0
 SET
@@ -40548,7 +40548,7 @@ SET
 SET
   @AllowsNull_3d1bee0c = 1
 SET
-  @IsPrimaryKey_3d1bee0c = 0
+  @IsPrimaryKey_3d1bee0c = 1
 SET
   @IsUniqueKey_3d1bee0c = 0
 SET
@@ -40639,7 +40639,7 @@ SET
 SET
   @AllowsNull_910278f8 = 1
 SET
-  @IsPrimaryKey_910278f8 = 0
+  @IsPrimaryKey_910278f8 = 1
 SET
   @IsUniqueKey_910278f8 = 0
 SET
@@ -40730,7 +40730,7 @@ SET
 SET
   @AllowsNull_7ba50318 = 1
 SET
-  @IsPrimaryKey_7ba50318 = 0
+  @IsPrimaryKey_7ba50318 = 1
 SET
   @IsUniqueKey_7ba50318 = 0
 SET
@@ -41185,7 +41185,7 @@ SET
 SET
   @AllowsNull_fddcef28 = 1
 SET
-  @IsPrimaryKey_fddcef28 = 0
+  @IsPrimaryKey_fddcef28 = 1
 SET
   @IsUniqueKey_fddcef28 = 0
 SET
@@ -41276,7 +41276,7 @@ SET
 SET
   @AllowsNull_53dba6ad = 1
 SET
-  @IsPrimaryKey_53dba6ad = 0
+  @IsPrimaryKey_53dba6ad = 1
 SET
   @IsUniqueKey_53dba6ad = 0
 SET
@@ -47919,7 +47919,7 @@ SET
 SET
   @AllowsNull_ef91dcb5 = 1
 SET
-  @IsPrimaryKey_ef91dcb5 = 0
+  @IsPrimaryKey_ef91dcb5 = 1
 SET
   @IsUniqueKey_ef91dcb5 = 0
 SET
@@ -48101,7 +48101,7 @@ SET
 SET
   @AllowsNull_6642321d = 1
 SET
-  @IsPrimaryKey_6642321d = 0
+  @IsPrimaryKey_6642321d = 1
 SET
   @IsUniqueKey_6642321d = 0
 SET
@@ -54564,7 +54564,7 @@ SET
 SET
   @AllowsNull_f8ad39ac = 1
 SET
-  @IsPrimaryKey_f8ad39ac = 0
+  @IsPrimaryKey_f8ad39ac = 1
 SET
   @IsUniqueKey_f8ad39ac = 0
 SET
@@ -54848,7 +54848,7 @@ SET
 SET
   @AllowsNull_2463d7e9 = 1
 SET
-  @IsPrimaryKey_2463d7e9 = 0
+  @IsPrimaryKey_2463d7e9 = 1
 SET
   @IsUniqueKey_2463d7e9 = 0
 SET
@@ -54944,7 +54944,7 @@ SET
 SET
   @AllowsNull_23ebb1b4 = 1
 SET
-  @IsPrimaryKey_23ebb1b4 = 0
+  @IsPrimaryKey_23ebb1b4 = 1
 SET
   @IsUniqueKey_23ebb1b4 = 0
 SET
@@ -58706,7 +58706,7 @@ SET
 SET
   @AllowsNull_dfbbabf8 = 1
 SET
-  @IsPrimaryKey_dfbbabf8 = 0
+  @IsPrimaryKey_dfbbabf8 = 1
 SET
   @IsUniqueKey_dfbbabf8 = 0
 SET
@@ -58897,7 +58897,7 @@ SET
 SET
   @AllowsNull_dbc31e88 = 1
 SET
-  @IsPrimaryKey_dbc31e88 = 0
+  @IsPrimaryKey_dbc31e88 = 1
 SET
   @IsUniqueKey_dbc31e88 = 0
 SET
@@ -59273,7 +59273,7 @@ SET
 SET
   @AllowsNull_8aadb2dc = 1
 SET
-  @IsPrimaryKey_8aadb2dc = 0
+  @IsPrimaryKey_8aadb2dc = 1
 SET
   @IsUniqueKey_8aadb2dc = 0
 SET
@@ -59557,7 +59557,7 @@ SET
 SET
   @AllowsNull_600df32e = 1
 SET
-  @IsPrimaryKey_600df32e = 0
+  @IsPrimaryKey_600df32e = 1
 SET
   @IsUniqueKey_600df32e = 0
 SET
@@ -59745,7 +59745,7 @@ SET
 SET
   @AllowsNull_663c0aa4 = 1
 SET
-  @IsPrimaryKey_663c0aa4 = 0
+  @IsPrimaryKey_663c0aa4 = 1
 SET
   @IsUniqueKey_663c0aa4 = 0
 SET
@@ -59935,7 +59935,7 @@ SET
 SET
   @AllowsNull_f0594bfb = 1
 SET
-  @IsPrimaryKey_f0594bfb = 0
+  @IsPrimaryKey_f0594bfb = 1
 SET
   @IsUniqueKey_f0594bfb = 0
 SET
@@ -60214,7 +60214,7 @@ SET
 SET
   @AllowsNull_2a71f130 = 1
 SET
-  @IsPrimaryKey_2a71f130 = 0
+  @IsPrimaryKey_2a71f130 = 1
 SET
   @IsUniqueKey_2a71f130 = 0
 SET
@@ -60593,7 +60593,7 @@ SET
 SET
   @AllowsNull_6f016508 = 1
 SET
-  @IsPrimaryKey_6f016508 = 0
+  @IsPrimaryKey_6f016508 = 1
 SET
   @IsUniqueKey_6f016508 = 0
 SET
@@ -60781,7 +60781,7 @@ SET
 SET
   @AllowsNull_3ddb2f57 = 1
 SET
-  @IsPrimaryKey_3ddb2f57 = 0
+  @IsPrimaryKey_3ddb2f57 = 1
 SET
   @IsUniqueKey_3ddb2f57 = 0
 SET
@@ -61533,9 +61533,9 @@ SET
 SET
   @AllowsNull_baf14e95 = 1
 SET
-  @IsPrimaryKey_baf14e95 = 0
+  @IsPrimaryKey_baf14e95 = 1
 SET
-  @IsUniqueKey_baf14e95 = 0
+  @IsUniqueKey_baf14e95 = 1
 SET
   @IsReadOnly_baf14e95 = 1
 SET
@@ -62379,9 +62379,9 @@ SET
 SET
   @AllowsNull_f053e5f0 = 1
 SET
-  @IsPrimaryKey_f053e5f0 = 0
+  @IsPrimaryKey_f053e5f0 = 1
 SET
-  @IsUniqueKey_f053e5f0 = 0
+  @IsUniqueKey_f053e5f0 = 1
 SET
   @IsReadOnly_f053e5f0 = 1
 SET
@@ -62940,7 +62940,7 @@ SET
 SET
   @AllowsNull_65cfcc5d = 1
 SET
-  @IsPrimaryKey_65cfcc5d = 0
+  @IsPrimaryKey_65cfcc5d = 1
 SET
   @IsUniqueKey_65cfcc5d = 0
 SET
@@ -63131,7 +63131,7 @@ SET
 SET
   @AllowsNull_3d6329c1 = 1
 SET
-  @IsPrimaryKey_3d6329c1 = 0
+  @IsPrimaryKey_3d6329c1 = 1
 SET
   @IsUniqueKey_3d6329c1 = 0
 SET
@@ -64533,7 +64533,7 @@ SET
 SET
   @AllowsNull_45052e61 = 1
 SET
-  @IsPrimaryKey_45052e61 = 0
+  @IsPrimaryKey_45052e61 = 1
 SET
   @IsUniqueKey_45052e61 = 0
 SET
@@ -64724,7 +64724,7 @@ SET
 SET
   @AllowsNull_f7922718 = 1
 SET
-  @IsPrimaryKey_f7922718 = 0
+  @IsPrimaryKey_f7922718 = 1
 SET
   @IsUniqueKey_f7922718 = 0
 SET
@@ -67547,7 +67547,7 @@ SET
 SET
   @AllowsNull_e9a2668e = 1
 SET
-  @IsPrimaryKey_e9a2668e = 0
+  @IsPrimaryKey_e9a2668e = 1
 SET
   @IsUniqueKey_e9a2668e = 0
 SET
@@ -67738,7 +67738,7 @@ SET
 SET
   @AllowsNull_1bf1d9a0 = 1
 SET
-  @IsPrimaryKey_1bf1d9a0 = 0
+  @IsPrimaryKey_1bf1d9a0 = 1
 SET
   @IsUniqueKey_1bf1d9a0 = 0
 SET
@@ -68114,7 +68114,7 @@ SET
 SET
   @AllowsNull_b406ba8f = 1
 SET
-  @IsPrimaryKey_b406ba8f = 0
+  @IsPrimaryKey_b406ba8f = 1
 SET
   @IsUniqueKey_b406ba8f = 0
 SET
@@ -68307,7 +68307,7 @@ SET
 SET
   @AllowsNull_dc7c9dd1 = 1
 SET
-  @IsPrimaryKey_dc7c9dd1 = 0
+  @IsPrimaryKey_dc7c9dd1 = 1
 SET
   @IsUniqueKey_dc7c9dd1 = 0
 SET
@@ -69156,7 +69156,7 @@ SET
 SET
   @AllowsNull_815c3874 = 1
 SET
-  @IsPrimaryKey_815c3874 = 0
+  @IsPrimaryKey_815c3874 = 1
 SET
   @IsUniqueKey_815c3874 = 0
 SET
@@ -70193,7 +70193,7 @@ SET
 SET
   @AllowsNull_8dbc86f6 = 1
 SET
-  @IsPrimaryKey_8dbc86f6 = 0
+  @IsPrimaryKey_8dbc86f6 = 1
 SET
   @IsUniqueKey_8dbc86f6 = 0
 SET
@@ -70286,7 +70286,7 @@ SET
 SET
   @AllowsNull_024d597a = 1
 SET
-  @IsPrimaryKey_024d597a = 0
+  @IsPrimaryKey_024d597a = 1
 SET
   @IsUniqueKey_024d597a = 0
 SET
@@ -70572,7 +70572,7 @@ SET
 SET
   @AllowsNull_7bfe412f = 1
 SET
-  @IsPrimaryKey_7bfe412f = 0
+  @IsPrimaryKey_7bfe412f = 1
 SET
   @IsUniqueKey_7bfe412f = 0
 SET
@@ -71328,7 +71328,7 @@ SET
 SET
   @AllowsNull_d4091c2d = 1
 SET
-  @IsPrimaryKey_d4091c2d = 0
+  @IsPrimaryKey_d4091c2d = 1
 SET
   @IsUniqueKey_d4091c2d = 0
 SET
@@ -71423,7 +71423,7 @@ SET
 SET
   @AllowsNull_80b3c8e3 = 1
 SET
-  @IsPrimaryKey_80b3c8e3 = 0
+  @IsPrimaryKey_80b3c8e3 = 1
 SET
   @IsUniqueKey_80b3c8e3 = 0
 SET
@@ -71518,7 +71518,7 @@ SET
 SET
   @AllowsNull_7dfc3dd4 = 1
 SET
-  @IsPrimaryKey_7dfc3dd4 = 0
+  @IsPrimaryKey_7dfc3dd4 = 1
 SET
   @IsUniqueKey_7dfc3dd4 = 0
 SET
@@ -71706,7 +71706,7 @@ SET
 SET
   @AllowsNull_e699dd6c = 1
 SET
-  @IsPrimaryKey_e699dd6c = 0
+  @IsPrimaryKey_e699dd6c = 1
 SET
   @IsUniqueKey_e699dd6c = 0
 SET
@@ -71992,7 +71992,7 @@ SET
 SET
   @AllowsNull_13ba67fd = 1
 SET
-  @IsPrimaryKey_13ba67fd = 0
+  @IsPrimaryKey_13ba67fd = 1
 SET
   @IsUniqueKey_13ba67fd = 0
 SET
@@ -72748,7 +72748,7 @@ SET
 SET
   @AllowsNull_f8fb39f1 = 1
 SET
-  @IsPrimaryKey_f8fb39f1 = 0
+  @IsPrimaryKey_f8fb39f1 = 1
 SET
   @IsUniqueKey_f8fb39f1 = 0
 SET
@@ -78762,9 +78762,9 @@ SET
 SET
   @AllowsNull_4d07fabf = 1
 SET
-  @IsPrimaryKey_4d07fabf = 0
+  @IsPrimaryKey_4d07fabf = 1
 SET
-  @IsUniqueKey_4d07fabf = 0
+  @IsUniqueKey_4d07fabf = 1
 SET
   @IsReadOnly_4d07fabf = 1
 SET
@@ -82212,7 +82212,7 @@ SET
 SET
   @AllowsNull_76d38da1 = 1
 SET
-  @IsPrimaryKey_76d38da1 = 0
+  @IsPrimaryKey_76d38da1 = 1
 SET
   @IsUniqueKey_76d38da1 = 0
 SET
@@ -82492,7 +82492,7 @@ SET
 SET
   @AllowsNull_1be25c5c = 1
 SET
-  @IsPrimaryKey_1be25c5c = 0
+  @IsPrimaryKey_1be25c5c = 1
 SET
   @IsUniqueKey_1be25c5c = 0
 SET
@@ -83438,7 +83438,7 @@ SET
 SET
   @AllowsNull_eb773b30 = 1
 SET
-  @IsPrimaryKey_eb773b30 = 0
+  @IsPrimaryKey_eb773b30 = 1
 SET
   @IsUniqueKey_eb773b30 = 0
 SET
@@ -83533,7 +83533,7 @@ SET
 SET
   @AllowsNull_daed74f4 = 1
 SET
-  @IsPrimaryKey_daed74f4 = 0
+  @IsPrimaryKey_daed74f4 = 1
 SET
   @IsUniqueKey_daed74f4 = 0
 SET
@@ -83725,7 +83725,7 @@ SET
 SET
   @AllowsNull_75a98b7a = 1
 SET
-  @IsPrimaryKey_75a98b7a = 0
+  @IsPrimaryKey_75a98b7a = 1
 SET
   @IsUniqueKey_75a98b7a = 0
 SET
@@ -84009,7 +84009,7 @@ SET
 SET
   @AllowsNull_c7d69aae = 1
 SET
-  @IsPrimaryKey_c7d69aae = 0
+  @IsPrimaryKey_c7d69aae = 1
 SET
   @IsUniqueKey_c7d69aae = 0
 SET
@@ -84295,7 +84295,7 @@ SET
 SET
   @AllowsNull_b8f3488a = 1
 SET
-  @IsPrimaryKey_b8f3488a = 0
+  @IsPrimaryKey_b8f3488a = 1
 SET
   @IsUniqueKey_b8f3488a = 0
 SET
@@ -84483,7 +84483,7 @@ SET
 SET
   @AllowsNull_a992bc94 = 1
 SET
-  @IsPrimaryKey_a992bc94 = 0
+  @IsPrimaryKey_a992bc94 = 1
 SET
   @IsUniqueKey_a992bc94 = 0
 SET
@@ -84581,7 +84581,7 @@ SET
 SET
   @AllowsNull_9665459f = 1
 SET
-  @IsPrimaryKey_9665459f = 0
+  @IsPrimaryKey_9665459f = 1
 SET
   @IsUniqueKey_9665459f = 0
 SET
@@ -84863,7 +84863,7 @@ SET
 SET
   @AllowsNull_c842a841 = 1
 SET
-  @IsPrimaryKey_c842a841 = 0
+  @IsPrimaryKey_c842a841 = 1
 SET
   @IsUniqueKey_c842a841 = 0
 SET
@@ -85335,7 +85335,7 @@ SET
 SET
   @AllowsNull_4fb6e285 = 1
 SET
-  @IsPrimaryKey_4fb6e285 = 0
+  @IsPrimaryKey_4fb6e285 = 1
 SET
   @IsUniqueKey_4fb6e285 = 0
 SET
@@ -85430,7 +85430,7 @@ SET
 SET
   @AllowsNull_4b4eb52d = 1
 SET
-  @IsPrimaryKey_4b4eb52d = 0
+  @IsPrimaryKey_4b4eb52d = 1
 SET
   @IsUniqueKey_4b4eb52d = 0
 SET
@@ -85621,7 +85621,7 @@ SET
 SET
   @AllowsNull_e6aeb7de = 1
 SET
-  @IsPrimaryKey_e6aeb7de = 0
+  @IsPrimaryKey_e6aeb7de = 1
 SET
   @IsUniqueKey_e6aeb7de = 0
 SET
@@ -85719,7 +85719,7 @@ SET
 SET
   @AllowsNull_d6654630 = 1
 SET
-  @IsPrimaryKey_d6654630 = 0
+  @IsPrimaryKey_d6654630 = 1
 SET
   @IsUniqueKey_d6654630 = 0
 SET
@@ -85907,7 +85907,7 @@ SET
 SET
   @AllowsNull_cbe4ff2f = 1
 SET
-  @IsPrimaryKey_cbe4ff2f = 0
+  @IsPrimaryKey_cbe4ff2f = 1
 SET
   @IsUniqueKey_cbe4ff2f = 0
 SET
@@ -86192,7 +86192,7 @@ SET
 SET
   @AllowsNull_cefebe32 = 1
 SET
-  @IsPrimaryKey_cefebe32 = 0
+  @IsPrimaryKey_cefebe32 = 1
 SET
   @IsUniqueKey_cefebe32 = 0
 SET
@@ -86381,7 +86381,7 @@ SET
 SET
   @AllowsNull_4ee06006 = 1
 SET
-  @IsPrimaryKey_4ee06006 = 0
+  @IsPrimaryKey_4ee06006 = 1
 SET
   @IsUniqueKey_4ee06006 = 0
 SET
@@ -86479,7 +86479,7 @@ SET
 SET
   @AllowsNull_14478b1f = 1
 SET
-  @IsPrimaryKey_14478b1f = 0
+  @IsPrimaryKey_14478b1f = 1
 SET
   @IsUniqueKey_14478b1f = 0
 SET
@@ -86668,7 +86668,7 @@ SET
 SET
   @AllowsNull_597faa77 = 1
 SET
-  @IsPrimaryKey_597faa77 = 0
+  @IsPrimaryKey_597faa77 = 1
 SET
   @IsUniqueKey_597faa77 = 0
 SET
@@ -86764,7 +86764,7 @@ SET
 SET
   @AllowsNull_cc0818da = 1
 SET
-  @IsPrimaryKey_cc0818da = 0
+  @IsPrimaryKey_cc0818da = 1
 SET
   @IsUniqueKey_cc0818da = 0
 SET
@@ -87235,7 +87235,7 @@ SET
 SET
   @AllowsNull_3b1097e1 = 1
 SET
-  @IsPrimaryKey_3b1097e1 = 0
+  @IsPrimaryKey_3b1097e1 = 1
 SET
   @IsUniqueKey_3b1097e1 = 0
 SET
@@ -87330,7 +87330,7 @@ SET
 SET
   @AllowsNull_e6cab981 = 1
 SET
-  @IsPrimaryKey_e6cab981 = 0
+  @IsPrimaryKey_e6cab981 = 1
 SET
   @IsUniqueKey_e6cab981 = 0
 SET
@@ -87521,7 +87521,7 @@ SET
 SET
   @AllowsNull_42e81eaa = 1
 SET
-  @IsPrimaryKey_42e81eaa = 0
+  @IsPrimaryKey_42e81eaa = 1
 SET
   @IsUniqueKey_42e81eaa = 0
 SET
@@ -87619,7 +87619,7 @@ SET
 SET
   @AllowsNull_09690bfa = 1
 SET
-  @IsPrimaryKey_09690bfa = 0
+  @IsPrimaryKey_09690bfa = 1
 SET
   @IsUniqueKey_09690bfa = 0
 SET
@@ -87807,7 +87807,7 @@ SET
 SET
   @AllowsNull_c1b49a6a = 1
 SET
-  @IsPrimaryKey_c1b49a6a = 0
+  @IsPrimaryKey_c1b49a6a = 1
 SET
   @IsUniqueKey_c1b49a6a = 0
 SET
@@ -87904,7 +87904,7 @@ SET
 SET
   @AllowsNull_34ccb500 = 1
 SET
-  @IsPrimaryKey_34ccb500 = 0
+  @IsPrimaryKey_34ccb500 = 1
 SET
   @IsUniqueKey_34ccb500 = 0
 SET
@@ -88187,7 +88187,7 @@ SET
 SET
   @AllowsNull_bf100924 = 1
 SET
-  @IsPrimaryKey_bf100924 = 0
+  @IsPrimaryKey_bf100924 = 1
 SET
   @IsUniqueKey_bf100924 = 0
 SET
@@ -88376,7 +88376,7 @@ SET
 SET
   @AllowsNull_d5cfdf49 = 1
 SET
-  @IsPrimaryKey_d5cfdf49 = 0
+  @IsPrimaryKey_d5cfdf49 = 1
 SET
   @IsUniqueKey_d5cfdf49 = 0
 SET
@@ -88657,7 +88657,7 @@ SET
 SET
   @AllowsNull_be368b3f = 1
 SET
-  @IsPrimaryKey_be368b3f = 0
+  @IsPrimaryKey_be368b3f = 1
 SET
   @IsUniqueKey_be368b3f = 0
 SET
@@ -88846,7 +88846,7 @@ SET
 SET
   @AllowsNull_4bb4fff3 = 1
 SET
-  @IsPrimaryKey_4bb4fff3 = 0
+  @IsPrimaryKey_4bb4fff3 = 1
 SET
   @IsUniqueKey_4bb4fff3 = 0
 SET
@@ -88944,7 +88944,7 @@ SET
 SET
   @AllowsNull_155bb6de = 1
 SET
-  @IsPrimaryKey_155bb6de = 0
+  @IsPrimaryKey_155bb6de = 1
 SET
   @IsUniqueKey_155bb6de = 0
 SET
@@ -89504,7 +89504,7 @@ SET
 SET
   @AllowsNull_0ab5229e = 1
 SET
-  @IsPrimaryKey_0ab5229e = 0
+  @IsPrimaryKey_0ab5229e = 1
 SET
   @IsUniqueKey_0ab5229e = 0
 SET
@@ -89599,7 +89599,7 @@ SET
 SET
   @AllowsNull_582bac37 = 1
 SET
-  @IsPrimaryKey_582bac37 = 0
+  @IsPrimaryKey_582bac37 = 1
 SET
   @IsUniqueKey_582bac37 = 0
 SET
@@ -90069,7 +90069,7 @@ SET
 SET
   @AllowsNull_4064224d = 1
 SET
-  @IsPrimaryKey_4064224d = 0
+  @IsPrimaryKey_4064224d = 1
 SET
   @IsUniqueKey_4064224d = 0
 SET
@@ -90352,7 +90352,7 @@ SET
 SET
   @AllowsNull_9e280bb8 = 1
 SET
-  @IsPrimaryKey_9e280bb8 = 0
+  @IsPrimaryKey_9e280bb8 = 1
 SET
   @IsUniqueKey_9e280bb8 = 0
 SET
@@ -91302,7 +91302,7 @@ SET
 SET
   @AllowsNull_090cad84 = 1
 SET
-  @IsPrimaryKey_090cad84 = 0
+  @IsPrimaryKey_090cad84 = 1
 SET
   @IsUniqueKey_090cad84 = 0
 SET
@@ -91780,7 +91780,7 @@ SET
 SET
   @AllowsNull_f3033620 = 1
 SET
-  @IsPrimaryKey_f3033620 = 0
+  @IsPrimaryKey_f3033620 = 1
 SET
   @IsUniqueKey_f3033620 = 0
 SET
@@ -92573,7 +92573,7 @@ SET
 SET
   @AllowsNull_a59162aa = 1
 SET
-  @IsPrimaryKey_a59162aa = 0
+  @IsPrimaryKey_a59162aa = 1
 SET
   @IsUniqueKey_a59162aa = 0
 SET
@@ -92861,7 +92861,7 @@ SET
 SET
   @AllowsNull_5ba1f0a6 = 1
 SET
-  @IsPrimaryKey_5ba1f0a6 = 0
+  @IsPrimaryKey_5ba1f0a6 = 1
 SET
   @IsUniqueKey_5ba1f0a6 = 0
 SET
@@ -94117,7 +94117,7 @@ SET
 SET
   @AllowsNull_73710cd0 = 1
 SET
-  @IsPrimaryKey_73710cd0 = 0
+  @IsPrimaryKey_73710cd0 = 1
 SET
   @IsUniqueKey_73710cd0 = 0
 SET
@@ -94497,7 +94497,7 @@ SET
 SET
   @AllowsNull_7098fd2b = 1
 SET
-  @IsPrimaryKey_7098fd2b = 0
+  @IsPrimaryKey_7098fd2b = 1
 SET
   @IsUniqueKey_7098fd2b = 0
 SET
@@ -95337,7 +95337,7 @@ SET
 SET
   @AllowsNull_816f3258 = 1
 SET
-  @IsPrimaryKey_816f3258 = 0
+  @IsPrimaryKey_816f3258 = 1
 SET
   @IsUniqueKey_816f3258 = 0
 SET
@@ -95528,7 +95528,7 @@ SET
 SET
   @AllowsNull_ad94e40d = 1
 SET
-  @IsPrimaryKey_ad94e40d = 0
+  @IsPrimaryKey_ad94e40d = 1
 SET
   @IsUniqueKey_ad94e40d = 0
 SET
@@ -95717,7 +95717,7 @@ SET
 SET
   @AllowsNull_166981e3 = 1
 SET
-  @IsPrimaryKey_166981e3 = 0
+  @IsPrimaryKey_166981e3 = 1
 SET
   @IsUniqueKey_166981e3 = 0
 SET
@@ -96185,7 +96185,7 @@ SET
 SET
   @AllowsNull_022f4652 = 1
 SET
-  @IsPrimaryKey_022f4652 = 0
+  @IsPrimaryKey_022f4652 = 1
 SET
   @IsUniqueKey_022f4652 = 0
 SET
@@ -96917,9 +96917,9 @@ SET
 SET
   @AllowsNull_a671bb9a = 1
 SET
-  @IsPrimaryKey_a671bb9a = 0
+  @IsPrimaryKey_a671bb9a = 1
 SET
-  @IsUniqueKey_a671bb9a = 0
+  @IsUniqueKey_a671bb9a = 1
 SET
   @IsReadOnly_a671bb9a = 1
 SET
@@ -99476,9 +99476,9 @@ SET
 SET
   @AllowsNull_dcbc5b39 = 1
 SET
-  @IsPrimaryKey_dcbc5b39 = 0
+  @IsPrimaryKey_dcbc5b39 = 1
 SET
-  @IsUniqueKey_dcbc5b39 = 0
+  @IsUniqueKey_dcbc5b39 = 1
 SET
   @IsReadOnly_dcbc5b39 = 1
 SET
@@ -101763,7 +101763,7 @@ SET
 SET
   @AllowsNull_48c74032 = 1
 SET
-  @IsPrimaryKey_48c74032 = 0
+  @IsPrimaryKey_48c74032 = 1
 SET
   @IsUniqueKey_48c74032 = 0
 SET
@@ -102046,7 +102046,7 @@ SET
 SET
   @AllowsNull_8f8b951d = 1
 SET
-  @IsPrimaryKey_8f8b951d = 0
+  @IsPrimaryKey_8f8b951d = 1
 SET
   @IsUniqueKey_8f8b951d = 0
 SET
@@ -102228,7 +102228,7 @@ SET
 SET
   @AllowsNull_552cc8e0 = 1
 SET
-  @IsPrimaryKey_552cc8e0 = 0
+  @IsPrimaryKey_552cc8e0 = 1
 SET
   @IsUniqueKey_552cc8e0 = 0
 SET
@@ -102319,7 +102319,7 @@ SET
 SET
   @AllowsNull_2689c4ab = 1
 SET
-  @IsPrimaryKey_2689c4ab = 0
+  @IsPrimaryKey_2689c4ab = 1
 SET
   @IsUniqueKey_2689c4ab = 0
 SET
@@ -104585,9 +104585,9 @@ SET
 SET
   @AllowsNull_b20fb759 = 1
 SET
-  @IsPrimaryKey_b20fb759 = 0
+  @IsPrimaryKey_b20fb759 = 1
 SET
-  @IsUniqueKey_b20fb759 = 0
+  @IsUniqueKey_b20fb759 = 1
 SET
   @IsReadOnly_b20fb759 = 1
 SET
