@@ -70,7 +70,7 @@ schema discovery against the real API, without a persisted sync. Its `SUPPORT.md
 | [Eventbrite](../Events/Eventbrite/docs/SUPPORT.md) | 33 | 11 ⚠️ | 677 | [✓](../Events/Eventbrite/docs/credential-setup.html) |
 | [Totara](../LMS/Totara/docs/SUPPORT.md) | 28 | 4 ⚠️ | 589 | — |
 | [Mailchimp](../Marketing/Mailchimp/docs/SUPPORT.md) | 76 | 8 ⚠️ | 349 | [✓](../Marketing/Mailchimp/docs/credential-setup.html) |
-| [ORCID](../Platform/ORCID/docs/SUPPORT.md) | 12 | 2 | 45 | [✓](../Platform/ORCID/docs/credential-setup.html) |
+| [ORCID](../Platform/ORCID/docs/SUPPORT.md) | 18 | 2 | 45 | [✓](../Platform/ORCID/docs/credential-setup.html) |
 | [HubSpot](../CRM/HubSpot/docs/SUPPORT.md) | 168 | 2 ⚠️ | 8 | [✓](../CRM/HubSpot/docs/credential-setup.html) |
 | [Salesforce](../CRM/Salesforce/docs/SUPPORT.md) | 1,695 | — | — | [✓](../CRM/Salesforce/docs/credential-setup.html) |
 | [ConstantContact](../Marketing/ConstantContact/docs/SUPPORT.md) | 65 | — | — | [✓](../Marketing/ConstantContact/docs/credential-setup.html) |
