@@ -4,7 +4,7 @@
   "name": "connector-blackbaud",
   "displayName": "Blackbaud Connector",
   "description": "Blackbaud integration connector for MemberJunction",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "license": "ISC",
   "icon": "fa-solid fa-hand-holding-heart",
   "publisher": {
@@ -13,7 +13,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_blackbaud",
     "createIfNotExists": true

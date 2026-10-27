@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SHARED = join(ROOT, 'packages', 'integration-connectors', 'src');
 const TESTS = join(SHARED, '__tests__');
-const RANGE = '>=5.43.0 <6.0.0';
+const RANGE = '>=5.43.0 <7.0.0';
 const PINNED = '^5.43.0';
 const FRAMEWORK = new Set(['@memberjunction/core', '@memberjunction/core-entities', '@memberjunction/global', '@memberjunction/integration-engine', '@memberjunction/integration-engine-base']);
 const EXTERNAL = { jsonwebtoken: '9.0.3', mssql: '^12.2.0', zod: '~3.24.4' };

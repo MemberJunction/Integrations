@@ -4,7 +4,7 @@
   "name": "connector-higher-logic-vanilla",
   "displayName": "Higher Logic Vanilla Connector",
   "description": "Higher Logic Vanilla connector for MemberJunction — full curated object catalog.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
@@ -12,7 +12,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.43.0 <6.0.0",
+  "mjVersionRange": ">=5.43.0 <7.0.0",
   "schema": {
     "name": "mj_connector_higher_logic_vanilla",
     "createIfNotExists": true

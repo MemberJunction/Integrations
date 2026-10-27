@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ClientName": {
+      "type": "string",
+      "title": "Spektrix System Name",
+      "description": "The tenant's Spektrix system name (the client identifier Spektrix assigns to the organisation). Tenant-specific; supplied per company, never baked into the connector.",
+      "order": 0
+    },
+    "ApiLoginName": {
+      "type": "string",
+      "title": "API Login Name",
+      "description": "The Spektrix API login name issued for the tenant's API user. Used as the identity in the SpektrixAPI3 request signature.",
+      "order": 1
+    },
+    "ApiSecretKey": {
+      "type": "string",
+      "title": "API Secret Key",
+      "description": "Base-64 encoded API secret key issued with the API login. Decoded and used as the HMAC-SHA1 signing key for each request.",
+      "isSecret": true,
+      "order": 2
+    },
+    "BaseURL": {
+      "type": "string",
+      "title": "Base URL Override",
+      "description": "Optional full v3 API root override for custom domains or non-standard deployments. Leave blank to use the default Spektrix v3 endpoint for the system name.",
+      "order": 3
+    }
+  },
+  "required": [
+    "ClientName",
+    "ApiLoginName",
+    "ApiSecretKey"
+  ]
+}

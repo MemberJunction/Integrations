@@ -104,8 +104,78 @@ function readSeeded(migrationsDir) {
     for (const stmt of sql.matchAll(/INSERT\s+INTO\s+[^;]*?IntegrationObjectField[^;]*;/gis)) {
       fieldCount += (stmt[0].match(/'[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}'/g) ?? []).length;
     }
+
+    // The same argument for OBJECT rows. A delta that adds objects with a guarded direct INSERT (rather than
+    // the generated SET/EXEC pair) ships them just as surely, and until this was added the gate reported
+    // them as "declared but never shipped". Objects are matched by NAME, so the row's Name literal has to
+    // be found, not counted: the statement's row alias list names its columns (`AS v(ObjID, ObjName, …)`),
+    // so the Name column is located by alias and each VALUES row contributes the literal at that position.
+    // String literals are tokenized rather than regexed because Description and Configuration cells carry
+    // commas, parentheses and JSON.
+    for (const name of directInsertObjectNames(sql)) objectNames.add(name);
   }
   return { objectNames, fieldCount };
+}
+
+/**
+ * Object names delivered by `INSERT INTO … IntegrationObject (…) SELECT … FROM (VALUES …) AS v(…)` statements.
+ * Column position comes from the alias list (a column named ObjName / obj_name / Name); rows are split on
+ * commas at parenthesis depth one, outside string literals.
+ */
+function directInsertObjectNames(sql) {
+  const names = [];
+  const re = /INSERT\s+INTO\s+\[?"?__mj"?\]?\.\[?"?IntegrationObject"?\]?\s*\(/gi;
+  for (const m of sql.matchAll(re)) {
+    const stmt = sliceStatement(sql, m.index);
+    const alias = /\)\s+AS\s+\w+\s*\(([^)]*)\)/i.exec(stmt);
+    const values = /\(\s*VALUES\b/i.exec(stmt);   // the VALUES list's own opening parenthesis
+    if (!alias || !values) continue;
+    const cols = alias[1].split(',').map((c) => c.trim());
+    const nameIdx = cols.findIndex((c) => /^(obj_?name|name)$/i.test(c));
+    if (nameIdx < 0) continue;
+    for (const row of splitRows(stmt.slice(values.index))) {
+      const cell = row[nameIdx];
+      const lit = cell && /^N?'((?:[^']|'')*)'$/s.exec(cell.trim());
+      if (lit) names.push(lit[1].replace(/''/g, "'"));
+    }
+  }
+  return names;
+}
+
+/** The statement starting at `from`, ended by the first `;` outside a string literal. */
+function sliceStatement(sql, from) {
+  let inStr = false;
+  for (let i = from; i < sql.length; i++) {
+    const ch = sql[i];
+    if (inStr) { if (ch === "'") { if (sql[i + 1] === "'") i++; else inStr = false; } continue; }
+    if (ch === "'") inStr = true;
+    else if (ch === ';') return sql.slice(from, i + 1);
+  }
+  return sql.slice(from);
+}
+
+/**
+ * Parenthesised rows of a VALUES list, each split into cells on depth-one commas outside literals.
+ * `text` starts at the parenthesis that opens `(VALUES …)`; parsing stops at that list's closing one.
+ */
+function splitRows(text) {
+  const rows = [];
+  let depth = 0, inStr = false, row = null, cell = '';
+  for (let i = text.indexOf('(') + 1; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) { cell += ch; if (ch === "'") { if (text[i + 1] === "'") { cell += "'"; i++; } else inStr = false; } continue; }
+    if (ch === "'") { inStr = true; cell += ch; continue; }
+    if (ch === '(') { if (depth === 0) { row = []; cell = ''; } else cell += ch; depth++; continue; }
+    if (ch === ')') {
+      if (depth === 0) break;                       // end of the VALUES list
+      depth--;
+      if (depth === 0) { row.push(cell); rows.push(row); row = null; cell = ''; } else cell += ch;
+      continue;
+    }
+    if (ch === ',' && depth === 1) { row.push(cell); cell = ''; continue; }
+    if (depth >= 1) cell += ch;
+  }
+  return rows;
 }
 
 const problems = [];

@@ -4,7 +4,7 @@
   "name": "connector-propfuel",
   "displayName": "PropFuel Connector",
   "description": "PropFuel AI-powered member insights and engagement platform — data export file-feed integration. Retrieves hourly JSON files via list/download/ack endpoints.",
-  "version": "1.2.2",
+  "version": "1.2.5",
   "license": "ISC",
   "icon": "fa-solid fa-file-export",
   "publisher": {
@@ -13,7 +13,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_propfuel",
     "createIfNotExists": true

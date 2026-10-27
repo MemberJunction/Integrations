@@ -1,5 +1,23 @@
 # @memberjunction/connector-elevate
 
+## 0.3.7
+
+### Patch Changes
+
+- 9addc35: fix(elevate): load the site's `/api/reports` catalog before resolving a discovered object's route.
+
+  `FetchChanges` resolved the read route before anything had loaded the per-instance catalog page (the load happened later, in `RequestableSelectorsFor`). The connector instance is new per run, so every config-less discovered object a run started first failed with "declares no Configuration.resourceWireValue" — 6 objects per run on a live tenant. The "no read-surface columns" error now also says which input was empty (columns, requestable, rejected, requested source fields).
+
+## 0.3.6
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
 ## 0.3.5
 
 ### Patch Changes

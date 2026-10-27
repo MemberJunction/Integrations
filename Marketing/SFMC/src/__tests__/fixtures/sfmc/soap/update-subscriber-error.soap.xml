@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:UpdateResponse>
+      <par:Results xsi:type="par:UpdateResult">
+        <par:StatusCode>Error</par:StatusCode>
+        <par:StatusMessage>Unable to find the applicable subscriber in this account</par:StatusMessage>
+        <par:OrdinalID>0</par:OrdinalID>
+        <par:ErrorCode>12014</par:ErrorCode>
+      </par:Results>
+      <par:RequestID>5a6fe4e6-51b9-4142-b18e-6ecf8e142555</par:RequestID>
+      <par:OverallStatus>Error</par:OverallStatus>
+    </par:UpdateResponse>
+  </soap:Body>
+</soap:Envelope>

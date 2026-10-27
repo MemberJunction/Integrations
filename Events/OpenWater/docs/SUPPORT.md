@@ -163,7 +163,10 @@ all 25 got an entity map.
   `RateLimitTokensPerSec 3`, deliberately gentle against a client endpoint).
 - **No live object discovery.** This connector is declared-only: `DiscoverObjects` returns the metadata
   catalog rather than probing the vendor, so a new object appearing in OpenWater will not show up until the
-  catalog is updated. Nimble AMS is the fleet's counter-example (authoritative live describe).
+  catalog is updated. The vendor swagger has no enumeration endpoint, so this is a ceiling, not a defect;
+  the Integration row now says so (`Configuration.DeclaredAgainst` pins the swagger, its sha256 and
+  the date it was read, with a re-check procedure). Nimble AMS is the fleet's counter-example (authoritative
+  live describe).
 - **Coverage:** 11 of 25 declared objects have proven rows. The other 14 fetched successfully and are
   attributed above — not untested, and not keyless.
 - **The first sync after an apply can run an object with zero field maps.** On run `847A4E5E`,

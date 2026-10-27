@@ -4,7 +4,7 @@
   "name": "connector-mailchimp",
   "displayName": "Mailchimp Connector",
   "description": "Mailchimp Marketing API v3.0 integration for syncing audiences, campaigns, automations, templates, reports, and e-commerce data. Uses Basic authentication with an API key whose suffix identifies the data center.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "license": "ISC",
   "icon": "fa-brands fa-mailchimp",
   "color": "#ffe01b",
@@ -14,7 +14,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_mailchimp",
     "createIfNotExists": true

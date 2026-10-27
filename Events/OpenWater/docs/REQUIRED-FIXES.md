@@ -136,32 +136,6 @@ rather than fixed here. `docs/SUPPORT.md` states the honest 10-of-25 rather than
 
 ---
 
-## 4. Discovery is declared-only — a new vendor object is invisible until someone updates the catalog
-
-`DiscoverObjects` returns the metadata catalog rather than probing the vendor, so this connector cannot
-report an object OpenWater added after the catalog was authored. Nimble AMS is the fleet's counter-example
-(authoritative live Salesforce describe; 32 declared → 37 objects with rows).
-
-Not a defect today — it is an explicit design choice and `DiscoveryIsAuthoritative` reports it honestly, so
-nothing downstream is misled. It is a ceiling: coverage on this connector can only ever be as current as
-the last catalog edit.
-
-**Fix should:** probe the v2 API's own route surface during discovery and report unknown collections as
-new objects, or state in the connector's description that the catalog is the contract.
-
----
-
-## 5. The catalog still advertises a dead host
-
-`NavigationBaseURL` is `https://api.getopenwater.com`. The working tenant reaches
-`https://api.secure-platform.com`. The field is display-only, so nothing fails — but it is the URL a human
-is shown when they ask where their data comes from, and it points at nothing.
-
-**Fix should:** carry the host from the connection's own configuration rather than a constant, or set the
-constant to the live host.
-
----
-
 ## 6. The first sync after an apply can run an object with **zero field maps** (engine, not connector)
 
 New on run `847A4E5E` (2026-08-05). `ApplicationCategory` fetched its 43 records correctly and then failed

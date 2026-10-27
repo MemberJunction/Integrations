@@ -4,7 +4,7 @@
   "name": "connector-netsuite",
   "displayName": "NetSuite Connector",
   "description": "Oracle NetSuite ERP/CRM connector: SuiteTalk REST Record Service (CRUD) + SuiteQL reads across standard and custom record types; incremental via lastModifiedDate; OAuth 1.0a TBA / OAuth 2.0; per-account host; runtime metadata-catalog discovery.",
-  "version": "1.4.1",
+  "version": "1.4.3",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
@@ -12,7 +12,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_netsuite",
     "createIfNotExists": true

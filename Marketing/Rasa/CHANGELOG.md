@@ -1,5 +1,55 @@
 # @memberjunction/connector-rasa-io
 
+## 3.0.2
+
+### Patch Changes
+
+- 7cc5258: Newsletter, Blast and Sequence Action now declare `contact_id` (linked to Contact) and `email`. rasa.io added both to every insights action event on 2026-10-20 (they aren't in the published spec), so engagement can now be tied to the contact in MJ. Without the declaration the sync dropped them, since it keeps only declared fields. Existing installs pick up the two new columns on the next schema refresh; a full resync backfills older events, which the incremental watermark won't revisit.
+- 8a3f2c3: The rasa.io credential gains an optional **API host** field (`baseUrl`). Leave it blank for rasa.io production (`https://api.rasa.io`); set it to reach another rasa.io environment, e.g. `https://api-dev.rasa.io` for client credentials generated in rasa.io's dev dashboard, which production rejects. A host typed without a scheme gets `https://`. The connector already honored this key; the credential form just never showed it, so a connection made in MJ Central could only target production.
+
+## 3.0.1
+
+### Patch Changes
+
+- e9a915d: A 404 on one parent of a per-parent object (e.g. `/v2/insights/blast/{id}/actions`) no longer stops that object's sync. The parent is skipped with a `PARENT_NOT_FOUND` warning that carries rasa.io's message, and the sync moves on. Seen live: `/v2/messaging/blast` and `/v2/messaging/sequence` currently list some of each other's ids, and the insights feed answers "'144' is a sequence, not a blast" (rasa.io is fixing the list endpoints).
+
+## 3.0.0
+
+### Major Changes
+
+- a00dce2: Move the rasa.io connector to the v2 API only, at rasa.io's direction.
+
+  2.x signed in with v1 (`POST /v1/tokens`, username + password + API key) and sent that token to every object, but rasa.io's v2 endpoints don't accept v1 tokens, so every v2 object failed with HTTP 401. 3.0.0 signs in with a v2 **client ID and secret** that the customer generates in the rasa.io dashboard (`POST /v2/tokens`, OAuth2 client-credentials), and reuses the token until shortly before its `expires_in`.
+
+  **Breaking:**
+
+  - **Credential:** the `rasa.io API` credential now takes `clientId` and `clientSecret`. Existing v1 credentials stop working and must be re-entered.
+  - **Objects:** the 18 v1 objects (Person and its children, Post, Lead Post, Content Pool Item, Community, Section, Insight Action / Topic / Topic Score, Analytics Activity / Article / Image / Topic) are retired. Their destination tables and data are left in place.
+  - **Actions:** the 12 Actions on Person, Post, Insight Action and Insight Topic are disabled. New read-only Get / Search / List Actions are added for Contact and Newsletter Action.
+
+  **New objects:** Newsletter / Blast / Sequence Action (rasa.io's bulk engagement feeds: opens, clicks, deliveries; incremental on `created`), Newsletter / Blast / Sequence Contact, Newsletter Deleted Contact, Segment and Integration Run. The first sync sends an early `created_since`, because rasa.io otherwise defaults it to the last seven days.
+
+  Discovery no longer lists undeclared parent-scoped endpoints, which couldn't be synced. Upgrade steps are in `MIGRATION-v3.md`.
+
+### Patch Changes
+
+- 4441977: Fixes from the first live run against rasa.io's v2 API (api-dev.rasa.io, 2026-10-20).
+
+  - **First sync of the action feeds no longer fails.** rasa.io rejects `created_since` more than 24 months ago (HTTP 400), so the fixed 2000-01-01 starting point is replaced by a rolling 725-day window (`Configuration.maxLookbackDays`). A stored watermark older than the window is moved up to it, with a `WATERMARK_CLAMPED` warning.
+  - **Auth header:** the token is sent as `Authorization: Bearer` only. The live API rejects the `rasa-token` header that its spec documents.
+  - **Deleted Contact** is fetched once per List: rasa.io requires `list_id`. Its key is now `list_id + id`.
+  - **Removed:** `Subscription` (its list endpoint requires a `contact_id`, so a sync would make one request per contact; its create/update writes go with it) and `Integration Run` (internal to rasa.io, per the vendor). 23 objects.
+
+## 2.0.2
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
 ## 2.0.1
 
 ### Patch Changes

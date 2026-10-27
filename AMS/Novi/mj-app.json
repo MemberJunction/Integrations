@@ -4,7 +4,7 @@
   "name": "connector-novi-ams",
   "displayName": "Novi AMS Connector",
   "description": "Novi AMS connector — syncs members, events, ecommerce, custom fields, webhooks, blogs, site content, NPS surveys, and catalog items via the Novi REST API (HTTP Basic with raw API key, per-tenant base URL https://www.<assoc>.org/api/).",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
@@ -12,7 +12,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_novi_ams",
     "createIfNotExists": true

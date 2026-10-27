@@ -4,7 +4,7 @@ import type {
     FetchContext,
     ExternalObjectSchema,
 } from '@memberjunction/integration-engine';
-import { PropFuelConnector, parseFileName, compareMicrotime } from '../PropFuelConnector.js';
+import { PropFuelConnector, parseFileName, compareMicrotime, stableHash } from '../PropFuelConnector.js';
 import type { MJCompanyIntegrationEntity } from '@memberjunction/core-entities';
 import type { UserInfo } from '@memberjunction/core';
 
@@ -275,7 +275,10 @@ describe('PropFuelConnector', () => {
             });
         });
 
-        it('partial batch (BatchSize): stops mid-listing and reports HasMore=true', async () => {
+        it('partial batch (BatchSize): stops INSIDE a file and reports HasMore=true', async () => {
+            // Previously the record cap was only checked BETWEEN files, so this returned BOTH
+            // records for a request of 1. The engine flagged that as CONNECTOR_IGNORED_BATCH_SIZE;
+            // live, a single 1,000-record file answered a 200-record request with 1,000.
             const f1 = '100.0-opens.json';
             const f2 = '200.0-opens.json';
             connector.Routes.set(LIST_URL, listResponse([f1, f2]));
@@ -283,10 +286,55 @@ describe('PropFuelConnector', () => {
             connector.Routes.set(downloadURL(f2), fileResponse([{ id: 'c' }]));
 
             const result = await connector.FetchChanges(ctx({ BatchSize: 1 }));
-            // first file alone exceeds the batch limit → second file not fetched yet
-            expect(result.Records.map(r => r.ExternalID)).toEqual(['a', 'b']);
+            expect(result.Records.map(r => r.ExternalID)).toEqual(['a']);
             expect(result.HasMore).toBe(true);
+            // cursor keeps the file and remembers how far it got
+            expect(result.NextAfterKeyValue).toBe('100.0@1');
             expect(connector.RequestedURLs).not.toContain(downloadURL(f2));
+        });
+
+        it('resumes mid-file with no gap and no repeat', async () => {
+            const f1 = '100.0-opens.json';
+            const f2 = '200.0-opens.json';
+            connector.Routes.set(LIST_URL, listResponse([f1, f2]));
+            connector.Routes.set(downloadURL(f1), fileResponse([{ id: 'a' }, { id: 'b' }, { id: 'c' }]));
+            connector.Routes.set(downloadURL(f2), fileResponse([{ id: 'd' }]));
+
+            // walk the whole feed one record at a time, exactly as the engine does on HasMore
+            const seen: string[] = [];
+            let cursorValue: string | null = null;
+            for (let i = 0; i < 10; i++) {
+                const r = await connector.FetchChanges(ctx({ BatchSize: 1, AfterKeyValue: cursorValue } as Partial<FetchContext>));
+                seen.push(...r.Records.map(x => x.ExternalID));
+                cursorValue = (r.NextAfterKeyValue as string) ?? cursorValue;
+                if (!r.HasMore) break;
+            }
+            expect(seen).toEqual(['a', 'b', 'c', 'd']);          // every record, in order
+            expect(new Set(seen).size).toBe(seen.length);        // and none twice
+        });
+
+        it('a cursor written before mid-file resume existed still works', async () => {
+            // Older cursors are a bare microtime with no "@offset" — they must mean "that file is
+            // finished", not "restart it".
+            const fOld = '100.0-opens.json';
+            const fNew = '300.0-opens.json';
+            connector.Routes.set(LIST_URL, listResponse([fOld, fNew]));
+            connector.Routes.set(downloadURL(fNew), fileResponse([{ id: 'new' }]));
+
+            const result = await connector.FetchChanges(ctx({ WatermarkValue: '100.0' }));
+            expect(result.Records.map(r => r.ExternalID)).toEqual(['new']);
+            expect(connector.RequestedURLs).not.toContain(downloadURL(fOld));
+        });
+
+        it('a file whose records exactly fill the batch does not leave a phantom offset', async () => {
+            const f1 = '100.0-opens.json';
+            connector.Routes.set(LIST_URL, listResponse([f1]));
+            connector.Routes.set(downloadURL(f1), fileResponse([{ id: 'a' }, { id: 'b' }]));
+
+            const result = await connector.FetchChanges(ctx({ BatchSize: 2 }));
+            expect(result.Records.map(r => r.ExternalID)).toEqual(['a', 'b']);
+            expect(result.NextAfterKeyValue).toBe('100.0');   // file complete — no "@"
+            expect(result.HasMore).toBe(false);
         });
 
         it('uses a content-hash fallback identity when a record has no id key', async () => {
@@ -324,5 +372,53 @@ describe('PropFuelConnector', () => {
             expect(headers['Authorization']).toBe('Bearer abc');
             expect(headers['Accept']).toBe('application/json');
         });
+    });
+});
+
+describe('stableHash — record identity must reflect NESTED content', () => {
+    // Regression for the identity collapse found on SANDBOX 2026-09-13.
+    //
+    // `JSON.stringify(record, Object.keys(record).sort())` passes the top-level keys as a REPLACER.
+    // An array replacer is an allow-list applied at EVERY level, so every nested key was stripped and
+    // each record serialised to `{"campaign":{},"click":{},"contact":{}}`. All records in a file with
+    // the same shape therefore shared one identity, and the engine's CollapseDuplicateIdentities —
+    // correctly treating one identity seen twice as one record — collapsed 882 of 884 clicks in a
+    // single batch. A sync that fetched ~2,400 records stored 181.
+    const clickA = {
+        campaign: { id: 'c1', name: 'Spring' },
+        contact: { id: 'p1', email: 'a@example.com' },
+        click: { id: 'k1', clicked_at: '2026-01-01T10:00:00Z', link: 'https://a' },
+    };
+    const clickB = {
+        campaign: { id: 'c1', name: 'Spring' },
+        contact: { id: 'p2', email: 'b@example.com' },
+        click: { id: 'k2', clicked_at: '2026-02-02T20:00:00Z', link: 'https://b' },
+    };
+
+    it('gives two records differing ONLY in nested fields different hashes', () => {
+        expect(stableHash(clickA)).not.toBe(stableHash(clickB));
+    });
+
+    it('is stable for the same content regardless of key order', () => {
+        const reordered = {
+            click: { link: 'https://a', clicked_at: '2026-01-01T10:00:00Z', id: 'k1' },
+            contact: { email: 'a@example.com', id: 'p1' },
+            campaign: { name: 'Spring', id: 'c1' },
+        };
+        expect(stableHash(reordered)).toBe(stableHash(clickA));
+    });
+
+    it('distinguishes a difference at ANY depth', () => {
+        const deepA = { a: { b: { c: { d: 1 } } } };
+        const deepB = { a: { b: { c: { d: 2 } } } };
+        expect(stableHash(deepA)).not.toBe(stableHash(deepB));
+    });
+
+    it('keeps array ORDER significant', () => {
+        expect(stableHash({ xs: [1, 2, 3] })).not.toBe(stableHash({ xs: [3, 2, 1] }));
+    });
+
+    it('still separates flat records (the case the old code handled by accident)', () => {
+        expect(stableHash({ id: 1, v: 'x' })).not.toBe(stableHash({ id: 2, v: 'x' }));
     });
 });

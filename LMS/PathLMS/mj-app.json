@@ -4,7 +4,7 @@
   "name": "connector-path-lms",
   "displayName": "Path LMS Connector",
   "description": "Path LMS (Blue Sky eLearn) Reporting API connector — pull-only GraphQL analytics over 16 report query surfaces. Two-step bearer auth (applicationId + applicationSecret then 12-hour JWT); no writes. All data via POST to the single GraphQL endpoint.",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "license": "ISC",
   "icon": "fa-solid fa-graduation-cap",
   "publisher": {
@@ -13,7 +13,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_path_lms",
     "createIfNotExists": true

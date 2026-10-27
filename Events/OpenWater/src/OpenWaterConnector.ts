@@ -24,7 +24,11 @@
  * roundId), then calls the entry path once per parent — injecting the parent id either
  * into the path template ({programId}/{fundId}) or as a query param (roundId-gated
  * JudgeAssignments/Recusals, which 400 without it). An `embedded-array` AccessPath
- * (Rounds) emits records directly from the door payload with no second call.
+ * (Rounds) emits records directly from the door payload with no second call. The detail modes
+ * (`detail-object`, `detail-embedded`) fetch each door row's OWN detail and emit either the detail
+ * (EvaluationDetail, SessionDetail, UserDetail) or arrays inside it (scorecards, chairs, winner
+ * assignments), tagging intermediate ids via `segmentTags` and keeping scalar leaves via
+ * `scalarLeafKey`.
  *
  * Discovery — credential-free: DiscoverObjects/DiscoverFields/IntrospectSchema use the
  * BaseRESTIntegrationConnector implementations, which read the Declared IO/IOF metadata
@@ -78,6 +82,31 @@ import {
     type SourceObjectInfo,
 } from '@memberjunction/integration-engine';
 import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
+
+/**
+ * Stable JSON serialisation: keys sorted RECURSIVELY, array order kept (order is semantically
+ * meaningful), `undefined` omitted.
+ *
+ * This replaces the replacer form `JSON.stringify(v, Object.keys(v).sort())`. That second argument
+ * is a REPLACER, and an array replacer is an allow-list of property names applied at EVERY level —
+ * so passing the top-level keys stripped every NESTED key from the output, and any two values that
+ * differed only below the top level serialised identically.
+ *
+ * Proven live on PropFuel 2026-09-13, where the identical line was the primary record identity: a
+ * sync that fetched ~2,400 records stored 181, because `CollapseDuplicateIdentities` correctly
+ * treats one identity seen twice as one record observed twice. Fixed there in 1.2.4; this is the
+ * same line in the three connectors that still carried it.
+ */
+export function canonicalJSON(value: unknown): string {
+    if (value === null || value === undefined) return 'null';
+    if (typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(v => canonicalJSON(v)).join(',')}]`;
+    if (value instanceof Date) return JSON.stringify(value.toISOString());
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+    return `{${keys.map(k => `${JSON.stringify(k)}:${canonicalJSON(obj[k])}`).join(',')}}`;
+}
+
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -153,6 +182,24 @@ const DOOR_CACHE_MAX_ENTRIES = 20;
  */
 const MAX_PARENTS_PER_CALL = 100;
 /**
+ * Parent details fetched CONCURRENTLY inside one walk batch.
+ *
+ * The walk is one HTTP call per parent and was strictly serial — `await` inside the parent loop —
+ * so a door of 2,079 applications cost 2,079 round trips end to end, and three objects derived from
+ * that same door (ApplicationFile, ApplicationRoundSubmission, Media) each paid it in full. Measured
+ * live on the sandbox 2026-09-14: 6,273 records in ~20 minutes, ~300 rows/min, against 13,518 in 73s
+ * for the objects that fetch a list directly.
+ *
+ * Nothing about that was rate-limit driven: the engine's own limiter and the 429 backoff sit UNDER
+ * this loop and keep applying, so widening the batch cannot outrun them — it only stops the walk
+ * idling on latency between calls. `fetchConcurrency` on the connection overrides it; the ceiling is
+ * deliberate, because the door enumeration above already drew `HTTP 429 at /v2/Applications` at
+ * modest rates and a per-parent burst is the same vendor.
+ */
+const DEFAULT_WALK_CONCURRENCY = 8;
+/** Hard ceiling for {@link DEFAULT_WALK_CONCURRENCY}, whatever the connection asks for. */
+const MAX_WALK_CONCURRENCY = 16;
+/**
  * Door rows harvested in ONE call, and the wall-clock the whole walk gets before it yields.
  *
  * A count is only ever a PROXY for the thing that actually kills the batch, which is the engine's
@@ -222,6 +269,21 @@ interface AccessPath {
     embeddedParentTag?: { sourceKey?: string; asKey?: string };
     /** detail-harvest: the key read off each walked element (default 'id') — e.g. 'mediaId'. */
     harvestIdKey?: string;
+    /**
+     * detail-embedded only: copy a field from an INTERMEDIATE node onto every element beneath it.
+     * `segment` names the nestingSegments level whose nodes supply the value (e.g. 'roundSubmissions[]'
+     * with sourceKey 'roundId'); the door id is already stamped via parentParamName, this reaches the
+     * levels in between. Without it a round-submission child arrives knowing its application but not
+     * its round, which is why the four #364 children could not declare a key. Vendor-supplied values
+     * under asKey are never overwritten. See WalkSegmentsTagged.
+     */
+    segmentTags?: { segment: string; sourceKey: string; asKey?: string }[];
+    /**
+     * detail-embedded only: when the LEAF elements are scalars (roundSubmissions[].winnerTypes[] is
+     * an array of strings, subAccountUserIds[] of integers), wrap each as { [scalarLeafKey]: value }
+     * so it can be tagged and keyed. Absent, scalar leaves are dropped, as they always were.
+     */
+    scalarLeafKey?: string;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────
@@ -1220,6 +1282,29 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
      * sibling re-pays the full per-application call count against the vendor.
      * 404 returns null (parent deleted between list and detail — skip, don't fail the object).
      */
+    /**
+     * How many parent details a detail walk fetches at once.
+     *
+     * `fetchConcurrency` is the connection-level knob the framework already defines for exactly this
+     * (the engine reads the same key for its own fetch pipeline), so a tenant whose vendor tolerates
+     * more — or less — needs no release. Anything unparseable, zero or negative falls back rather
+     * than being applied verbatim: `Number('')` is 0, and a 0 here would stall the walk outright.
+     */
+    private ResolveWalkConcurrency(companyIntegration: MJCompanyIntegrationEntity | null | undefined): number {
+        let requested: number | null = null;
+        if (companyIntegration?.Configuration) {
+            try {
+                const parsed = JSON.parse(companyIntegration.Configuration) as { fetchConcurrency?: unknown };
+                const n = Number(parsed?.fetchConcurrency);
+                if (Number.isFinite(n) && n > 0) requested = Math.floor(n);
+            } catch {
+                // A connection whose Configuration is not JSON is a real state (hand-edited rows exist);
+                // the walk still has to run, so fall through to the default rather than throwing here.
+            }
+        }
+        return Math.min(requested ?? DEFAULT_WALK_CONCURRENCY, MAX_WALK_CONCURRENCY);
+    }
+
     private async FetchDetailCached(auth: OpenWaterAuthContext, baseURL: string, path: string,
         warnings: FetchWarning[]): Promise<Record<string, unknown> | null> {
         const now = Date.now();
@@ -1388,37 +1473,63 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         let consumed = startAt;
         // The nesting walk's counterpart to harvestShape: what the first parent detail actually held.
         let nestShape: string | null = null;
-        for (const parentID of parentIDs.slice(startAt)) {
+        // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL — and
+        // fetch each bounded window CONCURRENTLY, processing the results IN ORDER. Ordering is what
+        // keeps this a pure latency change: `consumed` (the resume cursor), the budget cut-off and
+        // `nestShape` (first detail wins) all behave exactly as they did when the walk was serial.
+        const walkConcurrency = this.ResolveWalkConcurrency(ctx.CompanyIntegration);
+        const walkWindow = parentIDs.slice(startAt, startAt + MAX_PARENTS_PER_CALL);
+        for (let w = 0; w < walkWindow.length; ) {
             if (out.length >= budget) break;
-            // Bound the vendor calls, not only the records emitted — see MAX_PARENTS_PER_CALL —
-            // and stop on the clock, which is what the engine actually kills the batch on.
-            if (consumed - startAt >= MAX_PARENTS_PER_CALL) break;
+            // The clock is checked per SLICE, not per parent: it is what the engine actually kills
+            // the batch on, and requests already in flight cannot be recalled anyway.
             if (Date.now() > deadline) break;
-            consumed++;
-            const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
-            if (leafPath == null) continue;
-            const detail = await this.FetchDetailCached(auth, baseURL, leafPath, warnings);
-            if (!detail) continue;
-            if (accessPath.extractionMode === 'detail-object') {
-                const rec: Record<string, unknown> = { ...detail };
-                if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
-                    rec[accessPath.parentParamName] = parentID;
-                out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
-            } else {
-                if (nestShape === null) nestShape = this.ShapeAlong(detail, accessPath.nestingSegments ?? []);
-                let elements = this.WalkSegments([detail], accessPath.nestingSegments ?? []) as Record<string, unknown>[];
-                if (filt && filt.key) {
-                    elements = elements.filter(e => e && (filt.exists
-                        ? e[filt.key] != null
-                        : String(e[filt.key]) === String(filt.value)));
-                }
-                for (const e of elements) {
-                    const rec: Record<string, unknown> = { ...e };
+            /**
+             * Never dispatch more parents than the REMAINING budget could consume. A parent yields
+             * at least zero records, so a full-width slice is right for a sparse child mid-sync —
+             * but a sampling call asks for a handful, and fetching a fixed 8 for a budget of 2 is
+             * exactly the over-walking that made DiscoverFieldsViaFetch blow the discovery budget
+             * (see the batch-stops-early test). Width follows demand.
+             */
+            const sliceWidth = Math.max(1, Math.min(walkConcurrency, budget - out.length));
+            const slice = walkWindow.slice(w, w + sliceWidth);
+            const fetched = await Promise.all(slice.map(async (parentID) => {
+                const leafPath = this.InjectParentID(accessPath.entryPath, parentID, accessPath);
+                if (leafPath == null) return { parentID, detail: null };
+                return { parentID, detail: await this.FetchDetailCached(auth, baseURL, leafPath, warnings) };
+            }));
+            w += slice.length;
+            let budgetMet = false;
+            for (const { parentID, detail } of fetched) {
+                // A parent fetched but not processed is deliberately NOT counted as consumed: the
+                // next call re-walks it and FetchDetailCached serves it from cache, so the cursor
+                // stays truthful without paying the vendor twice.
+                if (out.length >= budget) { budgetMet = true; break; }
+                consumed++;
+                if (!detail) continue;
+                if (accessPath.extractionMode === 'detail-object') {
+                    const rec: Record<string, unknown> = { ...detail };
                     if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
                         rec[accessPath.parentParamName] = parentID;
                     out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
+                } else {
+                    if (nestShape === null) nestShape = this.ShapeAlong(detail, accessPath.nestingSegments ?? []);
+                    let elements = this.WalkSegmentsTagged([detail], accessPath.nestingSegments ?? [],
+                        accessPath.segmentTags ?? [], accessPath.scalarLeafKey);
+                    if (filt && filt.key) {
+                        elements = elements.filter(e => e && (filt.exists
+                            ? e[filt.key] != null
+                            : String(e[filt.key]) === String(filt.value)));
+                    }
+                    for (const e of elements) {
+                        const rec: Record<string, unknown> = { ...e };
+                        if (accessPath.parentParamName && rec[accessPath.parentParamName] == null)
+                            rec[accessPath.parentParamName] = parentID;
+                        out.push(this.BuildExternalRecord(rec, obj, fields, pkFieldNames));
+                    }
                 }
             }
+            if (budgetMet) break;
         }
         if (out.length === 0 && startAt === 0) {
             warnings.push({ Code: 'ZERO_LEAVES',
@@ -1581,6 +1692,55 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
         return nodes;
     }
 
+    /**
+     * WalkSegments for the detail-embedded mode: the same descent, plus two things the plain walker
+     * cannot do. (1) `segmentTags` carries a field from an intermediate node down onto every element
+     * beneath it — the round submission's roundId onto each scorecard, recommendation or winner type —
+     * so a leaf that is only unique within its round can be keyed (applicationId, roundId, ...).
+     * (2) `scalarLeafKey` keeps scalar leaves: roundSubmissions[].winnerTypes[] is an array of
+     * STRINGS, and the plain walker's object-only filter dropped every one of them silently — the
+     * per-application half of the 74-vs-89 winner type gap (REQUIRED-FIXES / INT-32). A tag never
+     * overwrites a value the vendor itself supplied under that name. With no tags and no scalar key
+     * this behaves exactly as WalkSegments.
+     */
+    private WalkSegmentsTagged(
+        doorRows: Record<string, unknown>[],
+        segments: string[],
+        segmentTags: { segment: string; sourceKey: string; asKey?: string }[],
+        scalarLeafKey?: string
+    ): Record<string, unknown>[] {
+        type Node = { value: unknown; tags: Record<string, unknown> };
+        let nodes: Node[] = doorRows.map(value => ({ value, tags: {} }));
+        segments.forEach((seg, depth) => {
+            const key = seg.endsWith('[]') ? seg.slice(0, -2) : seg;
+            const isLast = depth === segments.length - 1;
+            const tagsHere = segmentTags.filter(t => t.segment === seg);
+            const next: Node[] = [];
+            for (const node of nodes) {
+                if (node.value == null || typeof node.value !== 'object') continue;
+                const child = (node.value as Record<string, unknown>)[key];
+                const children = Array.isArray(child) ? child : child != null ? [child] : [];
+                for (const c of children) {
+                    if (c != null && typeof c === 'object') {
+                        // Tags declared FOR this level read off this node and apply to its descendants.
+                        const own: Record<string, unknown> = {};
+                        for (const t of tagsHere) {
+                            const v = (c as Record<string, unknown>)[t.sourceKey];
+                            if (v != null) own[t.asKey ?? t.sourceKey] = v;
+                        }
+                        next.push({ value: c, tags: { ...node.tags, ...own } });
+                    } else if (isLast && scalarLeafKey && c != null) {
+                        next.push({ value: { [scalarLeafKey]: c }, tags: node.tags });
+                    }
+                    // A scalar at an intermediate level, or a scalar leaf with no scalarLeafKey: dropped.
+                }
+            }
+            nodes = next;
+        });
+        // Vendor values win over tags: spread the element LAST.
+        return nodes.map(n => ({ ...n.tags, ...(n.value as Record<string, unknown>) }));
+    }
+
     /** For embedded-array access paths: emit the nested records directly from the door payload. */
     /**
      * embedded-array extraction, optionally tagging each leaf with its IMMEDIATE parent's id.
@@ -1689,7 +1849,7 @@ export class OpenWaterConnector extends BaseRESTIntegrationConnector {
 
     /** Deterministic fallback identity for partial/missing keys (FNV-1a over the canonical JSON). */
     private ContentHash(record: Record<string, unknown>): string {
-        const json = JSON.stringify(record, Object.keys(record).sort());
+        const json = canonicalJSON(record);
         let hash = 0x811c9dc5;
         for (let i = 0; i < json.length; i++) {
             hash ^= json.charCodeAt(i);

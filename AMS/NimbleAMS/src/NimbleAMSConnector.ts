@@ -156,6 +156,8 @@ const FUSE_PATH = '/services/apexrest/NUINT/NUIntegrationService';
 const NIMBLE_NAMESPACES = ['NU__', 'NUINT__'];
 /** Standard SF objects used by Nimble AMS alongside the managed package. */
 const NIMBLE_STANDARD_OBJECTS = new Set(['Account', 'Contact']);
+/** The change cursor Salesforce exposes on standard and custom objects (not on every companion type). */
+const SF_WATERMARK_FIELD = 'LastModifiedDate';
 /** Nimble Fuse OUTBOUND hard limits per call — 50,000 records OR 3MB, whichever is reached first. */
 const FUSE_MAX_RECORDS_PER_CALL = 50_000;
 const FUSE_MAX_BYTES_PER_CALL = 3 * 1024 * 1024; // 3MB
@@ -246,6 +248,36 @@ export class NimbleAMSConnector extends SalesforceConnector {
         // best-effort — and let the shared PURE `mergeDeclaredWithSampledFields` union the two by field name
         // (never-shrink `max()` width; append MJ-discovered custom columns). No merge/PK/type logic here — MJ
         // owns all of it. Per-object failures keep that object's declared fields.
+        /**
+         * DECLARE THE CURSOR, not just the capability — and only where the column actually exists.
+         *
+         * `SupportsIncrementalSync: true` from DiscoverObjects buys nothing on its own: the SOQL
+         * door inherits the base connector's declared-watermark handling, which filters on the
+         * object's `IncrementalWatermarkField`, and `ExternalObjectSchema` has no property to carry
+         * one — only `SourceObjectInfo` does, which is why this is set here rather than there. The
+         * object-create path persists this column but NOT the capability flag, so a discovered
+         * object arrived with a null cursor and full-scanned on every sync, forever, silently.
+         *
+         * Measured on a live org 2026-09-14: of 364 discovered objects only the 16 DECLARED ones
+         * carried a cursor; the other 348 — 114 of them real `__c` objects — had none.
+         *
+         * PRESENCE-CHECKED, never assumed. `LastModifiedDate` is guaranteed on standard and custom
+         * objects but absent from some of the platform's own companion types — on that same org, 96
+         * `__History` and 24 `__mdt` objects lack the column entirely. Declaring it there would put
+         * a non-existent field in the SOQL predicate and fail the fetch outright, trading a silent
+         * full scan for a hard error. The describe answer is already in `obj.Fields`; use it rather
+         * than assuming a shape, so this stays correct whatever the tenant chooses to sync.
+         *
+         * Declared objects keep whatever their metadata already says — the fill only applies where
+         * no cursor is set, so a curated choice is never overridden.
+         */
+        for (const obj of schema.Objects) {
+            if (obj.IncrementalWatermarkField) continue;
+            if (obj.Fields.some(f => f.Name === SF_WATERMARK_FIELD)) {
+                obj.IncrementalWatermarkField = SF_WATERMARK_FIELD;
+            }
+        }
+
         await runBounded(schema.Objects, 8, async (obj: SourceObjectInfo) => {
             try {
                 const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);

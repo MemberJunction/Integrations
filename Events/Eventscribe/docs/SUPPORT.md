@@ -9,7 +9,7 @@
 
 ## What this connector supports
 
-**38 objects** declared across **658 fields** (source: `metadata/integration/.eventscribe.integration.json`).
+**38 objects** declared across **680 fields** (source: `metadata/integration/.eventscribe.integration.json`).
 **22 are Active**; **16 are `Status='Disabled'`** — the EdgeReg Registration family, deliberately out of
 scope (see below). 27 objects carry a primary key.
 
@@ -28,6 +28,46 @@ silently syncs nothing:
   `getPresentationsWithPresenters` and `getAllExhibitorsWithBooth`.
 - Roughly half the objects have **no read door of their own** — they arrive nested inside a parent's
   response under a declared container key, walked via `Configuration.accessPath`.
+
+### Connecting: credential type and connection test (added 2026-09-28)
+
+- **Credential type `Eventscribe API`** (`81521198-EB2F-4691-87D0-FAD574914C0D`) ships in
+  `metadata/credential-type/`: `APIKey` (required, secret) and `eID` (optional — the event id, needed only
+  for a key provisioned for several events). Before this, the seed referenced that id without creating it,
+  and a fresh install failed on `FK_Integration_CredentialType` (reproduced on a scratch MJ 5.51
+  PostgreSQL database; the corrected seed installs 38 objects and 658 fields there).
+- **Cadmium issues one key per product.** The connection test fires one cheap read per product family —
+  `asset` → `Assets`, `education-harvester` → `getPresenters`, `expo-harvester` → `getAllExhibitorStaff`,
+  `abstract-scorecard` → `getAuthors` — one second apart, and passes at the first family that answers. The
+  message names the family that answered and every family tried. It never probes the 1-per-minute
+  methods. `eventscribe-web` has no credential-only read (`getAccount` needs an account id), so it is
+  never probed.
+- A connection still sees **every family's objects**, whatever its key covers. Apply only the objects of
+  the family the test named; the others fail at sync (401/403 → `CONFIGURATION_ERROR`).
+- **Unproven live:** which product(s) a given key authenticates against, and what Cadmium answers when a
+  key is used on another product's host.
+
+### Keeping events apart: `EventScope` (added 2026-09-28)
+
+- Every connection of this connector writes into the **same tables**, and the engine matches rows by the
+  entity's primary key across the whole table. So every active object now has an **`EventScope`** field
+  (22 fields; the field Configuration carries `connectorStamped: "event-scope"`). On the **17 keyed
+  objects** it is part of the primary key, which becomes (Cadmium id, `EventScope`). On the **5 keyless
+  objects** (Handout, MediaAsset, PosterImages, ReviewQuestion, Slide) it is a plain column that enters the
+  content-hash identity.
+- The connector stamps it on every record it reads. The value is the connection's **configured `eID`**;
+  with no eID, it is **the connection's own ID**. Two connections share a scope only by naming the same
+  event, and an empty value is refused. The connection test says which applies.
+- `ExternalID` stays the vendor key (update/delete/read-one requests are unchanged), and the stamp never
+  goes on the wire.
+- **Set eID before a connection's first sync, or leave it unset.** Adding one later, or re-creating the
+  connection, changes the scope, and the new scope's rows do not match the old ones.
+- `Exhibitor.ExhibitorEventID` is **not** used as the scope: it rests on one vendor example, and
+  nothing shows it is the same id as eID. Using it for one object would key Exhibitor differently from its
+  own Booths and Staff. It stays an ordinary column.
+- **Unproven:** a key provisioned for several events, used **without** an eID. If Cadmium answered such a
+  call with more than one event's rows, they would share this connection's scope. The vendor documents eID
+  as required in that case.
 
 ### Object matrix
 

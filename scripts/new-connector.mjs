@@ -39,7 +39,7 @@ if (existsSync(appDir)) { console.error(`${category}/${classBase} already exists
 
 const write = (rel, content) => { const p = join(appDir, rel); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, content); };
 const json = (rel, o) => write(rel, JSON.stringify(o, null, 2) + '\n');
-const RANGE = '>=5.43.0 <6.0.0', PINNED = '^5.43.0';
+const RANGE = '>=5.43.0 <7.0.0', PINNED = '^5.43.0';
 const base = useBase ? 'BaseIntegrationConnector' : 'BaseRESTIntegrationConnector';
 
 json('mj-app.json', {

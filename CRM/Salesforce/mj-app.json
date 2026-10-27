@@ -4,7 +4,7 @@
   "name": "connector-salesforce",
   "displayName": "Salesforce Connector",
   "description": "Salesforce REST connector: syncs CRM SObjects (Account, Contact, Lead, Opportunity, Case, Campaign, Task, Event, User) via SOQL watermark incremental sync; CRUD for most objects; custom __c discovered at runtime; OAuth2 JWT/Client Credentials.",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "license": "ISC",
   "color": "#00a1e0",
   "publisher": {
@@ -13,7 +13,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_salesforce",
     "createIfNotExists": true

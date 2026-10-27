@@ -10,6 +10,7 @@ import {
     BaseRESTIntegrationConnector,
     type ActionGeneratorConfig,
     type ConnectionTestResult,
+    type CRUDResult,
     type IntegrationObjectInfo,
     type PaginationState,
     type PaginationType,
@@ -21,10 +22,26 @@ import { BILLCOM_OBJECTS } from './generated/objects.js';
 
 // ── Constants ────────────────────────────────────────────────────────
 
-/** Sandbox gateway. Deliberately the default — a mis-provisioned connection must not reach production. */
-const BILLCOM_SANDBOX_BASE = 'https://gateway.stage.bill.com/connect/v3';
-/** Production gateway. Note `gateway.prod.bill.com`, NOT `gateway.bill.com`. */
-const BILLCOM_PRODUCTION_BASE = 'https://gateway.prod.bill.com/connect/v3';
+/**
+ * Sandbox gateway, WITHOUT the `/v3` segment. Deliberately the default — a mis-provisioned connection
+ * must not reach production.
+ *
+ * THE VERSION BELONGS TO THE PATH, NOT THE BASE. Every object path in the catalog is an OpenAPI path
+ * beginning `/v3/…`, and the engine builds a request as base + path. A base that also ended in `/v3`
+ * produced `…/connect/v3/v3/customers` and a 404 on every generic CRUD and fetch call (#390). Login is
+ * the only endpoint the connector addresses itself, which is why `TestConnection` passed throughout.
+ */
+const BILLCOM_SANDBOX_BASE = 'https://gateway.stage.bill.com/connect';
+/** Production gateway, likewise version-less. Note `gateway.prod.bill.com`, NOT `gateway.bill.com`. */
+const BILLCOM_PRODUCTION_BASE = 'https://gateway.prod.bill.com/connect';
+/** The API version every catalog path carries, and the one `Login` addresses. */
+const BILLCOM_API_VERSION = 'v3';
+
+/** Fallbacks for the invoice sub-resource actions; the catalog's `Configuration` wins when present. */
+const BILLCOM_INVOICE_ARCHIVE_PATH = `/${BILLCOM_API_VERSION}/invoices/{invoiceId}/archive`;
+const BILLCOM_INVOICE_RESTORE_PATH = `/${BILLCOM_API_VERSION}/invoices/{invoiceId}/restore`;
+/** Both are POSTs with no body. */
+const BILLCOM_INVOICE_ACTION_METHOD = 'POST';
 
 /** `max` ceiling on list endpoints. The concepts page says the default is 100 and the endpoint
  *  reference pages say 20 — so we always send it explicitly rather than trusting either. */
@@ -60,6 +77,14 @@ interface BillComCredentials {
     Environment?: string;
     /** Explicit override; wins over Environment. */
     ApiUrl?: string;
+}
+
+/** What {@link BillComConnector.ArchiveInvoice} and `RestoreInvoice` need. Mirrors the engine's CRUD contexts. */
+export interface BillComInvoiceActionContext {
+    CompanyIntegration: MJCompanyIntegrationEntity;
+    /** The invoice's BILL ID — `00e…`. */
+    ExternalID: string;
+    ContextUser: UserInfo;
 }
 
 /** Auth context for Bill.com. The base `RESTAuthContext` already models `SessionID` for session APIs. */
@@ -200,7 +225,7 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
      */
     private async Login(creds: BillComCredentials): Promise<BillComAuthContext> {
         const baseURL = this.ResolveBaseURL(creds);
-        const response = await fetch(`${baseURL}/login`, {
+        const response = await fetch(`${baseURL}/${BILLCOM_API_VERSION}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
@@ -238,11 +263,24 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
     /** Explicit `apiUrl` wins; otherwise environment selects a gateway, defaulting to sandbox. */
     private ResolveBaseURL(creds: BillComCredentials): string {
         if (creds.ApiUrl && creds.ApiUrl.trim().length > 0) {
-            return creds.ApiUrl.trim().replace(/\/+$/, '');
+            return this.NormalizeBaseURL(creds.ApiUrl);
         }
         return creds.Environment?.trim().toLowerCase() === 'production'
             ? BILLCOM_PRODUCTION_BASE
             : BILLCOM_SANDBOX_BASE;
+    }
+
+    /**
+     * Trims a configured gateway to the connector's convention: no trailing slash, and no trailing
+     * version segment.
+     *
+     * The version is stripped rather than rejected because `…/connect/v3` is what the credential type's
+     * own `apiUrl` help text has always recommended, and existing connections are configured that way.
+     * Both spellings therefore resolve to the same requests instead of one of them 404ing (#390).
+     */
+    private NormalizeBaseURL(url: string): string {
+        const trimmed = url.trim().replace(/\/+$/, '');
+        return trimmed.replace(new RegExp(`/${BILLCOM_API_VERSION}$`), '');
     }
 
     protected override BuildHeaders(auth: RESTAuthContext): Record<string, string> {
@@ -257,14 +295,17 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
 
     protected override GetBaseURL(companyIntegration: MJCompanyIntegrationEntity, auth: RESTAuthContext): string {
         const ctx = auth as BillComAuthContext | undefined;
-        if (ctx?.BaseURL) return ctx.BaseURL;
+        // Normalised even though `Login` already stored a normalised value: this is the single funnel
+        // every generic request passes through, so the "base carries no version" invariant is enforced
+        // here regardless of where the context came from (#390).
+        if (ctx?.BaseURL) return this.NormalizeBaseURL(ctx.BaseURL);
         const cfg = companyIntegration?.Configuration;
         if (cfg) {
             try {
                 const parsed = JSON.parse(cfg) as Record<string, unknown>;
                 const override = parsed.apiUrl ?? parsed.ApiUrl ?? parsed.BaseURL;
                 if (typeof override === 'string' && override.trim().length > 0) {
-                    return override.trim().replace(/\/+$/, '');
+                    return this.NormalizeBaseURL(override);
                 }
             } catch {
                 /* Configuration is not JSON — fall through to the sandbox default */
@@ -407,9 +448,31 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
         return `${basePath}${separator}${parts.join('&')}`;
     }
 
-    /** Bill.com reports failures as `{ message }` (sometimes `{ error }`) alongside a non-2xx status. */
+    /**
+     * Bill.com reports failures as `{ message }` (sometimes `{ error }`) alongside a non-2xx status —
+     * EXCEPT validation failures, which arrive as a bare ARRAY of `{timestamp, severity, message}`:
+     *
+     * ```json
+     * [ { "severity": "ERROR", "message": "customer: must not be null" },
+     *   { "severity": "ERROR", "message": "invoiceLineItems: must not be null" } ]
+     * ```
+     *
+     * An array reaches `typeof body === 'object'` but has none of the keys below, so before this every
+     * validation failure surfaced as the generic `HTTP 400 on <verb>` and the caller never learned which
+     * field BILL objected to.
+     */
     protected override ExtractErrorMessage(response: RESTResponse): string | undefined {
         const body = response.Body;
+        if (Array.isArray(body)) {
+            const messages = (body as unknown[])
+                .map((entry) =>
+                    entry && typeof entry === 'object' && typeof (entry as { message?: unknown }).message === 'string'
+                        ? (entry as { message: string }).message
+                        : null
+                )
+                .filter((message): message is string => message !== null);
+            return messages.length > 0 ? messages.join('; ') : undefined;
+        }
         if (body && typeof body === 'object') {
             const rec = body as Record<string, unknown>;
             for (const key of ['message', 'error', 'errorMessage', 'detail']) {
@@ -419,6 +482,82 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
         }
         if (typeof body === 'string' && body.length > 0) return body.slice(0, 300);
         return undefined;
+    }
+
+    // ── Invoice lifecycle ────────────────────────────────────────────
+
+    /**
+     * Archives an invoice — BILL's cancel.
+     *
+     * `InvoiceStatus` has no VOID or CANCELED value: cancellation is the separate `archived` boolean,
+     * reached through a sub-resource action rather than a field write. `UpdateRecord({archived:true})`
+     * cannot stand in for it, because the invoices object updates with `PUT` and BILL's PUT is a full
+     * replace — it answers 400 `customer: must not be null; invoiceLineItems: must not be null`.
+     *
+     * Idempotent: archiving an archived invoice answers 200. A caller that lost the first response may
+     * simply retry. On success BILL returns the invoice with `archived: true` and
+     * `recordStatus: INACTIVE`, while `status` STAYS `OPEN` — so a consumer confirming a cancellation
+     * must read `archived`, never `status`.
+     */
+    public async ArchiveInvoice(ctx: BillComInvoiceActionContext): Promise<CRUDResult> {
+        return this.RunInvoiceAction(ctx, 'archivePath', BILLCOM_INVOICE_ARCHIVE_PATH);
+    }
+
+    /** Reverses {@link ArchiveInvoice}. Idempotent in the same way. */
+    public async RestoreInvoice(ctx: BillComInvoiceActionContext): Promise<CRUDResult> {
+        return this.RunInvoiceAction(ctx, 'restorePath', BILLCOM_INVOICE_RESTORE_PATH);
+    }
+
+    /**
+     * Shared body of the invoice sub-resource actions.
+     *
+     * The path is read from the `invoices` object's `Configuration` — where the catalog has always
+     * declared `archivePath`/`restorePath` — so a vendor path change is a metadata edit. The constant is
+     * only a fallback for a database whose seed predates the key, and for the id placeholder both
+     * `{invoiceId}` and `{id}` are accepted because the catalog and the generic CRUD columns spell it
+     * differently.
+     */
+    private async RunInvoiceAction(
+        ctx: BillComInvoiceActionContext,
+        configurationKey: 'archivePath' | 'restorePath',
+        fallbackPath: string
+    ): Promise<CRUDResult> {
+        const externalID = ctx.ExternalID?.trim();
+        if (!externalID) {
+            return { Success: false, StatusCode: 0, ErrorMessage: `${configurationKey} requires an invoice ID.` };
+        }
+        const template = this.InvoiceActionPath(ctx.CompanyIntegration, configurationKey) ?? fallbackPath;
+        const path = template.replace(/\{invoiceId\}|\{id\}/g, encodeURIComponent(externalID));
+
+        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+        const url = `${this.GetBaseURL(ctx.CompanyIntegration, auth)}${path.startsWith('/') ? path : `/${path}`}`;
+        const response = await this.MakeHTTPRequest(auth, url, BILLCOM_INVOICE_ACTION_METHOD, this.BuildHeaders(auth));
+
+        if (response.Status >= 200 && response.Status < 300) {
+            return { Success: true, StatusCode: response.Status, ExternalID: externalID };
+        }
+        return {
+            Success: false,
+            StatusCode: response.Status,
+            ErrorMessage: this.ExtractErrorMessage(response) ?? `HTTP ${response.Status} on ${configurationKey}`,
+        };
+    }
+
+    /** The configured sub-resource path, or null when the object or key is absent. */
+    private InvoiceActionPath(
+        companyIntegration: MJCompanyIntegrationEntity,
+        configurationKey: 'archivePath' | 'restorePath'
+    ): string | null {
+        try {
+            const obj = this.GetCachedObject(companyIntegration.IntegrationID, 'invoices');
+            if (!obj?.Configuration) return null;
+            const parsed = JSON.parse(obj.Configuration) as Record<string, unknown>;
+            const path = parsed[configurationKey];
+            return typeof path === 'string' && path.trim().length > 0 ? path.trim() : null;
+        } catch {
+            // An unseeded object or non-JSON Configuration is not a reason to fail the cancel.
+            return null;
+        }
     }
 
     // ── Connection test ──────────────────────────────────────────────

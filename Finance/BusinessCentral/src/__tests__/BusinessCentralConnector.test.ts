@@ -27,6 +27,8 @@ import {
     DecodeResumeCursor,
     ParseEDMXEntitySets,
     ParseEDMXFieldsForEntitySet,
+    ParseRecordRules,
+    RecordPassesFilter,
     type BusinessCentralAuthContext,
     type BusinessCentralConnectionConfig,
 } from '../BusinessCentralConnector.js';
@@ -1566,5 +1568,80 @@ describe('PostJournal (MOCK ONLY — no live endpoint, no mutation)', () => {
         expect(result.Success).toBe(false);
         expect(result.StatusCode).toBe(400);
         expect(result.ErrorMessage).toContain('not balanced');
+    });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+describe('record rules — recordFilter (skip non-posting accounts) and parentCode (dimension code)', () => {
+    const accountsIO = makeIO({
+        ID: 'io-accounts',
+        Name: 'accounts',
+        APIPath: '/companies({id})/accounts',
+        Configuration: JSON.stringify({ recordFilter: { field: 'accountType', in: ['Posting'] } }),
+    });
+    const dimensionValuesIO = makeIO({
+        ID: 'io-dimensionValues',
+        Name: 'dimensionValues',
+        APIPath: '/companies({id})/dimensionValues',
+        Configuration: JSON.stringify({ parentCode: { object: 'dimensions', idField: 'dimensionId', codeField: 'code', as: 'dimensionCode' } }),
+    });
+    const DIM_DEPT = 'aaaaaaaa-0000-0000-0000-00000000000d';
+
+    it('parses the rules from JSON text or an object, and ignores malformed ones', () => {
+        expect(ParseRecordRules('{"recordFilter":{"field":"accountType","in":["Posting"]}}').RecordFilter)
+            .toEqual({ Field: 'accountType', In: ['Posting'], NotIn: undefined });
+        expect(ParseRecordRules({ parentCode: { object: 'dimensions', idField: 'dimensionId', codeField: 'code', as: 'dimensionCode' } }).ParentCode)
+            .toEqual({ Object: 'dimensions', IdField: 'dimensionId', CodeField: 'code', As: 'dimensionCode' });
+        expect(ParseRecordRules('{"recordFilter":{"field":"accountType"}}')).toEqual({});
+        expect(ParseRecordRules('{"parentCode":{"object":"x/../y","idField":"a","codeField":"b","as":"c"}}')).toEqual({});
+        expect(ParseRecordRules('not json')).toEqual({});
+        expect(ParseRecordRules(null)).toEqual({});
+    });
+
+    it('RecordPassesFilter: in-list keeps, others and missing values drop; notIn excludes', () => {
+        const rule = { Field: 'accountType', In: ['Posting'] };
+        expect(RecordPassesFilter({ accountType: 'Posting' }, rule)).toBe(true);
+        expect(RecordPassesFilter({ accountType: 'Heading' }, rule)).toBe(false);
+        expect(RecordPassesFilter({}, rule)).toBe(false);
+        expect(RecordPassesFilter({ accountType: 'Total' }, { Field: 'accountType', NotIn: ['Total'] })).toBe(false);
+        expect(RecordPassesFilter({ accountType: 'Posting' }, { Field: 'accountType', NotIn: ['Total'] })).toBe(true);
+    });
+
+    it('skips heading/total accounts but still advances the watermark past them', async () => {
+        connector.IOFixtures.set('accounts', accountsIO);
+        connector.IOFFixtures.set('io-accounts', idPK);
+        connector.Responses.push(ok({ value: [
+            { id: 'a-1', number: '10000', accountType: 'Heading', lastModifiedDateTime: '2026-03-09T10:00:00Z' },
+            { id: 'a-2', number: '11109', accountType: 'Posting', lastModifiedDateTime: '2026-03-01T10:00:00Z' },
+            { id: 'a-3', number: '19999', accountType: 'End-Total', lastModifiedDateTime: '2026-03-02T10:00:00Z' },
+        ] }));
+        const result = await connector.FetchChanges(fetchCtx('accounts', makeCI()));
+        expect(result.Records.map(r => r.ExternalID)).toEqual(['a-2']);
+        expect(result.NewWatermarkValue).toBe('2026-03-09T10:00:00Z');
+    });
+
+    it('adds dimensionCode from the company\'s dimensions, read once per company', async () => {
+        connector.IOFixtures.set('dimensionValues', dimensionValuesIO);
+        connector.IOFFixtures.set('io-dimensionValues', idPK);
+        connector.Responses.push(
+            ok({ value: [
+                { id: 'dv-1', code: 'SALES', dimensionId: DIM_DEPT, lastModifiedDateTime: '2026-03-01T10:00:00Z' },
+                { id: 'dv-2', code: 'OPS', dimensionId: DIM_DEPT.toUpperCase(), lastModifiedDateTime: '2026-03-01T10:00:00Z' },
+                { id: 'dv-3', code: 'X', dimensionId: 'bbbbbbbb-0000-0000-0000-000000000000', lastModifiedDateTime: '2026-03-01T10:00:00Z' },
+            ] }),
+            ok({ value: [{ id: DIM_DEPT, code: 'DEPT' }] }),
+        );
+        const result = await connector.FetchChanges(fetchCtx('dimensionValues', makeCI()));
+        expect(connector.Captured).toHaveLength(2);
+        expect(connector.Captured[1].url).toContain(`companies(${COMPANY_A})/dimensions?$select=id,code`);
+        expect(result.Records.map(r => r.Fields.dimensionCode)).toEqual(['DEPT', 'DEPT', null]);
+        expect(result.Warnings?.some(w => w.Code === 'PARENT_CODE_MISSING')).toBe(true);
+    });
+
+    it('leaves objects without rules untouched', async () => {
+        connector.Responses.push(ok(customersPage2));
+        const result = await connector.FetchChanges(fetchCtx('customers', makeCI()));
+        expect(result.Records).toHaveLength(2);
+        expect(Object.keys(result.Records[0].Fields)).not.toContain('dimensionCode');
     });
 });

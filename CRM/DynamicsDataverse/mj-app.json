@@ -4,7 +4,7 @@
   "name": "connector-microsoft-dynamics-365-dataverse",
   "displayName": "Microsoft Dynamics 365 (Dataverse) Connector",
   "description": "Microsoft Dynamics 365 / Dataverse Web API (OData v4) connector for CE/model-driven app tables. OAuth2 client credentials (Entra ID); per-environment base URL; runtime EntityDefinitions discovery; change-tracking incremental; full CRUD.",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
@@ -12,7 +12,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_microsoft_dynamics_365_dataverse",
     "createIfNotExists": true

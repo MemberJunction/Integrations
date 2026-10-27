@@ -16,9 +16,9 @@
   "author": "MemberJunction.com",
   "license": "BUSL-1.1",
   "peerDependencies": {
-    "@memberjunction/core": ">=5.42.0 <6.0.0",
-    "@memberjunction/core-entities": ">=5.42.0 <6.0.0",
-    "@memberjunction/integration-engine": ">=5.42.0 <6.0.0"
+    "@memberjunction/core": ">=5.42.0 <7.0.0",
+    "@memberjunction/core-entities": ">=5.42.0 <7.0.0",
+    "@memberjunction/integration-engine": ">=5.42.0 <7.0.0"
   },
   "dependencies": {
     "mssql": "^12.2.0"

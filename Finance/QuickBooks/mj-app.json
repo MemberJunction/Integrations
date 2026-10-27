@@ -4,7 +4,7 @@
   "name": "connector-quickbooks",
   "displayName": "QuickBooks Connector",
   "description": "QuickBooks Online REST API v3 integration for syncing accounting data (customers, vendors, invoices, bills, items, payments, reports) using OAuth 2.0 authentication scoped by realmId.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "license": "ISC",
   "icon": "fa-solid fa-calculator",
   "color": "#2ca01c",
@@ -14,7 +14,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_quickbooks",
     "createIfNotExists": true

@@ -67,6 +67,30 @@ class MockedOpenWaterConnector extends OpenWaterConnector {
     }
 }
 
+/**
+ * Counts OVERLAPPING requests so concurrency is asserted structurally rather than by wall-clock.
+ * The `setTimeout(0)` yield is what lets every dispatched request increment before any resolves —
+ * a timing-free proof that the walk no longer awaits one parent before starting the next.
+ */
+class ConcurrencyProbeConnector extends MockedOpenWaterConnector {
+    public InFlight = 0;
+    public MaxInFlight = 0;
+
+    protected override async MakeHTTPRequest(
+        auth: RESTAuthContext, url: string, method: string,
+        headers: Record<string, string>, body?: unknown
+    ): Promise<RESTResponse> {
+        this.InFlight++;
+        this.MaxInFlight = Math.max(this.MaxInFlight, this.InFlight);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 0));
+            return await super.MakeHTTPRequest(auth, url, method, headers, body);
+        } finally {
+            this.InFlight--;
+        }
+    }
+}
+
 /** Exposes the REAL MakeHTTPRequest (no transport override) so the abort deadline can be asserted. */
 class RealTransportOpenWaterConnector extends OpenWaterConnector {
     public async PublicMakeHTTP(auth: RESTAuthContext, url: string): Promise<RESTResponse> {
@@ -884,6 +908,104 @@ describe('OpenWaterConnector — FetchChanges (detail-walk modes)', () => {
         expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['9001', '9002']);
     });
 
+    it('detail-embedded + segmentTags: an intermediate node\'s id reaches every element beneath it, never overwriting a vendor value', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({
+                ID: 'o-ajs', Name: 'ApplicationJudgeScorecard', APIPath: '(embedded)',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+                    entryPath: '/v2/Applications/{applicationId}',
+                    nestingSegments: ['roundSubmissions[]', 'judgeScorecardInfos[]'],
+                    segmentTags: [{ segment: 'roundSubmissions[]', sourceKey: 'roundId' }],
+                    extractionMode: 'detail-embedded',
+                } }),
+            }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }, { Name: 'id', IsPrimaryKey: true }, { Name: 'totalScore' }]
+        );
+        connector.Responses = [
+            { match: '/v2/Applications/101', response: { Status: 200, Body: { id: 101, roundSubmissions: [
+                { roundId: 55, judgeScorecardInfos: [{ id: 1, totalScore: 9 }, { id: 2, totalScore: 7 }] },
+                { roundId: 56, judgeScorecardInfos: [{ id: 3, totalScore: 8, roundId: 999 }] },   // vendor value present
+            ] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 101 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationJudgeScorecard'));
+
+        // Without the tag these rows would have keyed on (applicationId, ?, id) with roundId missing. The
+        // third element carries its own roundId (999), and the vendor's value wins, key included.
+        expect(result.Records.map(r => r.ExternalID).sort()).toEqual(['101|55|1', '101|55|2', '101|999|3'].sort());
+        expect(result.Records.find(r => r.Fields['id'] === 1)?.Fields['roundId']).toBe(55);
+        // The vendor said 999 on that element; the tag does not overwrite it.
+        expect(result.Records.find(r => r.Fields['id'] === 3)?.Fields['roundId']).toBe(999);
+    });
+
+    it('detail-embedded + scalarLeafKey: scalar leaves become records (ApplicationWinnerAssignment), and are still dropped without it', async () => {
+        const winnerPath = (scalarLeafKey?: string) => JSON.stringify({ AccessPath: {
+            door: 'Application', doorPath: '/v2/Applications', parentParamName: 'applicationId',
+            entryPath: '/v2/Applications/{applicationId}',
+            nestingSegments: ['roundSubmissions[]', 'winnerTypes[]'],
+            segmentTags: [{ segment: 'roundSubmissions[]', sourceKey: 'roundId' }],
+            ...(scalarLeafKey ? { scalarLeafKey } : {}),
+            extractionMode: 'detail-embedded',
+        } });
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(
+            io({ ID: 'o-awa', Name: 'ApplicationWinnerAssignment', APIPath: '(embedded)', SupportsPagination: false, PaginationType: 'None', Configuration: winnerPath('name') }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }, { Name: 'roundId', IsPrimaryKey: true }, { Name: 'name', IsPrimaryKey: true }]
+        );
+        connector.AddObject(
+            io({ ID: 'o-awa-nokey', Name: 'WinnerTypesNoScalarKey', APIPath: '(embedded)', SupportsPagination: false, PaginationType: 'None', Configuration: winnerPath() }),
+            [{ Name: 'applicationId', IsPrimaryKey: true }]
+        );
+        connector.Responses = [
+            { match: '/v2/Applications/101', response: { Status: 200, Body: { id: 101, roundSubmissions: [
+                { roundId: 55, isWinner: true, winnerTypes: ['Gold', 'Best in Show'] },
+                { roundId: 56, isWinner: false, winnerTypes: [] },
+            ] }, Headers: {} } },
+            { match: '/v2/Applications', response: { Status: 200, Body: { records: [{ id: 101 }] }, Headers: {} } },
+        ];
+
+        const withKey = await connector.FetchChanges(fetchCtx('ApplicationWinnerAssignment'));
+        expect(withKey.Records.map(r => r.ExternalID).sort()).toEqual(['101|55|Best in Show', '101|55|Gold']);
+        expect(withKey.Records[0].Fields['applicationId']).toBe('101');
+
+        // The pre-existing behaviour is unchanged for a path that declares no scalarLeafKey.
+        const noKey = await connector.FetchChanges(fetchCtx('WinnerTypesNoScalarKey'));
+        expect(noKey.Records).toEqual([]);
+        expect(noKey.Warnings?.some(w => w.Code === 'ZERO_LEAVES')).toBe(true);
+    });
+
+    it('detail-object over a LIST door: each door row\'s own id fetches its detail, which IS the record (EvaluationDetail)', async () => {
+        const connector = new MockedOpenWaterConnector();
+        connector.AddObject(io({ ID: 'o-ev', Name: 'Evaluation', APIPath: '/v2/Evaluations' }), [{ Name: 'id', IsPrimaryKey: true }]);
+        connector.AddObject(
+            io({
+                ID: 'o-evd', Name: 'EvaluationDetail', APIPath: '/v2/Evaluations/{id}',
+                SupportsPagination: false, PaginationType: 'None',
+                Configuration: JSON.stringify({ AccessPath: {
+                    door: 'Evaluation', doorPath: '/v2/Evaluations', parentParamName: 'id',
+                    entryPath: '/v2/Evaluations/{id}', extractionMode: 'detail-object',
+                } }),
+            }),
+            [{ Name: 'id', IsPrimaryKey: true }, { Name: 'computedScore' }, { Name: 'rankPosition' }]
+        );
+        connector.Responses = [
+            { match: '/v2/Evaluations/7', response: { Status: 200, Body: { id: 7, computedScore: 88.5, rankPosition: 2 }, Headers: {} } },
+            { match: '/v2/Evaluations/8', response: { Status: 200, Body: { id: 8, computedScore: 91, rankPosition: 1 }, Headers: {} } },
+            { match: '/v2/Evaluations', response: { Status: 200, Body: { records: [{ id: 7, totalScore: 80 }, { id: 8, totalScore: 90 }] }, Headers: {} } },
+        ];
+
+        const result = await connector.FetchChanges(fetchCtx('EvaluationDetail'));
+
+        expect(result.Records.map(r => r.ExternalID)).toEqual(['7', '8']);
+        expect(result.Records[0].Fields['computedScore']).toBe(88.5);
+        // One GET per door row, to the per-record path — the assumption every Detail object rests on.
+        expect(connector.Requests.filter(r => /\/v2\/Evaluations\/\d+$/.test(r.url)).map(r => r.url.split('/').pop())).toEqual(['7', '8']);
+    });
+
     it('detail-object via detail-harvest: harvested ids are deduped and each detail IS the record (Media)', async () => {
         const connector = new MockedOpenWaterConnector();
         connector.AddObject(
@@ -1128,6 +1250,36 @@ describe('OpenWaterConnector — a detail walk is bounded by the caller\'s batch
         expect(result.NextCursor).toBe('detail:2');
         // Only the parents needed for this batch were fetched — 103/104 were never touched.
         expect(connector.Requests.some(r => r.url.includes('/v2/Applications/103'))).toBe(false);
+    });
+
+    it('walks parent details CONCURRENTLY, and still emits them in parent order', async () => {
+        // The walk was one `await` per parent, so a 2,079-application door cost 2,079 serialized
+        // round trips and three objects derived from that door each paid it in full — measured on
+        // the sandbox 2026-09-14 at ~300 rows/min. Concurrency is the fix; ORDER is what it must
+        // not cost, because `consumed` is the resume cursor and nestShape is "first detail wins".
+        const connector = new ConcurrencyProbeConnector();
+        fourApplications(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission'));
+
+        expect(result.Records).toHaveLength(4);
+        expect(result.Records.map(r => String(r.Fields.applicationId))).toEqual(['101', '102', '103', '104']);
+        // The point of the change: more than one detail in flight at once.
+        expect(connector.MaxInFlight).toBeGreaterThan(1);
+    });
+
+    it('fetchConcurrency on the connection bounds the walk width', async () => {
+        // The knob has to be reachable without a release — a vendor that rate-limits harder than
+        // OpenWater must be throttleable from the connection alone.
+        const connector = new ConcurrencyProbeConnector();
+        fourApplications(connector);
+
+        const result = await connector.FetchChanges(fetchCtx('ApplicationRoundSubmission', {
+            CompanyIntegration: { IntegrationID: 'int-1', Configuration: JSON.stringify({ fetchConcurrency: 1 }) },
+        } as Partial<FetchContext>));
+
+        expect(result.Records).toHaveLength(4);
+        expect(connector.MaxInFlight).toBe(1);
     });
 
     it('resuming from the cursor continues at the offset and reports completion', async () => {

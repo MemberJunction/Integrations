@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-higher-logic-vanilla",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MemberJunction HigherLogicVanilla connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -15,10 +15,10 @@
   "author": "MemberJunction.com",
   "license": "BUSL-1.1",
   "peerDependencies": {
-    "@memberjunction/core": ">=5.43.0 <6.0.0",
-    "@memberjunction/core-entities": ">=5.43.0 <6.0.0",
-    "@memberjunction/global": ">=5.43.0 <6.0.0",
-    "@memberjunction/integration-engine": ">=5.43.0 <6.0.0"
+    "@memberjunction/core": ">=5.43.0 <7.0.0",
+    "@memberjunction/core-entities": ">=5.43.0 <7.0.0",
+    "@memberjunction/global": ">=5.43.0 <7.0.0",
+    "@memberjunction/integration-engine": ">=5.43.0 <7.0.0"
   },
   "dependencies": {
     "zod": "~3.24.4",

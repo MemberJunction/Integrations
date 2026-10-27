@@ -4,7 +4,7 @@
   "name": "connector-hivebrite",
   "displayName": "Hivebrite Connector",
   "description": "Hivebrite community management platform connector — syncs users, companies, events, memberships, donations, groups, and 40+ other objects via Hivebrite Admin API (v1/v2/v3) with OAuth2 password grant authentication.",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
@@ -12,7 +12,7 @@
     "url": "https://memberjunction.com"
   },
   "repository": "https://github.com/MemberJunction/Integrations",
-  "mjVersionRange": ">=5.42.0 <6.0.0",
+  "mjVersionRange": ">=5.42.0 <7.0.0",
   "schema": {
     "name": "mj_connector_hivebrite",
     "createIfNotExists": true

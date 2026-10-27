@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:RetrieveResponseMsg>
+      <par:OverallStatus>OK</par:OverallStatus>
+      <par:RequestID>2d3cb1b3-2e86-4e1f-8e5b-3b9f5be1f222</par:RequestID>
+      <par:Results xsi:type="par:DataExtensionField">
+        <par:ObjectID>2f31c6c0-1a11-4a0b-b8a7-90c0cd7f0001</par:ObjectID>
+        <par:Name>IATA-Code</par:Name>
+        <par:FieldType>Text</par:FieldType>
+        <par:MaxLength>10</par:MaxLength>
+        <par:IsRequired>true</par:IsRequired>
+        <par:IsPrimaryKey>true</par:IsPrimaryKey>
+        <par:IsNillable>false</par:IsNillable>
+        <par:Ordinal>0</par:Ordinal>
+      </par:Results>
+      <par:Results xsi:type="par:DataExtensionField">
+        <par:ObjectID>2f31c6c0-1a11-4a0b-b8a7-90c0cd7f0002</par:ObjectID>
+        <par:Name>Airline</par:Name>
+        <par:FieldType>Text</par:FieldType>
+        <par:MaxLength>100</par:MaxLength>
+        <par:IsRequired>false</par:IsRequired>
+        <par:IsPrimaryKey>false</par:IsPrimaryKey>
+        <par:IsNillable>true</par:IsNillable>
+        <par:Ordinal>1</par:Ordinal>
+      </par:Results>
+      <par:Results xsi:type="par:DataExtensionField">
+        <par:ObjectID>2f31c6c0-1a11-4a0b-b8a7-90c0cd7f0003</par:ObjectID>
+        <par:Name>Country</par:Name>
+        <par:FieldType>Text</par:FieldType>
+        <par:MaxLength>50</par:MaxLength>
+        <par:IsRequired>false</par:IsRequired>
+        <par:IsPrimaryKey>false</par:IsPrimaryKey>
+        <par:IsNillable>true</par:IsNillable>
+        <par:Ordinal>2</par:Ordinal>
+      </par:Results>
+      <par:Results xsi:type="par:DataExtensionField">
+        <par:ObjectID>2f31c6c0-1a11-4a0b-b8a7-90c0cd7f0004</par:ObjectID>
+        <par:Name>Loyalty_Tier__c</par:Name>
+        <par:FieldType>Text</par:FieldType>
+        <par:MaxLength>25</par:MaxLength>
+        <par:IsRequired>false</par:IsRequired>
+        <par:IsPrimaryKey>false</par:IsPrimaryKey>
+        <par:IsNillable>true</par:IsNillable>
+        <par:Ordinal>3</par:Ordinal>
+      </par:Results>
+    </par:RetrieveResponseMsg>
+  </soap:Body>
+</soap:Envelope>

@@ -406,6 +406,27 @@ describe('ElevateConnector — the POST envelope read path', () => {
             expect((c.Captured[0].body as { resource?: string }).resource).toBe('quizAccess');
         });
 
+        // The connector instance is new per run, and nothing had loaded this site's page before
+        // FetchChanges resolved the route — the load happened later, inside RequestableSelectorsFor. So
+        // whichever discovered objects a run started first found the page cache empty and failed with
+        // "declares no Configuration.resourceWireValue" (6 objects per run on a live tenant, 2026-10-13).
+        it('loads the catalog page BEFORE resolving a discovered object\'s route on the first fetch of a run', async () => {
+            const c = makeConnector([[catalogIO, catalogIOFs]]);
+            let pageLoads = 0;
+            (c as unknown as { LoadCatalogPage: () => Promise<unknown> }).LoadCatalogPage = async () => {
+                pageLoads++;
+                seedCatalog(c, ['quizAccess']);
+                return [{ Name: 'quizAccess', Fields: [], Relations: [] }];
+            };
+            c.Canned.push({ response: ok(envelope([], { id: 'ID' })) });
+
+            await c.FetchChanges(fetchCtx(ci, 'quizAccess'));
+
+            expect(pageLoads).toBeGreaterThanOrEqual(1);
+            expect(c.Captured).toHaveLength(1);
+            expect((c.Captured[0].body as { resource?: string }).resource).toBe('quizAccess');
+        });
+
         it('sends the catalog\'s EXACT spelling, not the object\'s casing', async () => {
             // The wire value is what the site said. Matching is case-insensitive so a differently-
             // cased IntegrationObject still routes, but the string sent is the catalog's.
