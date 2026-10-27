@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:RetrieveResponseMsg>
+      <par:OverallStatus>OK</par:OverallStatus>
+      <par:RequestID>1c2ba0a2-1d75-4d0e-9d4a-2a8f4ad0e111</par:RequestID>
+      <par:Results xsi:type="par:DataExtension">
+        <par:PartnerKey xsi:nil="true"/>
+        <par:ObjectID>c0f4b2fd-7d4a-4d3c-9a2e-1f5f9b6a7001</par:ObjectID>
+        <par:CustomerKey>Airlines</par:CustomerKey>
+        <par:Name>Airlines</par:Name>
+        <par:Description>Airline reference data used to target sends.</par:Description>
+        <par:IsSendable>false</par:IsSendable>
+        <par:CategoryID>2094</par:CategoryID>
+        <par:ModifiedDate>2021-06-08T10:12:00.000</par:ModifiedDate>
+      </par:Results>
+    </par:RetrieveResponseMsg>
+  </soap:Body>
+</soap:Envelope>

@@ -1,5 +1,54 @@
 # @memberjunction/connector-nimble-ams
 
+## 1.3.7
+
+### Patch Changes
+
+- 321de1c: `FuseEndpoint` is Disabled: it is an endpoint, not a data object.
+
+  Its own declared Description says it is "a POST-only Apex REST endpoint ... Not a data record." Its eight
+  declared fields describe a request/response envelope, none of which is a record key, because there is no
+  record. It cannot be given a primary key honestly and should not be offered in the picker as a table to
+  sync. One delta migration (paired T-SQL and PostgreSQL) sets the row to `Disabled` by its seeded ID.
+
+  Live Salesforce describe is unaffected: discovery still returns every object in the Nimble namespace, and
+  which tables to sync remains the customer's decision. This is the connector-side half of the new read-only
+  scope of the fleet primary-key gate (`scripts/lint-writable-pk.mjs`).
+
+## 1.3.6
+
+### Patch Changes
+
+- 5e10026: Declare the incremental cursor on discovered objects that expose one.
+
+  Every discovered object was full-scanning on every sync, silently. `SupportsIncrementalSync: true`
+  buys nothing on its own: the SOQL door filters on the object's `IncrementalWatermarkField`, and
+  `ExternalObjectSchema` has no property to carry one, so the cursor was never declared. Measured on
+  a live org: of 364 discovered objects only the 16 declared ones had a cursor; the other 348 — 114
+  of them real `__c` objects — had none, and nothing reported it.
+
+  `IntrospectSchema` now fills `LastModifiedDate` where an object has no cursor AND the describe
+  response shows it has that column. The presence check is the point: Salesforce's own companion
+  types do not all carry it — on the same org, 96 `__History` and 24 `__mdt` objects lack it — and
+  naming a non-existent field in the SOQL predicate fails the fetch outright. A silent full scan is
+  the lesser failure, so those objects keep no cursor.
+
+  Object scoping is unchanged: discovery still returns everything in the Nimble namespace, and which
+  tables to sync stays the customer's choice in the picker.
+
+## 1.3.5
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
+- Updated dependencies [06b2b4b]
+  - @memberjunction/connector-salesforce@1.3.3
+
 ## 1.3.4
 
 ### Patch Changes

@@ -1,5 +1,38 @@
 # @memberjunction/connector-wordpress
 
+## 1.3.0
+
+### Minor Changes
+
+- 246afa1: Give the Activity Log fields that matter their own columns.
+
+  `ActivityLogEvent.meta` holds every per-event detail WP Activity Log records, in one JSON object, so a member ID or the URL a member viewed lands in a single text column that every query has to parse. Six keys now also arrive as their own fields:
+
+  | Field           | From                  | Notes                                                                     |
+  | --------------- | --------------------- | ------------------------------------------------------------------------- |
+  | `ams_id`        | `meta.ams_id`         | The member's AMS ID, when the site records one                            |
+  | `post_url`      | `meta.PostUrl`        | Query string and fragment removed, so it joins to a post's `link`         |
+  | `post_url_full` | `meta.PostUrl`        | As visited, query string kept (campaign attribution such as `utm_source`) |
+  | `post_title`    | `meta.PostTitle`      |                                                                           |
+  | `post_date`     | `meta.PostDate`       | Site-local, as WP Activity Log records it                                 |
+  | `editor_link`   | `meta.EditorLinkPost` |                                                                           |
+
+  HTML entities are decoded on the way in. WP Activity Log stores URLs through `esc_url`, so every `&` arrives as `&#038;`. Blank values land as null rather than an empty string. `meta` itself is unchanged, so no key is lost.
+
+  The mapping lives in metadata, not code: each field declares `Configuration.promoteFrom` (`"meta.PostUrl"`, plus `stripQuery` for the canonical URL), and the connector fills any field that declares it. Lengths are explicit (100 for `ams_id`, 2048 for the URLs, 1000 for the title), because an unsized string is capped at 255 and a row with a longer value is dropped. Real `PostUrl` values reach 263 characters once newsletter tracking is attached.
+
+  Delta migration `V202610151853` (+ its Postgres twin) adds the 6 IntegrationObjectField rows on top of the existing catalog, additively, taking `ActivityLogEvent` from 20 fields to 26.
+
+## 1.2.1
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
 ## 1.2.0
 
 ### Minor Changes

@@ -1,0 +1,6 @@
+{
+  "message": "Rate limit exceeded",
+  "errorcode": 50100,
+  "retryAfter": 5,
+  "documentation": "https://developer.salesforce.com/docs/atlas.en-us.mc-apis.meta/mc-apis/error-handling.htm"
+}

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Data Extension ROWSET for DataExtensionObject[Airlines].
+
+  MANDATORY CUSTOM-COLUMN FIXTURE. Every SFMC Data Extension is CUSTOMER-DEFINED, so none of these
+  columns can ever appear in declared build-time metadata. Two are called out deliberately:
+
+    * Loyalty_Tier__c          - a tenant-defined DE column that RUNTIME discovery does list
+                                 (see dataextensionfield-airlines.soap.xml), i.e. undeclared at build
+                                 time and minted by discovery.
+    * Tenant_Promo_Segment__c  - an ILLUSTRATIVE TENANT-DEFINED DE COLUMN that appears ONLY here: it is
+                                 in NO declared metadata and in NO discovery result. It exists to prove
+                                 the connector passes the FULL source record through to
+                                 ExternalRecord.Fields rather than filtering to a known column set, so
+                                 the framework's custom-column capture (__mj_integration_CustomOverflow
+                                 -> post-sync promotion) has something real to capture. A run in which
+                                 this value silently vanishes is a FAILED run.
+
+  Envelope shape is the vendor's own documented DataExtensionObject response
+  (par:Results / par:Properties / par:Property{Name,Value}).
+-->
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:RetrieveResponseMsg>
+      <par:OverallStatus>OK</par:OverallStatus>
+      <par:RequestID>3e4dc2c4-3f97-4f20-9f6c-4cae6cf20333</par:RequestID>
+      <par:Results xsi:type="par:DataExtensionObject">
+        <par:PartnerKey xsi:nil="true"/>
+        <par:ObjectID xsi:nil="true"/>
+        <par:CustomerKey>Airlines</par:CustomerKey>
+        <par:Properties>
+          <par:Property>
+            <par:Name>IATA-Code</par:Name>
+            <par:Value>AA</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Airline</par:Name>
+            <par:Value>American Airlines</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Country</par:Name>
+            <par:Value>United States</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Loyalty_Tier__c</par:Name>
+            <par:Value>Platinum</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Tenant_Promo_Segment__c</par:Name>
+            <par:Value>SPRING-FLYER-2024</par:Value>
+          </par:Property>
+        </par:Properties>
+      </par:Results>
+      <par:Results xsi:type="par:DataExtensionObject">
+        <par:PartnerKey xsi:nil="true"/>
+        <par:ObjectID xsi:nil="true"/>
+        <par:CustomerKey>Airlines</par:CustomerKey>
+        <par:Properties>
+          <par:Property>
+            <par:Name>IATA-Code</par:Name>
+            <par:Value>BA</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Airline</par:Name>
+            <par:Value>British Airways</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Country</par:Name>
+            <par:Value>United Kingdom</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Loyalty_Tier__c</par:Name>
+            <par:Value>Gold</par:Value>
+          </par:Property>
+          <par:Property>
+            <par:Name>Tenant_Promo_Segment__c</par:Name>
+            <par:Value>TRANSATLANTIC-2024</par:Value>
+          </par:Property>
+        </par:Properties>
+      </par:Results>
+    </par:RetrieveResponseMsg>
+  </soap:Body>
+</soap:Envelope>

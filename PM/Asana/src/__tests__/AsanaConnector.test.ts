@@ -8,7 +8,7 @@ import type {
     MJIntegrationObjectFieldEntity,
 } from '@memberjunction/core-entities';
 import type { UserInfo } from '@memberjunction/core';
-import { AsanaConnector, maxModifiedAt, toAsanaTimestamp } from '../AsanaConnector.js';
+import { AsanaConnector, DeletedParentAsEmpty, maxModifiedAt, toAsanaTimestamp } from '../AsanaConnector.js';
 
 /**
  * The SHIPPED catalog, not a hand-made stub.
@@ -204,6 +204,28 @@ describe('pagination', () => {
     it('joins with & on a door that already carries a query string', () => {
         // Tasks' door is /tasks?project={project_gid}; a second `?` would be a malformed URL.
         expect(c.callBuildPaginatedURL('Tasks')).toContain('?project={project_gid}&limit=');
+    });
+});
+
+describe('credential values', () => {
+    // The "Asana API" credential type's two fields are named apiKey and workspace (metadata/credential-type/
+    // schemas/asana-api.schema.json). This pins that the connector reads BOTH from a credential's Values —
+    // the workspace used to be reachable only through ExternalSystemID or the Configuration JSON, which the
+    // connect wizard never asks for, so a connection could be created that then refused to run.
+    type Parser = { ParseCredentialJson(json: string): { Token?: string; Workspace?: string } | null };
+    const parse = (json: string) => (c as unknown as Parser).ParseCredentialJson(json);
+
+    it('resolves the token and the workspace from the credential type\'s own field names', () => {
+        expect(parse(JSON.stringify({ apiKey: 'pat-1', workspace: '1200000000000001' })))
+            .toEqual({ Token: 'pat-1', Workspace: '1200000000000001' });
+    });
+
+    it('keeps a numeric workspace gid as a string', () => {
+        expect(parse(JSON.stringify({ apiKey: 'pat-1', workspace: 1200000000000001 }))?.Workspace).toBe('1200000000000001');
+    });
+
+    it('returns null for values that carry neither', () => {
+        expect(parse(JSON.stringify({ unrelated: true }))).toBeNull();
     });
 });
 
@@ -518,3 +540,29 @@ describe('shipped catalog', () => {
         for (const o of OBJECTS) expect(o.fields.SupportsWrite).toBe(false);
     });
 });
+
+describe('deleted parents', () => {
+    const notFound: RESTResponse = { Status: 404, Body: { errors: [{ message: 'task: Unknown object: 1218788287275194' }] }, Headers: {} };
+    const BASE = 'https://app.asana.com/api/1.0';
+
+    it('answers a deleted task\'s subtasks as an empty page, so the object keeps going', () => {
+        const r = DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194/subtasks?limit=100&opt_fields=gid`, 'GET', notFound);
+        expect(r.Status).toBe(200);
+        expect(c.callNormalize(r.Body, 'data')).toEqual([]);
+        expect(c.callPagination(r.Body, 'Cursor')).toEqual({ HasMore: false });
+    });
+
+    it('answers a deleted project\'s tasks as an empty page', () => {
+        const r = DeletedParentAsEmpty(`${BASE}/tasks?project=1200000000000001&limit=100`, 'GET', notFound);
+        expect(r.Status).toBe(200);
+    });
+
+    it('leaves a 404 on a single record, an unscoped list, a write, or a non-404 alone', () => {
+        expect(DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194`, 'GET', notFound)).toBe(notFound);
+        expect(DeletedParentAsEmpty(`${BASE}/users?workspace=111`, 'GET', notFound)).toBe(notFound);
+        expect(DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194/subtasks`, 'POST', notFound)).toBe(notFound);
+        const forbidden: RESTResponse = { ...notFound, Status: 403 };
+        expect(DeletedParentAsEmpty(`${BASE}/tasks/1218788287275194/subtasks`, 'GET', forbidden)).toBe(forbidden);
+    });
+});
+
