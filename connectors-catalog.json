@@ -735,10 +735,10 @@
       "objectCount": 23,
       "className": "@memberjunction/connector-rasa-io",
       "npmPackage": "@memberjunction/connector-rasa-io",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Marketing/Rasa",
-      "installTag": "Marketing-Rasa@3.0.1"
+      "installTag": "Marketing-Rasa@3.0.2"
     },
     {
       "name": "Reply",
