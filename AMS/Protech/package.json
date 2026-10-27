@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-protech",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MemberJunction Protech AMS (UX 365) connector — thin leaf over the Microsoft Dynamics 365 (Dataverse) connector.",
   "type": "module",
   "main": "dist/index.js",
