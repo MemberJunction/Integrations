@@ -4,7 +4,7 @@
   "name": "connector-protech",
   "displayName": "Protech Connector",
   "description": "Protech AMS (UX 365) connector — association management built on Microsoft Dynamics 365/Dataverse. Thin leaf over the Dataverse connector: OAuth2 client credentials (Entra ID), runtime EntityDefinitions discovery of pa_* + standard tables, change-tracking incremental, full CRUD.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "ISC",
   "publisher": {
     "name": "MemberJunction",
