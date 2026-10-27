@@ -24,7 +24,8 @@ const NS = 'b111c0m-cata-log0-0000-memberjunction';
 /**
  * Objects to extract. Everything here is verified against the published spec:
  *  - `listOp` supplies the response DTO whose properties become the field set.
- *  - Write columns are only declared where the spec documents that operation.
+ *  - Write columns are only declared where the spec documents that operation. Each write verb names
+ *    its doc `op`, whose request DTO supplies the vendor's `maxLength` bounds (see `requestBounds`).
  *  - `updatedTime` supports gt/gte/lt/lte on both invoices and receivable-payments → incremental.
  *
  * Deliberately absent: credit-memos (refunds are descoped — bc-aidp-next-golive#51) and every AP
@@ -43,9 +44,9 @@ const OBJECTS = [
     incremental: true,
     watermark: 'updatedTime',
     write: {
-      create: { path: '/v3/customers', method: 'POST' },
+      create: { path: '/v3/customers', method: 'POST', op: 'createcustomer' },
       // Customers update via PATCH — invoices use PUT. Asymmetric per object; a global default breaks one.
-      update: { path: '/v3/customers/{id}', method: 'PATCH' },
+      update: { path: '/v3/customers/{id}', method: 'PATCH', op: 'updatecustomer' },
     },
   },
   {
@@ -62,8 +63,9 @@ const OBJECTS = [
     incremental: true,
     watermark: 'updatedTime',
     write: {
-      create: { path: '/v3/invoices', method: 'POST' },
-      update: { path: '/v3/invoices/{id}', method: 'PUT' },
+      create: { path: '/v3/invoices', method: 'POST', op: 'createinvoice' },
+      // PUT is `replaceinvoice`; `updateinvoice` documents the PATCH variant, which the connector does not send.
+      update: { path: '/v3/invoices/{id}', method: 'PUT', op: 'replaceinvoice' },
     },
     // BILL's read and write DTOs disagree on the customer reference in BOTH name and shape:
     // InvoiceResponseDto returns a flat string `customerId`, while InvoiceCreateRequestDto REQUIRES a
@@ -111,7 +113,7 @@ const OBJECTS = [
     watermark: 'updatedTime',
     write: {
       // "Charge a customer" — pulls funds. Requires authorizedToCharge + a customer bank account.
-      create: { path: '/v3/receivable-payments', method: 'POST' },
+      create: { path: '/v3/receivable-payments', method: 'POST', op: 'chargecustomer' },
     },
     configuration: {
       chargePrerequisite:
@@ -147,9 +149,19 @@ function extractSchemas(text) {
   if (compIdx === -1) return {};
   const schemasIdx = text.indexOf('"schemas"', compIdx);
   if (schemasIdx === -1) return {};
-  const open = text.indexOf('{', schemasIdx);
-  if (open === -1) return {};
+  return sliceObject(text, text.indexOf('{', schemasIdx), 'schemas');
+}
 
+/** Extracts the embedded OpenAPI `paths` map from a doc page. */
+function extractPaths(text) {
+  const pathsIdx = text.indexOf('"paths"');
+  if (pathsIdx === -1) return {};
+  return sliceObject(text, text.indexOf('{', pathsIdx), 'paths');
+}
+
+/** Parses the balanced JSON object that opens at `open`, skipping braces inside strings. */
+function sliceObject(text, open, label) {
+  if (open === -1) return {};
   let depth = 0;
   let inString = false;
   let escaped = false;
@@ -166,7 +178,7 @@ function extractSchemas(text) {
         try {
           return JSON.parse(text.slice(open, i + 1));
         } catch (err) {
-          throw new Error(`schemas block did not parse: ${err instanceof Error ? err.message : String(err)}`);
+          throw new Error(`${label} block did not parse: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
     }
@@ -187,6 +199,46 @@ function deriveRowDto(schemas, fallback) {
   return fallback;
 }
 
+/**
+ * Reads the `maxLength` bounds a write operation's request DTO declares, keyed by property name.
+ *
+ * BILL's response DTOs omit `maxLength`; its request DTOs carry the real limits (CustomerCreateRequestDto
+ * `name` is 100, not 255). An over-limit value is rejected before it is sent, so the catalog must hold
+ * the bound the vendor enforces on write. The DTO is resolved from the op's `requestBody` `$ref` rather
+ * than hardcoded — the operation is the contract, so this cannot drift.
+ */
+async function requestBounds(op, method) {
+  const text = await fetchDoc(op);
+  const operation = Object.values(extractPaths(text)).map((p) => p[method.toLowerCase()]).find(Boolean);
+  const ref = operation?.requestBody?.content?.['application/json']?.schema?.$ref;
+  if (!ref) throw new Error(`${op}: no ${method} operation with a JSON request DTO`);
+  const dtoName = ref.split('/').pop();
+  const dto = extractSchemas(text)[dtoName];
+  if (!dto) throw new Error(`${op}: request DTO ${dtoName} not found in spec`);
+
+  const bounds = new Map();
+  for (const [propName, prop] of Object.entries(dto.properties ?? {})) {
+    if (typeof prop?.maxLength === 'number') bounds.set(propName, prop.maxLength);
+  }
+  return { dtoName, bounds };
+}
+
+/**
+ * Merges each documented write verb's bounds, keeping the SMALLEST per field — a value must satisfy
+ * every operation it can be sent through, so the tightest bound is the only safe one.
+ */
+async function writeBounds(spec) {
+  const merged = new Map();
+  for (const verb of ['create', 'update']) {
+    const w = spec.write?.[verb];
+    if (!w?.op) continue;
+    const { dtoName, bounds } = await requestBounds(w.op, w.method);
+    process.stderr.write(`${w.op} (${dtoName}): ${bounds.size} bounds… `);
+    for (const [name, len] of bounds) merged.set(name, Math.min(len, merged.get(name) ?? Infinity));
+  }
+  return merged;
+}
+
 /** Maps an OpenAPI property to the MJ IntegrationObjectField Type vocabulary. */
 /**
  * Semantic length tiers for string fields the vendor's response schema leaves unbounded.
@@ -194,9 +246,8 @@ function deriveRowDto(schemas, fallback) {
  * Mirrors `scripts/infer-field-lengths.mjs`, which CI enforces. Falling back to the 255 default for a
  * prose field is a build failure there, and for good reason: an oversize value is **skipped, not
  * truncated**, so an over-long description would drop the whole record silently rather than fail
- * loudly. BILL's response DTOs omit `maxLength` on exactly these fields even where the matching
- * request DTO declares one (`description` is 4000 in CustomerCreateRequestDto), so inferring by name
- * is what keeps a regenerated catalog green.
+ * loudly. BILL's response DTOs omit `maxLength`; the request DTOs' bounds (`writeBounds`) are applied
+ * first, and name inference covers only what no DTO bounds — e.g. fields of read-only objects.
  */
 const LENGTH_TIERS = [
   {
@@ -215,7 +266,7 @@ function inferLength(propName) {
   return tier ? tier.length : 255;
 }
 
-function mapType(prop, propName) {
+function mapType(prop, propName, writeBound) {
   if (!prop || typeof prop !== 'object') return { type: 'string', length: null };
   if (prop.$ref || prop.allOf) return { type: 'json', length: null };
   switch (prop.type) {
@@ -228,8 +279,12 @@ function mapType(prop, propName) {
       if (prop.format === 'date') return { type: 'date', length: null };
       if (prop.format === 'date-time') return { type: 'datetime', length: null };
       if (Array.isArray(prop.enum)) return { type: 'string', length: 100 };
-      // Vendor bound wins; otherwise infer by name rather than defaulting to a lossy 255.
-      return { type: 'string', length: prop.maxLength ?? inferLength(propName) };
+      // Vendor bound wins — the smallest of the response and request DTOs' — otherwise infer by name
+      // rather than defaulting to a lossy 255.
+      if (prop.maxLength != null || writeBound != null) {
+        return { type: 'string', length: Math.min(prop.maxLength ?? Infinity, writeBound ?? Infinity) };
+      }
+      return { type: 'string', length: inferLength(propName) };
     default: return { type: 'string', length: inferLength(propName) };
   }
 }
@@ -240,13 +295,13 @@ async function fetchDoc(op) {
   return res.text();
 }
 
-function buildFields(schema, objName) {
+function buildFields(schema, objName, bounds) {
   const props = schema?.properties ?? {};
   const required = new Set(schema?.required ?? []);
   const out = [];
   let seq = 1;
   for (const [propName, prop] of Object.entries(props)) {
-    const { type, length } = mapType(prop, propName);
+    const { type, length } = mapType(prop, propName, bounds.get(propName));
     // `id` is the vendor primary key on every AR object.
     const isPk = propName === 'id';
     // Server-computed fields — writing them is meaningless and the API ignores or rejects them.
@@ -331,7 +386,7 @@ function applyWriteShape(fields, spec) {
   return fields;
 }
 
-function buildObject(spec, schemas) {
+function buildObject(spec, schemas, bounds) {
   const dtoName = deriveRowDto(schemas, spec.dto);
   const schema = schemas[dtoName];
   if (!schema) {
@@ -340,7 +395,7 @@ function buildObject(spec, schemas) {
       `DTO ${dtoName} not found in ${spec.listOp} spec. Candidates: ${available.join(', ') || '(none)'}`
     );
   }
-  const fields = applyWriteShape(buildFields(schema, spec.name), spec);
+  const fields = applyWriteShape(buildFields(schema, spec.name, bounds), spec);
   if (fields.length === 0) throw new Error(`no fields extracted for ${spec.name}`);
 
   const w = spec.write ?? {};
@@ -448,7 +503,7 @@ async function main() {
   for (const spec of OBJECTS) {
     process.stderr.write(`fetching ${spec.listOp}… `);
     const schemas = extractSchemas(await fetchDoc(spec.listOp));
-    const obj = buildObject(spec, schemas);
+    const obj = buildObject(spec, schemas, await writeBounds(spec));
     const n = obj.relatedEntities['MJ: Integration Object Fields'].length;
     process.stderr.write(`${spec.name}: ${n} fields\n`);
     objects.push(obj);

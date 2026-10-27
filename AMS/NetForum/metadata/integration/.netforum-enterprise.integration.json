@@ -11,7 +11,7 @@
       "BatchRequestWaitTime": -1,
       "Configuration": {
         "AuthFlow": "two-step",
-        "AuthFlowNote": "netFORUM Enterprise xWeb uses a two-step SOAP session-token model. Step 1 (bootstrap): POST a SOAP Authenticate(userName, password) envelope to <tenantBaseURL>/xweb/secure/netForumXML.asmx with SOAPAction http://www.avectra.com/2005/Authenticate. The credentials travel as ELEMENTS IN THE SOAP BODY — there is no HTTP Basic Authorization header on this call — and the envelope deliberately carries no AuthorizationToken header, because it is the bootstrap. The token is the string in the AuthenticateResult element of the response body. Step 2: every subsequent xWeb call carries that token in a SOAP <AuthorizationToken><Token> HEADER ELEMENT. CORRECTED 2026-08-26: this note previously described a JSON shim at /xWeb/JSON/Authenticate using HTTP Basic to mint an Authorization: Bearer token. The connector has never done that on this code path and its own header comment states the opposite verbatim ('Auth (TWO-STEP, SOAP — NOT HTTP Basic / WWW-Authenticate / Bearer)'). Do not restore the Basic/Bearer wording. Source: connector code — NetForumConnector.Authenticate(), BuildSoapEnvelope(), SoapHeaders() (cited by SYMBOL, not line number: the previous note cited 'NetForumConnector.ts:326-357', which drifted onto unrelated code). Token validity window is not published by the vendor; the connector assumes a 1-hour TTL (TOKEN_TTL_MS) and re-authenticates on 401.",
+        "AuthFlowNote": "netFORUM Enterprise xWeb uses a two-step SOAP session-token model. Step 1 (bootstrap): POST a SOAP Authenticate(userName, password) envelope to <tenantBaseURL>/xweb/secure/netForumXML.asmx with SOAPAction http://www.avectra.com/2005/Authenticate. The credentials travel as ELEMENTS IN THE SOAP BODY — there is no HTTP Basic Authorization header on this call — and the envelope deliberately carries no AuthorizationToken header, because it is the bootstrap. The token is in the SOAP RESPONSE HEADER — <soap:Header><AuthorizationToken><Token> — which the WSDL declares as an output header of Authenticate. The body's AuthenticateResult is NOT the token: on a real tenant it holds the namespace URI http://www.avectra.com/2005/. CORRECTED 2026-09-15: this note previously said the token was the AuthenticateResult string, and the connector read it that way through 1.3.4, so it sent that URI as its token; netFORUM answers an unrecognised token with HTTP 500 + faultstring 'Locked' on every call, with nothing locked. Vendor-confirmed with a captured Authenticate response. Do not restore the AuthenticateResult wording. Step 2: every subsequent xWeb call carries that token in a SOAP <AuthorizationToken><Token> HEADER ELEMENT. CORRECTED 2026-08-26: this note previously described a JSON shim at /xWeb/JSON/Authenticate using HTTP Basic to mint an Authorization: Bearer token. The connector has never done that on this code path and its own header comment states the opposite verbatim ('Auth (TWO-STEP, SOAP — NOT HTTP Basic / WWW-Authenticate / Bearer)'). Do not restore the Basic/Bearer wording. Source: connector code — NetForumConnector.Authenticate(), BuildSoapEnvelope(), SoapHeaders() (cited by SYMBOL, not line number: the previous note cited 'NetForumConnector.ts:326-357', which drifted onto unrelated code). Token validity window is not published by the vendor; the connector assumes a 1-hour TTL (TOKEN_TTL_MS) and re-authenticates on 401.",
         "AuthHeaderPattern": "<AuthorizationToken xmlns=\"http://www.avectra.com/2005/\"><Token>{token}</Token></AuthorizationToken>",
         "AuthHeaderPatternNote": "NOT an HTTP header. The session token is a SOAP HEADER ELEMENT inside <soap:Header>, namespaced to http://www.avectra.com/2005/. The only HTTP headers the connector sets are Content-Type: text/xml; charset=utf-8 and SOAPAction: http://www.avectra.com/2005/<MethodName>. CORRECTED 2026-08-26 from 'Authorization: Bearer <token>', which described a transport this connector does not use. Source: connector code — NetForumConnector.Authenticate(), BuildSoapEnvelope(), SoapHeaders() (cited by SYMBOL, not line number: the previous note cited 'NetForumConnector.ts:326-357', which drifted onto unrelated code).",
         "TransportMode": "soap",
@@ -38,7 +38,7 @@
         "APIVersioningStrategy": "none",
         "APIVersioningStrategyNote": "xWeb does not use URL-path versioning. The SOAP namespace http://www.avectra.com/2005/ encodes the Avectra-era year but is not versioned in the URL path. The WSDL endpoint is /xweb/secure/netforumxml.asmx?WSDL with no version segment. Backward compatibility is maintained across Community Brands releases by adding new operations without removing or changing existing ones. Source: WSDL URL patterns on public instances (myasm.asm.org, apconetforum.org). EvidenceStrength: ImpliedFromExample.",
         "TokenRefreshStrategy": "session-token-reissue",
-        "TokenRefreshStrategyNote": "There is no OAuth2-style refresh_token. When the session token expires, the connector re-authenticates from scratch by calling /xWeb/JSON/Authenticate again with the stored Basic credentials. The connector maintains a token cache with a 1-hour TTL (ExpiresAt = Date.now() + 3600*1000) and re-authenticates before the TTL elapses. A 401 response on any call triggers an immediate token invalidation and re-authentication retry. Source: connector code (tokenCache, Authenticate method lines 320-357; 401 handling in MakeHTTPRequest line 476: \"if (response.status === 401 && attempt === 0) { this.tokenCache = null; continue; }\").",
+        "TokenRefreshStrategyNote": "There is no OAuth2-style refresh_token. When the session token expires, the connector re-authenticates from scratch with the same SOAP Authenticate(userName, password) envelope (credentials as body elements, not HTTP Basic) and reads the new token from the SOAP response header (<AuthorizationToken><Token>). It keeps a token cache with a 1-hour TTL (TOKEN_TTL_MS) and re-authenticates before it elapses; a 401 on any call clears the cache and retries once. CORRECTED 2026-09-15: this note previously described a /xWeb/JSON/Authenticate call with stored Basic credentials — a transport this connector does not use — and cited line numbers that had drifted onto unrelated code. Source: connector code — NetForumConnector.Authenticate(), ParseAuthenticateToken(), MakeRawHTTPRequest() (cited by SYMBOL).",
         "ErrorResponseShape": {
           "description": "NetForum xWeb JSON mode returns HTTP 4xx/5xx with error details in various forms depending on the endpoint and xWeb version. Common patterns: (1) SOAP fault wrapped in JSON; (2) {\"ExceptionMessage\": \"...\", \"ExceptionType\": \"...\", \"Message\": \"...\"} for .NET-style errors; (3) Plain HTTP status codes with no body for auth failures. SOAP mode returns standard SOAP Fault elements. The connector handles non-200 responses by inspecting status codes and surfacing the raw body. Source: connector code MakeHTTPRequest error handling; EvidenceStrength: ImpliedFromExample (inferred from .NET/SOAP stack patterns; exact shapes require sandbox verification).",
           "soapFaultElements": [
@@ -146,7 +146,7 @@
           "docSitesGap": "The Abila doc pages are cited throughout this Configuration (GetQuery @TOP semantics, the DataGrid row-limit behaviour, xWeb overview) but were never date-stamped — only the WSDL got an accessedAt. Any claim sourced to those pages therefore has no freshness evidence behind it.",
           "tenantReleaseVersion": null,
           "versionSkewGap": "UNRESOLVED AND LOAD-BEARING. The declared catalog is derived from two LIVE tenant WSDLs whose netFORUM release version is unknown and not discoverable without credentials, while the prose evidence is the 2017.1 doc set. Nothing here pins a product version, so a later 'missing' object CANNOT be attributed: it may mean the catalog is wrong, or that the tenant runs an older release than myasm.asm.org did on 2026-06-20. Contrast Platform/WordPress, which pins wp 7.1 / woocommerce 11.0.1 with zip sha256s precisely so that attribution stays possible.",
-          "catalogLastEditedAt": "2026-07-27",
+          "catalogLastEditedAt": "2026-09-15",
           "catalogLastEditedNote": "migrations/V202607280915__netforum-enterprise__WritablePK.sql withdrew write from five field-less placeholder objects. That edit was reasoned from the SAME 2026-06-20 WSDL read — no refetch occurred — so the accessedAt pin above still describes the evidence base. This field exists because 'source fetched' and 'catalog edited' are different dates: without both, a reader cannot tell whether a post-pin edit was evidence-backed or freehand.",
           "note": "Freshness record for the DECLARED object catalog. Distinct from the repo-wide A9 check (scripts/check-catalog-freshness.mjs), which compares package version to git tag and says nothing about whether the vendor surface still looks like this."
         }
@@ -199,6 +199,11 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "cph_key",
+              "columnList": [
+                "cph_key",
+                "cph_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an EMPTY szColumnList this object faults \"'*' is not a valid value for szColumnList\" — its default list is itself '*' on that tenant — so without a declared list it cannot be read at all. Primary key + watermark only, the two columns the connector needs; accepted by the door (0 row(s)). Extend with proven column names when a tenant needs more.",
               "isMutable": true,
               "writeOps": {
                 "createOp": "WEBPhoneInsert",
@@ -3931,6 +3936,13 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "eml_key",
+              "columnList": [
+                "eml_key",
+                "eml_address",
+                "cst_sort_name_dn",
+                "eml_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (3 columns) does not carry the watermark column eml_change_date, so incremental sync could never advance. This is that default list plus the watermark; naming it was accepted (1 row(s), 4 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": true,
               "writeOps": {
                 "createOp": "WEBEmailInsert",
@@ -6658,6 +6670,11 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "idc_key",
+              "columnList": [
+                "idc_key",
+                "idc_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an EMPTY szColumnList this object faults \"'*' is not a valid value for szColumnList\" — its default list is itself '*' on that tenant — so without a declared list it cannot be read at all. Primary key + watermark only, the two columns the connector needs; accepted by the door (0 row(s)). Extend with proven column names when a tenant needs more.",
               "isMutable": false
             },
             "IncrementalWatermarkField": "idc_change_date"
@@ -12118,6 +12135,17 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "ivd_key",
+              "columnList": [
+                "ivd_key",
+                "prc_display_name",
+                "ivd_qty",
+                "ivd_void_date",
+                "ivd_ship_qty",
+                "ivd_close_flag",
+                "ivd_notes",
+                "ivd_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (7 columns) does not carry the watermark column ivd_change_date, so incremental sync could never advance. This is that default list plus the watermark; naming it was accepted (1 row(s), 8 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": false
             },
             "IncrementalWatermarkField": "ivd_change_date"
@@ -59642,6 +59670,19 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "ind_cst_key",
+              "columnList": [
+                "ind_cst_key",
+                "ind_last_name",
+                "ind_first_name",
+                "ind_mid_name",
+                "cst_org_name_dn",
+                "cst_eml_address_dn",
+                "adr_line1",
+                "adr_city_state_code",
+                "cst_no_email_flag",
+                "ind_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (9 columns) does not carry the watermark column ind_change_date, so incremental sync could never advance. This is that default list plus the watermark; naming it was accepted (1 row(s), 10 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": true,
               "writeOps": {
                 "createOp": "WEBIndividualInsert",
@@ -83887,6 +83928,16 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "inv_key",
+              "columnList": [
+                "inv_key",
+                "inv_code_cp",
+                "bat_code",
+                "inv_close_flag",
+                "inv_add_user",
+                "inv_trx_date",
+                "inv_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (7 columns) does not carry the watermark column inv_change_date. This is that default list plus the watermark, minus cst_sort_name_dn — display column(s) the door refuses when named (\"Invalid column name\"; not re-requestable without a From Table alias). Accepted (1 row(s), 7 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": true,
               "writeOps": {
                 "createOp": "CreateInvoice"
@@ -108222,6 +108273,14 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "cmt_key",
+              "columnList": [
+                "cmt_key",
+                "cmt_code",
+                "cmt_name",
+                "cmt_ctp_code",
+                "cmt_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (4 columns) does not carry the watermark column cmt_change_date, so incremental sync could never advance. This is that default list plus the watermark; naming it was accepted (1 row(s), 5 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": false
             },
             "IncrementalWatermarkField": "cmt_change_date"
@@ -145624,6 +145683,14 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "org_cst_key",
+              "columnList": [
+                "org_cst_key",
+                "org_name",
+                "org_ogt_code",
+                "org_acronym",
+                "org_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (5 columns) does not carry the watermark column org_change_date. This is that default list plus the watermark, minus adr_city_state_code — display column(s) the door refuses when named (\"Invalid column name\"; not re-requestable without a From Table alias). Accepted (1 row(s), 5 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": true,
               "writeOps": {
                 "createOp": "WEBOrganizationInsert",
@@ -166200,6 +166267,11 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "cfx_key",
+              "columnList": [
+                "cfx_key",
+                "cfx_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an EMPTY szColumnList this object faults \"'*' is not a valid value for szColumnList\" — its default list is itself '*' on that tenant — so without a declared list it cannot be read at all. Primary key + watermark only, the two columns the connector needs; accepted by the door (1 row(s)). Extend with proven column names when a tenant needs more.",
               "isMutable": true,
               "writeOps": {
                 "createOp": "WEBFaxInsert",
@@ -176962,6 +177034,18 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "reg_key",
+              "columnList": [
+                "reg_key",
+                "reg_badge_name",
+                "evt_title",
+                "reg_confirm_date",
+                "ivd_amount_cp",
+                "pat_fee_class",
+                "rgt_code",
+                "reg_cancel_date",
+                "reg_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (10 columns) does not carry the watermark column reg_change_date. This is that default list plus the watermark, minus cst_sort_name_dn, cst_eml_address_dn — display column(s) the door refuses when named (\"Invalid column name\"; not re-requestable without a From Table alias). Accepted (1 row(s), 9 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": false
             },
             "IncrementalWatermarkField": "reg_change_date"
@@ -298905,6 +298989,16 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "inv_key",
+              "columnList": [
+                "inv_key",
+                "inv_code_cp",
+                "bat_code",
+                "inv_close_flag",
+                "inv_add_user",
+                "inv_trx_date",
+                "inv_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (7 columns) does not carry the watermark column inv_change_date. This is that default list plus the watermark, minus cst_sort_name_dn — display column(s) the door refuses when named (\"Invalid column name\"; not re-requestable without a From Table alias). Accepted (1 row(s), 7 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": false
             },
             "IncrementalWatermarkField": "inv_change_date"
@@ -349622,6 +349716,20 @@
               "syncStrategy": "WatermarkIncremental",
               "contentHashApplicable": false,
               "stableOrderingKey": "cxa_key",
+              "columnList": [
+                "cxa_key",
+                "cst_type",
+                "cst_name_cp",
+                "adr_line1",
+                "adr_line2",
+                "adr_line3",
+                "adr_city",
+                "adr_post_code",
+                "adr_state",
+                "adr_country",
+                "cxa_change_date"
+              ],
+              "columnListNote": "Declared from a live probe of nfdev.plusweb.org on 2026-09-15: with an empty szColumnList this object's default list (10 columns) does not carry the watermark column cxa_change_date, so incremental sync could never advance. This is that default list plus the watermark; naming it was accepted (1 row(s), 11 columns). A declared list REPLACES the default list — the connector appends the primary key, ordering key and watermark if omitted.",
               "isMutable": true,
               "writeOps": {
                 "createOp": "WEBAddressInsert",

@@ -39666,6 +39666,163 @@
                   "lastModified": "2026-08-30T00:02:47.121Z",
                   "checksum": "64920dd703911d3f2e70b16036509880051cd4151cd3bc00afa8e82999210306"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "ams_id",
+                  "DisplayName": "AMS ID",
+                  "Description": "The member's ID in the association's AMS (for example a NetForum customer key), promoted from meta.ams_id. Present only when the site's WP Activity Log integration records it; null otherwise.",
+                  "Type": "String",
+                  "Length": 100,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 20,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ],
+                    "promoteFrom": "meta.ams_id"
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "94E6EEE2-852E-42DA-8D06-FC15D75AB562"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "post_url",
+                  "DisplayName": "Post URL",
+                  "Description": "Canonical URL of the post the event concerns: meta.PostUrl with HTML entities decoded and the query string and fragment removed, so it joins to a post's link.",
+                  "Type": "String",
+                  "Length": 2048,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 21,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ],
+                    "promoteFrom": "meta.PostUrl",
+                    "stripQuery": true
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CC8F8A7E-CACE-4C07-AE07-03E7E641FA98"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "post_url_full",
+                  "DisplayName": "Post URL (Full)",
+                  "Description": "meta.PostUrl exactly as visited, HTML entities decoded, with its query string kept (it carries campaign attribution such as utm_source).",
+                  "Type": "String",
+                  "Length": 2048,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 22,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ],
+                    "promoteFrom": "meta.PostUrl"
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B5BD2102-487D-45FD-AC6F-65E891EB76BE"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "post_title",
+                  "DisplayName": "Post Title",
+                  "Description": "Title of the post at the time of the event, promoted from meta.PostTitle with HTML entities decoded.",
+                  "Type": "String",
+                  "Length": 1000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 23,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ],
+                    "promoteFrom": "meta.PostTitle"
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8D0FDDCB-7BC3-4AA4-B0C6-A9AA74ABFB8A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "post_date",
+                  "DisplayName": "Post Date",
+                  "Description": "Publication date of the post, promoted from meta.PostDate as WP Activity Log records it (site-local time, 'YYYY-MM-DD HH:MM:SS').",
+                  "Type": "String",
+                  "Length": 30,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 24,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ],
+                    "promoteFrom": "meta.PostDate"
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6701EB96-C0A9-42FA-AF7F-A4E1C2EC500C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "editor_link",
+                  "DisplayName": "Editor Link",
+                  "Description": "wp-admin edit link for the post, promoted from meta.EditorLinkPost with HTML entities decoded.",
+                  "Type": "String",
+                  "Length": 2048,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 25,
+                  "Configuration": {
+                    "contexts": [
+                      "view"
+                    ],
+                    "promoteFrom": "meta.EditorLinkPost"
+                  },
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5813E24E-EF72-4195-B8D6-D19D24307721"
+                }
               }
             ]
           },

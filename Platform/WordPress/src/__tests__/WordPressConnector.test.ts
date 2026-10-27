@@ -806,6 +806,85 @@ describe('FetchChanges — soft deletes', () => {
     });
 });
 
+describe('FetchChanges — nested-field promotion from metadata', () => {
+    // The shape WP Activity Log returns for a "User viewed a post" event, through the mj-wsal bridge.
+    const viewedEvent = {
+        id: 56350, post_id: 1728, post_type: 'page', created_at: '2026-10-14T17:03:46.239Z',
+        meta: {
+            ams_id: '2560888f-b9cf-416f-875b-b5d2bdfdbe7a',
+            EditorLinkPost: 'https://example.org/wp-admin/post.php?post=1728&#038;action=edit',
+            PostDate: '2023-12-12 14:06:52',
+            PostTitle: 'Tips &amp; Tricks &#8211; Part 1',
+            PostUrl: 'https://example.org/news/tips/?utm_medium=email&#038;utm_source=rasa_io#top',
+        },
+    };
+    const loginEvent = { id: 56351, post_id: 0, post_type: '', meta: { ams_id: '', LoginPageURL: 'https://example.org/' } };
+
+    function promotingConnector(): MockedWordPressConnector {
+        const c = makeConnector();
+        const io = makeIO({ ID: 'io-event', Name: 'ActivityLogEvent', APIPath: '/mj-wsal/v1/events', SupportsWrite: false });
+        c.IOFixtures.set('ActivityLogEvent', io);
+        const promote = (Name: string, promoteFrom: string, extra: Record<string, unknown> = {}, Sequence = 0) =>
+            makeIOF({ Name, Sequence, Configuration: JSON.stringify({ contexts: ['view'], promoteFrom, ...extra }) });
+        c.IOFFixtures.set('io-event', [
+            makeIOF({ Name: 'id', Type: 'Integer', IsPrimaryKey: true, Sequence: 0 }),
+            makeIOF({ Name: 'meta', Type: 'json', Sequence: 1 }),
+            promote('ams_id', 'meta.ams_id'),
+            promote('post_url', 'meta.PostUrl', { stripQuery: true }),
+            promote('post_url_full', 'meta.PostUrl'),
+            promote('post_title', 'meta.PostTitle'),
+            promote('post_date', 'meta.PostDate'),
+            promote('editor_link', 'meta.EditorLinkPost'),
+        ]);
+        return c;
+    }
+
+    it('lifts declared meta keys into their own fields, decoded and column-ready', async () => {
+        const c = promotingConnector();
+        c.Canned.push({ response: ok([viewedEvent], { 'x-wp-totalpages': '1' }) });
+        const result = await c.FetchChanges(fetchCtx({ ObjectName: 'ActivityLogEvent' }));
+        const f = result.Records[0].Fields;
+        expect(f['ams_id']).toBe('2560888f-b9cf-416f-875b-b5d2bdfdbe7a');
+        expect(f['post_url']).toBe('https://example.org/news/tips/');
+        expect(f['post_url_full']).toBe('https://example.org/news/tips/?utm_medium=email&utm_source=rasa_io#top');
+        expect(f['post_title']).toBe('Tips & Tricks – Part 1');
+        expect(f['post_date']).toBe('2023-12-12 14:06:52');
+        expect(f['editor_link']).toBe('https://example.org/wp-admin/post.php?post=1728&action=edit');
+    });
+
+    it('keeps the full meta object, so keys that are not promoted are not lost', async () => {
+        const c = promotingConnector();
+        c.Canned.push({ response: ok([loginEvent], { 'x-wp-totalpages': '1' }) });
+        const result = await c.FetchChanges(fetchCtx({ ObjectName: 'ActivityLogEvent' }));
+        expect(result.Records[0].Fields['meta']).toEqual(loginEvent.meta);
+    });
+
+    it('writes null — never an empty string or a stale value — when a key is absent or blank', async () => {
+        const c = promotingConnector();
+        c.Canned.push({ response: ok([loginEvent], { 'x-wp-totalpages': '1' }) });
+        const result = await c.FetchChanges(fetchCtx({ ObjectName: 'ActivityLogEvent' }));
+        const f = result.Records[0].Fields;
+        expect(f['ams_id']).toBeNull();
+        expect(f['post_url']).toBeNull();
+        expect(f['post_title']).toBeNull();
+    });
+
+    it('accepts meta delivered as a JSON string', async () => {
+        const c = promotingConnector();
+        c.Canned.push({ response: ok([{ ...viewedEvent, meta: JSON.stringify(viewedEvent.meta) }], { 'x-wp-totalpages': '1' }) });
+        const result = await c.FetchChanges(fetchCtx({ ObjectName: 'ActivityLogEvent' }));
+        expect(result.Records[0].Fields['ams_id']).toBe('2560888f-b9cf-416f-875b-b5d2bdfdbe7a');
+    });
+
+    it('leaves objects without promotion declarations untouched', async () => {
+        const c = makeConnector();
+        c.Canned.push({ response: ok(postsPage1, { 'x-wp-totalpages': '1' }) });
+        c.Canned.push({ response: ok([], { 'x-wp-totalpages': '1' }) });
+        const result = await c.FetchChanges(fetchCtx({ ObjectName: 'Post' }));
+        expect(Object.keys(result.Records[0].Fields).sort()).toEqual(Object.keys(postsPage1[0]).sort());
+    });
+});
+
 describe('DiscoverObjects — dynamic, never baked', () => {
     it('makes a RUNTIME route-index call and unions the per-site remainder over the declared floor', async () => {
         const c = makeConnector();

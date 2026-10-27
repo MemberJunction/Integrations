@@ -35,6 +35,21 @@ class TestableBillCom extends BillComConnector {
     ) {
         return this['MakeHTTPRequest'](auth, url, method, headers, body);
     }
+    public callResolveBaseURL(creds: { ApiUrl?: string; Environment?: string }) {
+        return (this as unknown as { ResolveBaseURL(c: unknown): string }).ResolveBaseURL({
+            Username: 'u', Password: 'p', OrganizationID: 'org', DevKey: 'dk', ...creds,
+        });
+    }
+    /** Stands in for the engine's object cache so the archive path can be read from Configuration. */
+    public stubCachedObject(configuration: string | null): void {
+        (this as unknown as { GetCachedObject(): unknown }).GetCachedObject = () => ({ Configuration: configuration });
+    }
+    /** Makes GetCachedObject behave like an unseeded database. */
+    public stubMissingObject(): void {
+        (this as unknown as { GetCachedObject(): unknown }).GetCachedObject = () => {
+            throw new Error('IntegrationObject not found: "invoices"');
+        };
+    }
     /** Seeds the private credential cache so the 401 re-login path is reachable in isolation. */
     public seedCredentials(): void {
         (this as unknown as { cachedCredentials: unknown }).cachedCredentials = {
@@ -163,6 +178,19 @@ describe('BillComConnector', () => {
         it('returns undefined when there is nothing to report', () => {
             expect(connector.callExtractError({ Status: 200, Body: {}, Headers: {} })).toBeUndefined();
         });
+
+        it('joins the messages of an array body — BILL reports validation failures that way', () => {
+            const msg = connector.callExtractError({
+                Status: 400,
+                Body: [{ severity: 'ERROR', message: 'customer: must not be null' }, { severity: 'ERROR', message: 'invoiceLineItems: must not be null' }],
+                Headers: {},
+            });
+            expect(msg).toBe('customer: must not be null; invoiceLineItems: must not be null');
+        });
+
+        it('returns undefined for an array carrying no messages', () => {
+            expect(connector.callExtractError({ Status: 400, Body: [{ severity: 'ERROR' }], Headers: {} })).toBeUndefined();
+        });
     });
 
     describe('session lifecycle', () => {
@@ -221,6 +249,132 @@ describe('BillComConnector', () => {
             await connector.callMakeHTTPRequest(authCtx(), 'https://mock/x', 'POST', {}, { customerId: '0cu1' });
             expect(sawBody).toBe(JSON.stringify({ customerId: '0cu1' }));
         });
+    });
+});
+
+/**
+ * The version segment belongs to the path, not the base (#390). These are regression tests for a defect
+ * that made EVERY generic CRUD and fetch call 404 while `TestConnection` kept reporting success.
+ */
+describe('gateway base URL', () => {
+    const connector = new TestableBillCom();
+
+    it('defaults to the sandbox gateway without a version segment', () => {
+        expect(connector.callResolveBaseURL({})).toBe('https://gateway.stage.bill.com/connect');
+    });
+
+    it('selects production only on an explicit environment', () => {
+        expect(connector.callResolveBaseURL({ Environment: 'production' })).toBe('https://gateway.prod.bill.com/connect');
+        expect(connector.callResolveBaseURL({ Environment: 'Production ' })).toBe('https://gateway.prod.bill.com/connect');
+        expect(connector.callResolveBaseURL({ Environment: 'anything-else' })).toBe('https://gateway.stage.bill.com/connect');
+    });
+
+    it('strips a trailing /v3 from a configured apiUrl — the credential help text recommends that spelling', () => {
+        expect(connector.callResolveBaseURL({ ApiUrl: 'https://gateway.stage.bill.com/connect/v3' })).toBe('https://gateway.stage.bill.com/connect');
+        expect(connector.callResolveBaseURL({ ApiUrl: 'https://gateway.stage.bill.com/connect/v3/' })).toBe('https://gateway.stage.bill.com/connect');
+    });
+
+    it('leaves a version-less apiUrl alone, and keeps a path that merely contains v3', () => {
+        expect(connector.callResolveBaseURL({ ApiUrl: 'https://mock.local/connect' })).toBe('https://mock.local/connect');
+        expect(connector.callResolveBaseURL({ ApiUrl: 'https://mock.local/v3/proxy' })).toBe('https://mock.local/v3/proxy');
+    });
+
+    it('addresses the version on login, so base + catalog path stays unversioned', async () => {
+        const urls: string[] = [];
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL) => {
+            urls.push(String(input));
+            return jsonResponse(200, { sessionId: 'sess-1' });
+        });
+        await (connector as unknown as { Login(c: unknown): Promise<unknown> }).Login({
+            Username: 'u', Password: 'p', OrganizationID: 'org', DevKey: 'dk', Environment: 'sandbox',
+        });
+        expect(urls).toEqual(['https://gateway.stage.bill.com/connect/v3/login']);
+        vi.restoreAllMocks();
+    });
+});
+
+/**
+ * Cancellation is `POST /v3/invoices/{id}/archive` — never a field write. `UpdateRecord({archived:true})`
+ * is answered 400 by BILL because the invoices object updates with PUT, which is a full replace (#391).
+ */
+describe('invoice archive and restore', () => {
+    let connector: TestableBillCom;
+    const ci = { ID: 'ci-1', IntegrationID: 'int-1' } as never;
+    const user = {} as never;
+
+    /** Answers every call with `status`, recording the URL and method it was asked for. */
+    const wire = (status: number, body: unknown = { archived: true }) => {
+        const seen: Array<{ url: string; method?: string; body?: unknown }> = [];
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+            seen.push({ url: String(input), method: init?.method, body: init?.body });
+            return jsonResponse(status, body);
+        });
+        return seen;
+    };
+
+    beforeEach(() => {
+        connector = new TestableBillCom();
+        connector.seedCredentials();
+        (connector as unknown as { cachedAuth: unknown }).cachedAuth = authCtx();
+        connector.stubCachedObject(JSON.stringify({ archivePath: '/v3/invoices/{invoiceId}/archive', restorePath: '/v3/invoices/{invoiceId}/restore' }));
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it('POSTs the archive sub-resource with no body and reports the invoice back', async () => {
+        const seen = wire(200);
+        const result = await connector.ArchiveInvoice({ CompanyIntegration: ci, ExternalID: '00e1', ContextUser: user });
+        expect(result).toEqual({ Success: true, StatusCode: 200, ExternalID: '00e1' });
+        expect(seen).toHaveLength(1);
+        expect(seen[0].url).toBe('https://mock/connect/v3/invoices/00e1/archive');
+        expect(seen[0].method).toBe('POST');
+        expect(seen[0].body).toBeUndefined();
+    });
+
+    it('restores through the configured restore path', async () => {
+        const seen = wire(200, { archived: false });
+        const result = await connector.RestoreInvoice({ CompanyIntegration: ci, ExternalID: '00e1', ContextUser: user });
+        expect(result.Success).toBe(true);
+        expect(seen[0].url).toBe('https://mock/connect/v3/invoices/00e1/restore');
+    });
+
+    it('falls back to the documented path when Configuration predates the key', async () => {
+        connector.stubCachedObject(JSON.stringify({ archiveNote: 'no paths here' }));
+        const seen = wire(200);
+        await connector.ArchiveInvoice({ CompanyIntegration: ci, ExternalID: '00e1', ContextUser: user });
+        expect(seen[0].url).toBe('https://mock/connect/v3/invoices/00e1/archive');
+    });
+
+    it('still archives when the object is not seeded at all — a missing cache must not block a cancel', async () => {
+        connector.stubMissingObject();
+        const seen = wire(200);
+        const result = await connector.ArchiveInvoice({ CompanyIntegration: ci, ExternalID: '00e1', ContextUser: user });
+        expect(result.Success).toBe(true);
+        expect(seen[0].url).toBe('https://mock/connect/v3/invoices/00e1/archive');
+    });
+
+    it('url-encodes the id rather than interpolating it raw', async () => {
+        const seen = wire(200);
+        await connector.ArchiveInvoice({ CompanyIntegration: ci, ExternalID: '00e 1/x', ContextUser: user });
+        expect(seen[0].url).toBe('https://mock/connect/v3/invoices/00e%201%2Fx/archive');
+    });
+
+    it('refuses an empty id without reaching the wire', async () => {
+        const seen = wire(200);
+        const result = await connector.ArchiveInvoice({ CompanyIntegration: ci, ExternalID: '  ', ContextUser: user });
+        expect(result.Success).toBe(false);
+        expect(seen).toHaveLength(0);
+    });
+
+    it("surfaces BILL's array-shaped validation errors instead of a bare status", async () => {
+        wire(400, [
+            { timestamp: '2026-09-21T00:00:00Z', severity: 'ERROR', message: 'customer: must not be null' },
+            { timestamp: '2026-09-21T00:00:00Z', severity: 'ERROR', message: 'invoiceLineItems: must not be null' },
+        ]);
+        const result = await connector.ArchiveInvoice({ CompanyIntegration: ci, ExternalID: '00e1', ContextUser: user });
+        expect(result.Success).toBe(false);
+        expect(result.StatusCode).toBe(400);
+        expect(result.ErrorMessage).toBe('customer: must not be null; invoiceLineItems: must not be null');
     });
 });
 

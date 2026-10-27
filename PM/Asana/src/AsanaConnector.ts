@@ -110,7 +110,8 @@ export class AsanaConnector extends BaseRESTIntegrationConnector {
         if (!workspace) {
             throw new Error(
                 'Asana workspace is not configured. Every Asana listing is workspace-scoped; set the ' +
-                'workspace gid on CompanyIntegration.ExternalSystemID (or "workspace" in the Configuration JSON).'
+                'Workspace GID on the "Asana API" credential, on CompanyIntegration.ExternalSystemID, ' +
+                'or as "workspace" in the Configuration JSON.'
             );
         }
         return { Token: resolved.Token, Workspace: String(workspace) };
@@ -152,7 +153,7 @@ export class AsanaConnector extends BaseRESTIntegrationConnector {
         if (contentType.includes('json') || (text.length > 0 && (text[0] === '{' || text[0] === '['))) {
             try { parsed = JSON.parse(text); } catch { parsed = text; }
         }
-        return { Status: response.status, Body: parsed, Headers: responseHeaders };
+        return DeletedParentAsEmpty(url, method, { Status: response.status, Body: parsed, Headers: responseHeaders });
     }
 
     /** Asana wraps every collection response in `{ "data": [...] }` (the declared ResponseDataKey). */
@@ -400,8 +401,8 @@ export class AsanaConnector extends BaseRESTIntegrationConnector {
         }
         if (!token) {
             throw new Error(
-                'No Asana credential found — link an "API Key" credential holding a personal access ' +
-                'token, or supply one as "token" in the CompanyIntegration.Configuration JSON.'
+                'No Asana credential found — link an "Asana API" credential (personal access token + ' +
+                'workspace gid), or supply "token" in the CompanyIntegration.Configuration JSON.'
             );
         }
         return { Token: token, Workspace: workspace };
@@ -526,4 +527,28 @@ export function maxModifiedAt(
         if (best === null || value > best) best = value;
     }
     return best === previous ? null : best;
+}
+
+/**
+ * A 404 on a parent-scoped collection means the PARENT is gone, not that the request is wrong.
+ *
+ * Tasks and Subtasks are fetched once per already-synced parent (`/tasks?project={gid}`,
+ * `/tasks/{gid}/subtasks`). A project or task deleted in Asana stays in the synced tables, since
+ * nothing removes it, so every later run asks Asana for its children and gets a 404. The base
+ * fetch loop treats that as a persistent error and abandons the WHOLE object at that batch, so one
+ * deleted task left every subtask after it unsynced, every night. A deleted parent has no children,
+ * so this answers that call as an empty page. A 404 on a single record (`/tasks/{gid}`) or on an
+ * unscoped list is left alone.
+ */
+export function DeletedParentAsEmpty(url: string, method: string, response: RESTResponse): RESTResponse {
+    if (response.Status !== 404 || method.toUpperCase() !== 'GET') return response;
+    let parsed: URL;
+    try { parsed = new URL(url); } catch { return response; }
+    const path = parsed.pathname.replace(/\/+$/, '');
+    const project = parsed.searchParams.get('project') ?? '';
+    const childOfTask = /\/tasks\/\d+\/subtasks$/.test(path);
+    const tasksOfProject = /\/tasks$/.test(path) && /^\d+$/.test(project);
+    if (!childOfTask && !tasksOfProject) return response;
+    console.warn(`[Asana] ${path}${tasksOfProject ? `?project=${project}` : ''}: HTTP 404, the parent was deleted in Asana; treating it as having no children.`);
+    return { Status: 200, Body: { data: [], next_page: null }, Headers: response.Headers };
 }

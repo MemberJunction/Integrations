@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:par="http://exacttarget.com/wsdl/partnerAPI">
+  <soap:Body>
+    <par:CreateResponse>
+      <par:Results xsi:type="par:CreateResult">
+        <par:StatusCode>OK</par:StatusCode>
+        <par:StatusMessage>Created Subscriber</par:StatusMessage>
+        <par:OrdinalID>0</par:OrdinalID>
+        <par:NewID>1004</par:NewID>
+        <par:NewObjectID>9f2c1b08-0f06-4f4e-9b2f-6bb9d3f0a004</par:NewObjectID>
+        <par:Object xsi:type="par:Subscriber">
+          <par:ObjectID>9f2c1b08-0f06-4f4e-9b2f-6bb9d3f0a004</par:ObjectID>
+          <par:EmailAddress>dnguyen@example.com</par:EmailAddress>
+          <par:SubscriberKey>dnguyen@example.com</par:SubscriberKey>
+        </par:Object>
+      </par:Results>
+      <par:RequestID>4f5ed3d5-40a8-4031-a07d-5dbf7d031444</par:RequestID>
+      <par:OverallStatus>OK</par:OverallStatus>
+    </par:CreateResponse>
+  </soap:Body>
+</soap:Envelope>

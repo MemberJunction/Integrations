@@ -177,6 +177,16 @@ const ZObjectConfig = z
 
 type EventscribeObjectConfig = z.infer<typeof ZObjectConfig>;
 
+/**
+ * `IntegrationObjectField.Configuration` — only the one key this connector acts on. A field whose
+ * `connectorStamped` is {@link EVENT_SCOPE_STAMP} carries no vendor data: the connector writes the
+ * connection's event scope into it on every record it reads (see {@link EventscribeConnector.EventScopeFor}).
+ */
+const ZFieldConfig = z.object({ connectorStamped: z.string().optional() }).passthrough();
+
+/** The `connectorStamped` marker value that names the event-scope field. Vocabulary, not catalog. */
+const EVENT_SCOPE_STAMP = 'event-scope';
+
 const ZFamilyBaseURL = z.object({ family: z.string(), baseUrl: z.string() }).passthrough();
 
 const ZRateLimitOverride = z
@@ -242,6 +252,11 @@ interface EventscribeCallScope {
      * object's `Configuration.watermark` plus the engine-supplied watermark value. Absent = full pull.
      */
     WindowParams?: Record<string, string>;
+    /**
+     * The event scope every record read in this call chain is stamped with (see
+     * {@link EventscribeConnector.EventScopeFor}). Absent on the write verbs, which stamp nothing.
+     */
+    EventScope?: string;
 }
 
 /** A classified vendor failure, kept structured so the engine can route it. */
@@ -264,6 +279,20 @@ export class EventscribeAPIError extends Error {
         super(message);
         this.name = 'EventscribeAPIError';
     }
+}
+
+/** The one cheap read {@link EventscribeConnector.TestConnection} fires for one product family. */
+interface ConnectionProbe {
+    Family: string;
+    Object: MJIntegrationObjectEntity;
+    /** The `Method` value the probe dispatches. */
+    Door: string;
+}
+
+/** The connection test's plan: one probe per family that has one, and why the rest have none. */
+interface ConnectionProbePlan {
+    Probes: ConnectionProbe[];
+    Unprobeable: Array<{ Family: string; Reason: string }>;
 }
 
 /** One per-record outcome read back out of a non-atomic array-body write. */
@@ -435,10 +464,27 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
     // ── Connection test ───────────────────────────────────────────────────────
 
     /**
-     * Runs the cheapest real read this connection can make: the first ACTIVE, directly-queryable
-     * object's own door. Objects whose only door needs a caller-supplied record key
-     * (`Configuration.requiresRecordKeyToRead`) are skipped — calling them unkeyed proves nothing.
-     * The message never carries credential bytes.
+     * Passes when the API key authenticates against ANY product family this connector declares.
+     *
+     * Cadmium issues one API key per PRODUCT (eventScribe website/app and Assets on mycadmium.com,
+     * Education and Expo Harvester on conferenceharvester.com, Scorecard on conferenceabstracts.com),
+     * and every connection sees the objects of all five families. A test that probed one fixed object
+     * — the first active one by Sequence, which is a Scorecard door — could only ever pass for a
+     * Scorecard key; an eventScribe or Harvester key failed it, and since discovery and both
+     * connection wizards run this test first, those connections could not be created at all.
+     *
+     * So the test walks the families in `Integration.Configuration.BaseURLsByFamily` order (then any
+     * family an active object carries that the table does not list) and fires ONE cheap probe per
+     * family, stopping at the first that answers 2xx. The probe for a family is its lowest-Sequence
+     * active object that is directly queryable (depth 0), needs no caller-supplied record key, speaks
+     * JSON, and is NOT one of the vendor's heavy methods: an object whose documented window is longer
+     * than the vendor-wide standard (`getAllExhibitorsWithBooth`, `getPresentations`, 1 per minute) is
+     * never used as a probe. Consecutive probes are spaced by the standard window (1 request per
+     * second), so a key that fits no family costs at most one request per family, one second apart.
+     *
+     * The message names the family that answered, every family tried before it and why each failed,
+     * the families not probed, and the families that have no credential-only probe at all. It never
+     * carries credential bytes.
      */
     public override async TestConnection(
         companyIntegration: MJCompanyIntegrationEntity,
@@ -454,43 +500,180 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
                         'no door to probe. Push metadata/integrations/eventscribe before testing the connection.',
                 };
             }
-            const probe = objects.find((o) => {
-                const cfg = this.ObjectConfig(o);
-                return this.DepthOf(cfg) === 0 && cfg?.requiresRecordKeyToRead == null && this.DoorOperationFor(o, cfg) != null;
-            });
-            if (!probe) {
+            const plan = this.ConnectionProbePlan(objects);
+            if (plan.Probes.length === 0) {
                 return {
                     Success: false,
-                    Message:
-                        '[eventscribe] Every ACTIVE object either has no read door or declares ' +
-                        'requiresRecordKeyToRead, so no credential-only probe exists. Enable an enumerable object ' +
-                        '(for example one of the abstract-scorecard get* doors) before testing.',
+                    Message: this.Sentences([
+                        '[eventscribe] No product family has a credential-only probe: every ACTIVE object either has ' +
+                        'no read door, declares requiresRecordKeyToRead, sits under another object\'s door, or is one ' +
+                        'of the vendor\'s heavy (1 per minute) methods. Enable an enumerable object (for example one of ' +
+                        'the abstract-scorecard get* doors) before testing.',
+                        this.UnprobeableSentence(plan.Unprobeable),
+                    ]),
                 };
             }
+
             const auth = await this.Authenticate(companyIntegration, contextUser);
-            const url = this.DoorURL(
-                companyIntegration,
-                auth,
-                probe,
-                this.DoorOperationFor(probe, this.ObjectConfig(probe))!,
-            );
-            const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
-            if (response.Status >= 200 && response.Status < 300) {
-                return {
-                    Success: true,
-                    Message: `[eventscribe] Reachable: door "${probe.Name}" answered HTTP ${response.Status} for this API key.`,
-                };
+            const spacingMs = this.StandardWindowMs();
+            const failures: string[] = [];
+            let lastSentAt: number | null = null;
+            for (let i = 0; i < plan.Probes.length; i++) {
+                const probe = plan.Probes[i];
+                if (lastSentAt != null && spacingMs > 0) {
+                    const wait = lastSentAt + spacingMs - Date.now();
+                    if (wait > 0) await this.Sleep(wait);
+                }
+                lastSentAt = Date.now();
+                const outcome = await this.RunConnectionProbe(companyIntegration, auth, probe);
+                if (outcome.Success) {
+                    const notProbed = plan.Probes.slice(i + 1).map((p) => p.Family);
+                    return {
+                        Success: true,
+                        Message: this.Sentences([
+                            `[eventscribe] Reachable: this API key authenticated against the "${probe.Family}" family ` +
+                            `(door "${probe.Object.Name}", Method=${probe.Door}, HTTP ${outcome.Status}).`,
+                            failures.length > 0 ? `Tried first without success: ${failures.join('; ')}.` : '',
+                            notProbed.length > 0
+                                ? `Not probed, because the test stops at the first family that answers: ${notProbed.join(', ')}.`
+                                : '',
+                            this.UnprobeableSentence(plan.Unprobeable),
+                            'Objects of a family this key does not cover will fail at sync, so apply only the ' +
+                            `"${probe.Family}" objects on this connection unless the key is known to cover more.`,
+                            this.EventScopeSentence(objects, auth),
+                        ]),
+                    };
+                }
+                failures.push(`${probe.Family} (door "${probe.Object.Name}", Method=${probe.Door}: ${outcome.Detail})`);
             }
             return {
                 Success: false,
-                Message:
-                    `[eventscribe] Door "${probe.Name}" answered HTTP ${response.Status}` +
-                    `${this.VendorMessage(response.Body) ? `: ${this.VendorMessage(response.Body)}` : ''}. ` +
+                Message: this.Sentences([
+                    '[eventscribe] This API key did not authenticate against any product family the connector ' +
+                    `declares. Tried ${plan.Probes.length} famil${plan.Probes.length === 1 ? 'y' : 'ies'}, one request ` +
+                    `each: ${failures.join('; ')}.`,
+                    this.UnprobeableSentence(plan.Unprobeable),
                     'Check the API key and, for a multi-event key, the event id (eID) on this connection.',
+                ]),
             };
         } catch (err) {
             return { Success: false, Message: `[eventscribe] Connection test failed: ${this.SafeMessage(err)}` };
         }
+    }
+
+    /**
+     * One probe per product family, in the order {@link TestConnection} documents, plus the families
+     * that have no usable probe (with the reason). Everything is read from metadata.
+     */
+    private ConnectionProbePlan(objects: MJIntegrationObjectEntity[]): ConnectionProbePlan {
+        const ordered = [...objects].sort((a, b) => (a.Sequence ?? 0) - (b.Sequence ?? 0));
+        const families: string[] = [];
+        for (const entry of this.IntegrationConfig()?.BaseURLsByFamily ?? []) {
+            if (entry.family && !families.includes(entry.family)) families.push(entry.family);
+        }
+        for (const obj of ordered) {
+            const family = this.FamilyOf(obj);
+            if (family && !families.includes(family)) families.push(family);
+        }
+
+        const standardWindow = this.StandardWindowMs();
+        const probes: ConnectionProbe[] = [];
+        const unprobeable: Array<{ Family: string; Reason: string }> = [];
+        for (const family of families) {
+            const members = ordered.filter((o) => this.FamilyOf(o) === family);
+            if (members.length === 0) {
+                unprobeable.push({ Family: family, Reason: 'no ACTIVE object' });
+                continue;
+            }
+            let heavySkipped = false;
+            const probe = members.find((o) => {
+                const cfg = this.ObjectConfig(o);
+                if (this.DepthOf(cfg) !== 0 || cfg?.requiresRecordKeyToRead != null) return false;
+                const format = cfg?.responseFormat;
+                if (format && format.trim().toLowerCase() !== 'json') return false;
+                const door = this.DoorOperationFor(o, cfg);
+                if (door == null) return false;
+                if (this.RateWindowFor(door) > standardWindow) {
+                    heavySkipped = true;
+                    return false;
+                }
+                return true;
+            });
+            if (probe) {
+                probes.push({ Family: family, Object: probe, Door: this.DoorOperationFor(probe, this.ObjectConfig(probe))! });
+            } else {
+                unprobeable.push({
+                    Family: family,
+                    Reason: heavySkipped
+                        ? 'its only directly-readable doors are heavy (1 per minute) methods, which are never used as a probe'
+                        : 'every ACTIVE object needs a caller-supplied record key or sits under another object\'s door',
+                });
+            }
+        }
+        return { Probes: probes, Unprobeable: unprobeable };
+    }
+
+    /**
+     * Fires one probe. 2xx (without the vendor's `{"error": ...}` envelope) is success; anything else —
+     * a non-2xx, an error envelope, a transport failure — is a failure for THIS family only, reported
+     * with the status and the vendor's own message, credential bytes redacted.
+     */
+    private async RunConnectionProbe(
+        companyIntegration: MJCompanyIntegrationEntity,
+        auth: EventscribeAuthContext,
+        probe: ConnectionProbe,
+    ): Promise<{ Success: true; Status: number } | { Success: false; Detail: string }> {
+        try {
+            const url = this.DoorURL(companyIntegration, auth, probe.Object, probe.Door);
+            const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+            if (response.Status >= 200 && response.Status < 300) return { Success: true, Status: response.Status };
+            const vendorMessage = this.VendorMessage(response.Body);
+            return { Success: false, Detail: this.SafeMessage(`HTTP ${response.Status}${vendorMessage ? `: ${vendorMessage}` : ''}`) };
+        } catch (err) {
+            if (err instanceof EventscribeAPIError) {
+                return {
+                    Success: false,
+                    Detail: this.SafeMessage(`HTTP ${err.Status}: ${err.VendorMessage ?? err.Classification.Reason}`),
+                };
+            }
+            return { Success: false, Detail: this.SafeMessage(err) };
+        }
+    }
+
+    /** The families with no credential-only probe, as one sentence (empty when there are none). */
+    private UnprobeableSentence(unprobeable: Array<{ Family: string; Reason: string }>): string {
+        if (unprobeable.length === 0) return '';
+        return `No probe exists for: ${unprobeable.map((u) => `${u.Family} (${u.Reason})`).join('; ')}.`;
+    }
+
+    /**
+     * How this connection's records will be keyed, for the connection-test message — so an operator
+     * sees the no-eID fallback before the first sync, not after. Never prints the eID itself (it is
+     * redacted everywhere else too). Empty when no active object declares an event-scope field.
+     */
+    private EventScopeSentence(objects: MJIntegrationObjectEntity[], auth: EventscribeAuthContext): string {
+        if (!objects.some((o) => this.EventScopeFieldNames(this.GetCachedFields(o.ID)).length > 0)) return '';
+        return auth.EventID?.trim()
+            ? 'Records from this connection are keyed by its configured eID (EventScope), so each event\'s rows stay apart.'
+            : 'No eID is configured, so records from this connection are keyed to the connection itself (EventScope = ' +
+              'this connection\'s ID): they never merge with another connection\'s rows, but re-creating the connection, ' +
+              'or adding an eID after the first sync, starts a new set of rows.';
+    }
+
+    /** Joins the non-empty sentences of a message with single spaces. */
+    private Sentences(parts: string[]): string {
+        return parts.filter((p) => p.length > 0).join(' ');
+    }
+
+    /** An object's product family: its own `Configuration.family`, else its `Category` tag. */
+    private FamilyOf(obj: MJIntegrationObjectEntity): string | null {
+        return this.ObjectConfig(obj)?.family ?? obj.Category ?? null;
+    }
+
+    /** The vendor-wide standard window from `Configuration.RateLimits.standard`, or 0 when undeclared. */
+    private StandardWindowMs(): number {
+        const windowMs = this.IntegrationConfig()?.RateLimits?.standard?.windowMs;
+        return Number.isFinite(windowMs) && (windowMs as number) > 0 ? (windowMs as number) : 0;
     }
 
     // ── The READ path ─────────────────────────────────────────────────────────
@@ -509,6 +692,10 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
      * batch limiting and record assembly are used AS IS. Two metadata-declared refusals run FIRST
      * ({@link WireFormatGate}, {@link RecordKeyGate}) so an object this connector cannot honestly read
      * reports a structured warning instead of a silent, green, zero-row batch.
+     *
+     * Every record read here is stamped with the connection's event scope ({@link EventScopeFor}) on
+     * the object's declared event-scope field, and — on the depth-0 path, whose record assembly is the
+     * base class's — re-keyed on the SOURCE key alone ({@link RekeyOnSourceKey}).
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         const companyIntegration = ctx.CompanyIntegration;
@@ -521,18 +708,150 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
         const gate = this.RecordKeyGate(companyIntegration, obj, cfg);
         if (gate) return { Records: [], HasMore: false, Warnings: [gate] };
 
+        const auth = await this.Authenticate(companyIntegration, ctx.ContextUser);
         const callScope: EventscribeCallScope = {
             IntegrationID: companyIntegration.IntegrationID,
             ObjectName: ctx.ObjectName,
             Verb: 'read',
             WindowParams: this.WindowParamsFor(obj, cfg, ctx),
+            EventScope: this.EventScopeFor(companyIntegration, auth),
         };
         const batch = this.DepthOf(cfg) === 0
-            ? await this.scope.run(callScope, () => super.FetchChanges(ctx))
+            ? this.RekeyOnSourceKey(
+                await this.scope.run(callScope, () => super.FetchChanges(ctx)),
+                this.GetCachedFields(obj.ID),
+            )
             : await this.scope.run(callScope, () => this.FetchNestedViaDoor(ctx, obj, cfg));
         // Reached ONLY on a batch that completed without throwing — a mid-iteration failure propagates
         // out of the awaits above, so the watermark is never advanced over a partial read.
         return this.WithMaxSeenWatermark(batch, obj, ctx);
+    }
+
+    // ── Event scope: keeping each event's records apart ───────────────────────
+    //
+    // All connections of this connector write into the same tables, and the engine matches an incoming
+    // row to an existing one by the entity's primary key across the WHOLE table (no connection filter).
+    // A client with one connection per product per event therefore needs the event IN the key, or the
+    // same Cadmium id read for two events is one row that the last sync overwrote. Each active object
+    // declares an `EventScope` field (IntegrationObjectField.Configuration.connectorStamped =
+    // "event-scope"); on keyed objects it is part of the declared primary key. This connector writes
+    // the value into every record it reads, and keeps it off everything it sends.
+
+    /**
+     * The value every record read through this connection is stamped with: the connection's configured
+     * `eID` when it has one — the same value, resolved the same way, that {@link Authenticate} sends on
+     * the wire — and otherwise the connection's own `CompanyIntegration.ID`.
+     *
+     * The fallback is the point. A connection with no eID is still exactly one event (Cadmium keys are
+     * per product per event unless provisioned for several, and a multi-event key needs eID to be
+     * scoped at all), so its own ID is a value no other connection can produce: two connections can
+     * share an event scope only by naming the same eID, i.e. the same event. Stamping a shared constant,
+     * or leaving the field empty, would merge every connection's rows exactly as before; refusing to run
+     * without an eID would also be safe, but would block single-event keys on a value Cadmium does not
+     * require of them. The cost of the fallback: re-creating a connection starts a new scope, and adding
+     * an eID to a connection that has already synced changes its scope — set eID before the first sync.
+     *
+     * Throws rather than stamp an empty value, which would put every such record in one shared scope.
+     */
+    protected EventScopeFor(companyIntegration: MJCompanyIntegrationEntity, auth: EventscribeAuthContext): string {
+        const eventID = auth.EventID?.trim();
+        if (eventID) return eventID;
+        const connectionID = companyIntegration.ID?.trim();
+        if (connectionID) return connectionID;
+        throw new Error(
+            '[eventscribe] Cannot key this connection\'s records: it has no eID and no CompanyIntegration ID. ' +
+            'An empty event scope would merge its rows with every other connection\'s, so nothing is read.',
+        );
+    }
+
+    /** Names of the object's fields the connector stamps with the event scope, from their Configuration. */
+    private EventScopeFieldNames(fields: MJIntegrationObjectFieldEntity[]): string[] {
+        return fields.filter((f) => this.IsEventScopeField(f)).map((f) => f.Name);
+    }
+
+    private IsEventScopeField(field: MJIntegrationObjectFieldEntity): boolean {
+        const parsed = this.ParseJSONObject(field.Configuration);
+        if (!parsed) return false;
+        const result = ZFieldConfig.safeParse(parsed);
+        return result.success && result.data.connectorStamped === EVENT_SCOPE_STAMP;
+    }
+
+    /**
+     * The record-assembly hook both read paths run every row through (the base's flat/paged read and
+     * {@link FetchNestedViaDoor}), so this is where the event scope is stamped. Identity when nothing is
+     * in scope or the object declares no event-scope field. The stamp always wins over a same-named key
+     * in the payload: the record's identity depends on it, and Cadmium documents no such field.
+     */
+    protected override TransformRecord(
+        raw: Record<string, unknown>,
+        _obj: MJIntegrationObjectEntity,
+        fields: MJIntegrationObjectFieldEntity[],
+    ): Record<string, unknown> {
+        const scope = this.scope.getStore()?.EventScope;
+        if (scope == null) return raw;
+        const names = this.EventScopeFieldNames(fields);
+        if (names.length === 0) return raw;
+        const out: Record<string, unknown> = { ...raw };
+        for (const name of names) {
+            if (name in raw && raw[name] != null && String(raw[name]) !== scope) {
+                this.WarnOnce(
+                    `event-scope-collision:${name}`,
+                    `[eventscribe] The vendor payload carried its own "${name}" value; it was replaced by this ` +
+                    'connection\'s event scope, which the record\'s primary key depends on.',
+                );
+            }
+            out[name] = scope;
+        }
+        return out;
+    }
+
+    /**
+     * The depth-0 path's records come out of the base class's record assembly, which keys `ExternalID`
+     * on EVERY declared primary-key column — the stamped event scope included. `ExternalID` is the
+     * connector's vendor-facing identity (it is substituted into update/delete paths and read back by
+     * `GetRecord`), and the engine keeps it per connection, where the event is already fixed; the event
+     * belongs in the MJ row's key (which it is: the declared PK), not in the vendor id. So this re-keys
+     * each record on the source key alone — exactly what the base would have produced had the event
+     * scope not been declared, including its content-hash fallback when the source key is missing and,
+     * for a single source key, writing that hash into the key column so the row still has a storable key.
+     */
+    private RekeyOnSourceKey(batch: FetchBatchResult, fields: MJIntegrationObjectFieldEntity[]): FetchBatchResult {
+        if (!fields.some((f) => f.IsPrimaryKey && this.IsEventScopeField(f))) return batch;
+        const sourceKeys = this.SourceKeyNames(fields);
+        if (sourceKeys.length === 0) return batch;
+        return {
+            ...batch,
+            Records: batch.Records.map((record) => {
+                const values = record.Fields;
+                const allPresent = sourceKeys.every((n) => values[n] != null && serializeKeyValue(values[n]).length > 0);
+                if (allPresent) {
+                    return { ...record, ExternalID: sourceKeys.map((n) => serializeKeyValue(values[n])).join('|') };
+                }
+                // The base already fell back to a content hash (a key with a missing part is not an
+                // identity); a single missing source key gets that hash as its value, as the base does.
+                if (sourceKeys.length === 1) return { ...record, Fields: { ...values, [sourceKeys[0]]: record.ExternalID } };
+                return record;
+            }),
+        };
+    }
+
+    /** A copy of outbound write attributes without the event-scope fields — never vendor data. */
+    private WithoutEventScope(
+        attributes: Record<string, unknown>,
+        integrationID: string,
+        objectName: string,
+    ): Record<string, unknown> {
+        let fields: MJIntegrationObjectFieldEntity[];
+        try {
+            fields = this.GetCachedFields(this.GetCachedObject(integrationID, objectName).ID);
+        } catch {
+            return attributes;
+        }
+        const names = this.EventScopeFieldNames(fields).filter((n) => n in attributes);
+        if (names.length === 0) return attributes;
+        const out = { ...attributes };
+        for (const name of names) delete out[name];
+        return out;
     }
 
     /**
@@ -677,7 +996,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
 
         const doorRows = this.NormalizeResponse(response.Body, obj.ResponseDataKey ?? doorObject?.ResponseDataKey ?? null);
         const fields = this.GetCachedFields(obj.ID);
-        const pkNames = this.PrimaryKeyNames(fields);
+        const pkNames = this.SourceKeyNames(fields);
         const records: ExternalRecord[] = [];
 
         for (const doorRow of doorRows) {
@@ -1169,8 +1488,12 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
             );
         }
 
-        return this.scope.run(this.ScopeFor(companyIntegration, ctx.ObjectName, 'get'), async () => {
-            const auth = await this.Authenticate(companyIntegration, contextUser);
+        const auth = await this.Authenticate(companyIntegration, contextUser);
+        const getScope: EventscribeCallScope = {
+            ...this.ScopeFor(companyIntegration, ctx.ObjectName, 'get'),
+            EventScope: this.EventScopeFor(companyIntegration, auth),
+        };
+        return this.scope.run(getScope, async () => {
             const doorURL = this.DoorURL(companyIntegration, auth, obj, door);
             const url = `${doorURL}${doorURL.includes('?') ? '&' : '?'}${encodeURIComponent(keyParam)}=${encodeURIComponent(ctx.ExternalID)}`;
             const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
@@ -1180,7 +1503,13 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
             const rows = this.NormalizeResponse(response.Body, obj.ResponseDataKey);
             if (rows.length === 0) return null;
             const fields = this.GetCachedFields(obj.ID);
-            return this.ToEventscribeRecord(rows[0], ctx.ObjectName, this.PrimaryKeyNames(fields), obj);
+            // Stamped like every other read, so a re-read row carries the same key as the synced one.
+            return this.ToEventscribeRecord(
+                this.applyTransformPreservingKeys(rows[0], obj, fields),
+                ctx.ObjectName,
+                this.SourceKeyNames(fields),
+                obj,
+            );
         });
     }
 
@@ -1194,7 +1523,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
     private RecordKeyParamFor(obj: MJIntegrationObjectEntity, cfg: EventscribeObjectConfig | null): string | null {
         const declared = cfg?.writeOperation?.idParam ?? cfg?.deleteOperation?.idParam;
         if (declared) return declared;
-        const pks = this.PrimaryKeyNames(this.GetCachedFields(obj.ID));
+        const pks = this.SourceKeyNames(this.GetCachedFields(obj.ID));
         return pks.length === 1 ? pks[0] : null;
     }
 
@@ -1205,14 +1534,20 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
      * object instead is a malformed request for those operations. Everything else keeps the base
      * class's shape untouched — the decision is per-operation and read from metadata (see
      * {@link UsesArrayBody}), never a list of vendor operation names written into this file.
+     *
+     * The event-scope field is removed first: it is this connector's stamp, not vendor data, and a
+     * connection-ID fallback value sent to an `addUpdate*` operation would be an invented parameter.
      */
     protected override BuildOperationBody(
         attributes: Record<string, unknown>,
         bodyShape: string | null,
         bodyKey: string | null,
     ): unknown {
-        const body = super.BuildOperationBody(attributes, bodyShape, bodyKey);
         const store = this.scope.getStore();
+        const outbound = store && store.Verb !== 'read' && store.Verb !== 'get'
+            ? this.WithoutEventScope(attributes, store.IntegrationID, store.ObjectName)
+            : attributes;
+        const body = super.BuildOperationBody(outbound, bodyShape, bodyKey);
         if (!store || store.Verb === 'read' || store.Verb === 'get') return body;
         return this.UsesArrayBody(store.IntegrationID, store.ObjectName, store.Verb) ? [body] : body;
     }
@@ -1308,7 +1643,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
                 continue;
             }
 
-            const bodies = indexes.map(i => ctxs[i].Attributes);
+            const bodies = indexes.map(i => this.WithoutEventScope(ctxs[i].Attributes, companyIntegration.IntegrationID, objectName));
             const auth = await this.Authenticate(companyIntegration, contextUser);
             const url = this.JoinURL(this.GetBaseURL(companyIntegration, auth, objectName), path as string);
             // Same per-call object scope the single-record path establishes, so the per-record id is read
@@ -1416,7 +1751,7 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
         const names: string[] = [];
         const declared = store.Verb === 'delete' ? cfg?.deleteOperation?.idParam : cfg?.writeOperation?.idParam;
         if (declared) names.push(declared);
-        for (const name of this.PrimaryKeyNames(this.GetCachedFields(obj.ID))) {
+        for (const name of this.SourceKeyNames(this.GetCachedFields(obj.ID))) {
             if (!names.includes(name)) names.push(name);
         }
         return names;
@@ -1756,18 +2091,26 @@ export class EventscribeConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * The DECLARED primary-key names in Sequence order — and NOTHING else. Deliberately does NOT use
-     * the base class's synthetic `['ID']` fallback: the frozen contract WITHDREW seven weakly-evidenced
-     * keys (they survive as ordinary nullable columns, and the `StableOrderingKey` columns that pointed
-     * at them were nulled to match), and its no-identity path is explicit that a PK-less object must
-     * make NO idempotent-identity claim and must NOT substitute a guessed alternative. Returning `['ID']`
-     * here would be exactly that guess — and would silently start claiming identity the day a tenant's
-     * payload happens to carry a column literally named `ID`. An empty list routes the object to the
-     * content-hash identity in {@link ToEventscribeRecord}, i.e. the append/full-refresh path the
-     * contract prescribes, where the engine's own hash idempotency does the deduplication.
+     * The SOURCE key: the DECLARED primary-key names in Sequence order, minus the stamped event scope —
+     * the key the vendor itself knows. It names a record on the wire (`ExternalID`, the single-record
+     * read parameter, the id read back from a write); the full declared key, event scope included, is
+     * the MJ row's key, which the engine matches on.
+     *
+     * Deliberately does NOT use the base class's synthetic `['ID']` fallback: the frozen contract
+     * WITHDREW seven weakly-evidenced keys (they survive as ordinary nullable columns, and the
+     * `StableOrderingKey` columns that pointed at them were nulled to match), and its no-identity path
+     * is explicit that a PK-less object must make NO idempotent-identity claim and must NOT substitute a
+     * guessed alternative. Returning `['ID']` here would be exactly that guess — and would silently start
+     * claiming identity the day a tenant's payload happens to carry a column literally named `ID`. An
+     * empty list routes the object to the content-hash identity in {@link ToEventscribeRecord}, i.e. the
+     * append/full-refresh path the contract prescribes, where the engine's own hash idempotency does the
+     * deduplication (and the hash covers the stamped event scope, so it too is per event).
      */
-    private PrimaryKeyNames(fields: MJIntegrationObjectFieldEntity[]): string[] {
-        return fields.filter(f => f.IsPrimaryKey).sort((a, b) => a.Sequence - b.Sequence).map(f => f.Name);
+    private SourceKeyNames(fields: MJIntegrationObjectFieldEntity[]): string[] {
+        return fields
+            .filter((f) => f.IsPrimaryKey && !this.IsEventScopeField(f))
+            .sort((a, b) => a.Sequence - b.Sequence)
+            .map((f) => f.Name);
     }
 
     // ── Credential resolution ─────────────────────────────────────────────────

@@ -1,5 +1,56 @@
 # @memberjunction/connector-hivebrite
 
+## 1.2.4
+
+### Patch Changes
+
+- a438a3a: Field declarations that PostgreSQL silently discarded are replayed, and the pattern is now linted.
+
+  Six OpenWater migrations resolved the integration with
+
+      JOIN "__mj"."Integration" i ON i."Name" = 'openwater'
+
+  while the Integration row is named `OpenWater`. SQL Server's default collation is case-INSENSITIVE,
+  so the predicate matched there and every row landed. PostgreSQL compares strings case-SENSITIVELY, so
+  it matched nothing — and an `INSERT ... SELECT` whose join matches nothing inserts zero rows and
+  reports success.
+
+  Measured on a PostgreSQL workspace 2026-09-13: OpenWater installed all 30 objects and **24 field
+  declarations never arrived**, leaving five objects with no columns at all — `ApplicationFile`,
+  `ApplicationRoundSubmission`, `ApplicationWinnerType`, `Judge`, `Media`. No columns means no primary
+  key, so discovery ended each with `entity.skipped-no-pk` (and an empty message), and none of the five
+  can ever sync. The same connector on SQL Server has all of them. These five are exactly the objects
+  added by the detail-walk work, so the whole of that effort was inert on PostgreSQL.
+
+  They cannot be sampled into existence either: all five are detail-walk children whose `APIPath` is a
+  description rather than a URL (`(embedded in /v2/Applications/{applicationId} roundSubmissions[])`),
+  reachable only through `Configuration.AccessPath`. The connector walks it at sync time; discovery's
+  sampler does not. Two of them say so out loud — `ApplicationWinnerType` fails with `Failed to parse
+URL` and `Judge` with an HTTP error — and the other three return nothing, silently. So the declared
+  catalog is their only possible source of columns.
+
+  The already-applied migrations are NOT edited — Flyway validates their checksums. Instead a new
+  migration per connector replays the affected statements with `lower(...)`. Every replayed statement is
+  either `NOT EXISTS`-guarded or an idempotent `UPDATE`, so on a workspace that already has the rows it
+  changes nothing.
+
+  Hivebrite carried the same defect in `V202607271500__hivebrite__WritablePK` (4 sites) and is repaired
+  the same way.
+
+  A new `scripts/lint-migration-name-case.mjs` fails CI when a migration compares a `Name` column to a
+  literal differing only by case from the connector's declared Integration name. The 14 already-applied
+  files are grandfathered and that list may only shrink.
+
+## 1.2.3
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
 ## 1.2.2
 
 ### Patch Changes

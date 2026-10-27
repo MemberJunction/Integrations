@@ -150,6 +150,69 @@ describe('NimbleAMSConnector — DiscoverObjects scope diagnostics', () => {
         expect(objects.map(o => o.Name)).toEqual(['NU__Order__c', 'Account']);
     });
 
+    it('declares LastModifiedDate as the change cursor on every discovered object', async () => {
+        // SupportsIncrementalSync: true buys NOTHING on its own — the SOQL door filters on the
+        // object's IncrementalWatermarkField, and the object-create path persists that column but
+        // not the capability flag. Measured on a live org 2026-09-14: of 364 discovered objects
+        // only the 16 DECLARED ones carried a cursor; the other 348 full-scanned on every sync,
+        // forever, with nothing reporting it.
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push({
+            Status: 200,
+            Body: {
+                sobjects: [
+                    { name: 'NU__Waitlist__c', label: 'Waitlist', queryable: true, createable: true, updateable: true, deletable: true },
+                ],
+            },
+        } as RESTResponse);
+        c.Responses.push({
+            Status: 200,
+            Body: {
+                fields: [
+                    { name: 'Id', label: 'Id', type: 'id', nillable: false, createable: false, updateable: false, unique: true, length: 18 },
+                    { name: 'LastModifiedDate', label: 'Last Modified Date', type: 'datetime', nillable: false, createable: false, updateable: false, unique: false },
+                ],
+            },
+        } as RESTResponse);
+
+        const schema = await c.IntrospectSchema(companyIntegration, contextUser);
+        const obj = schema.Objects.find(o => o.ExternalName === 'NU__Waitlist__c');
+        expect(obj).toBeDefined();
+        expect(obj!.IncrementalWatermarkField).toBe('LastModifiedDate');
+    });
+
+    it('leaves the cursor unset on an object that has no LastModifiedDate column', async () => {
+        // Presence-checked, never assumed. Salesforce's own companion types do not all carry the
+        // column — on the reference org 96 __History and 24 __mdt objects lack it entirely. Naming
+        // a non-existent field in the SOQL predicate fails the fetch outright, which trades a
+        // silent full scan for a hard error; a full scan is the lesser failure, so no cursor.
+        const c = new MockedNimbleAMSConnector();
+        c.Responses.push({
+            Status: 200,
+            Body: {
+                sobjects: [
+                    { name: 'NU__Waitlist__History', label: 'Waitlist History', queryable: true, createable: false, updateable: false, deletable: false },
+                ],
+            },
+        } as RESTResponse);
+        c.Responses.push({
+            Status: 200,
+            Body: {
+                fields: [
+                    { name: 'Id', label: 'Id', type: 'id', nillable: false, createable: false, updateable: false, unique: true, length: 18 },
+                    { name: 'ParentId', label: 'Parent Id', type: 'reference', nillable: false, createable: false, updateable: false, unique: false },
+                    { name: 'OldValue', label: 'Old Value', type: 'anyType', nillable: true, createable: false, updateable: false, unique: false },
+                    { name: 'NewValue', label: 'New Value', type: 'anyType', nillable: true, createable: false, updateable: false, unique: false },
+                ],
+            },
+        } as RESTResponse);
+
+        const schema = await c.IntrospectSchema(companyIntegration, contextUser);
+        const obj = schema.Objects.find(o => o.ExternalName === 'NU__Waitlist__History');
+        expect(obj).toBeDefined();
+        expect(obj!.IncrementalWatermarkField).toBeUndefined();
+    });
+
     it('throws a diagnosable error (not a silent empty list) when SF returns objects but none are Nimble-scoped', async () => {
         const c = new MockedNimbleAMSConnector();
         c.Responses.push({

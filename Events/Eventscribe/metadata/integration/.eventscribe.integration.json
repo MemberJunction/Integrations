@@ -2872,6 +2872,34 @@
                   "lastModified": "2026-08-27T16:53:21.752Z",
                   "checksum": "9f0c8ea24ce698e4eb574505d0fc5981193556a0ca8227f012ce4c8b7c5155ac"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 62,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E3C185CD-EC7D-4BE6-A498-FE16FCD03B0C"
+                }
               }
             ]
           },
@@ -4940,6 +4968,34 @@
                   "lastModified": "2026-08-27T16:53:23.161Z",
                   "checksum": "bbc47a4500564d6ff5054473938da329a1893f93793bdba23fca22cbe980ff1c"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 63,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "917726C7-E9CB-4FED-BB24-3BEB83EFF8C1"
+                }
               }
             ]
           },
@@ -6944,6 +7000,34 @@
                   "lastModified": "2026-08-27T16:53:24.546Z",
                   "checksum": "0f4ae63b555803ddc53ff76ccfe2a3e3c5ee33e8ae03f0c505d286519242001d"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 61,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C1AAACBE-4215-4CD8-951A-A13FF8C00C8E"
+                }
               }
             ]
           },
@@ -7443,6 +7527,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:24.824Z",
                   "checksum": "d767bdc23d190c562711a6044550f01777342554c6a4c720ed1e42fe56d980a4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 14,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2F1D8C20-4300-4CBF-9E99-541945464BE2"
                 }
               }
             ]
@@ -9096,6 +9208,34 @@
                   "lastModified": "2026-08-27T16:53:26.060Z",
                   "checksum": "fb4d5f8cf115b98cc4d69e807674f126848853355da96c608246e006f0bc98d7"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 50,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AE8A0B39-84CA-4EB0-A8D7-5CD964621870"
+                }
               }
             ]
           },
@@ -9243,6 +9383,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:26.136Z",
                   "checksum": "ac758dc582849391c74bfa7ad50b26dc8e01f634e08f3242f280d294d79725f3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0F99F63E-1695-4B35-A6A2-3EDF338D16DF"
                 }
               }
             ]
@@ -9679,6 +9847,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:26.429Z",
                   "checksum": "1d75579dd3036705f88e44ddbb64e944871214c6b300868583537ec5b74a6052"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "38C5477F-0D1F-4265-BB8D-840F3EA7A845"
                 }
               }
             ]
@@ -11588,6 +11784,34 @@
                   "lastModified": "2026-08-27T16:53:27.713Z",
                   "checksum": "7387c9a84bfb290a511ec93fb44562e4620a2c5e3469f0eb8dc039d04292cec4"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 58,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "04AE6C45-D9EE-4633-AC2D-C5A70F5C0740"
+                }
               }
             ]
           },
@@ -12920,6 +13144,34 @@
                   "lastModified": "2026-08-27T16:53:28.478Z",
                   "checksum": "727d412f0c9f37a773024a0dbe7c703f5c73f097c1eaff8146fabd170e5b6cad"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 40,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B29FE39C-91A3-48C9-B88C-3F55563317B3"
+                }
               }
             ]
           },
@@ -14155,6 +14407,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:29.201Z",
                   "checksum": "c94bebb54d6e6d736dbb564c55c174b132d51ee502a84dfb26acfd5ce2759356"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 37,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EAACFA3C-0E90-406D-B66F-4433C0F13F94"
                 }
               }
             ]
@@ -19584,6 +19864,34 @@
                   "lastModified": "2026-08-27T16:53:32.440Z",
                   "checksum": "bdbf980425ab260697f42dcca0a6cc7b3a7f6d28a593da71ac45d70d38b8a31a"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9FC9C447-5406-46CF-B521-4FB1CBC7CF25"
+                }
               }
             ]
           },
@@ -19763,6 +20071,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:32.512Z",
                   "checksum": "b8f4958cc5f5dceef17df77e3b1ac53b4cc466c63ce11dec7cd6dab747d1a8d1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5CFB84AC-A638-4860-BA5F-47EC837B278F"
                 }
               }
             ]
@@ -19976,6 +20312,34 @@
                   "lastModified": "2026-08-27T16:53:32.614Z",
                   "checksum": "d7b938ebad6b2618018759a8cd062f38ea2b9bcf6092ad9386fe776a84b73111"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. This object declares no key, so its identity is a hash of the whole record, which includes this value.",
+                  "Category": "Attribute",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B033CC98-1D0A-49BE-865A-8CB04F7B6D49"
+                }
               }
             ]
           },
@@ -20091,6 +20455,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:32.650Z",
                   "checksum": "586ca17ffecf79aa30d60d884d728efae02ce17ab311b886d1fec76b9a40bbd0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. This object declares no key, so its identity is a hash of the whole record, which includes this value.",
+                  "Category": "Attribute",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E9D0A6DC-09E5-4279-A997-A77AC171C0A3"
                 }
               }
             ]
@@ -20528,6 +20920,34 @@
                   "lastModified": "2026-08-27T16:53:32.882Z",
                   "checksum": "bb4f4f18cfce268a5a3831084210fa7919e6ed56a08f973ea8036bc92e46fc0b"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4115FC24-54CC-4089-914D-49FB75FFD7AE"
+                }
               }
             ]
           },
@@ -20675,6 +21095,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:32.930Z",
                   "checksum": "90c9e187be6ca010377dcdbec6cbd93b60a824d24ffe497ccfe12158931c8425"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. This object declares no key, so its identity is a hash of the whole record, which includes this value.",
+                  "Category": "Attribute",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C3238A9A-94C7-42C6-8408-0DFBC5990311"
                 }
               }
             ]
@@ -21047,6 +21495,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:33.126Z",
                   "checksum": "7486df91ebbf74a4800f478da1e7993041cfc13d5cc3a2ae1ec0035f045e8e2d"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A6F79472-3242-4DAA-80B3-0C67A853CFED"
                 }
               }
             ]
@@ -23084,6 +23560,34 @@
                   "lastModified": "2026-08-27T16:53:35.426Z",
                   "checksum": "ee9864f8bec9c329da1b30ce55cc2f9cd185f9cff5cd1f01dbeda0350fd33e47"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 62,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "12B37D48-50F0-4ECE-A0D9-3A41EBF91716"
+                }
               }
             ]
           },
@@ -23295,6 +23799,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:35.537Z",
                   "checksum": "a4e34b33aac1dd827a86e3680e9eb543ca0efafffa957cc367b6eb23c866dbbe"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. This object declares no key, so its identity is a hash of the whole record, which includes this value.",
+                  "Category": "Attribute",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6407BE1D-0404-42B1-8A00-378174D01F0D"
                 }
               }
             ]
@@ -23508,6 +24040,34 @@
                   "lastModified": "2026-08-27T16:53:35.632Z",
                   "checksum": "a16e6b77a9b1e23a2aa3583ebc21006e169770673739754faf6432c928e33ba0"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. This object declares no key, so its identity is a hash of the whole record, which includes this value.",
+                  "Category": "Attribute",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8A622AC3-974A-47F5-B0A2-3ADF28F16E63"
+                }
               }
             ]
           },
@@ -23688,6 +24248,34 @@
                   "lastModified": "2026-08-27T16:53:35.729Z",
                   "checksum": "acfd7d97e527e902e9f0136154c192ba73bb0100f56afbcf57712a19f7d60b1d"
                 }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CCDE7666-EA93-420F-84FD-91D9FB0C4E35"
+                }
               }
             ]
           },
@@ -23867,6 +24455,34 @@
                 "sync": {
                   "lastModified": "2026-08-27T16:53:35.820Z",
                   "checksum": "4bde15af985959c8d87cc1b5695adcc4ef1d0a6269bc98bd3977876ffa2ad178"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EventScope",
+                  "DisplayName": "Event Scope",
+                  "Description": "The Cadmium event this record was read under, stamped by the connector on every record: the connection's configured eID, or, when the connection sets no eID, the connection's own ID. Part of the primary key, so the same Cadmium id read for two events is two rows, never one row the last sync overwrote.",
+                  "Category": "Identity",
+                  "Type": "nvarchar",
+                  "Length": 100,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsReadOnly": true,
+                  "IsRequired": false,
+                  "RelatedIntegrationObjectID": null,
+                  "RelatedIntegrationObjectFieldName": null,
+                  "Configuration": "{\"connectorStamped\":\"event-scope\",\"valueSource\":\"The connection's eID (credential first, then Configuration; the names eID, eId, EID, eventID, EventID, eventId, event_id are accepted), else the connection's CompanyIntegration ID. Never read from the vendor payload.\",\"reason\":\"All connections of this connector write into the same tables, and rows are matched by primary key across the whole table. Without the event in the key, the same Cadmium id read for two events (or through two connections) collapses into one row that the last sync overwrote.\"}",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "50B33B1B-68F3-4669-8E22-17F72B636868"
                 }
               }
             ]

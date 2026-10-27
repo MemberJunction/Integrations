@@ -1,0 +1,7 @@
+{
+  "Source": "Generated from the Spektrix v3 Help models (system.spektrix.com/apitesting/api/v3/Help) by the MemberJunction connector-builder fixture generator (gen-fixtures.mjs, rest-door shaper).",
+  "Kind": "doc-example",
+  "PII": "none \u2014 every value is synthetic; no tenant or customer data",
+  "Trimmed": "Only the sections the unit tests read are shipped: Configuration, Routes, FetchWindows, ErrorRoutes (DeltaPasses/Lifecycle are e2e-harness inputs and stay in the MJ build registry).",
+  "GeneratedFrom": "MemberJunction/MJ branch connector/spektrix, run connector-spektrix-1791930958572-1741e97d"
+}
