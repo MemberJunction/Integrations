@@ -208,6 +208,18 @@ export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
     private readonly tokenManager = new OAuth2TokenManager();
     private cachedAuth: DynamicsAuthContext | null = null;
 
+    /**
+     * Environment root URL → (lower-cased logical name → `EntitySetName`), plus every known set name
+     * under its own key so an already-plural path passes through. Populated free from any
+     * EntityDefinitions describe, and on demand by {@link ResolveEntitySet}. See
+     * {@link RepairEntitySetURL} for why a discovered table needs it.
+     */
+    private readonly entitySetCache = new Map<string, Map<string, string>>();
+    /** Environment root URLs whose full EntityDefinitions sweep has run, so a miss is not re-swept. */
+    private readonly sweptEntitySets = new Set<string>();
+    /** Re-entry guard: the EntityDefinitions sweep issues its own requests through MakeHTTPRequest. */
+    private resolvingEntitySets = false;
+
     // ── Identity + capabilities ──────────────────────────────────────
 
     /** Verbatim from the upstream identity handoff. Drives the three-way name invariant.
@@ -508,6 +520,12 @@ export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
      * HTTP transport with retry/backoff on 429/503/504 (Dataverse service-protection limits). The
      * thrown error on a retryable status carries the response headers so {@link ExtractRetryAfterMs}
      * can read `Retry-After` for the engine's adaptive bucket.
+     *
+     * Every request — read, delta, CRUD and the connector's own describes — funnels through here, so
+     * this is also where a collection path that never got the Web API segment is repaired
+     * ({@link RepairEntitySetURL}). It is the only hook that is both async and sees every URL: the
+     * base class's `BuildFullURL` is private, and `BuildPaginatedURL`/`SubstituteIDInPath` are
+     * synchronous, so neither can await the EntityDefinitions lookup the repair needs.
      */
     protected async MakeHTTPRequest(
         auth: RESTAuthContext,
@@ -519,9 +537,10 @@ export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
         const config = (auth as DynamicsAuthContext).Config;
         const maxRetries = config.MaxRetries ?? DEFAULT_MAX_RETRIES;
         const timeoutMs = config.RequestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+        const target = await this.RepairEntitySetURL(auth as DynamicsAuthContext, url);
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            const response = await this.ExecuteOneRequest(url, method, headers, body, timeoutMs);
+            const response = await this.ExecuteOneRequest(target, method, headers, body, timeoutMs);
             if (this.IsRetryable(response) && attempt < maxRetries) {
                 const delay = this.ComputeBackoffDelay(attempt, response.Headers['retry-after']);
                 await this.Sleep(delay);
@@ -529,7 +548,7 @@ export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
             }
             return response;
         }
-        throw new Error(`DynamicsDataverseConnector: exhausted ${maxRetries + 1} attempts for ${method} ${url}`);
+        throw new Error(`DynamicsDataverseConnector: exhausted ${maxRetries + 1} attempts for ${method} ${target}`);
     }
 
     /**
@@ -750,6 +769,105 @@ export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
         };
     }
 
+    // ─── Entity-set path repair ──────────────────────────────────────
+
+    /**
+     * Rewrites a root-relative collection path into the real Web API collection URL.
+     *
+     * The frozen catalog seeds every IO `APIPath` absolute-from-root
+     * (`account` → `/api/data/v9.2/accounts`), so those pass straight through. A table that arrives
+     * through RUNTIME DISCOVERY cannot: {@link ExternalObjectSchema} — the engine type
+     * {@link DynamicsDataverseConnector.DiscoverObjects} returns — carries `Name` but no API path, so
+     * the only name that survives into the IO row is the LOGICAL name (`pa_batchlog`). Joined onto the
+     * org root that produces `<EnvironmentUrl>/pa_batchlog`: singular, and missing the Web API segment
+     * entirely. Dataverse answers 404. Discovery enumerates the table and its columns fine, which is
+     * why this reads as "tables found, rows unreadable".
+     *
+     * Dataverse itself has always hidden this behind its 592 pre-seeded standard tables. A connector
+     * that declares NO catalog and leans entirely on discovery — Protech (UX 365), whose whole `pa_*`
+     * schema is solution-installed — hits it on every object.
+     *
+     * The repair is idempotent (anything already under `/api/data/` is returned untouched), so it is
+     * safe wherever it lands: `@odata.nextLink` and `@odata.deltaLink` continuations come back
+     * absolute and already versioned, and the connector's own describes are built from `ApiBaseUrl`.
+     */
+    private async RepairEntitySetURL(auth: DynamicsAuthContext, url: string): Promise<string> {
+        if (this.resolvingEntitySets) return url;              // the sweep's own requests
+        if (!url.startsWith(auth.BaseUrl)) return url;         // foreign absolute URL — never rewritten
+        const rest = url.slice(auth.BaseUrl.length);
+        if (rest.length <= 1 || rest.startsWith('/api/data/')) return url;   // already a Web API path
+        const parts = /^\/([^/()?#]+)(.*)$/.exec(rest);
+        if (!parts) return url;
+        const [, head, tail] = parts;
+
+        const resolved = await this.ResolveEntitySet(auth, head);
+        if (!resolved) {
+            throw new Error(
+                `DynamicsDataverseConnector: "${head}" matches no table or entity set in this environment's ` +
+                `EntityDefinitions, so no Web API collection path can be built for it. The IO's APIPath is ` +
+                `"/${head}", which is a logical name rather than an absolute "/api/data/<version>/<entityset>" ` +
+                `path — re-run discovery against a credential that can see the table, or seed the IO's APIPath.`
+            );
+        }
+        return `${auth.ApiBaseUrl}/${resolved}${tail}`;
+    }
+
+    /**
+     * Resolves one name to its `EntitySetName`. Answers from cache when it can — entries seeded by an
+     * earlier describe are a hit, not a reason to skip the sweep — and otherwise sweeps
+     * EntityDefinitions ONCE per environment, merging into whatever was already cached. A name still
+     * missing after the sweep is a genuine miss and is not retried, so a bad path costs one sweep, not
+     * one per request. A frozen-catalog tenant never reaches this at all.
+     */
+    private async ResolveEntitySet(auth: DynamicsAuthContext, name: string): Promise<string | undefined> {
+        const key = name.toLowerCase();
+        const cached = this.entitySetCache.get(auth.BaseUrl);
+        const hit = cached?.get(key);
+        if (hit) return hit;
+        if (this.sweptEntitySets.has(auth.BaseUrl)) return undefined;
+
+        const found: DataverseEntityMetadata[] = [];
+        this.resolvingEntitySets = true;
+        try {
+            let url: string | undefined = `${auth.ApiBaseUrl}/EntityDefinitions?$select=LogicalName,EntitySetName`;
+            while (url) {
+                const response = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildHeaders(auth));
+                if (response.Status < 200 || response.Status >= 300) {
+                    throw new Error(
+                        `EntityDefinitions describe failed while resolving entity set names: ` +
+                        `HTTP ${response.Status} — ${this.previewBody(response.Body)}`
+                    );
+                }
+                const body = response.Body as ODataCollectionResponse<DataverseEntityMetadata>;
+                for (const e of body.value ?? []) found.push(e);
+                url = typeof body['@odata.nextLink'] === 'string' ? body['@odata.nextLink'] : undefined;
+            }
+        } finally {
+            this.resolvingEntitySets = false;
+        }
+        this.CacheEntitySets(auth, found);
+        this.sweptEntitySets.add(auth.BaseUrl);
+        return this.entitySetCache.get(auth.BaseUrl)?.get(key);
+    }
+
+    /**
+     * Records one describe entry under BOTH its logical name and its own set name, so a path that
+     * already names the collection (`/accounts`) resolves to itself instead of failing the lookup.
+     */
+    private RememberEntitySet(map: Map<string, string>, e: DataverseEntityMetadata): void {
+        const set = e.EntitySetName;
+        if (typeof set !== 'string' || set.length === 0) return;
+        if (typeof e.LogicalName === 'string' && e.LogicalName.length > 0) map.set(e.LogicalName.toLowerCase(), set);
+        map.set(set.toLowerCase(), set);
+    }
+
+    /** Folds describe results already in hand into the cache, so a repair after discovery is free. */
+    private CacheEntitySets(auth: DynamicsAuthContext, entities: DataverseEntityMetadata[]): void {
+        const map = this.entitySetCache.get(auth.BaseUrl) ?? new Map<string, string>();
+        for (const e of entities) this.RememberEntitySet(map, e);
+        this.entitySetCache.set(auth.BaseUrl, map);
+    }
+
     // ─── EntityDefinitions describe helpers ──────────────────────────
 
     /** Fetches the full table list via `EntityDefinitions` (paged, following @odata.nextLink). */
@@ -770,6 +888,9 @@ export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
             for (const e of body.value ?? []) out.push(e);
             url = typeof body['@odata.nextLink'] === 'string' ? body['@odata.nextLink'] : undefined;
         }
+        // The select already carries EntitySetName — fold it in so a later path repair costs nothing.
+        this.CacheEntitySets(auth, out);
+        this.sweptEntitySets.add(auth.BaseUrl);
         return out;
     }
 
@@ -789,7 +910,9 @@ export class DynamicsDataverseConnector extends BaseRESTIntegrationConnector {
         if (response.Status < 200 || response.Status >= 300) {
             throw new Error(`EntityDefinition describe failed for "${objectName}": HTTP ${response.Status} — ${this.previewBody(response.Body)}`);
         }
-        return response.Body as DataverseEntityMetadata;
+        const entity = response.Body as DataverseEntityMetadata;
+        this.CacheEntitySets(auth, [entity]);
+        return entity;
     }
 
     /** Resolves the Dataverse logical name for an IO (Configuration.logicalName, else the IO name). */

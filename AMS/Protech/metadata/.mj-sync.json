@@ -1,0 +1,10 @@
+{
+  "directoryOrder": [
+    "integration"
+  ],
+  "sqlLogging": {
+    "enabled": true,
+    "outputDirectory": "../migrations",
+    "formatAsMigration": false
+  }
+}
