@@ -1,5 +1,60 @@
 # @memberjunction/connector-bill-com
 
+## 0.3.3
+
+### Patch Changes
+
+- 2ea2e75: Record the field lengths BILL enforces on writes. The catalog extractor read only each object's response DTO, and BILL's response DTOs leave `maxLength` off fields its create and update request DTOs bound. As a result, `customers.name` was recorded at the 255 default while BILL accepts 100. The extractor now also reads the create and update request DTOs and keeps the smallest bound. That changes `customers.name` 255→100, `customers.companyName` 255→250, `customers.accountNumber` 255→100 and `invoices.invoiceNumber` 255→100. The new `V202609271412__bill-com__Metadata.sql` migration applies the four lengths to installed catalogs, so apps that check lengths against this metadata reject an over-long value before sending it.
+
+## 0.3.2
+
+### Patch Changes
+
+- ff57db0: Stop repeating the API version in every URL, and expose invoice archive/restore.
+
+  **The version segment belonged to the path, and the base carried it too.** Every object path in the
+  catalog is an OpenAPI path beginning `/v3/…`, while `ResolveBaseURL` returned a gateway already
+  ending in `/connect/v3`. The engine builds a request as base + path, so a create went to
+  `…/connect/v3/v3/customers` and came back 404 — as did every update, read and fetch. Nothing caught
+  it: `Login` is the one endpoint the connector addresses itself, so `TestConnection` reported success
+  on a connection where no other verb worked, and the mock suite asserts on request bodies rather than
+  URLs. The gateway constants lose the version, `Login` asks for `/v3/login` explicitly, and both
+  `ResolveBaseURL` and `GetBaseURL` normalise whatever they are handed — a trailing `/v3` is stripped
+  rather than rejected, because `…/connect/v3` is the spelling the credential type's own `apiUrl` help
+  text recommends and existing connections are configured that way. Both spellings now resolve to the
+  same requests, so no database needs repairing.
+
+  **Cancellation had no supported path.** In BILL, cancelling an AR invoice means archiving it:
+  `InvoiceStatus` has no VOID or CANCELED value, and `DeleteRecord` correctly refuses because archive
+  is not a delete. The catalog has always declared `archivePath`, `archiveMethod` and `restorePath` on
+  the invoices object, but nothing called them. `UpdateRecord({archived: true})` cannot stand in — the
+  invoices object updates with `PUT`, and BILL's PUT is a full replace that answers
+  `400 customer: must not be null; invoiceLineItems: must not be null`. New `ArchiveInvoice` and
+  `RestoreInvoice` verbs POST the sub-resource, reading the path from the object's `Configuration` so a
+  vendor change stays a metadata edit, and falling back to the documented path when the seed predates
+  the key or the object is not cached at all — a cancel should not fail because discovery has not run.
+  Both are idempotent, matching the endpoint. Note for consumers confirming a cancellation: BILL leaves
+  `status` at `OPEN` and moves `archived` to true with `recordStatus` `INACTIVE`, so the check is
+  `archived`, never `status`.
+
+  **Validation failures now say what was wrong.** BILL reports them as a bare array of
+  `{timestamp, severity, message}`, which reaches `typeof body === 'object'` but carries none of the
+  keys `ExtractErrorMessage` looked for, so every 400 surfaced as `HTTP 400 on <verb>` with the reason
+  discarded. Array bodies are joined on `message`.
+
+  Verified against the BILL stage sandbox: customer and invoice create, read-back, archive (including a
+  second archive returning 200), and a duplicate `invoiceNumber` correctly refused with 422.
+
+## 0.3.1
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
 ## 0.3.0
 
 ### Minor Changes

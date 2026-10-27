@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "apiKey": {
+      "type": "string",
+      "title": "Personal Access Token",
+      "description": "Asana personal access token (My Settings \u2192 Apps \u2192 Developer apps \u2192 Personal access tokens). Sent as a Bearer header.",
+      "isSecret": true,
+      "order": 0
+    },
+    "workspace": {
+      "type": "string",
+      "title": "Workspace GID",
+      "description": "The gid of the workspace to sync (the number in https://app.asana.com/0/<gid>/\u2026 or from GET /workspaces). One connection reads one workspace.",
+      "isSecret": false,
+      "order": 1
+    }
+  },
+  "required": [
+    "apiKey",
+    "workspace"
+  ]
+}

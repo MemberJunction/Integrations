@@ -1,5 +1,88 @@
 # @memberjunction/connector-totara
 
+## 0.4.6
+
+### Patch Changes
+
+- 321de1c: Four objects the vendor exposes without any derivable key are now Disabled instead of offered.
+
+  `Course Completion Status`, `Activity Completion Status`, `Grade Items` and `Course Grades Overview`
+  declare fields but no primary key, and none can be given one honestly: their wsfunctions are
+  per-(course, user) or per-user readers with no row identity of their own, and two of the four could only
+  be walked per course-user pair (428 x 24,682 requests on the proving site). `docs/SUPPORT.md` has called
+  them "keyless by design" since 2026-08-05 and no entity map has ever existed for them.
+
+  What was wrong was not the declining but the offering. An Active keyless object either costs the soft-PK
+  classifier a per-tenant inference at every discovery, or lands `entity.skipped-no-pk` while the picker
+  still shows it as data that could arrive. A Disabled object is neither inferred against nor offered. One
+  delta migration (paired T-SQL and PostgreSQL) sets the four rows to `Disabled` by their seeded IDs.
+
+  This is the connector-side half of the new read-only scope of the fleet primary-key gate
+  (`scripts/lint-writable-pk.mjs`), which exempts non-Active objects for exactly this reason.
+
+## 0.4.5
+
+### Patch Changes
+
+- dd9d6c7: Parent-scoped `courseid` is writable, so the sync can persist what the fetch injected.
+
+  The parent-iteration fetch injects the parent foreign key (`courseid`) into every child record of the parent-scoped objects, but those `courseid` fields were declared `IsReadOnly: true`. CodeGen omits a read-only field from the generated create/update procedures, so there was no parameter for the injected value to land in and every save failed with `@courseid is not a parameter for procedure spCreateCourse_Contents` — a successful fetch that persisted nothing.
+
+  This is a read-only _pull_ connector: the field is written into MemberJunction and never sent back to Totara, so making it writable changes nothing about what the connector asks the vendor for. Read scope is unchanged — full-record pass-through and the never-shrink sample union still surface every field.
+
+  Live-verified against a real Totara tenant when this was first found: Course_Contents 0 to 2,615 rows and Course_Enrolment_Methods 0 to 3, alongside Courses 424, Cohorts 97 and Course_Categories 66 on a full-catalog pull.
+
+## 0.4.4
+
+### Patch Changes
+
+- a0563d1: Record identity ignored every nested field — the same defect fixed in PropFuel 1.2.4, in the three
+  connectors that still carried the line.
+
+  `JSON.stringify(value, Object.keys(value).sort())` reads as "serialise with sorted keys". It is not.
+  The second argument is a **replacer**, and an array replacer is an **allow-list of property names
+  applied at every level** — so passing the top-level keys stripped every nested key from the output,
+  and any two values differing only below the top level serialised identically.
+
+  Proven live on PropFuel: a sandbox sync fetched ~2,400 records and stored **181**, because the engine
+  did the right thing with a wrong input — two records sharing an identity are one record observed
+  twice, so `CollapseDuplicateIdentities` collapsed them. 882 of 884 clicks in a single batch.
+
+  Where each connector used it, and what it cost:
+
+  - **Totara** `ExplodeCollection` — the dedupe signature for exploded collection elements. Its own
+    comment says "byte-identical projection = one fact restated. Anything differing is kept", and the
+    code did the opposite: two elements differing only in a nested object were counted as repeats and
+    **silently dropped**, incrementing `ElementsCollapsed`. This is the sharpest of the three, because
+    the drop is deliberate and invisible.
+  - **OpenWater** `ContentHash` — the identity fallback when a declared primary key is partial or
+    missing. `Fields` carries the full source record for custom-column pass-through, so nested vendor
+    JSON is exactly what it hashes.
+  - **WildApricot** `stableHash` — the same fallback shape.
+
+  All three now use one `canonicalJSON`: keys sorted **recursively**, array order kept (order is
+  semantically meaningful), `undefined` omitted, `Date` via ISO string.
+
+  Pinned by tests that fail on the old code: Totara gains three behavioural cases on the public
+  `ExplodeCollection` (two elements differing only in a nested value survive; a genuine restatement
+  still collapses; nested key _order_ is ignored while nested _values_ are not) — two of them fail
+  against the previous implementation with exactly the collapse described above. OpenWater and
+  WildApricot export `canonicalJSON` and gain five cases each, one of which asserts the old expression
+  produced identical output for two records that must be distinct.
+
+## 0.4.3
+
+### Patch Changes
+
+- 06b2b4b: Allow MemberJunction 6.x as a peer. Every connector capped its `@memberjunction/*` peers at `<6.0.0`; the ceiling moves to `<7.0.0`, and `mj-app.json.mjVersionRange` moves with it so npm and `mjdev app register` agree. Floors are unchanged, so 5.x hosts are unaffected.
+
+  Why the ceiling is the fix on a 6.x host: pnpm's `auto-install-peers` satisfies an unmet peer range by installing a **second** copy of `@memberjunction/core`, and two copies of core in one process is the failure that surfaces as thousands of unrelated-looking type errors. Business Central hit exactly this and was widened alone (#180, then #208 for the manifest); this brings the other 56 connectors, the two private platform packages, and the shared `connector-id-window-scan` package to the same range, so the duplicate cannot return transitively through a shared dependency either. The scaffolding scripts (`new-connector`, `scaffold-openapps`, `split-into-packages`) now mint `<7.0.0` too, so a new connector does not reintroduce the cap.
+
+  Verified at compile time, not at runtime: all 61 packages in the repo (57 connectors, the two private platform packages, the two shared packages) type-check against `@memberjunction/*@6.1.0-edge.5` — the only 6.x published at the time; there is no stable 6.x yet — with every framework `.d.ts` resolved from the 6.x install and none from 5.x. That check is `npm run check:mj-compat` (`scripts/typecheck-against-mj.mjs`), added with this change so the claim can be re-run against any MJ version. It is API compatibility at the type level; the only runtime evidence on a 6.x host remains the Business Central team's edge deployment.
+
+- Updated dependencies [06b2b4b]
+  - @memberjunction/connector-id-window-scan@1.1.1
+
 ## 0.4.2
 
 ### Patch Changes

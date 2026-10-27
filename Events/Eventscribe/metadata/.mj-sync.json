@@ -1,5 +1,6 @@
 {
   "directoryOrder": [
+    "credential-type",
     "integration",
     "actions"
   ],

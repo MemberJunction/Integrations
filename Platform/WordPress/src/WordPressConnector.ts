@@ -542,6 +542,7 @@ export class WordPressConnector extends BaseRESTIntegrationConnector {
         if (trash.Warning) warnings.push(trash.Warning);
 
         this.markTrashedAsDeleted(result.Records);
+        this.promoteNestedFields(obj, result.Records);
 
         const watermark = this.maxWatermark(obj, result.Records);
         return {
@@ -1597,6 +1598,81 @@ export class WordPressConnector extends BaseRESTIntegrationConnector {
         for (const record of records) {
             if (record.Fields['status'] === 'trash') record.IsDeleted = true;
         }
+    }
+
+    // ── Nested-field promotion (declared via IOF Configuration.promoteFrom) ──
+
+    /**
+     * Lifts values out of a nested object into their own top-level fields, so a key that matters (a member
+     * ID, a URL) lands as a real column instead of staying buried in one JSON blob. Driven ENTIRELY by
+     * metadata: a field whose `Configuration.promoteFrom` is `"<container>.<key>"` (e.g. `"meta.PostUrl"`)
+     * is filled from that key. The container is left untouched, so nothing is lost for keys not promoted.
+     *
+     * Values are made column-ready on the way: HTML entities are decoded (WP Activity Log stores URLs through
+     * `esc_url`, so `&` arrives as `&#038;`), an empty string becomes null, and `stripQuery: true` drops the
+     * query string and fragment to give a canonical URL that joins to a post's `link`.
+     */
+    private promoteNestedFields(obj: MJIntegrationObjectEntity, records: ExternalRecord[]): void {
+        const promotions = this.declaredPromotions(obj);
+        if (promotions.length === 0) return;
+        for (const record of records) {
+            for (const p of promotions) {
+                const container = this.asPlainObject(record.Fields[p.Container]);
+                const raw = container ? container[p.Key] : undefined;
+                record.Fields[p.Field] = this.toPromotedValue(raw, p.StripQuery);
+            }
+        }
+    }
+
+    /** Reads the promotion declarations off the object's own field metadata. */
+    private declaredPromotions(obj: MJIntegrationObjectEntity): Array<{ Field: string; Container: string; Key: string; StripQuery: boolean }> {
+        const out: Array<{ Field: string; Container: string; Key: string; StripQuery: boolean }> = [];
+        for (const field of this.GetCachedFields(obj.ID)) {
+            const cfg = this.parseJsonObject(field.Configuration ?? null);
+            const from = typeof cfg?.['promoteFrom'] === 'string' ? (cfg['promoteFrom'] as string).trim() : '';
+            const dot = from.indexOf('.');
+            if (dot <= 0 || dot === from.length - 1) continue;
+            out.push({
+                Field: field.Name,
+                Container: from.slice(0, dot),
+                Key: from.slice(dot + 1),
+                StripQuery: cfg?.['stripQuery'] === true,
+            });
+        }
+        return out;
+    }
+
+    /** A nested container as a plain object — accepts the object itself or its JSON-string form. */
+    private asPlainObject(value: unknown): Record<string, unknown> | null {
+        if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>;
+        if (typeof value === 'string' && value.trim().startsWith('{')) {
+            try {
+                const parsed: unknown = JSON.parse(value);
+                return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
+            } catch { return null; }
+        }
+        return null;
+    }
+
+    private toPromotedValue(raw: unknown, stripQuery: boolean): string | null {
+        if (raw == null) return null;
+        let text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        text = this.decodeHtmlEntities(text).trim();
+        if (stripQuery) text = text.replace(/[?#].*$/, '');
+        return text === '' ? null : text;
+    }
+
+    /** Decodes the numeric and basic named entities WordPress's escaping functions emit. */
+    private decodeHtmlEntities(text: string): string {
+        if (!text.includes('&')) return text;
+        const named: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+        return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity: string) => {
+            if (entity[0] === '#') {
+                const code = entity[1] === 'x' || entity[1] === 'X' ? parseInt(entity.slice(2), 16) : parseInt(entity.slice(1), 10);
+                return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+            }
+            return named[entity.toLowerCase()] ?? match;
+        });
     }
 
     // ── Global styles (declared KnownGap: "wp/v2 global styles enumeration") ──

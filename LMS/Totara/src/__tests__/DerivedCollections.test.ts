@@ -207,3 +207,49 @@ describe('exact repeats collapse; differences never do', () => {
         expect(out.ElementsCollapsed).toBe(1);
     });
 });
+
+describe('ExplodeCollection — nested element values are not collapsed (identity replacer fix)', () => {
+    const nestCfg: DerivedCollectionConfig = {
+        parentObjectName: 'Enrolled Users',
+        collectionField: 'roles',
+        elementKind: 'object',
+        parentKeyMap: { id: 'userid' },
+    };
+
+    it('keeps two elements that differ ONLY below the top level', () => {
+        // The dedupe signature used `JSON.stringify(row, Object.keys(row).sort())`. That second
+        // argument is a REPLACER — an allow-list applied at EVERY level — so both rows serialised
+        // to {"detail":{},"userid":1} and the second was counted as "one fact restated" and dropped.
+        const parents = [rec({
+            id: 1,
+            roles: [
+                { detail: { shortname: 'editingteacher', sortorder: 1 } },
+                { detail: { shortname: 'student', sortorder: 2 } },
+            ],
+        })];
+        const out = ExplodeCollection(parents, nestCfg);
+        expect(out.ChildFields).toHaveLength(2);
+        expect(out.ElementsCollapsed).toBe(0);
+    });
+
+    it('still collapses a genuinely identical restatement', () => {
+        const parents = [rec({
+            id: 1,
+            roles: [
+                { detail: { shortname: 'student' } },
+                { detail: { shortname: 'student' } },
+            ],
+        })];
+        const out = ExplodeCollection(parents, nestCfg);
+        expect(out.ChildFields).toHaveLength(1);
+        expect(out.ElementsCollapsed).toBe(1);
+    });
+
+    it('is insensitive to nested key ORDER but sensitive to nested VALUES', () => {
+        const same = [rec({ id: 1, roles: [{ detail: { b: 2, a: 1 } }, { detail: { a: 1, b: 2 } }] })];
+        expect(ExplodeCollection(same, nestCfg).ElementsCollapsed).toBe(1);
+
+        const differs = [rec({ id: 1, roles: [{ detail: { a: 1, b: 2 } }, { detail: { a: 1, b: 3 } }] })];
+        expect(ExplodeCollection(differs, nestCfg).ElementsCollapsed).toBe(0);
+    });
+});

@@ -29,6 +29,31 @@
 
 import type { ExternalRecord } from '@memberjunction/integration-engine';
 
+/**
+ * Stable JSON serialisation: keys sorted RECURSIVELY, array order kept (order is semantically
+ * meaningful), `undefined` omitted.
+ *
+ * This replaces the replacer form `JSON.stringify(v, Object.keys(v).sort())`. That second argument
+ * is a REPLACER, and an array replacer is an allow-list of property names applied at EVERY level —
+ * so passing the top-level keys stripped every NESTED key from the output, and any two values that
+ * differed only below the top level serialised identically.
+ *
+ * Proven live on PropFuel 2026-09-13, where the identical line was the primary record identity: a
+ * sync that fetched ~2,400 records stored 181, because `CollapseDuplicateIdentities` correctly
+ * treats one identity seen twice as one record observed twice. Fixed there in 1.2.4; this is the
+ * same line in the three connectors that still carried it.
+ */
+function canonicalJSON(value: unknown): string {
+    if (value === null || value === undefined) return 'null';
+    if (typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(v => canonicalJSON(v)).join(',')}]`;
+    if (value instanceof Date) return JSON.stringify(value.toISOString());
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+    return `{${keys.map(k => `${JSON.stringify(k)}:${canonicalJSON(obj[k])}`).join(',')}}`;
+}
+
+
 /** Parsed shape of `Configuration.derivedCollection` on a derived integration object. */
 export interface DerivedCollectionConfig {
     /** Name of the parent integration object (its `IntegrationObject.Name`) whose fetch is reused. */
@@ -134,7 +159,7 @@ export function ExplodeCollection(
 
     /** Byte-identical projection = one fact restated. Anything differing is kept. */
     const emit = (row: Record<string, unknown>): void => {
-        const sig = JSON.stringify(row, Object.keys(row).sort());
+        const sig = canonicalJSON(row);
         if (seen.has(sig)) { elementsCollapsed++; return; }
         seen.add(sig);
         out.push(row);

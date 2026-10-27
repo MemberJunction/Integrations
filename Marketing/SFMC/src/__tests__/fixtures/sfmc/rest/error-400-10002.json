@@ -1,0 +1,5 @@
+{
+  "message": "Missing Required Field",
+  "errorcode": 10002,
+  "documentation": "https://developer.salesforce.com/docs/atlas.en-us.mc-apis.meta/mc-apis/error-handling.htm"
+}

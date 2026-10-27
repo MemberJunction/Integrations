@@ -3,7 +3,7 @@
     "fields": {
       "Name": "elevate",
       "ClassName": "ElevateConnector",
-      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=API Key with Endpoint",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Elevate Report API",
       "NavigationBaseURL": "https://elevate.support.gocadmium.com/support/solutions/articles/16000139296-report-api",
       "BatchMaxRequestCount": null,
       "BatchRequestWaitTime": null,

@@ -4,10 +4,33 @@
       "Name": "OpenWater",
       "Icon": "fa-solid fa-trophy",
       "ClassName": "@memberjunction/connector-openwater",
-      "Description": "OpenWater awards/grants/abstracts/fellowship platform connector \u2014 pull-centric sync of programs, applications, users, invoices, judges, rounds and nested review objects via the OpenWater Public API v2 (REST, ClientKey + ApiKey headers).",
+      "Description": "OpenWater awards/grants/abstracts/fellowship connector — pull sync of programs, applications, users, invoices, judges, rounds and review objects via Public API v2. Catalog is DECLARED (vendor has no enumeration API); see Configuration.DeclaredAgainst.",
       "ImportPath": "@memberjunction/connector-openwater",
-      "NavigationBaseURL": "https://api.getopenwater.com",
-      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API"
+      "NavigationBaseURL": "https://{tenant}.secure-platform.com",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=OpenWater API",
+      "Configuration": {
+        "DeclaredAgainst": {
+          "swagger": {
+            "url": "https://api.secure-platform.com/swagger/v2/swagger.json",
+            "accessedAt": "2026-09-22",
+            "sha256": "1abdc36cd18add8a0fea16a66530a9141c2b2c7998906af81130d738b5798747",
+            "sizeBytes": 437128,
+            "specFormat": "OpenAPI 3.0.1",
+            "apiTitle": "OpenWater API 2.0",
+            "pathCount": 92,
+            "getPathCount": 46,
+            "schemaCount": 231,
+            "authentication": "none required to read the document"
+          },
+          "catalogIsContract": true,
+          "catalogIsContractNote": "None of the 92 paths enumerates the object surface, so live discovery is not possible for this vendor. DiscoverObjects, DiscoverFields and IntrospectSchema read the Declared catalog from the engine cache and DiscoveryIsAuthoritative stays false, so the platform is never told that a live enumeration happened. The object list is therefore the connector version: a collection OpenWater adds after accessedAt cannot appear on any tenant until this catalog is re-declared against a newer swagger.",
+          "howToRecheck": "Fetch swagger.url, compare sha256; if it changed, diff its GET paths against the set of APIPath, AccessPath.doorPath, AccessPath.entryPath, alternativePaths and harvestDetailPath values in this catalog. A GET list path with no match is an undeclared object.",
+          "surfaceCoverageAt": "2026-09-22",
+          "surfaceCoverageNote": "Every GET path not referenced by the catalog on this date is a per-record detail (/{id}), a form template, or a settings singleton. No undeclared list collection existed. Per-record detail data (Evaluation scores and answers, Session chairs and items, User flags) is tracked separately as extraction work, not as a catalog gap.",
+          "catalogLastEditedAt": "2026-09-22",
+          "catalogLastEditedNote": "Added this pin, extended Description, and replaced NavigationBaseURL (api.getopenwater.com no longer resolves; the live API host is the shared api.secure-platform.com and each tenant UI lives at its own subdomain, which is the connection ClientKey). No object or field changed."
+        }
+      }
     },
     "relatedEntities": {
       "MJ: Integration Objects": [
@@ -327,8 +350,8 @@
                   "ID": "C2D02E5F-7232-4562-82D0-BFEC3F4CB128"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.095Z",
-                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                  "lastModified": "2026-09-14T01:57:47.807Z",
+                  "checksum": "978264b44df1c2eb25dedcd718334aabefccb2317ef0e9175d1e6da2ec09c5fb"
                 }
               },
               {
@@ -900,8 +923,8 @@
                   "ID": "9EA86648-550B-426C-9D4F-A8612DCFBF26"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.420Z",
-                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                  "lastModified": "2026-09-14T01:57:47.863Z",
+                  "checksum": "978264b44df1c2eb25dedcd718334aabefccb2317ef0e9175d1e6da2ec09c5fb"
                 }
               },
               {
@@ -1305,8 +1328,8 @@
                   "ID": "2091109B-A9AB-4D8D-B8E7-E1D7EBB5AC73"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.642Z",
-                  "checksum": "41bdc720f49684fa60089e2d17a7aa760e20d97fd3b84cd6250ed050a688e694"
+                  "lastModified": "2026-09-14T01:57:47.909Z",
+                  "checksum": "e01b2669ea510f2bb159f311b47200c10f40590a2e42d196f41f4184ac545d6f"
                 }
               },
               {
@@ -1328,8 +1351,8 @@
                   "ID": "AB54E7DF-318C-417E-BB75-038E1C087893"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:57.654Z",
-                  "checksum": "8ee5ef34e8e1a072fa7bbd2a77298a38b9e7df3a1925130c2d12a4f28c009b7f"
+                  "lastModified": "2026-09-14T01:57:47.935Z",
+                  "checksum": "d5215f5a11e6fae397f02a4daabd9862f52be33c8454fef66d11382a380ba7d7"
                 }
               },
               {
@@ -1454,7 +1477,7 @@
             "IntegrationID": "@parent:ID",
             "MetadataSource": "Declared",
             "Configuration": {
-              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId \u2014 generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
+              "LiteralCreateReason": "Create CreateRequest requires typeId (int FK to SessionType); synced IOF has typeName (string) not typeId — generic flat body would 400. Connector overrides CreateRecord: resolve typeId from typeName via SessionType (or accept typeId input)."
             }
           },
           "relatedEntities": {
@@ -2873,8 +2896,8 @@
                   "ID": "D582FCE5-33DF-4901-AE2F-2CB7E4819C17"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.509Z",
-                  "checksum": "8a0fe9afe97ff0e068f1254aecb5fa03d3a3cfa1186e24e22e14db99883180bb"
+                  "lastModified": "2026-09-14T01:57:48.065Z",
+                  "checksum": "2945b7bbf3dfe18abd2f0c08d1b6af8a6c0a8bb4152ef735d291051ad3694eb0"
                 }
               },
               {
@@ -2918,8 +2941,8 @@
                   "ID": "1E282CEF-C7AF-4D3A-8CA9-BB526B666CCA"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.536Z",
-                  "checksum": "0f4326f73329cad018a83b030166c6cd58bc7216b320516adb144ad04474cc80"
+                  "lastModified": "2026-09-14T01:57:48.085Z",
+                  "checksum": "a90f4cb6a66ae56f5d74cbad4b018b280c091b81f8e91aa1f5018c968a52ce90"
                 }
               },
               {
@@ -3061,8 +3084,8 @@
                   "ID": "4777B9F4-E9F9-4905-B357-621103A8BCDA"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.617Z",
-                  "checksum": "dd82e29146c0f40c81276606bca9cb6b900f8cfc512294047d1046edc1f686a5"
+                  "lastModified": "2026-09-14T01:57:48.128Z",
+                  "checksum": "e5f35f62b8f4c0465a48c008d6b2fbe15ac6b19cac49af8edb75a135608238a6"
                 }
               },
               {
@@ -3084,8 +3107,8 @@
                   "ID": "99A41678-06F2-403B-A68D-3C1B2AADB806"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.631Z",
-                  "checksum": "7413c3e59c992eb024cff6af9ffa37338f211cc605aac79822b4897e64debd65"
+                  "lastModified": "2026-09-14T01:57:48.149Z",
+                  "checksum": "1db2ea612ff3f14e524982f61f20e106c31f375dfb314b73ebf2cebe45d4c8e5"
                 }
               },
               {
@@ -3239,7 +3262,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/ApplicationCategories) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3252,6 +3275,10 @@
                 },
                 "primaryKey": {
                   "ID": "2BFE5913-9D8F-5769-B46A-EC38C98FD9C6"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.205Z",
+                  "checksum": "f652a0fef0faed4a966dafbf8ae0addc23a92cd18eae2b8c9479fe4f67ae785a"
                 }
               }
             ]
@@ -3407,8 +3434,8 @@
                   "ID": "176AB13A-58C7-4772-B643-426126110DAC"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.780Z",
-                  "checksum": "d2baf39b3c70e79103e1b35cc47fb75df08b45669f0e1a2e99561ca3dbe1e91b"
+                  "lastModified": "2026-09-14T01:57:48.230Z",
+                  "checksum": "61edcb54202c4bbbd033e204455f7ff7e2e630c739b97e4d20710f300549ab92"
                 }
               },
               {
@@ -3437,7 +3464,7 @@
                 "fields": {
                   "Name": "fundId",
                   "DisplayName": "Fund Id",
-                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Fund this record was walked under. Injected by the connector from the access path (/v2/Funds/{fundId}/Transactions) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3450,6 +3477,10 @@
                 },
                 "primaryKey": {
                   "ID": "2212B345-8394-5E7B-9A35-34110D54D538"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.251Z",
+                  "checksum": "739eb1226183db21a3f69abd40a4df653d77695f44ffa3f914af2291c5026623"
                 }
               }
             ]
@@ -3491,7 +3522,7 @@
                 "entryPath": "/v2/JudgeAssignments/AssignedToRound",
                 "parentParamIn": "query"
               },
-              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} \u2014 generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
+              "LiteralCreateReason": "Create AssignJudgeToRoundRequest requires {judgeUserId, roundId}; synced IOFs are {userId,...} — generic flat body would 400. Connector overrides CreateRecord: judgeUserId<-record.userId, roundId<-parent AccessPath round context."
             },
             "Status": "Active",
             "SupportsPagination": true,
@@ -3590,8 +3621,8 @@
                   "ID": "FAE98E46-6C91-413E-B2E0-232AE847689D"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.860Z",
-                  "checksum": "094e65995cc463b815657eb1bf1ef911bf887b0bb23eaedcb6aa3901dc065484"
+                  "lastModified": "2026-09-14T01:57:48.294Z",
+                  "checksum": "978264b44df1c2eb25dedcd718334aabefccb2317ef0e9175d1e6da2ec09c5fb"
                 }
               },
               {
@@ -3790,8 +3821,8 @@
                   "ID": "23966173-14BE-4193-AB69-29A807ACF4E1"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:58.942Z",
-                  "checksum": "7255454584c0e248414cf419d11340b76d2fbbe46741bde067fbac1e9e9d6144"
+                  "lastModified": "2026-09-14T01:57:48.318Z",
+                  "checksum": "c7396400a4e14932094f9a1c1db337eaa6ca018e72ad53e198c1b418f119d46a"
                 }
               },
               {
@@ -3913,15 +3944,15 @@
                   "ID": "CE2A003B-4201-47EC-BF6E-41CA07FABE6F"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:59.007Z",
-                  "checksum": "37d26e69113675b27239ba7d1e1c52171d20238e2b9031e3d3153a6a84eed2ea"
+                  "lastModified": "2026-09-14T01:57:48.363Z",
+                  "checksum": "471d3f6a6eeecd0f08f2ddbc178109360d3825d50157b7b4b4b23b095ddaf5c7"
                 }
               },
               {
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/OtherSessionItemTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -3934,6 +3965,10 @@
                 },
                 "primaryKey": {
                   "ID": "42F46EF8-074F-5BAD-8D36-6C5DE00862F3"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.388Z",
+                  "checksum": "d79e1a6a23262fd4df113f7e5ced5a7b96afd13bec5ab530434ce50f566bf7a8"
                 }
               }
             ]
@@ -4025,7 +4060,7 @@
                 "fields": {
                   "Name": "roundId",
                   "DisplayName": "Round Id",
-                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Rounds this record was walked under. Injected by the connector from the access path (/v2/Rounds/{roundId}/ApplicationReports) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4038,6 +4073,10 @@
                 },
                 "primaryKey": {
                   "ID": "DE1496E1-64A1-5F78-9BFC-B44C7EBFB569"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.412Z",
+                  "checksum": "74d710e13985d3a56ff020128cc2eea7b30ba9e464ea537bd609a5ce88375f42"
                 }
               }
             ]
@@ -4180,7 +4219,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Days) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4193,6 +4232,10 @@
                 },
                 "primaryKey": {
                   "ID": "5860D712-577F-57C2-89F2-1D51E934699F"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.459Z",
+                  "checksum": "b108b11ae07048927b82c29a02bec8c78d05ed582666498fda51bf2531cb7f72"
                 }
               }
             ]
@@ -4350,15 +4393,15 @@
                   "ID": "5263652B-DDA1-44EA-A728-516E3E3DA6AB"
                 },
                 "sync": {
-                  "lastModified": "2026-06-29T03:44:59.166Z",
-                  "checksum": "fac4e8609a6b8723d5f06738d4f16ba4ea40ec45f11cdb849b4d53aa9066111c"
+                  "lastModified": "2026-09-14T01:57:48.510Z",
+                  "checksum": "e9d3eb0e2aa521a16416ab3577e78d134531c01c1f4f97bdd35586a379831d46"
                 }
               },
               {
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/Rooms) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4371,6 +4414,10 @@
                 },
                 "primaryKey": {
                   "ID": "152C9C7A-DC82-5C11-81D4-92753315C3AC"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.485Z",
+                  "checksum": "15994b5087e0bd59b3ba67ed2f8cb9d101115486dc75c9899d559153f67c5377"
                 }
               }
             ]
@@ -4413,7 +4460,7 @@
                 "parentParamName": "programId",
                 "entryPath": "/v2/Programs/{programId}/Scheduler/TimeSlots"
               },
-              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) \u2014 generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
+              "LiteralCreateReason": "Create CreateRequest requires scheduleDayIds; synced IOFs lack that exact field (availableOnlyInDayIds is the read-side name) — generic flat body would omit it. Connector overrides CreateRecord to supply scheduleDayIds.",
               "LiteralUpdateReason": "Update UpdateRequest requires scheduleDayIds (array of int); read-side IOF is availableOnlyInDayIds. Generic flat body omits/misnames it -> 422. Connector overrides UpdateRecord to supply scheduleDayIds from availableOnlyInDayIds. Mirrors LiteralCreateReason."
             },
             "Status": "Active",
@@ -4559,7 +4606,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/TimeSlots) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4572,6 +4619,10 @@
                 },
                 "primaryKey": {
                   "ID": "26A08615-7040-5CDC-9162-6646C583C239"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.553Z",
+                  "checksum": "06f04f5bca7bc95b647d49ef068d87a2e9aa1454025f5e0ed476428777dcbf02"
                 }
               }
             ]
@@ -4769,7 +4820,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/Scheduler/ScheduleItems) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4782,6 +4833,10 @@
                 },
                 "primaryKey": {
                   "ID": "7D9FF438-D975-5CD5-8E14-E3A5D40473F6"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.597Z",
+                  "checksum": "fd6c77955f53b89daaac7063d10dbf4150da7169605dbcd7491f06ed90d2061b"
                 }
               }
             ]
@@ -4866,7 +4921,7 @@
                 "fields": {
                   "Name": "programId",
                   "DisplayName": "Program Id",
-                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index \u2014 see docs/REQUIRED-FIXES.md item 7.",
+                  "Description": "The Program this record was walked under. Injected by the connector from the access path (/v2/Programs/{programId}/SessionTypes) rather than returned in the record body, so it is declared as a String: the injected value is the parent id as a string, which is also exactly what the engine chose when it promoted this field out of custom overflow. Declaring it Integer would route it through the unsized-integer path the engine maps to NVARCHAR(MAX), which SQL Server cannot index — see docs/REQUIRED-FIXES.md item 7.",
                   "Type": "String",
                   "IsRequired": false,
                   "IsReadOnly": false,
@@ -4879,6 +4934,10 @@
                 },
                 "primaryKey": {
                   "ID": "F5C6C9BF-B530-5C9C-8B56-FF89358C8428"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.621Z",
+                  "checksum": "c3da669fd2d4068dd6716092e2c04ba234d37525d21507337993a1f4e3ace97c"
                 }
               }
             ]
@@ -5398,6 +5457,13 @@
                   "Status": "Active",
                   "MetadataSource": "Declared",
                   "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9C1E7B24-3F86-5A41-B7D2-58C0E1A4F933"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.676Z",
+                  "checksum": "65190be489999cfb5ce6f296cba445f44c75481a117cf4894bd2fa7a837f6275"
                 }
               },
               {
@@ -5440,6 +5506,10 @@
           },
           "primaryKey": {
             "ID": "7D3F6794-4A3A-4C2F-9255-A27448CB4B50"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.602Z",
+            "checksum": "053fb0b57e73144bf873553969d29ad48cf5d5db92cf3f2a7cd8953da8c00dfb"
           }
         },
         {
@@ -5584,6 +5654,1927 @@
           },
           "primaryKey": {
             "ID": "2B33BEA0-AC37-46EB-9190-3CE4B45571CC"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationJudgeScorecard",
+            "DisplayName": "Application Judge Scorecards",
+            "Description": "OpenWater per-judge scorecards on an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> judgeScorecardInfos[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].judgeScorecardInfos[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "judgeScorecardInfos[]"
+                ],
+                "segmentTags": [
+                  {
+                    "segment": "roundSubmissions[]",
+                    "sourceKey": "roundId",
+                    "asKey": "roundId"
+                  }
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "41A2D3C3-0F57-4AB9-A400-99DBF3D9DA3F"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.723Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round this row belongs to, copied from the enclosing roundSubmissions[] element by the detail walk (AccessPath.segmentTags). Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "37DC9A28-6B1B-46DA-ABF6-7EFB68F065E8"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Scorecard id.",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CB4F8F4A-B1E1-460A-9BDC-4121E65519A4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Scorecard status (NotScored, Started, Complete).",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "506E6939-220B-407D-8D1E-DE663A75F171"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "totalScore",
+                  "DisplayName": "Total Score",
+                  "Description": "Total score on this scorecard.",
+                  "Type": "Decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A7BF843E-8CE1-4D51-81E3-EFB6FA6B19A7"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "644DBEC0-A0A5-4CDC-B598-FF9F3E2AB413"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.663Z",
+            "checksum": "6adb9147099b8fe5c3897b07e59a36420707d1004cb6e60edec3b9f8a188a386"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationReceivedRecommendation",
+            "DisplayName": "Application Received Recommendations",
+            "Description": "OpenWater recommendations RECEIVED for an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> receivedRecommendations[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].receivedRecommendations[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "receivedRecommendations[]"
+                ],
+                "segmentTags": [
+                  {
+                    "segment": "roundSubmissions[]",
+                    "sourceKey": "roundId",
+                    "asKey": "roundId"
+                  }
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AFFE89AA-49C5-4971-9760-AF7FBF5A95BE"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.747Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round this row belongs to, copied from the enclosing roundSubmissions[] element by the detail walk (AccessPath.segmentTags). Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BD2FBEFD-F7F7-46EB-942E-F9CD3D30AB3E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "fieldAlias",
+                  "DisplayName": "Field Alias",
+                  "Description": "Recommendation field alias.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "44B4BD37-CE2B-41C5-B588-25B182588057"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "confirmationUrl",
+                  "DisplayName": "Confirmation Url",
+                  "Description": "Confirmation URL for the received recommendation.",
+                  "Type": "String",
+                  "Length": 2048,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7D5C8737-8441-4AB6-A665-B936B5C6D682"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E2351748-76FA-490A-8E65-22BE8EF77FCC"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.693Z",
+            "checksum": "e765808597e365e52569e9389b837462e36461ae515e42b49c49090eb83ffd95"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationPendingRecommendation",
+            "DisplayName": "Application Pending Recommendations",
+            "Description": "OpenWater recommendations REQUESTED but not yet received for an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> notReceivedRecommendations[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].notReceivedRecommendations[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "notReceivedRecommendations[]"
+                ],
+                "segmentTags": [
+                  {
+                    "segment": "roundSubmissions[]",
+                    "sourceKey": "roundId",
+                    "asKey": "roundId"
+                  }
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "438E0ECC-0099-4F44-9BB2-3CA46DF52AF3"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.772Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round this row belongs to, copied from the enclosing roundSubmissions[] element by the detail walk (AccessPath.segmentTags). Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "36A20B28-D2BE-4A1F-9668-C2F473F5F5FC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "fieldAlias",
+                  "DisplayName": "Field Alias",
+                  "Description": "Recommendation field alias.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5EE51024-1A29-4372-B5A1-6F5E3CF22438"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "recommendationUrl",
+                  "DisplayName": "Recommendation Url",
+                  "Description": "URL the recommender was sent.",
+                  "Type": "String",
+                  "Length": 2048,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D7B903B3-94CE-4221-9431-6A7DEF7F2B3E"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "4514D359-D1F5-40B6-84D2-36ED211D0E30"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.724Z",
+            "checksum": "244fcadfe1eab53e118ffc2519f3da5b7e914beebc670b69e32968e5fed26e56"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationScoringQuestionScore",
+            "DisplayName": "Application Scoring Question Scores",
+            "Description": "OpenWater aggregated scores per general scoring question on an application round submission. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> generalScoringQuestionsAggregatedScoreInfos[].",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].generalScoringQuestionsAggregatedScoreInfos[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "generalScoringQuestionsAggregatedScoreInfos[]"
+                ],
+                "segmentTags": [
+                  {
+                    "segment": "roundSubmissions[]",
+                    "sourceKey": "roundId",
+                    "asKey": "roundId"
+                  }
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under, stamped by the detail walk. Declared String, never Integer - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0CF7EC86-3411-4C92-93DD-306AD5436D86"
+                },
+                "sync": {
+                  "lastModified": "2026-09-14T01:57:48.795Z",
+                  "checksum": "57e068c618bbbb0b99c6334ec023a41707a9af871ac507549967aaf4fc3392c1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round this row belongs to, copied from the enclosing roundSubmissions[] element by the detail walk (AccessPath.segmentTags). Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D1905413-EE56-42FF-BAB5-7DF4A57171D0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "generalScoringQuestionId",
+                  "DisplayName": "General Scoring Question Id",
+                  "Description": "General scoring question id.",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1CD96497-60EA-4E09-8CB9-A42431B2B593"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "score",
+                  "DisplayName": "Score",
+                  "Description": "Aggregated score for the question ({averageScore}).",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F4F03821-8068-4FFA-A463-FFC173727708"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "7DD615DB-8E11-43A0-9A07-1E2912543C48"
+          },
+          "sync": {
+            "lastModified": "2026-09-14T01:57:47.751Z",
+            "checksum": "f56cdb62b1b0d6fc2fb0401f9dd9fa128a5034d5f758a650d8a9dc3fddadec5e"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ApplicationWinnerAssignment",
+            "DisplayName": "Application Winner Assignments",
+            "Description": "OpenWater per-application winner assignments: which winner types an application was awarded in a round. Access: /v2/Applications/{applicationId} -> roundSubmissions[] -> winnerTypes[] (an array of type NAMES; each becomes one row). This is the application grain of winner data; ApplicationWinnerType is the round-level menu of available types.",
+            "APIPath": "(embedded in /v2/Applications/{applicationId} roundSubmissions[].winnerTypes[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Application",
+                "doorPath": "/v2/Applications",
+                "entryPath": "/v2/Applications/{applicationId}",
+                "parentParamName": "applicationId",
+                "nestingSegments": [
+                  "roundSubmissions[]",
+                  "winnerTypes[]"
+                ],
+                "segmentTags": [
+                  {
+                    "segment": "roundSubmissions[]",
+                    "sourceKey": "roundId",
+                    "asKey": "roundId"
+                  }
+                ],
+                "extractionMode": "detail-embedded",
+                "scalarLeafKey": "name"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "The Application this row was walked under. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0772E97E-38D9-4BC9-8E15-1C3B7B216FF0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round this row belongs to, copied from the enclosing roundSubmissions[] element by the detail walk (AccessPath.segmentTags). Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Rounds&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2F13A679-9E0B-48DC-AE9D-F723DB8BAD79"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Winner type name as assigned to this application in this round (the vendor supplies names, not ids, at this grain).",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "53FC5539-9B26-4D26-BB88-3C56E200C943"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "42990F2A-1DB5-4EDD-97E6-081B1664E8E3"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EvaluationDetail",
+            "DisplayName": "Evaluation Details",
+            "Description": "OpenWater evaluation detail: the scalar fields /v2/Evaluations/{id} carries that the /v2/Evaluations list does not (computed score, rank score, rank position). One row per Evaluation; join on id.",
+            "APIPath": "/v2/Evaluations/{id}",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Evaluation",
+                "doorPath": "/v2/Evaluations",
+                "entryPath": "/v2/Evaluations/{id}",
+                "parentParamName": "id",
+                "extractionMode": "detail-object"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Evaluation id (same value as Evaluation.id).",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Evaluation&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1121319A-37E9-42C8-BD1B-87523FDF7B5B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Program id.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D3B54C6E-F117-4700-A639-ACC798BE243C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "roundId",
+                  "DisplayName": "Round Id",
+                  "Description": "Round id.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1F4A729A-0F09-41EF-9F30-C7B90C56F755"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "judgeUserId",
+                  "DisplayName": "Judge User Id",
+                  "Description": "Judge user id.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "43732C38-D641-48FE-BBA0-D9483939CB5E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "Application id.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E8DA1770-50C6-4B3F-A1EA-C29972CE464A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationCode",
+                  "DisplayName": "Application Code",
+                  "Description": "Application code.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BC381626-37C4-41B4-BFDA-F50F7A41F1AC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "computedScore",
+                  "DisplayName": "Computed Score",
+                  "Description": "Computed score for this evaluation.",
+                  "Type": "Decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "047A1478-B91F-4C9F-8C9B-DC88F4644580"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "rankScore",
+                  "DisplayName": "Rank Score",
+                  "Description": "Rank score.",
+                  "Type": "Decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "056126A0-3F96-4B54-A337-8430AA4215A9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "rankPosition",
+                  "DisplayName": "Rank Position",
+                  "Description": "Rank position.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A36252EB-AC2C-41DA-A162-976DE79E8385"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "evaluationDateUtc",
+                  "DisplayName": "Evaluation Date Utc",
+                  "Description": "Evaluation date (UTC).",
+                  "Type": "DateTime",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "17F3A6A3-528D-42F1-BF3D-EB087A098820"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "F7793104-5007-4B0D-8167-CD2AEDC6EC41"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EvaluationScoreFieldValue",
+            "DisplayName": "Evaluation Score Field Values",
+            "Description": "OpenWater per-field inline scores on an evaluation. Access: /v2/Evaluations/{evaluationId} -> inlineScoreFieldValues[]. rowScores is kept as JSON (rows of rowId/score).",
+            "APIPath": "(embedded in /v2/Evaluations/{evaluationId} inlineScoreFieldValues[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Evaluation",
+                "doorPath": "/v2/Evaluations",
+                "entryPath": "/v2/Evaluations/{evaluationId}",
+                "parentParamName": "evaluationId",
+                "nestingSegments": [
+                  "inlineScoreFieldValues[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "evaluationId",
+                  "DisplayName": "Evaluation Id",
+                  "Description": "The Evaluation this score belongs to. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Evaluation&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "00053A18-8CA4-449C-A5CA-84833D5F5E3D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alias",
+                  "DisplayName": "Alias",
+                  "Description": "Scored field alias.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6A10FA66-1D05-4A71-B288-04FDB99898FA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "rowScores",
+                  "DisplayName": "Row Scores",
+                  "Description": "Per-row scores for this field (array of {rowId, ...}).",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F2EB5703-856A-4F82-A693-2A010E8FAFF6"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "080C8975-E01D-4024-AAAA-C590544885A5"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EvaluationGeneralScoringAnswer",
+            "DisplayName": "Evaluation General Scoring Answers",
+            "Description": "OpenWater answers to the general scoring questions on an evaluation. Access: /v2/Evaluations/{evaluationId} -> generalScoringAnswers[].",
+            "APIPath": "(embedded in /v2/Evaluations/{evaluationId} generalScoringAnswers[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Evaluation",
+                "doorPath": "/v2/Evaluations",
+                "entryPath": "/v2/Evaluations/{evaluationId}",
+                "parentParamName": "evaluationId",
+                "nestingSegments": [
+                  "generalScoringAnswers[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "evaluationId",
+                  "DisplayName": "Evaluation Id",
+                  "Description": "The Evaluation this answer belongs to. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Evaluation&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DC1B2554-0F0D-4B49-8DE6-34DFEB257100"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alias",
+                  "DisplayName": "Alias",
+                  "Description": "Scoring question alias.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "13084909-9BD6-4D6E-86E4-8DE2E9990C5D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "mediaId",
+                  "DisplayName": "Media Id",
+                  "Description": "Media attached to the answer, when any. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Media&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8C3ACC84-EE25-4E44-A6E7-F8786D446631"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "score",
+                  "DisplayName": "Score",
+                  "Description": "Numeric score given.",
+                  "Type": "Decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "78648668-DDF9-4454-A3F7-E1567C109D70"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "text",
+                  "DisplayName": "Text",
+                  "Description": "Free-text answer.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "28089A7D-F589-4907-B387-394020EDC652"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E2740862-3EEF-477E-956C-C9D123EAE9A6"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EvaluationJudgeTeam",
+            "DisplayName": "Evaluation Judge Teams",
+            "Description": "OpenWater judge teams associated with an evaluation. Access: /v2/Evaluations/{evaluationId} -> judgeTeams[].",
+            "APIPath": "(embedded in /v2/Evaluations/{evaluationId} judgeTeams[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Evaluation",
+                "doorPath": "/v2/Evaluations",
+                "entryPath": "/v2/Evaluations/{evaluationId}",
+                "parentParamName": "evaluationId",
+                "nestingSegments": [
+                  "judgeTeams[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "evaluationId",
+                  "DisplayName": "Evaluation Id",
+                  "Description": "The Evaluation this team row belongs to. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Evaluation&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "35637F56-877B-4D02-8163-234A34A35A73"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Judge team id. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=JudgeTeam&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "38085942-7F68-4F66-BAC9-F3A00F4F1F2E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Judge team name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F7526B3E-10DE-48C3-9A63-A9CDB1EB700D"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "D45C57B6-6C08-43FC-8914-210D3541E1BE"
+          }
+        },
+        {
+          "fields": {
+            "Name": "SessionDetail",
+            "DisplayName": "Session Details",
+            "Description": "OpenWater session detail: the scalar fields /v2/Sessions/{id} carries that the /v2/Sessions list does not (typeId). One row per Session; join on id.",
+            "APIPath": "/v2/Sessions/{id}",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Session",
+                "doorPath": "/v2/Sessions",
+                "entryPath": "/v2/Sessions/{id}",
+                "parentParamName": "id",
+                "extractionMode": "detail-object"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Session id (same value as Session.id).",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Session&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "70B95A9A-4125-4376-AEF9-CED619A1A055"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "programId",
+                  "DisplayName": "Program Id",
+                  "Description": "Program id.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "699C2AB7-106A-4C9B-A498-EC98A50AD5EC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "typeId",
+                  "DisplayName": "Type Id",
+                  "Description": "Session type id.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8005D745-7585-4BBA-8EFA-A8E3E9461577"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "typeName",
+                  "DisplayName": "Type Name",
+                  "Description": "Session type name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4E76689D-F3EF-4E76-9769-675B34C93D12"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Session name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "95B9DF57-2A70-41C6-B29E-7AC761E39A1C"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "18E055F6-C5DC-4EEB-AEFE-FE486B17F154"
+          }
+        },
+        {
+          "fields": {
+            "Name": "SessionChair",
+            "DisplayName": "Session Chairs",
+            "Description": "OpenWater session chairs. Access: /v2/Sessions/{sessionId} -> chairs[].",
+            "APIPath": "(embedded in /v2/Sessions/{sessionId} chairs[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Session",
+                "doorPath": "/v2/Sessions",
+                "entryPath": "/v2/Sessions/{sessionId}",
+                "parentParamName": "sessionId",
+                "nestingSegments": [
+                  "chairs[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "sessionId",
+                  "DisplayName": "Session Id",
+                  "Description": "The Session this chair belongs to. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Session&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0B5644F9-5FF8-4AE4-BBCE-FA3CA0845ACB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Session chair id.",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "264F9EFA-C407-4B5C-869B-6367D32842AD"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Chair email address.",
+                  "Type": "String",
+                  "Length": 320,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "599C4623-E25A-4810-AC9F-0F2E1A6B4D7D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isPrimary",
+                  "DisplayName": "Is Primary",
+                  "Description": "Whether this is the primary chair.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DB86CF46-4BFF-4A22-B64C-C6FD645B3FEE"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "10AC1182-7159-4A4F-876A-5C3665AED70E"
+          }
+        },
+        {
+          "fields": {
+            "Name": "SessionItem",
+            "DisplayName": "Session Items",
+            "Description": "OpenWater session agenda items (applications and other item types placed in a session). Access: /v2/Sessions/{sessionId} -> items[].",
+            "APIPath": "(embedded in /v2/Sessions/{sessionId} items[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Session",
+                "doorPath": "/v2/Sessions",
+                "entryPath": "/v2/Sessions/{sessionId}",
+                "parentParamName": "sessionId",
+                "nestingSegments": [
+                  "items[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "sessionId",
+                  "DisplayName": "Session Id",
+                  "Description": "The Session this item belongs to. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Session&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6E56A080-B3B2-4E35-AD21-A7B872A77094"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Session item id.",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "32746917-4E5D-4F09-8264-00F4C096DBD0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "applicationId",
+                  "DisplayName": "Application Id",
+                  "Description": "Application placed in this item, when any. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Application&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6D74FA35-2F76-4767-8FEF-DEAEFE8B8F86"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "customSessionItemTypeId",
+                  "DisplayName": "Custom Session Item Type Id",
+                  "Description": "Custom item type id, when not an application.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "22673A54-ADA3-4F40-BDB7-F635303893CD"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "customSessionItemTypeDescription",
+                  "DisplayName": "Custom Session Item Type Description",
+                  "Description": "Custom item type description.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "00942635-9D5B-4533-859C-69CD61125F68"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sortOrder",
+                  "DisplayName": "Sort Order",
+                  "Description": "Position within the session.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E4D4F333-D873-4991-8C31-8AFCAC0BB8B3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "durationInMinutes",
+                  "DisplayName": "Duration In Minutes",
+                  "Description": "Duration in minutes.",
+                  "Type": "Integer",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "99F24FDF-9428-4196-B402-81545DAA0F70"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "97B4B038-9EA9-4C5A-9D79-38DD414FDBA5"
+          }
+        },
+        {
+          "fields": {
+            "Name": "SessionFieldValue",
+            "DisplayName": "Session Field Values",
+            "Description": "OpenWater session form field values. Access: /v2/Sessions/{sessionId} -> fieldValues[]. The vendor model is polymorphic (FieldValueModelBase subtypes); alias and typeName are declared, the subtype-specific keys arrive as custom columns.",
+            "APIPath": "(embedded in /v2/Sessions/{sessionId} fieldValues[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "Session",
+                "doorPath": "/v2/Sessions",
+                "entryPath": "/v2/Sessions/{sessionId}",
+                "parentParamName": "sessionId",
+                "nestingSegments": [
+                  "fieldValues[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "sessionId",
+                  "DisplayName": "Session Id",
+                  "Description": "The Session this value belongs to. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Session&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B951B62E-0565-47BA-A2BE-F536E5C37AC1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alias",
+                  "DisplayName": "Alias",
+                  "Description": "Form field alias.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A33AA545-E335-47A8-A136-2D22BB7F890D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "typeName",
+                  "DisplayName": "Type Name",
+                  "Description": "Field value type name (the polymorphic subtype).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "548ABB78-EB61-417A-886B-FD54C8F1BB07"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "C3B05F96-1EFE-4113-A4C8-993F00C9F544"
+          }
+        },
+        {
+          "fields": {
+            "Name": "UserDetail",
+            "DisplayName": "User Details",
+            "Description": "OpenWater user detail: the role flags /v2/Users/{id} carries that the /v2/Users list does not. One row per User; join on id.",
+            "APIPath": "/v2/Users/{id}",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "User",
+                "doorPath": "/v2/Users",
+                "entryPath": "/v2/Users/{id}",
+                "parentParamName": "id",
+                "extractionMode": "detail-object"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "User id (same value as User.id).",
+                  "Type": "Integer",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3D7FCAE4-E904-445E-9B41-A5877FE44913"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isApplicant",
+                  "DisplayName": "Is Applicant",
+                  "Description": "Whether the user is an applicant.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "25A300B8-F86A-4192-8C75-3A51D8F5D870"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isJudge",
+                  "DisplayName": "Is Judge",
+                  "Description": "Whether the user is a judge.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "389295D5-FFAC-41D3-B901-401CD58DA089"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isSessionChair",
+                  "DisplayName": "Is Session Chair",
+                  "Description": "Whether the user is a session chair.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "980B7435-1B0E-4D5F-9ABD-BEEF41E04C98"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isGuest",
+                  "DisplayName": "Is Guest",
+                  "Description": "Whether the user is a guest.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FDCF71E2-2EC4-4EA7-9ADD-88D1EA396B1A"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "27013659-F63D-4846-A345-6A6D73A14217"
+          }
+        },
+        {
+          "fields": {
+            "Name": "UserFieldValue",
+            "DisplayName": "User Field Values",
+            "Description": "OpenWater user profile form field values. Access: /v2/Users/{userId} -> fieldValues[]. Polymorphic vendor model; alias and typeName declared, subtype keys arrive as custom columns.",
+            "APIPath": "(embedded in /v2/Users/{userId} fieldValues[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "User",
+                "doorPath": "/v2/Users",
+                "entryPath": "/v2/Users/{userId}",
+                "parentParamName": "userId",
+                "nestingSegments": [
+                  "fieldValues[]"
+                ],
+                "extractionMode": "detail-embedded"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "userId",
+                  "DisplayName": "User Id",
+                  "Description": "The User this value belongs to. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DB45AFB2-AFE3-4EFB-AA6F-A5D76553434B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "alias",
+                  "DisplayName": "Alias",
+                  "Description": "Profile field alias.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "23FE1CD2-D23A-4F03-96A2-C9BFDDE059EB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "typeName",
+                  "DisplayName": "Type Name",
+                  "Description": "Field value type name (the polymorphic subtype).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FC2FCB0D-8912-4ACC-87DC-090226C3658C"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "C98DDD6C-105F-4024-A47C-24D773AF77F7"
+          }
+        },
+        {
+          "fields": {
+            "Name": "UserSubAccount",
+            "DisplayName": "User Sub Accounts",
+            "Description": "OpenWater sub-account links: the users that are sub-accounts of a user. Access: /v2/Users/{userId} -> subAccountUserIds[] (an array of user ids; each becomes one row).",
+            "APIPath": "(embedded in /v2/Users/{userId} subAccountUserIds[])",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Configuration": {
+              "AccessPath": {
+                "door": "User",
+                "doorPath": "/v2/Users",
+                "entryPath": "/v2/Users/{userId}",
+                "parentParamName": "userId",
+                "nestingSegments": [
+                  "subAccountUserIds[]"
+                ],
+                "extractionMode": "detail-embedded",
+                "scalarLeafKey": "subAccountUserId"
+              }
+            },
+            "Status": "Active",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "IntegrationID": "@parent:ID",
+            "MetadataSource": "Declared"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "userId",
+                  "DisplayName": "User Id",
+                  "Description": "The parent User. Injected by the detail walk from the access path, not present in the element body, so declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5AFDD034-05E1-4683-B03C-FC04F8A189D8"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "subAccountUserId",
+                  "DisplayName": "Sub Account User Id",
+                  "Description": "The sub-account User. Declared String - see V202608050910 for the sizing rationale.",
+                  "Type": "String",
+                  "Length": 50,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "Status": "Active",
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "231E0A79-7A00-47EE-ADFD-1294A188CC52"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "EEE573C3-1BEB-4725-A544-4E704CD00FA3"
           }
         }
       ]

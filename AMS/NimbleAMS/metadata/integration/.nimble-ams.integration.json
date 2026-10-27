@@ -225,7 +225,7 @@
             "IsMutable": false,
             "ContentHashApplicable": false,
             "StableOrderingKey": null,
-            "Status": "Active",
+            "Status": "Disabled",
             "Configuration": {
               "Family": "FuseEndpoint",
               "AccessPath": {

@@ -404,6 +404,12 @@
                 "operationPages": [
                   "packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/api/dynamics_account_get.md"
                 ]
+              },
+              "recordFilter": {
+                "field": "accountType",
+                "in": [
+                  "Posting"
+                ]
               }
             }
           },
@@ -10514,6 +10520,12 @@
                 "operationPages": [
                   "packages/Integration/connectors-registry/business-central/sources/ms-docs/bc-docs-repo/dev-itpro/api-reference/v2.0/api/dynamics_dimensionvalue_get.md"
                 ]
+              },
+              "parentCode": {
+                "object": "dimensions",
+                "idField": "dimensionId",
+                "codeField": "code",
+                "as": "dimensionCode"
               }
             }
           },
@@ -10684,6 +10696,30 @@
                 "sync": {
                   "lastModified": "2026-08-04T23:22:51.673Z",
                   "checksum": "bd5d438b9c6143b3268ae8b7512fb42fc4ad86ee3f8494440765dbacfe6105f6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "dimensionCode",
+                  "DisplayName": "Dimension Code",
+                  "Description": "The parent dimension's code, added by the connector from dimensionId (Configuration.parentCode). Business Central dimension IDs are per company; the code is what a shared Dimension matches on.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": 20,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID",
+                  "Configuration": {
+                    "edmType": "string",
+                    "derived": "connector parentCode (dimensions.code via dimensionId)"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "14AF8F23-4512-483C-A23B-E562236028C4"
                 }
               }
             ]
