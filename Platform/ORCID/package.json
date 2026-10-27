@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-orcid",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "MemberJunction ORCID connector.",
   "type": "module",
   "main": "dist/index.js",
