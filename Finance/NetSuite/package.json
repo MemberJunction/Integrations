@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-netsuite",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "MemberJunction NetSuite connector.",
   "type": "module",
   "main": "dist/index.js",

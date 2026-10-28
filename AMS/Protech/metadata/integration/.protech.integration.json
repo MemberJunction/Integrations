@@ -1,0 +1,39 @@
+[
+  {
+    "fields": {
+      "Name": "Protech",
+      "Description": "Protech AMS (UX 365): association management built on Microsoft Dynamics 365/Dataverse. Thin leaf over the Dataverse connector — Entra ID client credentials, runtime discovery of pa_* + standard CE tables, change-tracking incremental, full CRUD.",
+      "ClassName": "@memberjunction/connector-protech",
+      "ImportPath": "@memberjunction/connector-protech",
+      "NavigationBaseURL": "https://protechassociates.com",
+      "Icon": "fa-solid fa-building-columns",
+      "BatchMaxRequestCount": 6000,
+      "BatchRequestWaitTime": 300,
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Azure Service Principal",
+      "Configuration": {
+        "connectionModel": "dataverse-thin-leaf",
+        "BaseConnector": "@memberjunction/connector-microsoft-dynamics-365-dataverse",
+        "note": "Protech AMS / UX 365 is a managed solution (ProtechCustomization, ProtechPlugins, ProtechServiceEndPoints) installed inside a customer's Dynamics 365 / Dataverse environment. This Integration is a nominal leaf: auth (Entra ID client credentials against the customer's environment URL), discovery, incremental sync, and CRUD are all inherited from the Microsoft Dynamics 365 (Dataverse) connector. The credential is the same Azure Service Principal shape (TenantId / ClientId / ClientSecret / EnvironmentUrl); customers typically obtain the app registration + application-user grant through their Protech support representative when Protech manages the tenant.",
+        "publisherPrefix": "pa_",
+        "publisherPrefixNote": "Protech's custom tables use the pa_ publisher prefix (e.g. pa_batchlog, pa_giftcertificate, pa_country) and extend standard CE tables (contact, account, invoice). Evidence: the openly readable UX 365 help portal, https://ux365help.ptassoc.com/.",
+        "DiscoveryIsAuthoritative": true,
+        "DiscoveryIsAuthoritativeRationale": "Inherited from the Dataverse connector: GET /api/data/v9.2/EntityDefinitions enumerates the complete set of tables the credential can access — standard, custom, and solution-installed — so the pa_* Protech schema surfaces without a declared catalog. No public Protech data dictionary exists to author one from; the tenant's own metadata endpoint is the only authoritative source.",
+        "DeclaredAgainst": {
+          "sources": [
+            "https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/overview",
+            "https://ux365help.ptassoc.com/"
+          ],
+          "readOn": "2026-09-07",
+          "note": "This connector declares no static object catalog (discovery-authoritative leaf). The pin records the Dataverse Web API surface the leaf inherits and the public UX 365 help portal evidencing the pa_ publisher prefix, both read on the date above."
+        }
+      }
+    },
+    "primaryKey": {
+      "ID": "B51AA810-375D-4E13-836F-F52A8D8802B2"
+    },
+    "sync": {
+      "lastModified": "2026-09-07T05:09:23.617Z",
+      "checksum": "ccf43fb765662f4546f9cecdd868d02c2e3af884f2ff63351be809ae8311fdd0"
+    }
+  }
+]
