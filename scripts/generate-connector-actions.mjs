@@ -19,7 +19,7 @@
  *
  *   node scripts/generate-connector-actions.mjs Finance/BillCom
  */
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -60,13 +60,28 @@ if (!config) {
     process.exit(2);
 }
 
-const generated = new ActionMetadataGenerator().Generate(config);
 const outDir = join(dir, 'metadata', 'actions');
 mkdirSync(outDir, { recursive: true });
 
 const slug = config.IntegrationName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const outFile = join(outDir, `.${slug}-actions.json`);
+
+// Feed the previous run back in so IDs survive regeneration. The generator matches actions by Name,
+// params by Name + Type and result codes by ResultCode, and reuses the IDs it finds (MJ#6088).
+//
+// Why this matters: `mj sync push` matches on ID alone, with no natural-key fallback, and
+// `autoCreateMissingRecords` is on — so a record whose primaryKey loads nothing is treated as new. On
+// SQL Server the Action table's UNIQUE (Name, CategoryID, ParentID) then REJECTS the second insert,
+// because generated actions leave ParentID null and SQL Server treats NULLs as equal in a unique
+// constraint. On PostgreSQL, where NULLs are distinct, the same push silently duplicates the rows
+// instead. Either way regeneration is not idempotent once IDs are in play.
+const existing = readExistingRecords(outFile);
+if (existing) config.ExistingActionRecords = existing;
+
+const generated = new ActionMetadataGenerator().Generate(config);
 writeFileSync(outFile, `${JSON.stringify(generated.ActionRecords, null, 2)}\n`);
+
+reportIDStability(existing, generated.ActionRecords);
 
 const verbs = new Set(generated.ActionRecords.map((a) => a.fields.Config?.Verb ?? a.fields.Config_?.Verb));
 console.log(`${target}: ${generated.ActionRecords.length} actions across ${config.Objects.length} objects`);
@@ -74,4 +89,46 @@ console.log(`  verbs: ${[...verbs].filter(Boolean).sort().join(', ')}`);
 console.log(`  wrote ${outFile.replace(root + '/', '')}`);
 if (generated.CategoryRecords.length) {
     console.log(`  (+${generated.CategoryRecords.length} category record(s) — CreateCategory is on)`);
+}
+
+/** Previous output, or null when there is none to preserve (first run, or a hand-deleted file). */
+function readExistingRecords(file) {
+    if (!existsSync(file)) return null;
+    try {
+        const parsed = JSON.parse(readFileSync(file, 'utf8'));
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    } catch (err) {
+        // A corrupt file must not silently become "no previous IDs" — that is the churn this guards.
+        console.error(`  refusing to regenerate: ${file.replace(root + '/', '')} is not valid JSON (${err.message})`);
+        console.error('  fix or delete it deliberately, so losing its IDs is a choice rather than an accident.');
+        process.exit(3);
+    }
+}
+
+/**
+ * Says plainly whether IDs actually survived.
+ *
+ * `ExistingActionRecords` landed in the 6.x line; an engine without it ignores the property, and the
+ * run would quietly churn every ID. Comparing the two sets turns that into a visible warning rather
+ * than a surprise at the next `mj sync push`.
+ */
+function reportIDStability(existing, regenerated) {
+    const idsOf = (records) => new Set((records ?? []).map((r) => r?.primaryKey?.ID).filter(Boolean));
+    const before = idsOf(existing);
+    if (before.size === 0) {
+        if ((existing?.length ?? 0) > 0) {
+            console.log('  no IDs in the previous output to preserve (generated before primaryKey emission)');
+        }
+        return;
+    }
+    const after = idsOf(regenerated);
+    const kept = [...before].filter((id) => after.has(id)).length;
+    if (kept === before.size) {
+        console.log(`  kept all ${kept} existing action ID(s)`);
+        return;
+    }
+    console.warn(`  WARNING: kept ${kept} of ${before.size} existing action ID(s).`);
+    console.warn('  Pushing this will create duplicate rows (PostgreSQL) or fail on');
+    console.warn('  UQ_Action_Name_CategoryID_ParentID (SQL Server). Check that the installed');
+    console.warn('  @memberjunction/integration-engine supports ActionGeneratorConfig.ExistingActionRecords.');
 }
