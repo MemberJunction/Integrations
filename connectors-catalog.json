@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 53,
+  "count": 54,
   "connectors": [
     {
       "name": "Fonteva",
@@ -676,6 +676,27 @@
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "Marketing/GA4",
       "installTag": "Marketing-GA4@0.2.3"
+    },
+    {
+      "name": "Higher Logic Thrive Marketing Professional",
+      "displayName": "Higher Logic Thrive Marketing Professional Connector",
+      "description": "Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform used by associations. This connector reads subscriber, mailing, activity and campaign data through the Informz Advanced API (AAPI), a SOAP web service.",
+      "category": "Marketing",
+      "tags": [
+        "informz",
+        "marketing",
+        "connector",
+        "integration"
+      ],
+      "logo": "fa-solid fa-envelope-open-text",
+      "navigationBaseURL": "https://support.higherlogic.com/hc/en-us",
+      "objectCount": 70,
+      "className": "InformzConnector",
+      "npmPackage": "@memberjunction/connector-informz",
+      "version": "0.1.0",
+      "mjVersionRange": ">=5.43.0 <7.0.0",
+      "repoSubpath": "Marketing/Informz",
+      "installTag": "Marketing-Informz@0.1.0"
     },
     {
       "name": "magnetmail",
