@@ -693,10 +693,10 @@
       "objectCount": 70,
       "className": "InformzConnector",
       "npmPackage": "@memberjunction/connector-informz",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "Marketing/Informz",
-      "installTag": "Marketing-Informz@0.1.0"
+      "installTag": "Marketing-Informz@0.2.0"
     },
     {
       "name": "magnetmail",
