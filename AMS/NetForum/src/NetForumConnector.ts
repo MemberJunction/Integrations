@@ -43,7 +43,9 @@
  *         a token read from the wrong element. 1.3.4's changelog attributed it to
  *         MethodsFaultLimitPerDay; that diagnosis was wrong.
  *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" (wm normalised by WatermarkLiteral) where the watermark column is
- *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date).
+ *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date). A
+ *         `<prefix>_change_date` watermark with a `<prefix>_add_date` beside it is sent as
+ *         "(<change> >= '<wm>' OR <add> >= '<wm>')": netFORUM leaves the change date NULL on insert.
  *         There is NO canonical `LastModifiedDate` column — the field is per-facade and is read
  *         from metadata, never hardcoded.
  *       - Row limit: szObjectName supports an `@TOP -1` / `@TOP N` modifier to bypass / bound the
@@ -1701,9 +1703,17 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // learn from. The object is read without the predicate (a full read, so nothing is skipped) and says so;
         // the engine then saves a real date watermark from the rows.
         const watermarkLiteral = ctx.WatermarkValue && watermarkField ? this.DateWatermarkLiteral(ctx.WatermarkValue) : null;
-        if (watermarkLiteral) {
-            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= '${this.EscapeSqlLiteral(watermarkLiteral)}'`);
-        }
+        // netFORUM stamps <prefix>_change_date only when a record is EDITED; a new row carries <prefix>_add_date and a
+        // NULL change date, so `change_date >= X` alone never returns a new row of an append-only object (dues,
+        // membership and course history, GL transactions, payment detail read 0 rows for two weeks on a live tenant,
+        // 2026-10-29). Rows changed OR added since the watermark are read whenever `list` names the add date.
+        const watermarkPredicate = (list: string): string => {
+            const since = `'${this.EscapeSqlLiteral(watermarkLiteral!)}'`;
+            const changed = `${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= ${since}`;
+            const added = this.AddDateCompanion(ctx.ObjectName, watermarkField, list, grantKey);
+            return added ? `(${changed} OR ${this.QualifiedColumn(ctx.ObjectName, added, grantKey)} >= ${since})` : changed;
+        };
+        if (watermarkLiteral) predicates.push(watermarkPredicate(args.szColumnList ?? ''));
         if (canPaginate && ctx.AfterKeyValue) {
             predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
         }
@@ -1920,7 +1930,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (sentArgs.szOrderBy && orderingKey) sentArgs.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey, grantKey);
             if (sentArgs.szWhereClause) {
                 const predicates: string[] = [];
-                if (watermarkLiteral) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= '${this.EscapeSqlLiteral(watermarkLiteral)}'`);
+                if (watermarkLiteral) predicates.push(watermarkPredicate(rebuilt));
                 if (canPaginate && ctx.AfterKeyValue) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
                 sentArgs.szWhereClause = predicates.join(' AND ');
             }
@@ -2097,11 +2107,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // Watermark: when this IO has a watermark field, the engine narrows next sync from the max
         // seen. Advance ONLY on the final page — advancing mid-scan would let a crash between pages
         // skip every later row older than the new watermark.
+        // A row only ADDED since the watermark carries an empty change date; its add date is what moves the watermark
+        // (the latest of either date — see watermarkPredicate). An empty value is no date.
         let newWatermark: string | undefined;
         if (watermarkField && !hasMore) {
+            const addedField = this.AddDateCompanion(ctx.ObjectName, watermarkField, sentArgs.szColumnList ?? '', grantKey);
             for (const row of rows) {
-                const v = row[watermarkField];
-                if (v != null) {
+                for (const field of addedField ? [watermarkField, addedField] : [watermarkField]) {
+                    const v = row[field];
+                    if (v == null || String(v).trim() === '') continue;
                     // US-form datetimes compare as ISO (see UsDateTimeToIso); ISO values are kept exactly as xWeb sent them.
                     const s = NetForumConnector.UsDateTimeToIso(v) ?? String(v);
                     if (newWatermark === undefined || s > newWatermark) newWatermark = s;
@@ -2451,6 +2465,27 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * carries the column, else the bare column name. Rows still come back with the bare, lowercased column
      * name, so readers keep using `name`; only the SQL sent qualifies.
      */
+    /**
+     * The `<prefix>_add_date` paired with a `<prefix>_change_date` watermark: on the watermark's own table in the object's
+     * definition, not learned unresolvable, and named by `list` (the request's column list — its value sets the next
+     * watermark, so a read that cannot return it does not filter on it). Undefined for any other watermark, no
+     * definition, the default list, or a column xWeb could not resolve.
+     */
+    private AddDateCompanion(objectName: string, watermarkField: string | undefined, list: string, learnKey: string): string | undefined {
+        const prefix = watermarkField ? /^(\w+)_change_date$/i.exec(watermarkField)?.[1] : undefined;
+        if (!prefix || !list) return undefined;
+        const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
+        const find = (n: string): NFDefinedColumn | undefined => def?.Columns.find(c => c.Name.toLowerCase() === n.toLowerCase());
+        const changed = find(watermarkField!);
+        const added = find(`${prefix}_add_date`);
+        if (!changed || !added || !IsQueryableColumn(added.Name)) return undefined;
+        const tableOf = (c: NFDefinedColumn): string => (c.Alias ?? c.Table ?? '').toLowerCase();
+        if (tableOf(changed) !== tableOf(added)) return undefined;
+        const name = added.Name.toLowerCase();
+        if (this.UnselectableColumns.get(learnKey)?.has(name)) return undefined;
+        return list.split(',').some(item => item.trim().split('.').pop()!.toLowerCase() === name) ? added.Name : undefined;
+    }
+
     private QualifiedColumn(objectName: string, name: string, learnKey?: string): string {
         const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
         const col = def?.Columns.find(c => c.Name.toLowerCase() === name.toLowerCase());
