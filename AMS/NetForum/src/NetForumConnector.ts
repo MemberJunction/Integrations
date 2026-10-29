@@ -43,7 +43,9 @@
  *         a token read from the wrong element. 1.3.4's changelog attributed it to
  *         MethodsFaultLimitPerDay; that diagnosis was wrong.
  *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" (wm normalised by WatermarkLiteral) where the watermark column is
- *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date).
+ *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date). A
+ *         `<prefix>_change_date` watermark with a `<prefix>_add_date` beside it is sent as
+ *         "(<change> >= '<wm>' OR <add> >= '<wm>')": netFORUM leaves the change date NULL on insert.
  *         There is NO canonical `LastModifiedDate` column — the field is per-facade and is read
  *         from metadata, never hardcoded.
  *       - Row limit: szObjectName supports an `@TOP -1` / `@TOP N` modifier to bypass / bound the
@@ -116,7 +118,18 @@ const SOAP_NS = 'http://www.avectra.com/2005/';
 /** Canonical xWeb SOAP endpoint path (per-tenant host; path is constant). */
 const DEFAULT_SOAP_PATH = '/xweb/secure/netForumXML.asmx';
 const MAX_RETRIES = 3;
+/**
+ * Per-request HTTP timeout (time to response headers) when the connection declares none. A connection whose list
+ * queries run longer on xWeb's side raises it with `CompanyIntegration.Configuration.requestTimeoutMs` (a JSON
+ * number of milliseconds, clamped to REQUEST_TIMEOUT_MIN_MS – REQUEST_TIMEOUT_MAX_MS; see RequestTimeoutMsFrom).
+ *
+ * The engine abandons a whole FetchChanges page at its own `fetchTimeoutMs` (same Configuration; 30 s when unset),
+ * and one page can send several requests (Authenticate, GetQueryDefinition, GetQuery and up to three learn rounds),
+ * so a raised `requestTimeoutMs` needs `fetchTimeoutMs` set ABOVE it — otherwise the page is still cut first.
+ */
 const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MIN_MS = 5_000;
+const REQUEST_TIMEOUT_MAX_MS = 600_000;
 const MIN_REQUEST_INTERVAL_MS = 200;
 /** Session-token TTL. netFORUM does not publish a token lifetime; re-auth on 401 covers expiry. */
 const TOKEN_TTL_MS = 3_600_000;
@@ -178,6 +191,11 @@ interface NFDefinedColumn {
     Table: string | null;
     /** `<lsf_from_alias>` of the enclosing table — GetQuery MUST use it to name this column when set. */
     Alias: string | null;
+    /**
+     * The enclosing `<lsf_from_table>`: the join that naming this column brings in. Not always `Table` — an Extender
+     * column's `mdc_table_name` is its `_ext` table (co_email_optout_ext under co_email_optout). Null without one.
+     */
+    FromTable: string | null;
     DataType: string | null;
     Description: string | undefined;
     AllowsNull: boolean | undefined;
@@ -195,6 +213,8 @@ interface NFFromTable {
     Alias: string | null;
     /** `<lsf_from_join>`; '' when the response states none. */
     Join: string;
+    /** `<lsf_from_join_type>` ('Join' = INNER, 'Left Join'); '' when the response states none. See RowFilteringJoins. */
+    JoinType: string;
 }
 
 /**
@@ -240,6 +260,7 @@ interface NFLearnedObject {
     ownListUsable?: unknown;
     refused?: unknown;
     injectedKey?: unknown;
+    ambiguous?: unknown;
 }
 
 /** One connection's section (or the `*` seed) of `.nf-learned.json`. */
@@ -286,6 +307,11 @@ function IsQueryableColumn(name: string): boolean {
  * statement unquoted, so anything else ("Incorrect syntax near '='." on a live tenant's 711-column
  * object) breaks the whole query; such a qualifier is dropped and the column sent bare.
  */
+/** The join a column brings in, as RowFilteringJoins keys it: the alias, else the enclosing from-table (see FromTable). */
+function FromTableKey(c: NFDefinedColumn): string {
+    return (c.Alias ?? c.FromTable ?? c.Table ?? '').toLowerCase();
+}
+
 function IsPlainIdentifier(s: string): boolean {
     return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s);
 }
@@ -294,6 +320,48 @@ function IsPlainIdentifier(s: string): boolean {
 export class NetForumConnector extends BaseRESTIntegrationConnector {
     private tokenCache: CachedToken | null = null;
     private lastRequestTime = 0;
+    /** This instance's per-request timeout, read from the connection on every Authenticate (see REQUEST_TIMEOUT_MS). */
+    private requestTimeoutMs = REQUEST_TIMEOUT_MS;
+    private requestTimeoutWarned = false;
+
+    /**
+     * `requestTimeoutMs` from a CompanyIntegration.Configuration JSON string: a JSON number of milliseconds, clamped to
+     * 5 s – 10 min. Anything else — absent, a string, not positive, unparseable Configuration — is the 30 s default.
+     */
+    public static RequestTimeoutMsFrom(configuration: string | null | undefined): number {
+        if (!configuration) return REQUEST_TIMEOUT_MS;
+        let raw: unknown;
+        try {
+            const parsed: unknown = JSON.parse(configuration);
+            raw = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>).requestTimeoutMs : undefined;
+        } catch {
+            return REQUEST_TIMEOUT_MS;
+        }
+        if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) return REQUEST_TIMEOUT_MS;
+        return Math.min(REQUEST_TIMEOUT_MAX_MS, Math.max(REQUEST_TIMEOUT_MIN_MS, Math.floor(raw)));
+    }
+
+    /**
+     * Adopts the connection's `requestTimeoutMs`. A value raised above the default is pointless while the engine's own
+     * page timeout (`fetchTimeoutMs`, same Configuration, 30 s when unset) is not above it, so that is said once.
+     */
+    private ApplyRequestTimeout(ci: MJCompanyIntegrationEntity): void {
+        this.requestTimeoutMs = NetForumConnector.RequestTimeoutMsFrom(ci?.Configuration);
+        if (this.requestTimeoutMs <= REQUEST_TIMEOUT_MS || this.requestTimeoutWarned) return;
+        let fetchTimeoutMs: unknown;
+        try {
+            fetchTimeoutMs = (JSON.parse(ci.Configuration ?? '{}') as Record<string, unknown>)?.fetchTimeoutMs;
+        } catch {
+            fetchTimeoutMs = undefined;
+        }
+        if (typeof fetchTimeoutMs === 'number' && fetchTimeoutMs > this.requestTimeoutMs) return;
+        this.requestTimeoutWarned = true;
+        console.warn(
+            `NetForum: Configuration.requestTimeoutMs is ${this.requestTimeoutMs} but the engine's fetchTimeoutMs is ` +
+            `${typeof fetchTimeoutMs === 'number' ? fetchTimeoutMs : 'unset (30000)'}: the engine abandons a page at fetchTimeoutMs, ` +
+            `so set fetchTimeoutMs above requestTimeoutMs or the longer request never gets to finish.`,
+        );
+    }
 
     public override get IntegrationName(): string { return 'NetForum Enterprise'; }
 
@@ -327,6 +395,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * in the SOAP body elements — there is no HTTP Basic / Bearer here.
      */
     protected async Authenticate(ci: MJCompanyIntegrationEntity, cu: UserInfo): Promise<RESTAuthContext> {
+        // Every operation authenticates first, so this is where the connection's request timeout is adopted.
+        this.ApplyRequestTimeout(ci);
         const config = await this.ParseConfig(ci, cu);
         if (this.tokenCache && this.tokenCache.ExpiresAt > Date.now() + 60_000) {
             return { Token: this.tokenCache.Token, Config: config } as NFAuthContext;
@@ -541,6 +611,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     /** `<connection>|<object>` whose own-table-only read was already logged this process. */
     private readonly OwnOnlyWarned = new Set<string>();
 
+    /** RowFilteringJoins, once per parsed definition. */
+    private readonly RowFilteringByDefinition = new WeakMap<NFQueryDefinition, Set<string>>();
+
+    /** `<connection>|<object>` whose left-out row-dropping joins were already logged this process. */
+    private readonly RowFilteringWarned = new Set<string>();
+
     /**
      * Tables (or aliases) xWeb's generated SQL does not expose under the name the definition gives them, learned
      * from `The multi-part identifier "T.col" could not be bound` (live: `ev_session_fee`, `oe_price`,
@@ -553,6 +629,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
     /** Per `<connection>|<object>`: the name xWeb gave the first column when our key was not in the row. */
     private readonly InjectedKeyByObject = new Map<string, string>();
+
+    /**
+     * Column names SQL Server called ambiguous on an object's request ("Ambiguous column name 'x'."), lowercased.
+     * Keyed `<connection>|<object>`, persisted as `objects[o].ambiguous`. The fault names the column, so it teaches
+     * something instead of condemning the list: the object's KEY is left out of every list built for it (xWeb prepends
+     * its own copy of the primary key to every query, so ours is the duplicate), and any other name a list would send
+     * bare is qualified by the table (or alias) the definition gives it. See ResolveAmbiguous.
+     */
+    private readonly AmbiguousColumns = new Map<string, Set<string>>();
 
     /**
      * Tables xWeb's SQL says do not exist in this database ("Invalid object name 'T'"), learned CONNECTION-WIDE from
@@ -737,6 +822,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 mergeInto(this.UnselectableColumns, key, o.unselectable);
                 mergeInto(this.UnexposedQualifiers, key, o.unexposed);
                 mergeInto(this.UnresolvablePairs, key, o.unresolvable);
+                mergeInto(this.AmbiguousColumns, key, o.ambiguous);
                 if (typeof o.defaultListUnusable === 'string' || o.defaultListUnusable === true) this.DefaultListUnusableByObject.set(key, typeof o.defaultListUnusable === 'string' ? o.defaultListUnusable : "'*' is not a valid value for szColumnList");
                 else if (o.defaultListUsable === true) this.DefaultListUsable.add(key);
                 if (o.legacyCleared === true) this.LegacyCleared.add(key);
@@ -772,6 +858,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             for (const k of this.LegacyCleared) at(k).legacyCleared = true;
             for (const [k, v] of this.UnselectableColumns) if (v.size > 0) at(k).unselectable = [...v].sort();
             for (const [k, v] of this.UnexposedQualifiers) if (v.size > 0) at(k).unexposed = [...v].sort();
+            for (const [k, v] of this.AmbiguousColumns) if (v.size > 0) at(k).ambiguous = [...v].sort();
             for (const k of this.ExplicitListUnsendable) at(k).unsendable = true;
             for (const k of this.OwnListUnsendable) at(k).ownListUnsendable = true;
             for (const k of this.OwnListUsable) if (!this.OwnListUnsendable.has(k)) at(k).ownListUsable = true;
@@ -1273,6 +1360,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     Name: name,
                     Table: this.ParseSoapScalar(colXml, 'mdc_table_name') ?? table,
                     Alias: alias,
+                    FromTable: table,
                     DataType: this.ParseSoapScalar(colXml, 'mdc_data_type') ?? null,
                     Description: this.ParseSoapScalar(colXml, 'mdc_description') || undefined,
                     // AllowsNull provable-only: 'mdc_nullable' is an explicit source flag. "0"/"false"/"no" ⇒ NOT NULL.
@@ -1288,7 +1376,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             for (const lft of fromTables) {
                 const table = this.ParseSoapScalar(lft, 'lsf_from_table') ?? null;
                 const alias = this.ParseSoapScalar(lft, 'lsf_from_alias') || null;   // <lsf_from_alias xsi:nil="true"/> → null
-                from.push({ Table: table, Alias: alias, Join: this.ParseSoapScalar(lft, 'lsf_from_join') ?? '' });
+                from.push({
+                    Table: table,
+                    Alias: alias,
+                    Join: this.ParseSoapScalar(lft, 'lsf_from_join') ?? '',
+                    JoinType: this.ParseSoapScalar(lft, 'lsf_from_join_type') ?? '',
+                });
                 readColumns(lft, table, alias);
                 for (const dl of this.ExtractElements(lft, 'ListFromTableColumn')) {
                     const n = this.ParseSoapScalar(dl, 'lsc_mdc_name');
@@ -1575,12 +1668,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // key and the watermark — the three columns this method itself reads.
         const args: Record<string, string> = {
             szObjectName,
-            szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField]),
+            szColumnList: this.ColumnListFor(cfg, [pkField, orderingKey, watermarkField], ctx.ObjectName, grantKey),
         };
         // An object whose definition lists its columns is read with ALL of them. The empty list would return the
         // tenant's default list — a handful of columns (2–18 of up to 300 on a live tenant), which is a partial
         // read presented as a full one — or fault on a `*` default. Declared Configuration.columnList still wins.
         const required = [pkField, orderingKey, watermarkField];
+        // The declared Configuration.columnList is what this call sends (until a fallback below replaces it): a fault
+        // that teaches something rebuilds THAT list, not the definition's.
+        let sentDeclared = !!args.szColumnList;
         const protectedNames = this.ProtectedColumns(def, required);
         // `probeKind` marks this call's requests as ones nothing has vouched for, sent under the daily probe-fault
         // budget (SendBudgetedGetQuery): 'default' — the object's own default list, never tried on this installation;
@@ -1631,9 +1727,17 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // learn from. The object is read without the predicate (a full read, so nothing is skipped) and says so;
         // the engine then saves a real date watermark from the rows.
         const watermarkLiteral = ctx.WatermarkValue && watermarkField ? this.DateWatermarkLiteral(ctx.WatermarkValue) : null;
-        if (watermarkLiteral) {
-            predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= '${this.EscapeSqlLiteral(watermarkLiteral)}'`);
-        }
+        // netFORUM stamps <prefix>_change_date only when a record is EDITED; a new row carries <prefix>_add_date and a
+        // NULL change date, so `change_date >= X` alone never returns a new row of an append-only object (dues,
+        // membership and course history, GL transactions, payment detail read 0 rows for two weeks on a live tenant,
+        // 2026-10-29). Rows changed OR added since the watermark are read whenever `list` names the add date.
+        const watermarkPredicate = (list: string): string => {
+            const since = `'${this.EscapeSqlLiteral(watermarkLiteral!)}'`;
+            const changed = `${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= ${since}`;
+            const added = this.AddDateCompanion(ctx.ObjectName, watermarkField, list, grantKey);
+            return added ? `(${changed} OR ${this.QualifiedColumn(ctx.ObjectName, added, grantKey)} >= ${since})` : changed;
+        };
+        if (watermarkLiteral) predicates.push(watermarkPredicate(args.szColumnList ?? ''));
         if (canPaginate && ctx.AfterKeyValue) {
             predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
         }
@@ -1749,6 +1853,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 const next = await resend({ ...args, szColumnList: explicit });
                 if (next) {
                     sentArgs = { ...args, szColumnList: explicit };
+                    sentDeclared = false;
                     response = next;
                 }
             }
@@ -1819,6 +1924,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     break;
                 }
             }
+            // "Ambiguous column name 'x'": x went out bare where two columns carry the name — the object's key next to
+            // the copy xWeb prepends, or a column two joined tables share. Learned for the object (see ResolveAmbiguous).
+            const ambiguous = this.AmbiguousColumnNames(response.Body);
+            if (ambiguous.length > 0) {
+                const own = this.AmbiguousColumns.get(grantKey) ?? new Set<string>();
+                for (const n of ambiguous) own.add(n);
+                this.AmbiguousColumns.set(grantKey, own);
+                learned = true;
+            }
             const unbound = this.UnboundQualifiers(response.Body);
             if (unbound.length > 0) {
                 const own = this.UnexposedQualifiers.get(grantKey) ?? new Set<string>();
@@ -1830,7 +1944,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 markUnsendable(faultText);
                 break;
             }
-            const rebuilt = listFor();
+            const rebuilt = sentDeclared ? this.ColumnListFor(cfg, required, ctx.ObjectName, grantKey) : listFor();
             if (!rebuilt || rebuilt === sentArgs.szColumnList) {
                 markUnsendable(faultText);
                 break;
@@ -1840,7 +1954,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (sentArgs.szOrderBy && orderingKey) sentArgs.szOrderBy = this.QualifiedColumn(ctx.ObjectName, orderingKey, grantKey);
             if (sentArgs.szWhereClause) {
                 const predicates: string[] = [];
-                if (watermarkLiteral) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= '${this.EscapeSqlLiteral(watermarkLiteral)}'`);
+                if (watermarkLiteral) predicates.push(watermarkPredicate(rebuilt));
                 if (canPaginate && ctx.AfterKeyValue) predicates.push(`${this.QualifiedColumn(ctx.ObjectName, orderingKey!, grantKey)} > '${this.EscapeSqlLiteral(ctx.AfterKeyValue)}'`);
                 sentArgs.szWhereClause = predicates.join(' AND ');
             }
@@ -1914,6 +2028,29 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (!this.OwnOnlyWarned.has(grantKey)) {
                 this.OwnOnlyWarned.add(grantKey);
                 console.warn(message);
+            }
+        }
+        // The definition's full list left out the joins that would drop records (RowFilteringJoins): say which.
+        if (!ownOnly && !sentDeclared && def && sentArgs.szColumnList) {
+            const filtering = this.RowFilteringJoins(def);
+            if (filtering.size > 0) {
+                const tables = def.FromTables
+                    .filter(f => filtering.has((f.Alias ?? f.Table ?? '').toLowerCase()))
+                    .map(f => (f.Alias ? `${f.Table} AS ${f.Alias}` : f.Table ?? '?'));
+                const leftOut = def.Columns.filter(c => filtering.has(FromTableKey(c)) && !protectedNames.has(c.Name.toLowerCase())).length;
+                const message =
+                    `NetForum "${ctx.ObjectName}" leaves out ${leftOut} column(s) of ${tables.length} table(s) its definition ` +
+                    `joins INNER as other than a lookup (${tables.join(', ')}): naming any of their columns would keep only the ` +
+                    `records that have a match there.`;
+                warnings.push({
+                    Code: 'ROW_FILTERING_JOINS_LEFT_OUT',
+                    Message: message,
+                    Data: { ObjectName: ctx.ObjectName, Tables: tables, ColumnsLeftOut: leftOut },
+                });
+                if (!this.RowFilteringWarned.has(grantKey)) {
+                    this.RowFilteringWarned.add(grantKey);
+                    console.warn(message);
+                }
             }
         }
         // A list cut down to the key (and watermark) reads every record with none of its data: say so, by name,
@@ -2017,11 +2154,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // Watermark: when this IO has a watermark field, the engine narrows next sync from the max
         // seen. Advance ONLY on the final page — advancing mid-scan would let a crash between pages
         // skip every later row older than the new watermark.
+        // A row only ADDED since the watermark carries an empty change date; its add date is what moves the watermark
+        // (the latest of either date — see watermarkPredicate). An empty value is no date.
         let newWatermark: string | undefined;
         if (watermarkField && !hasMore) {
+            const addedField = this.AddDateCompanion(ctx.ObjectName, watermarkField, sentArgs.szColumnList ?? '', grantKey);
             for (const row of rows) {
-                const v = row[watermarkField];
-                if (v != null) {
+                for (const field of addedField ? [watermarkField, addedField] : [watermarkField]) {
+                    const v = row[field];
+                    if (v == null || String(v).trim() === '') continue;
                     // US-form datetimes compare as ISO (see UsDateTimeToIso); ISO values are kept exactly as xWeb sent them.
                     const s = NetForumConnector.UsDateTimeToIso(v) ?? String(v);
                     if (newWatermark === undefined || s > newWatermark) newWatermark = s;
@@ -2154,6 +2295,37 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         return [...out];
     }
 
+    /** Every column SQL Server called ambiguous in a fault ("Ambiguous column name 'x'."), lowercased, each once. */
+    private AmbiguousColumnNames(body: unknown): string[] {
+        const out = new Set<string>();
+        const re = /Ambiguous column name '([^']+)'/gi;
+        const text = this.FaultText(body);
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) out.add(m[1].trim().toLowerCase());
+        return [...out];
+    }
+
+    /**
+     * How a list names `name` once the object learned it ambiguous: null — leave it out (it is the object's KEY, which
+     * xWeb prepends to every query itself; ours was the duplicate); `<alias-or-table>.<name>` — a bare name the
+     * definition can qualify; otherwise `name` unchanged (nothing better is known, so the fault stands as before).
+     * A name the object never learned ambiguous is returned as given.
+     */
+    private ResolveAmbiguous(objectName: string, name: string, learnKey: string | undefined, keyNames: Set<string>): string | null {
+        const bare = name.split('.').pop() ?? name;
+        const k = bare.toLowerCase();
+        if (!learnKey || !this.AmbiguousColumns.get(learnKey)?.has(k)) return name;
+        if (keyNames.has(k)) return null;
+        if (name.includes('.')) return name;
+        return this.QualifiedColumn(objectName, bare, learnKey);
+    }
+
+    /** The object's key names, lowercased: the persisted key (`required[0]`) and the definition's KeyColumn. */
+    private KeyNamesOf(objectName: string, required: Array<string | undefined>): Set<string> {
+        const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
+        return new Set([required[0], def?.KeyColumn].filter((n): n is string => typeof n === 'string' && n.length > 0).map(n => n.toLowerCase()));
+    }
+
     private IsSqlSyntaxFault(body: unknown): boolean {
         return /Incorrect syntax near/i.test(this.FaultText(body));
     }
@@ -2254,6 +2426,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // only when today's probe budget is spent.
         if (learnKey && !ownOnly && this.ExplicitListUnsendable.has(learnKey)) return '';
         const unselectable = learnKey ? this.UnselectableColumns.get(learnKey) : undefined;
+        const keyNames = this.KeyNamesOf(obj.Name, required);
         const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
         const protectedNames = this.ProtectedColumns(def, required);
         const legacy = applyLegacy && learnKey ? this.LegacyUnresolvable.get(learnKey.slice(0, learnKey.indexOf('|'))) : undefined;
@@ -2265,7 +2438,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             if (seen.has(key) || (unselectable?.has(key) && !protectedNames.has(key))) return;
             seen.add(key);
             const q = qualifier && IsPlainIdentifier(qualifier) ? qualifier : null;
-            out.push(q ? `${q}.${name}` : name);
+            const named = q ? `${q}.${name}` : name;
+            // Learned ambiguous (AmbiguousColumns): the key is left out (xWeb prepends its own copy of it); a name that
+            // would still go out bare cannot be named unambiguously, so it is left out too unless this read needs it.
+            const resolved = this.ResolveAmbiguous(obj.Name, named, learnKey, keyNames);
+            if (resolved === null) return;
+            if (!resolved.includes('.') && this.AmbiguousColumns.get(learnKey ?? '')?.has(key) && !protectedNames.has(key)) return;
+            out.push(resolved);
         };
         if (def && def.Columns.length > 0) {
             const unexposed = learnKey ? this.UnexposedQualifiers.get(learnKey) : undefined;
@@ -2276,11 +2455,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             // An Extender column under an ALIASED join is unselectable (see NFDefinedColumn.IsExtension). A column on a
             // table missing from the database is gone for every object; a learned pair is this object's, and never
             // takes its key or watermark.
+            // A column of a join that can drop rows (RowFilteringJoins) is left out unless this read needs it.
+            const rowFiltering = this.RowFilteringJoins(def);
             const dropped = (c: NFDefinedColumn): boolean => {
                 if (c.IsExtension && c.Alias) return true;
                 if (this.ColumnOnMissingTable(c, learnKey)) return true;
                 const n = c.Name.toLowerCase();
                 if (protectedNames.has(n)) return false;
+                if (rowFiltering.has(FromTableKey(c))) return true;
                 return this.ColumnUnresolvable(c, learnKey) || !!legacy?.has(`${(c.Table ?? '').toLowerCase()}.${n}`);
             };
             // `ownOnly` (OwnTableColumnListFor): the OWN table's columns, and this read's key/ordering key/watermark
@@ -2333,6 +2515,94 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * carries the column, else the bare column name. Rows still come back with the bare, lowercased column
      * name, so readers keep using `name`; only the SQL sent qualifies.
      */
+    /**
+     * The from-tables (alias or table, lower case) whose join can DROP records of the object; the full list leaves their
+     * columns out. netFORUM states each join's kind (`<lsf_from_join_type>`): a 'Left Join' never drops a record, a 'Join'
+     * (INNER) keeps only records that have a match, and xWeb joins a table only when the list names one of its columns.
+     * An INNER join is safe when it is a LOOKUP — it equates the joined table's own `<prefix>_key` with a column of a
+     * table always present (the main table, or another such lookup): co_customer by cst_key, ev_event by evt_key. Any
+     * other INNER join (a child or optional extension: ce_course_participant by cup_cst_key, np_constituent,
+     * co_email_optout), and any table joined through one, can drop records — a live tenant's Individual list kept only
+     * course participants who were also donors and had opted out of email, so 0 of 364 new individuals were read
+     * (2026-10-29). A definition that states no join kind is read as before: nothing is left out.
+     */
+    private RowFilteringJoins(def: NFQueryDefinition): Set<string> {
+        const cached = this.RowFilteringByDefinition.get(def);
+        if (cached) return cached;
+        const keyOf = (t: { Table: string | null; Alias: string | null }): string => (t.Alias ?? t.Table ?? '').toLowerCase();
+        const tables = new Set(def.FromTables.map(keyOf));
+        // Each from-table's column prefix (its most common `<prefix>_`), and the definition's owner of each column name.
+        const counts = new Map<string, Map<string, number>>();
+        const ownerOfName = new Map<string, string>();
+        for (const c of def.Columns) {
+            const k = FromTableKey(c);
+            ownerOfName.set(c.Name.toLowerCase(), k);
+            const p = /^([a-z0-9]+)_/i.exec(c.Name)?.[1]?.toLowerCase();
+            if (!p) continue;
+            const m = counts.get(k) ?? new Map<string, number>();
+            m.set(p, (m.get(p) ?? 0) + 1);
+            counts.set(k, m);
+        }
+        const prefixOf = new Map([...counts].map(([k, m]) => [k, [...m].sort((a, b) => b[1] - a[1])[0][0]] as const));
+        // The from-table a reference in join text belongs to: its qualifier; else `self` when it carries self's prefix;
+        // else the definition's owner of that name; else the table whose prefix it carries.
+        const ownerOf = (ref: string, self: string): string | undefined => {
+            const dot = ref.lastIndexOf('.');
+            if (dot > 0) {
+                const q = ref.slice(0, dot).toLowerCase();
+                return tables.has(q) ? q : undefined;
+            }
+            const n = ref.toLowerCase();
+            const p = /^([a-z0-9]+)_/.exec(n)?.[1];
+            if (p && prefixOf.get(self) === p) return self;
+            return ownerOfName.get(n) ?? (p ? [...prefixOf].find(([, tp]) => tp === p)?.[0] : undefined);
+        };
+        const present = new Set<string>();
+        const filtering = new Set<string>();
+        def.FromTables.forEach((f, i) => {
+            const self = keyOf(f);
+            if (i === 0) {
+                present.add(self);
+                return;
+            }
+            const pairs = [...f.Join.matchAll(/([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)\s*=\s*([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)/g)].map(m => [m[1], m[2]] as const);
+            if (pairs.flat().some(r => { const t = ownerOf(r, self); return !!t && t !== self && filtering.has(t); })) {
+                filtering.add(self);
+                return;
+            }
+            const kind = f.JoinType.trim().toLowerCase();
+            if (kind !== 'join' && kind !== 'inner join') return;
+            const ownKey = prefixOf.has(self) ? `${prefixOf.get(self)}_key` : undefined;
+            const isOwnKey = (ref: string): boolean => !!ownKey && ownerOf(ref, self) === self && ref.slice(ref.lastIndexOf('.') + 1).toLowerCase() === ownKey;
+            const fromPresent = (ref: string): boolean => present.has(ownerOf(ref, self) ?? '');
+            const lookup = pairs.some(([a, b]) => (isOwnKey(a) && fromPresent(b)) || (isOwnKey(b) && fromPresent(a)));
+            (lookup ? present : filtering).add(self);
+        });
+        this.RowFilteringByDefinition.set(def, filtering);
+        return filtering;
+    }
+
+    /**
+     * The `<prefix>_add_date` paired with a `<prefix>_change_date` watermark: on the watermark's own table in the object's
+     * definition, not learned unresolvable, and named by `list` (the request's column list — its value sets the next
+     * watermark, so a read that cannot return it does not filter on it). Undefined for any other watermark, no
+     * definition, the default list, or a column xWeb could not resolve.
+     */
+    private AddDateCompanion(objectName: string, watermarkField: string | undefined, list: string, learnKey: string): string | undefined {
+        const prefix = watermarkField ? /^(\w+)_change_date$/i.exec(watermarkField)?.[1] : undefined;
+        if (!prefix || !list) return undefined;
+        const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
+        const find = (n: string): NFDefinedColumn | undefined => def?.Columns.find(c => c.Name.toLowerCase() === n.toLowerCase());
+        const changed = find(watermarkField!);
+        const added = find(`${prefix}_add_date`);
+        if (!changed || !added || !IsQueryableColumn(added.Name)) return undefined;
+        const tableOf = (c: NFDefinedColumn): string => (c.Alias ?? c.Table ?? '').toLowerCase();
+        if (tableOf(changed) !== tableOf(added)) return undefined;
+        const name = added.Name.toLowerCase();
+        if (this.UnselectableColumns.get(learnKey)?.has(name)) return undefined;
+        return list.split(',').some(item => item.trim().split('.').pop()!.toLowerCase() === name) ? added.Name : undefined;
+    }
+
     private QualifiedColumn(objectName: string, name: string, learnKey?: string): string {
         const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
         const col = def?.Columns.find(c => c.Name.toLowerCase() === name.toLowerCase());
@@ -2363,19 +2633,23 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         return `szObjectName="${args.szObjectName}"; szColumnList=${cols}; szOrderBy=${args.szOrderBy ?? 'none'}; szWhereClause=${where}`;
     }
 
-    private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>): string {
+    private ColumnListFor(cfg: NFObjectConfig, required: Array<string | undefined>, objectName?: string, learnKey?: string): string {
         const declared = Array.isArray(cfg.columnList)
             ? cfg.columnList.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).map(c => c.trim())
             : [];
         if (declared.length === 0) return '';
         const out: string[] = [];
         const seen = new Set<string>();
+        // A declared list names its columns as the operator wrote them (bare, as a by-hand request that read does);
+        // only a name this object learned ambiguous is changed — left out when it is the key, qualified otherwise.
+        const keyNames = objectName ? this.KeyNamesOf(objectName, required) : new Set<string>();
         for (const c of [...declared, ...required]) {
             if (!c) continue;
             const key = c.toLowerCase();
             if (seen.has(key)) continue;
             seen.add(key);
-            out.push(c);
+            const resolved = objectName ? this.ResolveAmbiguous(objectName, c, learnKey, keyNames) : c;
+            if (resolved !== null) out.push(resolved);
         }
         return out.join(',');
     }
@@ -2721,9 +2995,10 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         body?: string,
     ): Promise<RESTResponse> {
         await this.Throttle();
+        const timeoutMs = this.requestTimeoutMs;
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
             try {
                 const opts: RequestInit = { method, headers, signal: controller.signal };
                 if (body !== undefined && method !== 'GET') opts.body = body;
@@ -2745,7 +3020,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 return { Status: response.status, Body: text, Headers: h };
             } catch (e) {
                 clearTimeout(timer);
-                if (e instanceof Error && e.name === 'AbortError') throw new Error(`NetForum request timed out: ${url}`);
+                if (e instanceof Error && e.name === 'AbortError') throw new Error(`NetForum request timed out after ${timeoutMs}ms: ${url}`);
                 if (attempt >= MAX_RETRIES) throw e;
                 await this.Sleep(Math.min(1000 * Math.pow(2, attempt), 30_000));
             }

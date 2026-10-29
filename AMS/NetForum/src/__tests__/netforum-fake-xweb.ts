@@ -25,6 +25,7 @@ export interface FakeDefinedColumn {
     Name: string;
     Table: string | null;
     Alias: string | null;
+    FromTable: string | null;
     DataType: string | null;
     Description: string | undefined;
     AllowsNull: boolean | undefined;
@@ -38,7 +39,7 @@ export interface FakeDefinition {
     KeyColumn: string | undefined;
     Columns: FakeDefinedColumn[];
     DefaultListColumns: string[];
-    FromTables: Array<{ Table: string | null; Alias: string | null; Join: string }>;
+    FromTables: Array<{ Table: string | null; Alias: string | null; Join: string; JoinType: string }>;
     BrokenJoin: string | undefined;
 }
 
@@ -84,9 +85,17 @@ export type DefColumn = [string, string, string?];
  *   invalidOneAtATime  bare names that draw "Invalid column name" ONE per request (the first one named)
  *   ownTable           the table xWeb's statement is built on when it is not def.MainTable ('joinedBreaks' judges by it)
  *   values             { column: [v1, v2, …] } — the values xWeb returns for a column, one per row
+ *   def.joins          { '<alias or table>': { type, on } } — a from-table's `<lsf_from_join_type>` ('Join', 'Left Join')
+ *                      and `<lsf_from_join>`; a table not listed gets no join type and a placeholder join
+ *   def.ext            { column: '<table>_ext' } — an Extender column (mdc_ext = 1): listed under its DefColumn table,
+ *                      its mdc_table_name the `_ext` table
  */
 export interface FakeObject {
-    def?: { MainTable?: string; KeyColumn: string; Columns: DefColumn[] };
+    def?: {
+        MainTable?: string; KeyColumn: string; Columns: DefColumn[];
+        joins?: Record<string, { type?: string; on: string }>;
+        ext?: Record<string, string>;
+    };
     fields?: Array<[string, boolean]>;
     pk?: string;
     wm?: string;
@@ -98,6 +107,16 @@ export interface FakeObject {
     allowJoined?: string[];
     ownTable?: string;
     values?: Record<string, string[]>;
+    /**
+     * xWeb prepends its own copy of the object's primary key to every query it builds. A list that ALSO names this key
+     * bare, read with a bare ORDER BY / WHERE on it, draws SQL Server's "Ambiguous column name '<key>'"; a list that
+     * leaves the key out still returns it as the first column (xWeb's copy).
+     */
+    ambiguousKey?: string;
+    /** Bare names that draw "Ambiguous column name" whenever a list names them unqualified (two joined tables carry them). */
+    ambiguousBare?: string[];
+    /** The object's own Configuration JSON (e.g. a declared `columnList`). */
+    config?: Record<string, unknown>;
 }
 export type World = Record<string, FakeObject>;
 
@@ -140,7 +159,7 @@ export function makeConnector(world: World, root: string, calls: SentCall[]): Ne
     const x = internals(c);
     x.Authenticate = async () => ({ Config: { BaseURL: 'https://xweb.invalid' }, Token: 't' });
     x.GetCachedObject = (_iid: string, name: string) => ({
-        ID: `io-${name}`, Name: name, IntegrationID: 'I1', Configuration: null,
+        ID: `io-${name}`, Name: name, IntegrationID: 'I1', Configuration: world[name]?.config ? JSON.stringify(world[name].config) : null,
         IncrementalWatermarkField: world[name]?.wm ?? null,
     }) as unknown as MJIntegrationObjectEntity;
     x.GetCachedFields = (id: string) => {
@@ -157,10 +176,12 @@ export function makeConnector(world: World, root: string, calls: SentCall[]): Ne
             BrokenJoin: undefined,
             FromTables: [...new Set(w.Columns.map(([t, , a]) => `${t}|${a ?? ''}`))].map((ta, i) => {
                 const [t, a] = ta.split('|');
-                return { Table: t, Alias: a || null, Join: i === 0 ? '' : `${a || t}.x = y` };
+                const j = w.joins?.[a || t];
+                return { Table: t || null, Alias: a || null, Join: j?.on ?? (i === 0 ? '' : `${a || t}.x = y`), JoinType: j?.type ?? '' };
             }),
             Columns: w.Columns.map(([Table, Name, Alias]) => ({
-                Name, Table, Alias: Alias ?? null, DataType: 'nvarchar', Description: undefined, AllowsNull: undefined, MaxLength: null, IsExtension: false,
+                Name, Table: w.ext?.[Name] ?? (Table || null), Alias: Alias ?? null, FromTable: Table || null,
+                DataType: 'nvarchar', Description: undefined, AllowsNull: undefined, MaxLength: null, IsExtension: !!w.ext?.[Name],
             })),
         } : null;
         x.DefinitionByObject.set(name.toLowerCase(), def);
@@ -181,6 +202,15 @@ export function makeConnector(world: World, root: string, calls: SentCall[]): Ne
         if (seq) return fault(`Invalid column name '${seq}'.`);
         const bad = named.filter(n => (w.invalid ?? []).includes(n));
         if (bad.length) return fault(bad.map(n => `Invalid column name '${n}'.`).join('\n'));
+        const bareItem = (n: string): boolean => items.some(it => it.toLowerCase() === n.toLowerCase());
+        const ambBare = (w.ambiguousBare ?? []).find(bareItem);
+        if (ambBare) return fault(`Ambiguous column name '${ambBare}'.`);
+        if (w.ambiguousKey && bareItem(w.ambiguousKey)) {
+            const bareRef = new RegExp(`(^|[^.\\w])${w.ambiguousKey}\\b`, 'i');
+            if (bareRef.test(args.szOrderBy ?? '') || bareRef.test(args.szWhereClause ?? '')) {
+                return fault(`Check the Error Log for more details: Ambiguous column name '${w.ambiguousKey}'.`);
+            }
+        }
         if (w.mode === 'allBreaks') return fault(`Incorrect syntax near '${w.def!.MainTable ?? w.def!.Columns[0][0]}'.`);
         if (w.mode === 'joinedBreaks') {
             const main = (w.ownTable ?? w.def!.MainTable ?? w.def!.Columns[0][0]).toLowerCase();
@@ -192,6 +222,8 @@ export function makeConnector(world: World, root: string, calls: SentCall[]): Ne
             });
             if (joined) return fault(`Incorrect syntax near '${joined.split('.')[0]}'.`);
         }
+        // xWeb's own copy of the key leads every row when the list left the key out.
+        if (w.ambiguousKey && !named.includes(w.ambiguousKey.toLowerCase())) return rowsBody([w.ambiguousKey.toLowerCase(), ...named], w.values);
         return rowsBody(named, w.values);
     };
     return c;
