@@ -538,15 +538,20 @@ describe('HubSpotConnector — search keyset pagination (10k window cap fix)', (
             expect(r.hasMore).toBe(true);
             expect(r.nextCursor).toEqual({ after: '200', anchorDateMs: 'T', anchorId: '5' });
         });
-        it('re-anchors by keyset when the window is exhausted but records remain', () => {
+        it('STALLS rather than keyset re-anchoring when the window is exhausted but records remain', () => {
+            // The re-anchor needed a (dateField, hs_object_id) ordering that HubSpot will not accept
+            // (one sort only, #424). Guessing an anchor out of an unordered cluster would skip records,
+            // so the scan aborts loudly and the watermark stays put.
             const r = c.runComputeResume({ incoming: {}, pagingNextAfter: undefined, total: 25_000, lastAnchorDateMs: '1717', lastAnchorId: '10000' });
-            expect(r.hasMore).toBe(true);
-            expect(r.nextCursor).toEqual({ anchorDateMs: '1717', anchorId: '10000' });
-            expect(r.nextCursor?.after).toBeUndefined(); // re-anchor drops the window offset
+            expect(r.hasMore).toBe(false);
+            expect(r.nextCursor).toBeUndefined();
+            expect(r.stalled).toBe(true);
         });
-        it('re-anchors (does NOT keep paging) once the API offset reaches the 10k cap', () => {
+        it('STALLS once the API offset reaches the 10k cap, even with an anchor available', () => {
             const r = c.runComputeResume({ incoming: {}, pagingNextAfter: '10000', total: 25_000, lastAnchorDateMs: '1717', lastAnchorId: '10000' });
-            expect(r.nextCursor).toEqual({ anchorDateMs: '1717', anchorId: '10000' });
+            expect(r.hasMore).toBe(false);
+            expect(r.nextCursor).toBeUndefined();
+            expect(r.stalled).toBe(true);
         });
         it('completes when the window is exhausted and total is within the cap', () => {
             const r = c.runComputeResume({ incoming: {}, pagingNextAfter: undefined, total: 5_000, lastAnchorDateMs: '1717', lastAnchorId: '25000' });
@@ -595,28 +600,24 @@ describe('HubSpotConnector — search keyset pagination (10k window cap fix)', (
             return ids;
         }
 
-        it('pages through a >10k same-timestamp cluster with no skips or duplicates', async () => {
+        it('aborts loudly on a >10k cluster instead of silently dropping the remainder', async () => {
             const connector = new KeysetTestHubSpot();
             connector.clusterSize = 25_000;
-            const ids = await drain(connector);
-
-            expect(ids.length).toBe(25_000);
-            expect(new Set(ids).size).toBe(25_000); // no duplicates
-            const nums = ids.map(Number).sort((a, b) => a - b);
-            expect(nums[0]).toBe(1); // no leading skip
-            expect(nums[nums.length - 1]).toBe(25_000); // the straggler past the cap is fetched
-            // exactly two re-anchors, at the two 10k window boundaries
-            expect([...connector.reanchorFloors].sort((a, b) => a - b)).toEqual([10_000, 20_000]);
+            // Leaving the watermark un-advanced and retrying beats inventing a keyset anchor that
+            // would skip most of the cluster. The gap is visible; silent loss would not be.
+            await expect(drain(connector)).rejects.toThrow(/cannot advance without risking silent record loss/i);
+            expect(connector.reanchorFloors.size).toBe(0);
         });
 
-        it('always requests the hs_object_id secondary sort (keyset tie-breaker)', async () => {
+        it('sends exactly ONE sort — HubSpot answers 400 to any request carrying two', async () => {
             const connector = new KeysetTestHubSpot();
             connector.clusterSize = 250;
             await drain(connector);
             expect(connector.sortsSeen.length).toBeGreaterThan(0);
             for (const sorts of connector.sortsSeen) {
                 const arr = sorts as Array<{ propertyName: string }>;
-                expect(arr.map(s => s.propertyName)).toContain('hs_object_id');
+                expect(arr).toHaveLength(1);
+                expect(arr[0].propertyName).toBe('hs_lastmodifieddate');
             }
         });
 

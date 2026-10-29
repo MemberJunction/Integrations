@@ -94,6 +94,12 @@ interface BillComAuthContext extends RESTAuthContext {
     BaseURL: string;
     /** Epoch ms of the last request made on this session — drives idle-expiry detection. */
     LastUsedAt: number;
+    /**
+     * Which connection this session belongs to (see {@link BillComConnector.ConnectionKey}). A Bill.com
+     * session is scoped to ONE organization, so every cache read and the 401 re-login path must match on
+     * it — `MakeHTTPRequest` receives only the auth context, so the context has to carry its own identity.
+     */
+    ConnectionKey: string;
 }
 
 /** Bill.com list envelope. `nextPage`/`prevPage` are opaque cursor tokens. */
@@ -128,10 +134,18 @@ interface BillComListEnvelope {
 @RegisterClass(BaseIntegrationConnector, 'BillComConnector')
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-bill-com')
 export class BillComConnector extends BaseRESTIntegrationConnector {
-    /** Cached session. Reused across requests; re-acquired on idle expiry or a 401. */
-    private cachedAuth: BillComAuthContext | null = null;
-    /** Credentials retained so a mid-run re-login does not need another metadata round-trip. */
-    private cachedCredentials: BillComCredentials | null = null;
+    /**
+     * Cached sessions BY CONNECTION. Reused across requests; re-acquired on idle expiry or a 401.
+     *
+     * Keyed, not single-valued: a Bill.com session is scoped to the organization it logged into, so one
+     * connector instance serving two connections would otherwise read the second organization through the
+     * first one's session and return the first organization's data for both. The engine resolves a fresh
+     * connector per scheduled run, which is the only reason that has not bitten in production — any caller
+     * that reuses an instance (an action, a script, a future connector cache) crosses organizations.
+     */
+    private readonly sessions = new Map<string, BillComAuthContext>();
+    /** Credentials retained per connection so a mid-run re-login needs no metadata round-trip. */
+    private readonly credentials = new Map<string, BillComCredentials>();
 
     // ── Identity & capabilities ──────────────────────────────────────
 
@@ -203,13 +217,27 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo
     ): Promise<RESTAuthContext> {
-        if (this.cachedAuth && !this.IsSessionStale(this.cachedAuth)) {
-            return this.cachedAuth;
+        const key = this.ConnectionKey(companyIntegration);
+        const cached = this.sessions.get(key);
+        if (cached && !this.IsSessionStale(cached)) {
+            return cached;
         }
         const creds = await this.LoadCredentials(companyIntegration, contextUser);
-        this.cachedCredentials = creds;
-        this.cachedAuth = await this.Login(creds);
-        return this.cachedAuth;
+        this.credentials.set(key, creds);
+        const auth = await this.Login(creds, key);
+        this.sessions.set(key, auth);
+        return auth;
+    }
+
+    /**
+     * Identity of a connection for session-cache purposes.
+     *
+     * The CompanyIntegration ID alone would be enough to keep two connections apart, but the credential
+     * and Configuration are folded in as well so that re-pointing a connection at different Bill.com
+     * credentials cannot keep serving the previous organization's session out of cache.
+     */
+    private ConnectionKey(companyIntegration: MJCompanyIntegrationEntity): string {
+        return `${companyIntegration.ID}|${companyIntegration.CredentialID ?? ''}|${companyIntegration.Configuration ?? ''}`;
     }
 
     /** True when the session has been idle long enough that Bill.com may have expired it. */
@@ -223,7 +251,7 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
      * Throws rather than returning null: without a session nothing downstream can work, and a silent
      * failure here would surface later as an inscrutable 401 on an unrelated object.
      */
-    private async Login(creds: BillComCredentials): Promise<BillComAuthContext> {
+    private async Login(creds: BillComCredentials, connectionKey: string): Promise<BillComAuthContext> {
         const baseURL = this.ResolveBaseURL(creds);
         const response = await fetch(`${baseURL}/${BILLCOM_API_VERSION}/login`, {
             method: 'POST',
@@ -257,6 +285,7 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
             DevKey: creds.DevKey,
             BaseURL: baseURL,
             LastUsedAt: Date.now(),
+            ConnectionKey: connectionKey,
         };
     }
 
@@ -337,14 +366,21 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
             return first;
         }
 
-        if (!this.cachedCredentials) {
+        // Re-login for THIS connection, never "whichever logged in last". Taking the key off the auth
+        // context rather than a shared field is what keeps a 401 on one connection from replaying the
+        // request against another organization's session — which would have returned the wrong org's
+        // data with a 200, the quietest failure available.
+        const key = (auth as BillComAuthContext).ConnectionKey;
+        const creds = key ? this.credentials.get(key) : undefined;
+        if (!creds) {
             // Nothing to re-login with — surface the 401 rather than pretend we can recover.
             return first;
         }
 
-        this.cachedAuth = await this.Login(this.cachedCredentials);
-        const retried = await this.SendOnce(url, method, this.BuildHeaders(this.cachedAuth), body);
-        this.TouchSession(this.cachedAuth);
+        const refreshed = await this.Login(creds, key);
+        this.sessions.set(key, refreshed);
+        const retried = await this.SendOnce(url, method, this.BuildHeaders(refreshed), body);
+        this.TouchSession(refreshed);
         return retried;
     }
 
@@ -571,10 +607,11 @@ export class BillComConnector extends BaseRESTIntegrationConnector {
         contextUser: UserInfo
     ): Promise<ConnectionTestResult> {
         try {
+            const key = this.ConnectionKey(companyIntegration);
             const creds = await this.LoadCredentials(companyIntegration, contextUser);
-            const auth = await this.Login(creds);
-            this.cachedCredentials = creds;
-            this.cachedAuth = auth;
+            const auth = await this.Login(creds, key);
+            this.credentials.set(key, creds);
+            this.sessions.set(key, auth);
             return {
                 Success: true,
                 Message: `Connected to Bill.com at ${auth.BaseURL}`,

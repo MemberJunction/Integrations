@@ -3086,13 +3086,15 @@ export class HubSpotConnector extends BaseRESTIntegrationConnector {
 
         const searchBody: Record<string, unknown> = {
             filterGroups,
-            // Secondary sort on hs_object_id is REQUIRED: it makes ordering deterministic within a
-            // same-timestamp cluster so the keyset anchor (last record's id) is well-defined and the
-            // next window can never skip or re-emit a record at the boundary.
-            sorts: [
-                { propertyName: dateField, direction: 'ASCENDING' },
-                { propertyName: 'hs_object_id', direction: 'ASCENDING' },
-            ],
+            // ONE sort. HubSpot's v3 search accepts a single sort and answers HTTP 400 to any
+            // request carrying two, so the (dateField, hs_object_id) compound this path was written
+            // around could never execute — every incremental sync failed outright (#424).
+            //
+            // Losing the tie-breaker costs intra-cluster determinism, which the >10k keyset re-anchor
+            // depended on. That path now refuses to run rather than guess an anchor it cannot define
+            // (see computeSearchResume). Under the cap, `after` paginates one server-side result set,
+            // so a single sort is sufficient and this is simply correct.
+            sorts: [{ propertyName: dateField, direction: 'ASCENDING' }],
             properties,
             limit: pageSize,
         };
@@ -3265,14 +3267,20 @@ export class HubSpotConnector extends BaseRESTIntegrationConnector {
         }
 
         if (total > cap) {
-            if (lastAnchorId != null && lastAnchorDateMs != null) {
-                return { nextCursor: { anchorDateMs: lastAnchorDateMs, anchorId: lastAnchorId }, hasMore: true };
-            }
-            // total exceeds the 10k window cap but this page produced no usable keyset anchor — which
-            // means HubSpot returned a total > 0 with an empty/anchorless page (a contract violation).
-            // Re-anchoring is impossible; silently stopping here would DROP the remaining records — the
-            // exact silent-loss this fix exists to prevent. Flag it so the caller aborts loudly and
-            // leaves the watermark un-advanced (the next sync retries the gap) instead of skipping it.
+            // The keyset re-anchor is DISABLED, deliberately.
+            //
+            // It re-anchored on `(dateField > anchor) OR (dateField == anchor AND hs_object_id > anchorId)`,
+            // which is only sound when results are ordered by (dateField, hs_object_id). HubSpot accepts
+            // exactly one sort — a second is an unconditional HTTP 400 (#424) — so that ordering cannot be
+            // requested, and within a same-timestamp cluster the order is then unspecified. Taking the last
+            // row of an unordered cluster as the anchor would skip every other row in it: silent loss, on
+            // the largest objects, which is strictly worse than not advancing.
+            //
+            // So this falls through to the `stalled` path: the fetch aborts loudly, the watermark is left
+            // un-advanced, and the next sync retries. Restoring it needs a single-sort keyset — sort on
+            // hs_object_id alone with the date as a pure filter, carrying the running max date in the
+            // cursor since id order no longer puts the latest date on the last page — and that needs
+            // verifying against a real portal with a >10k same-timestamp cluster before it ships.
             return { nextCursor: undefined, hasMore: false, stalled: true };
         }
 
@@ -3312,13 +3320,10 @@ export class HubSpotConnector extends BaseRESTIntegrationConnector {
                         value: String(watermarkMs),
                     }],
                 }],
-                // Secondary sort on hs_object_id matches the active-record path: bulk deletions often
-                // share one hs_lastmodifieddate, so without a tie-breaker the opaque `after` pages of
-                // this archived scan have undefined intra-cluster order and could skip/duplicate.
-                sorts: [
-                    { propertyName: dateField, direction: 'ASCENDING' },
-                    { propertyName: 'hs_object_id', direction: 'ASCENDING' },
-                ],
+                // One sort, for the same reason as the active path: a second one is an unconditional
+                // HTTP 400 from HubSpot (#424). This scan pages a single result set via `after` and
+                // never re-anchors, so it needs no tie-breaker.
+                sorts: [{ propertyName: dateField, direction: 'ASCENDING' }],
                 properties,
                 limit: 100,
                 archived: true,

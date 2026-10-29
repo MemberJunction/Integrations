@@ -50,15 +50,48 @@ class TestableBillCom extends BillComConnector {
             throw new Error('IntegrationObject not found: "invoices"');
         };
     }
-    /** Seeds the private credential cache so the 401 re-login path is reachable in isolation. */
-    public seedCredentials(): void {
-        (this as unknown as { cachedCredentials: unknown }).cachedCredentials = {
-            Username: 'u', Password: 'p', OrganizationID: 'org', DevKey: 'dk', Environment: 'sandbox',
-        };
+    /** Seeds the per-connection credential cache so the 401 re-login path is reachable in isolation. */
+    public seedCredentials(connectionKey = 'ci-1||', organizationID = 'org'): void {
+        (this as unknown as { credentials: Map<string, unknown> }).credentials.set(connectionKey, {
+            Username: 'u', Password: 'p', OrganizationID: organizationID, DevKey: 'dk', Environment: 'sandbox',
+        });
+    }
+
+    /** Seeds the per-connection session cache. */
+    public seedSession(connectionKey: string, session: unknown): void {
+        (this as unknown as { sessions: Map<string, unknown> }).sessions.set(connectionKey, session);
+    }
+
+    /** The session currently cached for a connection, for cross-connection assertions. */
+    public sessionFor(connectionKey: string): { SessionID?: string } | undefined {
+        return (this as unknown as { sessions: Map<string, { SessionID?: string }> }).sessions.get(connectionKey);
+    }
+
+    public callAuthenticate(companyIntegration: unknown) {
+        return this['Authenticate'](companyIntegration as never, {} as never);
+    }
+
+    /**
+     * Stands in for the metadata round-trip so Authenticate can be exercised without a provider.
+     * Resolves each connection to the credentials already seeded under its own key, which is exactly
+     * what the real loader does — one connection, its own credentials.
+     */
+    public stubCredentialLoader(): void {
+        (this as unknown as { LoadCredentials(ci: { ID: string; CredentialID?: string; Configuration?: string | null }): Promise<unknown> }).LoadCredentials =
+            async (ci) => {
+                const key = `${ci.ID}|${ci.CredentialID ?? ''}|${ci.Configuration ?? ''}`;
+                const creds = (this as unknown as { credentials: Map<string, unknown> }).credentials.get(key);
+                if (!creds) throw new Error(`test: no credentials seeded for "${key}"`);
+                return creds;
+            };
     }
 }
 
-const authCtx = () => ({ SessionID: 'sess-1', DevKey: 'dev-1', BaseURL: 'https://mock/connect/v3', LastUsedAt: Date.now() });
+const CONN_KEY = 'ci-1||';
+const authCtx = (connectionKey = CONN_KEY) => ({
+    SessionID: 'sess-1', DevKey: 'dev-1', BaseURL: 'https://mock/connect/v3', LastUsedAt: Date.now(),
+    ConnectionKey: connectionKey,
+});
 
 function jsonResponse(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
@@ -193,6 +226,94 @@ describe('BillComConnector', () => {
         });
     });
 
+    describe('session isolation across connections', () => {
+        /** Two connections, two Bill.com organizations, one connector instance. */
+        const ciA = { ID: 'ci-A', IntegrationID: 'int-1', CredentialID: 'cred-A', Configuration: null } as never;
+        const ciB = { ID: 'ci-B', IntegrationID: 'int-1', CredentialID: 'cred-B', Configuration: null } as never;
+
+        beforeEach(() => connector.stubCredentialLoader());
+
+        /** Each /login answers with a session id derived from the organizationId it was sent. */
+        const loginWire = () => {
+            const logins: string[] = [];
+            vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = String(input);
+                if (url.endsWith('/login')) {
+                    const org = JSON.parse(String(init?.body ?? '{}')).organizationId as string;
+                    logins.push(org);
+                    return jsonResponse(200, { sessionId: `sess-for-${org}` });
+                }
+                return jsonResponse(200, { results: [] });
+            });
+            return logins;
+        };
+
+        it('does not serve one connection the other connection\'s session', async () => {
+            const logins = loginWire();
+            connector.seedCredentials('ci-A|cred-A|', 'org-A');
+            connector.seedCredentials('ci-B|cred-B|', 'org-B');
+
+            const a = (await connector.callAuthenticate(ciA)) as { SessionID: string };
+            const b = (await connector.callAuthenticate(ciB)) as { SessionID: string };
+
+            expect(a.SessionID).toBe('sess-for-org-A');
+            expect(b.SessionID).toBe('sess-for-org-B');
+            expect(a.SessionID).not.toBe(b.SessionID);
+            expect(logins).toEqual(['org-A', 'org-B']);
+        });
+
+        it('still caches per connection — a repeat Authenticate does not re-login', async () => {
+            const logins = loginWire();
+            connector.seedCredentials('ci-A|cred-A|', 'org-A');
+
+            const first = (await connector.callAuthenticate(ciA)) as { SessionID: string };
+            const second = (await connector.callAuthenticate(ciA)) as { SessionID: string };
+
+            expect(second).toBe(first);
+            expect(logins).toEqual(['org-A']);
+        });
+
+        it('re-logins on a 401 with THIS connection\'s credentials, not the last one to authenticate', async () => {
+            connector.seedCredentials('ci-A|cred-A|', 'org-A');
+            connector.seedCredentials('ci-B|cred-B|', 'org-B');
+            // B authenticated most recently — the pre-fix code would have re-logged-in as B.
+            const logins: string[] = [];
+            let dataCalls = 0;
+            vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = String(input);
+                if (url.endsWith('/login')) {
+                    const org = JSON.parse(String(init?.body ?? '{}')).organizationId as string;
+                    logins.push(org);
+                    return jsonResponse(200, { sessionId: `sess-for-${org}` });
+                }
+                dataCalls++;
+                return dataCalls === 1 ? jsonResponse(401, { message: 'session expired' }) : jsonResponse(200, { results: [] });
+            });
+
+            const res = await connector.callMakeHTTPRequest(
+                authCtx('ci-A|cred-A|'), 'https://mock/connect/v3/invoices', 'GET', {}
+            );
+
+            expect(res.Status).toBe(200);
+            expect(logins).toEqual(['org-A']);
+            expect(connector.sessionFor('ci-A|cred-A|')?.SessionID).toBe('sess-for-org-A');
+            expect(connector.sessionFor('ci-B|cred-B|')).toBeUndefined();
+        });
+
+        it('re-pointing a connection at new credentials does not reuse the old session', async () => {
+            const logins = loginWire();
+            connector.seedCredentials('ci-A|cred-A|', 'org-A');
+            connector.seedCredentials('ci-A|cred-B|', 'org-B');
+
+            const before = (await connector.callAuthenticate(ciA)) as { SessionID: string };
+            const repointed = { ID: 'ci-A', IntegrationID: 'int-1', CredentialID: 'cred-B', Configuration: null } as never;
+            const after = (await connector.callAuthenticate(repointed)) as { SessionID: string };
+
+            expect(before.SessionID).toBe('sess-for-org-A');
+            expect(after.SessionID).toBe('sess-for-org-B');
+        });
+    });
+
     describe('session lifecycle', () => {
         it('re-logins once on a 401 and replays the request', async () => {
             connector.seedCredentials();
@@ -315,7 +436,7 @@ describe('invoice archive and restore', () => {
     beforeEach(() => {
         connector = new TestableBillCom();
         connector.seedCredentials();
-        (connector as unknown as { cachedAuth: unknown }).cachedAuth = authCtx();
+        connector.seedSession(CONN_KEY, authCtx());
         connector.stubCachedObject(JSON.stringify({ archivePath: '/v3/invoices/{invoiceId}/archive', restorePath: '/v3/invoices/{invoiceId}/restore' }));
     });
 
