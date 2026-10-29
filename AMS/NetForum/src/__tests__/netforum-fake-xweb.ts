@@ -25,6 +25,7 @@ export interface FakeDefinedColumn {
     Name: string;
     Table: string | null;
     Alias: string | null;
+    FromTable: string | null;
     DataType: string | null;
     Description: string | undefined;
     AllowsNull: boolean | undefined;
@@ -38,7 +39,7 @@ export interface FakeDefinition {
     KeyColumn: string | undefined;
     Columns: FakeDefinedColumn[];
     DefaultListColumns: string[];
-    FromTables: Array<{ Table: string | null; Alias: string | null; Join: string }>;
+    FromTables: Array<{ Table: string | null; Alias: string | null; Join: string; JoinType: string }>;
     BrokenJoin: string | undefined;
 }
 
@@ -84,9 +85,17 @@ export type DefColumn = [string, string, string?];
  *   invalidOneAtATime  bare names that draw "Invalid column name" ONE per request (the first one named)
  *   ownTable           the table xWeb's statement is built on when it is not def.MainTable ('joinedBreaks' judges by it)
  *   values             { column: [v1, v2, …] } — the values xWeb returns for a column, one per row
+ *   def.joins          { '<alias or table>': { type, on } } — a from-table's `<lsf_from_join_type>` ('Join', 'Left Join')
+ *                      and `<lsf_from_join>`; a table not listed gets no join type and a placeholder join
+ *   def.ext            { column: '<table>_ext' } — an Extender column (mdc_ext = 1): listed under its DefColumn table,
+ *                      its mdc_table_name the `_ext` table
  */
 export interface FakeObject {
-    def?: { MainTable?: string; KeyColumn: string; Columns: DefColumn[] };
+    def?: {
+        MainTable?: string; KeyColumn: string; Columns: DefColumn[];
+        joins?: Record<string, { type?: string; on: string }>;
+        ext?: Record<string, string>;
+    };
     fields?: Array<[string, boolean]>;
     pk?: string;
     wm?: string;
@@ -167,10 +176,12 @@ export function makeConnector(world: World, root: string, calls: SentCall[]): Ne
             BrokenJoin: undefined,
             FromTables: [...new Set(w.Columns.map(([t, , a]) => `${t}|${a ?? ''}`))].map((ta, i) => {
                 const [t, a] = ta.split('|');
-                return { Table: t || null, Alias: a || null, Join: i === 0 ? '' : `${a || t}.x = y` };
+                const j = w.joins?.[a || t];
+                return { Table: t || null, Alias: a || null, Join: j?.on ?? (i === 0 ? '' : `${a || t}.x = y`), JoinType: j?.type ?? '' };
             }),
             Columns: w.Columns.map(([Table, Name, Alias]) => ({
-                Name, Table: Table || null, Alias: Alias ?? null, DataType: 'nvarchar', Description: undefined, AllowsNull: undefined, MaxLength: null, IsExtension: false,
+                Name, Table: w.ext?.[Name] ?? (Table || null), Alias: Alias ?? null, FromTable: Table || null,
+                DataType: 'nvarchar', Description: undefined, AllowsNull: undefined, MaxLength: null, IsExtension: !!w.ext?.[Name],
             })),
         } : null;
         x.DefinitionByObject.set(name.toLowerCase(), def);
