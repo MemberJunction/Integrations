@@ -270,10 +270,10 @@
       "objectCount": 168,
       "className": "@memberjunction/connector-hubspot",
       "npmPackage": "@memberjunction/connector-hubspot",
-      "version": "1.1.6",
+      "version": "1.1.7",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "CRM/HubSpot",
-      "installTag": "CRM-HubSpot@1.1.6"
+      "installTag": "CRM-HubSpot@1.1.7"
     },
     {
       "name": "Microsoft Dynamics 365 (Dataverse)",
@@ -480,10 +480,10 @@
       "objectCount": 3,
       "className": "@memberjunction/connector-bill-com",
       "npmPackage": "@memberjunction/connector-bill-com",
-      "version": "0.3.3",
+      "version": "0.3.4",
       "mjVersionRange": ">=5.43.0 <7.0.0",
       "repoSubpath": "Finance/BillCom",
-      "installTag": "Finance-BillCom@0.3.3"
+      "installTag": "Finance-BillCom@0.3.4"
     },
     {
       "name": "business-central",
