@@ -2831,6 +2831,15 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
+     * A copy of `s` that shares no memory with the response it was parsed from. V8 stores a regex capture or substring
+     * as a pointer into its source string, so a kept value would keep the whole response.
+     */
+    private DetachText(s: string): string {
+        // JSON.stringify always builds a new string, so the parsed copy cannot point into the response.
+        return JSON.parse(JSON.stringify(s)) as string;
+    }
+
+    /**
      * Extracts the text content of the FIRST occurrence of a scalar element by local name, ignoring
      * namespace prefixes. Returns undefined when absent. Used for AuthenticateResult, mdc_* columns,
      * and create-result keys.
@@ -2851,7 +2860,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const re = new RegExp(`<(?:[\\w.-]+:)?${this.EscapeRegExp(localName)}\\b[^>]*>([\\s\\S]*?)</(?:[\\w.-]+:)?${this.EscapeRegExp(localName)}>`);
         const m = re.exec(xml);
         if (!m) return undefined;
-        return this.UnescapeXml(m[1]).trim();
+        return this.DetachText(this.UnescapeXml(m[1]).trim());
     }
 
     /** Returns the inner XML of every occurrence of an element by local name (namespace-agnostic). */
@@ -2923,8 +2932,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             const selfClosing = m[2] === '/';
             const content = m[3];
             if (selfClosing || content === undefined) { row[tag] = null; continue; }
-            // Flattened GetQuery rows carry scalar columns; keep the unescaped text value.
-            row[tag] = this.UnescapeXml(content);
+            // Flattened GetQuery rows carry scalar columns; keep a copy of the unescaped text value.
+            row[tag] = this.DetachText(this.UnescapeXml(content));
         }
         return row;
     }
