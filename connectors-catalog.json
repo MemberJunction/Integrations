@@ -102,10 +102,10 @@
       "objectCount": 34,
       "className": "@memberjunction/connector-netforum-enterprise",
       "npmPackage": "@memberjunction/connector-netforum-enterprise",
-      "version": "1.7.0",
+      "version": "1.7.1",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "AMS/NetForum",
-      "installTag": "AMS-NetForum@1.7.0"
+      "installTag": "AMS-NetForum@1.7.1"
     },
     {
       "name": "Nimble AMS",
@@ -777,10 +777,10 @@
       "objectCount": 23,
       "className": "@memberjunction/connector-rasa-io",
       "npmPackage": "@memberjunction/connector-rasa-io",
-      "version": "3.0.2",
+      "version": "3.0.3",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Marketing/Rasa",
-      "installTag": "Marketing-Rasa@3.0.2"
+      "installTag": "Marketing-Rasa@3.0.3"
     },
     {
       "name": "Reply",
