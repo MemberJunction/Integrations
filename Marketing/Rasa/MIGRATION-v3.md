@@ -94,10 +94,44 @@ stored watermark older than that is moved up to it with a `WATERMARK_CLAMPED` wa
 repeats, no overlap, every id's insights feed answers 200). Blast / Sequence Action still skip a parent that
 answers HTTP 404 (e.g. a deleted blast) with a `PARENT_NOT_FOUND` warning instead of failing.
 
-**Contact link (3.0.3):** since rasa.io's 2026-10-20 update, every Newsletter / Blast / Sequence Action row
+**Contact link (3.0.2):** since rasa.io's 2026-10-20 update, every Newsletter / Blast / Sequence Action row
 carries `contact_id` and `email` (not in the published spec). `contact_id` resolves via `GET /v2/contacts/{id}`
 and is declared as a link to Contact, so engagement joins to the contact in MJ. It is null on some events
 (17 of 91 newsletter events on rasa.io dev). The row's own `id` is per event, not the contact.
+
+## 4b. Keys, parent links and descriptions (3.0.3)
+
+- **Event keys.** Newsletter / Blast / Sequence Action were keyed on `<parent>_id + id + action_type +
+  timestamp + url`. Opens and deliveries have no `url`, so the engine refused them as keyless records and
+  only clicks were stored (first production sync: 53,169 clicks of about 131k newsletter events, and 0 blast
+  events, which were all opens). They are now keyed on `<parent>_id + id`: rasa.io's event `id` is unique per
+  event (all 53,169 clicks, and a 500-row page of opens).
+- **Parent links on nested collections.** The eight objects read from inside their parent's records
+  (Contact External Identifier, Newsletter List, Newsletter Subscription Type, Sequence List, Sequence
+  Exclude List, Sequence Subscription Type, Sequence Message, Subscription Type Mapping) now carry the
+  parent's id (`contact_id`, `newsletter_id`, `sequence_id`, `subscription_type_id`), declared as a link to
+  the parent. Before, a list shared by two newsletters collapsed to one row, and an external identifier could
+  not be joined back to its contact. The link-table keys become `<parent>_id + id` (`contact_id +
+  identifier`); Sequence Message and Subscription Type Mapping keep `id`. Contact External Identifier now
+  pages through every contact (it read only the first page).
+- **Concurrent fetches.** The per-object fetch context moved from instance fields to a per-call scope, so
+  a connection with `syncConcurrency` above 1 no longer reads one object's pages with another's settings.
+- **Descriptions.** Every object and field description is rewritten in rasa.io terms (177 were generated
+  filler such as "Email — Contact field 'email' (Contact), rasa.io v2.").
+
+**Upgrading an existing install:**
+
+1. Upgrade the package and apply its migration (`V202611041422__rasa-io__Metadata`), then refresh the
+   connection's tables so the eight new parent-key columns are added.
+2. The event tables' old key columns must stop being key columns. CodeGen on **MJ 6.2.0 or later** drops soft
+   key columns the schema no longer declares. On **MJ 6.1.x** it does not, so unmark `action_type`,
+   `timestamp` and `url` as primary keys on the three action entities by hand (Entity Field `IsPrimaryKey` and
+   `IsSoftPrimaryKey`), and remove them from those tables' soft key in the schema's additional schema info, or
+   the next CodeGen puts them back. Until then the engine keeps refusing opens.
+3. Run a **full** sync ("Sync all history") of the three action feeds and the eight nested collections. An
+   incremental sync won't revisit events or rows already past the watermark. Rows stored before the upgrade
+   match the new key, so they update in place; nested-collection rows stored without a parent id stay as
+   orphans and can be deleted.
 
 ## 5. Actions: 12 disabled, 6 added
 

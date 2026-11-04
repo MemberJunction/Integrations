@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type {
@@ -136,6 +137,19 @@ const RasaObjectConfigSchema = z.object({
             parentKeyField: z.string().nullable().optional(),
         })
         .optional(),
+    /**
+     * A collection nested inside its parent's records (`results[].identifiers`): the child rows carry no
+     * key of their parent, so each is stamped with the parent's `parentKeyField` value under
+     * `childKeyField` while the response is flattened (see {@link RasaConnector.NormalizeResponse}).
+     */
+    parentKeyInjectionRequired: z
+        .object({
+            parentObject: z.string().optional(),
+            parentKeyField: z.string(),
+            nesting: z.array(z.string()).min(1),
+            childKeyField: z.string().optional(),
+        })
+        .optional(),
 }).passthrough();
 
 type RasaObjectConfig = z.infer<typeof RasaObjectConfigSchema>;
@@ -180,6 +194,26 @@ interface RasaResponseContext {
     UnwrapDeclared: boolean;
     /** Whether the object is fetched once per parent (`{var}` in its APIPath). */
     ParentScoped: boolean;
+    /** For a collection nested in its parent's records: where the parents are, and the key to copy down. */
+    NestedChild: RasaNestedChild | null;
+}
+
+/** How a nested collection's rows are lifted out of their parent records. */
+interface RasaNestedChild {
+    /** Path to the PARENT records (`results`); paging counts these, not the children. */
+    ParentPath: string;
+    /** Path from a parent record to its children (`identifiers`). */
+    ChildPath: string;
+    /** The parent's key field (`id`) and the child field that receives it (`contact_id`). */
+    ParentKeyField: string;
+    ChildKeyField: string;
+}
+
+/** Everything one fetch call publishes for the base's object-less hooks to read back. */
+interface RasaFetchState {
+    Response: RasaResponseContext | null;
+    Watermark: string | null;
+    Warnings: FetchWarning[];
 }
 
 // ─── Connector ───────────────────────────────────────────────────────
@@ -218,14 +252,46 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     private cachedToken: string | null = null;
     private tokenRefreshAt = 0;
 
+    /**
+     * Per-call fetch state. The base's hooks (`NormalizeResponse`, `ExtractPaginationInfo`,
+     * `AppendDefaultQueryParams`, `MakeHTTPRequest`) carry no object, so {@link FetchChanges} and
+     * {@link GetRecord} open a scope here and the hooks read it back. An `AsyncLocalStorage` scope follows
+     * each call through its awaits, so concurrent fetches on one instance (the engine's
+     * `syncConcurrency > 1`) each see their own object's context. Instance fields raced: the last call
+     * to start overwrote the others' `DataPath`, and their pages were read with the wrong settings.
+     */
+    private readonly fetchScope = new AsyncLocalStorage<RasaFetchState>();
+
+    /** State used outside any fetch scope (direct hook calls, e.g. from tests). */
+    private readonly unscopedState: RasaFetchState = { Response: null, Watermark: null, Warnings: [] };
+
+    private get fetchState(): RasaFetchState {
+        return this.fetchScope.getStore() ?? this.unscopedState;
+    }
+
     /** Response context for the in-flight fetch (see {@link RasaResponseContext}). */
-    private responseCtx: RasaResponseContext | null = null;
+    private get responseCtx(): RasaResponseContext | null {
+        return this.fetchState.Response;
+    }
+    private set responseCtx(value: RasaResponseContext | null) {
+        this.fetchState.Response = value;
+    }
 
     /** Watermark value for the in-flight fetch — consumed by {@link AppendDefaultQueryParams}. */
-    private currentWatermark: string | null = null;
+    private get currentWatermark(): string | null {
+        return this.fetchState.Watermark;
+    }
+    private set currentWatermark(value: string | null) {
+        this.fetchState.Watermark = value;
+    }
 
     /** Non-fatal diagnostics raised during the in-flight fetch, drained into the FetchBatchResult. */
-    private pendingWarnings: FetchWarning[] = [];
+    private get pendingWarnings(): FetchWarning[] {
+        return this.fetchState.Warnings;
+    }
+    private set pendingWarnings(value: FetchWarning[]) {
+        this.fetchState.Warnings = value;
+    }
 
     /** Running max of the watermark FIELD across the batches of one object's sync pass. */
     private readonly watermarkHighWater = new Map<string, string>();
@@ -533,10 +599,29 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      */
     protected NormalizeResponse(rawBody: unknown, responseDataKey: string | null): Record<string, unknown>[] {
         const ctx = this.responseCtx;
+        if (ctx?.NestedChild) return this.ExtractNestedChildren(rawBody, ctx.NestedChild);
         const path = ctx ? ctx.DataPath : responseDataKey;
         const records = this.ExtractByPath(rawBody, path);
         if (ctx && !ctx.UnwrapDeclared) this.FlagUndeclaredEnvelope(ctx.ObjectName, records);
         return records;
+    }
+
+    /**
+     * Flattens a collection nested in its parent's records, stamping each child with its parent's key
+     * (`results[].identifiers` → each identifier gets the contact's `id` as `contact_id`). A plain
+     * `ExtractByPath` over the composed path drops the parent, leaving rows that can't be joined back. A
+     * parent without a key contributes no rows: a child keyed to nothing is the defect this avoids.
+     */
+    private ExtractNestedChildren(rawBody: unknown, nested: RasaNestedChild): Record<string, unknown>[] {
+        const children: Record<string, unknown>[] = [];
+        for (const parent of this.ExtractByPath(rawBody, nested.ParentPath)) {
+            const key = parent[nested.ParentKeyField];
+            if (key == null || key === '') continue;
+            for (const child of this.ExtractByPath(parent, nested.ChildPath)) {
+                children.push({ ...child, [nested.ChildKeyField]: key });
+            }
+        }
+        return children;
     }
 
     /**
@@ -628,7 +713,10 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
         const root = this.AsRecord(rawBody);
         const metadata = this.AsRecord(root?.metadata);
         const totalRecords = typeof metadata?.record_count === 'number' ? metadata.record_count : undefined;
-        const returned = this.ExtractByPath(rawBody, this.responseCtx?.DataPath ?? 'results').length;
+        // A nested collection pages by its PARENTS: 50 contacts can carry any number of identifiers.
+        const ctx = this.responseCtx;
+        const pagePath = ctx?.NestedChild ? ctx.NestedChild.ParentPath : (ctx?.DataPath ?? 'results');
+        const returned = this.ExtractByPath(rawBody, pagePath).length;
 
         if (returned === 0 || (pageSize > 0 && returned < pageSize)) {
             return { HasMore: false, TotalRecords: totalRecords };
@@ -714,25 +802,25 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * a mid-pass failure (which throws before we return) leaves the stored watermark untouched.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
-        this.lastIntegrationID = ctx.CompanyIntegration.IntegrationID;
-        const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
-        this.AssertReadable(obj, ctx.ObjectName);
-        this.PublishResponseContext(obj, ctx.ObjectName);
-        this.BridgeAccessPathToParentConfig(obj);
-        this.currentWatermark = ctx.WatermarkValue;
-        this.pendingWarnings = [];
-        if (this.IsFirstBatch(ctx)) this.watermarkHighWater.delete(ctx.ObjectName);
+        return this.fetchScope.run({ Response: null, Watermark: null, Warnings: [] }, async () => {
+            this.lastIntegrationID = ctx.CompanyIntegration.IntegrationID;
+            const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
+            this.AssertReadable(obj, ctx.ObjectName);
+            this.PublishResponseContext(obj, ctx.ObjectName);
+            this.BridgeAccessPathToParentConfig(obj);
+            this.currentWatermark = ctx.WatermarkValue;
+            if (this.IsFirstBatch(ctx)) this.watermarkHighWater.delete(ctx.ObjectName);
 
-        const result = await super.FetchChanges(ctx);
-        this.AdvanceWatermarkHighWater(ctx.ObjectName, obj, result.Records);
+            const result = await super.FetchChanges(ctx);
+            this.AdvanceWatermarkHighWater(ctx.ObjectName, obj, result.Records);
 
-        const warnings = [...(result.Warnings ?? []), ...this.pendingWarnings];
-        this.pendingWarnings = [];
-        return {
-            ...result,
-            Warnings: warnings.length > 0 ? warnings : undefined,
-            NewWatermarkValue: result.HasMore ? undefined : this.FinalWatermark(ctx),
-        };
+            const warnings = [...(result.Warnings ?? []), ...this.pendingWarnings];
+            return {
+                ...result,
+                Warnings: warnings.length > 0 ? warnings : undefined,
+                NewWatermarkValue: result.HasMore ? undefined : this.FinalWatermark(ctx),
+            };
+        });
     }
 
     /**
@@ -754,10 +842,11 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     /** GetRecord also runs NormalizeResponse — publish the same response context first. */
     public override async GetRecord(ctx: GetRecordContext): Promise<ExternalRecord | null> {
         const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        this.lastIntegrationID = ci.IntegrationID;
-        this.PublishResponseContext(this.GetCachedObject(ci.IntegrationID, ctx.ObjectName), ctx.ObjectName);
-        this.currentWatermark = null;
-        return super.GetRecord(ctx);
+        return this.fetchScope.run({ Response: null, Watermark: null, Warnings: [] }, () => {
+            this.lastIntegrationID = ci.IntegrationID;
+            this.PublishResponseContext(this.GetCachedObject(ci.IntegrationID, ctx.ObjectName), ctx.ObjectName);
+            return super.GetRecord(ctx);
+        });
     }
 
     private IsFirstBatch(ctx: FetchContext): boolean {
@@ -772,6 +861,27 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
             DataPath: this.EffectiveDataPath(obj, config),
             UnwrapDeclared: !!config.recordUnwrapPath,
             ParentScoped: /\{\w+\}/.test(obj.APIPath ?? ''),
+            NestedChild: this.NestedChildOf(obj, config),
+        };
+    }
+
+    /**
+     * Reads a nested collection's parent-key declaration. Only a declaration that names the child field
+     * (`childKeyField`) is acted on, so an object that merely notes the need keeps its old behaviour.
+     * The parent path is the `ResponseDataKey` before its nesting (`results[].identifiers` → `results`).
+     */
+    private NestedChildOf(obj: MJIntegrationObjectEntity, config: RasaObjectConfig): RasaNestedChild | null {
+        const inject = config.parentKeyInjectionRequired;
+        if (!inject?.childKeyField) return null;
+        const childPath = inject.nesting.join('.');
+        const declaredKey = obj.ResponseDataKey ?? '';
+        const suffix = `[].${childPath}`;
+        const parentPath = declaredKey.endsWith(suffix) ? declaredKey.slice(0, -suffix.length) : 'results';
+        return {
+            ParentPath: parentPath.length > 0 ? parentPath : 'results',
+            ChildPath: childPath,
+            ParentKeyField: inject.parentKeyField,
+            ChildKeyField: inject.childKeyField,
         };
     }
 
@@ -951,16 +1061,14 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * untouched. Overrides `IntrospectSchema`, NOT `DiscoverFields` (which would recurse into
      * `DiscoverFieldsViaFetch`'s own fallback).
      *
-     * SEQUENTIAL, and that is load-bearing. {@link FetchChanges} publishes its per-object response
-     * context onto INSTANCE state (`responseCtx`/`currentWatermark`/`pendingWarnings`) which is read
-     * back AFTER the HTTP round-trip. Sampling the catalog with `Promise.all` therefore raced: every
-     * concurrent call overwrote `responseCtx`, so a response was normalized against some OTHER object's
-     * `DataPath`, matched nothing, and yielded ZERO records — cleanly, with no throw and no warning.
-     * Observed live: 17 of 18 objects that reached the sampler logged `rows=0 | cols: []`, the sole
-     * survivor being the one that happened to win the race, and the resulting all-null field widths
-     * were what made the framework's unknown-width defect drop 8,841 records. The sync engine iterates
-     * objects sequentially, which is why the identical read path works there. Do not re-parallelize
-     * this without first threading the response context through the call instead of the instance.
+     * SEQUENTIAL. When {@link FetchChanges} kept its per-object response context on INSTANCE state,
+     * sampling with `Promise.all` raced: every concurrent call overwrote `responseCtx`, so a response
+     * was normalized against some OTHER object's `DataPath`, matched nothing, and yielded ZERO records —
+     * cleanly, with no throw and no warning. Observed live: 17 of 18 objects that reached the sampler
+     * logged `rows=0 | cols: []`, and the resulting all-null field widths were what made the
+     * framework's unknown-width defect drop 8,841 records. The context now lives in a per-call
+     * {@link fetchScope}, so concurrent fetches are safe; sampling stays sequential to keep discovery's
+     * load on the vendor to one request at a time.
      */
     public override async IntrospectSchema(
         companyIntegration: MJCompanyIntegrationEntity,
