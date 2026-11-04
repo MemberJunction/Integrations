@@ -4,13 +4,14 @@ import { RasaConnector } from './RasaConnector';
 /**
  * Regression guard for DEFECT-12 — the sample-union race.
  *
- * `FetchChanges` publishes its per-object response context onto INSTANCE state (`responseCtx`,
- * `currentWatermark`, `pendingWarnings`) and reads it back AFTER the HTTP round-trip. When
+ * `FetchChanges` used to publish its per-object response context onto INSTANCE state (`responseCtx`,
+ * `currentWatermark`, `pendingWarnings`) and read it back AFTER the HTTP round-trip. When
  * `IntrospectSchema` sampled the catalog with `Promise.all`, every concurrent call overwrote
  * `responseCtx`, so each response was normalized against some other object's `DataPath`, matched
  * nothing, and returned ZERO records — cleanly, no throw, no warning. Live evidence: 17 of the 18
  * objects that reached the sampler logged `rows=0 | cols: []`; the resulting all-null field widths
- * are what let the framework's unknown-width default drop 8,841 records.
+ * are what let the framework's unknown-width default drop 8,841 records. The context is now
+ * per-call (see FetchScope.test.ts); sampling stays sequential to keep discovery's load on the vendor low.
  *
  * These tests pin the two properties that make the enrichment sound, without any network:
  *   1. objects are sampled STRICTLY SEQUENTIALLY (max concurrent FetchChanges === 1);

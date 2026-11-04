@@ -195,3 +195,59 @@ describe('engagement events carry the contact (rasa.io 2026-10-20)', () => {
         }
     });
 });
+
+describe('keys (3.0.3)', () => {
+    type Field = Record<string, unknown> & { Name: string };
+    type Obj = {
+        fields: { Name: string; SupportsPagination: boolean; Configuration: Record<string, unknown> };
+        relatedEntities: { 'MJ: Integration Object Fields': Array<{ fields: Field }> };
+    };
+    async function catalog(): Promise<Map<string, { obj: Obj['fields']; fields: Field[] }>> {
+        const { readFileSync } = await import('node:fs');
+        const { fileURLToPath } = await import('node:url');
+        const path = fileURLToPath(new URL('../metadata/integration/.rasa.integration.json', import.meta.url));
+        const [integration] = JSON.parse(readFileSync(path, 'utf8')) as Array<{ relatedEntities: { 'MJ: Integration Objects': Obj[] } }>;
+        return new Map(
+            integration.relatedEntities['MJ: Integration Objects'].map(o => [
+                o.fields.Name,
+                { obj: o.fields, fields: o.relatedEntities['MJ: Integration Object Fields'].map(f => f.fields) },
+            ]),
+        );
+    }
+    const pkOf = (fields: Field[]) => fields.filter(f => f.IsPrimaryKey).map(f => f.Name).sort();
+
+    it('keys each event on its parent and rasa.io event id, so opens (no url) are stored', async () => {
+        const all = await catalog();
+        for (const [name, parent] of [['Newsletter Action', 'newsletter_id'], ['Blast Action', 'blast_id'], ['Sequence Action', 'sequence_id']]) {
+            const { obj, fields } = all.get(name)!;
+            expect(obj.Configuration.pkField, name).toBe(`${parent}+id`);
+            expect(pkOf(fields), name).toEqual([parent, 'id'].sort());
+        }
+    });
+
+    it('stamps every nested collection with its parent key, declared as a field linked to the parent', async () => {
+        const all = await catalog();
+        const nested = [...all.values()].filter(o => (o.obj.Configuration.accessPath as { nesting?: string[] } | undefined)?.nesting?.length);
+        expect(nested.map(o => o.obj.Name).sort()).toHaveLength(8);
+        for (const { obj, fields } of nested) {
+            const inject = obj.Configuration.parentKeyInjectionRequired as { parentObject: string; childKeyField: string };
+            expect(inject?.childKeyField, obj.Name).toBeTruthy();
+            const key = fields.find(f => f.Name === inject.childKeyField);
+            expect(key, `${obj.Name}.${inject.childKeyField}`).toMatchObject({ IsRequired: true, RelatedIntegrationObjectFieldName: 'id' });
+            expect(String(key?.RelatedIntegrationObjectID)).toContain(`Name=${inject.parentObject}&`);
+            // The declared pkField and the fields flagged IsPrimaryKey agree.
+            expect(pkOf(fields), obj.Name).toEqual(String(obj.Configuration.pkField).split('+').sort());
+        }
+        expect(all.get('Contact External Identifier')!.obj.SupportsPagination).toBe(true);
+    });
+
+    it('describes every active column in rasa.io terms, with no generated filler', async () => {
+        const filler = /^[^—]+ — .+ field '[^']+' \([^)]*\), rasa\.io v2\./;
+        for (const { obj, fields } of (await catalog()).values()) {
+            for (const f of fields) {
+                expect(String(f.Description ?? ''), `${obj.Name}.${f.Name}`).not.toMatch(filler);
+                expect(String(f.Description ?? '').length, `${obj.Name}.${f.Name}`).toBeGreaterThan(0);
+            }
+        }
+    });
+});
