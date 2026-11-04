@@ -1,0 +1,8 @@
+---
+"@memberjunction/connector-netforum-enterprise": patch
+---
+
+NetForum: a configurable per-request timeout, and "Ambiguous column name" learned instead of condemning the list.
+
+- **`requestTimeoutMs`.** The per-request HTTP timeout was a hard-coded 30 s, so an object whose list query takes longer on xWeb's side (a live tenant's `ViewPricingControl`, a view over a dozen tables) timed out on every run, and raising the engine's `fetchTimeoutMs` changed nothing: the connector aborted its own request first. A connection can now set `CompanyIntegration.Configuration.requestTimeoutMs` (a JSON number of milliseconds, clamped to 5 s – 10 min; anything else keeps 30 s). The engine still abandons a page at `fetchTimeoutMs` (same Configuration, 30 s when unset), and one page can send several requests, so set `fetchTimeoutMs` above `requestTimeoutMs`; the connector warns once when it is not. A timeout now says how long it waited.
+- **"Ambiguous column name 'x'".** The fault-learning loop learned nothing from it, so the list was marked unsendable (a live tenant's `ChapterPhone` ended with both its full and its own-table list refused). The fault names the column, so it is now learned for the object (`objects[o].ambiguous` in `.nf-learned.json`) and the list is rebuilt in the same call: the object's key is left out (xWeb prepends its own copy of the primary key to every query, so ours was the duplicate), and any other name that went out bare is qualified by the table or alias its definition gives it. This applies to a declared `Configuration.columnList` too, which is otherwise still sent as written. A name that can be neither left out nor qualified ends the call as before.
