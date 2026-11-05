@@ -1,5 +1,47 @@
 # @memberjunction/connector-netforum-enterprise
 
+## 1.7.1
+
+### Patch Changes
+
+- ec99a2c: NetForum: an incremental read returns rows ADDED since the watermark, not only rows changed.
+
+  netFORUM stamps `<prefix>_change_date` only when a record is edited; a newly inserted row carries `<prefix>_add_date` and a NULL change date. The incremental read sent `<prefix>_change_date >= '<watermark>'` alone, so an append-only object never returned a new row: on a live tenant seven objects (member dues, membership and course participation history, GL transactions, payment detail, …) read a clean 0 rows every night for two weeks while netFORUM held new rows for each (with the connector's own column list, `mdh_change_date >= X` returned 0 rows and `mdh_add_date >= X` returned a full page, every row with an empty change date).
+
+  - **Predicate.** When the object's definition has `<prefix>_add_date` on the same table as its `<prefix>_change_date` watermark, and the request's column list names it, the read sends `(<change> >= X OR <add> >= X)`, both qualified. Any other watermark, an object without a definition, the default (empty) list, or an add date xWeb answered "Invalid column name" for (learned out of the list) keep the change-date predicate alone. Verified against a live xWeb: the OR form returns the same rows as the add-date form.
+  - **Next watermark.** The latest of either date across the batch, so rows that were only added move it. An empty value is no longer taken as a watermark (a batch whose change dates were all empty returned `''`).
+
+- 05f4a55: Copy each value the connector parses out of an xWeb response, so a kept value no longer keeps the whole response in memory.
+
+  The connector reads XML with regular expressions. In V8, a capture or substring of 13 or more characters points into the string it came from. So one kept value kept its whole response:
+
+  - **GetQuery pages.** The engine keeps the record IDs of an entity map until the map ends, and samples of unmapped columns until the run ends. Each kept ID or sample kept its page. On a production tenant, a page of 200 rows of a wide object is about 7 MB, and these pages added up to more than 2 GB during one sync.
+  - **GetQueryDefinition responses.** The connector caches the parsed definition of each object for its whole life, so each definition kept its response.
+
+  `ParseRowColumns` and `ParseSoapScalar` now return copies (`DetachText`). The copy costs about 140 ns per value.
+
+- 1e758d3: NetForum: a configurable per-request timeout, and "Ambiguous column name" learned instead of condemning the list.
+
+  - **`requestTimeoutMs`.** The per-request HTTP timeout was a hard-coded 30 s, so an object whose list query takes longer on xWeb's side (a live tenant's `ViewPricingControl`, a view over a dozen tables) timed out on every run, and raising the engine's `fetchTimeoutMs` changed nothing: the connector aborted its own request first. A connection can now set `CompanyIntegration.Configuration.requestTimeoutMs` (a JSON number of milliseconds, clamped to 5 s – 10 min; anything else keeps 30 s). The engine still abandons a page at `fetchTimeoutMs` (same Configuration, 30 s when unset), and one page can send several requests, so set `fetchTimeoutMs` above `requestTimeoutMs`; the connector warns once when it is not. A timeout now says how long it waited.
+  - **"Ambiguous column name 'x'".** The fault-learning loop learned nothing from it, so the list was marked unsendable (a live tenant's `ChapterPhone` ended with both its full and its own-table list refused). The fault names the column, so it is now learned for the object (`objects[o].ambiguous` in `.nf-learned.json`) and the list is rebuilt in the same call: the object's key is left out (xWeb prepends its own copy of the primary key to every query, so ours was the duplicate), and any other name that went out bare is qualified by the table or alias its definition gives it. This applies to a declared `Configuration.columnList` too, which is otherwise still sent as written. A name that can be neither left out nor qualified ends the call as before.
+
+- 6d2fcdc: NetForum: the full column list leaves out joins that would DROP records.
+
+  A list definition states each join's kind (`<lsf_from_join_type>`: `Join` or `Left Join`), and xWeb joins a table only when the list names one of its columns. A live tenant's Individual INNER-joins `ce_course_participant`, `np_constituent` and `co_email_optout`, and its Organization INNER-joins `co_related_association` behind a LEFT join. Naming any of their columns, or any of their Extender columns, keeps only the records that have a match there. Both objects' full lists returned 0 rows with no WHERE at all, while netFORUM holds 55,988 individuals and 7,152 organizations, and the incremental reads stopped finding new people.
+
+  - `<lsf_from_join_type>` is parsed (`NFFromTable.JoinType`), and each column records the from-table it is listed under (`NFDefinedColumn.FromTable`). An Extender column's `mdc_table_name` is its `_ext` table, but naming it brings in the enclosing join.
+  - `RowFilteringJoins` keeps an INNER join only when it is a lookup: the joined table's own `<prefix>_key` equated with a column of a table always present (the main table, or another such lookup), such as `co_customer` by `cst_key` or `ev_event` by `evt_key`. Any other INNER join, and anything joined through one, has its columns left out of the full list, except this read's own key, ordering key and watermark. The read says so: a `ROW_FILTERING_JOINS_LEFT_OUT` warning, logged once per object.
+  - A definition that states no join kind is read as before.
+
+  Measured on the live xWeb, with no WHERE:
+
+  | Object       | Today's full list | List with those joins left out |
+  | ------------ | ----------------- | ------------------------------ |
+  | Individual   | 0 rows            | full page                      |
+  | Organization | 0 rows            | full page                      |
+
+  Since 2026-09-25, Individual returned a full page of new records and Organization returned 18.
+
 ## 1.7.0
 
 ### Minor Changes
