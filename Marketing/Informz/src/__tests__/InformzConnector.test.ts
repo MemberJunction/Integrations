@@ -29,7 +29,16 @@ import {
     type FetchContext,
     type PaginationState,
 } from '@memberjunction/integration-engine';
-import { InformzAPIError, InformzConnector, type InformzGridPage, type InformzWireResponse } from '../InformzConnector.js';
+import {
+    InformzAPIError,
+    InformzConnector,
+    parseInformzWindowCursor,
+    formatInformzWindowCursor,
+    initialInformzDateWindow,
+    nextInformzDateWindow,
+    type InformzGridPage,
+    type InformzWireResponse,
+} from '../InformzConnector.js';
 
 // ─── Real metadata + fixtures ─────────────────────────────────────────────────────────────────────
 
@@ -630,4 +639,77 @@ describe('InformzConnector', () => {
             expect(new Set(urls)).toEqual(new Set(['http://schemas.xmlsoap.org/soap/envelope/']));
         });
     });
+
+    describe('bounded date-window <Conditions> & migrationPacing', () => {
+        it('serializes and parses v1 InformzWindowCursor losslessly', () => {
+            const cursor = { Today: '2026-04-20', From: '2025-01-01', To: '2025-01-30', StartRow: 51, ScopeKey: '' };
+            const s = formatInformzWindowCursor(cursor);
+            expect(s).toBe('v1|2026-04-20|2025-01-01|2025-01-30|51|');
+            expect(parseInformzWindowCursor(s)).toEqual(cursor);
+            expect(initialInformzDateWindow({ startDate: '2025-01-01', windowDays: 10 }, null, '2026-04-20')).toEqual({
+                From: '2025-01-01',
+                To: '2025-01-10',
+            });
+            expect(nextInformzDateWindow({ From: '2025-01-01', To: '2025-01-10' }, { windowDays: 10 }, '2026-04-20')).toEqual({
+                From: '2025-01-11',
+                To: '2025-01-20',
+            });
+        });
+
+        it('emits two-sided GTE + LTE <Conditions>, resets StartRow per window, and applies migrationPacing', async () => {
+            const ci = companyIntegration(baseConfig({
+                dateWindowing: {
+                    Subscriber: {
+                        startDate: '2026-01-01',
+                        windowDays: 10,
+                    },
+                },
+                migrationPacing: {
+                    tokensPerSec: 1.5,
+                    burst: 3,
+                    maxConcurrency: 1,
+                    minDelayBetweenRequestsMs: 150,
+                    maxWindowsPerRun: 1,
+                    checkpointPerWindow: true,
+                },
+            }));
+
+            // Window 1 [2026-01-01, 2026-01-10]: Page 1 (StartRow 0, 2 rows) → Page 2 (StartRow 3, 1 row) → window drained
+            const responses: InformzWireResponse[] = [
+                gridEnvelope('subscriber', [
+                    { Row: 1, Fields: [['subscriber_id', '140001'], ['email', 'a@example.invalid'], ['modified_date', '2026-01-02T10:00:00Z']] },
+                    { Row: 2, Fields: [['subscriber_id', '140002'], ['email', 'b@example.invalid'], ['modified_date', '2026-01-05T10:00:00Z']] },
+                ]),
+                gridEnvelope('subscriber', [
+                    { Row: 3, Fields: [['subscriber_id', '140003'], ['email', 'c@example.invalid'], ['modified_date', '2026-01-08T10:00:00Z']] },
+                ]),
+            ];
+            connector.Responder = (_req, idx) => responses[idx] ?? gridEnvelope('subscriber', []);
+
+            const initialCur = formatInformzWindowCursor({
+                Today: '2026-01-20',
+                From: '2026-01-01',
+                To: '2026-01-10',
+                StartRow: 0,
+                ScopeKey: '',
+            });
+
+            const batch1 = await connector.FetchChanges(fetchContext(ci, 'Subscriber', { CurrentCursor: initialCur }));
+
+            expect(connector.RateLimitPolicy).toEqual({ TokensPerSec: 1.5, Burst: 3 });
+            expect(connector.MaxConcurrencyHint).toBe(1);
+            expect(connector.Sleeps).toEqual([150]);
+            expect(batch1.Records.map(r => r.ExternalID)).toEqual(['140001', '140002', '140003']);
+            expect(batch1.HasMore).toBe(true);
+            expect(batch1.NextCursor).toBe('v1|2026-01-20|2026-01-11|2026-01-20|0|');
+            expect(batch1.NewWatermarkValue).toBe('2026-01-08T10:00:00Z');
+
+            const doc0 = gridRequestOf(connector.Requests[0]);
+            expect(doc0).toContain('<Condition><Single><DataElement>modified_date</DataElement><DataValue>2025-12-31T19:00:00</DataValue><Comparator>GTE</Comparator></Single></Condition>');
+            expect(doc0).toContain('<Condition><Single><DataElement>modified_date</DataElement><DataValue>2026-01-10T18:59:59</DataValue><Comparator>LTE</Comparator></Single></Condition>');
+            expect(doc0).toContain('<StartRow>0</StartRow>');
+            expect(gridRequestOf(connector.Requests[1])).toContain('<StartRow>3</StartRow>');
+        });
+    });
 });
+

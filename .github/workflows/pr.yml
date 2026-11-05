@@ -125,6 +125,9 @@ jobs:
       - name: Connector catalog up to date
         run: node scripts/build-connectors-catalog.mjs --check
 
+      - name: README connector directory up to date
+        run: node scripts/build-readme-directory.mjs --check
+
       # mj-app.json.mjVersionRange and the @memberjunction/core peer range are two statements of one
       # fact: which MJ majors the connector supports. npm enforces the peer range at install; MJ reads
       # mjVersionRange to gate `mjdev app register`. When they disagree the connector is installable by

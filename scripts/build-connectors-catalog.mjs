@@ -88,6 +88,8 @@ for (const m of findManifests(ROOT)) {
   });
 }
 
+import { updateReadmeFile } from './build-readme-directory.mjs';
+
 connectors.sort((a, b) => (a.category + '/' + a.name).localeCompare(b.category + '/' + b.name));
 const out = JSON.stringify({ schemaVersion: 1, count: connectors.length, connectors }, null, 2) + '\n';
 const target = join(ROOT, 'connectors-catalog.json');
@@ -101,4 +103,5 @@ if (CHECK) {
 } else {
   writeFileSync(target, out);
   console.log(`Wrote connectors-catalog.json — ${connectors.length} installable connectors.`);
+  updateReadmeFile({ checkOnly: false });
 }

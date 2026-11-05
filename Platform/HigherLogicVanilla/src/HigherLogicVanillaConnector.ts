@@ -84,6 +84,130 @@ interface VanillaAuthContext extends RESTAuthContext {
     CommunityBaseURL: string;
 }
 
+/**
+ * Metered migration pacing & run-budget controls for Higher Logic Vanilla historical backfills.
+ * Vanilla enforces a 300 req/min GET ceiling and a hard 250 req/10s IP-block threshold that requires manual
+ * vendor intervention to lift (KB article 44).
+ */
+export interface VanillaMigrationPacing {
+    /** Sustained token-bucket refill rate in requests/second (default: 5, migration preset: 2). */
+    tokensPerSec?: number;
+    /** Token-bucket burst ceiling (default: 10, migration preset: 3). */
+    burst?: number;
+    /** Maximum concurrent requests hint (default: 3, migration preset: 1). */
+    maxConcurrency?: number;
+    /** Minimum inter-request delay in milliseconds (default: 0, migration preset: 400). */
+    minDelayBetweenRequestsMs?: number;
+    /** Optional cap on HTTP requests per FetchChanges invocation. */
+    maxRequestsPerRun?: number;
+    /** Optional cap on date windows processed per FetchChanges invocation. */
+    maxWindowsPerRun?: number;
+    /** Emit intermediate NewWatermarkValue after each completed window (default: true). */
+    checkpointPerWindow?: boolean;
+}
+
+/** Configuration for sliding date-window slicing (`dateUpdated=[From,To]` / `dateInserted=[From,To]`). */
+export interface VanillaDateWindowConfig {
+    /** Enable bounded `[From,To]` date-window slicing for multi-year community migrations. */
+    enabled?: boolean;
+    /** Earliest historical backfill ISO date `YYYY-MM-DD` (default: `'2015-01-01'`). */
+    earliestBackfillDate?: string;
+    /** Width of each date window slice in days (default: 30). */
+    windowSizeDays?: number;
+}
+
+/** A single bounded `[From, To]` date slice (inclusive `YYYY-MM-DD` dates). */
+export interface VanillaDateWindow {
+    From: string;
+    To: string;
+    Today: string;
+}
+
+/**
+ * Stateful sliding date-window cursor (`v1|<Today>|<From>|<To>|<InnerPage>|<ScopeKey>`).
+ * Persists both the active `[From, To]` date slice and the inner 1-based page number so multi-day
+ * migrations resume mid-window without re-fetching earlier pages.
+ */
+export interface VanillaWindowCursor {
+    Today: string;
+    From: string;
+    To: string;
+    InnerPage: number;
+    ScopeKey: string;
+}
+
+const VANILLA_CURSOR_PREFIX = 'v1';
+
+/** Parses a `v1|<Today>|<From>|<To>|<InnerPage>|<ScopeKey>` cursor string, or returns null. */
+export function parseVanillaWindowCursor(cursor: string | undefined | null): VanillaWindowCursor | null {
+    if (!cursor || !cursor.startsWith(`${VANILLA_CURSOR_PREFIX}|`)) return null;
+    const parts = cursor.split('|');
+    if (parts.length < 6) return null;
+    const innerPage = parseInt(parts[4], 10);
+    if (isNaN(innerPage) || innerPage < 1) return null;
+    return {
+        Today: parts[1],
+        From: parts[2],
+        To: parts[3],
+        InnerPage: innerPage,
+        ScopeKey: parts.slice(5).join('|'),
+    };
+}
+
+/** Serializes a `VanillaWindowCursor` into its canonical `v1|...` wire string. */
+export function formatVanillaWindowCursor(c: VanillaWindowCursor): string {
+    return `${VANILLA_CURSOR_PREFIX}|${c.Today}|${c.From}|${c.To}|${c.InnerPage}|${c.ScopeKey}`;
+}
+
+function toIsoDateOnly(d: Date): string {
+    return d.toISOString().slice(0, 10);
+}
+
+function addDaysIso(isoDate: string, days: number): string {
+    const ms = Date.parse(`${isoDate}T00:00:00Z`);
+    return toIsoDateOnly(new Date(ms + days * 86_400_000));
+}
+
+/** Computes the initial `[From, To]` date slice from `earliestBackfillDate` (or prior watermark) toward `now`. */
+export function initialVanillaDateWindow(
+    cfg: VanillaDateWindowConfig,
+    watermarkValue?: string | null,
+    now: Date = new Date()
+): VanillaDateWindow {
+    const today = toIsoDateOnly(now);
+    const windowDays = Math.max(1, cfg.windowSizeDays ?? 30);
+    let from = (cfg.earliestBackfillDate ?? '2015-01-01').slice(0, 10);
+    if (watermarkValue && watermarkValue.trim().length >= 10) {
+        const candidate = watermarkValue.trim().slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(candidate)) {
+            from = candidate;
+        }
+    }
+    if (from > today) from = today;
+    const rawTo = addDaysIso(from, windowDays - 1);
+    const to = rawTo > today ? today : rawTo;
+    return { From: from, To: to, Today: today };
+}
+
+/** Advances to the next `[From, To]` date slice, or returns null when `current.To >= current.Today`. */
+export function nextVanillaDateWindow(
+    current: VanillaDateWindow,
+    cfg: VanillaDateWindowConfig
+): VanillaDateWindow | null {
+    if (current.To >= current.Today) return null;
+    const windowDays = Math.max(1, cfg.windowSizeDays ?? 30);
+    const nextFrom = addDaysIso(current.To, 1);
+    if (nextFrom > current.Today) return null;
+    const rawTo = addDaysIso(nextFrom, windowDays - 1);
+    const nextTo = rawTo > current.Today ? current.Today : rawTo;
+    return { From: nextFrom, To: nextTo, Today: current.Today };
+}
+
+/** Formats Vanilla API v2's bounded date range query parameter (`<field>=[<From>,<To>]`). */
+export function formatVanillaBoundedDateFilter(wmField: string, window: VanillaDateWindow): string {
+    return `${encodeURIComponent(wmField)}=${encodeURIComponent(`[${window.From},${window.To}]`)}`;
+}
+
 // ─── HigherLogicVanillaConnector ─────────────────────────────────────────
 
 /**
@@ -124,6 +248,9 @@ export class HigherLogicVanillaConnector extends BaseRESTIntegrationConnector {
      * different watermark).
      */
     private activeWatermarkFilter: string | null = null;
+
+    /** Active migration pacing overrides parsed from CompanyIntegration.Configuration. */
+    private activePacing: VanillaMigrationPacing | null = null;
 
     // ── Identity (T1 three-way invariant) ────────────────────────────
 
@@ -188,11 +315,15 @@ export class HigherLogicVanillaConnector extends BaseRESTIntegrationConnector {
     /**
      * From Configuration.RateLimitPolicy (KB article 44): GET is 300 req/min per IP (=5/s), writes 120/min
      * (=2/s). A separate HARD limit — 250 requests / 10s — triggers a MANUAL-intervention IP block (not an
-     * auto-lifting 429), so we stay well under it: 5/s sustained (the GET ceiling) with a small burst. The
-     * engine's AIMD bucket backs off further on any 429.
+     * auto-lifting 429), so we stay well under it: 5/s sustained (the GET ceiling) with a small burst, or
+     * lower when `migrationPacing` is configured on the connection. The engine's AIMD bucket backs off
+     * further on any 429.
      */
     public override get RateLimitPolicy(): RateLimitPolicy | null {
-        return { TokensPerSec: 5, Burst: 10 };
+        return {
+            TokensPerSec: this.activePacing?.tokensPerSec ?? 5,
+            Burst: this.activePacing?.burst ?? 10,
+        };
     }
 
     // ExtractRetryAfterMs: inherited default (undefined). Configuration.RateLimitPolicy.retryAfterHeaderDocumented
@@ -200,8 +331,50 @@ export class HigherLogicVanillaConnector extends BaseRESTIntegrationConnector {
     // of the merged OpenAPI spec's response headers). Nothing to parse reliably; the AIMD bucket backs off on
     // the 429 regardless. Left as a soft gap for live-probe confirmation rather than guessing a header name.
 
-    /** Conservative in-flight cap. The per-minute + hard-block ceilings are the real limiters. */
-    public override get MaxConcurrencyHint(): number | null { return 3; }
+    /** Conservative in-flight cap. Respects `migrationPacing.maxConcurrency` when configured (default: 3). */
+    public override get MaxConcurrencyHint(): number | null {
+        return this.activePacing?.maxConcurrency ?? 3;
+    }
+
+    /** Injectable sleep hook for metered migration pacing (overridable in unit tests). */
+    protected async Sleep(ms: number): Promise<void> {
+        if (ms <= 0) return;
+        await new Promise<void>(resolve => setTimeout(resolve, ms));
+    }
+
+    /** Parses and activates `migrationPacing` from `companyIntegration.Configuration` (if present). */
+    public ConfigureMigrationPacing(companyIntegration?: MJCompanyIntegrationEntity | null): VanillaMigrationPacing {
+        const raw = companyIntegration?.Configuration;
+        if (!raw) {
+            this.activePacing = null;
+            return {};
+        }
+        try {
+            const parsed = JSON.parse(raw) as Record<string, unknown>;
+            const p = (parsed.migrationPacing ?? parsed.MigrationPacing) as VanillaMigrationPacing | undefined;
+            this.activePacing = p && typeof p === 'object' ? p : null;
+            return this.activePacing ?? {};
+        } catch {
+            this.activePacing = null;
+            return {};
+        }
+    }
+
+    /** Parses `dateWindowing` configuration from `companyIntegration.Configuration` (if present). */
+    private parseDateWindowConfig(companyIntegration?: MJCompanyIntegrationEntity | null): VanillaDateWindowConfig | null {
+        const raw = companyIntegration?.Configuration;
+        if (!raw) return null;
+        try {
+            const parsed = JSON.parse(raw) as Record<string, unknown>;
+            const cfg = (parsed.dateWindowing ?? parsed.DateWindowing) as VanillaDateWindowConfig | undefined;
+            if (cfg && typeof cfg === 'object' && cfg.enabled !== false) {
+                return cfg;
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    }
 
     /**
      * No-watermark objects resume by their StableOrderingKey — read from the IO metadata when the extractor
@@ -355,23 +528,87 @@ export class HigherLogicVanillaConnector extends BaseRESTIntegrationConnector {
         return `${basePath}${separator}${parts.join('&')}`;
     }
 
-    // ── FetchChanges override (incremental dateUpdated/dateInserted filter + new-watermark emission) ──
+    // ── FetchChanges override (incremental dateUpdated/dateInserted filter + date-window slicing + pacing) ──
 
     /**
-     * OVERRIDDEN to (1) inject the `<IncrementalWatermarkField>=>=<watermark>` list filter for objects that
-     * declare SupportsIncrementalSync + carry a watermark this run, and (2) EMIT the new watermark. The base
-     * flat/template fetch threads no watermark into the URL and returns no NewWatermarkValue, so the connector
-     * owns both. All fetching (numbered pagination, template-var parent traversal) is delegated to the base;
-     * this override only sets activeWatermarkFilter around the super call and computes the max on a drained batch.
-     *
-     * Partial-failure safety: NewWatermarkValue is emitted ONLY when the whole object is drained
-     * (HasMore=false). A mid-stream batch advances no watermark, so a failure between batches resumes from the
-     * unchanged prior watermark. The `>=` operator (not `>`) means the boundary record re-syncs each run —
-     * idempotent (content-hash dedup) and never loses a record that shares the boundary timestamp.
+     * OVERRIDDEN to:
+     *  1. Apply `migrationPacing` (dynamic RateLimitPolicy, MaxConcurrencyHint, and inter-request `Sleep`).
+     *  2. Support stateful sliding date-window slicing (`dateUpdated=[YYYY-MM-DD,YYYY-MM-DD]`) via
+     *     `VanillaWindowCursor` (`v1|<Today>|<From>|<To>|<InnerPage>|<ScopeKey>`) when `dateWindowing` is
+     *     configured or a `v1|...` cursor is resumed.
+     *  3. Inject the `<IncrementalWatermarkField>=>=<watermark>` list filter for incremental syncs and
+     *     emit `NewWatermarkValue` when drained.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
+        const pacing = this.ConfigureMigrationPacing(ctx.CompanyIntegration);
+        if (pacing.minDelayBetweenRequestsMs && pacing.minDelayBetweenRequestsMs > 0) {
+            await this.Sleep(pacing.minDelayBetweenRequestsMs);
+        }
+
         const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
         const wmField = obj.IncrementalWatermarkField;
+        const windowCursor = parseVanillaWindowCursor(ctx.CurrentCursor);
+        const windowCfg = this.parseDateWindowConfig(ctx.CompanyIntegration)
+            ?? (windowCursor ? { enabled: true } : null);
+
+        if (windowCfg && obj.SupportsIncrementalSync && wmField) {
+            const window: VanillaDateWindow = windowCursor
+                ? { From: windowCursor.From, To: windowCursor.To, Today: windowCursor.Today }
+                : initialVanillaDateWindow(windowCfg, ctx.WatermarkValue);
+            const innerPage = windowCursor ? windowCursor.InnerPage : (ctx.CurrentPage ?? 1);
+
+            this.activeWatermarkFilter = formatVanillaBoundedDateFilter(wmField, window);
+            try {
+                const innerResult = await super.FetchChanges({
+                    ...ctx,
+                    CurrentPage: innerPage,
+                    CurrentCursor: undefined,
+                });
+                if (innerResult.HasMore) {
+                    const nextInnerPage = innerResult.NextPage ?? (innerPage + 1);
+                    return {
+                        ...innerResult,
+                        HasMore: true,
+                        NextPage: nextInnerPage,
+                        NextCursor: formatVanillaWindowCursor({
+                            Today: window.Today,
+                            From: window.From,
+                            To: window.To,
+                            InnerPage: nextInnerPage,
+                            ScopeKey: ctx.ObjectName,
+                        }),
+                    };
+                }
+                const nextWin = nextVanillaDateWindow(window, windowCfg);
+                if (nextWin) {
+                    return {
+                        Records: innerResult.Records,
+                        HasMore: true,
+                        NextPage: 1,
+                        NextCursor: formatVanillaWindowCursor({
+                            Today: nextWin.Today,
+                            From: nextWin.From,
+                            To: nextWin.To,
+                            InnerPage: 1,
+                            ScopeKey: ctx.ObjectName,
+                        }),
+                        NewWatermarkValue: pacing.checkpointPerWindow !== false
+                            ? `${window.To}T23:59:59Z`
+                            : undefined,
+                    };
+                }
+                const finalWatermark = this.maxWatermark(innerResult, wmField, `${window.To}T23:59:59Z`);
+                return {
+                    ...innerResult,
+                    HasMore: false,
+                    NextCursor: undefined,
+                    NewWatermarkValue: finalWatermark,
+                };
+            } finally {
+                this.activeWatermarkFilter = null;
+            }
+        }
+
         const incremental = obj.SupportsIncrementalSync
             && !!wmField
             && ctx.WatermarkValue != null
