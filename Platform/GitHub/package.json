@@ -1,0 +1,53 @@
+{
+  "name": "@memberjunction/connector-github",
+  "version": "1.0.0",
+  "description": "MemberJunction integration connector for GitHub (REST API 2022-11-28)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "mj-app.json",
+    "metadata",
+    "migrations",
+    "migrations-pg",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@memberjunction/core": ">=5.36.0 <7.0.0",
+    "@memberjunction/core-entities": ">=5.36.0 <7.0.0",
+    "@memberjunction/global": ">=5.36.0 <7.0.0",
+    "@memberjunction/integration-engine": ">=5.36.0 <7.0.0",
+    "@memberjunction/integration-engine-base": ">=5.36.0 <7.0.0"
+  },
+  "devDependencies": {
+    "@memberjunction/core": "^5.36.0",
+    "@memberjunction/core-entities": "^5.36.0",
+    "@memberjunction/global": "^5.36.0",
+    "@memberjunction/integration-engine": "^5.36.0",
+    "@memberjunction/integration-engine-base": "^5.36.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MemberJunction/Integrations.git",
+    "directory": "Platform/GitHub"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,13 @@
+{
+  "directoryOrder": [
+    "integration"
+  ],
+  "sqlLogging": {
+    "enabled": true,
+    "outputDirectory": "../migrations",
+    "formatAsMigration": false
+  },
+  "push": {
+    "autoCreateMissingRecords": true
+  }
+}

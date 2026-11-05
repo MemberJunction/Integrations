@@ -1,0 +1,53 @@
+{
+  "$schema": "https://raw.githubusercontent.com/MemberJunction/MJ/main/packages/OpenApp/Engine/src/manifest/mj-app-schema.json",
+  "name": "@memberjunction/connector-github",
+  "displayName": "GitHub Integration Connector",
+  "description": "GitHub REST API v3 (2022-11-28) connector for MemberJunction Integration Engine — syncs repositories, issues, issue comments, pull requests, pull request comments, releases, commits, and workflow runs with Personal Access Token (PAT), OAuth Bearer token, or GitHub App Installation Token authentication",
+  "version": "1.0.0",
+  "publisher": {
+    "name": "MemberJunction",
+    "email": "info@memberjunction.org",
+    "url": "https://memberjunction.org"
+  },
+  "repository": "https://github.com/MemberJunction/Integrations",
+  "license": "MIT",
+  "mjVersionRange": ">=5.36.0 <7.0.0",
+  "icon": "fa-brands fa-github",
+  "categories": [
+    "Integration",
+    "Platform"
+  ],
+  "tags": [
+    "connector",
+    "integration",
+    "platform",
+    "github",
+    "git",
+    "devops",
+    "issues",
+    "pull-requests"
+  ],
+  "schema": {
+    "name": "mj_connector_github",
+    "createIfNotExists": true
+  },
+  "migrations": {
+    "directory": "migrations",
+    "engine": "skyway"
+  },
+  "metadata": {
+    "directory": "metadata"
+  },
+  "packages": {
+    "server": [
+      {
+        "name": "@memberjunction/connector-github",
+        "role": "bootstrap",
+        "startupExport": "registerConnector"
+      }
+    ]
+  },
+  "configuration": {
+    "properties": {}
+  }
+}
