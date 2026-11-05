@@ -1,0 +1,3415 @@
+[
+  {
+    "fields": {
+      "Name": "GitHub",
+      "Description": "GitHub REST API v3 (2022-11-28) connector. Syncs repositories, issues, issue comments, pull requests, review comments, releases, commits, and workflow runs via PAT, OAuth, or GitHub App authentication.",
+      "NavigationBaseURL": "https://api.github.com",
+      "ClassName": "@memberjunction/connector-github",
+      "ImportPath": "@memberjunction/connector-github",
+      "BatchMaxRequestCount": 25,
+      "BatchRequestWaitTime": 100,
+      "Icon": "fa-brands fa-github",
+      "Configuration": {
+        "DeclaredAgainst": {
+          "sourceUrl": "https://docs.github.com/en/rest?apiVersion=2022-11-28",
+          "openApiSpecUrl": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+          "apiVersion": "2022-11-28",
+          "fetchedAt": "2026-11-05",
+          "catalogLastEditedAt": "2026-11-05"
+        },
+        "AuthFlows": [
+          "pat",
+          "oauth2-3lo",
+          "github-app-installation-token"
+        ],
+        "AuthHeaderPattern": "Authorization: Bearer <token>",
+        "DefaultBaseURL": "https://api.github.com",
+        "APIVersionHeader": "X-GitHub-Api-Version: 2022-11-28",
+        "AcceptHeader": "Accept: application/vnd.github+json",
+        "PaginationDefaults": {
+          "type": "PageNumber",
+          "pageParam": "page",
+          "pageSizeParam": "per_page",
+          "maxPageSize": 100,
+          "linkHeaderSupported": true
+        },
+        "IncrementalSyncCapability": true,
+        "IncrementalSyncDescription": "Incremental sync uses the ISO-8601 since query parameter paired with sort=updated&direction=asc and tracks updated_at as the monotonic watermark.",
+        "DefaultSyncDirection": "Pull",
+        "DefaultConflictResolution": "SourceWins"
+      }
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "repositories",
+            "DisplayName": "Repositories",
+            "Description": "GitHub repositories accessible to the authenticated user, organization, or GitHub App installation.",
+            "Category": "Repositories",
+            "APIPath": "/user/repos",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updated_at",
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "DefaultQueryParams": "{\"sort\":\"updated\",\"direction\":\"asc\",\"type\":\"all\"}",
+            "Configuration": "{\"apiPath\":\"/user/repos\",\"orgApiPath\":\"/orgs/{owner}/repos\",\"installationApiPath\":\"/installation/repositories\",\"watermark\":\"updated_at\"}",
+            "Sequence": 1,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique numeric GitHub repository ID.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F3128DE3-5574-4B4C-8D74-B8D7DBC1E578"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ce95a1b0de2fd32fd17533fb1f30c07f56b35bb5863d4c989dd681461f2ae280"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the repository.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F10CFAFB-FC33-4676-8A84-8E7CD1703197"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "f7b80337143617b98c174aca05c010f07ee2d945a091f8e075410ff0c3d65e68"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Short repository name without owner prefix.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "0F4C048B-B8CD-40FD-8DEF-477B529B6DDF"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "262d5d394dffebd0d57745fe2ab1ffa75c7c6c5080062684139d4812e4aafcbe"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "full_name",
+                  "DisplayName": "Full Name",
+                  "Description": "Repository owner and name in owner/repo format.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "413FCEEE-753B-495B-8764-0C8F0AD3D2AB"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ce3f4cf4dba5e0f353cc3409e6b74b96ba74d7e1527feb7a67227b5ba6aa5f89"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "owner_login",
+                  "DisplayName": "Owner Login",
+                  "Description": "Login handle of the user or organization that owns the repository.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3C08B007-FAE2-416B-8015-E3C68DAC41C7"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "f9871e5c5d268d89de4c2913281ad36da65b66bbba7debeaff307c4270fe9e73"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "private",
+                  "DisplayName": "Private",
+                  "Description": "Whether the repository is private.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CD15901D-1B20-483C-8ED0-6010F39A1FDB"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "f507e2278b5979f6a1fa3869c681b6f68b67c8191bd37092a645c2b18ed2a232"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "fork",
+                  "DisplayName": "Is Fork",
+                  "Description": "Whether the repository is a fork of another repository.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "15422021-E697-4776-852D-3B3417B1C5F3"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ceaadbdef5eac5366dd8c13bb4140b5407125a881f9c7a39d8baceaa381dc664"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "archived",
+                  "DisplayName": "Archived",
+                  "Description": "Whether the repository is archived and read-only.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D017C2DC-892D-42E2-8970-09C2057C3EF2"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "8e70c72690d8b5e6e9c8d880af17a0005fe3c306936e87ef98dc8360824e313a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "disabled",
+                  "DisplayName": "Disabled",
+                  "Description": "Whether the repository has been disabled.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E5E6BBF9-DE44-4FC6-854D-F18F176C25A0"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "8e3c75402b92c214d6eb34e928b9d8d5013e9f8d98b8e7a5aa28282a898b477d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Repository summary description text.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "59164C5C-A17C-4611-8663-A03F0C94E314"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "1db0031043adf632dd0ff4009da790a12ba5f4483a25863617757411482da928"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "homepage",
+                  "DisplayName": "Homepage URL",
+                  "Description": "External website URL associated with the repository.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5A9455D5-42D2-4FF3-8DC4-8AA3545F8257"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "2f5207586f444b6cacc62e16329bb6d1438d18bcca3402d76521009a1d02fcf1"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for viewing the repository on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CAA35126-3744-4F41-82BA-57B4A558D6AB"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "50f7c4d21242cdc84300f8987cbab93f0f27ba795b6e4e91b9e9fe349863e489"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "default_branch",
+                  "DisplayName": "Default Branch",
+                  "Description": "Default Git branch name (for example main or next).",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "75D84B96-63AC-479A-8C4C-6252C5D8E69D"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "93dfc29e254cb7f9033da6fc903832c6af47f5a86306cca00090d33af20f60da"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "language",
+                  "DisplayName": "Primary Language",
+                  "Description": "Primary programming language detected in the repository.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E22799EF-AFC4-410C-8798-4F5B66270990"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "034c37ad52fa56a64cf3521a9ca0efbe6546cc18d5d2c5acac8a3d56584c0872"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "visibility",
+                  "DisplayName": "Visibility",
+                  "Description": "Repository visibility level (public, private, or internal).",
+                  "Type": "string",
+                  "Length": 50,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1868A3E4-6FE6-4116-881D-F78DE0602C2F"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "33ea3cf675437b16378412ea7ffb54fd558a054e6e11a9aa4750fdcf16bafa64"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "stargazers_count",
+                  "DisplayName": "Stargazers Count",
+                  "Description": "Number of users who have starred the repository.",
+                  "Type": "integer",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C89CFF11-92B2-403B-8EBB-AD385C32C754"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "89b69a0f298a85cf2d58055597e6d9303d1bc2ca106bf98d1a7ef568849733aa"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "forks_count",
+                  "DisplayName": "Forks Count",
+                  "Description": "Number of forks of the repository.",
+                  "Type": "integer",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 17,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FB352153-BB60-40A6-8640-C8E8E19CB39C"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "3e60d5b51e2b1f31a226e0b96d63f11ed720556dda57c8310c098b8d92f71982"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "open_issues_count",
+                  "DisplayName": "Open Issues Count",
+                  "Description": "Count of open issues and pull requests in the repository.",
+                  "Type": "integer",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 18,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4A37D650-D05D-4BCE-8E67-0D0AA23388B6"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "e679ac3b5c3dd857bfdb837f469c0580ae29e9a23d0006050f6cec0c936717bd"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "pushed_at",
+                  "DisplayName": "Pushed At",
+                  "Description": "Timestamp of the most recent Git push to any branch.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 19,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "AFCB5D0C-F947-473C-8C07-395A27BE7112"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ccd8d8f53d0aa37e6b2e0c12ee2e5b9f44ee1b2f2b49a7ebe731874a85e59f71"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "Timestamp when the repository was created.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 20,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E3459C80-86E4-42A9-89A6-968B51C9664D"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "c11d6596f4a133a8bc0583c5a708b18f6c8bd46e36f3e65c0ec3262bbc35e738"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "updated_at",
+                  "DisplayName": "Updated At",
+                  "Description": "Timestamp when repository metadata was last updated.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 21,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5C6086F6-FC4F-40D6-8BBD-617156D54B7F"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "2aa5c2c58c970f90f88f99b40ef1d0a4d6c5e58efa807710f15b04b3c401001f"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "bcedca119c80d72794281a33ba49b280f452972fd9d66d2e500441c68d7bd6d2"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "issues",
+            "DisplayName": "Issues",
+            "Description": "GitHub repository issues fetched via GET /repos/{full_name}/issues with incremental since support and POST/PATCH write capabilities.",
+            "Category": "Issues",
+            "APIPath": "/repos/{full_name}/issues",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updated_at",
+            "SupportsWrite": true,
+            "SupportsCreate": true,
+            "SupportsUpdate": true,
+            "SupportsDelete": false,
+            "WriteAPIPath": "/repos/{full_name}/issues",
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "CreateAPIPath": "/repos/{full_name}/issues",
+            "CreateMethod": "POST",
+            "UpdateAPIPath": "/repos/{full_name}/issues/{ExternalID}",
+            "UpdateMethod": "PATCH",
+            "DefaultQueryParams": "{\"state\":\"all\",\"sort\":\"updated\",\"direction\":\"asc\"}",
+            "Configuration": "{\"apiPath\":\"/repos/{full_name}/issues\",\"parentObjectName\":\"repositories\",\"parentKeyField\":\"full_name\",\"watermark\":\"updated_at\"}",
+            "Sequence": 2,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique numeric GitHub issue ID across GitHub.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "551E0067-1CBE-42BE-8580-77F93E0E8CD4"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "12eb93636b637ef462f54dc11931ab93812adf41aea8ef9bc164d184797412e7"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the issue.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "740F14E1-5E59-4CC7-8F85-FA4AB6B42EBA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "b37c040d40001d89ab1f03755dd8bfb399c172b61060e199a7d1899c0ad4efcc"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "number",
+                  "DisplayName": "Issue Number",
+                  "Description": "Repository-scoped issue number used in URLs and references.",
+                  "Type": "integer",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "DA28D40B-49C7-4918-82F2-3E537DCBD310"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "9d7b776d08f115fe0e1c7dc2074c44c77a4974526943ee155f3ab9763cfd2e98"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "repository_full_name",
+                  "DisplayName": "Repository Full Name",
+                  "Description": "Full owner/repo name of the parent repository.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314",
+                  "RelatedIntegrationObjectFieldName": "full_name",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "913ADC5F-312B-4527-8598-FA2C337713E9"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ebe4baaf046c0f450c193ce6848925f941cb1c497c9928889fcaeff29ae3efa4"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "title",
+                  "DisplayName": "Title",
+                  "Description": "Title of the GitHub issue.",
+                  "Type": "string",
+                  "Length": 1024,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "AllowsNull": false,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5028C269-D1D5-4437-802F-1285138799E8"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "36e11983e9c8ef34cc07152ceb32046a6bc585dc629e0b94a703dc7e440f0102"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "body",
+                  "DisplayName": "Body",
+                  "Description": "Markdown body content of the issue.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5EB936B5-8755-4B9D-8418-7F4CF8CE49AE"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "1c4b82d0dcbbf2cfb5b0e231d58110407d8765d06cd3b032f379f3abb50bcfe8"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "state",
+                  "DisplayName": "State",
+                  "Description": "Issue lifecycle state (open or closed).",
+                  "Type": "string",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3939E647-CC9C-4D87-8683-C66E03B3B15B"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "795486341f61a524329540d920c3ba4c67845aac63e9fe50803493a35116e4e4"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "state_reason",
+                  "DisplayName": "State Reason",
+                  "Description": "Reason the issue was closed (completed, not_planned, or reopened).",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A3717479-3FE7-4BFC-844A-6645E7E7AFDD"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "b7faad357f3c417e410d99c9a3c47ddd4f865c85da07a749cc6826e242acf3a1"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_login",
+                  "DisplayName": "Author Login",
+                  "Description": "GitHub username of the user who opened the issue.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9A27C565-9E2F-4D9D-8D65-427E4ED8BC00"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "e4c5084d9d5f49eab555fd44d94ec68501c7493cf3c859b00bded041c7261c46"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "assignee_login",
+                  "DisplayName": "Primary Assignee Login",
+                  "Description": "GitHub username of the primary assigned user.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "FFA0EF20-34B7-42AE-8091-6CE5580EEAA9"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ae605a3c4e0d3a5c46f2b05bdbb340f00b5905623f8e7d293d1e0a37524de1ba"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "labels_json",
+                  "DisplayName": "Labels JSON",
+                  "Description": "Serialized JSON array of labels attached to the issue.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8928D7A7-A100-42BC-8C24-C7F024AC47F4"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "040b9a31520f69aa647119fd8cbe6819233e8f7f9eab59d4b16a0cb714950ea2"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "comments",
+                  "DisplayName": "Comments Count",
+                  "Description": "Total number of comments on the issue.",
+                  "Type": "integer",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "DC7F690B-B1A4-44D0-8EE1-4AE6918A408F"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "c0c8636f91a0f17cc4fcaca2b4dbed3c94a8ef55ef31498dbd2db3ab1a3ab5bb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "locked",
+                  "DisplayName": "Locked",
+                  "Description": "Whether the issue conversation is locked.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B597FB04-BFF4-413A-8411-5C58D9BFFB5E"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "c22f5884591fc42ff9a164ef10e3f4b367cfb2a87e407a2fd7e6b8d6c25fb871"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "is_pull_request",
+                  "DisplayName": "Is Pull Request",
+                  "Description": "True when the issue row represents a pull request in GitHub issues API.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "7BCCA2C6-03E4-48D1-8FBC-27E8FC8C5EAA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "c69f35fba60b3ff9d00cffa6e6bb02b65a24b5cc2cb21580a470dffbf9fb84e0"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for viewing the issue on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "0769ED30-1437-40D6-8A21-0E8AA904A3BD"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "c8539bcc5563f4d4a445174d23c01fefb3dc1bbe72ab8d2d66859c72d526a0c3"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "closed_at",
+                  "DisplayName": "Closed At",
+                  "Description": "Timestamp when the issue was closed, or null if open.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E3EFA99E-63D9-4CA3-830F-52D102F67E2F"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "78aa6a4fa7c2f2bf902f86a1bacbfe7fe074d974fbdc63518278bf5645670136"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "Timestamp when the issue was created.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 17,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C75BED52-6446-4D0D-8031-A05FEEDEC085"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "7f76a3ff1e8eeebe028d3c2684551d6cd824a2ea15cd5bf706542c4ceac4a039"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "updated_at",
+                  "DisplayName": "Updated At",
+                  "Description": "Timestamp when the issue was last updated.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 18,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C69DF5A0-4374-4D84-87BD-C63DD9EBC4C8"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "71d063642e4f6d600572375da8ad8d4609c8d016d5e4177b3862deaefedac796"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "93719CA1-6B74-4FD8-81AC-25F123093A00"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "d72083ed009124421783c40c3588ff977e4e482ae6095bb8ef25a349b814544a"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "issue_comments",
+            "DisplayName": "Issue Comments",
+            "Description": "Comments on GitHub issues and pull requests fetched via GET /repos/{full_name}/issues/comments with incremental since support.",
+            "Category": "Issues",
+            "APIPath": "/repos/{full_name}/issues/comments",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updated_at",
+            "SupportsWrite": true,
+            "SupportsCreate": true,
+            "SupportsUpdate": true,
+            "SupportsDelete": false,
+            "WriteAPIPath": "/repos/{full_name}/issues/{issue_number}/comments",
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "CreateAPIPath": "/repos/{full_name}/issues/{issue_number}/comments",
+            "CreateMethod": "POST",
+            "UpdateAPIPath": "/repos/{full_name}/issues/comments/{ExternalID}",
+            "UpdateMethod": "PATCH",
+            "DefaultQueryParams": "{\"sort\":\"updated\",\"direction\":\"asc\"}",
+            "Configuration": "{\"apiPath\":\"/repos/{full_name}/issues/comments\",\"parentObjectName\":\"repositories\",\"parentKeyField\":\"full_name\",\"watermark\":\"updated_at\"}",
+            "Sequence": 3,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique numeric GitHub issue comment ID.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5FB60F13-525D-4076-8C14-FFB805A5C0DC"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "8cb10c455b78946ed1a61c15c3a9be38364f8077177793f9d5b33f38c2bbb81f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the comment.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C8400E38-8FF7-40EE-84C6-B9267FD74AAD"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "60ec8ff220d2b89d21b81fd9d46fa8d7d0f437b7d3e229154e64ffafe468f761"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "repository_full_name",
+                  "DisplayName": "Repository Full Name",
+                  "Description": "Full owner/repo name of the parent repository.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314",
+                  "RelatedIntegrationObjectFieldName": "full_name",
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A26C7866-94E4-40AC-8887-9C78C90610B4"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "56799d7b2d71ae0b3f59a0cfdfdc2825b662b53fdbd0987ad61c1bc7e73465e1"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "issue_url",
+                  "DisplayName": "Issue API URL",
+                  "Description": "API URL of the parent issue or pull request.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "40BF02A1-A8E5-4D97-8E38-10EC5B40BC80"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "e62955250976354caa781b3e7dcd469ef84789375c435d22d3d23d427ff5d77b"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_login",
+                  "DisplayName": "Author Login",
+                  "Description": "GitHub username of the comment author.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "0AEA2A89-A29F-4DDF-89A9-97173B4AF41A"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "6c6d08dda1e992b5842c866940d9238ce8f01f020891f98b15ed88f26ec594be"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_association",
+                  "DisplayName": "Author Association",
+                  "Description": "Relationship of the comment author to the repository (OWNER, MEMBER, CONTRIBUTOR, NONE).",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6C29C1EC-FADF-46E9-8708-DB673F5832E1"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "bd3352a823a6854e3654926762abf8208d3bcfb5717016c089487925c618304a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "body",
+                  "DisplayName": "Body",
+                  "Description": "Markdown body content of the comment.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "AllowsNull": false,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "067C5EFA-F705-404D-87F1-6156EB5D85CC"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "2c587b2257d9976d270dcd229394a0d13a7466fb20c17ab35f13de627acefe0a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for the comment on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A855A58B-FCE6-4E45-8A16-1E4F020D0B56"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "0330e2d43a8dcb37a9bb765be04f1076ba5e5cf0ba53a878094365bdd5d5689f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "Timestamp when the comment was created.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2D043994-08C4-43C6-8311-97867217692C"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "efbfb40cb020d6d8ad8419e2bd537d05e0aa68133f2773885fa0dd57cad320d5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "updated_at",
+                  "DisplayName": "Updated At",
+                  "Description": "Timestamp when the comment was last edited or updated.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1F9B3726-2C07-48F5-8514-B369B4495534"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "39a87229a463554178c5362d35a53fdfbcf4d8773ead1a42b2c0b9a0c4b4b38e"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "77249FF3-B997-4295-88FF-F604F0AB9018"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "f4c17a54c1e5c9dfbae86daf7c09c1238757e2e06620c5b3d9b9f050daac7fdc"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "pull_requests",
+            "DisplayName": "Pull Requests",
+            "Description": "GitHub pull requests fetched via GET /repos/{full_name}/pulls with support for creating and updating pull requests.",
+            "Category": "Pull Requests",
+            "APIPath": "/repos/{full_name}/pulls",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updated_at",
+            "SupportsWrite": true,
+            "SupportsCreate": true,
+            "SupportsUpdate": true,
+            "SupportsDelete": false,
+            "WriteAPIPath": "/repos/{full_name}/pulls",
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "CreateAPIPath": "/repos/{full_name}/pulls",
+            "CreateMethod": "POST",
+            "UpdateAPIPath": "/repos/{full_name}/pulls/{ExternalID}",
+            "UpdateMethod": "PATCH",
+            "DefaultQueryParams": "{\"state\":\"all\",\"sort\":\"updated\",\"direction\":\"desc\"}",
+            "Configuration": "{\"apiPath\":\"/repos/{full_name}/pulls\",\"parentObjectName\":\"repositories\",\"parentKeyField\":\"full_name\",\"watermark\":\"updated_at\"}",
+            "Sequence": 4,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique numeric GitHub pull request ID.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D994F69A-1DCA-43EC-8B30-DFFD10FCE3FA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "51b7e62bab124576b9283b9dadc3b002517f08634675e3769dba704b629edcdf"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the pull request.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D4B2618B-DFAE-46E9-8E64-EF879D0AF234"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "98e4eba7e7626b55e488a7e74885b6036243ecf81bdaefbf555bf01c4b1b33ee"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "number",
+                  "DisplayName": "Pull Request Number",
+                  "Description": "Repository-scoped pull request number.",
+                  "Type": "integer",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "139E3C40-5134-49EA-8824-C9223E9797B2"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "a633e69a9cdea12f8ef267b6491554be6b09273cb0b9527c8e3bbac2c72fd4d2"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "repository_full_name",
+                  "DisplayName": "Repository Full Name",
+                  "Description": "Full owner/repo name of the parent repository.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314",
+                  "RelatedIntegrationObjectFieldName": "full_name",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "7E329CB7-F025-4947-86DA-C0BB0680012C"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ebe4baaf046c0f450c193ce6848925f941cb1c497c9928889fcaeff29ae3efa4"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "title",
+                  "DisplayName": "Title",
+                  "Description": "Title of the pull request.",
+                  "Type": "string",
+                  "Length": 1024,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": false,
+                  "AllowsNull": false,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2B7DAF8D-BFFA-4D12-8DD0-04201B485E7D"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "6280fa09379277034249d5f4aba75beaa6eaeb89cd3af84c59c8a3779cb46acb"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "body",
+                  "DisplayName": "Body",
+                  "Description": "Markdown description body of the pull request.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9F742C2A-D2CF-4244-8774-9778BD08E826"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "6fb86cdba5bf7dd2b580a9b678b3795b3a52ba8609a3b96329146c0e5f01779a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "state",
+                  "DisplayName": "State",
+                  "Description": "Pull request state (open or closed).",
+                  "Type": "string",
+                  "Length": 32,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4E1E47D8-260A-401D-8EAD-B43AE2E39366"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "d60b858ece2b7a9887cefb7e659efe32efc0db04bc030320bb1a8391fbdfb306"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "draft",
+                  "DisplayName": "Is Draft",
+                  "Description": "Whether the pull request is currently marked as a draft.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "925C240B-183A-410E-8DF8-78A28195B128"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "6dc83d2f755a99f42dae2051c1e02ff79a0d58ca864ec6d9b1478317de78a199"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "merged_at",
+                  "DisplayName": "Merged At",
+                  "Description": "Timestamp when the pull request was merged, or null if unmerged.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "41067468-00EB-4E58-8364-1EEFC042F0B9"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "1c597eebc53558ea90090cb30981042f7b05128f6b5517b90b6ff3ee515e0fcd"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "merge_commit_sha",
+                  "DisplayName": "Merge Commit SHA",
+                  "Description": "Git commit SHA resulting from merging the pull request.",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4981A208-D0CD-4450-8471-97DB2F42B418"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "5144c7b8df552d477792c9891e83dd238db90c8a81f076e56740133f356dad25"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "head_ref",
+                  "DisplayName": "Head Branch Ref",
+                  "Description": "Source branch name proposed by the pull request.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "49C9EB1B-1371-4BAC-89A0-3B5CE7C89B83"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "5bb03d912577330eea40d69f3ec67c9bfeedb5be2fdba6cb18ac2da709f0f425"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "head_sha",
+                  "DisplayName": "Head Commit SHA",
+                  "Description": "Git commit SHA at the tip of the source branch.",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "74554D60-74A2-4BDA-8BCD-E1299D46C7FC"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "0d0d62eaf33fdd0122b663c7051014eb3f9f5c80fd8365e4d8891c679ae4d040"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "base_ref",
+                  "DisplayName": "Base Branch Ref",
+                  "Description": "Target branch name into which the pull request merges.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3C6CAE11-E51B-4329-8CF5-71A8D4CC8215"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "0547be942030fedcc27db1cd391ec4eab222fd7472f38ae7c9e69c2ae650a05a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "base_sha",
+                  "DisplayName": "Base Commit SHA",
+                  "Description": "Git commit SHA at the base of the target branch.",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8349ABCB-FE74-4742-8181-6F6E0E99B5C4"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "9623c389d50304233efd3026b8ab1ffd52cc6bb9ae16bbfd056f420ec43a364c"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_login",
+                  "DisplayName": "Author Login",
+                  "Description": "GitHub username of the pull request author.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "0A08E6AB-E85E-4D36-89F6-2A94FB43A9AA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "dd955088623587b272c8ad60393e91dd093c600281f02e593f7df0a209304abd"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "merged_by_login",
+                  "DisplayName": "Merged By Login",
+                  "Description": "GitHub username of the user who merged the pull request.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 16,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "52B1DBFE-C240-4BC8-8494-B12443AB3FE7"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "a903e3c1060edd8b8647b616b71c1184521471a4ae565731840604008b33441a"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for viewing the pull request on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 17,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "6E1FA5DB-4B3A-41A7-8145-8E3C72D4FA44"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "fef09fce1acf0868e56e3a2e130b989c3480059933f3d497a16fc0c89c4753d9"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "closed_at",
+                  "DisplayName": "Closed At",
+                  "Description": "Timestamp when the pull request was closed.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 18,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "3EBB1196-3318-40EB-8319-DBA2291554C8"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "c13440fe385a38d70359d1e2723d50a01733f1ee93a1cda9232ff14d31657c59"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "Timestamp when the pull request was created.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 19,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "50028651-67E0-407A-81C8-9FADFCC95BEC"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "9e5f5e5eb7c0fa73d009495153cf84a7dc04697c909efb67da92e349057300f0"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "updated_at",
+                  "DisplayName": "Updated At",
+                  "Description": "Timestamp when the pull request was last updated.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 20,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "26C83167-8653-4D6E-847B-3163AE0E3941"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "8786cc8b9188f055fb0fedbcf4e7b4c8a7a7c4554476482c2a158ddbd78256e1"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "CB46F179-00B1-45F3-8C68-BC565A411268"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "bbe5faed4c8ab8690e715f62e857129a2c68fea3d701e5571190ca754601b762"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "pull_request_comments",
+            "DisplayName": "Pull Request Review Comments",
+            "Description": "Diff-anchored code review comments on GitHub pull requests fetched via GET /repos/{full_name}/pulls/comments.",
+            "Category": "Pull Requests",
+            "APIPath": "/repos/{full_name}/pulls/comments",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "updated_at",
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "DefaultQueryParams": "{\"sort\":\"updated\",\"direction\":\"asc\"}",
+            "Configuration": "{\"apiPath\":\"/repos/{full_name}/pulls/comments\",\"parentObjectName\":\"repositories\",\"parentKeyField\":\"full_name\",\"watermark\":\"updated_at\"}",
+            "Sequence": 5,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique numeric GitHub pull request review comment ID.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "68FEA2EC-A4E7-4B19-8C60-A5036729BE5E"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "8e935ec2b99cfe726b94fce2f87c94f4111beafe4451f905478c2f9d20d28168"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the review comment.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E8A5EB95-ED40-4AA5-8D0D-938DF187FC3B"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "335649e20aa8a9543d7cc4c8bb17a3b0b0863ac24e1af2dd69e010b09a0eaeb9"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "pull_request_review_id",
+                  "DisplayName": "Pull Request Review ID",
+                  "Description": "Numeric ID of the parent pull request review.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "DEB2D39B-738C-4863-85AE-7CC0521D761E"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "72308babc60a1dfc02357fed1bda8994c81a6e67c8d3794dd03830d8a959b5ba"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "repository_full_name",
+                  "DisplayName": "Repository Full Name",
+                  "Description": "Full owner/repo name of the parent repository.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314",
+                  "RelatedIntegrationObjectFieldName": "full_name",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8C1B4F9D-AC2E-4657-81C6-F9F930436BB8"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "d69ebc46a15b42b4402138caa6d2c2d9fdf2afa1537e276649bc12af232489ae"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "path",
+                  "DisplayName": "File Path",
+                  "Description": "Relative file path in the repository that the review comment targets.",
+                  "Type": "string",
+                  "Length": 1024,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "20EB0361-7140-4300-865B-4BBA8C4E4652"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ddc5e06953341293ac3f9efa89559bb8d545bdb4e66d850c9a173c925e856245"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "commit_id",
+                  "DisplayName": "Commit SHA",
+                  "Description": "Git commit SHA to which the review comment applies.",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "73D31292-A56C-410B-86FF-5C2417590363"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "b13cfc2eae9f92c4ba8c264408e390af02b35a99371ff15f7c9745f9823f6a56"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_login",
+                  "DisplayName": "Author Login",
+                  "Description": "GitHub username of the reviewer who authored the comment.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1A6451F7-12A4-4621-8693-C57D0D538508"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "3d41788c496bce8b3635ddfb30cff12b4aad6501a83d8744738536d210dffc09"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "body",
+                  "DisplayName": "Body",
+                  "Description": "Markdown body content of the pull request review comment.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2CA46E15-9828-4B7B-8B4E-13EF9F5EE00D"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "65a042d082bba24439531047cf7d240231ba9023db0a87630dcf40272dd3782e"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for the review comment on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "5DD3D30B-9D58-4182-8E73-3C21B310A695"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "f195cab8377d1efeb79a00098904e4ed587eb2e734ccb9fa186c4490e4ce8be0"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "Timestamp when the review comment was created.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2D4E0744-ED61-44E5-826B-73C1672C6858"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "3006b981ed662dd76b198d9d7a6e72c233b7f8089bd21da44848d305a800466f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "updated_at",
+                  "DisplayName": "Updated At",
+                  "Description": "Timestamp when the review comment was last updated.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B39CE8DC-9479-465D-837F-40D891022429"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "cb167d42ca00fdf58d2a680fe98ea6ae0ec1193ce9f0a4327b7adb9672012913"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "B4F4CBC2-0BC1-4905-8D26-BB238E657BCA"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "a73b22fc2ebaaeea11fafa942be59b05e7da6cf0415b64933e368ef5ba7bf5eb"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "releases",
+            "DisplayName": "Releases",
+            "Description": "Published and draft GitHub releases fetched per repository via GET /repos/{full_name}/releases.",
+            "Category": "Releases",
+            "APIPath": "/repos/{full_name}/releases",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "Configuration": "{\"apiPath\":\"/repos/{full_name}/releases\",\"parentObjectName\":\"repositories\",\"parentKeyField\":\"full_name\"}",
+            "Sequence": 6,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique numeric GitHub release ID.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B53E0B3E-C6D8-439C-8F7B-2AC482C4A372"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "f825594633ee9785ec042b3d236160ed38f70c63ddc90e6b63e9265ea09693b4"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the release.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "7ACA48CD-742D-4C15-8344-84D36E5D922D"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "dfee21663fb7984d834ccc7f23068d82b0cb0be997efdbab9e5d8e8b9a7a9253"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "repository_full_name",
+                  "DisplayName": "Repository Full Name",
+                  "Description": "Full owner/repo name of the parent repository.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314",
+                  "RelatedIntegrationObjectFieldName": "full_name",
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "2E298027-10E8-4722-8CA7-3264CD3BF96A"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "fcc37c2a73bce1c30f724b0453c4081a577d66d280d3498047687420291fd33d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "tag_name",
+                  "DisplayName": "Tag Name",
+                  "Description": "Git tag name associated with the release.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "E7CCE1F2-5B91-4A1A-809B-6CCEC47AE824"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "9469a982e0fd3dbdcd444cfbc55da91d8ebff8657e9b257b0c6c7afe209b0d47"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "target_commitish",
+                  "DisplayName": "Target Commitish",
+                  "Description": "Branch or commit SHA that the release tag points to.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "B35BD0BF-7319-46CD-8FDE-C8DCD27DD01A"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "7ed18c282aac68d0b83025002e26172a2bfaedcb0539dd13fa54f9f44df090f5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Release Name",
+                  "Description": "Human-readable title of the release.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "0DB05734-CD40-41E8-8E03-4EBB36D97FCA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "f765dda52d47a1cff33c2b63e15b4f903560df952b70ace4515edef3f7c4bcbc"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "body",
+                  "DisplayName": "Release Notes Body",
+                  "Description": "Markdown release notes and changelog description.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9E04D558-0079-4A0D-8A1A-B894879B3AF5"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "4bc8e01f73d4c8e6ede94b3af16a3280c3ad791304adfedab70badcea02d04c1"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "draft",
+                  "DisplayName": "Is Draft",
+                  "Description": "True if the release is an unpublished draft.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "124AE62D-81DA-424A-81AF-053A5A1AF2E0"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "892bf0c1046df43712e0cdeca813144a796655baa0e91dd24d578881c9d88fb2"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "prerelease",
+                  "DisplayName": "Is Prerelease",
+                  "Description": "True if the release is marked as a pre-release.",
+                  "Type": "boolean",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1165E8EC-336A-4C5A-8333-7B0D5846268E"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "4d93bd71860b60cfce820ef5f6bde542bb13b014efce42f0ff19501d7b430d30"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_login",
+                  "DisplayName": "Author Login",
+                  "Description": "GitHub username of the user who created the release.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C3CD71B7-F21C-4A28-8E30-629023821605"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "66f372e12d34cb2ecd7fa658383cfeb7d610e66f00273c3f6caaca41a4b5381d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for viewing the release on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "A9FE1830-FBEC-45FE-8E32-47A804DC9ACA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "d3fd254e163755de0256bfd012990a155509d0d20d44acec34363f07df0a25d1"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "Timestamp when the release record was created.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "75151A4E-535D-4DFC-8D0D-3B719933504F"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "9a68fc23dae7493927d6272cf8ee1dee72331e2f0736424985e0fb495ca98314"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "published_at",
+                  "DisplayName": "Published At",
+                  "Description": "Timestamp when the release was published.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "9630455A-D0EC-4CE0-86AC-56E7AEA871DD"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "a0046d2f881e2f74a758c13859f01bff81d33f3b648b3586a68ed8c8b21bcc0b"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "DC42D505-F255-40B2-8ED5-9C419936D513"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "07da3e515903ead1a09a42f1413a4cb92ac4cdf034c512f7de0955797926f47b"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "commits",
+            "DisplayName": "Commits",
+            "Description": "Git commits on the default branch of each repository fetched via GET /repos/{full_name}/commits with incremental since support.",
+            "Category": "Repositories",
+            "APIPath": "/repos/{full_name}/commits",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "committed_at",
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "Configuration": "{\"apiPath\":\"/repos/{full_name}/commits\",\"parentObjectName\":\"repositories\",\"parentKeyField\":\"full_name\",\"watermark\":\"committed_at\"}",
+            "Sequence": 7,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "Commit ID (SHA)",
+                  "Description": "40-character Git commit SHA serving as the primary key.",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4C163E1A-D66C-44EC-8BAA-AEF7CB5815EB"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "730f5840437bdc6d8f59332eb4637a676c0fc6dd45f38d1dde6493a4b72e1b37"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "sha",
+                  "DisplayName": "SHA",
+                  "Description": "40-character hexadecimal Git commit SHA.",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1DDE177A-E36F-49F8-8B8C-62A43D3790E5"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "956706a91b7014da1df37a7fab62f051f875dd7bf3ff9382de519e436035bc10"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the commit.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "1848C85A-C7D4-4AFF-876E-E034FF158E42"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "e90e5466f8139d9172bce1e6f266deab0daa19b786a20e3e740cf57501289d14"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "repository_full_name",
+                  "DisplayName": "Repository Full Name",
+                  "Description": "Full owner/repo name of the parent repository.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314",
+                  "RelatedIntegrationObjectFieldName": "full_name",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8DF834A5-020D-4C54-8DDE-37C298E8D92A"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "d69ebc46a15b42b4402138caa6d2c2d9fdf2afa1537e276649bc12af232489ae"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "message",
+                  "DisplayName": "Commit Message",
+                  "Description": "Full Git commit subject and body message.",
+                  "Type": "string",
+                  "Length": 4000,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "278AD0C4-E7A1-4058-8303-4247DA74A693"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "d1b946db4a1e82452e766eab58e7bb472735dad0d0ed86a2fc0f029902854bb0"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_login",
+                  "DisplayName": "GitHub Author Login",
+                  "Description": "GitHub username linked to the commit author, if matched.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "F7C97A27-3FD7-414E-876F-886FCA8370B7"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "2de10913a405ba664ed3738026a5a3a633ccc282e39260c39694e9a9934ac260"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_name",
+                  "DisplayName": "Git Author Name",
+                  "Description": "Author display name recorded in the Git commit header.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D79FB482-D6D8-4548-813C-BF0C8CD82EC2"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "850bed74a9151f8ed881b3a05874cf784fe43adb702675d483ebf03df585bda4"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "author_email",
+                  "DisplayName": "Git Author Email",
+                  "Description": "Author email address recorded in the Git commit header.",
+                  "Type": "string",
+                  "Length": 320,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D3E6F84D-1742-4380-89F7-3CCB7C428779"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "ed06cbd39a44d14bdaf0f1096cf64bacffb8ec2df9909f2e829be43c602ac8df"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "committed_at",
+                  "DisplayName": "Committed At",
+                  "Description": "ISO-8601 timestamp when the commit was authored/committed.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "BFC3186F-72E9-4AF9-8077-E7D4DF029C08"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "71f29f15e70f004328c1ecbb9609538d47bfb1384e589bc9e042bf5edf554ed6"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for viewing the commit diff on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "30A28725-8967-4A89-8821-5B6F41A02386"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "dee08a7cfc64d6e079edda1518ced2ea75fa3d05ad2496b8159365ad1e732368"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "5E937B6F-6D2B-4706-8239-CF8F624D78E7"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "e5b60632cac2e3cfc84ee639299c662a81512ce7c8eac36bf24a979a3d8732c2"
+          }
+        },
+        {
+          "fields": {
+            "IntegrationID": "@parent:ID",
+            "Name": "workflow_runs",
+            "DisplayName": "Workflow Runs",
+            "Description": "GitHub Actions workflow run executions fetched per repository via GET /repos/{full_name}/actions/runs.",
+            "Category": "CI/CD",
+            "APIPath": "/repos/{full_name}/actions/runs",
+            "ResponseDataKey": "workflow_runs",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "PaginationType": "PageNumber",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "WriteMethod": "POST",
+            "DeleteMethod": "DELETE",
+            "Configuration": "{\"apiPath\":\"/repos/{full_name}/actions/runs\",\"parentObjectName\":\"repositories\",\"parentKeyField\":\"full_name\"}",
+            "Sequence": 8,
+            "Status": "Active",
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "ContentHashApplicable": true
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "id",
+                  "DisplayName": "ID",
+                  "Description": "Unique numeric GitHub Actions workflow run ID.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "AllowsNull": false,
+                  "Sequence": 1,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "56F5386D-7666-4915-8096-017A4A57F9BF"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "51f37c015724e07ed4f85c960f25627028f1abd75e534b3832a70040573aefcd"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "node_id",
+                  "DisplayName": "Node ID",
+                  "Description": "Global GraphQL node identifier for the workflow run.",
+                  "Type": "string",
+                  "Length": 128,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 2,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8F1E47C8-EE98-4879-895B-FD5EBF309216"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "cfe3ec76c74d9dd3a993f53b02c6ce65d4c89b189e087f1b66f38fe2263c05c5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "workflow_id",
+                  "DisplayName": "Workflow ID",
+                  "Description": "Numeric ID of the workflow definition.",
+                  "Type": "bigint",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 3,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "ABAFFAEB-808F-4F42-8C5A-5069C98D09AD"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "49d701fe032ec72f411566f61061d37b4cbcaad04825e1e142dc84d2d659d5de"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "repository_full_name",
+                  "DisplayName": "Repository Full Name",
+                  "Description": "Full owner/repo name of the parent repository.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "AC55426E-FB41-4FCB-8E96-D0962A5F9314",
+                  "RelatedIntegrationObjectFieldName": "full_name",
+                  "Sequence": 4,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "41DF8EDC-1D0B-4B56-80B9-657670198A70"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "d69ebc46a15b42b4402138caa6d2c2d9fdf2afa1537e276649bc12af232489ae"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "name",
+                  "DisplayName": "Workflow Name",
+                  "Description": "Display name of the GitHub Actions workflow.",
+                  "Type": "string",
+                  "Length": 512,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 5,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4515A58F-7AF0-4747-8620-9150BEE1B47A"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "13394f9252a233b12e69ce41ae5993c90fb54c2c08ce34f9c808a5ea90159d8d"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "display_title",
+                  "DisplayName": "Display Title",
+                  "Description": "Commit message or event title displayed for the workflow run.",
+                  "Type": "string",
+                  "Length": 1024,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 6,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "35676ABE-7DF5-4F88-833B-7606C8DC5889"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "444ffba08204f3dc5686ec5ba251bfdb4be98dadb0979cdd03256778e2b62e9f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "run_number",
+                  "DisplayName": "Run Number",
+                  "Description": "Sequential execution number for the workflow.",
+                  "Type": "integer",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 7,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "83605A5E-454C-469F-8F9C-FC2E65D02FCA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "bd550046bf2308ea07d02d9cd58c67fc540aa21c04241c30284955ad75f9c89f"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "event",
+                  "DisplayName": "Trigger Event",
+                  "Description": "GitHub webhook event that triggered the run (push, pull_request, workflow_dispatch).",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 8,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "59255CD7-ED9B-4E90-8A00-C975C0CC2A02"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "b96d5c7a658127f72563b728082c7841ffd9615a0e68ea6e8d565b533914fc26"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Execution status of the workflow run (queued, in_progress, completed).",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 9,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "86582EEC-4CE4-4DCB-8460-DFEB331EE8ED"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "24b4a1f7b60a5e3f3569129cd3b18cb8e3261b6d7ebf36f5ac2f3eae841eaef5"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "conclusion",
+                  "DisplayName": "Conclusion",
+                  "Description": "Final outcome of the workflow run (success, failure, cancelled, skipped).",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 10,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "61175D0D-3888-4E6B-8708-C309B9401622"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "576f3e6d7b451c0b6b7b04b0b665f3319c846c343dfef5b4a9987538d81295d2"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "head_branch",
+                  "DisplayName": "Head Branch",
+                  "Description": "Branch name that the workflow run executed against.",
+                  "Type": "string",
+                  "Length": 255,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 11,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "C2B6074B-657E-4FF6-87A7-85771E481734"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "57d988f38cd6605fd8a78be0eb5d5dd227bb71742aa3fa2b49be23c989c9bef3"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "head_sha",
+                  "DisplayName": "Head Commit SHA",
+                  "Description": "Git commit SHA that the workflow run executed against.",
+                  "Type": "string",
+                  "Length": 64,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 12,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "CAA02B5C-620A-4492-87CC-833D790F01B5"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "5a090c4f5698accb7124a2847090657e5a61c059be039c09f94c8f9fbcb98856"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "html_url",
+                  "DisplayName": "HTML URL",
+                  "Description": "Browser URL for viewing the workflow run logs on GitHub.",
+                  "Type": "string",
+                  "Length": 2048,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 13,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "D3023809-5751-4CA5-8613-04257146483D"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "b35e659b8f133f4783bd09a850340c7f26bf77321185b72380f4b706eecdd993"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "created_at",
+                  "DisplayName": "Created At",
+                  "Description": "Timestamp when the workflow run was created.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 14,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "8772354D-F2ED-4C9E-8C2D-D537A455A167"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "327e30219b906cf625ba6d28d03f361a029a875e509a67038dc2163905373eee"
+                }
+              },
+              {
+                "fields": {
+                  "IntegrationObjectID": "@parent:ID",
+                  "Name": "updated_at",
+                  "DisplayName": "Updated At",
+                  "Description": "Timestamp when the workflow run status last changed.",
+                  "Type": "datetime",
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "AllowsNull": true,
+                  "Sequence": 15,
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared"
+                },
+                "primaryKey": {
+                  "ID": "4F62C33B-35CE-4031-81DA-70806BC39664"
+                },
+                "sync": {
+                  "lastModified": "2026-11-05T09:30:00.000Z",
+                  "checksum": "6605a85a0a2b0da79fda0685ff4c43152d1b4f501625d85198613cd2af184d9f"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "B7D69CFC-5F16-46AC-85E2-6ABB4DECE499"
+          },
+          "sync": {
+            "lastModified": "2026-11-05T09:30:00.000Z",
+            "checksum": "db83f88a18462d2f2343f7e7f8349c638a6b72afec072371bc2749062c94a016"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "9340C141-A28B-44E4-8E69-2E4CBB050463"
+    },
+    "sync": {
+      "lastModified": "2026-11-05T09:30:00.000Z",
+      "checksum": "69981a86e81d23f71dde7f25e25a5cf819c82f3ef0b5939cf7784c58a1143dff"
+    }
+  }
+]

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "count": 54,
+  "count": 55,
   "connectors": [
     {
       "name": "Fonteva",
@@ -830,6 +830,31 @@
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Marketing/SFMC",
       "installTag": "Marketing-SFMC@1.0.0"
+    },
+    {
+      "name": "GitHub",
+      "displayName": "GitHub Integration Connector",
+      "description": "GitHub REST API v3 (2022-11-28) connector. Syncs repositories, issues, issue comments, pull requests, review comments, releases, commits, and workflow runs via PAT, OAuth, or GitHub App authentication.",
+      "category": "Platform",
+      "tags": [
+        "connector",
+        "integration",
+        "platform",
+        "github",
+        "git",
+        "devops",
+        "issues",
+        "pull-requests"
+      ],
+      "logo": "fa-brands fa-github",
+      "navigationBaseURL": "https://api.github.com",
+      "objectCount": 8,
+      "className": "@memberjunction/connector-github",
+      "npmPackage": "@memberjunction/connector-github",
+      "version": "1.0.0",
+      "mjVersionRange": ">=5.36.0 <7.0.0",
+      "repoSubpath": "Platform/GitHub",
+      "installTag": "Platform-GitHub@1.0.0"
     },
     {
       "name": "higherlogic-thrive",
