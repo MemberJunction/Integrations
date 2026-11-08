@@ -89,6 +89,9 @@ jobs:
       - name: Connector catalog up to date
         run: node scripts/build-connectors-catalog.mjs --check
 
+      - name: README connector directory up to date
+        run: node scripts/build-readme-directory.mjs --check
+
       # THE PUBLISH GATE. `npm run release` is `turbo run build && changeset publish` — it BUILDS but never
       # TESTS, and unit tests ran only in pr.yml's `validate`, which is not a required check. So a connector
       # whose tests were red could be merged and published: @memberjunction/connector-hubspot went live on

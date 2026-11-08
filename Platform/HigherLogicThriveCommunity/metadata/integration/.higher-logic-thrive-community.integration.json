@@ -15241,6 +15241,615 @@
             "lastModified": "2026-07-11T21:36:39.518Z",
             "checksum": "2131ce617e242cf22673a5860303a034c8343d3156c1a876a4dfc223e70f0f82"
           }
+        },
+        {
+          "fields": {
+            "Name": "InboxMessages",
+            "DisplayName": "Inbox Messages",
+            "Description": "Private direct messages received in the authenticated member or impersonated contact inbox (GET /v2.0/Messaging/GetInboxMessages). Opt-in via Configuration.includePrivateSocialObjects=true. Supports firstRecord/maxRecords query-offset pagination, SendMessage create, and DeleteInboxMessage delete.",
+            "APIPath": "/v2.0/Messaging/GetInboxMessages",
+            "Category": "Messaging",
+            "DefaultPageSize": 50,
+            "SupportsPagination": true,
+            "PaginationType": "Offset",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": true,
+            "SupportsCreate": true,
+            "SupportsUpdate": false,
+            "SupportsDelete": true,
+            "CreateAPIPath": "/v2.0/Messaging/SendMessage",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "body",
+            "DeleteAPIPath": "/v2.0/Messaging/DeleteInboxMessage?messageKey={id}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "MessageKey",
+            "Sequence": 36,
+            "Status": "Active",
+            "Configuration": "{\"optInGroup\": \"PrivateSocialObjects\", \"optInConfigKey\": \"includePrivateSocialObjects\", \"accessPath\": {\"door\": \"Messaging/GetInboxMessages\", \"path\": \"/v2.0/Messaging/GetInboxMessages\", \"readMethod\": \"GET\", \"nesting\": [], \"door_args\": [\"firstRecord\", \"maxRecords\"]}, \"paginationDetail\": {\"type\": \"Offset\", \"subtype\": \"query-offset\", \"params\": [\"firstRecord\", \"maxRecords\"]}, \"sourceModel\": \"PrivateMessage\"}",
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "MessageKey",
+                  "DisplayName": "Message Key",
+                  "Description": "Unique GUID identifier for the private message.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B101-100000000001"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "SenderContactKey",
+                  "DisplayName": "Sender Contact Key",
+                  "Description": "ContactKey of the member who sent the private message.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contacts&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "ContactKey",
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B101-100000000002"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "RecipientContactKey",
+                  "DisplayName": "Recipient Contact Key",
+                  "Description": "ContactKey of the member receiving the private message.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contacts&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "ContactKey",
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B101-100000000003"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "Subject",
+                  "DisplayName": "Subject",
+                  "Description": "Subject line of the private message.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B101-100000000004"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "Body",
+                  "DisplayName": "Body",
+                  "Description": "Message body content.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B101-100000000005"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "DateSent",
+                  "DisplayName": "Date Sent",
+                  "Description": "Timestamp when the message was sent.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B101-100000000006"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "IsRead",
+                  "DisplayName": "Is Read",
+                  "Description": "Whether the inbox message has been read.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B101-100000000007"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "8B3E41A0-92C4-4D5A-B101-000000000001"
+          }
+        },
+        {
+          "fields": {
+            "Name": "SentMessages",
+            "DisplayName": "Sent Messages",
+            "Description": "Private direct messages sent by the authenticated member or impersonated contact (GET /v2.0/Messaging/GetSentMessages). Opt-in via Configuration.includePrivateSocialObjects=true. Uses firstRecord/maxRecords query-offset pagination.",
+            "APIPath": "/v2.0/Messaging/GetSentMessages",
+            "Category": "Messaging",
+            "DefaultPageSize": 50,
+            "SupportsPagination": true,
+            "PaginationType": "Offset",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "MessageKey",
+            "Sequence": 37,
+            "Status": "Active",
+            "Configuration": "{\"optInGroup\": \"PrivateSocialObjects\", \"optInConfigKey\": \"includePrivateSocialObjects\", \"accessPath\": {\"door\": \"Messaging/GetSentMessages\", \"path\": \"/v2.0/Messaging/GetSentMessages\", \"readMethod\": \"GET\", \"nesting\": [], \"door_args\": [\"firstRecord\", \"maxRecords\"]}, \"paginationDetail\": {\"type\": \"Offset\", \"subtype\": \"query-offset\", \"params\": [\"firstRecord\", \"maxRecords\"]}, \"sourceModel\": \"PrivateMessage\"}",
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "MessageKey",
+                  "DisplayName": "Message Key",
+                  "Description": "Unique GUID identifier for the sent message.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B102-200000000001"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "SenderContactKey",
+                  "DisplayName": "Sender Contact Key",
+                  "Description": "ContactKey of the member who sent the private message.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contacts&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "ContactKey",
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B102-200000000002"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "RecipientContactKey",
+                  "DisplayName": "Recipient Contact Key",
+                  "Description": "ContactKey of the member who received the private message.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contacts&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "ContactKey",
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B102-200000000003"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "Subject",
+                  "DisplayName": "Subject",
+                  "Description": "Subject line of the sent message.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B102-200000000004"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "Body",
+                  "DisplayName": "Body",
+                  "Description": "Message body content.",
+                  "Type": "String",
+                  "Length": 4000,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B102-200000000005"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "DateSent",
+                  "DisplayName": "Date Sent",
+                  "Description": "Timestamp when the message was sent.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B102-200000000006"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "8B3E41A0-92C4-4D5A-B102-000000000002"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Friends",
+            "DisplayName": "Friends",
+            "Description": "Accepted member-to-member friend connections (GET /v2.0/Friends/GetMyFriends). Opt-in via Configuration.includePrivateSocialObjects=true. Supports RemoveFriend delete.",
+            "APIPath": "/v2.0/Friends/GetMyFriends",
+            "Category": "Friends",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": true,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": true,
+            "DeleteAPIPath": "/v2.0/Friends/RemoveFriend?friendContactKey={id}",
+            "DeleteMethod": "DELETE",
+            "DeleteIDLocation": "path",
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "ContactKey",
+            "Sequence": 38,
+            "Status": "Active",
+            "Configuration": "{\"optInGroup\": \"PrivateSocialObjects\", \"optInConfigKey\": \"includePrivateSocialObjects\", \"accessPath\": {\"door\": \"Friends/GetMyFriends\", \"path\": \"/v2.0/Friends/GetMyFriends\", \"readMethod\": \"GET\", \"nesting\": [], \"door_args\": []}, \"paginationDetail\": null, \"sourceModel\": \"ContactConcise\"}",
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "ContactKey",
+                  "DisplayName": "Contact Key",
+                  "Description": "ContactKey of the connected friend.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contacts&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "ContactKey",
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B103-300000000001"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "FirstName",
+                  "DisplayName": "First Name",
+                  "Description": "Friend's first name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B103-300000000002"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "LastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Friend's last name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B103-300000000003"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "EmailAddress",
+                  "DisplayName": "Email Address",
+                  "Description": "Friend's email address.",
+                  "Type": "String",
+                  "Length": 320,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B103-300000000004"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "LegacyContactKey",
+                  "DisplayName": "Legacy Contact Key",
+                  "Description": "AMS/CRM legacy identifier for the connected friend.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B103-300000000005"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "8B3E41A0-92C4-4D5A-B103-000000000003"
+          }
+        },
+        {
+          "fields": {
+            "Name": "FriendRequests",
+            "DisplayName": "Friend Requests",
+            "Description": "Pending member-to-member friend invitations (GET /v2.0/Friends/GetFriendRequestsReceived, plus optional GetFriendRequestsSent merge when includeSent=true). Opt-in via Configuration.includePrivateSocialObjects=true. Supports RequestFriend create.",
+            "APIPath": "/v2.0/Friends/GetFriendRequestsReceived",
+            "Category": "Friends",
+            "SupportsPagination": false,
+            "PaginationType": "None",
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": true,
+            "SupportsCreate": true,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "CreateAPIPath": "/v2.0/Friends/RequestFriend?friendContactKey={friendContactKey}",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "flat",
+            "CreateIDLocation": "n/a",
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": "FriendRequestKey",
+            "Sequence": 39,
+            "Status": "Active",
+            "Configuration": "{\"optInGroup\": \"PrivateSocialObjects\", \"optInConfigKey\": \"includePrivateSocialObjects\", \"secondaryAPIPath\": \"/v2.0/Friends/GetFriendRequestsSent\", \"accessPath\": {\"door\": \"Friends/GetFriendRequestsReceived\", \"path\": \"/v2.0/Friends/GetFriendRequestsReceived\", \"readMethod\": \"GET\", \"nesting\": [], \"door_args\": []}, \"paginationDetail\": null, \"sourceModel\": \"FriendRequest\"}",
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "FriendRequestKey",
+                  "DisplayName": "Friend Request Key",
+                  "Description": "Unique GUID identifier for the friend request.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B104-400000000001"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "RequesterContactKey",
+                  "DisplayName": "Requester Contact Key",
+                  "Description": "ContactKey of the member who initiated the friend request.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contacts&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "ContactKey",
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B104-400000000002"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "RecipientContactKey",
+                  "DisplayName": "Recipient Contact Key",
+                  "Description": "ContactKey of the member who received the friend request.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": false,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contacts&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "ContactKey",
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B104-400000000003"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "Direction",
+                  "DisplayName": "Direction",
+                  "Description": "Request direction relative to the authenticated member ('Received' or 'Sent').",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B104-400000000004"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "Status",
+                  "DisplayName": "Status",
+                  "Description": "Current status of the friend invitation.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B104-400000000005"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "CreatedOn",
+                  "DisplayName": "Created On",
+                  "Description": "Timestamp when the friend request was created.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8B3E41A0-92C4-4D5A-B104-400000000006"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "8B3E41A0-92C4-4D5A-B104-000000000004"
+          }
         }
       ]
     },

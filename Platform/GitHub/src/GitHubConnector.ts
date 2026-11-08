@@ -10,8 +10,6 @@ import type {
 import {
     BaseIntegrationConnector,
     BaseRESTIntegrationConnector,
-    DiscoverFieldsViaFetch,
-    mergeDeclaredWithSampledFields,
     type RESTAuthContext,
     type RESTResponse,
     type PaginationState,
@@ -25,8 +23,17 @@ import {
     type UpdateRecordContext,
     type GetRecordContext,
     type CRUDResult,
-    type ConnectorActionCapabilities,
 } from '@memberjunction/integration-engine';
+import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema-merge';
+
+export interface ConnectorActionCapabilities {
+    SupportsSearch: boolean;
+    SupportsList: boolean;
+    SupportsGet: boolean;
+    SupportsCreate: boolean;
+    SupportsUpdate: boolean;
+    SupportsDelete: boolean;
+}
 
 /** Default GitHub REST API base URL. Can be overridden per connection for GitHub Enterprise Server. */
 export const DEFAULT_GITHUB_API_BASE_URL = 'https://api.github.com';
@@ -108,20 +115,23 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
     public override async IntrospectSchema(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo,
-        options?: IntrospectSchemaOptions
+        _options?: IntrospectSchemaOptions
     ): Promise<SourceSchemaInfo> {
-        let sampled: SourceSchemaInfo = { Objects: [] };
-        try {
-            sampled = await DiscoverFieldsViaFetch(this, companyIntegration, contextUser, options);
-        } catch {
-            // Fall back to declared metadata when credentials are not yet reachable during offline introspection
+        const schema = await super.IntrospectSchema(companyIntegration, contextUser);
+        for (const obj of schema.Objects) {
+            try {
+                const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
+                obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
+            } catch {
+                // Fall back to declared metadata when credentials are not yet reachable during offline introspection
+            }
         }
-        return mergeDeclaredWithSampledFields(companyIntegration.IntegrationID, sampled, options);
+        return schema;
     }
 
     // ─── Action Generator Capabilities ─────────────────────────────────────
 
-    public override GetActionGeneratorCapabilities(): ConnectorActionCapabilities {
+    public GetActionGeneratorCapabilities(): ConnectorActionCapabilities {
         return {
             SupportsSearch: true,
             SupportsList: true,
@@ -184,8 +194,10 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
     ): Promise<GitHubAuthContext> {
         const config = await this.LoadConfiguration(companyIntegration, contextUser);
 
+        const navBaseUrl = (companyIntegration as unknown as { NavigationBaseURL?: string | null }).NavigationBaseURL
+            ?? (companyIntegration.Get?.('NavigationBaseURL') as string | null | undefined);
         const rawBaseUrl = pickString(config, ['baseUrl', 'BaseURL', 'apiUrl', 'apiBaseUrl'])
-            ?? companyIntegration.NavigationBaseURL
+            ?? navBaseUrl
             ?? DEFAULT_GITHUB_API_BASE_URL;
         const baseUrl = normalizeApiBaseUrl(rawBaseUrl);
 
@@ -294,8 +306,10 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
     ): string {
         const ghAuth = auth as Partial<GitHubAuthContext>;
         if (ghAuth.BaseURL) return ghAuth.BaseURL;
-        if (companyIntegration.NavigationBaseURL) {
-            return normalizeApiBaseUrl(companyIntegration.NavigationBaseURL);
+        const navBaseUrl = (companyIntegration as unknown as { NavigationBaseURL?: string | null }).NavigationBaseURL
+            ?? (companyIntegration.Get?.('NavigationBaseURL') as string | null | undefined);
+        if (navBaseUrl) {
+            return normalizeApiBaseUrl(navBaseUrl);
         }
         return DEFAULT_GITHUB_API_BASE_URL;
     }
@@ -571,10 +585,13 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         this.currentWatermark = ctx.WatermarkValue ?? null;
         try {
             const result = await super.FetchChanges(ctx);
-            if (!ctx.Object.SupportsIncrementalSync) {
+            const obj = (ctx as unknown as { Object?: Partial<MJIntegrationObjectEntity> }).Object;
+            const nonIncrementalObjects = new Set(['releases', 'workflow_runs']);
+            if (obj?.SupportsIncrementalSync === false || nonIncrementalObjects.has(ctx.ObjectName)) {
                 return result;
             }
-            const watermarkField = ctx.Object.IncrementalWatermarkField || 'updated_at';
+            const watermarkField = obj?.IncrementalWatermarkField
+                || (ctx.ObjectName === 'commits' ? 'committed_at' : 'updated_at');
             let maxWatermark = ctx.WatermarkValue ?? null;
             for (const rec of result.Records) {
                 const candidate = rec.Fields[watermarkField];
@@ -594,9 +611,11 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
 
     public override async CreateRecord(ctx: CreateRecordContext): Promise<CRUDResult> {
         try {
-            const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+            const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+            const user = ctx.ContextUser as UserInfo;
+            const auth = await this.Authenticate(ci, user);
             const headers = this.BuildHeaders(auth);
-            const baseUrl = this.GetBaseURL(ctx.CompanyIntegration, auth).replace(/\/+$/, '');
+            const baseUrl = this.GetBaseURL(ci, auth).replace(/\/+$/, '');
             const apiPath = this.ResolveWriteCollectionPath(ctx.ObjectName, ctx.Attributes, auth);
             const payload = this.FilterWritePayload(ctx.Attributes);
 
@@ -625,9 +644,11 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
 
     public override async UpdateRecord(ctx: UpdateRecordContext): Promise<CRUDResult> {
         try {
-            const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+            const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+            const user = ctx.ContextUser as UserInfo;
+            const auth = await this.Authenticate(ci, user);
             const headers = this.BuildHeaders(auth);
-            const baseUrl = this.GetBaseURL(ctx.CompanyIntegration, auth).replace(/\/+$/, '');
+            const baseUrl = this.GetBaseURL(ci, auth).replace(/\/+$/, '');
             const itemPath = this.ResolveWriteItemPath(ctx.ObjectName, ctx.ExternalID, ctx.Attributes, auth);
             const payload = this.FilterWritePayload(ctx.Attributes);
 
@@ -654,10 +675,12 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         }
     }
 
-    public override async GetRecord(ctx: GetRecordContext): Promise< ExternalRecord | null> {
-        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+    public override async GetRecord(ctx: GetRecordContext): Promise<ExternalRecord | null> {
+        const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
+        const user = ctx.ContextUser as UserInfo;
+        const auth = await this.Authenticate(ci, user);
         const headers = this.BuildHeaders(auth);
-        const baseUrl = this.GetBaseURL(ctx.CompanyIntegration, auth).replace(/\/+$/, '');
+        const baseUrl = this.GetBaseURL(ci, auth).replace(/\/+$/, '');
         const itemPath = this.ResolveSingleRecordPath(ctx.ObjectName, ctx.ExternalID, auth);
 
         const response = await this.MakeHTTPRequest(auth, `${baseUrl}${itemPath}`, 'GET', headers);
