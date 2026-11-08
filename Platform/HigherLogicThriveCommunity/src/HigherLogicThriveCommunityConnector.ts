@@ -64,8 +64,73 @@ import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema
 
 type HLTRegion = 'US' | 'Canada';
 
-/** The four real vendor pagination schemes, derived from the per-IO Configuration.paginationDetail. */
-type PageScheme = 'none' | 'seek-key' | 'continuation-token' | 'marker-direction' | 'offset';
+/** The five real vendor pagination schemes, derived from the per-IO Configuration.paginationDetail. */
+export type PageScheme = 'none' | 'seek-key' | 'continuation-token' | 'marker-direction' | 'offset' | 'query-offset';
+
+/** Metered migration pacing & run-budget controls configured via CompanyIntegration.Configuration.migrationPacing. */
+export interface HLTMigrationPacing {
+    /** Override token-bucket fill rate (default: 3 req/s). */
+    tokensPerSec?: number;
+    /** Override token-bucket burst capacity (default: 6). */
+    burst?: number;
+    /** Override MaxConcurrencyHint (default: 2). */
+    maxConcurrency?: number;
+    /** Extra deterministic inter-request delay floor in milliseconds (default: 0). */
+    minDelayBetweenRequestsMs?: number;
+    /** Hard cap on total HTTP requests in a single FetchChanges invocation; pauses with HasMore: true when reached. */
+    maxRequestsPerRun?: number;
+    /** Hard cap on date windows processed in a single FetchChanges invocation; pauses with HasMore: true when reached. */
+    maxWindowsPerRun?: number;
+    /** When true, stops after each completed date window to persist NewWatermarkValue + NextCursor immediately. */
+    checkpointPerWindow?: boolean;
+}
+
+/** Inclusive date window `[From, To]` (`YYYY-MM-DD`). */
+export interface HLTDateWindow {
+    From: string;
+    To: string;
+}
+
+/** Configuration for sliding date-window / lookback slicing on legacy capped endpoints. */
+export interface HLTDateWindowConfig {
+    /** Earliest historical date to backfill from when no watermark exists (default: `'2010-01-01'`). */
+    startDate?: string;
+    /** Width of each date slice in days (default: `30`). */
+    windowDays?: number;
+    /** Days to step back from an existing watermark to catch late-arriving revisions (default: `0`). */
+    lookbackDays?: number;
+    /** Alternate API path to use when date-windowing is active (e.g. `/v2.0/Events/SearchEvents`). */
+    windowAPIPath?: string;
+    /** HTTP method for the windowed endpoint (default: `'POST'`). */
+    windowMethod?: 'GET' | 'POST';
+    /** Parameter name for the window start date (default: `'StartDate'`). */
+    fromParam?: string;
+    /** Parameter name for the window end date (default: `'EndDate'`). */
+    toParam?: string;
+    /** Maximum records cap parameter name (default: `'MaxRecords'`). */
+    capParam?: string;
+    /** Maximum records cap value per window request (default: `500`). */
+    capLimit?: number;
+    /** Adaptive bisection threshold — if a multi-day window returns `>= capThreshold` rows, bisect the window in half. */
+    capThreshold?: number;
+    /** Optional list of parent scope keys (e.g. `libraryKey` values) to walk sequentially. */
+    scopeKeys?: string[];
+    /** Parameter name for the parent scope key (e.g. `'libraryKey'`). */
+    scopeParamName?: string;
+}
+
+/**
+ * Composite cursor encoding both outer date-window / parent-scope state and inner pagination position.
+ * Wire format: `v1|<Today>|<From>|<To>|<InnerPos>|<ScopeKey>`
+ */
+export interface HLTWindowCursor extends HLTDateWindow {
+    /** Pinned UTC date (`YYYY-MM-DD`) for the entire multi-page run so crossing midnight never shifts windows. */
+    Today: string;
+    /** Inner page/offset/continuation position within `[From, To]` (`'0'` at window start). */
+    InnerPos: string;
+    /** Optional parent scope key currently being walked (`''` when unscoped). */
+    ScopeKey: string;
+}
 
 /** Parsed Higher Logic credential + connection facts. */
 interface HLTCredentials {
@@ -103,7 +168,7 @@ interface PaginationDescriptor {
     ReadMethod: 'GET' | 'POST';
 }
 
-// ─── Constants ────────────────────────────────────────────────────────
+// ─── Constants & Window Arithmetic ────────────────────────────────────
 
 /** Fixed regional hosts (vendor-documented, tenant-AGNOSTIC — the tenant is identified by the token). */
 const REGIONAL_HOSTS: Record<HLTRegion, string> = {
@@ -118,7 +183,106 @@ const LOGIN_PATH = '/v2.0/Authentication/Login';
 const DEFAULT_SEEK_LIMIT = 100;
 const DEFAULT_CONTINUATION_MAX = 100;
 const DEFAULT_MARKER_COUNT = 25; // DataFeed NumberToReturn caps at 25
-const DEFAULT_OFFSET_WINDOW = 50; // CommunityMembers StartRecord/EndRecord default window
+const DEFAULT_OFFSET_WINDOW = 50; // CommunityMembers StartRecord/EndRecord & Messaging firstRecord/maxRecords default window
+const DEFAULT_COLD_START_DATE = '2010-01-01';
+const DEFAULT_WINDOW_DAYS = 30;
+const MS_PER_DAY = 86_400_000;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Opt-in private/social objects gated by `CompanyIntegration.Configuration.includePrivateSocialObjects`. */
+export const PRIVATE_SOCIAL_OBJECTS: ReadonlySet<string> = new Set([
+    'InboxMessages',
+    'SentMessages',
+    'Friends',
+    'FriendRequests',
+]);
+
+/** Returns the UTC date string (`YYYY-MM-DD`) for a Date instance. */
+export function toISODate(d: Date): string {
+    return d.toISOString().slice(0, 10);
+}
+
+/** Shifts an ISO `YYYY-MM-DD` date by whole days. */
+export function addDays(iso: string, days: number): string {
+    const base = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
+    if (Number.isNaN(base)) return iso;
+    return new Date(base + days * MS_PER_DAY).toISOString().slice(0, 10);
+}
+
+/** Whole-day difference between two ISO dates (`to - from`), minimum 1. */
+export function daysBetween(fromIso: string, toIso: string): number {
+    const a = Date.parse(`${fromIso.slice(0, 10)}T00:00:00Z`);
+    const b = Date.parse(`${toIso.slice(0, 10)}T00:00:00Z`);
+    if (Number.isNaN(a) || Number.isNaN(b)) return DEFAULT_WINDOW_DAYS;
+    return Math.max(1, Math.ceil((b - a) / MS_PER_DAY));
+}
+
+const minDate = (a: string, b: string): string => (a < b ? a : b);
+const maxDate = (a: string, b: string): string => (a > b ? a : b);
+
+/** Computes the first date window `[From, To]` of a run from the watermark or configured `startDate`. */
+export function initialDateWindow(cfg: HLTDateWindowConfig, watermark: string | null | undefined, today: string): HLTDateWindow {
+    const startFloor = cfg.startDate && ISO_DATE_RE.test(cfg.startDate.slice(0, 10))
+        ? cfg.startDate.slice(0, 10)
+        : DEFAULT_COLD_START_DATE;
+    const lookback = Math.max(0, cfg.lookbackDays ?? 0);
+    const windowDays = Math.max(1, cfg.windowDays ?? DEFAULT_WINDOW_DAYS);
+
+    let from = watermark && ISO_DATE_RE.test(watermark.slice(0, 10))
+        ? addDays(watermark.slice(0, 10), -lookback)
+        : startFloor;
+    if (cfg.startDate && ISO_DATE_RE.test(cfg.startDate.slice(0, 10))) {
+        from = maxDate(from, cfg.startDate.slice(0, 10));
+    }
+    from = minDate(from, today);
+    const to = minDate(addDays(from, windowDays - 1), today);
+    return { From: from, To: to };
+}
+
+/** Computes the next date window after `current`, or `null` once `current.To >= today`. */
+export function nextDateWindow(current: HLTDateWindow, cfg: HLTDateWindowConfig, today: string): HLTDateWindow | null {
+    if (current.To >= today) return null;
+    const windowDays = Math.max(1, cfg.windowDays ?? DEFAULT_WINDOW_DAYS);
+    const from = addDays(current.To, 1);
+    const to = minDate(addDays(from, windowDays - 1), today);
+    return { From: from, To: to };
+}
+
+/**
+ * Adaptive window bisection: when a multi-day window `[From, To]` hits a server cap, splits it in half
+ * `[From, Mid]` so the caller can re-query a narrower slice (down to 1-day granularity) without silent truncation.
+ * Returns `null` when `From === To` (already a single day).
+ */
+export function bisectDateWindow(current: HLTDateWindow): HLTDateWindow | null {
+    if (current.From >= current.To) return null;
+    const span = daysBetween(current.From, current.To);
+    const half = Math.max(0, Math.floor(span / 2) - 1);
+    const mid = addDays(current.From, half);
+    if (mid >= current.To) return { From: current.From, To: current.From };
+    return { From: current.From, To: mid };
+}
+
+/** Formats a composite `HLTWindowCursor` into its wire representation `v1|<Today>|<From>|<To>|<InnerPos>|<ScopeKey>`. */
+export function formatWindowCursor(c: HLTWindowCursor): string {
+    return ['v1', c.Today, c.From, c.To, c.InnerPos || '0', c.ScopeKey || ''].join('|');
+}
+
+/** Parses a composite `v1|...` window cursor, returning `null` if absent or not a v1 window cursor. */
+export function parseWindowCursor(raw: string | null | undefined): HLTWindowCursor | null {
+    if (!raw || !raw.startsWith('v1|')) return null;
+    const parts = raw.split('|');
+    if (parts.length < 6) return null;
+    const [, today, from, to, innerPos, ...scopeRest] = parts;
+    if (!ISO_DATE_RE.test(today) || !ISO_DATE_RE.test(from) || !ISO_DATE_RE.test(to)) return null;
+    if (from > to) return null;
+    return {
+        Today: today,
+        From: from,
+        To: to,
+        InnerPos: innerPos || '0',
+        ScopeKey: scopeRest.join('|'),
+    };
+}
 
 // ─── HigherLogicThriveCommunityConnector ─────────────────────────────────
 
@@ -126,9 +290,11 @@ const DEFAULT_OFFSET_WINDOW = 50; // CommunityMembers StartRecord/EndRecord defa
  * Higher Logic Thrive Community connector — extends BaseRESTIntegrationConnector (REST/JSON RPC over HTTP).
  *
  * Discovery + generic per-operation CRUD are inherited; this class supplies the Higher Logic protocol
- * surface: two-step token auth, region-selected base URL, the four real pagination schemes (over GET and
- * POST), the HelpPage response-envelope normalizer, watermark incremental for EventRegistrants, connection
- * testing, and the §7/§10 sync-efficiency hooks the frozen contract evidences.
+ * surface: two-step token auth, region-selected base URL, the five real pagination schemes (over GET and
+ * POST, including GET query-offset `firstRecord`/`maxRecords` for Messaging), opt-in private/social object
+ * gating (`InboxMessages`, `SentMessages`, `Friends`, `FriendRequests`), metered migration pacing, sliding
+ * date-window / lookback slicing for legacy capped endpoints, connection testing, and the §7/§10
+ * sync-efficiency hooks the frozen contract evidences.
  */
 // Catalog convention: registration key == npm package name (what instance
 // discovery reports and the catalog resolves installed state by).
@@ -137,6 +303,8 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
 
     /** Cached auth for the lifetime of a single sync run (the token is presented on every call). */
     private cachedAuth: HLTAuthContext | null = null;
+    /** Active migration pacing overrides parsed from the most recent CompanyIntegration configuration. */
+    private activePacing: HLTMigrationPacing | null = null;
 
     // ── Identity (T1 three-way invariant) ────────────────────────────
 
@@ -166,15 +334,23 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
     /**
      * From Configuration.RateLimitGuidance: ~180–240 calls/minute (~3–4 req/s) acceptable-use guidance;
      * NO hard server-enforced numeric limit is documented (excessive usage risks IP blocking, not a
-     * deterministic 429). This is a conservative self-imposed client throttle, not a metadata-enforced
-     * hard constraint (hence Integration.BatchMaxRequestCount/WaitTime are null).
+     * deterministic 429). Honors `CompanyIntegration.Configuration.migrationPacing` when configured so
+     * multi-day historical migrations can dial the token bucket down (e.g., 1 req/s, burst 2).
      */
     public override get RateLimitPolicy(): RateLimitPolicy | null {
-        return { TokensPerSec: 3, Burst: 6 };
+        const tokensPerSec = this.activePacing?.tokensPerSec;
+        const burst = this.activePacing?.burst;
+        return {
+            TokensPerSec: typeof tokensPerSec === 'number' && tokensPerSec > 0 ? tokensPerSec : 3,
+            Burst: typeof burst === 'number' && burst > 0 ? burst : 6,
+        };
     }
 
-    /** Conservative in-flight cap — the per-minute budget (not concurrency) is the real ceiling. */
-    public override get MaxConcurrencyHint(): number | null { return 2; }
+    /** Conservative in-flight cap — honors `migrationPacing.maxConcurrency` when set (default: 2). */
+    public override get MaxConcurrencyHint(): number | null {
+        const mc = this.activePacing?.maxConcurrency;
+        return typeof mc === 'number' && mc > 0 ? mc : 2;
+    }
 
     /**
      * No-watermark objects resume by their StableOrderingKey — read from the IO metadata (the extractor
@@ -226,6 +402,7 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo
     ): Promise<RESTAuthContext> {
+        this.activePacing = this.readMigrationPacing(companyIntegration);
         if (this.cachedAuth) return this.cachedAuth;
         const creds = await this.loadCredentials(companyIntegration, contextUser);
         const region = this.resolveRegion(companyIntegration, creds);
@@ -284,6 +461,12 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
             try { parsed = JSON.parse(text); } catch { parsed = text; }
         }
         return { Status: response.status, Body: parsed, Headers: respHeaders };
+    }
+
+    /** Injectable delay seam for metered migration pacing (`minDelayBetweenRequestsMs`). Overridden in unit tests. */
+    protected async Sleep(ms: number): Promise<void> {
+        if (ms <= 0) return;
+        await new Promise<void>(resolve => setTimeout(resolve, ms));
     }
 
     /**
@@ -360,21 +543,36 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         return `${host}/api`;
     }
 
-    // ── FetchChanges override — the vendor's four pagination schemes over GET + POST ──
+    // ── FetchChanges override — five pagination schemes + opt-in gating + metered pacing + sliding date windows ──
 
     /**
-     * OVERRIDDEN: the Community API is genuinely idiosyncratic for reads — four distinct pagination schemes,
-     * two of them over a POST request body (offset StartRecord/EndRecord, marker-direction Marker/Direction),
-     * and a CLIENT-DERIVED continuation token (the envelope echoes none, so the next token is the last row's
-     * key field). None of this is expressible through the base's GET-only, object-agnostic pagination loop.
-     * A directly-queryable object (empty accessPath.nesting) is the depth-0 case handled here; the frozen
-     * contract shows all read doors at depth-0 (no path template vars), so no parent-path walk is needed —
-     * parent SCOPE query params (communityKey, calendarEventKey, …) are injected from CompanyIntegration
-     * Configuration.objectParams where a tenant supplies them.
+     * OVERRIDDEN: the Community API is genuinely idiosyncratic for reads — five distinct pagination schemes
+     * (`seek-key`, `continuation-token`, `marker-direction`, `offset` over POST `StartRecord`/`EndRecord`, and
+     * `query-offset` over GET `firstRecord`/`maxRecords`), opt-in private/social object gating (`InboxMessages`,
+     * `SentMessages`, `Friends`, `FriendRequests`), metered migration pacing (`minDelayBetweenRequestsMs`,
+     * `maxRequestsPerRun`, `maxWindowsPerRun`), and sliding date-window / lookback slicing (`v1|...` cursor)
+     * for legacy capped endpoints (`Events/SearchEvents`, `CommunityMembers` delta updates, and
+     * `ResourceLibraryDocuments` lookback + library walk).
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
+
+        // 1. Opt-in private/social object gate (InboxMessages, SentMessages, Friends, FriendRequests).
+        if (this.isPrivateSocialOptInObject(obj) && !this.isPrivateSocialEnabled(ctx.CompanyIntegration, obj.Name)) {
+            return {
+                Records: [],
+                HasMore: false,
+                Warnings: [{
+                    Code: 'OPT_IN_DISABLED',
+                    Message: `"${obj.Name}" is an opt-in private/social object. Set "includePrivateSocialObjects": true in CompanyIntegration.Configuration to include it in sync/migration.`,
+                    Data: { object: obj.Name, optInKey: 'includePrivateSocialObjects' },
+                }],
+            };
+        }
+
         const fields = this.GetCachedFields(obj.ID);
+        const pacing = this.readMigrationPacing(ctx.CompanyIntegration);
+        this.activePacing = pacing;
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser) as HLTAuthContext;
         const baseURL = this.GetBaseURL(ctx.CompanyIntegration, auth);
         const headers = this.BuildHeaders(auth);
@@ -383,8 +581,22 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         const scopeParams = this.readObjectScopeParams(ctx.CompanyIntegration, obj.Name);
         const wmField = obj.SupportsIncrementalSync ? (obj.IncrementalWatermarkField ?? null) : null;
 
+        // 2. Sliding date-window / parent-scope state machine when configured or resuming a `v1|...` cursor.
+        const windowCfg = this.resolveDateWindowConfig(ctx.CompanyIntegration, obj, scopeParams);
+        if (windowCfg || (ctx.CurrentCursor && ctx.CurrentCursor.startsWith('v1|'))) {
+            return this.fetchDateWindowedChanges(
+                ctx, obj, fields, auth, baseURL, headers, desc, pkFieldNames, scopeParams, wmField, pacing,
+                windowCfg ?? {}
+            );
+        }
+
         const batchLimit = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : Number.MAX_SAFE_INTEGER;
         const pageSize = this.pageSizeForScheme(desc.Scheme);
+        const minDelayMs = pacing?.minDelayBetweenRequestsMs ?? 0;
+        const maxRequests = pacing?.maxRequestsPerRun && pacing.maxRequestsPerRun > 0
+            ? pacing.maxRequestsPerRun
+            : Number.MAX_SAFE_INTEGER;
+
         const out: ExternalRecord[] = [];
         const warnings: FetchWarning[] = [];
         let cursor = ctx.CurrentCursor;
@@ -392,17 +604,48 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         let hasMore = true;
         let maxWatermark: string | null = null;
         let fullyDrained = true;
+        let requestsMade = 0;
 
         while (hasMore && out.length < batchLimit) {
+            if (requestsMade >= maxRequests) {
+                fullyDrained = false;
+                break;
+            }
+            if (requestsMade > 0 && minDelayMs > 0) {
+                await this.Sleep(minDelayMs);
+            }
             const remaining = Math.max(1, batchLimit - out.length);
             const req = this.buildReadRequest(obj, baseURL, desc, cursor, offset, Math.min(pageSize, remaining), scopeParams, ctx, wmField);
             const response = await this.MakeHTTPRequest(auth, req.URL, req.Method, headers, req.Body);
+            requestsMade++;
             if (response.Status === 403) {
                 warnings.push({ Code: 'FORBIDDEN', Message: `"${obj.Name}": HTTP 403 — insufficient API entitlement; skipping.`, Data: { object: obj.Name } });
+                hasMore = false;
                 break;
             }
             this.assert2xx(response, req.URL, obj.Name);
             const raw = this.NormalizeResponse(response.Body, obj.ResponseDataKey);
+
+            // Optional dual-door merge for FriendRequests (GetFriendRequestsReceived + GetFriendRequestsSent).
+            const objCfg = this.parseObjectConfig(obj);
+            const secondaryPath = typeof objCfg?.secondaryAPIPath === 'string' ? objCfg.secondaryAPIPath : null;
+            if (secondaryPath && scopeParams.includeSent !== 'false' && requestsMade < maxRequests) {
+                for (const r of raw) {
+                    if (r.Direction == null) r.Direction = 'Received';
+                }
+                if (minDelayMs > 0) await this.Sleep(minDelayMs);
+                const secUrl = this.appendQuery(this.joinURL(baseURL, secondaryPath), scopeParams);
+                const secResp = await this.MakeHTTPRequest(auth, secUrl, 'GET', headers);
+                requestsMade++;
+                if (secResp.Status >= 200 && secResp.Status < 300) {
+                    const secRaw = this.NormalizeResponse(secResp.Body, obj.ResponseDataKey);
+                    for (const sr of secRaw) {
+                        if (sr.Direction == null) sr.Direction = 'Sent';
+                        raw.push(sr);
+                    }
+                }
+            }
+
             if (raw.length === 0) { hasMore = false; break; }
 
             for (const r of raw) {
@@ -412,7 +655,8 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
 
             const next = this.computeNextPage(desc, response.Body, raw, obj, pkFieldNames, offset, pageSize);
             // Break on a non-advancing cursor (broken/exhausted paging) to avoid an infinite loop.
-            if (next.HasMore && desc.Scheme !== 'offset' && next.NextCursor != null && next.NextCursor === cursor) {
+            const isOffsetScheme = desc.Scheme === 'offset' || desc.Scheme === 'query-offset';
+            if (next.HasMore && !isOffsetScheme && next.NextCursor != null && next.NextCursor === cursor) {
                 hasMore = false;
                 break;
             }
@@ -422,11 +666,12 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
             if (hasMore && out.length >= batchLimit) { fullyDrained = false; }
         }
 
+        const isOffsetScheme = desc.Scheme === 'offset' || desc.Scheme === 'query-offset';
         const result: FetchBatchResult = {
             Records: out,
             HasMore: hasMore,
             NextCursor: cursor,
-            NextOffset: desc.Scheme === 'offset' ? offset : undefined,
+            NextOffset: isOffsetScheme ? offset : undefined,
             Warnings: warnings.length > 0 ? warnings : undefined,
         };
         // Advance the watermark ONLY on full drain (partial batch resumes from the same point next call).
@@ -434,6 +679,241 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
             result.NewWatermarkValue = this.laterWatermark(ctx.WatermarkValue, maxWatermark);
         }
         return result;
+    }
+
+    // ── Sliding Date-Window & Parent-Scope Execution ─────────────────
+
+    /**
+     * Executes a stateful sliding date-window / parent-scope harvest using the `v1|<Today>|<From>|<To>|<InnerPos>|<ScopeKey>`
+     * cursor. Supports adaptive window bisection when a multi-day slice hits `capThreshold`, plus metered
+     * `maxRequestsPerRun`, `maxWindowsPerRun`, and `checkpointPerWindow` controls.
+     */
+    private async fetchDateWindowedChanges(
+        ctx: FetchContext,
+        obj: MJIntegrationObjectEntity,
+        fields: MJIntegrationObjectFieldEntity[],
+        auth: HLTAuthContext,
+        baseURL: string,
+        headers: Record<string, string>,
+        desc: PaginationDescriptor,
+        pkFieldNames: string[],
+        scopeParams: Record<string, string>,
+        wmField: string | null,
+        pacing: HLTMigrationPacing | null,
+        windowCfg: HLTDateWindowConfig
+    ): Promise<FetchBatchResult> {
+        const batchLimit = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : Number.MAX_SAFE_INTEGER;
+        const minDelayMs = pacing?.minDelayBetweenRequestsMs ?? 0;
+        const maxRequests = pacing?.maxRequestsPerRun && pacing.maxRequestsPerRun > 0
+            ? pacing.maxRequestsPerRun
+            : Number.MAX_SAFE_INTEGER;
+        const maxWindows = pacing?.maxWindowsPerRun && pacing.maxWindowsPerRun > 0
+            ? pacing.maxWindowsPerRun
+            : Number.MAX_SAFE_INTEGER;
+        const checkpointPerWindow = pacing?.checkpointPerWindow === true;
+
+        const scopeKeys = windowCfg.scopeKeys && windowCfg.scopeKeys.length > 0 ? windowCfg.scopeKeys : [''];
+        const scopeParamName = windowCfg.scopeParamName ?? 'libraryKey';
+        const parsedCursor = parseWindowCursor(ctx.CurrentCursor);
+        const today = parsedCursor?.Today ?? toISODate(new Date());
+        let currentScopeIdx = parsedCursor?.ScopeKey ? Math.max(0, scopeKeys.indexOf(parsedCursor.ScopeKey)) : 0;
+        let currentScopeKey = scopeKeys[currentScopeIdx] ?? '';
+        let window: HLTDateWindow = parsedCursor
+            ? { From: parsedCursor.From, To: parsedCursor.To }
+            : initialDateWindow(windowCfg, ctx.WatermarkValue, today);
+        let innerPos = parsedCursor?.InnerPos ?? '0';
+
+        const out: ExternalRecord[] = [];
+        const warnings: FetchWarning[] = [];
+        let requestsMade = 0;
+        let windowsCompleted = 0;
+        let lastCompletedWindowTo: string | null = null;
+        let maxWatermark: string | null = null;
+        let hasMore = true;
+
+        const capLimit = windowCfg.capLimit ?? 500;
+        const capThreshold = windowCfg.capThreshold ?? capLimit;
+        const fromParam = windowCfg.fromParam ?? 'StartDate';
+        const toParam = windowCfg.toParam ?? 'EndDate';
+        const capParam = windowCfg.capParam ?? 'MaxRecords';
+        const targetPath = windowCfg.windowAPIPath ?? obj.APIPath;
+        const method = windowCfg.windowMethod ?? desc.ReadMethod;
+
+        while (hasMore && out.length < batchLimit) {
+            if (requestsMade >= maxRequests || windowsCompleted >= maxWindows) {
+                break;
+            }
+            if (requestsMade > 0 && minDelayMs > 0) {
+                await this.Sleep(minDelayMs);
+            }
+
+            const effectiveScope: Record<string, string> = { ...scopeParams };
+            if (currentScopeKey.length > 0) {
+                effectiveScope[scopeParamName] = currentScopeKey;
+            }
+
+            const req = this.buildWindowedReadRequest(
+                baseURL, targetPath, method, desc, window, innerPos, capLimit, fromParam, toParam, capParam, effectiveScope, obj
+            );
+            const response = await this.MakeHTTPRequest(auth, req.URL, req.Method, headers, req.Body);
+            requestsMade++;
+
+            if (response.Status === 403) {
+                warnings.push({ Code: 'FORBIDDEN', Message: `"${obj.Name}": HTTP 403 — insufficient API entitlement; skipping.`, Data: { object: obj.Name } });
+                hasMore = false;
+                break;
+            }
+            this.assert2xx(response, req.URL, obj.Name);
+            const raw = this.NormalizeResponse(response.Body, obj.ResponseDataKey);
+
+            // Adaptive window bisection: if a single-page capped endpoint returns >= capThreshold rows across a
+            // multi-day window, bisect the window into a narrower date range and re-query before emitting rows.
+            if (desc.Scheme === 'none' && raw.length >= capThreshold) {
+                const bisected = bisectDateWindow(window);
+                if (bisected) {
+                    warnings.push({
+                        Code: 'WINDOW_BISECTED',
+                        Message: `"${obj.Name}": window [${window.From}, ${window.To}] returned ${raw.length} rows (>= cap ${capThreshold}); bisecting to [${bisected.From}, ${bisected.To}].`,
+                        Data: { object: obj.Name, originalFrom: window.From, originalTo: window.To, bisectedTo: bisected.To },
+                    });
+                    window = bisected;
+                    innerPos = '0';
+                    continue;
+                } else {
+                    warnings.push({
+                        Code: 'WINDOW_CAP_REACHED',
+                        Message: `"${obj.Name}": single-day window [${window.From}, ${window.To}] returned ${raw.length} rows (at cap ${capThreshold}).`,
+                        Data: { object: obj.Name, date: window.From, count: raw.length },
+                    });
+                }
+            }
+
+            for (const r of raw) {
+                out.push(this.buildExternalRecord(this.applyTransformPreservingKeys(r, obj, fields), obj.Name, pkFieldNames));
+                maxWatermark = this.trackWatermark(maxWatermark, r, wmField);
+            }
+
+            // Check inner pagination within the current window (when the windowed endpoint also pages).
+            const innerOffset = Number.isInteger(Number(innerPos)) ? Number(innerPos) : 0;
+            const pageSize = this.pageSizeForScheme(desc.Scheme);
+            const nextInner = desc.Scheme === 'none'
+                ? { HasMore: false }
+                : this.computeNextPage(desc, response.Body, raw, obj, pkFieldNames, innerOffset, pageSize);
+
+            if (nextInner.HasMore) {
+                const nextPos = (desc.Scheme === 'offset' || desc.Scheme === 'query-offset')
+                    ? String(nextInner.NextOffset ?? (innerOffset + raw.length))
+                    : String(nextInner.NextCursor ?? innerPos);
+                if (nextPos !== innerPos) {
+                    innerPos = nextPos;
+                    continue;
+                }
+            }
+
+            // Current window is fully drained! Advance to the next window (or next parent scope key).
+            lastCompletedWindowTo = window.To;
+            windowsCompleted++;
+            innerPos = '0';
+
+            const nextWin = nextDateWindow(window, windowCfg, today);
+            if (nextWin) {
+                window = nextWin;
+                if (checkpointPerWindow) {
+                    break;
+                }
+            } else if (currentScopeIdx + 1 < scopeKeys.length) {
+                currentScopeIdx++;
+                currentScopeKey = scopeKeys[currentScopeIdx];
+                window = initialDateWindow(windowCfg, ctx.WatermarkValue, today);
+                if (checkpointPerWindow) {
+                    break;
+                }
+            } else {
+                hasMore = false;
+                break;
+            }
+        }
+
+        const nextCursor = hasMore
+            ? formatWindowCursor({ Today: today, From: window.From, To: window.To, InnerPos: innerPos, ScopeKey: currentScopeKey })
+            : undefined;
+
+        const result: FetchBatchResult = {
+            Records: out,
+            HasMore: hasMore,
+            NextCursor: nextCursor,
+            Warnings: warnings.length > 0 ? warnings : undefined,
+        };
+
+        // Advance watermark on full drain OR on a completed window boundary when checkpointing.
+        const candidateWatermark = maxWatermark ?? lastCompletedWindowTo;
+        if (candidateWatermark && (!hasMore || lastCompletedWindowTo != null)) {
+            result.NewWatermarkValue = this.laterWatermark(ctx.WatermarkValue, candidateWatermark);
+        }
+        return result;
+    }
+
+    /** Builds the HTTP request for a single date-windowed slice. */
+    private buildWindowedReadRequest(
+        baseURL: string,
+        apiPath: string,
+        method: 'GET' | 'POST',
+        desc: PaginationDescriptor,
+        window: HLTDateWindow,
+        innerPos: string,
+        capLimit: number,
+        fromParam: string,
+        toParam: string,
+        capParam: string,
+        scopeParams: Record<string, string>,
+        obj: MJIntegrationObjectEntity
+    ): { URL: string; Method: 'GET' | 'POST'; Body?: unknown } {
+        const path = this.joinURL(baseURL, apiPath);
+        const offset = Number.isInteger(Number(innerPos)) ? Number(innerPos) : 0;
+        const pageSize = this.pageSizeForScheme(desc.Scheme);
+
+        // Special handling for ResourceLibraryDocuments (`DaysBack` integer lookback param).
+        const usesDaysBack = /^DaysBack$/i.test(fromParam) || obj.Name === 'ResourceLibraryDocuments';
+
+        if (method === 'POST') {
+            const body: Record<string, unknown> = { ...scopeParams };
+            if (usesDaysBack) {
+                body.DaysBack = daysBetween(window.From, window.To);
+                body[capParam] = capLimit;
+            } else {
+                body[fromParam] = window.From;
+                body[toParam] = window.To;
+                if (capParam) body[capParam] = capLimit;
+            }
+            if (desc.Scheme === 'offset') {
+                body.StartRecord = offset + 1;
+                body.EndRecord = offset + pageSize;
+            } else if (desc.Scheme === 'marker-direction') {
+                if (innerPos && innerPos !== '0') body.Marker = innerPos;
+                body.Direction = 'down';
+                body.NumberToReturn = pageSize;
+            }
+            return { URL: path, Method: 'POST', Body: body };
+        }
+
+        const query: Record<string, string> = {
+            ...scopeParams,
+            [fromParam]: window.From,
+            [toParam]: window.To,
+        };
+        if (capParam) query[capParam] = String(capLimit);
+        if (desc.Scheme === 'query-offset') {
+            query.firstRecord = String(offset);
+            query.maxRecords = String(pageSize);
+        } else if (desc.Scheme === 'seek-key') {
+            const afterParam = desc.Params.find(p => /^after.+Key$/i.test(p));
+            if (afterParam && innerPos && innerPos !== '0') query[afterParam] = innerPos;
+            query.limit = String(pageSize);
+        } else if (desc.Scheme === 'continuation-token') {
+            if (innerPos && innerPos !== '0') query.continuationToken = innerPos;
+            query.maxRecords = String(pageSize);
+        }
+        return { URL: this.appendQuery(path, query), Method: 'GET' };
     }
 
     // ── Pagination internals ─────────────────────────────────────────
@@ -448,6 +928,7 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         let scheme: PageScheme = 'none';
         if (obj.SupportsPagination && obj.PaginationType !== 'None') {
             if (params.some(p => /^StartRecord$/i.test(p)) && params.some(p => /^EndRecord$/i.test(p))) scheme = 'offset';
+            else if (params.some(p => /^firstRecord$/i.test(p)) && params.some(p => /^maxRecords$/i.test(p))) scheme = 'query-offset';
             else if (params.some(p => /^Marker$/i.test(p)) && params.some(p => /^Direction$/i.test(p))) scheme = 'marker-direction';
             else if (params.some(p => /^continuationToken$/i.test(p))) scheme = 'continuation-token';
             else if (params.some(p => /^after.+Key$/i.test(p))) scheme = 'seek-key';
@@ -484,6 +965,15 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
                 if (cursor) body.Marker = cursor;
                 body.Direction = 'down';
                 body.NumberToReturn = pageSize;
+            } else if (obj.Name === 'ResourceLibraryDocuments') {
+                // ResourceLibrary/GetLibraryDocuments defaults to DaysBack=30, MaxRecords=10 unless overridden.
+                if (body.DaysBack == null) {
+                    const startDate = this.readConfigString(ctx.CompanyIntegration, 'startDate');
+                    body.DaysBack = startDate ? daysBetween(startDate, toISODate(new Date())) : 3650;
+                }
+                if (body.MaxRecords == null) {
+                    body.MaxRecords = Math.max(pageSize, 500);
+                }
             }
             return { URL: path, Method: 'POST', Body: body };
         }
@@ -497,10 +987,13 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         } else if (desc.Scheme === 'continuation-token') {
             if (cursor) query.continuationToken = cursor;
             query.maxRecords = String(pageSize);
+        } else if (desc.Scheme === 'query-offset') {
+            query.firstRecord = String(offset);
+            query.maxRecords = String(pageSize);
         } else {
             // None: apply a cap param when the operation documents one (from the accepted door_args).
             const capParam = this.objectDoorArgs(obj).find(p => /^(maxRecords|maxResults|maxToRetrieve|numberToReturn)$/i.test(p));
-            if (capParam) query[capParam] = String(pageSize);
+            if (capParam && query[capParam] == null) query[capParam] = String(pageSize);
         }
         // Server-side incremental: EventRegistrants documents a real `modifiedDateTime` watermark param.
         if (watermark && wmField && this.objectDoorArgs(obj).some(a => /^modifiedDateTime$/i.test(a))) {
@@ -522,7 +1015,7 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         if (desc.Scheme === 'none') return { HasMore: false };
 
         const envelope = this.ExtractPaginationInfo(rawBody, obj.PaginationType, 1, offset, pageSize);
-        if (desc.Scheme === 'offset') {
+        if (desc.Scheme === 'offset' || desc.Scheme === 'query-offset') {
             const full = records.length >= pageSize;
             return { HasMore: envelope.HasMore || full, NextOffset: offset + records.length };
         }
@@ -560,7 +1053,8 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
             case 'seek-key': return DEFAULT_SEEK_LIMIT;
             case 'continuation-token': return DEFAULT_CONTINUATION_MAX;
             case 'marker-direction': return DEFAULT_MARKER_COUNT;
-            case 'offset': return DEFAULT_OFFSET_WINDOW;
+            case 'offset':
+            case 'query-offset': return DEFAULT_OFFSET_WINDOW;
             default: return DEFAULT_SEEK_LIMIT;
         }
     }
@@ -1008,4 +1502,119 @@ export class HigherLogicThriveCommunityConnector extends BaseRESTIntegrationConn
         }
         return typeof cur === 'string' && cur.length > 0 ? cur : undefined;
     }
+
+    /** Returns true when the object is an opt-in private/social object (InboxMessages, SentMessages, Friends, FriendRequests). */
+    private isPrivateSocialOptInObject(obj: MJIntegrationObjectEntity): boolean {
+        if (PRIVATE_SOCIAL_OBJECTS.has(obj.Name)) return true;
+        const cfg = this.parseObjectConfig(obj);
+        return cfg?.optInGroup === 'PrivateSocialObjects' || cfg?.optInRequired === true;
+    }
+
+    /** Returns true when opt-in private/social objects are enabled on the CompanyIntegration configuration. */
+    private isPrivateSocialEnabled(companyIntegration: MJCompanyIntegrationEntity, objectName: string): boolean {
+        if (this.readConfigFlag(companyIntegration, 'includePrivateSocialObjects')) return true;
+        const scope = this.readObjectScopeParams(companyIntegration, objectName);
+        return scope.enabled === 'true' || scope.includePrivateSocialObjects === 'true';
+    }
+
+    /** Reads `migrationPacing` overrides from CompanyIntegration.Configuration. */
+    private readMigrationPacing(companyIntegration: MJCompanyIntegrationEntity): HLTMigrationPacing | null {
+        if (!companyIntegration.Configuration) return null;
+        try {
+            const cfg = JSON.parse(companyIntegration.Configuration) as Record<string, unknown>;
+            const raw = cfg.migrationPacing;
+            if (!raw || typeof raw !== 'object') return null;
+            const p = raw as Record<string, unknown>;
+            return {
+                tokensPerSec: typeof p.tokensPerSec === 'number' ? p.tokensPerSec : undefined,
+                burst: typeof p.burst === 'number' ? p.burst : undefined,
+                maxConcurrency: typeof p.maxConcurrency === 'number' ? p.maxConcurrency : undefined,
+                minDelayBetweenRequestsMs: typeof p.minDelayBetweenRequestsMs === 'number' ? p.minDelayBetweenRequestsMs : undefined,
+                maxRequestsPerRun: typeof p.maxRequestsPerRun === 'number' ? p.maxRequestsPerRun : undefined,
+                maxWindowsPerRun: typeof p.maxWindowsPerRun === 'number' ? p.maxWindowsPerRun : undefined,
+                checkpointPerWindow: p.checkpointPerWindow === true || p.checkpointPerWindow === 'true',
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Resolves optional `HLTDateWindowConfig` for an object from:
+     * 1. `CompanyIntegration.Configuration.dateWindowing[obj.Name]` (or boolean `true` with defaults)
+     * 2. `IntegrationObject.Configuration.dateWindowing` (when enabled)
+     * 3. `scopeParams.windowDays` / `scopeParams.startDate` / `scopeParams.libraryKeys`
+     */
+    private resolveDateWindowConfig(
+        companyIntegration: MJCompanyIntegrationEntity,
+        obj: MJIntegrationObjectEntity,
+        scopeParams: Record<string, string>
+    ): HLTDateWindowConfig | null {
+        const objCfg = this.parseObjectConfig(obj);
+        const objWin = (objCfg?.dateWindowing && typeof objCfg.dateWindowing === 'object')
+            ? (objCfg.dateWindowing as Record<string, unknown>)
+            : null;
+
+        let ciWin: Record<string, unknown> | null = null;
+        let globalStartDate: string | undefined;
+        let globalWindowDays: number | undefined;
+        let useDeltaMemberUpdates = false;
+
+        if (companyIntegration.Configuration) {
+            try {
+                const parsed = JSON.parse(companyIntegration.Configuration) as Record<string, unknown>;
+                if (typeof parsed.startDate === 'string') globalStartDate = parsed.startDate;
+                if (typeof parsed.windowDays === 'number') globalWindowDays = parsed.windowDays;
+                useDeltaMemberUpdates = parsed.useDeltaMemberUpdates === true || parsed.useDeltaMemberUpdates === 'true';
+                const dw = parsed.dateWindowing;
+                if (dw && typeof dw === 'object') {
+                    const perObj = (dw as Record<string, unknown>)[obj.Name];
+                    if (perObj === true) ciWin = {};
+                    else if (perObj && typeof perObj === 'object') ciWin = perObj as Record<string, unknown>;
+                }
+            } catch {
+                /* ignore malformed JSON */
+            }
+        }
+
+        const hasScopeWindow = scopeParams.windowDays != null || scopeParams.libraryKeys != null;
+        const isDeltaMembers = obj.Name === 'CommunityMembers' && useDeltaMemberUpdates;
+        const objWinEnabled = objWin != null && objWin.enabled === true;
+
+        if (!ciWin && !objWinEnabled && !hasScopeWindow && !isDeltaMembers) {
+            return null;
+        }
+
+        const merged: Record<string, unknown> = { ...(objWin ?? {}), ...(ciWin ?? {}) };
+        const scopeKeysRaw = merged.scopeKeys ?? (scopeParams.libraryKeys ? scopeParams.libraryKeys.split(',').map(s => s.trim()).filter(Boolean) : undefined);
+        const scopeKeys = Array.isArray(scopeKeysRaw)
+            ? scopeKeysRaw.map(k => String(k).trim()).filter(Boolean)
+            : undefined;
+
+        // Default endpoints for known windowed objects when not explicitly overridden:
+        const defaultWindowAPIPath =
+            obj.Name === 'Events' ? '/v2.0/Events/SearchEvents'
+            : isDeltaMembers ? '/v2.0/System/GetCommunityMemberUpdates'
+            : undefined;
+        const defaultWindowMethod: 'GET' | 'POST' | undefined =
+            (obj.Name === 'Events' || isDeltaMembers || obj.Name === 'ResourceLibraryDocuments') ? 'POST' : undefined;
+
+        return {
+            startDate: typeof merged.startDate === 'string' ? merged.startDate : (scopeParams.startDate ?? globalStartDate),
+            windowDays: typeof merged.windowDays === 'number'
+                ? merged.windowDays
+                : (scopeParams.windowDays ? Number(scopeParams.windowDays) : globalWindowDays),
+            lookbackDays: typeof merged.lookbackDays === 'number' ? merged.lookbackDays : undefined,
+            windowAPIPath: typeof merged.windowAPIPath === 'string' ? merged.windowAPIPath : defaultWindowAPIPath,
+            windowMethod: (merged.windowMethod === 'GET' || merged.windowMethod === 'POST') ? merged.windowMethod : defaultWindowMethod,
+            fromParam: typeof merged.fromParam === 'string' ? merged.fromParam : undefined,
+            toParam: typeof merged.toParam === 'string' ? merged.toParam : undefined,
+            capParam: typeof merged.capParam === 'string' ? merged.capParam : undefined,
+            capLimit: typeof merged.capLimit === 'number' ? merged.capLimit : undefined,
+            capThreshold: typeof merged.capThreshold === 'number' ? merged.capThreshold : undefined,
+            scopeKeys,
+            scopeParamName: typeof merged.scopeParamName === 'string' ? merged.scopeParamName : undefined,
+        };
+    }
 }
+

@@ -844,7 +844,7 @@
       ],
       "logo": "fa-solid fa-people-group",
       "navigationBaseURL": "https://api.connectedcommunity.org/v2.0/Help",
-      "objectCount": 35,
+      "objectCount": 39,
       "className": "@memberjunction/connector-higher-logic-thrive-community",
       "npmPackage": "@memberjunction/connector-higher-logic-thrive-community",
       "version": "0.2.2",

@@ -15,6 +15,11 @@ import type {
 } from '@memberjunction/core-entities';
 import {
     MagnetMailConnector,
+    parseMagnetMailWindowCursor,
+    formatMagnetMailWindowCursor,
+    initialMagnetMailDateWindow,
+    nextMagnetMailDateWindow,
+    bisectMagnetMailDateWindow,
     type MagnetMailAuthContext,
     type SoapRequest,
 } from '../MagnetMailConnector.js';
@@ -164,11 +169,16 @@ const seededAuth: MagnetMailAuthContext = {
 class MockedMagnetMailConnector extends MagnetMailConnector {
     public Captured: CapturedRequest[] = [];
     public Responses: RESTResponse[] = [];
+    public Sleeps: number[] = [];
     public IOFixtures = new Map<string, MJIntegrationObjectEntity>();
     public IOFFixtures = new Map<string, MJIntegrationObjectFieldEntity[]>();
 
     protected override async ParseConfig(): Promise<never> {
         return { Username: 'u', Password: 'p', Endpoint: seededAuth.Endpoint, Namespace: seededAuth.Namespace, SessionTTLMs: 1_800_000 } as never;
+    }
+
+    protected override async Sleep(ms: number): Promise<void> {
+        this.Sleeps.push(ms);
     }
 
     protected override async MakeHTTPRequest(
@@ -588,3 +598,152 @@ describe('MagnetMailConnector — CRUD (SOAP mutation envelopes)', () => {
         await expect(c.DeleteRecord(ctx)).rejects.toThrow(/DeleteRecord not supported/);
     });
 });
+
+describe('MagnetMailConnector — 5 WSDL date-range conventions, <criteria> paging & sliding date-windows', () => {
+    it('serializes and parses v1 MagnetMailWindowCursor losslessly', () => {
+        const cursor = { Today: '2026-04-20', From: '2025-01-01', To: '2025-01-30', InnerPage: 3, ScopeKey: '' };
+        const s = formatMagnetMailWindowCursor(cursor);
+        expect(s).toBe('v1|2026-04-20|2025-01-01|2025-01-30|3|');
+        expect(parseMagnetMailWindowCursor(s)).toEqual(cursor);
+        expect(initialMagnetMailDateWindow({ startDate: '2025-01-01', windowDays: 10 }, null, '2026-04-20')).toEqual({
+            From: '2025-01-01',
+            To: '2025-01-10',
+        });
+        expect(nextMagnetMailDateWindow({ From: '2025-01-01', To: '2025-01-10' }, { windowDays: 10 }, '2026-04-20')).toEqual({
+            From: '2025-01-11',
+            To: '2025-01-20',
+        });
+        expect(bisectMagnetMailDateWindow({ From: '2025-01-01', To: '2025-01-20' })).toEqual({
+            From: '2025-01-01',
+            To: '2025-01-09',
+        });
+    });
+
+    it('walks GetMessageSentTracking across date windows + inner <criteria> PageNo/PageSize pages with SearchStartDate/SearchEndDate', async () => {
+        const c = new MockedMagnetMailConnector();
+        c.SeedAuth();
+        const io = makeIO({
+            ID: 'io-sent', Name: 'MessageSentTracking', ResponseDataKey: 'MessageSentTracking',
+            SupportsPagination: true, PaginationType: 'PageNumber', DefaultPageSize: 2,
+            SupportsIncrementalSync: true,
+            Configuration: JSON.stringify({ ListOperation: 'GetMessageSentTracking' }),
+        });
+        c.IOFixtures.set('MessageSentTracking', io);
+        c.IOFFixtures.set('io-sent', [makeIOF({ Name: 'id', IsPrimaryKey: true })]);
+
+        const windowedCi = {
+            IntegrationID: 'int-1',
+            CredentialID: null,
+            Configuration: JSON.stringify({
+                dateWindowing: {
+                    MessageSentTracking: {
+                        startDate: '2026-01-01',
+                        windowDays: 10,
+                    },
+                },
+                migrationPacing: {
+                    tokensPerSec: 1.5,
+                    burst: 3,
+                    maxConcurrency: 1,
+                    minDelayBetweenRequestsMs: 120,
+                    maxWindowsPerRun: 1,
+                    checkpointPerWindow: true,
+                },
+            }),
+        } as unknown as MJCompanyIntegrationEntity;
+
+        // Window 1 [2026-01-01, 2026-01-10]: Page 1 returns 2 rows (full page) → Page 2 returns 1 row (< pageSize 2) → window drained
+        c.Responses.push(
+            { Status: 200, Body: { GetMessageSentTrackingResult: { MessageSentTracking: [{ id: 'T1' }, { id: 'T2' }] } }, Headers: {} },
+            { Status: 200, Body: { GetMessageSentTrackingResult: { MessageSentTracking: [{ id: 'T3' }] } }, Headers: {} },
+        );
+
+        const initialCur = formatMagnetMailWindowCursor({
+            Today: '2026-01-20',
+            From: '2026-01-01',
+            To: '2026-01-10',
+            InnerPage: 1,
+            ScopeKey: '',
+        });
+
+        const res1 = await c.FetchChanges(fetchCtx('MessageSentTracking', {
+            CompanyIntegration: windowedCi,
+            CurrentCursor: initialCur,
+        }));
+
+        expect(c.RateLimitPolicy).toEqual({ TokensPerSec: 1.5, Burst: 3 });
+        expect(c.MaxConcurrencyHint).toBe(1);
+        expect(c.Sleeps).toEqual([120]);
+        expect(res1.Records).toHaveLength(3);
+        expect(res1.HasMore).toBe(true);
+        expect(res1.NextCursor).toBe('v1|2026-01-20|2026-01-11|2026-01-20|1|');
+        expect(res1.NewWatermarkValue).toBe('2026-01-10');
+
+        expect(c.Captured[0].body).toEqual({
+            Action: 'GetMessageSentTracking',
+            IncludeAuthHeader: true,
+            WrapperElement: 'criteria',
+            Args: {
+                PageNo: 1,
+                PageSize: 2,
+                SearchStartDate: '2026-01-01',
+                SearchEndDate: '2026-01-10',
+            },
+        });
+        expect(c.Captured[1].body?.Args.PageNo).toBe(2);
+    });
+
+    it('resolves all 5 WSDL date-range conventions and bisects non-paginated getUnsubscribes on capThreshold', async () => {
+        const c = new MockedMagnetMailConnector();
+        c.SeedAuth();
+        const io = makeIO({
+            ID: 'io-unsub', Name: 'Unsubscribe', ResponseDataKey: 'Unsubscribe',
+            SupportsPagination: false, PaginationType: 'None',
+            Configuration: JSON.stringify({ ListOperation: 'getUnsubscribes' }),
+        });
+        c.IOFixtures.set('Unsubscribe', io);
+        c.IOFFixtures.set('io-unsub', [makeIOF({ Name: 'id', IsPrimaryKey: true })]);
+
+        const windowedCi = {
+            IntegrationID: 'int-1',
+            CredentialID: null,
+            Configuration: JSON.stringify({
+                dateWindowing: {
+                    Unsubscribe: {
+                        startDate: '2026-01-01',
+                        windowDays: 20,
+                        capThreshold: 2,
+                    },
+                },
+                migrationPacing: { checkpointPerWindow: true },
+            }),
+        } as unknown as MJCompanyIntegrationEntity;
+
+        // First call returns 2 rows (== capThreshold) → bisects [2026-01-01, 2026-01-20] into [2026-01-01, 2026-01-09]
+        // Second call returns 1 row (< capThreshold)
+        c.Responses.push(
+            { Status: 200, Body: { getUnsubscribesResult: { Unsubscribe: [{ id: 'U1' }, { id: 'U2' }] } }, Headers: {} },
+            { Status: 200, Body: { getUnsubscribesResult: { Unsubscribe: [{ id: 'U1' }] } }, Headers: {} },
+        );
+
+        const initialCur = formatMagnetMailWindowCursor({
+            Today: '2026-01-20',
+            From: '2026-01-01',
+            To: '2026-01-20',
+            InnerPage: 1,
+            ScopeKey: '',
+        });
+
+        const res = await c.FetchChanges(fetchCtx('Unsubscribe', {
+            CompanyIntegration: windowedCi,
+            CurrentCursor: initialCur,
+        }));
+
+        expect(c.Captured).toHaveLength(2);
+        expect(c.Captured[0].body?.Args).toEqual({ fromDate: '2026-01-01', toDate: '2026-01-20' });
+        expect(c.Captured[1].body?.Args).toEqual({ fromDate: '2026-01-01', toDate: '2026-01-09' });
+        expect(res.Warnings?.[0]?.Code).toBe('WINDOW_BISECTED');
+        expect(res.Records).toHaveLength(1);
+    });
+});
+

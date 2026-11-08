@@ -23,6 +23,8 @@
     "sync:publish-scope": "node scripts/sync-publish-scope.mjs",
     "docs:overview": "node scripts/build-overview-docs.mjs",
     "docs:overview:check": "node scripts/build-overview-docs.mjs --check",
+    "docs:readme": "node scripts/build-readme-directory.mjs",
+    "docs:readme:check": "node scripts/build-readme-directory.mjs --check",
     "docs:baseline-support": "node scripts/gen-baseline-support-docs.mjs",
     "docs:refresh-mj-actions": "node scripts/refresh-mj-actions.mjs",
     "docs:ai-copy": "node scripts/ai-marketing-copy.mjs",
@@ -31,7 +33,7 @@
     "migrations:wrap": "node scripts/wrap-migration.mjs",
     "migrations:pg": "node scripts/build-pg-migrations.mjs",
     "changeset": "changeset",
-    "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs && node scripts/build-connectors-catalog.mjs",
+    "version-packages": "changeset version && node scripts/sync-manifest-versions.mjs && node scripts/build-connectors-catalog.mjs && node scripts/build-readme-directory.mjs",
     "release": "turbo run build && changeset publish && node scripts/tag-apps.mjs",
     "lint:version-range": "node scripts/lint-manifest-version-range.mjs",
     "check:mj-compat": "node scripts/typecheck-against-mj.mjs"
