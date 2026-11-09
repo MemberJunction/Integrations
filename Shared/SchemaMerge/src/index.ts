@@ -50,9 +50,11 @@ export function mergeDeclaredWithSampledFields(
 
     const sampledByName = new Map<string, ExternalFieldSchema>();
     for (const s of sampledList) {
-        if (s?.Name && !sampledByName.has(s.Name)) sampledByName.set(s.Name, s);
+        if (!s?.Name) continue;
+        const lower = s.Name.toLowerCase();
+        if (!sampledByName.has(lower)) sampledByName.set(lower, s);
     }
-    const declaredNames = new Set(declaredList.map((f) => f.Name));
+    const declaredNames = new Set(declaredList.map((f) => f.Name.toLowerCase()));
 
     // I1 — does the object declare ANY primary key? If not, a statistically-proven sampled PK is the
     // only thing standing between this object and being dropped from sync as keyless, so we adopt it
@@ -62,7 +64,7 @@ export function mergeDeclaredWithSampledFields(
     // Declared fields, in declared order — widen MaxLength to the never-shrink max(declared, measured)
     // and, when the object is otherwise keyless, adopt the sampled PK. Nothing else changes.
     const merged: SourceFieldInfo[] = declaredList.map((d) => {
-        const s = sampledByName.get(d.Name);
+        const s = sampledByName.get(d.Name.toLowerCase());
         if (!s) return d;
         const declaredW = d.MaxLength ?? 0;
         const sampledW = s.MaxLength ?? 0;
@@ -96,8 +98,10 @@ export function mergeDeclaredWithSampledFields(
     // Custom columns MJ discovered (sample-only names) — appended as-is, in sample order.
     const appended = new Set<string>();
     for (const s of sampledList) {
-        if (!s?.Name || declaredNames.has(s.Name) || appended.has(s.Name)) continue;
-        appended.add(s.Name);
+        if (!s?.Name) continue;
+        const lower = s.Name.toLowerCase();
+        if (declaredNames.has(lower) || appended.has(lower)) continue;
+        appended.add(lower);
         merged.push(sampledFieldToDeclared(s));
     }
 
