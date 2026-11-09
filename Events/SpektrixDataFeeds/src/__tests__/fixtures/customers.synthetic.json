@@ -1,0 +1,99 @@
+{
+  "_note": "Synthetic. Shapes mirror Spektrix.DataFeeds.Data as decoded by the Data Feeds client. No patron data.",
+  "lookups": {
+    "tags": [
+      { "id": 10, "name": "Subscriber", "tagGroupId": 1 },
+      { "id": 20, "name": "Donor", "tagGroupId": 1 },
+      { "id": 30, "name": "Do Not Mail", "tagGroupId": 2 }
+    ],
+    "tagGroups": [
+      { "id": 1, "name": "Segments" },
+      { "id": 2, "name": "Preferences" }
+    ],
+    "merges": [
+      { "date": "2025-03-04T10:15:00.0000000", "from": 1002, "to": 1001 }
+    ],
+    "dataProtectionStatements": [
+      { "id": 1, "name": "Email marketing" },
+      { "id": 2, "name": "Post" }
+    ]
+  },
+  "customers": [
+    {
+      "type": "Person",
+      "id": 1001,
+      "friendlyId": "ZXCV-1001",
+      "email": "Zebediah.Fixturesmith@Example.ORG",
+      "phoneNumber": "206 000 1234",
+      "dateCreated": "2019-04-12T09:30:15.1234567",
+      "dateLastUpdated": "2026-10-01T23:59:59.0000000Z",
+      "agreedStatementIds": [1, 2],
+      "tagIds": [10, 20],
+      "attributes": [
+        { "name": "Membership", "value": "Gold" },
+        { "name": "Notes", "value": "Prefers aisle seat, wheelchair user" }
+      ],
+      "billingAddress": {
+        "country": "United States",
+        "county": "Example County",
+        "line1": "123 Synthetic Street",
+        "line2": "Apt 4",
+        "line3": null,
+        "line4": null,
+        "line5": null,
+        "name": "Zebediah Fixturesmith",
+        "postcode": "12345-6789",
+        "town": "Exampleville"
+      },
+      "birthDate": "1980-02-29T00:00:00.0000000",
+      "firstName": "Zebediah",
+      "lastName": "Fixturesmith",
+      "mobileNumber": "206 000 5678",
+      "title": "Dr"
+    },
+    {
+      "type": "Person",
+      "id": 1002,
+      "friendlyId": null,
+      "email": null,
+      "phoneNumber": null,
+      "dateCreated": "0001-01-01T00:00:00.0000000",
+      "dateLastUpdated": "2026-10-02T08:00:00.0000000",
+      "agreedStatementIds": null,
+      "tagIds": null,
+      "attributes": null,
+      "billingAddress": null,
+      "birthDate": null,
+      "firstName": null,
+      "lastName": null,
+      "mobileNumber": null,
+      "title": null
+    },
+    {
+      "type": "Organisation",
+      "id": 2001,
+      "friendlyId": "ORG-2001",
+      "email": "office@sample-org.example",
+      "phoneNumber": "206 000 9999",
+      "dateCreated": "2021-01-05T12:00:00.0000000",
+      "dateLastUpdated": "2026-10-03T12:00:00.0000000",
+      "agreedStatementIds": [2],
+      "tagIds": [20],
+      "attributes": [],
+      "primaryAddress": {
+        "country": "United States",
+        "county": "Example County",
+        "line1": "1 Synthetic Plaza",
+        "line2": null,
+        "line3": null,
+        "line4": null,
+        "line5": null,
+        "name": "Sample Org Inc",
+        "postcode": "54321",
+        "town": "Sampletown"
+      },
+      "name": "Sample Org Inc",
+      "primaryContactId": 1001
+    }
+  ]
+}
