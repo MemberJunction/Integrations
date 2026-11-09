@@ -1,0 +1,67 @@
+name: Maintain README Integration Directory
+
+# Automatically keeps the root README.md "Full Integration Directory" and
+# connectors-catalog.json in sync whenever changes merge to `next`.
+#
+# First attempts a direct fast-forward commit to `next`; if `protect-next`
+# requires a PR (PR-only ruleset with empty bypass list), automatically pushes
+# a branch and opens a PR against `next`.
+
+on:
+  push:
+    branches: [next]
+  workflow_dispatch: {}
+
+concurrency:
+  group: readme-directory-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-readme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Regenerate connector catalog and README directory
+        run: |
+          node scripts/build-connectors-catalog.mjs
+          node scripts/build-readme-directory.mjs
+
+      - name: Commit or open PR if README.md or catalog changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- README.md connectors-catalog.json; then
+            echo "README.md and connectors-catalog.json are already up to date."
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md connectors-catalog.json
+          git commit -m "docs(readme): auto-update Full Integration Directory [skip ci]"
+
+          # Attempt direct push to next first; fall back to opening a PR if branch ruleset blocks direct push
+          if git push origin HEAD:next 2>/dev/null; then
+            echo "Pushed updated README.md directly to next."
+            exit 0
+          fi
+
+          BRANCH="docs/auto-readme-directory-${GITHUB_RUN_ID}"
+          git push origin "HEAD:refs/heads/$BRANCH"
+          gh pr create --base next --head "$BRANCH" \
+            --title "docs(readme): auto-update Full Integration Directory" \
+            --body "Automated update of \`README.md\` Full Integration Directory and \`connectors-catalog.json\` following a merge to \`next\`."
