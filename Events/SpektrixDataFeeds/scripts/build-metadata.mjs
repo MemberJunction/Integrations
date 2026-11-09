@@ -8,7 +8,7 @@
  *   npm run build && node scripts/build-metadata.mjs
  */
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CATALOG } from '../dist/catalog.js';
@@ -32,8 +32,8 @@ const integration = {
         ClassName: 'SpektrixDataFeedsConnector',
         ImportPath: '@memberjunction/connector-spektrix-data-feeds',
         Description:
-            'Spektrix Data Feeds — the WCF customer feed (IDataFeed.GetCustomerData) that carries the bulk customer base the v3 REST API does not expose. ' +
-            'Read-only, windowed by last-updated date, with a per-connection personal-data policy (raw / pseudonymize / suppress) applied before any row lands.',
+            'Spektrix Data Feeds: the WCF customer feed (IDataFeed.GetCustomerData) carrying the bulk customer base the v3 REST API does not expose. ' +
+            'Read-only, windowed by last-updated date, with a per-connection personal-data policy applied on ingest.',
         Icon: 'fa-solid fa-file-shield',
         CredentialTypeID: '@lookup:MJ: Credential Types.Name=Spektrix Data Feeds Certificate',
         Configuration: {
@@ -59,7 +59,12 @@ const integration = {
                 perFieldClass: 'IntegrationObjectField.Configuration.pii',
                 watermarkCarriesMode: true,
             },
-            DeclaredAgainst: 'Data Feeds client types 0.1.0 (2026-11-03), decoding Spektrix.DataFeeds.Data.Person / Organisation / Address / Attribute',
+            DeclaredAgainst: {
+              Sources: ['https://integrate.spektrix.com/docs/customer', 'https://integrate.spektrix.com/docs/Introduction'],
+              ReadOn: '2026-11-03',
+              ClientTypes: 'Integrator-supplied Data Feeds client types 0.1.0 (Spektrix.DataFeeds.Data.Person / Organisation / Address / Attribute)',
+              Note: 'The Data Feeds WCF service has no public reference page; the public pages above describe the Spektrix customer model the feed exposes.',
+            },
         },
     },
     relatedEntities: {
@@ -130,6 +135,33 @@ const integration = {
 };
 
 const out = join(ROOT, 'metadata', 'integration', '.spektrix-data-feeds.integration.json');
+
+// `mj sync push` writes a `sync` block (lastModified + checksum) back onto every record it seeds.
+// Carry those forward from the existing file, keyed by primaryKey ID, so regenerating from the
+// catalog never discards what the push recorded and re-runs stay deterministic.
+function collectSync(node, acc = new Map()) {
+    if (Array.isArray(node)) node.forEach((n) => collectSync(n, acc));
+    else if (node && typeof node === 'object') {
+        if (node.primaryKey?.ID && node.sync) acc.set(node.primaryKey.ID, node.sync);
+        for (const v of Object.values(node.relatedEntities ?? {})) collectSync(v, acc);
+    }
+    return acc;
+}
+function applySync(node, syncById) {
+    if (Array.isArray(node)) return node.forEach((n) => applySync(n, syncById));
+    if (!node || typeof node !== 'object') return;
+    const prior = node.primaryKey?.ID ? syncById.get(node.primaryKey.ID) : undefined;
+    if (prior) node.sync = prior;
+    for (const v of Object.values(node.relatedEntities ?? {})) applySync(v, syncById);
+}
+if (existsSync(out)) {
+    try {
+        applySync(integration, collectSync(JSON.parse(readFileSync(out, 'utf8'))));
+    } catch {
+        /* unreadable prior file: write fresh */
+    }
+}
+
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, JSON.stringify([integration], null, 2) + '\n');
 console.log(`wrote ${out}: ${CATALOG.length} objects, ${CATALOG.reduce((n, o) => n + o.fields.length, 0)} fields`);

@@ -56,9 +56,8 @@ export const CATALOG: readonly CatalogObject[] = [
         name: CUSTOMER_OBJECT,
         displayName: 'Customer',
         description:
-            'A Spektrix customer record (Person or Organisation) from the Data Feeds customer stream. One row per customer; ' +
-            'the `type` column tells the two apart and the address columns come from Person.BillingAddress or ' +
-            'Organisation.PrimaryAddress. Read incrementally by last-updated date window.',
+            'A Spektrix customer (Person or Organisation) from the Data Feeds customer stream, one row per customer. ' +
+            'The type column tells the two apart; address columns come from Person.BillingAddress or Organisation.PrimaryAddress.',
         category: 'Customers',
         apiPath: `${OPERATION}#customers`,
         syncStrategy: 'WatermarkIncremental',
