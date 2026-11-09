@@ -1,0 +1,1464 @@
+[
+  {
+    "fields": {
+      "Name": "Spektrix Data Feeds",
+      "ClassName": "SpektrixDataFeedsConnector",
+      "ImportPath": "@memberjunction/connector-spektrix-data-feeds",
+      "Description": "Spektrix Data Feeds — the WCF customer feed (IDataFeed.GetCustomerData) that carries the bulk customer base the v3 REST API does not expose. Read-only, windowed by last-updated date, with a per-connection personal-data policy (raw / pseudonymize / suppress) applied before any row lands.",
+      "Icon": "fa-solid fa-file-shield",
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Spektrix Data Feeds Certificate",
+      "Configuration": {
+        "Transport": "SOAP 1.1 over MTOM (multipart/related) to https://api.system.spektrix.com/{ClientName}/api/datafeeds/datafeeds.svc; customer records are a length-framed .NET BinaryFormatter (MS-NRBF) stream.",
+        "TransportClient": "Integrator-supplied streaming Node client for the Data Feeds protocol, registered by the host via RegisterSpektrixDataFeedClientFactory; this package never imports it.",
+        "AuthScheme": "TLS client certificate (PKCS#12). The certificate is issued per integrator and may grant access to many Spektrix systems; it must stay where its holder runs the client.",
+        "OperationsInScope": [
+          "IDataFeed.GetCustomerData"
+        ],
+        "OperationsKnownOutOfScope": [
+          {
+            "operation": "IDataFeed ticket feed (TicketData service wrapper)",
+            "reason": "not yet covered by the TypeScript client; sales rows wait on it"
+          },
+          {
+            "operation": "IDataFeed event feed (EventData service wrapper)",
+            "reason": "catalogue data already covered by the Spektrix v3 connector"
+          }
+        ],
+        "IncrementalSyncCapability": "GetCustomerData takes From/To and returns customers whose DateLastUpdated falls in the range; the connector walks date windows and stores the window end as the watermark.",
+        "PaginationCapability": "None at the service; the connector pages a buffered window by cursor.",
+        "RateLimits": {
+          "documentedNumbers": null,
+          "guidance": "One request in flight; the service prepares the whole window before sending the first byte, which can take minutes."
+        },
+        "DeleteSemantics": "No deletion feed. Customer merges arrive as (from, to, date) pointers and are kept as rows, never applied as deletes.",
+        "WriteCapability": "None.",
+        "DiscoveryIsAuthoritative": false,
+        "PersonalDataPolicy": {
+          "setting": "CompanyIntegration.Configuration.piiMode",
+          "modes": [
+            "raw",
+            "pseudonymize",
+            "suppress"
+          ],
+          "default": "pseudonymize",
+          "appliedAt": "FetchChanges, before the record reaches the engine (overflow, snapshot, content hash and field maps all see the policy output)",
+          "perFieldClass": "IntegrationObjectField.Configuration.pii",
+          "watermarkCarriesMode": true
+        },
+        "DeclaredAgainst": "Data Feeds client types 0.1.0 (2026-11-03), decoding Spektrix.DataFeeds.Data.Person / Organisation / Address / Attribute"
+      }
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "Name": "Customer",
+            "DisplayName": "Customer",
+            "Description": "A Spektrix customer record (Person or Organisation) from the Data Feeds customer stream. One row per customer; the `type` column tells the two apart and the address columns come from Person.BillingAddress or Organisation.PrimaryAddress. Read incrementally by last-updated date window.",
+            "APIPath": "IDataFeed/GetCustomerData#customers",
+            "Category": "Customers",
+            "Status": "Active",
+            "Sequence": 1,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": true,
+            "IncrementalWatermarkField": "dateLastUpdated",
+            "SyncStrategy": "WatermarkIncremental",
+            "StableOrderingKey": "id",
+            "ContentHashApplicable": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "Configuration": {
+              "operation": "IDataFeed.GetCustomerData",
+              "pk": {
+                "fields": [
+                  "id"
+                ],
+                "soft": true,
+                "basis": "documented identity in Spektrix.DataFeeds.Data; composite keys are |-joined in field order"
+              },
+              "piiClasses": {
+                "id": "identifier",
+                "type": "label",
+                "friendlyId": "reference",
+                "email": "email",
+                "phoneNumber": "phone",
+                "mobileNumber": "phone",
+                "title": "title",
+                "firstName": "personName",
+                "lastName": "personName",
+                "birthDate": "birthDate",
+                "organisationName": "organisationName",
+                "primaryContactId": "identifier",
+                "address_name": "addressLine",
+                "address_line1": "addressLine",
+                "address_line2": "addressLine",
+                "address_line3": "addressLine",
+                "address_line4": "addressLine",
+                "address_line5": "addressLine",
+                "address_town": "geography",
+                "address_county": "geography",
+                "address_postcode": "postcode",
+                "address_country": "geography",
+                "tagIds": "identifier",
+                "agreedStatementIds": "identifier",
+                "attributes": "freeText",
+                "dateCreated": "timestamp",
+                "dateLastUpdated": "timestamp"
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Spektrix customer id (Spektrix.DataFeeds.Data.Customer.Id).",
+                  "Type": "integer",
+                  "Category": "Identifier",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 1,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "81F85152-0C3A-53F2-9051-F29EC36B6379"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "type",
+                  "DisplayName": "Type",
+                  "Description": "'Person' or 'Organisation' — the .NET record type streamed.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 20,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 2,
+                  "Configuration": {
+                    "pii": "label",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "88E04E89-31AB-519C-BF1C-07982263909C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "friendlyId",
+                  "DisplayName": "Friendly Id",
+                  "Description": "Customer-facing reference (FriendlyId).",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 50,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 3,
+                  "Configuration": {
+                    "pii": "reference",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "71D54A42-ADC8-522B-A228-7F2E1A2D4B4D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Email address.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 320,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 4,
+                  "Configuration": {
+                    "pii": "email",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "243093E3-29D8-53C9-9BF6-680D396A76C2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "phoneNumber",
+                  "DisplayName": "Phone Number",
+                  "Description": "Main phone number.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 50,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 5,
+                  "Configuration": {
+                    "pii": "phone",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FF1E3967-D678-5736-A277-35ABFDD0ADF5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "mobileNumber",
+                  "DisplayName": "Mobile Number",
+                  "Description": "Mobile number (Person only).",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 50,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 6,
+                  "Configuration": {
+                    "pii": "phone",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "85A20840-3104-5D4B-85A4-B76731896947"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "title",
+                  "DisplayName": "Title",
+                  "Description": "Salutation (Person only).",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 50,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 7,
+                  "Configuration": {
+                    "pii": "title",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A30E244F-E587-59D8-93C7-21EF4E4D7EDB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "First name (Person only).",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 200,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 8,
+                  "Configuration": {
+                    "pii": "personName",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A54A25D0-2B73-55AE-9E42-6BAB2726DE34"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Last name (Person only).",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 200,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 9,
+                  "Configuration": {
+                    "pii": "personName",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "81562761-5BF0-5806-BD0E-EB225D673D8D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "birthDate",
+                  "DisplayName": "Birth Date",
+                  "Description": "Date of birth (Person only), .NET round-trip format.",
+                  "Type": "datetime",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 10,
+                  "Configuration": {
+                    "pii": "birthDate",
+                    "specType": "datetime",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AFD118FD-E00F-5860-95D6-09070F52E034"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "organisationName",
+                  "DisplayName": "Organisation Name",
+                  "Description": "Organisation name (Organisation only; wire Name).",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 11,
+                  "Configuration": {
+                    "pii": "organisationName",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CE5C20A4-2DF3-5389-83B7-EA36ED842649"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "primaryContactId",
+                  "DisplayName": "Primary Contact Id",
+                  "Description": "Customer id of the primary contact (Organisation only).",
+                  "Type": "integer",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 12,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C4814C12-DFFB-579A-AE15-3FC14756B889"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_name",
+                  "DisplayName": "Address Name",
+                  "Description": "Addressee name on the address.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 13,
+                  "Configuration": {
+                    "pii": "addressLine",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B1F33EAB-4D0D-57B6-A8AB-081F7558F5D4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_line1",
+                  "DisplayName": "Address Line 1",
+                  "Description": "Address line 1.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 14,
+                  "Configuration": {
+                    "pii": "addressLine",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C8C2B831-07BE-549E-9D72-B5720C252550"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_line2",
+                  "DisplayName": "Address Line 2",
+                  "Description": "Address line 2.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 15,
+                  "Configuration": {
+                    "pii": "addressLine",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6869A686-D795-5BE4-84A0-73BE6858E267"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_line3",
+                  "DisplayName": "Address Line 3",
+                  "Description": "Address line 3.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 16,
+                  "Configuration": {
+                    "pii": "addressLine",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8C5A189C-FF94-5988-82F9-6848B8AF0B67"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_line4",
+                  "DisplayName": "Address Line 4",
+                  "Description": "Address line 4.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 17,
+                  "Configuration": {
+                    "pii": "addressLine",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FC504633-B16B-541A-86A9-2F67FD5F4C7A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_line5",
+                  "DisplayName": "Address Line 5",
+                  "Description": "Address line 5.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 18,
+                  "Configuration": {
+                    "pii": "addressLine",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "740A2BD0-46F6-5DC5-8575-B42FA43416B7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_town",
+                  "DisplayName": "Town",
+                  "Description": "Town / city.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 200,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 19,
+                  "Configuration": {
+                    "pii": "geography",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FAEF3663-A157-5E44-BF54-109E75F3FDE3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_county",
+                  "DisplayName": "County",
+                  "Description": "County / state.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 200,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 20,
+                  "Configuration": {
+                    "pii": "geography",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CFB794B3-86A3-5F1F-8B03-F23505E091E1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_postcode",
+                  "DisplayName": "Postcode",
+                  "Description": "Postcode / ZIP (reduced to its first three characters when pseudonymized).",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 20,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 21,
+                  "Configuration": {
+                    "pii": "postcode",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "78ECE497-6448-535A-A525-36FB03A5B0C8"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "address_country",
+                  "DisplayName": "Country",
+                  "Description": "Country.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 200,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 22,
+                  "Configuration": {
+                    "pii": "geography",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E3AA4A15-EA3A-5E23-8715-5D94B15378BF"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "tagIds",
+                  "DisplayName": "Tag Ids",
+                  "Description": "JSON array of tag ids applied to the customer (join to Tag.id).",
+                  "Type": "json",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 23,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "json",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7416454F-B6BA-5955-A43A-9AF6F59E272E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "agreedStatementIds",
+                  "DisplayName": "Agreed Statement Ids",
+                  "Description": "JSON array of data-protection statement ids the customer agreed to (join to DataProtectionStatement.id).",
+                  "Type": "json",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 24,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "json",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9258933D-B98E-572D-9E67-FB61789B5944"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "attributes",
+                  "DisplayName": "Attributes",
+                  "Description": "JSON array of {name, value} custom attributes. Values outside the connection allowlist are nulled in the protective modes.",
+                  "Type": "json",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 25,
+                  "Configuration": {
+                    "pii": "freeText",
+                    "specType": "json",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A0D6E42C-BECC-5FA0-9187-66040DABD5B6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "dateCreated",
+                  "DisplayName": "Date Created",
+                  "Description": "Record creation stamp, .NET round-trip format.",
+                  "Type": "datetime",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 26,
+                  "Configuration": {
+                    "pii": "timestamp",
+                    "specType": "datetime",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3B2A396B-41A7-5484-A66B-495FBF8BB1D6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "dateLastUpdated",
+                  "DisplayName": "Date Last Updated",
+                  "Description": "Last-updated stamp, .NET round-trip format. The incremental watermark field.",
+                  "Type": "datetime",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 27,
+                  "Configuration": {
+                    "pii": "timestamp",
+                    "specType": "datetime",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0C302935-7280-5151-94C7-F38FF7FA7E09"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "6853E280-DF57-5AD5-B6A9-B49742F93E34"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Tag",
+            "DisplayName": "Tag",
+            "Description": "A customer tag, from the Tags list in the customer feed response header.",
+            "APIPath": "IDataFeed/GetCustomerData#header/Tags",
+            "Category": "Tags",
+            "Status": "Active",
+            "Sequence": 2,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SyncStrategy": "FullPullHashDiff",
+            "StableOrderingKey": "id",
+            "ContentHashApplicable": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "Configuration": {
+              "operation": "IDataFeed.GetCustomerData",
+              "pk": {
+                "fields": [
+                  "id"
+                ],
+                "soft": true,
+                "basis": "documented identity in Spektrix.DataFeeds.Data; composite keys are |-joined in field order"
+              },
+              "piiClasses": {
+                "id": "identifier",
+                "name": "label",
+                "tagGroupId": "identifier"
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Spektrix tag id.",
+                  "Type": "integer",
+                  "Category": "Identifier",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 1,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CEE50407-E12B-51F5-A636-4075F1FCDEFA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Tag name.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 2,
+                  "Configuration": {
+                    "pii": "label",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C48B4F4C-1901-5092-B412-E4E7CE7A527F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "tagGroupId",
+                  "DisplayName": "Tag Group Id",
+                  "Description": "Owning tag group (join to TagGroup.id).",
+                  "Type": "integer",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 3,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "158BA451-1B0B-5991-8626-51E3C77DCF42"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "2F47FE18-F7DB-5070-B368-8BC29D385A0D"
+          }
+        },
+        {
+          "fields": {
+            "Name": "TagGroup",
+            "DisplayName": "Tag Group",
+            "Description": "A tag group, from the TagGroups list in the customer feed response header.",
+            "APIPath": "IDataFeed/GetCustomerData#header/TagGroups",
+            "Category": "Tags",
+            "Status": "Active",
+            "Sequence": 3,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SyncStrategy": "FullPullHashDiff",
+            "StableOrderingKey": "id",
+            "ContentHashApplicable": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "Configuration": {
+              "operation": "IDataFeed.GetCustomerData",
+              "pk": {
+                "fields": [
+                  "id"
+                ],
+                "soft": true,
+                "basis": "documented identity in Spektrix.DataFeeds.Data; composite keys are |-joined in field order"
+              },
+              "piiClasses": {
+                "id": "identifier",
+                "name": "label"
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Spektrix tag group id.",
+                  "Type": "integer",
+                  "Category": "Identifier",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 1,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0CB89B2C-FA47-5A97-84AB-607AD2C16E42"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Tag group name.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 400,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 2,
+                  "Configuration": {
+                    "pii": "label",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B4486960-7C9C-5F58-9B9E-7B6C93053907"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "6BC54A57-11D8-5559-8C24-60BF4D48D61B"
+          }
+        },
+        {
+          "fields": {
+            "Name": "CustomerMerge",
+            "DisplayName": "Customer Merge",
+            "Description": "A customer merge event (from-customer absorbed into to-customer on date), from the Merges list in the customer feed response header. Composite key from|to. Apply as a pointer, never as a delete.",
+            "APIPath": "IDataFeed/GetCustomerData#header/Merges",
+            "Category": "Customers",
+            "Status": "Active",
+            "Sequence": 4,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SyncStrategy": "FullPullHashDiff",
+            "StableOrderingKey": null,
+            "ContentHashApplicable": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "Configuration": {
+              "operation": "IDataFeed.GetCustomerData",
+              "pk": {
+                "fields": [
+                  "from",
+                  "to"
+                ],
+                "soft": true,
+                "basis": "documented identity in Spektrix.DataFeeds.Data; composite keys are |-joined in field order"
+              },
+              "piiClasses": {
+                "from": "identifier",
+                "to": "identifier",
+                "date": "timestamp"
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "from",
+                  "DisplayName": "From Customer Id",
+                  "Description": "The customer id that was merged away.",
+                  "Type": "integer",
+                  "Category": "Identifier",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 1,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "83B9A59D-6D39-506D-846F-AF46167DA106"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "to",
+                  "DisplayName": "To Customer Id",
+                  "Description": "The surviving customer id.",
+                  "Type": "integer",
+                  "Category": "Identifier",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 2,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E69D6522-66B8-54B3-9CF8-D2C2A4B093F7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "date",
+                  "DisplayName": "Merge Date",
+                  "Description": "When the merge happened, .NET round-trip format.",
+                  "Type": "datetime",
+                  "Category": null,
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 3,
+                  "Configuration": {
+                    "pii": "timestamp",
+                    "specType": "datetime",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "376235E0-ECC2-5046-AAC3-2E49616C3BC2"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "99E89355-8214-5702-A690-6B4BC399E553"
+          }
+        },
+        {
+          "fields": {
+            "Name": "DataProtectionStatement",
+            "DisplayName": "Data Protection Statement",
+            "Description": "A consent statement customers can agree to, from the DataProtectionStatements list in the customer feed response header.",
+            "APIPath": "IDataFeed/GetCustomerData#header/DataProtectionStatements",
+            "Category": "Statements",
+            "Status": "Active",
+            "Sequence": 5,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "IncrementalWatermarkField": null,
+            "SyncStrategy": "FullPullHashDiff",
+            "StableOrderingKey": "id",
+            "ContentHashApplicable": true,
+            "SupportsWrite": false,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "IsCustom": false,
+            "MetadataSource": "Declared",
+            "Configuration": {
+              "operation": "IDataFeed.GetCustomerData",
+              "pk": {
+                "fields": [
+                  "id"
+                ],
+                "soft": true,
+                "basis": "documented identity in Spektrix.DataFeeds.Data; composite keys are |-joined in field order"
+              },
+              "piiClasses": {
+                "id": "identifier",
+                "name": "label"
+              }
+            },
+            "IntegrationID": "@parent:ID"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "id",
+                  "DisplayName": "Id",
+                  "Description": "Spektrix data protection statement id.",
+                  "Type": "integer",
+                  "Category": "Identifier",
+                  "Length": null,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": false,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 1,
+                  "Configuration": {
+                    "pii": "identifier",
+                    "specType": "integer",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "7CF371A3-0213-54A9-AB22-6B52830F1E0E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Statement name.",
+                  "Type": "string",
+                  "Category": null,
+                  "Length": 1000,
+                  "Precision": null,
+                  "Scale": null,
+                  "AllowsNull": true,
+                  "DefaultValue": null,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "Sequence": 2,
+                  "Configuration": {
+                    "pii": "label",
+                    "specType": "string",
+                    "source": "Spektrix.DataFeeds.Data via the Data Feeds client"
+                  },
+                  "Status": "Active",
+                  "IsCustom": false,
+                  "MetadataSource": "Declared",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DAF3720F-AE9F-555A-B480-B840AD813E20"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "AC96A4E0-8EBB-51EA-ABD3-C7DAA6BE8E2A"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "FB10B788-1FD1-568D-8FE2-3D8BBB0A1E65"
+    }
+  }
+]
