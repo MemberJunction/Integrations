@@ -79,7 +79,6 @@ schema discovery against the real API, without a persisted sync. Its `SUPPORT.md
 
 | Connector | Objects declared | Objects with rows | Rows verified | Setup guide |
 |---|---:|---:|---:|:--:|
-| [MJtoMJ](../Platform/MJtoMJ/docs/SUPPORT.md) | 6 | — | — | [✓](../Platform/MJtoMJ/docs/credential-setup.html) |
 | [MySQL](../Platform/MySQL/docs/SUPPORT.md) | discovered live | — | — | [✓](../Platform/MySQL/docs/credential-setup.html) |
 | [Oracle](../Platform/Oracle/docs/SUPPORT.md) | discovered live | — | — | [✓](../Platform/Oracle/docs/credential-setup.html) |
 | [PostgreSQL](../Platform/PostgreSQL/docs/SUPPORT.md) | discovered live | — | — | [✓](../Platform/PostgreSQL/docs/credential-setup.html) |

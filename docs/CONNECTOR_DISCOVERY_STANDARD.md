@@ -3,7 +3,7 @@
 > Applies to every **describe-endpoint** connector (one that extends `BaseRESTIntegrationConnector`
 > and returns a *declared* field catalog — cache-driven `IntrospectSchema`, or `DiscoverObjects` +
 > `DiscoverFields` over seeded metadata). It does **not** apply to schema-less / live-discovery
-> connectors (FileFeed, RelationalDB, MJtoMJ, or any connector that already overrides
+> connectors (FileFeed, RelationalDB, or any connector that already overrides
 > `IntrospectSchema` to describe/stream from the live source).
 
 ## The rule

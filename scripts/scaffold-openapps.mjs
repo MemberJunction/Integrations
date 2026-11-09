@@ -71,7 +71,6 @@ const CONNECTORS = {
   'OpenWater': { category: 'Events', appDir: 'OpenWater' },
   'SharePoint': { category: 'Platform', appDir: 'SharePoint' },
   'ORCID': { category: 'Platform', appDir: 'ORCID' },
-  'MJ to MJ': { category: 'Platform', appDir: 'MJtoMJ' },
 };
 
 /** Lowercase-kebab slug used for the app `name` and tags. */
