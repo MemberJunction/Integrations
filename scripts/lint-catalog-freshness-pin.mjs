@@ -91,7 +91,6 @@ const GRANDFATHERED = new Set([
   'Platform/HigherLogicThriveCommunity',
   'Platform/HigherLogicVanilla',
   'Platform/Hivebrite',
-  'Platform/MJtoMJ',
   'Platform/MongoDB',
   'Platform/MySQL',
   'Platform/ORCID',
