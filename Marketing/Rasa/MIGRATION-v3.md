@@ -129,9 +129,14 @@ and is declared as a link to Contact, so engagement joins to the contact in MJ. 
    `IsSoftPrimaryKey`), and remove them from those tables' soft key in the schema's additional schema info, or
    the next CodeGen puts them back. Until then the engine keeps refusing opens.
 3. Run a **full** sync ("Sync all history") of the three action feeds and the eight nested collections. An
-   incremental sync won't revisit events or rows already past the watermark. Rows stored before the upgrade
-   match the new key, so they update in place; nested-collection rows stored without a parent id stay as
-   orphans and can be deleted.
+   incremental sync won't revisit events or rows already past the watermark.
+
+**The refresh in step 1 empties the re-keyed tables** on MJ versions with re-key handling (6.2.0 or later, or
+an install patched with it). When a table's key changes, the schema refresh deletes that table's rows and its
+record maps, and leaves the table empty until the next sync reloads it. Here that is the three action tables
+and the eight nested collections. Every row comes back from rasa.io in the full sync in step 3, so run that
+sync straight after the refresh. Until it finishes, those tables are empty and anything that reads them
+(queries, lists, reports) sees no data.
 
 ## 5. Actions: 12 disabled, 6 added
 

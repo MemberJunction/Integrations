@@ -859,7 +859,7 @@ export class NetSuiteConnector extends BaseRESTIntegrationConnector {
         const t = String(prop['type'] ?? '').toLowerCase();
         const fmt = String(prop['format'] ?? '').toLowerCase();
         if (fmt.includes('date') || fmt.includes('time')) return 'datetime';
-        if (t === 'integer') return 'number';
+        if (t === 'integer') return 'integer';
         if (t === 'number') return 'decimal';
         if (t === 'boolean') return 'boolean';
         return 'string';
