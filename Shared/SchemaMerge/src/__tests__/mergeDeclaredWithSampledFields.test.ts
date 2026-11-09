@@ -171,4 +171,22 @@ describe('mergeDeclaredWithSampledFields (pure glue — adopts MJ values, no log
             expect(mergeDeclaredWithSampledFields(d, s)[0].MaxLength).toBe(64);
         });
     });
+
+    describe('Case-insensitive field matching (e.g. NetSuite camelCase catalog vs lowercase SuiteQL sample)', () => {
+        it('matches sampled lowercase field names to declared camelCase fields without appending duplicates', () => {
+            const d = [
+                declared({ Name: 'lastModifiedDate', SourceType: 'datetime', MaxLength: null }),
+                declared({ Name: 'isInactive', SourceType: 'boolean', MaxLength: null }),
+            ];
+            const s = [
+                sampled({ Name: 'lastmodifieddate', DataType: 'string', MaxLength: 24 }),
+                sampled({ Name: 'isinactive', DataType: 'string', MaxLength: 1 }),
+                sampled({ Name: 'custentity_region', DataType: 'string', MaxLength: 40 }),
+            ];
+            const out = mergeDeclaredWithSampledFields(d, s);
+            expect(out.map((f) => f.Name)).toEqual(['lastModifiedDate', 'isInactive', 'custentity_region']);
+            expect(out.find((f) => f.Name === 'lastModifiedDate')!.SourceType).toBe('datetime');
+            expect(out.find((f) => f.Name === 'isInactive')!.SourceType).toBe('boolean');
+        });
+    });
 });
