@@ -27,10 +27,11 @@ Configure credentials via a linked `MJ: Credential` entity or `CompanyIntegratio
 ```json
 {
   "token": "ghp_your_personal_access_token",
-  "owner": "MemberJunction",
-  "repositories": ["MemberJunction/MJ", "MemberJunction/Integrations"]
+  "defaultOwner": "MemberJunction",
+  "allowedRepositories": "MemberJunction/MJ,MemberJunction/Integrations"
 }
 ```
+*(Also accepts `"owner"` and `"repositories": ["MemberJunction/MJ", ...]` in `CompanyIntegration.Configuration`.)*
 
 ### 2. GitHub App Installation Token (Recommended for Organizations)
 ```json
@@ -38,7 +39,8 @@ Configure credentials via a linked `MJ: Credential` entity or `CompanyIntegratio
   "appId": "123456",
   "installationId": "98765432",
   "privateKey": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
-  "owner": "MemberJunction"
+  "defaultOwner": "MemberJunction",
+  "allowedRepositories": "MemberJunction/*"
 }
 ```
 The connector signs a short-lived RS256 JWT (`iat = now - 60s`, `exp = now + 9m`) and exchanges it against `POST /app/installations/{installationId}/access_tokens`.

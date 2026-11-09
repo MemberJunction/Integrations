@@ -132,16 +132,24 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         return schema;
     }
 
-    // ─── Action Generator Capabilities ─────────────────────────────────────
+    // ─── Action Generator & Connector Capabilities ─────────────────────────
+
+    public override get SupportsCreate(): boolean {
+        return true;
+    }
+
+    public override get SupportsUpdate(): boolean {
+        return true;
+    }
 
     public GetActionGeneratorCapabilities(): ConnectorActionCapabilities {
         return {
-            SupportsSearch: true,
-            SupportsList: true,
-            SupportsGet: true,
-            SupportsCreate: true,
-            SupportsUpdate: true,
-            SupportsDelete: false,
+            SupportsSearch: this.SupportsSearch,
+            SupportsList: this.SupportsListing,
+            SupportsGet: this.SupportsGet,
+            SupportsCreate: this.SupportsCreate,
+            SupportsUpdate: this.SupportsUpdate,
+            SupportsDelete: this.SupportsDelete,
         };
     }
 
@@ -589,11 +597,18 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         obj: MJIntegrationObjectEntity
     ): string {
         let resolvedUrl = url;
-        // When `repositories` is fetched with an Owner configured on the connection, scope to `/orgs/{owner}/repos`
-        if (obj.Name === 'repositories' && this.currentAuth?.Owner && resolvedUrl === '/user/repos') {
-            resolvedUrl = `/orgs/${encodeURIComponent(this.currentAuth.Owner)}/repos`;
-        } else if (obj.Name === 'repositories' && this.currentAuth?.AuthMode === 'github-app' && resolvedUrl === '/user/repos') {
-            resolvedUrl = '/installation/repositories';
+        // Rewrite `/user/repos` (whether full URL with query params or relative path):
+        // - GitHub App installation tokens cannot call `/user/repos` and must use `/installation/repositories`.
+        // - PAT/OAuth connections with an Owner/defaultOwner configured scope to `/orgs/{owner}/repos`.
+        if (obj.Name === 'repositories' && /\/user\/repos(?=\?|$)/.test(resolvedUrl)) {
+            if (this.currentAuth?.AuthMode === 'github-app') {
+                resolvedUrl = resolvedUrl.replace(/\/user\/repos(?=\?|$)/, '/installation/repositories');
+            } else if (this.currentAuth?.Owner) {
+                resolvedUrl = resolvedUrl.replace(
+                    /\/user\/repos(?=\?|$)/,
+                    `/orgs/${encodeURIComponent(this.currentAuth.Owner)}/repos`
+                );
+            }
         }
 
         let out = super.AppendDefaultQueryParams(resolvedUrl, obj);

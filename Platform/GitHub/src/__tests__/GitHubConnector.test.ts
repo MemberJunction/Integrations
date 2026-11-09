@@ -142,11 +142,18 @@ describe('GitHubConnector', () => {
             expect(connector.MonotonicWatermark).toBe(true);
         });
 
-        it('advertises search, list, get, create, and update capabilities', () => {
+        it('advertises get, create, and update capabilities on BaseIntegrationConnector getters', () => {
+            expect(connector.SupportsGet).toBe(true);
+            expect(connector.SupportsCreate).toBe(true);
+            expect(connector.SupportsUpdate).toBe(true);
+            expect(connector.SupportsDelete).toBe(false);
+            expect(connector.SupportsSearch).toBe(false);
+            expect(connector.SupportsListing).toBe(false);
+
             const caps = connector.GetActionGeneratorCapabilities();
             expect(caps).toEqual({
-                SupportsSearch: true,
-                SupportsList: true,
+                SupportsSearch: false,
+                SupportsList: false,
                 SupportsGet: true,
                 SupportsCreate: true,
                 SupportsUpdate: true,
@@ -299,6 +306,43 @@ describe('GitHubConnector', () => {
 
             const paginated = connector.exposeBuildPaginatedURL(withDefaults, obj, 3, 200, undefined, 50);
             expect(paginated).toContain('page=3&per_page=50');
+        });
+
+        it('rewrites full paginated /user/repos URLs to /installation/repositories for GitHub Apps and /orgs/{owner}/repos for PATs', () => {
+            const reposObj: Partial<MJIntegrationObjectEntity> = {
+                Name: 'repositories',
+                SupportsPagination: true,
+                PaginationType: 'PageNumber',
+                DefaultPageSize: 100,
+                SupportsIncrementalSync: true,
+                DefaultQueryParams: JSON.stringify({ sort: 'updated', direction: 'asc' }),
+            };
+
+            const appUrl = connector.exposeAppendDefaultQueryParams(
+                'https://api.github.com/user/repos?page=1&per_page=100',
+                reposObj,
+                null,
+                {
+                    Token: 'ghs_app',
+                    BaseURL: DEFAULT_GITHUB_API_BASE_URL,
+                    Owner: 'MemberJunction',
+                    AuthMode: 'github-app',
+                }
+            );
+            expect(appUrl).toContain('https://api.github.com/installation/repositories?page=1&per_page=100');
+
+            const orgPatUrl = connector.exposeAppendDefaultQueryParams(
+                'https://api.github.com/user/repos?page=1&per_page=100',
+                reposObj,
+                null,
+                {
+                    Token: 'ghp_pat',
+                    BaseURL: DEFAULT_GITHUB_API_BASE_URL,
+                    Owner: 'MemberJunction',
+                    AuthMode: 'pat',
+                }
+            );
+            expect(orgPatUrl).toContain('https://api.github.com/orgs/MemberJunction/repos?page=1&per_page=100');
         });
     });
 
