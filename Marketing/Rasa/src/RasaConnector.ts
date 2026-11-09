@@ -112,8 +112,11 @@ const RasaObjectConfigSchema = z.object({
     apiVersion: z.string().optional(),
     /** Swagger definition name(s) backing this object — the bridge into the public spec. */
     recordSchemas: z.array(z.string()).optional(),
-    /** Query-param name carrying the incremental watermark (`updated_since` / `created_since` / …). */
-    watermarkParam: z.string().optional(),
+    /**
+     * Query-param name carrying the incremental watermark (`updated_since` / `created_since` / …). The
+     * extractor writes `null` for an object with no such param.
+     */
+    watermarkParam: z.string().nullable().optional(),
     /**
      * How far back, in days, the vendor accepts `watermarkParam`. rasa.io's v2 insights feeds reject a
      * `created_since` more than 24 months ago (HTTP 400 "created_since must not be more than 24 months
