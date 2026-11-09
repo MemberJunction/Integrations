@@ -263,7 +263,7 @@ SET
 SET
   @DefaultQueryParams_fbc5dc97 = N'{"state":"all","sort":"updated","direction":"asc"}'
 SET
-  @Configuration_fbc5dc97 = N'{"apiPath":"/repos/{full_name}/issues","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}'
+  @Configuration_fbc5dc97 = N'{"apiPath":"/repos/{full_name}/issues","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}'
 SET
   @Sequence_fbc5dc97 = 2
 SET
@@ -390,7 +390,7 @@ SET
 SET
   @DefaultQueryParams_3abee6b9 = N'{"sort":"updated","direction":"asc"}'
 SET
-  @Configuration_3abee6b9 = N'{"apiPath":"/repos/{full_name}/issues/comments","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}'
+  @Configuration_3abee6b9 = N'{"apiPath":"/repos/{full_name}/issues/comments","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}'
 SET
   @Sequence_3abee6b9 = 3
 SET
@@ -515,9 +515,9 @@ SET
 SET
   @SupportsWrite_cc96db7f = 1
 SET
-  @DefaultQueryParams_cc96db7f = N'{"state":"all","sort":"updated","direction":"desc"}'
+  @DefaultQueryParams_cc96db7f = N'{"state":"all","sort":"updated","direction":"asc"}'
 SET
-  @Configuration_cc96db7f = N'{"apiPath":"/repos/{full_name}/pulls","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}'
+  @Configuration_cc96db7f = N'{"apiPath":"/repos/{full_name}/pulls","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}'
 SET
   @Sequence_cc96db7f = 4
 SET
@@ -644,7 +644,7 @@ SET
 SET
   @DefaultQueryParams_50f4698d = N'{"sort":"updated","direction":"asc"}'
 SET
-  @Configuration_50f4698d = N'{"apiPath":"/repos/{full_name}/pulls/comments","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}'
+  @Configuration_50f4698d = N'{"apiPath":"/repos/{full_name}/pulls/comments","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}'
 SET
   @Sequence_50f4698d = 5
 SET
@@ -764,7 +764,7 @@ SET
 SET
   @SupportsWrite_a5bea83b = 0
 SET
-  @Configuration_a5bea83b = N'{"apiPath":"/repos/{full_name}/releases","parentObjectName":"repositories","parentKeyField":"full_name"}'
+  @Configuration_a5bea83b = N'{"apiPath":"/repos/{full_name}/releases","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name"}'
 SET
   @Sequence_a5bea83b = 6
 SET
@@ -884,7 +884,7 @@ SET
 SET
   @SupportsWrite_7ed04f23 = 0
 SET
-  @Configuration_7ed04f23 = N'{"apiPath":"/repos/{full_name}/commits","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"committed_at"}'
+  @Configuration_7ed04f23 = N'{"apiPath":"/repos/{full_name}/commits","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"committed_at"}'
 SET
   @Sequence_7ed04f23 = 7
 SET
@@ -1007,7 +1007,7 @@ SET
 SET
   @SupportsWrite_b603dcd7 = 0
 SET
-  @Configuration_b603dcd7 = N'{"apiPath":"/repos/{full_name}/actions/runs","parentObjectName":"repositories","parentKeyField":"full_name"}'
+  @Configuration_b603dcd7 = N'{"apiPath":"/repos/{full_name}/actions/runs","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name"}'
 SET
   @Sequence_b603dcd7 = 8
 SET
@@ -1108,7 +1108,7 @@ SET
 SET
   @AllowsNull_eecc18e8 = 0
 SET
-  @IsPrimaryKey_eecc18e8 = 1
+  @IsPrimaryKey_eecc18e8 = 0
 SET
   @IsUniqueKey_eecc18e8 = 1
 SET
@@ -1369,11 +1369,11 @@ SET
 SET
   @Type_ae640a4d = N'string'
 SET
-  @Length_ae640a4d = 512
+  @Length_ae640a4d = 450
 SET
   @AllowsNull_ae640a4d = 0
 SET
-  @IsPrimaryKey_ae640a4d = 0
+  @IsPrimaryKey_ae640a4d = 1
 SET
   @IsUniqueKey_ae640a4d = 1
 SET

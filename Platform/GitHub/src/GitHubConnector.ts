@@ -100,8 +100,11 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
     /** Watermark from the active `FetchChanges` call, consumed by `AppendDefaultQueryParams`. */
     protected currentWatermark: string | null = null;
 
-    /** Last HTTP response headers observed, used by `ExtractPaginationInfo` to inspect RFC 5988 `Link` headers. */
+    /** Last HTTP response headers observed, used as fallback by `ExtractPaginationInfo`. */
     protected lastResponseHeaders: Record<string, string> = {};
+
+    /** Per-response header lookup keyed by parsed response body to prevent concurrent request races. */
+    protected readonly responseHeadersByBody = new WeakMap<object, Record<string, string>>();
 
     /** Active auth context cached during `FetchChanges` so repository path helpers can read connection scope. */
     protected currentAuth: GitHubAuthContext | null = null;
@@ -109,8 +112,8 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
     // ─── Schema Introspection ──────────────────────────────────────────────
 
     /**
-     * Introspects the GitHub schema by sampling live endpoints and merging with declared metadata
-     * so empty repositories or endpoints still expose their full declared column catalog.
+     * Introspects the GitHub schema by sampling live endpoints in a bounded parallel pool and merging
+     * with declared metadata so empty repositories or endpoints still expose their full declared column catalog.
      */
     public override async IntrospectSchema(
         companyIntegration: MJCompanyIntegrationEntity,
@@ -118,14 +121,14 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         _options?: IntrospectSchemaOptions
     ): Promise<SourceSchemaInfo> {
         const schema = await super.IntrospectSchema(companyIntegration, contextUser);
-        for (const obj of schema.Objects) {
+        await runBounded(schema.Objects, 8, async (obj) => {
             try {
                 const sampled = await this.DiscoverFieldsViaFetch(companyIntegration, obj.ExternalName, contextUser);
                 obj.Fields = mergeDeclaredWithSampledFields(obj.Fields, sampled);
             } catch {
                 // Fall back to declared metadata when credentials are not yet reachable during offline introspection
             }
-        }
+        });
         return schema;
     }
 
@@ -201,10 +204,23 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
             ?? DEFAULT_GITHUB_API_BASE_URL;
         const baseUrl = normalizeApiBaseUrl(rawBaseUrl);
 
-        const owner = pickString(config, ['owner', 'Owner', 'organization', 'Organization', 'org'])
-            ?? (companyIntegration.ExternalSystemID?.trim() || undefined);
+        const owner = pickString(config, [
+            'owner',
+            'Owner',
+            'defaultOwner',
+            'DefaultOwner',
+            'organization',
+            'Organization',
+            'org',
+        ]) ?? (companyIntegration.ExternalSystemID?.trim() || undefined);
 
-        const repositories = parseRepositoryList(config['repositories'] ?? config['Repositories'] ?? config['repo']);
+        const repositories = parseRepositoryList(
+            config['repositories']
+                ?? config['Repositories']
+                ?? config['allowedRepositories']
+                ?? config['AllowedRepositories']
+                ?? config['repo']
+        );
 
         const directToken = pickString(config, [
             'token',
@@ -348,6 +364,9 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
             } catch {
                 parsed = text;
             }
+        }
+        if (typeof parsed === 'object' && parsed !== null) {
+            this.responseHeadersByBody.set(parsed, responseHeaders);
         }
 
         return {
@@ -496,8 +515,11 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
 
         const effectivePageSize = Math.min(GITHUB_MAX_PAGE_SIZE, Math.max(1, pageSize || GITHUB_MAX_PAGE_SIZE));
 
-        // 1. Prefer RFC 5988 `Link: <...>; rel="next"` header when present
-        const linkHeader = this.lastResponseHeaders['link'] ?? '';
+        // 1. Prefer RFC 5988 `Link: <...>; rel="next"` header when present (bound per response body for concurrency safety)
+        const headersForBody = (typeof rawBody === 'object' && rawBody !== null)
+            ? this.responseHeadersByBody.get(rawBody)
+            : undefined;
+        const linkHeader = (headersForBody ?? this.lastResponseHeaders)['link'] ?? '';
         if (linkHeader) {
             const nextUrl = parseNextLinkHeader(linkHeader);
             if (nextUrl) {
@@ -584,16 +606,51 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         this.currentWatermark = ctx.WatermarkValue ?? null;
         try {
+            const auth = await this.Authenticate(
+                ctx.CompanyIntegration as MJCompanyIntegrationEntity,
+                ctx.ContextUser as UserInfo
+            );
             const result = await super.FetchChanges(ctx);
+            let records = result.Records;
+
+            // Enforce repository allowlist filter (`repositories` or `allowedRepositories`) when configured
+            if (auth.Repositories && auth.Repositories.length > 0) {
+                if (ctx.ObjectName === 'repositories') {
+                    records = records.filter(rec => {
+                        const fullName = String(rec.Fields['full_name'] ?? rec.ExternalID ?? '');
+                        return matchesRepositoryFilter(fullName, auth.Repositories, auth.Owner);
+                    });
+                } else {
+                    records = records.filter(rec => {
+                        const repoFullName = rec.Fields['repository_full_name'];
+                        if (typeof repoFullName === 'string' && repoFullName.length > 0) {
+                            return matchesRepositoryFilter(repoFullName, auth.Repositories, auth.Owner);
+                        }
+                        return true;
+                    });
+                }
+            }
+
             const obj = (ctx as unknown as { Object?: Partial<MJIntegrationObjectEntity> }).Object;
             const nonIncrementalObjects = new Set(['releases', 'workflow_runs']);
             if (obj?.SupportsIncrementalSync === false || nonIncrementalObjects.has(ctx.ObjectName)) {
-                return result;
+                return { ...result, Records: records };
             }
+
             const watermarkField = obj?.IncrementalWatermarkField
                 || (ctx.ObjectName === 'commits' ? 'committed_at' : 'updated_at');
+
+            // Client-side watermark guard for endpoints like `/pulls` or `/orgs/{org}/repos` that ignore `?since=`
+            if (ctx.WatermarkValue) {
+                const minWatermark = ctx.WatermarkValue;
+                records = records.filter(rec => {
+                    const candidate = rec.Fields[watermarkField];
+                    return typeof candidate !== 'string' || candidate.length === 0 || candidate >= minWatermark;
+                });
+            }
+
             let maxWatermark = ctx.WatermarkValue ?? null;
-            for (const rec of result.Records) {
+            for (const rec of records) {
                 const candidate = rec.Fields[watermarkField];
                 if (typeof candidate === 'string' && candidate.length > 0) {
                     if (!maxWatermark || candidate > maxWatermark) {
@@ -601,7 +658,9 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
                     }
                 }
             }
-            return maxWatermark ? { ...result, NewWatermarkValue: maxWatermark } : result;
+            return maxWatermark
+                ? { ...result, Records: records, NewWatermarkValue: maxWatermark }
+                : { ...result, Records: records };
         } finally {
             this.currentWatermark = null;
         }
@@ -688,10 +747,18 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
             return null;
         }
         if (response.Status >= 200 && response.Status < 300 && isRecord(response.Body)) {
+            const transformed = this.TransformRecord(
+                response.Body,
+                { Name: ctx.ObjectName } as MJIntegrationObjectEntity,
+                []
+            );
+            const externalId = ctx.ObjectName === 'repositories'
+                ? String(transformed['full_name'] ?? transformed['id'] ?? ctx.ExternalID)
+                : String(transformed['id'] ?? transformed['sha'] ?? ctx.ExternalID);
             return {
-                ExternalID: String(response.Body['id'] ?? response.Body['sha'] ?? ctx.ExternalID),
+                ExternalID: externalId,
                 ObjectType: ctx.ObjectName,
-                Fields: response.Body,
+                Fields: transformed,
             };
         }
         throw new Error(
@@ -713,8 +780,9 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         if (owner && fromAttrs) {
             return `${owner}/${fromAttrs}`;
         }
-        if (auth.Repositories && auth.Repositories.length > 0) {
-            return auth.Repositories[0];
+        const concreteRepo = firstConcreteRepository(auth.Repositories, auth.Owner);
+        if (concreteRepo) {
+            return concreteRepo;
         }
         throw new Error(
             'Repository full_name ("owner/repo") is required in record attributes or CompanyIntegration.Configuration.repositories.'
@@ -750,14 +818,19 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         attributes: Record<string, unknown>,
         auth: GitHubAuthContext
     ): string {
-        const fullName = this.ResolveRepositoryFullName(attributes, auth);
+        const parsed = parseCompositeExternalId(externalId);
+        const fullName = parsed.repoFullName ?? this.ResolveRepositoryFullName(attributes, auth);
         switch (objectName) {
-            case 'issues':
-                return `/repos/${fullName}/issues/${encodeURIComponent(externalId)}`;
-            case 'pull_requests':
-                return `/repos/${fullName}/pulls/${encodeURIComponent(externalId)}`;
+            case 'issues': {
+                const issueNumber = attributes['issue_number'] ?? attributes['number'] ?? parsed.itemId;
+                return `/repos/${fullName}/issues/${encodeURIComponent(String(issueNumber))}`;
+            }
+            case 'pull_requests': {
+                const pullNumber = attributes['pull_number'] ?? attributes['number'] ?? parsed.itemId;
+                return `/repos/${fullName}/pulls/${encodeURIComponent(String(pullNumber))}`;
+            }
             case 'issue_comments':
-                return `/repos/${fullName}/issues/comments/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/issues/comments/${encodeURIComponent(parsed.itemId)}`;
             default:
                 throw new Error(`Update operations are not supported for GitHub object "${objectName}".`);
         }
@@ -771,31 +844,33 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
         if (objectName === 'repositories' && externalId.includes('/')) {
             return `/repos/${externalId}`;
         }
-        const fullName = auth.Repositories?.[0];
+        const parsed = parseCompositeExternalId(externalId);
+        const fullName = parsed.repoFullName ?? firstConcreteRepository(auth.Repositories, auth.Owner);
         if (!fullName) {
             throw new Error(
-                `Single-record lookup for "${objectName}" requires a repository in CompanyIntegration.Configuration.repositories.`
+                `Single-record lookup for "${objectName}" requires a repository in CompanyIntegration.Configuration.repositories or composite ExternalID ("owner/repo#number").`
             );
         }
+        const itemId = parsed.itemId;
         switch (objectName) {
             case 'repositories':
                 return `/repos/${fullName}`;
             case 'issues':
-                return `/repos/${fullName}/issues/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/issues/${encodeURIComponent(itemId)}`;
             case 'issue_comments':
-                return `/repos/${fullName}/issues/comments/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/issues/comments/${encodeURIComponent(itemId)}`;
             case 'pull_requests':
-                return `/repos/${fullName}/pulls/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/pulls/${encodeURIComponent(itemId)}`;
             case 'pull_request_comments':
-                return `/repos/${fullName}/pulls/comments/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/pulls/comments/${encodeURIComponent(itemId)}`;
             case 'releases':
-                return `/repos/${fullName}/releases/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/releases/${encodeURIComponent(itemId)}`;
             case 'commits':
-                return `/repos/${fullName}/commits/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/commits/${encodeURIComponent(itemId)}`;
             case 'workflow_runs':
-                return `/repos/${fullName}/actions/runs/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/actions/runs/${encodeURIComponent(itemId)}`;
             default:
-                return `/repos/${fullName}/${objectName}/${encodeURIComponent(externalId)}`;
+                return `/repos/${fullName}/${objectName}/${encodeURIComponent(itemId)}`;
         }
     }
 
@@ -808,6 +883,8 @@ export class GitHubConnector extends BaseRESTIntegrationConnector {
             'owner',
             'owner_login',
             'issue_number',
+            'pull_number',
+            'number',
         ]);
         const payload: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(attributes)) {
@@ -895,6 +972,94 @@ function parseRepositoryList(raw: unknown): string[] | undefined {
         return list.length > 0 ? list : undefined;
     }
     return undefined;
+}
+
+/**
+ * Checks whether a repository `full_name` (`"owner/repo"`) matches the configured allowlist patterns.
+ * Supports exact `"owner/repo"`, wildcard `"owner/*"`, global `"*"`, and bare `"repo"` combined with `defaultOwner`.
+ */
+export function matchesRepositoryFilter(
+    fullName: string,
+    patterns: string[] | undefined,
+    defaultOwner?: string
+): boolean {
+    if (!patterns || patterns.length === 0) {
+        return true;
+    }
+    const normalizedTarget = fullName.trim().toLowerCase();
+    if (!normalizedTarget) {
+        return false;
+    }
+    const targetOwner = normalizedTarget.split('/')[0] ?? '';
+
+    for (const rawPattern of patterns) {
+        const pattern = rawPattern.trim().toLowerCase();
+        if (!pattern) continue;
+        if (pattern === '*' || pattern === '*/*') {
+            return true;
+        }
+        if (pattern.endsWith('/*')) {
+            const patternOwner = pattern.slice(0, -2);
+            if (targetOwner && targetOwner === patternOwner) {
+                return true;
+            }
+            continue;
+        }
+        if (pattern.includes('/')) {
+            if (normalizedTarget === pattern) {
+                return true;
+            }
+        } else if (defaultOwner) {
+            if (normalizedTarget === `${defaultOwner.trim().toLowerCase()}/${pattern}`) {
+                return true;
+            }
+        } else if (normalizedTarget.endsWith(`/${pattern}`)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function firstConcreteRepository(
+    repositories: string[] | undefined,
+    defaultOwner?: string
+): string | undefined {
+    if (!repositories) return undefined;
+    for (const raw of repositories) {
+        const entry = raw.trim();
+        if (!entry || entry === '*' || entry.endsWith('/*')) continue;
+        if (entry.includes('/')) {
+            return entry;
+        }
+        if (defaultOwner) {
+            return `${defaultOwner}/${entry}`;
+        }
+    }
+    return undefined;
+}
+
+function parseCompositeExternalId(externalId: string): { repoFullName?: string; itemId: string } {
+    const trimmed = externalId.trim();
+    const match = /^([^/#:]+\/[^/#:]+)[#:](.+)$/.exec(trimmed);
+    if (match?.[1] && match?.[2]) {
+        return { repoFullName: match[1], itemId: match[2] };
+    }
+    return { itemId: trimmed };
+}
+
+async function runBounded<T>(
+    items: T[],
+    concurrency: number,
+    worker: (item: T) => Promise<void>
+): Promise<void> {
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+        while (cursor < items.length) {
+            const idx = cursor++;
+            await worker(items[idx]);
+        }
+    });
+    await Promise.all(workers);
 }
 
 function normalizeApiBaseUrl(url: string): string {

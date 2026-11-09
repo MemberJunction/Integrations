@@ -187,7 +187,7 @@ BEGIN
   p_SupportsIncrementalSync_fbc5dc97 := TRUE;
   p_SupportsWrite_fbc5dc97 := TRUE;
   p_DefaultQueryParams_fbc5dc97 := '{"state":"all","sort":"updated","direction":"asc"}';
-  p_Configuration_fbc5dc97 := '{"apiPath":"/repos/{full_name}/issues","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}';
+  p_Configuration_fbc5dc97 := '{"apiPath":"/repos/{full_name}/issues","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}';
   p_Sequence_fbc5dc97 := 2;
   p_Status_fbc5dc97 := 'Active';
   p_WriteAPIPath_fbc5dc97 := '/repos/{full_name}/issues';
@@ -255,7 +255,7 @@ BEGIN
   p_SupportsIncrementalSync_3abee6b9 := TRUE;
   p_SupportsWrite_3abee6b9 := TRUE;
   p_DefaultQueryParams_3abee6b9 := '{"sort":"updated","direction":"asc"}';
-  p_Configuration_3abee6b9 := '{"apiPath":"/repos/{full_name}/issues/comments","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}';
+  p_Configuration_3abee6b9 := '{"apiPath":"/repos/{full_name}/issues/comments","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}';
   p_Sequence_3abee6b9 := 3;
   p_Status_3abee6b9 := 'Active';
   p_WriteAPIPath_3abee6b9 := '/repos/{full_name}/issues/{issue_number}/comments';
@@ -322,8 +322,8 @@ BEGIN
   p_PaginationType_cc96db7f := 'PageNumber';
   p_SupportsIncrementalSync_cc96db7f := TRUE;
   p_SupportsWrite_cc96db7f := TRUE;
-  p_DefaultQueryParams_cc96db7f := '{"state":"all","sort":"updated","direction":"desc"}';
-  p_Configuration_cc96db7f := '{"apiPath":"/repos/{full_name}/pulls","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}';
+  p_DefaultQueryParams_cc96db7f := '{"state":"all","sort":"updated","direction":"asc"}';
+  p_Configuration_cc96db7f := '{"apiPath":"/repos/{full_name}/pulls","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}';
   p_Sequence_cc96db7f := 4;
   p_Status_cc96db7f := 'Active';
   p_WriteAPIPath_cc96db7f := '/repos/{full_name}/pulls';
@@ -391,7 +391,7 @@ BEGIN
   p_SupportsIncrementalSync_50f4698d := TRUE;
   p_SupportsWrite_50f4698d := FALSE;
   p_DefaultQueryParams_50f4698d := '{"sort":"updated","direction":"asc"}';
-  p_Configuration_50f4698d := '{"apiPath":"/repos/{full_name}/pulls/comments","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"updated_at"}';
+  p_Configuration_50f4698d := '{"apiPath":"/repos/{full_name}/pulls/comments","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"updated_at"}';
   p_Sequence_50f4698d := 5;
   p_Status_50f4698d := 'Active';
   p_WriteMethod_50f4698d := 'POST';
@@ -453,7 +453,7 @@ BEGIN
   p_PaginationType_a5bea83b := 'PageNumber';
   p_SupportsIncrementalSync_a5bea83b := FALSE;
   p_SupportsWrite_a5bea83b := FALSE;
-  p_Configuration_a5bea83b := '{"apiPath":"/repos/{full_name}/releases","parentObjectName":"repositories","parentKeyField":"full_name"}';
+  p_Configuration_a5bea83b := '{"apiPath":"/repos/{full_name}/releases","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name"}';
   p_Sequence_a5bea83b := 6;
   p_Status_a5bea83b := 'Active';
   p_WriteMethod_a5bea83b := 'POST';
@@ -514,7 +514,7 @@ BEGIN
   p_PaginationType_7ed04f23 := 'PageNumber';
   p_SupportsIncrementalSync_7ed04f23 := TRUE;
   p_SupportsWrite_7ed04f23 := FALSE;
-  p_Configuration_7ed04f23 := '{"apiPath":"/repos/{full_name}/commits","parentObjectName":"repositories","parentKeyField":"full_name","watermark":"committed_at"}';
+  p_Configuration_7ed04f23 := '{"apiPath":"/repos/{full_name}/commits","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name","watermark":"committed_at"}';
   p_Sequence_7ed04f23 := 7;
   p_Status_7ed04f23 := 'Active';
   p_WriteMethod_7ed04f23 := 'POST';
@@ -577,7 +577,7 @@ BEGIN
   p_PaginationType_b603dcd7 := 'PageNumber';
   p_SupportsIncrementalSync_b603dcd7 := FALSE;
   p_SupportsWrite_b603dcd7 := FALSE;
-  p_Configuration_b603dcd7 := '{"apiPath":"/repos/{full_name}/actions/runs","parentObjectName":"repositories","parentKeyField":"full_name"}';
+  p_Configuration_b603dcd7 := '{"apiPath":"/repos/{full_name}/actions/runs","parentObjectName":"repositories","parentObjectIDFieldName":"repository_full_name"}';
   p_Sequence_b603dcd7 := 8;
   p_Status_b603dcd7 := 'Active';
   p_WriteMethod_b603dcd7 := 'POST';
@@ -625,7 +625,7 @@ BEGIN
   p_Description_eecc18e8 := 'Unique numeric GitHub repository ID.';
   p_Type_eecc18e8 := 'bigint';
   p_AllowsNull_eecc18e8 := FALSE;
-  p_IsPrimaryKey_eecc18e8 := TRUE;
+  p_IsPrimaryKey_eecc18e8 := FALSE;
   p_IsUniqueKey_eecc18e8 := TRUE;
   p_IsReadOnly_eecc18e8 := TRUE;
   p_IsRequired_eecc18e8 := TRUE;
@@ -761,9 +761,9 @@ BEGIN
   p_DisplayName_ae640a4d := 'Full Name';
   p_Description_ae640a4d := 'Repository owner and name in owner/repo format.';
   p_Type_ae640a4d := 'string';
-  p_Length_ae640a4d := 512;
+  p_Length_ae640a4d := 450;
   p_AllowsNull_ae640a4d := FALSE;
-  p_IsPrimaryKey_ae640a4d := FALSE;
+  p_IsPrimaryKey_ae640a4d := TRUE;
   p_IsUniqueKey_ae640a4d := TRUE;
   p_IsReadOnly_ae640a4d := TRUE;
   p_IsRequired_ae640a4d := TRUE;

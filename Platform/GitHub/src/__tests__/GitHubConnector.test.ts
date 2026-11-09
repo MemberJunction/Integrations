@@ -9,6 +9,7 @@ import {
     GitHubConnector,
     parseNextLinkHeader,
     createGitHubAppJwt,
+    matchesRepositoryFilter,
     DEFAULT_GITHUB_API_BASE_URL,
     GITHUB_API_VERSION,
     type GitHubAuthContext,
@@ -102,6 +103,9 @@ class TestableGitHubConnector extends GitHubConnector {
             Headers: { 'x-github-api-version': GITHUB_API_VERSION },
         };
         this.lastResponseHeaders = next.Headers;
+        if (typeof next.Body === 'object' && next.Body !== null) {
+            this.responseHeadersByBody.set(next.Body, next.Headers);
+        }
         return next;
     }
 }
@@ -215,6 +219,29 @@ describe('GitHubConnector', () => {
         it('throws a clear error when neither token nor GitHub App credentials are provided', async () => {
             const ci = makeCompanyIntegration({ Configuration: {} });
             await expect(connector.exposeAuthenticate(ci, mockUser)).rejects.toThrow(/GitHub credentials require/);
+        });
+
+        it('reads defaultOwner and allowedRepositories from MJ credential schema keys and matches repo filters', async () => {
+            const ci = makeCompanyIntegration({
+                Configuration: {
+                    token: 'ghp_schema_aligned',
+                    defaultOwner: 'MemberJunction',
+                    allowedRepositories: 'MemberJunction/MJ, MemberJunction/Integrations, OtherOrg/*',
+                },
+            });
+
+            const auth = await connector.exposeAuthenticate(ci, mockUser);
+            expect(auth.Owner).toBe('MemberJunction');
+            expect(auth.Repositories).toEqual([
+                'MemberJunction/MJ',
+                'MemberJunction/Integrations',
+                'OtherOrg/*',
+            ]);
+
+            expect(matchesRepositoryFilter('MemberJunction/MJ', auth.Repositories, auth.Owner)).toBe(true);
+            expect(matchesRepositoryFilter('MemberJunction/OtherRepo', auth.Repositories, auth.Owner)).toBe(false);
+            expect(matchesRepositoryFilter('OtherOrg/AnyRepo', auth.Repositories, auth.Owner)).toBe(true);
+            expect(matchesRepositoryFilter('MemberJunction/MJ', ['MJ'], 'MemberJunction')).toBe(true);
         });
     });
 
@@ -398,6 +425,69 @@ describe('GitHubConnector', () => {
             expect(connector.recordedRequests[1]?.url).toBe(
                 'https://api.github.com/repos/MemberJunction/Integrations/issues/42'
             );
+        });
+
+        it('supports composite ExternalID ("owner/repo#number") and attributes.number on UpdateRecord and flattens GetRecord', async () => {
+            const ci = makeCompanyIntegration({
+                Configuration: {
+                    token: 'ghp_valid',
+                    allowedRepositories: 'MemberJunction/MJ',
+                },
+            });
+
+            // 1. UpdateRecord when ExternalID is numeric database id and issue number is in Attributes
+            connector.mockResponses.push({
+                Status: 200,
+                Body: { id: 99901, number: 491, state: 'open' },
+                Headers: {},
+            });
+
+            const updateByAttrNumber = await connector.UpdateRecord({
+                CompanyIntegration: ci,
+                ObjectName: 'pull_requests',
+                ExternalID: '99901',
+                Attributes: {
+                    repository_full_name: 'MemberJunction/Integrations',
+                    number: 491,
+                    title: 'feat(github): ready for review',
+                },
+                ContextUser: mockUser,
+            });
+            expect(updateByAttrNumber.Success).toBe(true);
+            expect(connector.recordedRequests[0]?.url).toBe(
+                'https://api.github.com/repos/MemberJunction/Integrations/pulls/491'
+            );
+            expect(connector.recordedRequests[0]?.body).toEqual({
+                title: 'feat(github): ready for review',
+            });
+
+            // 2. GetRecord with composite "owner/repo#number" flattens nested fields via TransformRecord
+            connector.mockResponses.push({
+                Status: 200,
+                Body: {
+                    id: 5001,
+                    number: 491,
+                    html_url: 'https://github.com/MemberJunction/Integrations/pull/491',
+                    user: { login: 'AN-BC', id: 97354817 },
+                    head: { ref: 'feat/github-integration-connector', sha: 'abc1234' },
+                    base: { ref: 'next', sha: 'def5678' },
+                },
+                Headers: {},
+            });
+
+            const fetchedPr = await connector.GetRecord({
+                CompanyIntegration: ci,
+                ObjectName: 'pull_requests',
+                ExternalID: 'MemberJunction/Integrations#491',
+                ContextUser: mockUser,
+            });
+            expect(connector.recordedRequests[1]?.url).toBe(
+                'https://api.github.com/repos/MemberJunction/Integrations/pulls/491'
+            );
+            expect(fetchedPr?.ExternalID).toBe('5001');
+            expect(fetchedPr?.Fields['author_login']).toBe('AN-BC');
+            expect(fetchedPr?.Fields['head_ref']).toBe('feat/github-integration-connector');
+            expect(fetchedPr?.Fields['repository_full_name']).toBe('MemberJunction/Integrations');
         });
     });
 });
