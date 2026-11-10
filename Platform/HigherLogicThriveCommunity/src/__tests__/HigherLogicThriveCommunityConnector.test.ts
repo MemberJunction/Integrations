@@ -14,7 +14,14 @@ import type {
     MJIntegrationObjectEntity,
     MJIntegrationObjectFieldEntity,
 } from '@memberjunction/core-entities';
-import { HigherLogicThriveCommunityConnector } from '../HigherLogicThriveCommunityConnector.js';
+import {
+    HigherLogicThriveCommunityConnector,
+    parseWindowCursor,
+    formatWindowCursor,
+    initialDateWindow,
+    nextDateWindow,
+    bisectDateWindow,
+} from '../HigherLogicThriveCommunityConnector.js';
 
 // ─── Fixtures (synthetic, credential-free, read-only) ──────────────────────
 // Payloads shaped after the documented Higher Logic HelpPage response envelopes: a BARE array
@@ -90,6 +97,7 @@ function makeIOF(over: Partial<MJIntegrationObjectFieldEntity> & { Name: string 
 class MockedHLTConnector extends HigherLogicThriveCommunityConnector {
     public Captured: CapturedRequest[] = [];
     public Responses: RESTResponse[] = [];
+    public Sleeps: number[] = [];
     public IOFixtures = new Map<string, MJIntegrationObjectEntity>();
     public IOFFixtures = new Map<string, MJIntegrationObjectFieldEntity[]>();
     public SmallPages = false;
@@ -105,6 +113,10 @@ class MockedHLTConnector extends HigherLogicThriveCommunityConnector {
         const next = this.Responses.shift();
         if (!next) throw new Error(`MockedHLTConnector: no canned response queued for ${method} ${url}`);
         return next;
+    }
+
+    protected override async Sleep(ms: number): Promise<void> {
+        this.Sleeps.push(ms);
     }
 
     protected override GetCachedObject(_integrationID: string, objectName: string): MJIntegrationObjectEntity {
@@ -782,3 +794,353 @@ describe('Capabilities and sync-efficiency hooks', () => {
         expect(c.RateLimitPolicy?.TokensPerSec).toBe(3);
     });
 });
+
+describe('Opt-in Private Messaging & Friends (includePrivateSocialObjects)', () => {
+    function seedSocialConnector(): MockedHLTConnector {
+        const c = new MockedHLTConnector();
+        c.IOFixtures.set('InboxMessages', makeIO({
+            ID: 'io-inbox', Name: 'InboxMessages', APIPath: '/v2.0/Messaging/GetInboxMessages',
+            SupportsPagination: true, PaginationType: 'Offset',
+            Configuration: JSON.stringify({
+                optInGroup: 'PrivateSocialObjects',
+                optInRequired: true,
+                paginationDetail: { type: 'Offset', params: ['firstRecord', 'maxRecords'] },
+            }),
+        }));
+        c.IOFFixtures.set('io-inbox', [makeIOF({ Name: 'MessageId', IsPrimaryKey: true })]);
+
+        c.IOFixtures.set('SentMessages', makeIO({
+            ID: 'io-sent', Name: 'SentMessages', APIPath: '/v2.0/Messaging/GetSentMessages',
+            SupportsPagination: true, PaginationType: 'Offset',
+            Configuration: JSON.stringify({
+                optInGroup: 'PrivateSocialObjects',
+                optInRequired: true,
+                paginationDetail: { type: 'Offset', params: ['firstRecord', 'maxRecords'] },
+            }),
+        }));
+        c.IOFFixtures.set('io-sent', [makeIOF({ Name: 'MessageId', IsPrimaryKey: true })]);
+
+        c.IOFixtures.set('Friends', makeIO({
+            ID: 'io-friends', Name: 'Friends', APIPath: '/v2.0/Friends/GetFriends',
+            SupportsPagination: false, PaginationType: 'None',
+            Configuration: JSON.stringify({ optInGroup: 'PrivateSocialObjects', optInRequired: true }),
+        }));
+        c.IOFFixtures.set('io-friends', [makeIOF({ Name: 'ContactKey', IsPrimaryKey: true })]);
+
+        c.IOFixtures.set('FriendRequests', makeIO({
+            ID: 'io-freq', Name: 'FriendRequests', APIPath: '/v2.0/Friends/GetFriendRequestsReceived',
+            SupportsPagination: false, PaginationType: 'None',
+            Configuration: JSON.stringify({
+                optInGroup: 'PrivateSocialObjects',
+                optInRequired: true,
+                secondaryAPIPath: '/v2.0/Friends/GetFriendRequestsSent',
+            }),
+        }));
+        c.IOFFixtures.set('io-freq', [makeIOF({ Name: 'FriendRequestId', IsPrimaryKey: true })]);
+        return c;
+    }
+
+    it('returns an explicit OPT_IN_DISABLED warning and zero records when includePrivateSocialObjects is false/omitted', async () => {
+        const c = seedSocialConnector();
+        for (const objName of ['InboxMessages', 'SentMessages', 'Friends', 'FriendRequests']) {
+            const res = await c.FetchChanges({
+                CompanyIntegration: ciWithToken(),
+                ObjectName: objName,
+                WatermarkValue: null,
+                BatchSize: 100,
+                ContextUser: user,
+            } as unknown as FetchContext);
+            expect(res.Records).toHaveLength(0);
+            expect(res.HasMore).toBe(false);
+            expect(res.Warnings?.[0]?.Code).toBe('OPT_IN_DISABLED');
+            expect(res.Warnings?.[0]?.Message).toContain('includePrivateSocialObjects');
+        }
+        expect(c.Captured).toHaveLength(0);
+    });
+
+    it('fetches InboxMessages with query-offset pagination (firstRecord=0&maxRecords=20) when includePrivateSocialObjects is true', async () => {
+        const c = seedSocialConnector();
+        c.Responses.push(ok([
+            { MessageId: 'MSG-101', Subject: 'Welcome!', SenderContactKey: 'C-1', RecipientContactKey: 'C-2', SentOn: '2026-04-01T10:00:00Z' },
+            { MessageId: 'MSG-102', Subject: 'Follow up', SenderContactKey: 'C-3', RecipientContactKey: 'C-2', SentOn: '2026-04-02T10:00:00Z' },
+        ]));
+        const res = await c.FetchChanges({
+            CompanyIntegration: ciWithToken({ includePrivateSocialObjects: true }),
+            ObjectName: 'InboxMessages',
+            WatermarkValue: null,
+            BatchSize: 20,
+            ContextUser: user,
+        } as unknown as FetchContext);
+        expect(res.Records).toHaveLength(2);
+        expect(res.Records[0].ExternalID).toBe('MSG-101');
+        expect(res.Records[0].Fields.Subject).toBe('Welcome!');
+        expect(c.Captured[0].method).toBe('GET');
+        expect(c.Captured[0].url).toBe('https://api.connectedcommunity.org/api/v2.0/Messaging/GetInboxMessages?firstRecord=0&maxRecords=20');
+    });
+
+    it('advances query-offset pagination across pages of SentMessages', async () => {
+        const c = seedSocialConnector();
+        c.SmallPages = true;
+        c.Responses.push(
+            ok([{ MessageId: 'S-1', Subject: 'A' }, { MessageId: 'S-2', Subject: 'B' }]),
+            ok([{ MessageId: 'S-3', Subject: 'C' }]),
+        );
+        const res = await c.FetchChanges({
+            CompanyIntegration: ciWithToken({ includePrivateSocialObjects: true }),
+            ObjectName: 'SentMessages',
+            WatermarkValue: null,
+            BatchSize: 10,
+            ContextUser: user,
+        } as unknown as FetchContext);
+        expect(res.Records).toHaveLength(3);
+        expect(c.Captured[0].url).toContain('firstRecord=0&maxRecords=2');
+        expect(c.Captured[1].url).toContain('firstRecord=2&maxRecords=2');
+        expect(res.HasMore).toBe(false);
+    });
+
+    it('fetches Friends as a single-call list when includePrivateSocialObjects is true', async () => {
+        const c = seedSocialConnector();
+        c.Responses.push(ok([
+            { ContactKey: 'FR-1', FirstName: 'Ada', LastName: 'Lovelace', EmailAddress: 'ada@example.org' },
+        ]));
+        const res = await c.FetchChanges({
+            CompanyIntegration: ciWithToken({ includePrivateSocialObjects: true }),
+            ObjectName: 'Friends',
+            WatermarkValue: null,
+            BatchSize: 100,
+            ContextUser: user,
+        } as unknown as FetchContext);
+        expect(res.Records).toHaveLength(1);
+        expect(res.Records[0].ExternalID).toBe('FR-1');
+        expect(res.HasMore).toBe(false);
+        expect(c.Captured[0].url).toBe('https://api.connectedcommunity.org/api/v2.0/Friends/GetFriends');
+    });
+
+    it('merges GetFriendRequestsReceived and GetFriendRequestsSent with Direction discriminator for FriendRequests', async () => {
+        const c = seedSocialConnector();
+        c.Responses.push(
+            ok([{ FriendRequestId: 'REQ-IN-1', RequestorContactKey: 'C-10', RecipientContactKey: 'C-20' }]),
+            ok([{ FriendRequestId: 'REQ-OUT-2', RequestorContactKey: 'C-20', RecipientContactKey: 'C-30' }]),
+        );
+        const res = await c.FetchChanges({
+            CompanyIntegration: ciWithToken({
+                includePrivateSocialObjects: true,
+            }),
+            ObjectName: 'FriendRequests',
+            WatermarkValue: null,
+            BatchSize: 100,
+            ContextUser: user,
+        } as unknown as FetchContext);
+        expect(res.Records).toHaveLength(2);
+        expect(res.Records[0].ExternalID).toBe('REQ-IN-1');
+        expect(res.Records[0].Fields.Direction).toBe('Received');
+        expect(res.Records[1].ExternalID).toBe('REQ-OUT-2');
+        expect(res.Records[1].Fields.Direction).toBe('Sent');
+        expect(c.Captured[0].url).toContain('/v2.0/Friends/GetFriendRequestsReceived');
+        expect(c.Captured[1].url).toContain('/v2.0/Friends/GetFriendRequestsSent');
+    });
+});
+
+describe('Metered migration pacing (migrationPacing)', () => {
+    it('dynamically reflects migrationPacing in RateLimitPolicy, MaxConcurrencyHint, and inter-request Sleep', async () => {
+        const c = new MockedHLTConnector();
+        c.SmallPages = true;
+        c.IOFixtures.set('Contacts', makeIO({
+            ID: 'io-contacts', Name: 'Contacts', APIPath: '/v2.0/Contacts/GetMyContactsPage',
+            SupportsPagination: true, PaginationType: 'Cursor',
+            Configuration: JSON.stringify({ paginationDetail: { type: 'Cursor', params: ['afterContactKey', 'beforeContactKey', 'limit'] } }),
+        }));
+        c.IOFFixtures.set('io-contacts', [makeIOF({ Name: 'ContactKey', IsPrimaryKey: true })]);
+        c.Responses.push(
+            ok({ Contacts: [{ ContactKey: 'c1' }, { ContactKey: 'c2' }] }),
+            ok({ Contacts: [{ ContactKey: 'c3' }] }),
+        );
+
+        await c.FetchChanges({
+            CompanyIntegration: ciWithToken({
+                migrationPacing: {
+                    tokensPerSec: 1.5,
+                    burst: 3,
+                    maxConcurrency: 1,
+                    minDelayBetweenRequestsMs: 250,
+                },
+            }),
+            ObjectName: 'Contacts',
+            WatermarkValue: null,
+            BatchSize: 100,
+            ContextUser: user,
+        } as unknown as FetchContext);
+
+        expect(c.RateLimitPolicy).toEqual({ TokensPerSec: 1.5, Burst: 3 });
+        expect(c.MaxConcurrencyHint).toBe(1);
+        expect(c.Sleeps).toEqual([250]);
+    });
+});
+
+describe('Sliding date-window & adaptive bisection (WindowCursor)', () => {
+    it('serializes and parses v1 WindowCursor losslessly', () => {
+        const cursor = {
+            Today: '2026-04-20',
+            From: '2025-01-01',
+            To: '2025-01-31',
+            InnerPos: '100',
+            ScopeKey: 'LIB-1',
+        };
+        const formatted = formatWindowCursor(cursor);
+        expect(formatted).toBe('v1|2026-04-20|2025-01-01|2025-01-31|100|LIB-1');
+        expect(parseWindowCursor(formatted)).toEqual(cursor);
+        expect(nextDateWindow({ From: '2025-01-01', To: '2025-01-31' }, { windowDays: 10 }, '2026-04-20')).toEqual({
+            From: '2025-02-01',
+            To: '2025-02-10',
+        });
+    });
+
+    it('bisects a date window in half when an endpoint hits its response cap', () => {
+        const win = initialDateWindow({ startDate: '2025-01-01', windowDays: 30 }, null, '2026-04-20');
+        expect(win).toEqual({ From: '2025-01-01', To: '2025-01-30' });
+        const bisected = bisectDateWindow(win);
+        expect(bisected).not.toBeNull();
+        expect(bisected!.From).toBe('2025-01-01');
+        expect(bisected!.To).toBe('2025-01-14');
+    });
+
+    it('walks Events forward across date windows and checkpoints NewWatermarkValue per window', async () => {
+        const c = new MockedHLTConnector();
+        c.IOFixtures.set('Events', makeIO({
+            ID: 'io-ev', Name: 'Events', APIPath: '/v2.0/Events/GetCalendarEvents',
+            SupportsPagination: false, PaginationType: 'None', SupportsIncrementalSync: true,
+            IncrementalWatermarkField: 'ChangedSince',
+        }));
+        c.IOFFixtures.set('io-ev', [makeIOF({ Name: 'EventKey', IsPrimaryKey: true })]);
+
+        const customCi = ciWithToken({
+            dateWindowing: {
+                Events: {
+                    startDate: '2026-01-01',
+                    windowDays: 10,
+                    capLimit: 5,
+                    capThreshold: 5,
+                },
+            },
+            migrationPacing: {
+                maxWindowsPerRun: 1,
+                checkpointPerWindow: true,
+            },
+        });
+
+        c.Responses.push(ok([
+            { EventKey: 'EV-1', Title: 'Jan Kickoff', StartTime: '2026-01-05T14:00:00Z' },
+        ]));
+
+        // Pass an initial cursor pinned to 2026-01-20 so the test is deterministic regardless of wall clock
+        const initialCur = formatWindowCursor({
+            Today: '2026-01-20',
+            From: '2026-01-01',
+            To: '2026-01-10',
+            InnerPos: '0',
+            ScopeKey: '',
+        });
+
+        const res1 = await c.FetchChanges({
+            CompanyIntegration: customCi,
+            ObjectName: 'Events',
+            WatermarkValue: null,
+            CurrentCursor: initialCur,
+            BatchSize: 100,
+            ContextUser: user,
+        } as unknown as FetchContext);
+
+        expect(res1.Records).toHaveLength(1);
+        expect(res1.Records[0].ExternalID).toBe('EV-1');
+        expect(res1.HasMore).toBe(true);
+        expect(res1.NextCursor).toBe('v1|2026-01-20|2026-01-11|2026-01-20|0|');
+        expect(res1.NewWatermarkValue).toBe('2026-01-10');
+        expect(c.Captured[0].url).toBe('https://api.connectedcommunity.org/api/v2.0/Events/SearchEvents');
+        expect(c.Captured[0].body).toEqual({
+            StartDate: '2026-01-01',
+            EndDate: '2026-01-10',
+            MaxRecords: 5,
+        });
+
+        // Second call resumes from NextCursor and completes the final window [2026-01-11, 2026-01-20]
+        c.Responses.push(ok([
+            { EventKey: 'EV-2', Title: 'Mid-Jan Townhall', StartTime: '2026-01-15T14:00:00Z' },
+        ]));
+        const res2 = await c.FetchChanges({
+            CompanyIntegration: customCi,
+            ObjectName: 'Events',
+            WatermarkValue: res1.NewWatermarkValue ?? null,
+            CurrentCursor: res1.NextCursor,
+            BatchSize: 100,
+            ContextUser: user,
+        } as unknown as FetchContext);
+        expect(res2.Records).toHaveLength(1);
+        expect(res2.Records[0].ExternalID).toBe('EV-2');
+        expect(res2.HasMore).toBe(false);
+        expect(res2.NewWatermarkValue).toBe('2026-01-20');
+    });
+
+    it('bisects Events date window automatically when response count >= capThreshold', async () => {
+        const c = new MockedHLTConnector();
+        c.IOFixtures.set('Events', makeIO({
+            ID: 'io-ev', Name: 'Events', APIPath: '/v2.0/Events/GetCalendarEvents',
+            SupportsPagination: false, PaginationType: 'None',
+        }));
+        c.IOFFixtures.set('io-ev', [makeIOF({ Name: 'EventKey', IsPrimaryKey: true })]);
+
+        const customCi = ciWithToken({
+            dateWindowing: {
+                Events: {
+                    startDate: '2026-01-01',
+                    windowDays: 20,
+                    capLimit: 2,
+                    capThreshold: 2,
+                },
+            },
+            migrationPacing: {
+                checkpointPerWindow: true,
+            },
+        });
+
+        // First call returns 2 items (== capThreshold) → triggers bisection into [2026-01-01, 2026-01-09]
+        // Second call returns 1 item (< capThreshold) for [2026-01-01, 2026-01-09]
+        c.Responses.push(
+            ok([{ EventKey: 'EV-1', Title: 'E1' }, { EventKey: 'EV-2', Title: 'E2' }]),
+            ok([{ EventKey: 'EV-1', Title: 'E1' }]),
+        );
+
+        const initialCur = formatWindowCursor({
+            Today: '2026-01-20',
+            From: '2026-01-01',
+            To: '2026-01-20',
+            InnerPos: '0',
+            ScopeKey: '',
+        });
+
+        const res = await c.FetchChanges({
+            CompanyIntegration: customCi,
+            ObjectName: 'Events',
+            WatermarkValue: null,
+            CurrentCursor: initialCur,
+            BatchSize: 100,
+            ContextUser: user,
+        } as unknown as FetchContext);
+
+        expect(c.Captured).toHaveLength(2);
+        expect(c.Captured[0].body).toEqual({
+            StartDate: '2026-01-01',
+            EndDate: '2026-01-20',
+            MaxRecords: 2,
+        });
+        expect(c.Captured[1].body).toEqual({
+            StartDate: '2026-01-01',
+            EndDate: '2026-01-09',
+            MaxRecords: 2,
+        });
+        expect(res.Warnings?.[0]?.Code).toBe('WINDOW_BISECTED');
+        expect(res.Records).toHaveLength(1);
+        expect(res.HasMore).toBe(true);
+    });
+});
+
+

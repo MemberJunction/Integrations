@@ -101,6 +101,10 @@ const MAX_INLINE_RETRY_WAIT_MS = 60_000;
 const FETCH_CHANGES_TIMEOUT_MS = 300_000;
 const SAMPLING_CONCURRENCY = 4;
 const ERROR_PREVIEW_CHARS = 300;
+const DEFAULT_COLD_START_DATE = '2010-01-01';
+const DEFAULT_WINDOW_DAYS = 30;
+const MS_PER_DAY = 86_400_000;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // ─── Metadata shapes (Zod) ────────────────────────────────────────────────────────────────────────
 // A malformed individual key degrades to `undefined` (`.catch`) instead of discarding the whole blob.
@@ -256,6 +260,99 @@ interface GridCondition {
 interface InformzCallScope {
     Plan: InformzGridPlan;
     Conditions: GridCondition[];
+    Pacing?: InformzMigrationPacing | null;
+    RequestsMade?: number;
+}
+
+/** Metered migration pacing & run-budget configuration (`CompanyIntegration.Configuration.migrationPacing`). */
+export interface InformzMigrationPacing {
+    tokensPerSec?: number;
+    burst?: number;
+    maxConcurrency?: number;
+    minDelayBetweenRequestsMs?: number;
+    maxRequestsPerRun?: number;
+    maxWindowsPerRun?: number;
+    checkpointPerWindow?: boolean;
+}
+
+/** Per-grid or global sliding date-window configuration for Informz AAPI `<Conditions>`. */
+export interface InformzDateWindowConfig {
+    startDate?: string;
+    windowDays?: number;
+    lookbackDays?: number;
+    upperComparator?: string;
+}
+
+/** Inclusive `[From, To]` ISO `YYYY-MM-DD` date window. */
+export interface InformzDateWindow {
+    From: string;
+    To: string;
+}
+
+/** Composite cursor `v1|<Today>|<From>|<To>|<StartRow>|<ScopeKey>` for resumable bounded-window AAPI grid harvests. */
+export interface InformzWindowCursor {
+    Today: string;
+    From: string;
+    To: string;
+    StartRow: number;
+    ScopeKey: string;
+}
+
+export function addInformzDays(iso: string, days: number): string {
+    const base = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
+    if (Number.isNaN(base)) return iso;
+    return new Date(base + days * MS_PER_DAY).toISOString().slice(0, 10);
+}
+
+export function initialInformzDateWindow(
+    cfg: InformzDateWindowConfig,
+    watermark: string | null | undefined,
+    today: string,
+): InformzDateWindow {
+    const startFloor = cfg.startDate && ISO_DATE_RE.test(cfg.startDate.slice(0, 10))
+        ? cfg.startDate.slice(0, 10)
+        : DEFAULT_COLD_START_DATE;
+    const lookback = Math.max(0, cfg.lookbackDays ?? 0);
+    const windowDays = Math.max(1, cfg.windowDays ?? DEFAULT_WINDOW_DAYS);
+
+    let from = watermark && ISO_DATE_RE.test(watermark.slice(0, 10))
+        ? addInformzDays(watermark.slice(0, 10), -lookback)
+        : startFloor;
+    if (cfg.startDate && ISO_DATE_RE.test(cfg.startDate.slice(0, 10)) && cfg.startDate.slice(0, 10) > from) {
+        from = cfg.startDate.slice(0, 10);
+    }
+    if (from > today) from = today;
+    const candidateTo = addInformzDays(from, windowDays - 1);
+    const to = candidateTo < today ? candidateTo : today;
+    return { From: from, To: to };
+}
+
+export function nextInformzDateWindow(
+    current: InformzDateWindow,
+    cfg: InformzDateWindowConfig,
+    today: string,
+): InformzDateWindow | null {
+    if (current.To >= today) return null;
+    const windowDays = Math.max(1, cfg.windowDays ?? DEFAULT_WINDOW_DAYS);
+    const from = addInformzDays(current.To, 1);
+    const candidateTo = addInformzDays(from, windowDays - 1);
+    const to = candidateTo < today ? candidateTo : today;
+    return { From: from, To: to };
+}
+
+export function formatInformzWindowCursor(c: InformzWindowCursor): string {
+    return ['v1', c.Today, c.From, c.To, String(Math.max(0, c.StartRow || 0)), c.ScopeKey || ''].join('|');
+}
+
+export function parseInformzWindowCursor(raw: string | null | undefined): InformzWindowCursor | null {
+    if (!raw || !raw.startsWith('v1|')) return null;
+    const parts = raw.split('|');
+    if (parts.length < 5) return null;
+    const [, today, from, to, startRowRaw, scopeKey = ''] = parts;
+    if (!ISO_DATE_RE.test(today) || !ISO_DATE_RE.test(from) || !ISO_DATE_RE.test(to)) return null;
+    const parsedRow = Number.parseInt(startRowRaw, 10);
+    const startRow = Number.isFinite(parsedRow) && parsedRow >= 0 ? parsedRow : 0;
+    return { Today: today, From: from, To: to, StartRow: startRow, ScopeKey: scopeKey };
 }
 
 interface GridPageRequest {
@@ -346,6 +443,9 @@ export class InformzConnector extends BaseRESTIntegrationConnector {
     /** Warnings already logged, so a long sync logs honestly rather than noisily. */
     private readonly warnedOnce = new Set<string>();
 
+    /** Active metered migration pacing for the current run. */
+    private activePacing: InformzMigrationPacing | null = null;
+
     /**
      * Namespace-agnostic, case-insensitive XML reader: prefixes are stripped and element/attribute
      * names lower-cased, values are kept as strings (no number coercion), and the standard-entity
@@ -410,6 +510,18 @@ export class InformzConnector extends BaseRESTIntegrationConnector {
     // on 5.x it is simply unused.
     public get FetchChangesTimeoutMs(): number | null {
         return FETCH_CHANGES_TIMEOUT_MS;
+    }
+
+    /** Conservative rate-limit policy for Informz AAPI; dynamically overridden by `migrationPacing`. */
+    public get RateLimitPolicy(): { TokensPerSec: number; Burst: number } | null {
+        const tokensPerSec = this.activePacing?.tokensPerSec ?? 2;
+        const burst = this.activePacing?.burst ?? 4;
+        return { TokensPerSec: tokensPerSec, Burst: burst };
+    }
+
+    /** Serializes large AAPI GridRequest queries by default; dynamically overridden by `migrationPacing.maxConcurrency`. */
+    public get MaxConcurrencyHint(): number {
+        return this.activePacing?.maxConcurrency ?? 2;
     }
 
     /** Reads `Retry-After` off an {@link InformzAPIError}; anything else → the standard reader. */
@@ -492,17 +604,194 @@ export class InformzConnector extends BaseRESTIntegrationConnector {
     /**
      * Resolves the object's grid plan, adds the incremental `<Condition>` when the object supports
      * incremental sync and a watermark is in play, runs the base read loop inside the call scope, and
-     * reports the max watermark seen. A failure anywhere in the batch throws, so no watermark is
-     * returned for a partial batch.
+     * reports the max watermark seen. When `dateWindowing` is configured (or a `v1|...` cursor is resumed)
+     * on an incremental grid, runs bounded `[windowFrom, windowTo]` two-condition slices so `StartRow`
+     * resets to `StartRowBase` on each window advance and avoids deep-offset SQL timeouts.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
         const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
+        const pacing = this.readMigrationPacing(ctx.CompanyIntegration);
+        this.activePacing = pacing;
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const plan = this.buildGridPlan(obj, auth);
-        const scope: InformzCallScope = { Plan: plan, Conditions: this.watermarkConditions(plan, ctx.WatermarkValue) };
+
+        const windowCfg = this.resolveDateWindowConfig(ctx.CompanyIntegration, obj.Name);
+        const resumedCursor = parseInformzWindowCursor(ctx.CurrentCursor) ?? parseInformzWindowCursor(ctx.WatermarkValue);
+        if (plan.Watermark && (windowCfg || resumedCursor)) {
+            return this.fetchDateWindowedChanges(ctx, plan, pacing, windowCfg ?? {}, resumedCursor);
+        }
+
+        const scope: InformzCallScope = {
+            Plan: plan,
+            Conditions: this.watermarkConditions(plan, ctx.WatermarkValue),
+            Pacing: pacing,
+            RequestsMade: 0,
+        };
         const batch = await this.callScope.run(scope, () => super.FetchChanges(ctx));
         const newWatermark = maxWatermark(plan, batch.Records);
         return newWatermark ? { ...batch, NewWatermarkValue: newWatermark } : batch;
+    }
+
+    /**
+     * Bounded date-window harvester (`v1|<Today>|<From>|<To>|<StartRow>|`) for Informz AAPI grids.
+     * Injects a two-sided `<Conditions>` pair (`GTE` on `window.From` and `LTE` on `window.To`) into each
+     * `GridRequest`, delegates inner page iteration to `super.FetchChanges`, and resets `StartRow` to
+     * `plan.StartRowBase` whenever a window completes.
+     */
+    private async fetchDateWindowedChanges(
+        ctx: FetchContext,
+        plan: InformzGridPlan,
+        pacing: InformzMigrationPacing | null,
+        windowCfg: InformzDateWindowConfig,
+        resumedCursor: InformzWindowCursor | null,
+    ): Promise<FetchBatchResult> {
+        const batchLimit = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : Number.MAX_SAFE_INTEGER;
+        const maxRequests = pacing?.maxRequestsPerRun && pacing.maxRequestsPerRun > 0
+            ? pacing.maxRequestsPerRun
+            : Number.MAX_SAFE_INTEGER;
+        const maxWindows = pacing?.maxWindowsPerRun && pacing.maxWindowsPerRun > 0
+            ? pacing.maxWindowsPerRun
+            : Number.MAX_SAFE_INTEGER;
+        const checkpointPerWindow = pacing?.checkpointPerWindow === true;
+
+        const today = resumedCursor?.Today ?? new Date().toISOString().slice(0, 10);
+        let window: InformzDateWindow = resumedCursor
+            ? { From: resumedCursor.From, To: resumedCursor.To }
+            : initialInformzDateWindow(windowCfg, ctx.WatermarkValue, today);
+        let startRow = resumedCursor?.StartRow ?? plan.StartRowBase;
+
+        const out: ExternalRecord[] = [];
+        let totalRequestsMade = 0;
+        let windowsCompleted = 0;
+        let lastCompletedWindowTo: string | null = null;
+        let hasMore = true;
+
+        while (hasMore && out.length < batchLimit) {
+            if (totalRequestsMade >= maxRequests || windowsCompleted >= maxWindows) {
+                break;
+            }
+            const remainingRows = Math.max(1, batchLimit - out.length);
+            const remainingReqs = Math.max(1, maxRequests - totalRequestsMade);
+            const perWindowCap = remainingReqs < Number.MAX_SAFE_INTEGER
+                ? Math.min(remainingRows, remainingReqs * Math.max(1, plan.PageSize))
+                : remainingRows;
+
+            const scope: InformzCallScope = {
+                Plan: plan,
+                Conditions: this.boundedWindowConditions(plan, window, windowCfg),
+                Pacing: pacing,
+                RequestsMade: totalRequestsMade,
+            };
+            const windowCtx: FetchContext = {
+                ...ctx,
+                CurrentOffset: startRow,
+                BatchSize: perWindowCap,
+            };
+            const windowBatch = await this.callScope.run(scope, () => super.FetchChanges(windowCtx));
+            totalRequestsMade = scope.RequestsMade ?? totalRequestsMade;
+            out.push(...windowBatch.Records);
+
+            if (windowBatch.HasMore) {
+                startRow = windowBatch.NextOffset ?? (startRow + windowBatch.Records.length);
+                break;
+            }
+
+            // Current date window [window.From, window.To] is completely drained!
+            lastCompletedWindowTo = window.To;
+            windowsCompleted++;
+            startRow = plan.StartRowBase;
+
+            const nextWin = nextInformzDateWindow(window, windowCfg, today);
+            if (nextWin) {
+                window = nextWin;
+                if (checkpointPerWindow) {
+                    break;
+                }
+            } else {
+                hasMore = false;
+                break;
+            }
+        }
+
+        const nextCursor = hasMore
+            ? formatInformzWindowCursor({ Today: today, From: window.From, To: window.To, StartRow: startRow, ScopeKey: '' })
+            : undefined;
+        const maxSeen = maxWatermark(plan, out);
+        const candidateWatermark = maxSeen ?? (lastCompletedWindowTo ? `${lastCompletedWindowTo}T23:59:59Z` : undefined);
+
+        return {
+            Records: out,
+            HasMore: hasMore,
+            NextCursor: nextCursor,
+            NextOffset: hasMore ? startRow : undefined,
+            NewWatermarkValue: (!hasMore || lastCompletedWindowTo !== null) ? candidateWatermark : undefined,
+        };
+    }
+
+    /**
+     * Builds two-sided `[window.From, window.To]` `<Condition>` entries (`GTE` + `LTE`) for bounded date-window harvesting.
+     */
+    private boundedWindowConditions(
+        plan: InformzGridPlan,
+        window: InformzDateWindow,
+        windowCfg: InformzDateWindowConfig,
+    ): GridCondition[] {
+        if (!plan.Watermark) return [];
+        const lowerIso = `${window.From.slice(0, 10)}T00:00:00Z`;
+        const upperIso = `${window.To.slice(0, 10)}T23:59:59Z`;
+        const lower: GridCondition = {
+            DataElement: plan.Watermark.Element,
+            Comparator: plan.Watermark.Comparator,
+            DataValue: this.formatWatermarkValue(lowerIso, plan.Watermark),
+        };
+        const upper: GridCondition = {
+            DataElement: plan.Watermark.Element,
+            Comparator: windowCfg.upperComparator ?? 'LTE',
+            DataValue: this.formatWatermarkValue(upperIso, plan.Watermark),
+        };
+        return [lower, upper];
+    }
+
+    private readMigrationPacing(companyIntegration: MJCompanyIntegrationEntity): InformzMigrationPacing | null {
+        const parsed = parseJSONObject(companyIntegration.Configuration);
+        const raw = parsed ? parsed.migrationPacing : undefined;
+        if (!isPlainObject(raw)) return null;
+        return {
+            tokensPerSec: typeof raw.tokensPerSec === 'number' ? raw.tokensPerSec : undefined,
+            burst: typeof raw.burst === 'number' ? raw.burst : undefined,
+            maxConcurrency: typeof raw.maxConcurrency === 'number' ? raw.maxConcurrency : undefined,
+            minDelayBetweenRequestsMs: typeof raw.minDelayBetweenRequestsMs === 'number' ? raw.minDelayBetweenRequestsMs : undefined,
+            maxRequestsPerRun: typeof raw.maxRequestsPerRun === 'number' ? raw.maxRequestsPerRun : undefined,
+            maxWindowsPerRun: typeof raw.maxWindowsPerRun === 'number' ? raw.maxWindowsPerRun : undefined,
+            checkpointPerWindow: raw.checkpointPerWindow === true || raw.checkpointPerWindow === 'true',
+        };
+    }
+
+    private resolveDateWindowConfig(
+        companyIntegration: MJCompanyIntegrationEntity,
+        objectName: string,
+    ): InformzDateWindowConfig | null {
+        const parsed = parseJSONObject(companyIntegration.Configuration);
+        if (!parsed) return null;
+        const globalStartDate = typeof parsed.startDate === 'string' ? parsed.startDate : undefined;
+        const globalWindowDays = typeof parsed.windowDays === 'number' ? parsed.windowDays : undefined;
+        const dw = parsed.dateWindowing;
+        let ciWin: Record<string, unknown> | null = null;
+        if (dw === true) {
+            ciWin = {};
+        } else if (isPlainObject(dw)) {
+            const perObj = dw[objectName];
+            if (perObj === true) ciWin = {};
+            else if (isPlainObject(perObj)) ciWin = perObj;
+            else if (dw.enabled === true) ciWin = dw;
+        }
+        if (!ciWin) return null;
+        return {
+            startDate: typeof ciWin.startDate === 'string' ? ciWin.startDate : globalStartDate,
+            windowDays: typeof ciWin.windowDays === 'number' ? ciWin.windowDays : globalWindowDays,
+            lookbackDays: typeof ciWin.lookbackDays === 'number' ? ciWin.lookbackDays : undefined,
+            upperComparator: typeof ciWin.upperComparator === 'string' ? ciWin.upperComparator : undefined,
+        };
     }
 
     /**
@@ -623,6 +912,12 @@ export class InformzConnector extends BaseRESTIntegrationConnector {
         if (!scope) {
             throw new InformzAPIError(`${LOG_PREFIX} a grid request was issued outside a FetchChanges / TestConnection / GetRecord scope.`, 'Protocol', null, {}, null);
         }
+        const requestsSoFar = scope.RequestsMade ?? 0;
+        const minDelayMs = scope.Pacing?.minDelayBetweenRequestsMs ?? 0;
+        if (requestsSoFar > 0 && minDelayMs > 0) {
+            await this.Sleep(minDelayMs);
+        }
+        scope.RequestsMade = requestsSoFar + 1;
         const target = splitGridURL(url, scope.Plan.APIPath);
         const envelope = this.buildEnvelope(context, scope, target.Page);
         const wire = await this.sendWithRetry(context, target.ServiceURL, headers, envelope, scope.Plan.GridType);

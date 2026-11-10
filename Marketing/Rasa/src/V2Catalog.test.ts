@@ -241,6 +241,18 @@ describe('keys (3.0.3)', () => {
         expect(all.get('Contact External Identifier')!.obj.SupportsPagination).toBe(true);
     });
 
+    it("reads every object's shipped configuration, a null watermarkParam included", async () => {
+        const c = new RasaConnector() as unknown as { ObjectConfig(obj: { Configuration: string }): Record<string, unknown> };
+        for (const { obj } of (await catalog()).values()) {
+            const shipped = obj.Configuration;
+            expect(c.ObjectConfig({ Configuration: JSON.stringify(shipped) }), obj.Name).toMatchObject({
+                pkField: shipped.pkField,
+                recordSchemas: shipped.recordSchemas,
+                watermarkParam: shipped.watermarkParam,
+            });
+        }
+    });
+
     it('describes every active column in rasa.io terms, with no generated filler', async () => {
         const filler = /^[^—]+ — .+ field '[^']+' \([^)]*\), rasa\.io v2\./;
         for (const { obj, fields } of (await catalog()).values()) {

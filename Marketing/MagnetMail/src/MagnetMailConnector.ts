@@ -49,6 +49,7 @@ import {
     type ConnectionTestResult,
     type FetchContext,
     type FetchBatchResult,
+    type FetchWarning,
     type ExternalRecord,
     type CreateRecordContext,
     type UpdateRecordContext,
@@ -62,6 +63,10 @@ import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema
 const DEFAULT_ENDPOINT = 'https://hlma-apie1.magnetmail.net/mmapi.asmx';
 const DEFAULT_NAMESPACE = 'http://www.magnetmail.net/';
 const DEFAULT_SESSION_TTL_MS = 25 * 60 * 1000;
+const DEFAULT_COLD_START_DATE = '2010-01-01';
+const DEFAULT_WINDOW_DAYS = 30;
+const MS_PER_DAY = 86_400_000;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -103,6 +108,156 @@ export interface SoapRequest {
     WrapperElement?: string | null;
 }
 
+/** Metered migration pacing & run-budget configuration (`CompanyIntegration.Configuration.migrationPacing`). */
+export interface MagnetMailMigrationPacing {
+    tokensPerSec?: number;
+    burst?: number;
+    maxConcurrency?: number;
+    minDelayBetweenRequestsMs?: number;
+    maxRequestsPerRun?: number;
+    maxWindowsPerRun?: number;
+    checkpointPerWindow?: boolean;
+}
+
+/** Per-object or global sliding date-window configuration for MagnetMail SOAP operations. */
+export interface MagnetMailDateWindowConfig {
+    startDate?: string;
+    windowDays?: number;
+    lookbackDays?: number;
+    fromParam?: string;
+    toParam?: string;
+    capThreshold?: number;
+}
+
+/** Inclusive `[From, To]` ISO `YYYY-MM-DD` date window. */
+export interface MagnetMailDateWindow {
+    From: string;
+    To: string;
+}
+
+/** Composite cursor `v1|<Today>|<From>|<To>|<InnerPage>|<ScopeKey>` for resumable windowed SOAP harvests. */
+export interface MagnetMailWindowCursor {
+    Today: string;
+    From: string;
+    To: string;
+    InnerPage: number;
+    ScopeKey: string;
+}
+
+/** Per-SOAP-operation WSDL parameter conventions (5 date-range conventions + 4 pagination conventions + criteria wrapper). */
+export interface SoapOperationConvention {
+    WrapperElement?: string;
+    PageNumberParam?: string;
+    PageCountParam?: string;
+    FromParam?: string;
+    ToParam?: string;
+}
+
+/**
+ * WSDL-verified per-operation parameter conventions across MagnetMail's 55 SOAP operations:
+ * - 4 distinct pagination conventions (`pageNumber`/`pageCount`, `page`/`recordsPerPage`, `pageNo`/`pageSize`, `PageNo`/`PageSize`)
+ * - 5 distinct date-range conventions (`sentStartDate`/`sentEndDate`, `fromDate`/`toDate`, `startDate`/`endDate`, `start_date`/`end_date`, `SearchStartDate`/`SearchEndDate`)
+ * - 6 `<criteria>`-wrapped operations (`searchForRecipients`, `GetMessageLinkTracking`, `GetMessageSentTracking`, `GetMessageOpenTracking`, `GetUnsubscribeTracking`, `SearchPersonifySubscriptionMappings`)
+ */
+export const SOAP_OPERATION_CONVENTIONS: Readonly<Record<string, SoapOperationConvention>> = {
+    getGroupRecipients: { PageNumberParam: 'pageNumber', PageCountParam: 'pageCount' },
+    getDetailedTracking: { PageNumberParam: 'page', PageCountParam: 'recordsPerPage', FromParam: 'fromDate', ToParam: 'toDate' },
+    getDetailedTrackingUTC: { PageNumberParam: 'page', PageCountParam: 'recordsPerPage', FromParam: 'fromDate', ToParam: 'toDate' },
+    searchForRecipients: { WrapperElement: 'criteria', PageNumberParam: 'pageNo', PageCountParam: 'pageSize' },
+    GetMessageLinkTracking: { WrapperElement: 'criteria', PageNumberParam: 'PageNo', PageCountParam: 'PageSize', FromParam: 'SearchStartDate', ToParam: 'SearchEndDate' },
+    GetMessageSentTracking: { WrapperElement: 'criteria', PageNumberParam: 'PageNo', PageCountParam: 'PageSize', FromParam: 'SearchStartDate', ToParam: 'SearchEndDate' },
+    GetMessageOpenTracking: { WrapperElement: 'criteria', PageNumberParam: 'PageNo', PageCountParam: 'PageSize', FromParam: 'SearchStartDate', ToParam: 'SearchEndDate' },
+    GetUnsubscribeTracking: { WrapperElement: 'criteria', PageNumberParam: 'PageNo', PageCountParam: 'PageSize', FromParam: 'SearchStartDate', ToParam: 'SearchEndDate' },
+    SearchPersonifySubscriptionMappings: { WrapperElement: 'criteria' },
+    getMessages: { FromParam: 'sentStartDate', ToParam: 'sentEndDate' },
+    getMessagesUTC: { FromParam: 'sentStartDate', ToParam: 'sentEndDate' },
+    getMessageList: { FromParam: 'sentStartDate', ToParam: 'sentEndDate' },
+    getMessageListUtc: { FromParam: 'sentStartDate', ToParam: 'sentEndDate' },
+    getUnsubscribes: { FromParam: 'fromDate', ToParam: 'toDate' },
+    getSpamComplaints: { FromParam: 'fromDate', ToParam: 'toDate' },
+    getSubscribedRecipients: { FromParam: 'startDate', ToParam: 'endDate' },
+    getSuppressedRecipientList: { FromParam: 'start_date', ToParam: 'end_date' },
+};
+
+// ─── Date Window Arithmetic ──────────────────────────────────────────
+
+export function toISODate(d: Date): string {
+    return d.toISOString().slice(0, 10);
+}
+
+export function addDays(iso: string, days: number): string {
+    const base = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
+    if (Number.isNaN(base)) return iso;
+    return new Date(base + days * MS_PER_DAY).toISOString().slice(0, 10);
+}
+
+export function daysBetween(fromIso: string, toIso: string): number {
+    const a = Date.parse(`${fromIso.slice(0, 10)}T00:00:00Z`);
+    const b = Date.parse(`${toIso.slice(0, 10)}T00:00:00Z`);
+    if (Number.isNaN(a) || Number.isNaN(b)) return DEFAULT_WINDOW_DAYS;
+    return Math.max(1, Math.ceil((b - a) / MS_PER_DAY));
+}
+
+const minDate = (a: string, b: string): string => (a < b ? a : b);
+const maxDate = (a: string, b: string): string => (a > b ? a : b);
+
+export function initialMagnetMailDateWindow(
+    cfg: MagnetMailDateWindowConfig,
+    watermark: string | null | undefined,
+    today: string
+): MagnetMailDateWindow {
+    const startFloor = cfg.startDate && ISO_DATE_RE.test(cfg.startDate.slice(0, 10))
+        ? cfg.startDate.slice(0, 10)
+        : DEFAULT_COLD_START_DATE;
+    const lookback = Math.max(0, cfg.lookbackDays ?? 0);
+    const windowDays = Math.max(1, cfg.windowDays ?? DEFAULT_WINDOW_DAYS);
+
+    let from = watermark && ISO_DATE_RE.test(watermark.slice(0, 10))
+        ? addDays(watermark.slice(0, 10), -lookback)
+        : startFloor;
+    if (cfg.startDate && ISO_DATE_RE.test(cfg.startDate.slice(0, 10))) {
+        from = maxDate(from, cfg.startDate.slice(0, 10));
+    }
+    from = minDate(from, today);
+    const to = minDate(addDays(from, windowDays - 1), today);
+    return { From: from, To: to };
+}
+
+export function nextMagnetMailDateWindow(
+    current: MagnetMailDateWindow,
+    cfg: MagnetMailDateWindowConfig,
+    today: string
+): MagnetMailDateWindow | null {
+    if (current.To >= today) return null;
+    const windowDays = Math.max(1, cfg.windowDays ?? DEFAULT_WINDOW_DAYS);
+    const from = addDays(current.To, 1);
+    const to = minDate(addDays(from, windowDays - 1), today);
+    return { From: from, To: to };
+}
+
+export function bisectMagnetMailDateWindow(current: MagnetMailDateWindow): MagnetMailDateWindow | null {
+    if (current.From >= current.To) return null;
+    const span = daysBetween(current.From, current.To);
+    const half = Math.max(0, Math.floor(span / 2) - 1);
+    const mid = addDays(current.From, half);
+    if (mid >= current.To) return { From: current.From, To: current.From };
+    return { From: current.From, To: mid };
+}
+
+export function formatMagnetMailWindowCursor(c: MagnetMailWindowCursor): string {
+    return ['v1', c.Today, c.From, c.To, String(Math.max(1, c.InnerPage || 1)), c.ScopeKey || ''].join('|');
+}
+
+export function parseMagnetMailWindowCursor(raw: string | null | undefined): MagnetMailWindowCursor | null {
+    if (!raw || !raw.startsWith('v1|')) return null;
+    const parts = raw.split('|');
+    if (parts.length < 5) return null;
+    const [, today, from, to, innerRaw, scopeKey = ''] = parts;
+    if (!ISO_DATE_RE.test(today) || !ISO_DATE_RE.test(from) || !ISO_DATE_RE.test(to)) return null;
+    const innerPage = Math.max(1, parseInt(innerRaw, 10) || 1);
+    return { Today: today, From: from, To: to, InnerPage: innerPage, ScopeKey: scopeKey };
+}
+
 /** Cached session state. */
 interface CachedSession {
     Auth: MagnetMailAuthContext;
@@ -132,6 +287,7 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
 
     /** Cached session token (protected so the mocked test subclass can seed it without a live auth call). */
     protected cachedSession: CachedSession | null = null;
+    private activePacing: MagnetMailMigrationPacing | null = null;
 
     // ── Identity + capabilities ──────────────────────────────────────
 
@@ -151,6 +307,23 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
      * Declared IO/IOF rows on absence.
      */
     public override get DiscoveryIsAuthoritative(): boolean { return false; }
+
+    /** Conservative rate-limit policy for legacy SOAP endpoint; dynamically overridden by `migrationPacing`. */
+    public get RateLimitPolicy(): { TokensPerSec: number; Burst: number } | null {
+        const tokensPerSec = this.activePacing?.tokensPerSec ?? 2;
+        const burst = this.activePacing?.burst ?? 4;
+        return { TokensPerSec: tokensPerSec, Burst: burst };
+    }
+
+    /** Serializes legacy SOAP queries by default; dynamically overridden by `migrationPacing.maxConcurrency`. */
+    public get MaxConcurrencyHint(): number {
+        return this.activePacing?.maxConcurrency ?? 2;
+    }
+
+    /** Injectable sleep seam for metered migration pacing (overridden in unit tests for zero-delay assertions). */
+    protected async Sleep(ms: number): Promise<void> {
+        await new Promise(resolve => setTimeout(resolve, ms));
+    }
 
     // ── TestConnection (abstract on BaseIntegrationConnector) ─────────
 
@@ -342,6 +515,8 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
         const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
         const fields = this.GetCachedFields(obj.ID);
         const cfg = this.readIOConfig(obj);
+        const pacing = this.readMigrationPacing(ctx.CompanyIntegration);
+        this.activePacing = pacing;
 
         const listOp = this.readConfigString(cfg, 'ListOperation') ?? this.readConfigString(cfg, 'SoapListAction');
         if (!listOp) {
@@ -360,12 +535,23 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
         }
 
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+        const windowCfg = this.resolveDateWindowConfig(ctx.CompanyIntegration, obj, cfg, listOp);
+        const resumedCursor = parseMagnetMailWindowCursor(ctx.CurrentCursor) ?? parseMagnetMailWindowCursor(ctx.WatermarkValue);
+        if (windowCfg || resumedCursor) {
+            return this.fetchDateWindowedChanges(ctx, obj, fields, cfg, listOp, auth, pacing, windowCfg ?? {}, resumedCursor);
+        }
+
         const page = ctx.CurrentPage ?? 1;
         const offset = ctx.CurrentOffset ?? 0;
         const pageSize = obj.DefaultPageSize && obj.DefaultPageSize > 0 ? obj.DefaultPageSize : Math.max(1, ctx.BatchSize);
+        const convention = SOAP_OPERATION_CONVENTIONS[listOp];
 
-        const args = this.buildFetchArgs(obj, cfg, ctx, page, pageSize);
-        const wrapper = this.readConfigString(cfg, 'CriteriaWrapper');
+        if ((page > 1 || offset > 0) && pacing?.minDelayBetweenRequestsMs && pacing.minDelayBetweenRequestsMs > 0) {
+            await this.Sleep(pacing.minDelayBetweenRequestsMs);
+        }
+
+        const args = this.buildFetchArgs(obj, cfg, ctx, page, pageSize, listOp);
+        const wrapper = this.readConfigString(cfg, 'CriteriaWrapper') ?? convention?.WrapperElement ?? null;
         const request: SoapRequest = { Action: listOp, Args: args, IncludeAuthHeader: true, WrapperElement: wrapper };
 
         const response = await this.MakeHTTPRequest(auth, auth.Endpoint, 'POST', this.BuildHeaders(auth), request);
@@ -388,6 +574,142 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
             NextPage: pagination.NextPage,
             NextOffset: pagination.NextOffset,
             NewWatermarkValue: newWatermark,
+        };
+    }
+
+    /**
+     * Stateful sliding date-window harvest for MagnetMail SOAP operations (`v1|<Today>|<From>|<To>|<InnerPage>|`).
+     * Supports all 5 WSDL date-range parameter conventions and all 4 pagination conventions, plus adaptive
+     * window bisection for non-paginated operations (`getUnsubscribes`, `getSpamComplaints`, `getMessagesUTC`, etc.)
+     * and metered run-budget controls (`maxRequestsPerRun`, `maxWindowsPerRun`, `checkpointPerWindow`).
+     */
+    private async fetchDateWindowedChanges(
+        ctx: FetchContext,
+        obj: MJIntegrationObjectEntity,
+        fields: MJIntegrationObjectFieldEntity[],
+        cfg: Record<string, unknown>,
+        listOp: string,
+        auth: MagnetMailAuthContext,
+        pacing: MagnetMailMigrationPacing | null,
+        windowCfg: MagnetMailDateWindowConfig,
+        resumedCursor: MagnetMailWindowCursor | null
+    ): Promise<FetchBatchResult> {
+        const convention = SOAP_OPERATION_CONVENTIONS[listOp];
+        const fromParam = windowCfg.fromParam
+            ?? this.readConfigString(cfg, 'WatermarkFromParam')
+            ?? obj.IncrementalWatermarkField
+            ?? convention?.FromParam
+            ?? 'fromDate';
+        const toParam = windowCfg.toParam
+            ?? this.readConfigString(cfg, 'WatermarkToParam')
+            ?? convention?.ToParam
+            ?? 'toDate';
+        const wrapper = this.readConfigString(cfg, 'CriteriaWrapper') ?? convention?.WrapperElement ?? null;
+        const pageSize = obj.DefaultPageSize && obj.DefaultPageSize > 0 ? obj.DefaultPageSize : Math.max(1, ctx.BatchSize || 100);
+        const batchLimit = ctx.BatchSize && ctx.BatchSize > 0 ? ctx.BatchSize : Number.MAX_SAFE_INTEGER;
+        const minDelayMs = pacing?.minDelayBetweenRequestsMs ?? 0;
+        const maxRequests = pacing?.maxRequestsPerRun && pacing.maxRequestsPerRun > 0 ? pacing.maxRequestsPerRun : Number.MAX_SAFE_INTEGER;
+        const maxWindows = pacing?.maxWindowsPerRun && pacing.maxWindowsPerRun > 0 ? pacing.maxWindowsPerRun : Number.MAX_SAFE_INTEGER;
+        const checkpointPerWindow = pacing?.checkpointPerWindow === true;
+        const capThreshold = windowCfg.capThreshold ?? 0;
+        const supportsPaging = Boolean(
+            (obj.SupportsPagination && obj.PaginationType !== 'None')
+            || convention?.PageNumberParam
+            || this.readConfigString(cfg, 'PageNumberParam')
+        );
+
+        const today = resumedCursor?.Today ?? toISODate(new Date());
+        let window: MagnetMailDateWindow = resumedCursor
+            ? { From: resumedCursor.From, To: resumedCursor.To }
+            : initialMagnetMailDateWindow(windowCfg, ctx.WatermarkValue, today);
+        let innerPage = resumedCursor?.InnerPage ?? 1;
+
+        const out: ExternalRecord[] = [];
+        const warnings: FetchWarning[] = [];
+        const pkFieldNames = this.primaryKeyFieldNames(fields);
+        let requestsMade = 0;
+        let windowsCompleted = 0;
+        let lastCompletedWindowTo: string | null = null;
+        let maxRecordWatermark: string | undefined;
+        let hasMore = true;
+
+        while (hasMore && out.length < batchLimit) {
+            if (requestsMade >= maxRequests || windowsCompleted >= maxWindows) {
+                break;
+            }
+            if (requestsMade > 0 && minDelayMs > 0) {
+                await this.Sleep(minDelayMs);
+            }
+
+            const args = this.buildWindowedFetchArgs(obj, cfg, listOp, window, innerPage, pageSize, fromParam, toParam, supportsPaging);
+            const request: SoapRequest = { Action: listOp, Args: args, IncludeAuthHeader: true, WrapperElement: wrapper };
+            const response = await this.MakeHTTPRequest(auth, auth.Endpoint, 'POST', this.BuildHeaders(auth), request);
+            this.throwOnSoapFault(response, listOp);
+            requestsMade++;
+
+            const rawRecords = this.NormalizeResponse(response.Body, obj.ResponseDataKey);
+
+            // Adaptive window bisection when a non-paginated SOAP op returns >= capThreshold rows across a multi-day window
+            if (!supportsPaging && capThreshold > 0 && rawRecords.length >= capThreshold) {
+                const bisected = bisectMagnetMailDateWindow(window);
+                if (bisected) {
+                    warnings.push({
+                        Code: 'WINDOW_BISECTED',
+                        Message: `"${obj.Name}" (${listOp}): window [${window.From}, ${window.To}] returned ${rawRecords.length} rows (>= cap ${capThreshold}); bisecting to [${bisected.From}, ${bisected.To}].`,
+                        Data: { object: obj.Name, operation: listOp, originalFrom: window.From, originalTo: window.To, bisectedTo: bisected.To },
+                    });
+                    window = bisected;
+                    innerPage = 1;
+                    continue;
+                }
+            }
+
+            for (const r of rawRecords) {
+                out.push(this.buildExternalRecord(
+                    this.applyTransformPreservingKeys(r, obj, fields),
+                    ctx.ObjectName,
+                    pkFieldNames
+                ));
+            }
+            const batchWm = this.computeWatermark(obj, cfg, rawRecords);
+            if (batchWm && (!maxRecordWatermark || batchWm > maxRecordWatermark)) {
+                maxRecordWatermark = batchWm;
+            }
+
+            // Inner pagination within [window.From, window.To]
+            if (supportsPaging && pageSize > 0 && rawRecords.length >= pageSize) {
+                innerPage++;
+                continue;
+            }
+
+            // Window [window.From, window.To] is fully drained!
+            lastCompletedWindowTo = window.To;
+            windowsCompleted++;
+            innerPage = 1;
+
+            const nextWin = nextMagnetMailDateWindow(window, windowCfg, today);
+            if (nextWin) {
+                window = nextWin;
+                if (checkpointPerWindow) {
+                    break;
+                }
+            } else {
+                hasMore = false;
+                break;
+            }
+        }
+
+        const nextCursor = hasMore
+            ? formatMagnetMailWindowCursor({ Today: today, From: window.From, To: window.To, InnerPage: innerPage, ScopeKey: '' })
+            : undefined;
+
+        const candidateWm = maxRecordWatermark ?? lastCompletedWindowTo ?? undefined;
+        return {
+            Records: out,
+            HasMore: hasMore,
+            NextCursor: nextCursor,
+            NewWatermarkValue: (!hasMore || lastCompletedWindowTo != null) ? candidateWm : undefined,
+            Warnings: warnings.length > 0 ? warnings : undefined,
         };
     }
 
@@ -735,24 +1057,55 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
         cfg: Record<string, unknown>,
         ctx: FetchContext,
         page: number,
-        pageSize: number
+        pageSize: number,
+        listOp?: string
     ): Record<string, unknown> {
+        const convention = listOp ? SOAP_OPERATION_CONVENTIONS[listOp] : undefined;
         const args: Record<string, unknown> = {};
         const extraArgs = cfg.ExtraArgs;
         if (extraArgs && typeof extraArgs === 'object' && !Array.isArray(extraArgs)) {
             Object.assign(args, extraArgs as Record<string, unknown>);
         }
         if (obj.SupportsPagination && obj.PaginationType !== 'None') {
-            const pageParam = this.readConfigString(cfg, 'PageNumberParam') ?? 'pageNumber';
-            const sizeParam = this.readConfigString(cfg, 'PageCountParam') ?? 'pageCount';
+            const pageParam = this.readConfigString(cfg, 'PageNumberParam') ?? convention?.PageNumberParam ?? 'pageNumber';
+            const sizeParam = this.readConfigString(cfg, 'PageCountParam') ?? convention?.PageCountParam ?? 'pageCount';
             args[pageParam] = page;
             args[sizeParam] = pageSize;
         }
-        if (obj.SupportsIncrementalSync && ctx.WatermarkValue && obj.IncrementalWatermarkField) {
-            args[obj.IncrementalWatermarkField] = this.formatWatermark(ctx.WatermarkValue);
-            const toParam = this.readConfigString(cfg, 'WatermarkToParam');
+        const fromParam = obj.IncrementalWatermarkField ?? this.readConfigString(cfg, 'WatermarkFromParam') ?? convention?.FromParam;
+        if (obj.SupportsIncrementalSync && ctx.WatermarkValue && fromParam) {
+            args[fromParam] = this.formatWatermark(ctx.WatermarkValue);
+            const toParam = this.readConfigString(cfg, 'WatermarkToParam') ?? (!obj.IncrementalWatermarkField ? convention?.ToParam : undefined);
             if (toParam) args[toParam] = this.formatWatermark(new Date().toISOString());
         }
+        return args;
+    }
+
+    private buildWindowedFetchArgs(
+        obj: MJIntegrationObjectEntity,
+        cfg: Record<string, unknown>,
+        listOp: string,
+        window: MagnetMailDateWindow,
+        innerPage: number,
+        pageSize: number,
+        fromParam: string,
+        toParam: string,
+        supportsPaging: boolean
+    ): Record<string, unknown> {
+        const convention = SOAP_OPERATION_CONVENTIONS[listOp];
+        const args: Record<string, unknown> = {};
+        const extraArgs = cfg.ExtraArgs;
+        if (extraArgs && typeof extraArgs === 'object' && !Array.isArray(extraArgs)) {
+            Object.assign(args, extraArgs as Record<string, unknown>);
+        }
+        if (supportsPaging) {
+            const pageParam = this.readConfigString(cfg, 'PageNumberParam') ?? convention?.PageNumberParam ?? 'pageNumber';
+            const sizeParam = this.readConfigString(cfg, 'PageCountParam') ?? convention?.PageCountParam ?? 'pageCount';
+            args[pageParam] = innerPage;
+            args[sizeParam] = pageSize;
+        }
+        args[fromParam] = window.From;
+        args[toParam] = window.To;
         return args;
     }
 
@@ -897,7 +1250,7 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
         return { Success: false, ErrorMessage: `${operation} failed for ${objectName}: ${message}`, StatusCode: 500 };
     }
 
-    // ── IO Configuration JSON readers ─────────────────────────────────
+    // ── IO & CI Configuration JSON readers ────────────────────────────
 
     private readIOConfig(obj: MJIntegrationObjectEntity): Record<string, unknown> {
         if (!obj.Configuration) return {};
@@ -912,6 +1265,74 @@ export class MagnetMailConnector extends BaseRESTIntegrationConnector {
     private readConfigString(cfg: Record<string, unknown>, key: string): string | null {
         const v = cfg[key];
         return typeof v === 'string' && v.trim().length > 0 ? v.trim() : null;
+    }
+
+    private readMigrationPacing(companyIntegration: MJCompanyIntegrationEntity): MagnetMailMigrationPacing | null {
+        if (!companyIntegration.Configuration) return null;
+        try {
+            const parsed = JSON.parse(companyIntegration.Configuration) as Record<string, unknown>;
+            const raw = parsed.migrationPacing;
+            if (!raw || typeof raw !== 'object') return null;
+            const p = raw as Record<string, unknown>;
+            return {
+                tokensPerSec: typeof p.tokensPerSec === 'number' ? p.tokensPerSec : undefined,
+                burst: typeof p.burst === 'number' ? p.burst : undefined,
+                maxConcurrency: typeof p.maxConcurrency === 'number' ? p.maxConcurrency : undefined,
+                minDelayBetweenRequestsMs: typeof p.minDelayBetweenRequestsMs === 'number' ? p.minDelayBetweenRequestsMs : undefined,
+                maxRequestsPerRun: typeof p.maxRequestsPerRun === 'number' ? p.maxRequestsPerRun : undefined,
+                maxWindowsPerRun: typeof p.maxWindowsPerRun === 'number' ? p.maxWindowsPerRun : undefined,
+                checkpointPerWindow: p.checkpointPerWindow === true || p.checkpointPerWindow === 'true',
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private resolveDateWindowConfig(
+        companyIntegration: MJCompanyIntegrationEntity,
+        obj: MJIntegrationObjectEntity,
+        ioCfg: Record<string, unknown>,
+        listOp: string
+    ): MagnetMailDateWindowConfig | null {
+        const ioWin = (ioCfg.dateWindowing && typeof ioCfg.dateWindowing === 'object')
+            ? (ioCfg.dateWindowing as Record<string, unknown>)
+            : null;
+        let ciWin: Record<string, unknown> | null = null;
+        let globalStartDate: string | undefined;
+        let globalWindowDays: number | undefined;
+
+        if (companyIntegration.Configuration) {
+            try {
+                const parsed = JSON.parse(companyIntegration.Configuration) as Record<string, unknown>;
+                if (typeof parsed.startDate === 'string') globalStartDate = parsed.startDate;
+                if (typeof parsed.windowDays === 'number') globalWindowDays = parsed.windowDays;
+                const dw = parsed.dateWindowing;
+                if (dw === true) {
+                    ciWin = {};
+                } else if (dw && typeof dw === 'object') {
+                    const dwRec = dw as Record<string, unknown>;
+                    const perObj = dwRec[obj.Name] ?? dwRec[listOp];
+                    if (perObj === true) ciWin = {};
+                    else if (perObj && typeof perObj === 'object') ciWin = perObj as Record<string, unknown>;
+                    else if (dwRec.enabled === true) ciWin = dwRec;
+                }
+            } catch {
+                /* ignore malformed JSON */
+            }
+        }
+
+        const ioEnabled = ioWin != null && ioWin.enabled === true;
+        if (!ciWin && !ioEnabled) return null;
+
+        const merged: Record<string, unknown> = { ...(ioWin ?? {}), ...(ciWin ?? {}) };
+        return {
+            startDate: typeof merged.startDate === 'string' ? merged.startDate : globalStartDate,
+            windowDays: typeof merged.windowDays === 'number' ? merged.windowDays : globalWindowDays,
+            lookbackDays: typeof merged.lookbackDays === 'number' ? merged.lookbackDays : undefined,
+            fromParam: typeof merged.fromParam === 'string' ? merged.fromParam : undefined,
+            toParam: typeof merged.toParam === 'string' ? merged.toParam : undefined,
+            capThreshold: typeof merged.capThreshold === 'number' ? merged.capThreshold : undefined,
+        };
     }
 
     // ── XML utils ─────────────────────────────────────────────────────

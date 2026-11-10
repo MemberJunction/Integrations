@@ -450,8 +450,8 @@ export class NimbleAMSConnector extends SalesforceConnector {
     private MapSFType(sfType: string): string {
         const map: Record<string, string> = {
             id: 'string', string: 'string', textarea: 'string', url: 'string', email: 'string', phone: 'string',
-            boolean: 'boolean', int: 'number', double: 'decimal', currency: 'decimal', percent: 'decimal',
-            date: 'datetime', datetime: 'datetime', time: 'string', reference: 'string',
+            boolean: 'boolean', int: 'integer', double: 'decimal', currency: 'decimal', percent: 'decimal',
+            date: 'date', datetime: 'datetime', time: 'string', reference: 'string',
             picklist: 'string', multipicklist: 'string', base64: 'string', anyType: 'string', address: 'string',
         };
         return map[sfType] ?? 'string';

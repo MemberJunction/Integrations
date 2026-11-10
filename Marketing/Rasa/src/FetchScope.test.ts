@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BaseRESTIntegrationConnector } from '@memberjunction/integration-engine';
 import { RasaConnector } from './RasaConnector';
@@ -58,6 +60,22 @@ function fetchContext(objectName: string) {
     return { CompanyIntegration: { IntegrationID: 'i1' }, ObjectName: objectName, WatermarkValue: null } as never;
 }
 
+/** The objects in the shipped metadata, with Configuration as the JSON string the entity holds. */
+function shippedObjects(): Array<Obj & { Name: string }> {
+    const path = fileURLToPath(new URL('../metadata/integration/.rasa.integration.json', import.meta.url));
+    const [integration] = JSON.parse(readFileSync(path, 'utf8')) as Array<{
+        relatedEntities: { 'MJ: Integration Objects': Array<{ fields: Record<string, unknown> }> };
+    }>;
+    return integration.relatedEntities['MJ: Integration Objects'].map(({ fields }) => ({
+        Name: String(fields.Name),
+        APIPath: String(fields.APIPath),
+        ResponseDataKey: (fields.ResponseDataKey as string | null) ?? null,
+        Configuration: JSON.stringify(fields.Configuration),
+        IncrementalWatermarkField: (fields.IncrementalWatermarkField as string | null) ?? null,
+        SupportsIncrementalSync: Boolean(fields.SupportsIncrementalSync),
+    }));
+}
+
 describe('concurrent fetches on one instance', () => {
     afterEach(() => vi.restoreAllMocks());
 
@@ -104,6 +122,19 @@ describe('nested collections carry their parent key', () => {
             { system: 'crm', identifier: '111', contact_id: 'c1' },
             { system: 'erp', identifier: '9', contact_id: 'c1' },
         ]);
+    });
+
+    it('stamps the parent id with the configuration each nested object ships with', () => {
+        const nested = shippedObjects().filter(o => JSON.parse(o.Configuration).parentKeyInjectionRequired);
+        expect(nested).toHaveLength(8);
+        for (const obj of nested) {
+            const { nesting, childKeyField } = JSON.parse(obj.Configuration).parentKeyInjectionRequired as {
+                nesting: string[];
+                childKeyField: string;
+            };
+            const body = { metadata: { next_link: '' }, results: [{ id: 'p1', [nesting[0]]: [{ name: 'child' }] }] };
+            expect(publishedFor(obj).NormalizeResponse(body, null), obj.Name).toEqual([{ name: 'child', [childKeyField]: 'p1' }]);
+        }
     });
 
     it('pages by the parents, not the children', () => {
