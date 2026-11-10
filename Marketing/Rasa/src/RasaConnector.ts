@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { RegisterClass } from '@memberjunction/global';
-import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
+import { Metadata, RunView, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type {
     MJCompanyIntegrationEntity,
     MJCredentialEntity,
@@ -85,6 +85,32 @@ const MAX_RETRIES = 3;
  */
 const RASA_FALLBACK_PAGE_SIZE = 50;
 
+/**
+ * Records per call when the engine passes no `BatchSize`. Matches the engine's own default, so a
+ * parent-scoped fetch stays bounded either way.
+ */
+const RASA_FALLBACK_BATCH_SIZE = 200;
+
+/**
+ * Most parents one parent-scoped call visits. Every parent costs at least one request, so a run of
+ * empty parents (blasts with no events in a window) must still yield before the engine's per-call
+ * fetch timeout.
+ */
+const RASA_PARENTS_PER_CALL = 10;
+
+/** Default width, in days, of one window on a windowed event feed (see {@link WATERMARK_UPPER_BOUND_PARAM}). */
+const RASA_HISTORY_WINDOW_DAYS = 90;
+
+/**
+ * The upper-bound partner of a lower-bound watermark param, where rasa.io's v2 spec declares one. Only
+ * the insights action feeds (`/v2/insights/{newsletter|blast|sequence}/{id}/actions`) take
+ * `created_before`; `archived_since` has none, so the deleted-contact feeds are not windowed.
+ */
+const WATERMARK_UPPER_BOUND_PARAM: Readonly<Record<string, string>> = { created_since: 'created_before' };
+
+/** Prefix on a parent-scoped resume cursor, so a cursor from another format is never misread. */
+const PARENT_CURSOR_PREFIX = 'rasa-parent:';
+
 // ─── Config / envelope typing (Zod — no `any`) ───────────────────────
 
 const RasaConnectionConfigSchema = z.object({
@@ -98,6 +124,20 @@ const RasaConnectionConfigSchema = z.object({
 
 /** Connection configuration parsed from the MJ Credential (or CompanyIntegration.Configuration). */
 export type RasaConnectionConfig = z.infer<typeof RasaConnectionConfigSchema>;
+
+/**
+ * Per-connection settings read from `CompanyIntegration.Configuration`, next to the engine's own keys
+ * (`syncConcurrency`, `fetchTimeoutMs`, …). Each rasa.io account has its own history limit, so the
+ * object-level `maxLookbackDays` is only the default.
+ */
+const RasaConnectionSettingsSchema = z.object({
+    /** Overrides every object's declared `maxLookbackDays` for this connection. */
+    maxLookbackDays: z.number().int().positive().optional(),
+    /** Width, in days, of one window on a windowed event feed. */
+    historyWindowDays: z.number().int().positive().optional(),
+}).passthrough();
+
+type RasaConnectionSettings = z.infer<typeof RasaConnectionSettingsSchema>;
 
 /** Auth context carried through the REST pipeline. */
 interface RasaAuthContext extends RESTAuthContext {
@@ -217,6 +257,48 @@ interface RasaFetchState {
     Response: RasaResponseContext | null;
     Watermark: string | null;
     Warnings: FetchWarning[];
+    /** The connection's settings (see {@link RasaConnectionSettingsSchema}). */
+    Settings: RasaConnectionSettings;
+    /** While one parent is read: the object as the base must see it, with that parent's id in its path. */
+    ObjectView: { Name: string; Obj: MJIntegrationObjectEntity } | null;
+    /** While one parent is read: the field each record gets the parent's id under. */
+    ParentKey: { Field: string; Value: string } | null;
+    /** While one window of a windowed feed is read: its bounds. `Before` is null on the open last window. */
+    Window: { Since: string; Before: string | null } | null;
+    /** The `limit` the last page request asked for (see {@link RasaConnector.ExtractPaginationInfo}). */
+    RequestedLimit: number | null;
+}
+
+/** How a parent-scoped object reaches its parents (`/v2/insights/newsletter/{id}/actions` → Newsletter). */
+interface RasaParentRoute {
+    /** The `{var}` in the object's APIPath. */
+    TemplateVar: string;
+    /** The parent IntegrationObject's name. */
+    ParentObject: string;
+    /** The child field that holds the parent's id (`newsletter_id`). */
+    KeyField: string;
+}
+
+/**
+ * Where a parent-scoped fetch resumes, round-tripped through the engine as `NextCursor`. Carries the
+ * parent being read and that parent's next page, so each call returns at most one batch whatever the
+ * parent holds. Windowed feeds also carry the window being read.
+ */
+interface RasaParentCursor {
+    /** Parent id being read. */
+    p: string;
+    /** That parent's next page: a numeric skip, or the vendor's opaque skip token. */
+    o?: number;
+    c?: string;
+    /** Start of the window being read (windowed feeds only), ISO-8601. */
+    w?: string;
+}
+
+/** A windowed feed's plan: the upper-bound param, the window width, and the first window's start. */
+interface RasaWindowPlan {
+    UpperParam: string;
+    Days: number;
+    Start: string;
 }
 
 // ─── Connector ───────────────────────────────────────────────────────
@@ -266,7 +348,14 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     private readonly fetchScope = new AsyncLocalStorage<RasaFetchState>();
 
     /** State used outside any fetch scope (direct hook calls, e.g. from tests). */
-    private readonly unscopedState: RasaFetchState = { Response: null, Watermark: null, Warnings: [] };
+    private readonly unscopedState: RasaFetchState = RasaConnector.NewFetchState({});
+
+    private static NewFetchState(settings: RasaConnectionSettings): RasaFetchState {
+        return {
+            Response: null, Watermark: null, Warnings: [], Settings: settings,
+            ObjectView: null, ParentKey: null, Window: null, RequestedLimit: null,
+        };
+    }
 
     private get fetchState(): RasaFetchState {
         return this.fetchScope.getStore() ?? this.unscopedState;
@@ -606,6 +695,8 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
         const path = ctx ? ctx.DataPath : responseDataKey;
         const records = this.ExtractByPath(rawBody, path);
         if (ctx && !ctx.UnwrapDeclared) this.FlagUndeclaredEnvelope(ctx.ObjectName, records);
+        const parentKey = this.fetchState.ParentKey;
+        if (parentKey) for (const record of records) record[parentKey.Field] = parentKey.Value;
         return records;
     }
 
@@ -692,6 +783,7 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     ): string {
         const cap = obj.DefaultPageSize ?? RASA_FALLBACK_PAGE_SIZE;
         const limit = Math.max(1, Math.min(effectivePageSize ?? cap, cap));
+        this.fetchState.RequestedLimit = limit;
         const params = new URLSearchParams();
         if (cursor) params.set('skip', cursor);
         else if (offset > 0) params.set('skip', String(offset));
@@ -705,6 +797,11 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * `next_link` is the vendor's own next-page URL. A short page (fewer records than requested) always
      * terminates — the vendor emits `next_link` past the end of the dataset, so it is not a sufficient
      * stop signal on its own.
+     *
+     * "Short" is measured against the `limit` actually requested, not the object's page size. The base
+     * asks for less than a full page when only part of one fits the batch, and that page coming back
+     * full is not the end of the data. Measured against the page size, a 200-record batch over a
+     * 500-record page size read one page and stopped.
      */
     protected ExtractPaginationInfo(
         rawBody: unknown,
@@ -720,8 +817,9 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
         const ctx = this.responseCtx;
         const pagePath = ctx?.NestedChild ? ctx.NestedChild.ParentPath : (ctx?.DataPath ?? 'results');
         const returned = this.ExtractByPath(rawBody, pagePath).length;
+        const requested = this.fetchState.RequestedLimit ?? pageSize;
 
-        if (returned === 0 || (pageSize > 0 && returned < pageSize)) {
+        if (returned === 0 || (requested > 0 && returned < requested)) {
             return { HasMore: false, TotalRecords: totalRecords };
         }
         const nextLink = typeof metadata?.next_link === 'string' ? metadata.next_link : '';
@@ -758,13 +856,23 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
         const withDefaults = super.AppendDefaultQueryParams(url, obj);
         if (!obj.SupportsIncrementalSync) return withDefaults;
         const config = this.ObjectConfig(obj);
-        const watermark = this.EffectiveWatermark(config);
-        if (!watermark) return withDefaults;
         const param = config.watermarkParam;
         if (!param) return withDefaults;
-        if (new RegExp(`[?&]${param}=`, 'i').test(withDefaults)) return withDefaults;
-        const separator = withDefaults.includes('?') ? '&' : '?';
-        return `${withDefaults}${separator}${encodeURIComponent(param)}=${encodeURIComponent(watermark)}`;
+        // A windowed read sends its window's bounds in place of the watermark (see FetchParentScoped).
+        const window = this.fetchState.Window;
+        const watermark = window ? window.Since : this.EffectiveWatermark(config);
+        if (!watermark) return withDefaults;
+        let out = this.WithQueryParam(withDefaults, param, watermark);
+        const upper = WATERMARK_UPPER_BOUND_PARAM[param];
+        if (window?.Before && upper) out = this.WithQueryParam(out, upper, window.Before);
+        return out;
+    }
+
+    /** Appends `name=value` unless the URL already carries `name`. */
+    private WithQueryParam(url: string, name: string, value: string): string {
+        if (new RegExp(`[?&]${name}=`, 'i').test(url)) return url;
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
     }
 
     /**
@@ -775,7 +883,8 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * watermark and the window; the vendor no longer serves them, so the warning only records the gap.
      */
     private EffectiveWatermark(config: RasaObjectConfig): string | null {
-        const days = config.maxLookbackDays;
+        // A connection's own limit replaces the object default: rasa.io sets the limit per account.
+        const days = config.maxLookbackDays ? (this.fetchState.Settings.maxLookbackDays ?? config.maxLookbackDays) : undefined;
         if (!days) return this.currentWatermark;
         // Rounded UP to the next UTC midnight: stays inside the window, and every page of a pass sends the same value.
         const floorMs = Math.ceil((Date.now() - days * DAY_MS) / DAY_MS) * DAY_MS;
@@ -801,29 +910,315 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * Thin wrapper around the base's metadata-driven fetch. It (a) publishes the per-object response
      * context the base's object-less `NormalizeResponse` signature can't carry, (b) bridges the frozen
      * contract's `accessPath.parentObject` onto the key the base's parent resolver reads, (c) tracks the
-     * watermark high-water mark across the object's batches and emits it ONLY on the terminal batch, so
-     * a mid-pass failure (which throws before we return) leaves the stored watermark untouched.
+     * watermark high-water mark across the object's batches and emits it on the terminal batch, so a
+     * mid-pass failure (which throws before we return) leaves the stored watermark untouched. A
+     * parent-scoped object goes through {@link FetchParentScoped} instead of the base's per-parent loop.
      */
     public override async FetchChanges(ctx: FetchContext): Promise<FetchBatchResult> {
-        return this.fetchScope.run({ Response: null, Watermark: null, Warnings: [] }, async () => {
+        return this.fetchScope.run(RasaConnector.NewFetchState(this.ConnectionSettings(ctx.CompanyIntegration)), async () => {
             this.lastIntegrationID = ctx.CompanyIntegration.IntegrationID;
             const obj = this.GetCachedObject(ctx.CompanyIntegration.IntegrationID, ctx.ObjectName);
             this.AssertReadable(obj, ctx.ObjectName);
             this.PublishResponseContext(obj, ctx.ObjectName);
             this.BridgeAccessPathToParentConfig(obj);
             this.currentWatermark = ctx.WatermarkValue;
-            if (this.IsFirstBatch(ctx)) this.watermarkHighWater.delete(ctx.ObjectName);
+            if (this.IsFirstBatch(ctx)) {
+                this.watermarkHighWater.delete(ctx.ObjectName);
+                this.parentIDCache.delete(this.ParentCacheKey(ctx));
+            }
 
-            const result = await super.FetchChanges(ctx);
+            const scoped = this.responseCtx?.ParentScoped ? await this.FetchParentScoped(ctx, obj) : null;
+            const result = scoped?.Result ?? await super.FetchChanges(ctx);
             this.AdvanceWatermarkHighWater(ctx.ObjectName, obj, result.Records);
 
             const warnings = [...(result.Warnings ?? []), ...this.pendingWarnings];
             return {
                 ...result,
                 Warnings: warnings.length > 0 ? warnings : undefined,
-                NewWatermarkValue: result.HasMore ? undefined : this.FinalWatermark(ctx),
+                NewWatermarkValue: result.HasMore ? scoped?.SafeWatermark : this.FinalWatermark(ctx),
             };
         });
+    }
+
+    // ── Parent-scoped fetch: one bounded, resumable batch per call ───
+
+    /**
+     * Reads a parent-scoped object (`/v2/insights/newsletter/{id}/actions`) one batch per call, and
+     * returns where to resume as `NextCursor`.
+     *
+     * The base's per-parent loop reads EVERY page of up to 10 parents in one call, so one call returns
+     * however many records those parents hold. On a production install (MJ 6.1.6, 2026-11-06) four newsletters' 162k
+     * action events came back as a single batch and the sync failed with "Maximum call stack size
+     * exceeded", saving no watermark. Here each call reads pages until it has the engine's `BatchSize`
+     * (or has visited {@link RASA_PARENTS_PER_CALL} parents), then stops mid-parent if it must.
+     *
+     * A windowed feed (see {@link WindowPlan}) is read window by window across all parents, oldest
+     * first. When a window is done for every parent, nothing before its end is still unread, so the
+     * next window's start is returned as a safe watermark. The engine persists that position, so an
+     * interrupted multi-year backfill resumes from its last finished window, not from the start.
+     *
+     * Parents come from this connection's own record maps (see {@link ParentIDs}).
+     *
+     * Returns null when the object's parent can't be resolved; the base then handles it as before.
+     */
+    private async FetchParentScoped(
+        ctx: FetchContext,
+        obj: MJIntegrationObjectEntity,
+    ): Promise<{ Result: FetchBatchResult; SafeWatermark?: string } | null> {
+        const route = this.ParentRouteOf(obj);
+        if (!route) return null;
+        const parentIDs = await this.ParentIDs(ctx, route.ParentObject);
+        if (parentIDs.length === 0) {
+            return { Result: { Records: [], HasMore: false, Warnings: [{
+                Code: 'ZERO_PARENTS',
+                Message: `"${ctx.ObjectName}": this connection has no synced "${route.ParentObject}" records to read it through — sync "${route.ParentObject}" first.`,
+                Data: { object: ctx.ObjectName, parentObject: route.ParentObject },
+            }] } };
+        }
+
+        const plan = this.WindowPlan(obj);
+        const resumed = this.DecodeParentCursor(ctx.CurrentCursor);
+        let position: RasaParentCursor | null = resumed ?? { p: parentIDs[0], w: plan?.Start };
+        if (plan && !position.w) position = { ...position, w: plan.Start };
+
+        const budget = Math.max(1, ctx.BatchSize ?? RASA_FALLBACK_BATCH_SIZE);
+        const records: ExternalRecord[] = [];
+        let parentsVisited = 0;
+        while (position && records.length < budget && parentsVisited < RASA_PARENTS_PER_CALL) {
+            const index = this.ParentIndex(parentIDs, position.p);
+            if (index < 0) {
+                position = this.NextWindow(position, plan, parentIDs);
+                continue;
+            }
+            const parentID = parentIDs[index];
+            parentsVisited++;
+            const page = await this.FetchOneParent(ctx, obj, route, parentID, position, plan, budget - records.length);
+            for (const record of page.Records) records.push(record);
+            if (page.HasMore) {
+                position = { p: parentID, o: page.NextCursor ? undefined : page.NextOffset, c: page.NextCursor, w: position.w };
+            } else if (index + 1 < parentIDs.length) {
+                position = { p: parentIDs[index + 1], w: position.w };
+            } else {
+                position = this.NextWindow(position, plan, parentIDs);
+            }
+        }
+
+        const safeWatermark = plan && position?.w && Date.parse(position.w) > Date.parse(plan.Start) ? position.w : undefined;
+        return {
+            Result: { Records: records, HasMore: position !== null, NextCursor: position ? this.EncodeParentCursor(position) : undefined },
+            SafeWatermark: safeWatermark,
+        };
+    }
+
+    /**
+     * Reads one parent's pages, up to `budget` records, through the base's flat fetch: the base sees the
+     * object with this parent's id already in its path, so its own paging, transport and record
+     * conversion apply unchanged. Records get the parent's id in {@link NormalizeResponse}, before their
+     * keys are read, because the event keys include it (`newsletter_id` + `id`).
+     */
+    private async FetchOneParent(
+        ctx: FetchContext,
+        obj: MJIntegrationObjectEntity,
+        route: RasaParentRoute,
+        parentID: string,
+        position: RasaParentCursor,
+        plan: RasaWindowPlan | null,
+        budget: number,
+    ): Promise<FetchBatchResult> {
+        const state = this.fetchState;
+        const path = (obj.APIPath ?? '').split(`{${route.TemplateVar}}`).join(encodeURIComponent(parentID));
+        state.ObjectView = { Name: ctx.ObjectName, Obj: this.WithAPIPath(obj, path) };
+        state.ParentKey = { Field: route.KeyField, Value: parentID };
+        state.Window = plan && position.w ? { Since: position.w, Before: this.WindowEnd(position.w, plan) } : null;
+        try {
+            const page = await super.FetchChanges({
+                ...ctx,
+                BatchSize: budget,
+                CurrentPage: undefined,
+                CurrentOffset: position.o,
+                CurrentCursor: position.c,
+                AfterKeyValue: null,
+            });
+            // One parent's total says nothing about the object's, so it must not reach the engine's check.
+            return { ...page, SourceTotalRecords: undefined } as FetchBatchResult;
+        } finally {
+            state.ObjectView = null;
+            state.ParentKey = null;
+            state.Window = null;
+        }
+    }
+
+    /**
+     * While one parent is read, the base must see the object with that parent's id substituted into its
+     * path, so it takes its flat path. Everything else reads through to the cached entity.
+     */
+    protected override GetCachedObject(integrationID: string, objectName: string): MJIntegrationObjectEntity {
+        const view = this.fetchScope.getStore()?.ObjectView;
+        if (view && view.Name === objectName) return view.Obj;
+        return super.GetCachedObject(integrationID, objectName);
+    }
+
+    /** The entity with only its `APIPath` replaced. Getters run against the real entity. */
+    private WithAPIPath(obj: MJIntegrationObjectEntity, path: string): MJIntegrationObjectEntity {
+        return new Proxy(obj, {
+            get(target, prop) {
+                if (prop === 'APIPath') return path;
+                const value: unknown = Reflect.get(target, prop, target);
+                return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(target) : value;
+            },
+        });
+    }
+
+    /**
+     * The object's parent and key field, from its declared `parentObjectName` / `parentObjectIDFieldName`
+     * (bridged from `accessPath` when only that is declared). Single-`{var}` paths only: every rasa.io
+     * parent-scoped object has exactly one.
+     */
+    private ParentRouteOf(obj: MJIntegrationObjectEntity): RasaParentRoute | null {
+        const vars = [...(obj.APIPath ?? '').matchAll(/\{(\w+)\}/g)].map(m => m[1]);
+        if (vars.length !== 1) return null;
+        let declared: Record<string, unknown> = {};
+        try {
+            declared = obj.Configuration ? (JSON.parse(obj.Configuration) as Record<string, unknown>) : {};
+        } catch {
+            return null;
+        }
+        const parent = declared.parentObjectName;
+        if (typeof parent !== 'string' || parent.length === 0) return null;
+        const keyField = typeof declared.parentObjectIDFieldName === 'string' && declared.parentObjectIDFieldName.length > 0
+            ? declared.parentObjectIDFieldName
+            : vars[0];
+        return { TemplateVar: vars[0], ParentObject: parent, KeyField: keyField };
+    }
+
+    /** Parent ids per connection + object, loaded on an object's first batch and reused for the rest of the pass. */
+    private readonly parentIDCache = new Map<string, Promise<string[]>>();
+
+    private ParentCacheKey(ctx: FetchContext): string {
+        return `${ctx.CompanyIntegration.ID}|${ctx.ObjectName}`;
+    }
+
+    /**
+     * This connection's parent ids, sorted, from its own record maps.
+     *
+     * The base reads parents from the first entity map in the database whose external object has that
+     * name, with no connection filter. With one rasa.io connection per account on one database, that can
+     * be another connection's map, and then every parent is another account's: each read answers 404 and
+     * the object syncs nothing. Record maps carry the connection, so they give
+     * exactly this account's parents.
+     */
+    private ParentIDs(ctx: FetchContext, parentObject: string): Promise<string[]> {
+        const key = this.ParentCacheKey(ctx);
+        let pending = this.parentIDCache.get(key);
+        if (!pending) {
+            pending = this.ReadConnectionParentIDs(ctx, parentObject);
+            this.parentIDCache.set(key, pending);
+            pending.catch(() => this.parentIDCache.delete(key));
+        }
+        return pending;
+    }
+
+    private async ReadConnectionParentIDs(ctx: FetchContext, parentObject: string): Promise<string[]> {
+        const ciID = ctx.CompanyIntegration.ID;
+        const quoted = (value: string) => `'${value.replace(/'/g, "''")}'`;
+        const rv = new RunView();
+        const maps = await rv.RunView<{ EntityID: string }>({
+            EntityName: 'MJ: Company Integration Entity Maps',
+            ExtraFilter: `CompanyIntegrationID=${quoted(ciID)} AND ExternalObjectName=${quoted(parentObject)}`,
+            Fields: ['EntityID'],
+            ResultType: 'simple',
+            IgnoreMaxRows: true,
+        }, ctx.ContextUser);
+        if (!maps.Success || maps.Results.length === 0) return [];
+        const ids = await rv.RunView<{ ExternalSystemRecordID: string }>({
+            EntityName: 'MJ: Company Integration Record Maps',
+            ExtraFilter: `CompanyIntegrationID=${quoted(ciID)} AND EntityID=${quoted(maps.Results[0].EntityID)}`,
+            Fields: ['ExternalSystemRecordID'],
+            ResultType: 'simple',
+            // RunView otherwise stops at the entity's UserViewMaxRows (1,000 by default): a long-running
+            // account has more blasts than that, and every parent past the cap would never be read.
+            IgnoreMaxRows: true,
+        }, ctx.ContextUser);
+        if (!ids.Success) throw new Error(`[rasa] could not load "${parentObject}" record maps: ${ids.ErrorMessage ?? 'unknown error'}`);
+        return [...new Set(ids.Results.map(r => String(r.ExternalSystemRecordID)))].sort();
+    }
+
+    /**
+     * Where `parentID` sits in the sorted parent list. A parent no longer listed (removed since the cursor
+     * was written) resumes at the next id after it; -1 when none is left.
+     */
+    private ParentIndex(parentIDs: string[], parentID: string): number {
+        const exact = parentIDs.indexOf(parentID);
+        if (exact >= 0) return exact;
+        return parentIDs.findIndex(id => id > parentID);
+    }
+
+    /**
+     * A windowed feed's plan, or null for an object that isn't windowed. Windowed means its watermark
+     * param has an upper-bound partner in {@link WATERMARK_UPPER_BOUND_PARAM}. The first window starts
+     * at the effective watermark (the stored one, or the start of the lookback window); with neither,
+     * the feed is read unbounded.
+     */
+    private WindowPlan(obj: MJIntegrationObjectEntity): RasaWindowPlan | null {
+        if (!obj.SupportsIncrementalSync) return null;
+        const config = this.ObjectConfig(obj);
+        const upper = config.watermarkParam ? WATERMARK_UPPER_BOUND_PARAM[config.watermarkParam] : undefined;
+        if (!upper) return null;
+        const start = this.EffectiveWatermark(config);
+        if (!start || Number.isNaN(Date.parse(start))) return null;
+        const days = this.fetchState.Settings.historyWindowDays ?? RASA_HISTORY_WINDOW_DAYS;
+        return { UpperParam: upper, Days: days, Start: start };
+    }
+
+    /** A window's end, or null when it reaches the present (the last window is left open-ended). */
+    private WindowEnd(since: string, plan: RasaWindowPlan): string | null {
+        const end = Date.parse(since) + plan.Days * DAY_MS;
+        return end >= Date.now() ? null : this.IsoSeconds(end);
+    }
+
+    /** After the last parent: the next window from the first parent, or null when the feed is done. */
+    private NextWindow(position: RasaParentCursor, plan: RasaWindowPlan | null, parentIDs: string[]): RasaParentCursor | null {
+        if (!plan || !position.w) return null;
+        const end = this.WindowEnd(position.w, plan);
+        return end ? { p: parentIDs[0], w: end } : null;
+    }
+
+    private EncodeParentCursor(position: RasaParentCursor): string {
+        return PARENT_CURSOR_PREFIX + JSON.stringify(position);
+    }
+
+    /** Reads back a cursor from {@link EncodeParentCursor}; anything else means "start from the beginning". */
+    private DecodeParentCursor(cursor: string | undefined): RasaParentCursor | null {
+        if (!cursor || !cursor.startsWith(PARENT_CURSOR_PREFIX)) return null;
+        try {
+            const parsed = this.AsRecord(JSON.parse(cursor.slice(PARENT_CURSOR_PREFIX.length)));
+            if (!parsed || typeof parsed.p !== 'string') return null;
+            return {
+                p: parsed.p,
+                o: typeof parsed.o === 'number' ? parsed.o : undefined,
+                c: typeof parsed.c === 'string' ? parsed.c : undefined,
+                w: typeof parsed.w === 'string' ? parsed.w : undefined,
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    /** The connection's own settings from `CompanyIntegration.Configuration`; invalid or absent ⇒ none. */
+    private ConnectionSettings(ci: MJCompanyIntegrationEntity): RasaConnectionSettings {
+        try {
+            const raw = ci.Configuration;
+            if (!raw) return {};
+            const parsed = RasaConnectionSettingsSchema.safeParse(JSON.parse(raw));
+            return parsed.success ? parsed.data : {};
+        } catch {
+            return {};
+        }
+    }
+
+    /** ISO-8601 to the second, the form the vendor's `*_since` params are sent in. */
+    private IsoSeconds(ms: number): string {
+        return new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
     }
 
     /**
@@ -845,7 +1240,7 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     /** GetRecord also runs NormalizeResponse — publish the same response context first. */
     public override async GetRecord(ctx: GetRecordContext): Promise<ExternalRecord | null> {
         const ci = ctx.CompanyIntegration as MJCompanyIntegrationEntity;
-        return this.fetchScope.run({ Response: null, Watermark: null, Warnings: [] }, () => {
+        return this.fetchScope.run(RasaConnector.NewFetchState(this.ConnectionSettings(ci)), () => {
             this.lastIntegrationID = ci.IntegrationID;
             this.PublishResponseContext(this.GetCachedObject(ci.IntegrationID, ctx.ObjectName), ctx.ObjectName);
             return super.GetRecord(ctx);
