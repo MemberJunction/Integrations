@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-informz",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MemberJunction Informz connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "zod": "~3.24.4",
-    "@memberjunction/connector-schema-merge": "^1.0.0",
+    "@memberjunction/connector-schema-merge": "^1.1.1",
     "fast-xml-parser": "^5.5.10"
   },
   "devDependencies": {

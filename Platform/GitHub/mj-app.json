@@ -4,7 +4,7 @@
   "name": "connector-github",
   "displayName": "GitHub Integration Connector",
   "description": "GitHub REST API v3 (2022-11-28) connector for MemberJunction Integration Engine — syncs repositories, issues, issue comments, pull requests, pull request comments, releases, commits, and workflow runs with Personal Access Token (PAT), OAuth Bearer token, or GitHub App Installation Token authentication",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "publisher": {
     "name": "MemberJunction",

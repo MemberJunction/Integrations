@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-higher-logic-vanilla",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "MemberJunction HigherLogicVanilla connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "zod": "~3.24.4",
-    "@memberjunction/connector-schema-merge": "^1.0.0"
+    "@memberjunction/connector-schema-merge": "^1.1.1"
   },
   "devDependencies": {
     "@memberjunction/core": "^5.43.0",
