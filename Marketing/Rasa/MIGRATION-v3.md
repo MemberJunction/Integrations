@@ -76,8 +76,9 @@ not per contact). Each row is keyed on the parent id plus `id + action_type + ti
 **History window:** rasa.io defaults `created_since` to seven days ago and rejects a value more than 24 months
 ago (HTTP 400 "created_since must not be more than 24 months ago"). The action feeds declare
 `Configuration.maxLookbackDays: 725`: a first sync sends `now − 725 days` (rounded up to UTC midnight), and a
-stored watermark older than that is moved up to it with a `WATERMARK_CLAMPED` warning. Events older than
-24 months are not available from rasa.io.
+stored watermark older than that is moved up to it with a `WATERMARK_CLAMPED` warning. The limit is set per
+rasa.io account, and rasa.io can raise it; a connection whose account allows more sets its own
+`maxLookbackDays` (see §4c).
 
 ## 4a. Changed or removed after the first live run
 
@@ -137,6 +138,39 @@ record maps, and leaves the table empty until the next sync reloads it. Here tha
 and the eight nested collections. Every row comes back from rasa.io in the full sync in step 3, so run that
 sync straight after the refresh. Until it finishes, those tables are empty and anything that reads them
 (queries, lists, reports) sees no data.
+
+## 4c. Large histories and several accounts (3.0.5)
+
+**Bounded batches.** The 8 parent-scoped objects (Newsletter / Blast / Sequence Action and Contact, Newsletter
+Deleted Contact, Deleted Contact) are read one batch per call: at most the engine's `BatchSize` records, and
+at most 10 parents visited. The cursor carries the parent being read and that parent's next page, so a call
+can stop mid-parent and the next one resumes there. Before 3.0.5 a call read every page of up to 10 parents,
+and a full history came back as one batch (a production install on MJ 6.1.6: 162k newsletter events, "Maximum call stack size
+exceeded", no watermark saved).
+
+**Windows on the action feeds.** Newsletter / Blast / Sequence Action are read in date windows
+(`created_since` + `created_before`), oldest first, each window across every parent. The last window has no
+upper bound. When a window is done for every parent, the next window's start is reported as the watermark.
+On MJ 6.1 and later the engine saves that watermark every 25 batches and when a run stops early, for
+example at its limit of 5,000 batches per object. An interrupted backfill then resumes from its last
+finished window. On MJ 5.x an interrupted run saves no watermark, so a very large backfill has to
+finish in one run.
+
+**One connection per account.** Each rasa.io account needs its own connection, because each v2 client ID and
+secret belongs to one account. Parents are read from the connection's own record maps, so connections on one
+database don't read each other's newsletters. (The base connector reads the first entity map with that
+object name in the database, whichever connection it belongs to.)
+
+**Per-connection settings** in `CompanyIntegration.Configuration`, next to the engine's `syncConcurrency`
+and `fetchTimeoutMs`:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `maxLookbackDays` | each object's own (725 on the action feeds) | How far back the action feeds go. Set it when rasa.io has raised the account's limit; a value past the account's limit fails with HTTP 400. |
+| `historyWindowDays` | 90 | Width of one window on the action feeds. |
+
+A connection with `maxLookbackDays` set reads that much history on its first full sync. One already synced
+only goes further back on a full sync ("Sync all history").
 
 ## 5. Actions: 12 disabled, 6 added
 
