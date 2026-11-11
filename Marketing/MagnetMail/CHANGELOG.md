@@ -1,5 +1,16 @@
 # @memberjunction/connector-magnetmail
 
+## 3.1.0
+
+### Minor Changes
+
+- 9efbf1e: Add opt-in private social objects (`InboxMessages`, `SentMessages`, `Friends`, `FriendRequests`) to Higher Logic Thrive Community, plus metered migration pacing (`migrationPacing`) and stateful sliding date-window slicing (`WindowCursor`) with adaptive window bisection across all 4 Higher Logic connectors (`HigherLogicThriveCommunity`, `MagnetMail`, `Informz`, and `HigherLogicVanilla`).
+
+### Patch Changes
+
+- Updated dependencies [904cc70]
+  - @memberjunction/connector-schema-merge@1.1.1
+
 ## 3.0.5
 
 ### Patch Changes
