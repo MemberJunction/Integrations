@@ -262,6 +262,28 @@ describe('parent-scoped fetch', () => {
         expect(batches.map(b => b.Records.length)).toEqual([200, 200, 50]);
     });
 
+    it('reads the next parent from its start when the cursor names a parent that is gone', async () => {
+        const data = {
+            n1: Array.from({ length: 5 }, (_, i) => ({ id: `c${i}` })),
+            n2: Array.from({ length: 5 }, (_, i) => ({ id: `d${i}` })),
+        };
+        const first = (await drain(connectorFor(newsletterContact, fakeServer({}, data), ['n1']), newsletterContact, { batchSize: 3 }))[0];
+        expect(first.HasMore).toBe(true);
+
+        const connector = connectorFor(newsletterContact, fakeServer({}, data), ['n2']);
+        const batch = (await connector.FetchChanges({
+            CompanyIntegration: { ID: 'ci-1', IntegrationID: 'int-1', Configuration: null },
+            ObjectName: newsletterContact.Name,
+            WatermarkValue: null,
+            BatchSize: 50,
+            ContextUser: {},
+            CurrentCursor: first.NextCursor,
+            AfterKeyValue: null,
+        } as never)) as unknown as Batch;
+
+        expect(batch.Records.map(r => r.ExternalID)).toEqual(['n2|d0', 'n2|d1', 'n2|d2', 'n2|d3', 'n2|d4']);
+    });
+
     it('starts over when handed a cursor it did not write', async () => {
         const server = fakeServer({}, { n1: [{ id: 'c0' }, { id: 'c1' }] });
         const connector = connectorFor(newsletterContact, server, ['n1']);

@@ -991,6 +991,8 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
                 continue;
             }
             const parentID = parentIDs[index];
+            // The cursor's parent is gone and ParentIndex moved on: its offset belongs to that parent.
+            if (parentID !== position.p) position = { p: parentID, w: position.w };
             parentsVisited++;
             const page = await this.FetchOneParent(ctx, obj, route, parentID, position, plan, budget - records.length);
             for (const record of page.Records) records.push(record);
