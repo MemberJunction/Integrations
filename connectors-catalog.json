@@ -777,10 +777,10 @@
       "objectCount": 23,
       "className": "@memberjunction/connector-rasa-io",
       "npmPackage": "@memberjunction/connector-rasa-io",
-      "version": "3.0.4",
+      "version": "3.0.5",
       "mjVersionRange": ">=5.42.0 <7.0.0",
       "repoSubpath": "Marketing/Rasa",
-      "installTag": "Marketing-Rasa@3.0.4"
+      "installTag": "Marketing-Rasa@3.0.5"
     },
     {
       "name": "Reply",
