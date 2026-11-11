@@ -22,7 +22,7 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-BUSL--1.1-blue?style=flat-square" alt="License: BUSL 1.1"></a>
-  <a href="#-full-integration-directory"><img src="https://img.shields.io/badge/Connectors-54_Published-blue?style=flat-square" alt="Published Connectors"></a>
+  <a href="#-full-integration-directory"><img src="https://img.shields.io/badge/Connectors-55_Published-blue?style=flat-square" alt="Published Connectors"></a>
   <a href="https://github.com/MemberJunction/MJ"><img src="https://img.shields.io/badge/MemberJunction-%3E%3D5.43.0%20%3C7.0.0-2d6a9f?style=flat-square" alt="MemberJunction Compatibility"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"></a>
   <a href="https://docs.memberjunction.org"><img src="https://img.shields.io/badge/docs-memberjunction.org-blue?style=flat-square" alt="Documentation"></a>
@@ -273,6 +273,9 @@ Every pull request to `next` or `main` is verified against **16 automated qualit
 > **54 published Open App connectors** across **8 categories** (5,617+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **6 held connectors**.
 
 [**AMS** (11)](#ams--association-management-systems) · [**CRM** (5)](#crm--customer-relationship-management--fundraising) · [**Events** (6)](#events--conferences-registration-abstracts--awards) · [**Finance** (5)](#finance--accounting-erp-billing--payments) · [**LMS** (3)](#lms--learning-management--credentialing) · [**Marketing** (9)](#marketing--email-automation-engagement--analytics) · [**PM** (2)](#pm--project--time-management) · [**Platform** (13)](#platform--community-content-support-databases--data-warehouses) · [**Shared & Primitives** (4)](#shared-libraries--platform-primitives) · [**Held / In Development** (6)](#held--in-development-connectors)
+> **55 published Open App connectors** across **8 categories** (5,625+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **7 held connectors**.
+
+[**AMS** (11)](#ams--association-management-systems) · [**CRM** (5)](#crm--customer-relationship-management--fundraising) · [**Events** (6)](#events--conferences-registration-abstracts--awards) · [**Finance** (5)](#finance--accounting-erp-billing--payments) · [**LMS** (3)](#lms--learning-management--credentialing) · [**Marketing** (9)](#marketing--email-automation-engagement--analytics) · [**PM** (2)](#pm--project--time-management) · [**Platform** (14)](#platform--community-content-support-databases--data-warehouses) · [**Shared & Primitives** (4)](#shared-libraries--platform-primitives) · [**Held / In Development** (7)](#held--in-development-connectors)
 
 ### AMS — Association Management Systems
 
@@ -366,10 +369,11 @@ Workspaces, projects, tasks, subtasks, assignments, and time-tracking records. (
 
 ### Platform — Community, Content, Support, Databases & Data Warehouses
 
-Online communities, forums, CMS, help desks, document libraries, research registries, and live-introspected SQL/NoSQL databases. (13 connectors)
+Online communities, forums, CMS, help desks, document libraries, research registries, and live-introspected SQL/NoSQL databases. (14 connectors)
 
 | Connector | npm Package | Version | Objects | Docs & Evidence | Description |
 |-----------|-------------|---------|--------:|-----------------|-------------|
+| [**GitHub**](./Platform/GitHub) | `@memberjunction/connector-github` | `1.0.0` | 8 | — | GitHub REST API v3 (2022-11-28) connector. |
 | [**Higher Logic Thrive Community**](./Platform/HigherLogicThriveCommunity) | `@memberjunction/connector-higher-logic-thrive-community` | `0.2.2` | 39 | [🟡 Honest-NA](./Platform/HigherLogicThriveCommunity/docs/SUPPORT.md) | Community discussions, events, resource libraries and member activity from Higher Logic Thrive. |
 | [**Higher Logic Vanilla**](./Platform/HigherLogicVanilla) | `@memberjunction/connector-higher-logic-vanilla` | `0.2.3` | 65 | [🟡 Honest-NA](./Platform/HigherLogicVanilla/docs/SUPPORT.md) | Users, roles, categories, discussions, comments, reactions, groups and knowledge-base articles. |
 | [**Hivebrite**](./Platform/Hivebrite) | `@memberjunction/connector-hivebrite` | `1.2.4` | 98 | [🟡 Baseline](./Platform/Hivebrite/docs/SUPPORT.md) | Users, companies, events, memberships, donations, groups and 40+ other community objects. |
