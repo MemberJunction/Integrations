@@ -559,7 +559,7 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     /**
      * HTTP transport with bounded retry: network blips, a 401 (mint a fresh JWT and replay once the
      * cached one has aged out), and 429 honouring `Retry-After` when the vendor sends one. A 404 on a
-     * per-parent read, or a 400 saying that parent has no audience, is answered as an empty page
+     * per-parent read, or a 400 on one parent's contacts, is answered as an empty page
      * (see {@link EmptyPageForParent}).
      */
     protected async MakeHTTPRequest(
@@ -595,8 +595,8 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
             const result = await this.ToRESTResponse(response);
             if (method.toUpperCase() === 'GET' && this.responseCtx?.ParentScoped) {
                 if (result.Status === 404) return this.EmptyPageForParent(result, url, 'PARENT_NOT_FOUND');
-                if (result.Status === 400 && this.IsNoAudienceAnswer(result)) {
-                    return this.EmptyPageForParent(result, url, 'PARENT_HAS_NO_AUDIENCE');
+                if (result.Status === 400 && this.IsContactsRead(url)) {
+                    return this.EmptyPageForParent(result, url, 'PARENT_NOT_CONFIGURED');
                 }
             }
             return result;
@@ -612,11 +612,12 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * "'144' is a sequence, not a blast" (HTTP 404). The parent is skipped with a warning carrying the
      * vendor's message, and the sync moves on to the next parent.
      *
-     * The same goes for a blast with no audience: `/v2/messaging/blast/{id}/contacts` answers HTTP 400
-     * "No target lists configured" (seen live 2026-11-11) rather than an empty page. That blast has no
-     * contacts, so it is skipped too ({@link IsNoAudienceAnswer}).
+     * A 400 on one parent's contacts is skipped the same way ({@link IsContactsRead}). rasa.io answers
+     * 400 when that newsletter, blast or sequence isn't configured to answer the question, e.g. a blast
+     * with no target lists (seen live 2026-11-11: "No target lists configured"). rasa.io says the
+     * message can vary and isn't meant to be matched, so any 400 there counts.
      */
-    private EmptyPageForParent(result: RESTResponse, url: string, code: 'PARENT_NOT_FOUND' | 'PARENT_HAS_NO_AUDIENCE'): RESTResponse {
+    private EmptyPageForParent(result: RESTResponse, url: string, code: 'PARENT_NOT_FOUND' | 'PARENT_NOT_CONFIGURED'): RESTResponse {
         const vendorMessage = this.VendorErrorMessage(result);
         let path = url;
         try {
@@ -635,11 +636,19 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * A 400 that means "this parent has no audience", not a bad request. Matched on the vendor's message
-     * so any other 400 (a rejected `created_since`, a bad parameter) still fails the read.
+     * A per-parent contacts read (`/v2/messaging/{newsletter|blast|sequence}/{id}/contacts`). Every parent
+     * gets the same request (paging only, no dates or filters), so a 400 there is about that parent, not
+     * the request. The action feeds are not covered: they send a date window, and a 400 there can mean
+     * the window was rejected, which must still fail the read.
      */
-    private IsNoAudienceAnswer(result: RESTResponse): boolean {
-        return /no target lists configured/i.test(this.VendorErrorMessage(result) ?? '');
+    private IsContactsRead(url: string): boolean {
+        let path = url;
+        try {
+            path = new URL(url).pathname;
+        } catch {
+            /* match the raw url */
+        }
+        return /\/messaging\/(newsletter|blast|sequence)\/[^/?]+\/contacts\/?(\?|$)/.test(path);
     }
 
     /** rasa.io puts its error text in `metadata.errors`. */
