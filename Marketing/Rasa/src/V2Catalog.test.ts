@@ -169,6 +169,67 @@ describe('404 on a per-parent read', () => {
     });
 });
 
+describe('400 on one parent\'s contacts', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    type Transport = {
+        responseCtx: { ObjectName: string; DataPath: string | null; UnwrapDeclared: boolean; ParentScoped: boolean } | null;
+        pendingWarnings: { Code: string; Message: string }[];
+        MakeHTTPRequest(auth: unknown, url: string, method: string, headers: Record<string, string>): Promise<{ Status: number; Body: unknown }>;
+    };
+
+    // The live payload (2026-11-11): a blast with no audience answers its contacts read with a 400.
+    const noAudience = {
+        code: 400,
+        event: '',
+        metadata: { errors: 'No target lists configured', next_link: '', record_count: 0 },
+        results: [],
+    };
+    const otherMessage = { code: 400, metadata: { errors: 'Sequence has no messages', next_link: '' } };
+    const tooOld = { code: 400, metadata: { errors: 'created_since cannot be more than 24 months ago', next_link: '' } };
+
+    function connectorAnswering400(body: unknown, parentScoped = true): Transport {
+        vi.stubGlobal('fetch', async () => new Response(JSON.stringify(body), { status: 400 }));
+        const c = new RasaConnector() as unknown as Transport;
+        c.responseCtx = { ObjectName: 'Blast Contact', DataPath: 'results', UnwrapDeclared: false, ParentScoped: parentScoped };
+        c.pendingWarnings = [];
+        return c;
+    }
+
+    it('answers an empty page and warns, so the sync moves on to the next blast', async () => {
+        const c = connectorAnswering400(noAudience);
+        const res = await c.MakeHTTPRequest({ Token: 't' }, 'https://h/v2/messaging/blast/282/contacts?limit=25', 'GET', {});
+        expect(res.Status).toBe(200);
+        expect(res.Body).toMatchObject({ results: [] });
+        expect(c.pendingWarnings).toHaveLength(1);
+        expect(c.pendingWarnings[0].Code).toBe('PARENT_NOT_CONFIGURED');
+        expect(c.pendingWarnings[0].Message).toContain('HTTP 400 on GET /v2/messaging/blast/282/contacts');
+        expect(c.pendingWarnings[0].Message).toContain('No target lists configured');
+    });
+
+    it('skips whatever the message says, on newsletter and sequence contacts too', async () => {
+        for (const url of ['https://h/v2/messaging/sequence/144/contacts?skip=50&limit=50', 'https://h/v2/messaging/newsletter/9/contacts']) {
+            const c = connectorAnswering400(otherMessage);
+            const res = await c.MakeHTTPRequest({ Token: 't' }, url, 'GET', {});
+            expect(res.Status).toBe(200);
+            expect(c.pendingWarnings[0].Code).toBe('PARENT_NOT_CONFIGURED');
+        }
+    });
+
+    it('leaves a 400 on an action feed to fail the read (its date window may be what was rejected)', async () => {
+        const c = connectorAnswering400(tooOld);
+        const res = await c.MakeHTTPRequest({ Token: 't' }, 'https://h/v2/insights/blast/282/actions', 'GET', {});
+        expect(res.Status).toBe(400);
+        expect(c.pendingWarnings).toHaveLength(0);
+    });
+
+    it('leaves the 400 to fail on a top-level object', async () => {
+        const c = connectorAnswering400(noAudience, false);
+        const res = await c.MakeHTTPRequest({ Token: 't' }, 'https://h/v2/messaging/blast', 'GET', {});
+        expect(res.Status).toBe(400);
+    });
+});
+
 describe('engagement events carry the contact (rasa.io 2026-10-20)', () => {
     it('declares contact_id (linked to Contact) and email on every action feed', async () => {
         const { readFileSync } = await import('node:fs');
