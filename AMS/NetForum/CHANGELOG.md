@@ -1,5 +1,15 @@
 # @memberjunction/connector-netforum-enterprise
 
+## 1.7.2
+
+### Patch Changes
+
+- b55f4e3: NetForum: an incremental read whose watermark is on a joined table also reads the rows changed or added on the key's table, and a change-date watermark sent without its add date says why.
+
+  - **Watermark on a joined table.** On a live tenant, `EventRegistrationOrderEntry` and `OldEventRegistration` are keyed on `ev_registrant.reg_key` but watermarked on `ev_registration_dem.rdm_change_date`. Fewer than 0.1% of registrations have a row in that table, so the predicate matched almost none and no new registration was read after the initial load. When an object's `IncrementalWatermarkField` is a column of a table other than the key's, the read now also ORs the key table's `<prefix>_change_date` and `<prefix>_add_date` (the prefix is the key column's), each when the definition has it on the key's table and the column list names it. The next watermark is the latest of all these dates. A `WATERMARK_NOT_ON_KEY_TABLE` warning names both tables on every batch and is logged once per object. Objects whose watermark is on the key's table read as before.
+  - **Add date not sent.** A `<prefix>_change_date` watermark sent without its `<prefix>_add_date` gives a `WATERMARK_ADD_DATE_NOT_SENT` warning on every batch, logged once per object, with the reason: no definition, the definition does not list it, it is on another table or alias, xWeb could not resolve it, or the column list sent does not name it (the default list, `Configuration.columnList`, the own-table list, or the full list left it out, and why). Without the add date, a record only added since the watermark is not read.
+  - **Backfill after upgrade.** A read takes the rows changed or added since the _current_ watermark. Rows missed before this version stay missing until the object's watermark is moved back to before the gap, or a full sync of the object runs. On the tenant above, that is both registration objects from 2026-10-13.
+
 ## 1.7.1
 
 ### Patch Changes
