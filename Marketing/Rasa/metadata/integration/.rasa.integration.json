@@ -4613,7 +4613,31 @@
                 "fields": {
                   "Name": "identifiers",
                   "DisplayName": "Identifiers",
-                  "Description": "The contact's IDs in other systems, as rasa.io returns them (JSON array of system and identifier). The same data, one row per identifier, is in Contact External Identifier.",
+                  "Description": "Not returned by this feed: rasa.io sends the contact's IDs in other systems as external_identifiers instead. Kept so existing installs keep the column; it stays empty.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Disabled",
+                  "Sequence": 19,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5D526797-86AE-4016-A8B7-A91E69DEAA4F"
+                },
+                "sync": {
+                  "lastModified": "2026-11-13T01:58:22.862Z",
+                  "checksum": "f7e7eeaf761dd141bc21b2ca38892fd31f376bb9b5b62f90da1314fb00c2339c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "external_identifiers",
+                  "DisplayName": "External Identifiers",
+                  "Description": "The contact's IDs in other systems, as rasa.io returns them on this feed (JSON array of system, identifier and system_identifier). /v2/contacts returns the same data as identifiers; one row per identifier is in Contact External Identifier.",
                   "Type": "json",
                   "IsRequired": false,
                   "IsReadOnly": true,
@@ -4622,15 +4646,39 @@
                   "Length": null,
                   "AllowsNull": true,
                   "Status": "Active",
-                  "Sequence": 19,
+                  "Sequence": 20,
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "5D526797-86AE-4016-A8B7-A91E69DEAA4F"
+                  "ID": "7EEE6ECE-3AE3-4E6E-83CF-56C16BE939B7"
                 },
                 "sync": {
-                  "lastModified": "2026-11-04T19:22:12.740Z",
-                  "checksum": "de9f4da47e4b942a20fe315e2a7dcc5145e46efc0c98090d79108349b0f1bf73"
+                  "lastModified": "2026-11-13T01:58:22.889Z",
+                  "checksum": "768dbb4f964c53ec6435342a72a8b23519cf35b5ba92972966afa3d61f42c906"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "is_subscribed",
+                  "DisplayName": "Is Subscribed",
+                  "Description": "Whether the contact is subscribed to this newsletter's audience, as rasa.io reports it. Separate from can_email, which covers every send to the contact.",
+                  "Type": "boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 21,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D5756814-2626-4A0A-9BC3-D97842BC422D"
+                },
+                "sync": {
+                  "lastModified": "2026-11-13T01:58:22.903Z",
+                  "checksum": "ab3f4d031543ecba8a024e3cdb29c6650e7670cc0f31929b84bbbd4c3bc231f7"
                 }
               }
             ]
@@ -5611,7 +5659,31 @@
                 "fields": {
                   "Name": "identifiers",
                   "DisplayName": "Identifiers",
-                  "Description": "The contact's IDs in other systems, as rasa.io returns them (JSON array of system and identifier). The same data, one row per identifier, is in Contact External Identifier.",
+                  "Description": "Not returned by this feed: rasa.io sends the contact's IDs in other systems as external_identifiers instead. Kept so existing installs keep the column; it stays empty.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Disabled",
+                  "Sequence": 19,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CE1F6E89-8A3E-4C76-83F1-47E0EB290E80"
+                },
+                "sync": {
+                  "lastModified": "2026-11-13T01:58:22.944Z",
+                  "checksum": "f7e7eeaf761dd141bc21b2ca38892fd31f376bb9b5b62f90da1314fb00c2339c"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "external_identifiers",
+                  "DisplayName": "External Identifiers",
+                  "Description": "The contact's IDs in other systems, as rasa.io returns them on this feed (JSON array of system, identifier and system_identifier). /v2/contacts returns the same data as identifiers; one row per identifier is in Contact External Identifier.",
                   "Type": "json",
                   "IsRequired": false,
                   "IsReadOnly": true,
@@ -5620,15 +5692,39 @@
                   "Length": null,
                   "AllowsNull": true,
                   "Status": "Active",
-                  "Sequence": 19,
+                  "Sequence": 20,
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "CE1F6E89-8A3E-4C76-83F1-47E0EB290E80"
+                  "ID": "9ED398AE-0CF2-40D0-9879-E537136093BE"
                 },
                 "sync": {
-                  "lastModified": "2026-11-04T19:22:13.368Z",
-                  "checksum": "de9f4da47e4b942a20fe315e2a7dcc5145e46efc0c98090d79108349b0f1bf73"
+                  "lastModified": "2026-11-13T01:58:22.960Z",
+                  "checksum": "768dbb4f964c53ec6435342a72a8b23519cf35b5ba92972966afa3d61f42c906"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "is_subscribed",
+                  "DisplayName": "Is Subscribed",
+                  "Description": "Whether the contact is subscribed to this blast's audience, as rasa.io reports it. Separate from can_email, which covers every send to the contact.",
+                  "Type": "boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 21,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "028BFA1F-1680-44EE-882B-A98A19504462"
+                },
+                "sync": {
+                  "lastModified": "2026-11-13T01:58:22.973Z",
+                  "checksum": "5c648186f5d9c78d94bdb92adb8f8bb96315388d696820ff638523d260c53eb2"
                 }
               }
             ]
@@ -6627,6 +6723,54 @@
                 "sync": {
                   "lastModified": "2026-11-04T19:22:14.018Z",
                   "checksum": "de9f4da47e4b942a20fe315e2a7dcc5145e46efc0c98090d79108349b0f1bf73"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "external_identifiers",
+                  "DisplayName": "External Identifiers",
+                  "Description": "The contact's IDs in other systems, as rasa.io returns them on this feed (JSON array of system, identifier and system_identifier). /v2/contacts returns the same data as identifiers; one row per identifier is in Contact External Identifier.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 20,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2A67E5B5-5EF9-44C5-8BD5-9DA35DD32167"
+                },
+                "sync": {
+                  "lastModified": "2026-11-13T01:58:23.012Z",
+                  "checksum": "768dbb4f964c53ec6435342a72a8b23519cf35b5ba92972966afa3d61f42c906"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "is_subscribed",
+                  "DisplayName": "Is Subscribed",
+                  "Description": "Whether the contact is subscribed to this sequence's audience, as rasa.io reports it. Separate from can_email, which covers every send to the contact.",
+                  "Type": "boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 21,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3EA239DF-D076-440A-ADE0-CB02DB4DADEC"
+                },
+                "sync": {
+                  "lastModified": "2026-11-13T01:58:23.026Z",
+                  "checksum": "08fff3c8331f21c9822132a2a54e3a9f35b5b39a43c0c51031692b19126c9546"
                 }
               }
             ]

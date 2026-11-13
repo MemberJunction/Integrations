@@ -324,3 +324,37 @@ describe('keys (3.0.3)', () => {
         }
     });
 });
+
+describe('contact feed fields (rasa.io renamed identifiers on the per-item feeds)', () => {
+    async function fieldsOf(name: string): Promise<Array<Record<string, unknown>>> {
+        const { readFileSync } = await import('node:fs');
+        const { fileURLToPath } = await import('node:url');
+        const path = fileURLToPath(new URL('../metadata/integration/.rasa.integration.json', import.meta.url));
+        const [integration] = JSON.parse(readFileSync(path, 'utf8')) as Array<{
+            relatedEntities: { 'MJ: Integration Objects': Array<{
+                fields: { Name: string };
+                relatedEntities: { 'MJ: Integration Object Fields': Array<{ fields: Record<string, unknown> }> };
+            }> };
+        }>;
+        const obj = integration.relatedEntities['MJ: Integration Objects'].find(o => o.fields.Name === name);
+        return obj?.relatedEntities['MJ: Integration Object Fields'].map(f => f.fields) ?? [];
+    }
+
+    it('declares external_identifiers and is_subscribed on the newsletter, blast and sequence contact feeds', async () => {
+        for (const name of ['Newsletter Contact', 'Blast Contact', 'Sequence Contact']) {
+            const fields = await fieldsOf(name);
+            expect(fields.find(f => f.Name === 'external_identifiers'), `${name}.external_identifiers`)
+                .toMatchObject({ Type: 'json', AllowsNull: true, Status: 'Active', IsPrimaryKey: false });
+            expect(fields.find(f => f.Name === 'is_subscribed'), `${name}.is_subscribed`)
+                .toMatchObject({ Type: 'boolean', AllowsNull: true, Status: 'Active', IsPrimaryKey: false });
+        }
+    });
+
+    it('disables identifiers where the feed no longer sends it, and keeps it on Sequence Contact until a sequence is seen', async () => {
+        for (const name of ['Newsletter Contact', 'Blast Contact']) {
+            expect((await fieldsOf(name)).find(f => f.Name === 'identifiers')?.Status, name).toBe('Disabled');
+        }
+        // No sequence data has been seen yet, so Sequence Contact keeps its declared identifiers.
+        expect((await fieldsOf('Sequence Contact')).find(f => f.Name === 'identifiers')?.Status).toBe('Active');
+    });
+});
