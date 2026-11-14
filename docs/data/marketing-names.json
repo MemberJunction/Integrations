@@ -239,11 +239,6 @@
       "section": "community",
       "marketingDescription": "Users, companies, events, memberships, donations, groups and 40+ other community objects."
     },
-    "Platform/MJtoMJ": {
-      "marketingName": "MemberJunction to MemberJunction",
-      "section": "databases",
-      "marketingDescription": "Replicate data between two MemberJunction instances."
-    },
     "Platform/MongoDB": {
       "section": "databases",
       "marketingDescription": "Any MongoDB database, with its schema discovered when you connect."
