@@ -21,11 +21,11 @@ import {
     TAG_OBJECT,
     type CatalogObject,
 } from './catalog.js';
-import { ParseConnectionSettings, ParseJsonObject, ReadNonEmptyString, type ConnectionSettings, type CredentialValues } from './config.js';
+import { ParseConnectionSettings, ParseJsonObject, ReadNonEmptyString, ResolveEffectivePiiMode, type ConnectionSettings, type CredentialValues } from './config.js';
 import { GetSpektrixDataFeedClientFactory, NO_CLIENT_REGISTERED_MESSAGE } from './datafeeds/clientRegistry.js';
 import type { CustomerDataFeed, DataFeedClient, DataFeedCustomer, DataFeedLookups } from './datafeeds/types.js';
 import { AnonymizeRecord, FlattenCustomer } from './pii/anonymize.js';
-import { PII_MODES } from './pii/policy.js';
+import { PII_MODES, type PiiMode } from './pii/policy.js';
 import { Pseudonymizer } from './pii/pseudonymizer.js';
 import { DecodeCursor, DecodeWatermark, EncodeCursor, EncodeWatermark, ParseDotNetDateTime, PlanWindow } from './watermark.js';
 
@@ -55,6 +55,7 @@ export interface SpektrixDataFeedsSettingDescriptor {
 interface ResolvedConnection {
     client: DataFeedClient;
     settings: ConnectionSettings;
+    effectiveMode: PiiMode;
     pseudonymizer: Pseudonymizer | undefined;
 }
 
@@ -170,8 +171,9 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
 
     private async fetchCustomers(ctx: FetchContextCompat, object: CatalogObject): Promise<FetchBatchResult> {
         const settings = ParseConnectionSettings(ctx.CompanyIntegration.Configuration);
+        const effectiveMode = ResolveEffectivePiiMode(settings, ctx.CompanyIntegration.Configuration);
         const stored = DecodeWatermark(ctx.WatermarkValue);
-        this.guardPiiMode(stored?.piiMode ?? null, settings);
+        this.guardPiiMode(stored?.piiMode ?? null, effectiveMode, settings);
 
         const now = this.CurrentTime();
         const cursor = DecodeCursor(ctx.CurrentCursor);
@@ -185,7 +187,7 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
             window = PlanWindow(start, settings.windowDays, now);
             if (window === null) {
                 // Nothing newer than the stored watermark can exist yet. Keep the watermark where it is.
-                return { Records: [], HasMore: false, NewWatermarkValue: EncodeWatermark({ to: start.toISOString(), piiMode: settings.piiMode }) };
+                return { Records: [], HasMore: false, NewWatermarkValue: EncodeWatermark({ to: start.toISOString(), piiMode: effectiveMode }) };
             }
         }
 
@@ -201,7 +203,7 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
                 HasMore: true,
                 NextCursor: EncodeCursor({ from: window.from.toISOString(), to: window.to.toISOString(), offset: next }),
                 // Mid-window the safe watermark is the window START: an interrupted run re-reads this window.
-                NewWatermarkValue: EncodeWatermark({ to: window.from.toISOString(), piiMode: settings.piiMode }),
+                NewWatermarkValue: EncodeWatermark({ to: window.from.toISOString(), piiMode: effectiveMode }),
             };
         }
 
@@ -212,7 +214,7 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
             Records: slice,
             HasMore: nextWindow !== null,
             NextCursor: nextWindow ? EncodeCursor({ from: nextWindow.from.toISOString(), to: nextWindow.to.toISOString(), offset: 0 }) : undefined,
-            NewWatermarkValue: EncodeWatermark({ to: window.to.toISOString(), piiMode: settings.piiMode }),
+            NewWatermarkValue: EncodeWatermark({ to: window.to.toISOString(), piiMode: effectiveMode }),
         };
     }
 
@@ -251,7 +253,7 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
 
     private toCustomerRecord(customer: DataFeedCustomer, classes: ReturnType<typeof PiiClassesFor>, resolved: ResolvedConnection): ExternalRecord {
         const fields = AnonymizeRecord(FlattenCustomer(customer), classes, {
-            mode: resolved.settings.piiMode,
+            mode: resolved.effectiveMode,
             pseudonymizer: resolved.pseudonymizer,
             attributeAllowlist: resolved.settings.piiAttributeAllowlist,
             nameSeed: String(customer.id),
@@ -265,10 +267,10 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
         };
     }
 
-    private guardPiiMode(storedMode: string | null, settings: ConnectionSettings): void {
-        if (storedMode && storedMode !== settings.piiMode && !settings.allowPiiModeChange) {
+    private guardPiiMode(storedMode: PiiMode | null, effectiveMode: PiiMode, settings: ConnectionSettings): void {
+        if (storedMode && storedMode !== effectiveMode && !settings.allowPiiModeChange) {
             throw new Error(
-                `piiMode changed from '${storedMode}' to '${settings.piiMode}' since the last sync. Rows of both shapes would share one table. ` +
+                `piiMode changed from '${storedMode}' to '${effectiveMode}' since the last sync. Rows of both shapes would share one table. ` +
                     'Clear the watermark and resync in full, or set allowPiiModeChange: true to accept that.',
             );
         }
@@ -335,6 +337,7 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
         const factory = GetSpektrixDataFeedClientFactory();
         if (!factory) throw new Error(NO_CLIENT_REGISTERED_MESSAGE);
         const settings = ParseConnectionSettings(companyIntegration.Configuration);
+        const effectiveMode = ResolveEffectivePiiMode(settings, companyIntegration.Configuration);
         const credential = await this.LoadCredentialValues(companyIntegration, contextUser);
 
         const clientName = credential.ClientName ?? settings.ClientName;
@@ -343,7 +346,7 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
         const pfx = DecodeBase64Strict(credential.CertificatePfxBase64, 'CertificatePfxBase64');
 
         let pseudonymizer: Pseudonymizer | undefined;
-        if (settings.piiMode === 'pseudonymize') {
+        if (effectiveMode === 'pseudonymize') {
             if (!credential.PseudonymKey) throw new Error("PseudonymKey is missing from the credential; it is required while piiMode is 'pseudonymize'.");
             pseudonymizer = new Pseudonymizer(credential.PseudonymKey);
         }
@@ -355,13 +358,13 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
             endpoint: credential.Endpoint ?? settings.Endpoint,
             idleTimeoutMs: settings.idleTimeoutMs,
         });
-        return { client, settings, pseudonymizer };
+        return { client, settings, effectiveMode, pseudonymizer };
     }
 
     /**
      * Secrets come ONLY from the connection's `MJ: Credentials` record; `ClientName` and `Endpoint` may
-     * fall back to the connection configuration. Nothing read here is ever logged. Protected so tests
-     * substitute values without a database.
+     * fall back to the connection configuration and `PseudonymKey` may fall back to `SPEKTRIX_PSEUDONYM_KEY`.
+     * Nothing read here is ever logged. Protected so tests substitute values without a database.
      */
     protected async LoadCredentialValues(companyIntegration: MJCompanyIntegrationEntity, contextUser: UserInfo): Promise<CredentialValues> {
         let values: Record<string, unknown> | null = null;
@@ -374,7 +377,9 @@ export class SpektrixDataFeedsConnector extends BaseIntegrationConnector {
             ClientName: ReadNonEmptyString(values, 'ClientName') ?? ReadNonEmptyString(config, 'ClientName'),
             CertificatePfxBase64: ReadNonEmptyString(values, 'CertificatePfxBase64'),
             CertificatePassphrase: ReadNonEmptyString(values, 'CertificatePassphrase'),
-            PseudonymKey: ReadNonEmptyString(values, 'PseudonymKey'),
+            PseudonymKey:
+                ReadNonEmptyString(values, 'PseudonymKey') ??
+                ReadNonEmptyString(process.env as Record<string, unknown>, 'SPEKTRIX_PSEUDONYM_KEY'),
             Endpoint: ReadNonEmptyString(values, 'Endpoint') ?? ReadNonEmptyString(config, 'Endpoint'),
         };
     }
@@ -428,6 +433,18 @@ export function DecodeBase64Strict(value: string, label: string): Buffer {
 }
 
 const SPEKTRIX_DATA_FEEDS_SETTINGS: readonly SpektrixDataFeedsSettingDescriptor[] = [
+    {
+        Key: 'anonymizePII',
+        Label: 'Anonymize PII',
+        Group: 'Personal data',
+        Type: 'boolean',
+        Default: true,
+        Tier: 'basic',
+        AppliesTo: 'connection',
+        Description:
+            'When ON (default), masks/pseudonymizes patron PII (names, emails, phones, street addresses, birth date, custom attributes) as records arrive before saving or snapshotting. Turn OFF only to ingest raw PII.',
+        Sensitive: false,
+    },
     {
         Key: 'piiMode',
         Label: 'Personal data mode',

@@ -108,6 +108,8 @@ describe('surface', () => {
         expect(c.MonotonicWatermark).toBe(true);
         expect(c.DiscoveryIsAuthoritative).toBe(false);
         expect(c.MaxConcurrencyHint).toBe(1);
+        expect(c.SettingsSchema[0]?.Key).toBe('anonymizePII');
+        expect(c.SettingsSchema[0]?.Default).toBe(true);
         expect(c.SettingsSchema.map((s) => s.Key)).toContain('piiMode');
     });
 
@@ -308,5 +310,33 @@ describe('FetchChanges — guards', () => {
         const c = new TestConnector();
         await expect(c.FetchChanges(ctx(c, CUSTOMER_OBJECT, {}, { windowDays: 'thirty-ish' }))).rejects.toThrow(/windowDays/);
         await expect(c.FetchChanges(ctx(c, CUSTOMER_OBJECT, {}, { windowDays: 'thirty-ish' }))).rejects.not.toThrow(/thirty-ish/);
+    });
+});
+
+describe('anonymizePII toggle & comma-separated allowlist', () => {
+    it('allows anonymizePII: false to override the default pseudonymize mode to raw', async () => {
+        installFakeClient();
+        const c = new TestConnector();
+        c.Credential = { ...c.Credential, PseudonymKey: undefined };
+        const [batch] = await drain(c, ctx(c, CUSTOMER_OBJECT, {}, { anonymizePII: false, fetchWindowStart: '2026-11-01T00:00:00Z' }));
+        expect(batch!.Records[0]!.Fields['email']).toBe('Zebediah.Fixturesmith@Example.ORG');
+        expect(DecodeWatermark(batch!.NewWatermarkValue)?.piiMode).toBe('raw');
+    });
+
+    it('forces pseudonymize when anonymizePII: true even if piiMode was raw', async () => {
+        installFakeClient();
+        const c = new TestConnector();
+        const [batch] = await drain(c, ctx(c, CUSTOMER_OBJECT, {}, { anonymizePII: true, piiMode: 'raw', fetchWindowStart: '2026-11-01T00:00:00Z' }));
+        expect(batch!.Records[0]!.Fields['email']).toMatch(/@example\.invalid$/);
+        expect(DecodeWatermark(batch!.NewWatermarkValue)?.piiMode).toBe('pseudonymize');
+    });
+
+    it('parses comma-separated piiAttributeAllowlist strings alongside string arrays', async () => {
+        installFakeClient();
+        const c = new TestConnector();
+        const [batch] = await drain(c, ctx(c, CUSTOMER_OBJECT, {}, { anonymizePII: true, piiAttributeAllowlist: 'Membership, Notes', fetchWindowStart: '2026-11-01T00:00:00Z' }));
+        const attrs = JSON.parse(String(batch!.Records[0]!.Fields['attributes'])) as Array<{ name: string; value: string | null }>;
+        expect(attrs.find((a) => a.name === 'Membership')?.value).toBe('Gold');
+        expect(attrs.find((a) => a.name === 'Notes')?.value).toContain('wheelchair');
     });
 });

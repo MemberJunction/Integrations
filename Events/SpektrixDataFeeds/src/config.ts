@@ -1,16 +1,26 @@
 import { z } from 'zod';
-import { PII_MODES } from './pii/policy.js';
+import { PII_MODES, type PiiMode } from './pii/policy.js';
 
 /**
  * Connection-level settings, read from `CompanyIntegration.Configuration` (JSON). Everything has a
  * safe default; `piiMode` defaults to the protective setting so a connection only ever lands raw
- * personal data when someone wrote `"piiMode": "raw"` on purpose.
+ * personal data when someone wrote `"piiMode": "raw"` or `"anonymizePII": false` on purpose.
  */
 export const ZConnectionSettings = z
     .object({
+        anonymizePII: z.boolean().optional(),
         piiMode: z.enum(PII_MODES).default('pseudonymize'),
-        /** Attribute names whose values survive pseudonymize/suppress. */
-        piiAttributeAllowlist: z.array(z.string()).default([]),
+        /** Attribute names whose values survive pseudonymize/suppress (accepts string[] or comma-separated text). */
+        piiAttributeAllowlist: z.preprocess(
+            (val) =>
+                typeof val === 'string'
+                    ? val
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter((s) => s.length > 0)
+                    : val,
+            z.array(z.string()).default([]),
+        ),
         /** A watermark written under one mode refuses to continue under another unless this is set. */
         allowPiiModeChange: z.boolean().default(false),
         /** First `From` when no watermark exists yet (ISO date or date-time). */
@@ -63,4 +73,16 @@ export function ParseConnectionSettings(configurationJson: string | null | undef
 export function ReadNonEmptyString(source: Record<string, unknown> | null, key: string): string | undefined {
     const v = source?.[key];
     return typeof v === 'string' && v.trim() !== '' ? v.trim() : undefined;
+}
+
+/**
+ * Resolves the active personal-data policy from `anonymizePII` (boolean toggle) and `piiMode` (enum).
+ * When `anonymizePII` is omitted, `settings.piiMode` governs directly (default `'pseudonymize'`).
+ */
+export function ResolveEffectivePiiMode(settings: ConnectionSettings, configurationJson?: string | null): PiiMode {
+    const raw = ParseJsonObject(configurationJson);
+    const toggle = raw && 'anonymizePII' in raw ? raw['anonymizePII'] : settings.anonymizePII;
+    if (toggle === false) return 'raw';
+    if (toggle === true) return settings.piiMode === 'suppress' ? 'suppress' : 'pseudonymize';
+    return settings.piiMode;
 }
