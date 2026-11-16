@@ -45,7 +45,8 @@
  *       - Incremental: szWhereClause = "<watermarkField> >= '<wm>'" (wm normalised by WatermarkLiteral) where the watermark column is
  *         the IO's per-facade `IncrementalWatermarkField` (e.g. ind_change_date, evt_*_change_date). A
  *         `<prefix>_change_date` watermark with a `<prefix>_add_date` beside it is sent as
- *         "(<change> >= '<wm>' OR <add> >= '<wm>')": netFORUM leaves the change date NULL on insert.
+ *         "(<change> >= '<wm>' OR <add> >= '<wm>')": netFORUM leaves the change date NULL on insert. A
+ *         watermark on a table other than the key's also ORs the key table's change and add dates.
  *         There is NO canonical `LastModifiedDate` column — the field is per-facade and is read
  *         from metadata, never hardcoded.
  *       - Row limit: szObjectName supports an `@TOP -1` / `@TOP N` modifier to bypass / bound the
@@ -289,6 +290,34 @@ interface NFKeysOnlyCollapse {
     Defined: number;
 }
 
+/** A watermark on a table other than the key's (see WatermarkOffKeyTable). Tables are named as SQL names them. */
+interface NFWatermarkOffKeyTable {
+    WatermarkTable: string;
+    KeyTable: string;
+    /** The key table's `<prefix>_change_date` / `<prefix>_add_date` that its definition has. */
+    Dates: NFDefinedColumn[];
+}
+
+/** Which column list a GetQuery sent: empty (the tenant's default), Configuration.columnList, the own-table list, or the full list. */
+type NFListKind = 'default' | 'declared' | 'own' | 'full';
+
+/** The list a GetQuery sent, and what the full list was built under (see AddDateGap). */
+interface NFSentList {
+    List: string;
+    Kind: NFListKind;
+    ProtectedNames: Set<string>;
+    ApplyLegacy: boolean;
+}
+
+/** Why a `<prefix>_change_date` watermark is sent without its `<prefix>_add_date` (see AddDateGap). */
+interface NFAddDateGap {
+    AddDateField: string;
+    Reason: 'no-definition' | 'not-defined' | 'other-table' | 'unselectable' | 'not-in-list';
+    Detail: string;
+    /** Set when the reason is 'not-in-list'. */
+    List?: NFListKind;
+}
+
 /**
  * xWeb refuses any GetQuery whose text contains `_entity_key` — the vendor's GetQuery page lists it with
  * select/insert/update/delete/exec/execute as the tokens that make the door answer "Invalid query." (it is
@@ -310,6 +339,11 @@ function IsQueryableColumn(name: string): boolean {
 /** The join a column brings in, as RowFilteringJoins keys it: the alias, else the enclosing from-table (see FromTable). */
 function FromTableKey(c: NFDefinedColumn): string {
     return (c.Alias ?? c.FromTable ?? c.Table ?? '').toLowerCase();
+}
+
+/** The name SQL uses for a column's table: its alias, else its table. Two columns are on one joined row only when these match. */
+function QualifierOf(c: NFDefinedColumn): string {
+    return c.Alias ?? c.Table ?? '';
 }
 
 function IsPlainIdentifier(s: string): boolean {
@@ -616,6 +650,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
     /** `<connection>|<object>` whose left-out row-dropping joins were already logged this process. */
     private readonly RowFilteringWarned = new Set<string>();
+
+    /** `<connection>|<object>` whose watermark on a table other than the key's was already logged this process. */
+    private readonly OffKeyTableWarned = new Set<string>();
+
+    /** `<connection>|<object>` whose change-date watermark sent without its add date was already logged this process. */
+    private readonly AddDateGapWarned = new Set<string>();
 
     /**
      * Tables (or aliases) xWeb's generated SQL does not expose under the name the definition gives them, learned
@@ -1730,12 +1770,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // netFORUM stamps <prefix>_change_date only when a record is EDITED; a new row carries <prefix>_add_date and a
         // NULL change date, so `change_date >= X` alone never returns a new row of an append-only object (dues,
         // membership and course history, GL transactions, payment detail read 0 rows for two weeks on a live tenant,
-        // 2026-10-29). Rows changed OR added since the watermark are read whenever `list` names the add date.
+        // 2026-10-29). A watermark on a joined table matches only the records that have a row there. The read takes rows
+        // where the watermark OR any of its companion dates that `list` names is at or after the watermark
+        // (WatermarkCompanions).
         const watermarkPredicate = (list: string): string => {
             const since = `'${this.EscapeSqlLiteral(watermarkLiteral!)}'`;
-            const changed = `${this.QualifiedColumn(ctx.ObjectName, watermarkField!, grantKey)} >= ${since}`;
-            const added = this.AddDateCompanion(ctx.ObjectName, watermarkField, list, grantKey);
-            return added ? `(${changed} OR ${this.QualifiedColumn(ctx.ObjectName, added, grantKey)} >= ${since})` : changed;
+            const terms = [watermarkField!, ...this.WatermarkCompanions(ctx.ObjectName, watermarkField, pkField, list, grantKey)]
+                .map(c => `${this.QualifiedColumn(ctx.ObjectName, c, grantKey)} >= ${since}`);
+            return terms.length > 1 ? `(${terms.join(' OR ')})` : terms[0];
         };
         if (watermarkLiteral) predicates.push(watermarkPredicate(args.szColumnList ?? ''));
         if (canPaginate && ctx.AfterKeyValue) {
@@ -2072,6 +2114,11 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 console.warn(message);
             }
         }
+        if (watermarkLiteral && sentArgs.szWhereClause) {
+            const kind: NFListKind = !sentArgs.szColumnList ? 'default' : sentDeclared ? 'declared' : ownOnly ? 'own' : 'full';
+            const sent: NFSentList = { List: sentArgs.szColumnList ?? '', Kind: kind, ProtectedNames: protectedNames, ApplyLegacy: applyLegacy };
+            warnings.push(...this.WatermarkWarnings(ctx.ObjectName, watermarkField!, pkField, sent, grantKey));
+        }
         if (rows.length === 0) {
             warnings.push({ Code: 'ZERO_ROWS', Message: `GetQuery(${szObjectName}) returned no rows.` });
         }
@@ -2154,13 +2201,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // Watermark: when this IO has a watermark field, the engine narrows next sync from the max
         // seen. Advance ONLY on the final page — advancing mid-scan would let a crash between pages
         // skip every later row older than the new watermark.
-        // A row only ADDED since the watermark carries an empty change date; its add date is what moves the watermark
-        // (the latest of either date — see watermarkPredicate). An empty value is no date.
+        // A row only ADDED since the watermark carries an empty change date, and a record with no row on a joined
+        // watermark's table carries no watermark value: the latest of the watermark and its companion dates moves it
+        // (see watermarkPredicate). An empty value is no date.
         let newWatermark: string | undefined;
         if (watermarkField && !hasMore) {
-            const addedField = this.AddDateCompanion(ctx.ObjectName, watermarkField, sentArgs.szColumnList ?? '', grantKey);
+            const dateFields = [watermarkField, ...this.WatermarkCompanions(ctx.ObjectName, watermarkField, pkField, sentArgs.szColumnList ?? '', grantKey)];
             for (const row of rows) {
-                for (const field of addedField ? [watermarkField, addedField] : [watermarkField]) {
+                for (const field of dateFields) {
                     const v = row[field];
                     if (v == null || String(v).trim() === '') continue;
                     // US-form datetimes compare as ISO (see UsDateTimeToIso); ISO values are kept exactly as xWeb sent them.
@@ -2429,7 +2477,6 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         const keyNames = this.KeyNamesOf(obj.Name, required);
         const def = this.DefinitionByObject.get(obj.Name.toLowerCase()) ?? null;
         const protectedNames = this.ProtectedColumns(def, required);
-        const legacy = applyLegacy && learnKey ? this.LegacyUnresolvable.get(learnKey.slice(0, learnKey.indexOf('|'))) : undefined;
         const out: string[] = [];
         const seen = new Set<string>();
         const add = (name: string | undefined, qualifier: string | null): void => {
@@ -2452,19 +2499,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 const q = c.Alias ?? c.Table;
                 return q && unexposed?.has(q.toLowerCase()) ? null : q;
             };
-            // An Extender column under an ALIASED join is unselectable (see NFDefinedColumn.IsExtension). A column on a
-            // table missing from the database is gone for every object; a learned pair is this object's, and never
-            // takes its key or watermark.
-            // A column of a join that can drop rows (RowFilteringJoins) is left out unless this read needs it.
-            const rowFiltering = this.RowFilteringJoins(def);
-            const dropped = (c: NFDefinedColumn): boolean => {
-                if (c.IsExtension && c.Alias) return true;
-                if (this.ColumnOnMissingTable(c, learnKey)) return true;
-                const n = c.Name.toLowerCase();
-                if (protectedNames.has(n)) return false;
-                if (rowFiltering.has(FromTableKey(c))) return true;
-                return this.ColumnUnresolvable(c, learnKey) || !!legacy?.has(`${(c.Table ?? '').toLowerCase()}.${n}`);
-            };
+            const dropped = (c: NFDefinedColumn): boolean => this.LeftOutReason(c, def, learnKey, protectedNames, applyLegacy) !== undefined;
             // `ownOnly` (OwnTableColumnListFor): the OWN table's columns, and this read's key/ordering key/watermark
             // wherever they live. The own table is the one holding the object's key (`required[0]`, the persisted
             // primary key when there is one, else the definition's): netFORUM's MainTable is not always it — a live tenant's
@@ -2583,24 +2618,169 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * The `<prefix>_add_date` paired with a `<prefix>_change_date` watermark: on the watermark's own table in the object's
-     * definition, not learned unresolvable, and named by `list` (the request's column list — its value sets the next
-     * watermark, so a read that cannot return it does not filter on it). Undefined for any other watermark, no
-     * definition, the default list, or a column xWeb could not resolve.
+     * The date columns read with the watermark. A read takes the rows where the watermark OR any of these is at or after
+     * the watermark value, and the next watermark is the latest of them all:
+     *  - `<prefix>_add_date` beside a `<prefix>_change_date` watermark, on the watermark's table (netFORUM leaves the
+     *    change date NULL on insert);
+     *  - the key table's `<prefix>_change_date` and `<prefix>_add_date` when the watermark is a column of another table
+     *    (see WatermarkOffKeyTable).
+     * Each is in the object's definition, not learned unselectable, and named by `list` (the request's column list — its
+     * value sets the next watermark, so a read that cannot return it does not filter on it). Empty for the default list.
      */
-    private AddDateCompanion(objectName: string, watermarkField: string | undefined, list: string, learnKey: string): string | undefined {
-        const prefix = watermarkField ? /^(\w+)_change_date$/i.exec(watermarkField)?.[1] : undefined;
-        if (!prefix || !list) return undefined;
-        const def = this.DefinitionByObject.get(objectName.toLowerCase()) ?? null;
-        const find = (n: string): NFDefinedColumn | undefined => def?.Columns.find(c => c.Name.toLowerCase() === n.toLowerCase());
-        const changed = find(watermarkField!);
-        const added = find(`${prefix}_add_date`);
-        if (!changed || !added || !IsQueryableColumn(added.Name)) return undefined;
-        const tableOf = (c: NFDefinedColumn): string => (c.Alias ?? c.Table ?? '').toLowerCase();
-        if (tableOf(changed) !== tableOf(added)) return undefined;
-        const name = added.Name.toLowerCase();
-        if (this.UnselectableColumns.get(learnKey)?.has(name)) return undefined;
-        return list.split(',').some(item => item.trim().split('.').pop()!.toLowerCase() === name) ? added.Name : undefined;
+    private WatermarkCompanions(
+        objectName: string, watermarkField: string | undefined, keyField: string | undefined, list: string, learnKey: string,
+    ): string[] {
+        if (!list) return [];
+        const named = new Set(list.split(',').map(item => item.trim().split('.').pop()!.toLowerCase()));
+        const unselectable = this.UnselectableColumns.get(learnKey);
+        return this.WatermarkCompanionColumns(objectName, watermarkField, keyField)
+            .map(c => c.Name)
+            .filter(n => named.has(n.toLowerCase()) && !unselectable?.has(n.toLowerCase()));
+    }
+
+    /** The companion columns the object's definition has (see WatermarkCompanions), before the list and learned facts. */
+    private WatermarkCompanionColumns(objectName: string, watermarkField: string | undefined, keyField: string | undefined): NFDefinedColumn[] {
+        const changed = this.DefinedColumn(objectName, watermarkField);
+        if (!changed) return [];
+        const prefix = /^(\w+)_change_date$/i.exec(changed.Name)?.[1];
+        const added = prefix ? this.DefinedColumnBeside(objectName, changed, `${prefix}_add_date`) : undefined;
+        const keyTableDates = this.WatermarkOffKeyTable(objectName, watermarkField, keyField)?.Dates ?? [];
+        return [...(added ? [added] : []), ...keyTableDates];
+    }
+
+    /**
+     * When the watermark is a column of a table other than the key's: both tables and the key table's
+     * `<prefix>_change_date` / `<prefix>_add_date` (the prefix is the key column's). A record with no row on the
+     * watermark's table never matches the watermark. Undefined when both are on one table, or the definition does not
+     * place both columns.
+     */
+    private WatermarkOffKeyTable(objectName: string, watermarkField: string | undefined, keyField: string | undefined): NFWatermarkOffKeyTable | undefined {
+        const changed = this.DefinedColumn(objectName, watermarkField);
+        const key = this.DefinedColumn(objectName, keyField);
+        if (!changed || !key || QualifierOf(changed).toLowerCase() === QualifierOf(key).toLowerCase()) return undefined;
+        const prefix = /^([a-z0-9]+)_/i.exec(key.Name)?.[1];
+        const dates = prefix
+            ? [`${prefix}_change_date`, `${prefix}_add_date`].map(n => this.DefinedColumnBeside(objectName, key, n)).filter((c): c is NFDefinedColumn => !!c)
+            : [];
+        return { WatermarkTable: QualifierOf(changed), KeyTable: QualifierOf(key), Dates: dates };
+    }
+
+    /** The column `name` (any case) of the object's definition; undefined without a definition. */
+    private DefinedColumn(objectName: string, name: string | undefined): NFDefinedColumn | undefined {
+        if (!name) return undefined;
+        const n = name.toLowerCase();
+        return this.DefinitionByObject.get(objectName.toLowerCase())?.Columns.find(c => c.Name.toLowerCase() === n);
+    }
+
+    /** The definition's column `name` when it is queryable and on the same table (and alias) as `anchor`. */
+    private DefinedColumnBeside(objectName: string, anchor: NFDefinedColumn, name: string): NFDefinedColumn | undefined {
+        const c = this.DefinedColumn(objectName, name);
+        return c && QualifierOf(c).toLowerCase() === QualifierOf(anchor).toLowerCase() && IsQueryableColumn(c.Name) ? c : undefined;
+    }
+
+    /**
+     * Why the full list leaves `c` out, else undefined: an Extender column under an aliased join (unselectable), a table
+     * learned missing, a join that can drop rows (RowFilteringJoins), a pair this object learned unresolvable, or v1's
+     * connection-wide pair while today's legacy probe budget is spent. Only the first two apply to a protected column.
+     */
+    private LeftOutReason(
+        c: NFDefinedColumn, def: NFQueryDefinition, learnKey: string | undefined, protectedNames: Set<string>, applyLegacy: boolean,
+    ): string | undefined {
+        if (c.IsExtension && c.Alias) return `it is an Extender column under the aliased join ${c.Alias}`;
+        if (this.ColumnOnMissingTable(c, learnKey)) return `its table ${c.Table} is learned missing from this database`;
+        const n = c.Name.toLowerCase();
+        if (protectedNames.has(n)) return undefined;
+        const join = FromTableKey(c);
+        if (this.RowFilteringJoins(def).has(join)) return `its table ${join} is joined INNER as other than a lookup, so naming it would keep only the records that have a match there`;
+        if (this.ColumnUnresolvable(c, learnKey)) return `xWeb could not resolve ${c.Table}.${c.Name} for this object (.nf-learned.json)`;
+        const legacy = applyLegacy && learnKey ? this.LegacyUnresolvable.get(learnKey.slice(0, learnKey.indexOf('|'))) : undefined;
+        if (legacy?.has(`${(c.Table ?? '').toLowerCase()}.${n}`)) return `it is a v1 connection-wide pair (legacyUnresolvable) and today's legacy probe budget is spent`;
+        return undefined;
+    }
+
+    /**
+     * Why a `<prefix>_change_date` watermark is sent without its `<prefix>_add_date`; undefined when it is sent or the
+     * watermark has no such form. Without it, a record only added since the watermark is not read.
+     */
+    private AddDateGap(objectName: string, watermarkField: string, keyField: string | undefined, sent: NFSentList, learnKey: string): NFAddDateGap | undefined {
+        const prefix = /^(\w+)_change_date$/i.exec(watermarkField)?.[1];
+        if (!prefix) return undefined;
+        const field = `${prefix}_add_date`;
+        const companions = this.WatermarkCompanions(objectName, watermarkField, keyField, sent.List, learnKey);
+        if (companions.some(n => n.toLowerCase() === field.toLowerCase())) return undefined;
+        const gap = (Reason: NFAddDateGap['Reason'], Detail: string, List?: NFListKind): NFAddDateGap => ({ AddDateField: field, Reason, Detail, List });
+        const def = this.DefinitionByObject.get(objectName.toLowerCase());
+        if (!def) return gap('no-definition', `there is no GetQueryDefinition answer for "${objectName}" on this instance, so ${field} cannot be placed`);
+        const changed = this.DefinedColumn(objectName, watermarkField);
+        const added = this.DefinedColumn(objectName, field);
+        if (!changed || !added) return gap('not-defined', `its definition does not list ${changed ? field : watermarkField}`);
+        if (QualifierOf(added).toLowerCase() !== QualifierOf(changed).toLowerCase()) {
+            return gap('other-table', `its definition puts ${field} on ${QualifierOf(added) || '?'} and ${watermarkField} on ${QualifierOf(changed) || '?'}`);
+        }
+        if (this.UnselectableColumns.get(learnKey)?.has(field.toLowerCase())) {
+            return gap('unselectable', `xWeb could not resolve ${field} for this object (.nf-learned.json, objects["${objectName.toLowerCase()}"].unselectable)`);
+        }
+        return gap('not-in-list', this.NotInListDetail(added, def, sent, learnKey), sent.Kind);
+    }
+
+    /** Why the column list sent does not name `added` (see AddDateGap). */
+    private NotInListDetail(added: NFDefinedColumn, def: NFQueryDefinition, sent: NFSentList, learnKey: string): string {
+        if (sent.Kind === 'default') return `the tenant's default list (empty szColumnList) is sent, and it does not name ${added.Name}`;
+        if (sent.Kind === 'declared') return `Configuration.columnList is sent, and it does not name ${added.Name}`;
+        const why = this.LeftOutReason(added, def, learnKey, sent.ProtectedNames, sent.ApplyLegacy);
+        if (why) return `the ${sent.Kind === 'own' ? 'own-table' : 'full'} list leaves ${added.Name} out: ${why}`;
+        return sent.Kind === 'own'
+            ? `the own-table list is sent (the full list broke xWeb's SQL), and it names only the key table's columns and the watermark`
+            : `the full list leaves ${added.Name} out`;
+    }
+
+    /**
+     * What the incremental predicate cannot see: a watermark on a table other than the key's (WATERMARK_NOT_ON_KEY_TABLE)
+     * and a change-date watermark sent without its add date (WATERMARK_ADD_DATE_NOT_SENT). Returned for every batch,
+     * logged once per object per process.
+     */
+    private WatermarkWarnings(objectName: string, watermarkField: string, keyField: string | undefined, sent: NFSentList, learnKey: string): FetchWarning[] {
+        const out: FetchWarning[] = [];
+        const off = this.WatermarkOffKeyTable(objectName, watermarkField, keyField);
+        if (off) {
+            const companions = new Set(this.WatermarkCompanions(objectName, watermarkField, keyField, sent.List, learnKey).map(n => n.toLowerCase()));
+            const dates = off.Dates.map(c => c.Name).filter(n => companions.has(n.toLowerCase()));
+            out.push(this.WarnOnce(this.OffKeyTableWarned, learnKey, this.OffKeyTableWarning(objectName, watermarkField, off, dates)));
+        }
+        const gap = this.AddDateGap(objectName, watermarkField, keyField, sent, learnKey);
+        if (gap) out.push(this.WarnOnce(this.AddDateGapWarned, learnKey, this.AddDateGapWarning(objectName, watermarkField, gap)));
+        return out;
+    }
+
+    private OffKeyTableWarning(objectName: string, watermarkField: string, off: NFWatermarkOffKeyTable, dates: string[]): FetchWarning {
+        const then = dates.length > 0
+            ? `The read also takes the records whose ${dates.join(' or ')} is at or after the watermark.`
+            : `The key's table has no change or add date this read names, so a new record there is read only by a full sync: ` +
+              `point IncrementalWatermarkField at a date column of ${off.KeyTable}.`;
+        return {
+            Code: 'WATERMARK_NOT_ON_KEY_TABLE',
+            Message: `NetForum "${objectName}": IncrementalWatermarkField "${watermarkField}" is a column of ${off.WatermarkTable}, ` +
+                `not of the key's table ${off.KeyTable}, so a record with no row in ${off.WatermarkTable} never matches it. ${then}`,
+            Data: { ObjectName: objectName, WatermarkField: watermarkField, WatermarkTable: off.WatermarkTable, KeyTable: off.KeyTable, KeyTableDates: dates },
+        };
+    }
+
+    private AddDateGapWarning(objectName: string, watermarkField: string, gap: NFAddDateGap): FetchWarning {
+        return {
+            Code: 'WATERMARK_ADD_DATE_NOT_SENT',
+            Message: `NetForum "${objectName}" reads "${watermarkField} >= <watermark>" without ${gap.AddDateField}: netFORUM leaves ` +
+                `${watermarkField} empty on insert, so a record only added since the watermark is not read. Reason: ${gap.Detail}.`,
+            Data: { ObjectName: objectName, WatermarkField: watermarkField, ...gap },
+        };
+    }
+
+    /** `warning`, logged with console.warn the first time `key` is seen in `warned`. */
+    private WarnOnce(warned: Set<string>, key: string, warning: FetchWarning): FetchWarning {
+        if (!warned.has(key)) {
+            warned.add(key);
+            console.warn(warning.Message);
+        }
+        return warning;
     }
 
     private QualifiedColumn(objectName: string, name: string, learnKey?: string): string {

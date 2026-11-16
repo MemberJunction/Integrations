@@ -1,5 +1,25 @@
 # @memberjunction/connector-rasa-io
 
+## 3.0.5
+
+### Patch Changes
+
+- 7495a98: rasa.io: read parent-scoped objects (the newsletter, blast and sequence action and contact feeds) one bounded batch per call. Before, a call read every page of up to 10 parents, so a full history came back as one batch: on one production install, 162k newsletter events failed the sync with "Maximum call stack size exceeded" and saved no watermark. Each call now returns at most the engine's `BatchSize` records and resumes mid-parent from its cursor. The action feeds are read in date windows (`created_since` + `created_before`, 90 days by default) across all parents, oldest first. Each finished window is reported as a safe watermark, so on MJ 6.1+ an interrupted backfill resumes from its last finished window.
+
+  Also:
+
+  - Parents are read from the connection's own record maps. Before, they came from whichever entity map in the database had that object name, so a second rasa.io connection on the same database read the first account's parents.
+  - A connection can set `maxLookbackDays` and `historyWindowDays` in its `Configuration`. rasa.io sets the history limit per account; the objects' 725 days stay the default.
+  - Fixed a short-page check that ended paging early. The connector compared a page with the object's page size, not with the `limit` it asked for. When the base asked for less than a full page to fit the batch, a full answer to that smaller request was taken as the end of the data.
+
+## 3.0.4
+
+### Patch Changes
+
+- aff3339: rasa.io: read an object configuration whose `watermarkParam` is `null`. The metadata has `null` on the 18 objects with no incremental param, and the config check rejected it, so the connector ignored their whole configuration. The 8 nested collections (Contact External Identifier, Newsletter List, Newsletter Subscription Type, the 4 Sequence collections, Subscription Type Mapping) then carried no parent key (`contact_id`, `newsletter_id`, `sequence_id`, `subscription_type_id`), and discovery lost `recordSchemas` and the access path. After the upgrade, run a schema refresh (MJ Central: Update Catalog) so an existing connection gets the parent-key fields.
+- Updated dependencies [904cc70]
+  - @memberjunction/connector-schema-merge@1.1.1
+
 ## 3.0.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-higher-logic-thrive-community",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "private": false,
   "description": "MemberJunction HigherLogicThriveCommunity connector.",
   "type": "module",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "zod": "~3.24.4",
-    "@memberjunction/connector-schema-merge": "^1.0.1"
+    "@memberjunction/connector-schema-merge": "^1.1.1"
   },
   "devDependencies": {
     "@memberjunction/core": "^5.43.0",

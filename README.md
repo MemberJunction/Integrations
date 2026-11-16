@@ -22,7 +22,7 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-BUSL--1.1-blue?style=flat-square" alt="License: BUSL 1.1"></a>
-  <a href="#-full-integration-directory"><img src="https://img.shields.io/badge/Connectors-54_Published-blue?style=flat-square" alt="Published Connectors"></a>
+  <a href="#-full-integration-directory"><img src="https://img.shields.io/badge/Connectors-55_Published-blue?style=flat-square" alt="Published Connectors"></a>
   <a href="https://github.com/MemberJunction/MJ"><img src="https://img.shields.io/badge/MemberJunction-%3E%3D5.43.0%20%3C7.0.0-2d6a9f?style=flat-square" alt="MemberJunction Compatibility"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"></a>
   <a href="https://docs.memberjunction.org"><img src="https://img.shields.io/badge/docs-memberjunction.org-blue?style=flat-square" alt="Documentation"></a>
@@ -270,9 +270,9 @@ Every pull request to `next` or `main` is verified against **16 automated qualit
 <!-- BEGIN GENERATED CONNECTOR DIRECTORY -->
 
 > **Auto-maintained by CI** (`scripts/build-readme-directory.mjs`) from [`connectors-catalog.json`](./connectors-catalog.json), [`scripts/connector-publish-scope.json`](./scripts/connector-publish-scope.json), and per-connector metadata.
-> **54 published Open App connectors** across **8 categories** (5,617+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **8 held connectors**.
+> **55 published Open App connectors** across **8 categories** (5,625+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **8 held connectors**.
 
-[**AMS** (11)](#ams--association-management-systems) · [**CRM** (5)](#crm--customer-relationship-management--fundraising) · [**Events** (6)](#events--conferences-registration-abstracts--awards) · [**Finance** (5)](#finance--accounting-erp-billing--payments) · [**LMS** (3)](#lms--learning-management--credentialing) · [**Marketing** (9)](#marketing--email-automation-engagement--analytics) · [**PM** (2)](#pm--project--time-management) · [**Platform** (13)](#platform--community-content-support-databases--data-warehouses) · [**Shared & Primitives** (4)](#shared-libraries--platform-primitives) · [**Held / In Development** (8)](#held--in-development-connectors)
+[**AMS** (11)](#ams--association-management-systems) · [**CRM** (5)](#crm--customer-relationship-management--fundraising) · [**Events** (6)](#events--conferences-registration-abstracts--awards) · [**Finance** (5)](#finance--accounting-erp-billing--payments) · [**LMS** (3)](#lms--learning-management--credentialing) · [**Marketing** (9)](#marketing--email-automation-engagement--analytics) · [**PM** (2)](#pm--project--time-management) · [**Platform** (14)](#platform--community-content-support-databases--data-warehouses) · [**Shared & Primitives** (4)](#shared-libraries--platform-primitives) · [**Held / In Development** (8)](#held--in-development-connectors)
 
 ### AMS — Association Management Systems
 
@@ -284,8 +284,8 @@ Member records, dues, committees, chapters, certifications, orders, and associat
 | [**GrowthZone**](./AMS/GrowthZone) | `@memberjunction/connector-growthzone` | `1.3.2` | 38 | [🟢 Live-vendor](./AMS/GrowthZone/docs/SUPPORT.md) · [Setup](./AMS/GrowthZone/docs/credential-setup.html) | Contacts, memberships, groups, events, store orders and certifications from your GrowthZone AMS. |
 | [**iMIS**](./AMS/iMIS) | `@memberjunction/connector-imis` | `1.3.2` | 216 | [🟡 Baseline](./AMS/iMIS/docs/SUPPORT.md) | Parties, memberships, events, fundraising, invoicing and commerce from iMIS EMS. |
 | [**MemberSuite**](./AMS/MemberSuite) | `@memberjunction/connector-membersuite` | `1.2.2` | 196 | [🟡 Baseline](./AMS/MemberSuite/docs/SUPPORT.md) | Members, organizations, memberships, chapters, events, registrations, orders and certifications. |
-| [**NetForum Enterprise**](./AMS/NetForum) | `@memberjunction/connector-netforum-enterprise` | `1.7.1` | 34 | [🟡 Baseline](./AMS/NetForum/docs/SUPPORT.md) | Member, event and financial records from NetForum Enterprise. |
-| [**Nimble AMS**](./AMS/NimbleAMS) | `@memberjunction/connector-nimble-ams` | `1.3.7` | 32 | [🥇 Production-live](./AMS/NimbleAMS/docs/SUPPORT.md) · [Setup](./AMS/NimbleAMS/docs/credential-setup.html) | Salesforce-native association data: members, orders, events and the Nimble managed-package objects. |
+| [**NetForum Enterprise**](./AMS/NetForum) | `@memberjunction/connector-netforum-enterprise` | `1.7.1` | 34 | [🥇 Production-live](./AMS/NetForum/docs/SUPPORT.md) | Member, event and financial records from NetForum Enterprise. |
+| [**Nimble AMS**](./AMS/NimbleAMS) | `@memberjunction/connector-nimble-ams` | `1.3.8` | 32 | [🥇 Production-live](./AMS/NimbleAMS/docs/SUPPORT.md) · [Setup](./AMS/NimbleAMS/docs/credential-setup.html) | Salesforce-native association data: members, orders, events and the Nimble managed-package objects. |
 | [**Novi AMS**](./AMS/Novi) | `@memberjunction/connector-novi-ams` | `1.2.2` | 32 | [🟡 Baseline](./AMS/Novi/docs/SUPPORT.md) | Members, events, ecommerce, blogs, site content, NPS surveys and catalog items from Novi AMS. |
 | [**Protech**](./AMS/Protech) | `@memberjunction/connector-protech` | `0.2.0` | Live schema | [⚙️ Synthetic-local](./AMS/Protech/docs/SUPPORT.md) | Protech AMS (UX 365): association management built on Microsoft Dynamics 365/Dataverse. |
 | [**re:Members (Impexium)**](./AMS/Impexium) | `@memberjunction/connector-impexium` | `1.0.3` | 46 | [🟡 Honest-NA](./AMS/Impexium/docs/SUPPORT.md) | Individuals, organizations, memberships, events, committees, awards, exams and certifications. |
@@ -315,7 +315,7 @@ Events, attendees, sessions, speakers, exhibitors, submissions, judging, and bad
 | [**Eventscribe**](./Events/Eventscribe) | `@memberjunction/connector-eventscribe` | `0.3.0` | 38 | [🧪 Mock-only](./Events/Eventscribe/docs/SUPPORT.md) | Conference sessions, speakers, abstracts, exhibitors and booth assignments from your event program. |
 | [**OpenWater**](./Events/OpenWater) | `@memberjunction/connector-openwater` | `1.4.1` | 46 | [🥇 Production-live](./Events/OpenWater/docs/SUPPORT.md) · [Setup](./Events/OpenWater/docs/credential-setup.html) | Awards, grants, abstracts and fellowship programs: applications, judges, rounds and reviews. |
 | [**PheedLoop**](./Events/PheedLoop) | `@memberjunction/connector-pheedloop` | `1.4.6` | 28 | [🥇 Client-DB-live](./Events/PheedLoop/docs/SUPPORT.md) · [Setup](./Events/PheedLoop/docs/credential-setup.html) | Attendees, sessions, speakers, exhibitors, sponsors, registrations and memberships. |
-| [**Spektrix**](./Events/Spektrix) | `@memberjunction/connector-spektrix` | `0.2.0` | 65 | — | Spektrix provides a connected solution purpose-built for audience engagement. |
+| [**Spektrix**](./Events/Spektrix) | `@memberjunction/connector-spektrix` | `0.2.0` | 65 | [🥇 Production-live](./Events/Spektrix/docs/SUPPORT.md) | Spektrix provides a connected solution purpose-built for audience engagement. |
 
 ### Finance — Accounting, ERP, Billing & Payments
 
@@ -325,7 +325,7 @@ General ledger, invoices, bills, payments, subscriptions, customers, vendors, an
 |-----------|-------------|---------|--------:|-----------------|-------------|
 | [**Bill.com**](./Finance/BillCom) | `@memberjunction/connector-bill-com` | `0.3.4` | 3 | [🟢 Live-vendor](./Finance/BillCom/docs/SUPPORT.md) | Customers, invoices and payments received from your accounts receivable records. |
 | [**Microsoft Dynamics 365 Business Central**](./Finance/BusinessCentral) | `@memberjunction/connector-business-central` | `2.2.0` | 84 | [🟢 Live-vendor](./Finance/BusinessCentral/docs/SUPPORT.md) | Finance, sales, purchasing, inventory and master data from Business Central. |
-| [**NetSuite**](./Finance/NetSuite) | `@memberjunction/connector-netsuite` | `1.4.4` | 205 | [🟡 Honest-NA](./Finance/NetSuite/docs/SUPPORT.md) · [Setup](./Finance/NetSuite/docs/credential-setup.html) | ERP and CRM records across standard and custom record types, including saved-query reads. |
+| [**NetSuite**](./Finance/NetSuite) | `@memberjunction/connector-netsuite` | `1.4.5` | 205 | [🟡 Honest-NA](./Finance/NetSuite/docs/SUPPORT.md) · [Setup](./Finance/NetSuite/docs/credential-setup.html) | ERP and CRM records across standard and custom record types, including saved-query reads. |
 | [**QuickBooks**](./Finance/QuickBooks) | `@memberjunction/connector-quickbooks` | `2.0.2` | 39 | [🟡 Baseline](./Finance/QuickBooks/docs/SUPPORT.md) · [Setup](./Finance/QuickBooks/docs/credential-setup.html) | Customers, vendors, invoices, bills, payments, accounts and items from QuickBooks Online. |
 | [**Stripe**](./Finance/Stripe) | `@memberjunction/connector-stripe` | `0.3.2` | 63 | [🟢 Live-vendor](./Finance/Stripe/docs/SUPPORT.md) · [Setup](./Finance/Stripe/docs/credential-setup.html) | Payments, billing, subscriptions and Connect platform data from Stripe. |
 
@@ -347,11 +347,11 @@ Campaigns, mailings, subscribers, recipient-level sends/opens/clicks/bounces, li
 |-----------|-------------|---------|--------:|-----------------|-------------|
 | [**Constant Contact**](./Marketing/ConstantContact) | `@memberjunction/connector-constant-contact` | `2.0.2` | 65 | [🟢 Live-vendor](./Marketing/ConstantContact/docs/SUPPORT.md) · [Setup](./Marketing/ConstantContact/docs/credential-setup.html) | Contacts, lists, tags, segments, custom fields, campaigns and campaign reporting. |
 | [**Google Analytics 4**](./Marketing/GA4) | `@memberjunction/connector-ga4` | `0.2.3` | 3 | [🟢 Live-vendor](./Marketing/GA4/docs/SUPPORT.md) | Daily page performance and campaign traffic, at both campaign and content grain. |
-| [**Higher Logic Marketing Enterprise (MagnetMail)**](./Marketing/MagnetMail) | `@memberjunction/connector-magnetmail` | `3.0.5` | 47 | [🧪 Mock-only](./Marketing/MagnetMail/docs/SUPPORT.md) | Recipients, groups, messages, tracking and unsubscribes from Higher Logic Marketing Enterprise. |
-| [**Higher Logic Thrive Marketing Professional**](./Marketing/Informz) | `@memberjunction/connector-informz` | `0.2.0` | 70 | [🧪 Mock-only](./Marketing/Informz/docs/SUPPORT.md) | Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform used by associations. |
+| [**Higher Logic Marketing Enterprise (MagnetMail)**](./Marketing/MagnetMail) | `@memberjunction/connector-magnetmail` | `3.1.0` | 47 | [🧪 Mock-only](./Marketing/MagnetMail/docs/SUPPORT.md) | Recipients, groups, messages, tracking and unsubscribes from Higher Logic Marketing Enterprise. |
+| [**Higher Logic Thrive Marketing Professional**](./Marketing/Informz) | `@memberjunction/connector-informz` | `0.3.0` | 70 | [🥇 Production-live](./Marketing/Informz/docs/SUPPORT.md) | Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform used by associations. |
 | [**Mailchimp**](./Marketing/Mailchimp) | `@memberjunction/connector-mailchimp` | `2.0.2` | 76 | [🟢 Live-vendor](./Marketing/Mailchimp/docs/SUPPORT.md) · [Setup](./Marketing/Mailchimp/docs/credential-setup.html) | Campaigns, contacts, lists and automation workflows from Mailchimp. |
 | [**PropFuel**](./Marketing/PropFuel) | `@memberjunction/connector-propfuel` | `1.2.5` | 1 | [🟢 Live-vendor](./Marketing/PropFuel/docs/SUPPORT.md) · [Setup](./Marketing/PropFuel/docs/credential-setup.html) | Member insight and engagement results, delivered as an hourly data export feed. |
-| [**rasa.io**](./Marketing/Rasa) | `@memberjunction/connector-rasa-io` | `3.0.3` | 23 | [🟡 Baseline](./Marketing/Rasa/docs/SUPPORT.md) | Subscribers and their actions, topics, sends and attributes, plus newsletter content. |
+| [**rasa.io**](./Marketing/Rasa) | `@memberjunction/connector-rasa-io` | `3.0.5` | 23 | [🟡 Baseline](./Marketing/Rasa/docs/SUPPORT.md) | Subscribers and their actions, topics, sends and attributes, plus newsletter content. |
 | [**Reply.io**](./Marketing/Reply) | `@memberjunction/connector-reply` | `1.0.2` | 84 | [🟢 Live-vendor](./Marketing/Reply/docs/SUPPORT.md) | Contacts, accounts, sequences, outreach channels, tasks and inbox activity. |
 | [**Salesforce Marketing Cloud Engagement**](./Marketing/SFMC) | `@memberjunction/connector-sfmc` | `1.0.0` | 225 | [🧪 Mock-only](./Marketing/SFMC/docs/SUPPORT.md) | Salesforce Marketing Cloud Engagement (ExactTarget/Fuel) — dual REST+SOAP marketing platform: Data Extensions, Contacts, Journeys, Content Builder, Transactional… |
 
@@ -366,12 +366,13 @@ Workspaces, projects, tasks, subtasks, assignments, and time-tracking records. (
 
 ### Platform — Community, Content, Support, Databases & Data Warehouses
 
-Online communities, forums, CMS, help desks, document libraries, research registries, and live-introspected SQL/NoSQL databases. (13 connectors)
+Online communities, forums, CMS, help desks, document libraries, research registries, and live-introspected SQL/NoSQL databases. (14 connectors)
 
 | Connector | npm Package | Version | Objects | Docs & Evidence | Description |
 |-----------|-------------|---------|--------:|-----------------|-------------|
-| [**Higher Logic Thrive Community**](./Platform/HigherLogicThriveCommunity) | `@memberjunction/connector-higher-logic-thrive-community` | `0.2.2` | 39 | [🟡 Honest-NA](./Platform/HigherLogicThriveCommunity/docs/SUPPORT.md) | Community discussions, events, resource libraries and member activity from Higher Logic Thrive. |
-| [**Higher Logic Vanilla**](./Platform/HigherLogicVanilla) | `@memberjunction/connector-higher-logic-vanilla` | `0.2.3` | 65 | [🟡 Honest-NA](./Platform/HigherLogicVanilla/docs/SUPPORT.md) | Users, roles, categories, discussions, comments, reactions, groups and knowledge-base articles. |
+| [**GitHub**](./Platform/GitHub) | `@memberjunction/connector-github` | `1.1.0` | 8 | [🟡 Honest-NA](./Platform/GitHub/docs/SUPPORT.md) | GitHub REST API v3 (2022-11-28) connector. |
+| [**Higher Logic Thrive Community**](./Platform/HigherLogicThriveCommunity) | `@memberjunction/connector-higher-logic-thrive-community` | `0.3.0` | 39 | [🟡 Honest-NA](./Platform/HigherLogicThriveCommunity/docs/SUPPORT.md) | Community discussions, events, resource libraries and member activity from Higher Logic Thrive. |
+| [**Higher Logic Vanilla**](./Platform/HigherLogicVanilla) | `@memberjunction/connector-higher-logic-vanilla` | `0.3.0` | 65 | [🟡 Honest-NA](./Platform/HigherLogicVanilla/docs/SUPPORT.md) | Users, roles, categories, discussions, comments, reactions, groups and knowledge-base articles. |
 | [**Hivebrite**](./Platform/Hivebrite) | `@memberjunction/connector-hivebrite` | `1.2.4` | 98 | [🟡 Baseline](./Platform/Hivebrite/docs/SUPPORT.md) | Users, companies, events, memberships, donations, groups and 40+ other community objects. |
 | [**MongoDB**](./Platform/MongoDB) | `@memberjunction/connector-mongodb` | `1.0.3` | Live schema | [🟡 Honest-NA](./Platform/MongoDB/docs/SUPPORT.md) · [Setup](./Platform/MongoDB/docs/credential-setup.html) | Any MongoDB database, with its schema discovered when you connect. |
 | [**MySQL**](./Platform/MySQL) | `@memberjunction/connector-mysql` | `1.0.3` | Live schema | [⚙️ Synthetic-local](./Platform/MySQL/docs/SUPPORT.md) · [Setup](./Platform/MySQL/docs/credential-setup.html) | MySQL, MariaDB and Aurora-MySQL databases, with schema discovered when you connect. |
@@ -390,7 +391,7 @@ Code-only packages and base connector primitives shared across the fleet (no `mj
 
 | Package | npm | Version | Kind | Description |
 |---------|-----|---------|------|-------------|
-| [**SchemaMerge**](./Shared/SchemaMerge) | `@memberjunction/connector-schema-merge` | `1.1.0` | Shared Helper | Pure helper (`mergeDeclaredWithSampledFields`) that unions a connector’s declared field catalog with a live data-measured streaming sample during `IntrospectSchema`. |
+| [**SchemaMerge**](./Shared/SchemaMerge) | `@memberjunction/connector-schema-merge` | `1.1.1` | Shared Helper | Pure helper (`mergeDeclaredWithSampledFields`) that unions a connector’s declared field catalog with a live data-measured streaming sample during `IntrospectSchema`. |
 | [**IdWindowScan**](./Shared/IdWindowScan) | `@memberjunction/connector-id-window-scan` | `1.1.1` | Shared Helper | Resumable, budget-aware numeric ID window scanner (`runIdWindowScan`) with automatic window bisection for vendor endpoints that cannot bulk-list objects. |
 | [**RelationalDB**](./Platform/RelationalDB) | `@memberjunction/connector-relational-db` | `1.0.0` | Base Connector Primitive | Abstract base connector for relational database engines (`SQLServer`, `PostgreSQL`, `MySQL`, `Oracle`, `Snowflake`) with live `INFORMATION_SCHEMA` introspection. |
 | [**FileFeed**](./Platform/FileFeed) | `@memberjunction/connector-file-feed` | `1.0.0` | Base Connector Primitive | Generic flat-file and feed ingestion connector primitive for CSV/JSON/delimited data streams. |

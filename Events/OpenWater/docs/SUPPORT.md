@@ -1,38 +1,47 @@
 # OpenWater — Supported & Proven
 
-> **Evidence tier:** 🥇 Production-live (real vendor API, real production dataset, read-only)  ·  **Last verified:** 2026-08-05  ·  **Proof DB(s):** MJ_CT48
+> **Evidence tier:** 🥇 Production-live (real vendor API, real production dataset, read-only)  ·  **Last verified:** 2026-11-11  ·  **Proof DB(s):** MJ_CT48
 
 ## What this connector supports
 
-**25 objects** declared across **175 fields** (source: `metadata/integration/.openwater.integration.json`). 10 declare a write path; 15 are read-only (pull). 11 support incremental sync.
+**46 objects** declared across **273 fields** (source: `metadata/integration/.openwater.integration.json`). 10 declare a write path; 36 are read-only (pull). 11 support incremental sync.
+
+All 46 objects are Active and declare primary keys. Beyond the original 25 top-level and program/round-walked objects, the catalog includes per-record detail side-tables (`EvaluationDetail`, `SessionDetail`, `UserDetail`), detail-embedded child collections keyed via `AccessPath.segmentTags` and `AccessPath.scalarLeafKey`, and `ApplicationWinnerAssignment` keyed `(applicationId, roundId, name)` alongside round-level `ApplicationWinnerType`.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
 | Application | ✓ | `CD` | ✓ |
 | ApplicationCategory | ✓ | — (read-only) | — |
+| ApplicationFile | ✓ | — (read-only) | — |
+| ApplicationJudgeScorecard | ✓ | — (read-only) | — |
+| ApplicationPendingRecommendation | ✓ | — (read-only) | — |
+| ApplicationReceivedRecommendation | ✓ | — (read-only) | — |
+| ApplicationRoundSubmission | ✓ | — (read-only) | — |
+| ApplicationScoringQuestionScore | ✓ | — (read-only) | — |
+| ApplicationWinnerAssignment | ✓ | — (read-only) | — |
+| ApplicationWinnerType | ✓ | — (read-only) | — |
 | BillingLineItem | ✓ | — (read-only) | ✓ |
 | DeletedApplication | ✓ | — (read-only) | ✓ |
 | DeletedSession | ✓ | — (read-only) | ✓ |
 | Evaluation | ✓ | `U` | ✓ |
+| EvaluationDetail | ✓ | — (read-only) | — |
+| EvaluationGeneralScoringAnswer | ✓ | — (read-only) | — |
+| EvaluationJudgeTeam | ✓ | — (read-only) | — |
+| EvaluationScoreFieldValue | ✓ | — (read-only) | — |
 | Fund | ✓ | — (read-only) | — |
 | FundTransaction | ✓ | — (read-only) | — |
 | Invoice | ✓ | — (read-only) | ✓ |
+| Judge | ✓ | — (read-only) | — |
 | JudgeAssignment | ✓ | `CD` | — |
 | JudgeRecusal | ✓ | — (read-only) | — |
 | JudgeTeam | ✓ | `C` | — |
+| Media | ✓ | — (read-only) | — |
 | OtherSessionItemType | ✓ | — (read-only) | — |
 | Payment | ✓ | — (read-only) | ✓ |
 | Program | ✓ | — (read-only) | ✓ |
 | Refund | ✓ | — (read-only) | ✓ |
-| Report | ✓ | — (read-only) | — |
-| Rounds | ✓ | — (read-only) | — |
-| ScheduleDay | ✓ | `CUD` | — |
-| ScheduleItem | ✓ | `CD` | — |
-| ScheduleRoom | ✓ | `CUD` | — |
-| ScheduleTimeSlot | ✓ | `CUD` | — |
-| Session | ✓ | `CD` | ✓ |
-| SessionType | ✓ | — (read-only) | — |
-| User | ✓ | `CU` | ✓ |
+
+_First 30 of 46 objects shown, alphabetically. The full catalog is the metadata file cited above._
 
 > **"Declares a write path" is a capability declaration, not a proven behaviour.** What has actually
 > been executed against a live system is in the next section, and nothing else should be read as proven.
@@ -55,7 +64,9 @@
 | Program | Proven | 5 | MJ_CT48 |
 | SessionType | Proven | 2 | MJ_CT48 |
 
-**Total proven rows: 13,266** across **11 of 25 declared objects.**
+**Total proven rows: 13,266** across **11 of 46 declared objects.** (`MJ_CT48` ran against the earlier 25-object catalog snapshot; see below for the 46-object production deployment.)
+
+> **Second live production deployment (PostgreSQL tenant, verified through 2026-11-11):** All 46 declared objects were materialized on a second live customer OpenWater environment running on PostgreSQL, confirming data flow across both the core awards objects and objects that were unexercised on `MJ_CT48`: billing/finance (`Invoice`, `BillingLineItem`, `Payment`), session management (`Session`, `SessionDetail`, `SessionChair`, `SessionItem`, `SessionFieldValue`, `DeletedSession`), judging (`Judge`, `JudgeTeam`), user custom fields (`UserFieldValue`), and embedded application-round child collections (`ApplicationRoundSubmission`, `ApplicationJudgeScorecard`, `ApplicationWinnerType`).
 
 > **This section previously read "5 rows across 1 object", and that was the doc lagging the evidence, not
 > the connector lagging the fleet.** A live full-catalog run (`3BA35740`) against a real production tenant
@@ -84,8 +95,8 @@ all 25 got an entity map.
 > REST collections: `GET /v2/Users` lists and `POST /v2/Users` creates, and they are correctly the same URI.
 > The eight objects it exempts here — Application, JudgeTeam, ScheduleDay, ScheduleItem, ScheduleRoom,
 > ScheduleTimeSlot, Session, User — include the two largest proven objects on the connector (`User` 2,106
-> rows, `Application` 1,935). Reported for the harness; **the honest coverage number for this connector is
-> 10 of 25, and that is what this document states.**
+> rows, `Application` 1,935). Reported for the harness; **the honest coverage number on that 25-object `MJ_CT48` run was
+> 10 of 25** (prior to `Report` landing on run `847A4E5E`).
 
 > **The three unattributed zeros were the honest gap in this connector. They are now closed in code and the
 > fix is proven live.** Run `3BA35740` scored `Fund`, `OtherSessionItemType` and `Report` as zeros with **no
@@ -144,14 +155,13 @@ all 25 got an entity map.
 > are exactly the `NVARCHAR(MAX)` columns, on `Evaluation` (7,251 rows), `Application` (1,935) and
 > `DeletedApplication` (1,751). That is `docs/REQUIRED-FIXES.md` item 7 — an engine defect, recorded not fixed.
 
-> ✅ **Coverage: 11 of 25 declared.** These rows are real and DB-verified. A full-catalog live run HAS been
-> executed across all 25 objects, which is what made the attribution above possible — the 14 zeros are
-> accounted for, not untested.
+> ✅ **Coverage: 11 of 25 on `MJ_CT48` (plus 15 additional objects proven live on the 46-object PostgreSQL deployment).** These rows are real and DB-verified. Full-catalog live runs HAVE been
+> executed across the catalog, which is what made the attribution above possible — empty objects on a given tenant reflect tenant feature usage or token scope (`Fund`), not untested code.
 
 ### Push (write / bidirectional)
 
 - **Status: Heavily experimental.** Full C/U/D is wired in the class; **no live write has been executed.**
-- **Declared write surface (metadata):** 10 of 25 objects declare a substantiated write path.
+- **Declared write surface (metadata):** 10 of 46 objects declare a substantiated write path.
 - Every run recorded here was queued **read-only** — `syncDirection: 'Pull'`, no `allowWrite` — because
   this endpoint is a live client system. Bidirectional is not claimed as "works".
 
@@ -167,8 +177,8 @@ all 25 got an entity map.
   the Integration row now says so (`Configuration.DeclaredAgainst` pins the swagger, its sha256 and
   the date it was read, with a re-check procedure). Nimble AMS is the fleet's counter-example (authoritative
   live describe).
-- **Coverage:** 11 of 25 declared objects have proven rows. The other 14 fetched successfully and are
-  attributed above — not untested, and not keyless.
+- **`IntrospectSchema` `options` forwarding:** In `1.4.1`, `OpenWaterConnector.IntrospectSchema(companyIntegration, contextUser)` omits forwarding the optional third `options` argument to `BaseIntegrationConnector.prototype.IntrospectSchema` (patched per tenant deployment; still needs upstream port).
+- **Coverage:** 11 objects have `MJ_CT48` row counts and 15 additional billing, session, judge, user-field, and application-round objects have live PostgreSQL production verification across the 46-object catalog; remaining unpopulated detail/fund objects depend on tenant usage and `Fund` endpoint scope.
 - **The first sync after an apply can run an object with zero field maps.** On run `847A4E5E`,
   `ApplicationCategory` fetched its 43 records correctly but the engine logged `fieldMapsCount: 0` for that one
   entity map, so every value fell through to `__mj_integration_CustomOverflow`, the primary key came out null,
@@ -176,14 +186,10 @@ all 25 got an entity map.
   no data was lost and nothing about the connector changed. This is an engine/apply-ordering defect, not a
   connector defect; it is written up in `docs/REQUIRED-FIXES.md` item 6. The catalog-side trigger for it — the
   walk tag arriving undeclared — is now closed (see the declared-parent-link note above).
-- **8 of 25 declared foreign keys are not indexed**, and nothing anywhere reports it: they are the columns a
+- **8 of 25 earlier declared foreign keys were unindexed on SQL Server**, and nothing anywhere reports it: they are the columns a
   declared unsized `Integer` turns into `NVARCHAR(MAX)`, which SQL Server cannot use as an index key, so the
-  soft-FK index is skipped in silence. They sit on the three largest tables in the schema. Engine/CodeGen defect,
-  written up in `docs/REQUIRED-FIXES.md` item 7.
+  soft-FK index is skipped in silence. Engine/CodeGen defect, written up in `docs/REQUIRED-FIXES.md` item 7.
 
 ---
 
-_Capability section derived from this connector's own metadata on 2026-07-28. Proof numbers are DB ground
-truth as of 2026-08-05, read directly from `MJ_CT48` (`SELECT COUNT(*)` per `openwater.*` table) after live
-read-only full-catalog syncs (runs `3BA35740` and `847A4E5E`), and are re-stated verbatim — they change only
-when a new live sync is run and the numbers are re-read from the database. They are never hand-adjusted._
+_Capability section derived from `metadata/integration/.openwater.integration.json` (46 objects / 273 fields). Historical proof numbers are DB ground truth as of 2026-08-05 from `MJ_CT48` (`SELECT COUNT(*)` per `openwater.*` table after runs `3BA35740` and `847A4E5E`), supplemented by qualitative live PostgreSQL production verification across the 46-object catalog as of 2026-11-11._
