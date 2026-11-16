@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ClientName": {
+      "type": "string",
+      "title": "Spektrix System Name",
+      "description": "The tenant's Spektrix system name as it appears in the system URL (https://api.system.spektrix.com/<ClientName>/...). Tenant-specific; never baked into the connector.",
+      "order": 0
+    },
+    "CertificatePfxBase64": {
+      "type": "string",
+      "title": "Client Certificate (PKCS#12, base-64)",
+      "description": "The client certificate and private key issued by Spektrix, as a .pfx/.p12 file encoded base-64. Must be AES-256 encrypted: Node cannot open the older RC2/3DES exports.",
+      "isSecret": true,
+      "order": 1
+    },
+    "CertificatePassphrase": {
+      "type": "string",
+      "title": "Certificate Passphrase",
+      "description": "The passphrase protecting the private key in the pfx. Leave blank if the pfx has none.",
+      "isSecret": true,
+      "order": 2
+    },
+    "PseudonymKey": {
+      "type": "string",
+      "title": "Pseudonymization Key",
+      "description": "At least 16 characters. HMAC key for the deterministic replacement of personal values while the connection's piiMode is 'pseudonymize'. Different keys produce different tokens; losing the key makes tokens unrepeatable. Not needed for raw or suppress.",
+      "isSecret": true,
+      "order": 3
+    },
+    "Endpoint": {
+      "type": "string",
+      "title": "Endpoint Override",
+      "description": "Optional full URL of the datafeeds.svc endpoint, for a test server or replay harness. Leave blank for the production endpoint derived from the system name.",
+      "order": 4
+    }
+  },
+  "required": [
+    "ClientName",
+    "CertificatePfxBase64"
+  ]
+}
