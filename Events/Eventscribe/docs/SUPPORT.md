@@ -9,9 +9,9 @@
 
 ## What this connector supports
 
-**38 objects** declared across **680 fields** (source: `metadata/integration/.eventscribe.integration.json`).
-**22 are Active**; **16 are `Status='Disabled'`** — the EdgeReg Registration family, deliberately out of
-scope (see below). 27 objects carry a primary key.
+**38 objects** declared across **680 fields** (source: `metadata/integration/.eventscribe.integration.json`). 10 declare a write path; 28 are read-only (pull). 4 support incremental sync.
+
+**22 are Active** (`0` incremental); **16 are `Status='Disabled'`** — the EdgeReg Registration family, deliberately out of scope (see below), where all 4 incremental flags live. 27 objects carry a primary key.
 
 ### How this vendor actually works
 
@@ -69,7 +69,9 @@ silently syncs nothing:
   call with more than one event's rows, they would share this connection's scope. The vendor documents eID
   as required in that case.
 
-### Object matrix
+## What is proven
+
+### Pull (read)
 
 `Push` is a **capability declaration, not proven behaviour** — no write has been executed against a
 live Eventscribe system. `Rows` is what actually landed in SQL Server during the mock e2e.
@@ -102,6 +104,11 @@ live Eventscribe system. `Rows` is what actually landed in SQL Server during the
 **15 of 18 syncable objects landed rows.** 4 further objects are keyless and were skipped by the
 coverage gate rather than tested.
 
+### Push (write / bidirectional)
+
+- **Status: Not verified.** 10 declared objects advertise Create/Update/Delete flags in metadata (5 active, 5 disabled EdgeReg), and no write has been executed against any live Eventscribe system.
+- **No live write side-effect has been executed or verified for this integration.** Bidirectional is not claimed as "works".
+
 ## Incremental sync: none
 
 No in-scope object supports incremental sync. The platform's **only** documented incremental signal
@@ -116,36 +123,36 @@ EdgeReg is a different host, **XML over JSP**, and a different credential pair
 Recorded in `Integration.Configuration.OutOfScopeObjectFamilies` including the incremental-signal note,
 so a future build knows exactly what activating it would gain.
 
-## Known gaps — read before relying on this
+## Residual gap (honest)
 
-1. **`Account` and `Favorite` sync 0 rows, correctly.** `Account.Configuration.requiresRecordKeyToRead`
-   records that the vendor documents **no bulk-list door**: `getAccount` addresses ONE record by a
-   caller-supplied key. The connector returns an empty batch rather than calling it unkeyed.
-   `Favorite` is nested under `Account`, so it inherits that. Enumerating either needs a key set from
-   a parent object or an operator-supplied id list.
-2. **`Exhibitor` syncs 0 rows — OPEN, not explained.** Its door works: `getAllExhibitorsWithBooth`
-   fires and every object nested under it lands rows (Booth 10, Payment 10, Purchase 10). The
-   connector itself is proven correct — driving `FetchChanges('Exhibitor')` against the fixture emits
-   one record per exhibitor. The loss is **downstream in the sync/persist layer**, which recorded
-   `UPDATE` actions against rows that do not exist (a silent no-op). Needs engine-side investigation.
-3. **Pagination unproven** for `getPresentationsWithPresenters` and siblings. The vendor states
-   "pagination required" but never names the parameter, so `SupportsPagination=false` and the connector
-   issues a single unpaged call. Refusing to invent a parameter name is deliberate; needs live
-   verification.
-4. **10 write capabilities disabled.** `Presentation` and `Presenter` (plus 3 EdgeReg objects) name
-   `addUpdatePresentation` / `addUpdatePresenter` with **zero documented request-body shape**. Flags set
-   false rather than inventing one.
-5. **7 primary keys withdrawn as unevidenced** — e.g. `Handout.Pdf` and `Slide.Pdf` (CDN file URLs),
-   `ERPurchase.BillingID` (the vendor's own sample shows `888888` twice, disproving uniqueness). Those
-   objects sync without an idempotent identity until evidence exists.
-6. **`NoExplicitTypeError` on MJAPI boot — NOT specific to this connector.** Running a full
-   `mj codegen` against a database holding *any* connector's entities generates GraphQL resolver
-   classes into `packages/MJAPI/src/generated/generated.ts` that fail to bind. The MJ hybrid-e2e
-   runbook documents this as a known condition and names `salesforceAccount_`, `propfuel*`, `orcid`,
-   `openwater`, `path_lms` and `growthzone` as hitting it; the prescribed remedy is to restore that
-   generated file to HEAD, which is what was done here. Recorded for completeness only — it is a
-   property of the shared CodeGen/MJAPI boundary, not a defect in this connector, and it is not a
-   deployment blocker any more than it is for the connectors already shipped.
+- **`Account` and `Favorite` sync 0 rows, correctly.** `Account.Configuration.requiresRecordKeyToRead`
+  records that the vendor documents **no bulk-list door**: `getAccount` addresses ONE record by a
+  caller-supplied key. The connector returns an empty batch rather than calling it unkeyed.
+  `Favorite` is nested under `Account`, so it inherits that. Enumerating either needs a key set from
+  a parent object or an operator-supplied id list.
+- **`Exhibitor` syncs 0 rows — OPEN, not explained.** Its door works: `getAllExhibitorsWithBooth`
+  fires and every object nested under it lands rows (Booth 10, Payment 10, Purchase 10). The
+  connector itself is proven correct — driving `FetchChanges('Exhibitor')` against the fixture emits
+  one record per exhibitor. The loss is **downstream in the sync/persist layer**, which recorded
+  `UPDATE` actions against rows that do not exist (a silent no-op). Needs engine-side investigation.
+- **Pagination unproven** for `getPresentationsWithPresenters` and siblings. The vendor states
+  "pagination required" but never names the parameter, so `SupportsPagination=false` and the connector
+  issues a single unpaged call. Refusing to invent a parameter name is deliberate; needs live
+  verification.
+- **10 write capabilities disabled.** `Presentation` and `Presenter` (plus 3 EdgeReg objects) name
+  `addUpdatePresentation` / `addUpdatePresenter` with **zero documented request-body shape**. Flags set
+  false rather than inventing one.
+- **7 primary keys withdrawn as unevidenced** — e.g. `Handout.Pdf` and `Slide.Pdf` (CDN file URLs),
+  `ERPurchase.BillingID` (the vendor's own sample shows `888888` twice, disproving uniqueness). Those
+  objects sync without an idempotent identity until evidence exists.
+- **`NoExplicitTypeError` on MJAPI boot — NOT specific to this connector.** Running a full
+  `mj codegen` against a database holding *any* connector's entities generates GraphQL resolver
+  classes into `packages/MJAPI/src/generated/generated.ts` that fail to bind. The MJ hybrid-e2e
+  runbook documents this as a known condition and names `salesforceAccount_`, `propfuel*`, `orcid`,
+  `openwater`, `path_lms` and `growthzone` as hitting it; the prescribed remedy is to restore that
+  generated file to HEAD, which is what was done here. Recorded for completeness only — it is a
+  property of the shared CodeGen/MJAPI boundary, not a defect in this connector, and it is not a
+  deployment blocker any more than it is for the connectors already shipped.
 
 ## Verification performed
 
