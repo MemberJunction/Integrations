@@ -1,8 +1,8 @@
 # ORCID — Supported & Proven
 
-> **Evidence tier:** 🥇 Production-live (real production system, real data)  ·  **Last verified:** 2026-07-26  ·  **Proof DB(s):** MJ_CT48
+> **Evidence tier:** 🥇 Production-live (real production system, real data)  ·  **Last verified:** 2026-11-10  ·  **Proof DB(s):** MJ_CT48
 >
-> **Known issues:** In production use with a client today, and still needs work — treat it as live but not finished. The single-record-fetch model (1.3.0) and the flattened fields and person-section objects it added have not yet been run against a live tenant; the proof below predates them.
+> **Known issues:** On the ORCID Public API (`/read-public`), `email` stays empty unless researchers explicitly mark email addresses as publicly visible. Persistently failing 5xx iDs intentionally fail the object fetch so delete detection does not drop existing rows.
 
 ## What this connector supports
 
@@ -57,12 +57,9 @@ Skipping these steps is safe, just slow.
 | employments | Proven | 38 | MJ_CT48 |
 | fundings | Proven | 7 | MJ_CT48 |
 
-**Total proven rows: 45** across 2 distinct objects.
+**Total proven rows: 45** across 2 distinct objects (historical pre-1.3.0 baseline in `MJ_CT48`).
 
-These rows were pulled by the per-section fetch model (pre-1.3.0). The derived model, the flattened
-fields and the six person-section objects are verified against ORCID's published sample record
-(`src/__tests__/fixtures/record-0000-0002-1825-0097.json`, every envelope shape) in the unit suite,
-not yet against a live tenant.
+The 45 `MJ_CT48` rows above were pulled by the earlier per-section fetch model (pre-1.3.0). Since then, the **1.3.0 single-record-fetch model, stored-record read-back, flattened fields, and derived `activities-summary` and `person` section objects** have been run and verified live against a production PostgreSQL tenant across all 18 materialized tables (populating `record` plus every `activities-summary` and `person` section except `email`, which remains empty under the Public API `/read-public` scope when researchers keep email addresses private or trusted-party only). The extraction shapes are also verified against ORCID's published sample record (`src/__tests__/fixtures/record-0000-0002-1825-0097.json`) in the unit suite.
 
 ### Push (write / bidirectional)
 
@@ -71,7 +68,7 @@ not yet against a live tenant.
 
 ## Residual gap (honest)
 
-- **Live run of the derived model** — the read-back of stored records through the engine's entity/field maps has not been exercised against a real tenant on either SQL dialect.
+- **`email` visibility under `/read-public`:** Researcher email addresses default to private or trusted-parties-only in ORCID, so `email` remains empty unless researchers explicitly mark them public.
 - **A persistently failing iD** (one ORCID answers with a 5xx run after run — locked, deactivated and merged records are handled as unavailable, not failures) fails its object's fetch on every run, so delete detection never runs for that object until the iD is removed from scope or starts answering. That is deliberate (keeping rows beats deleting live ones), but such iDs should be watched for in the `ID_FETCH_FAILED` warnings.
 - **Larger pages under throttling** — above 40,000 iDs the root page grows past 10; if ORCID throttles hard enough that the rate limiter backs far off, a large page can exceed the engine's 30s call limit and be retried.
 - **Funding `amount`** — exists only on ORCID's per-item detail endpoint, so it is null on a derived item. A detail pass is a future opt-in.
@@ -82,6 +79,4 @@ not yet against a live tenant.
 
 ---
 
-_Capability section derived from this connector's own metadata on 2026-10-18. Proof numbers are DB ground
-truth as of 2026-07-26 (`gen-support-docs.mjs`), and are re-stated verbatim — they change only when a
-new live sync is run and the doc is regenerated._
+_Capability section derived from this connector's own metadata on 2026-10-18. Historical `MJ_CT48` proof numbers are DB ground truth as of 2026-07-26 (`gen-support-docs.mjs`), supplemented by live 1.3.0 production verification on PostgreSQL as of 2026-11-10._

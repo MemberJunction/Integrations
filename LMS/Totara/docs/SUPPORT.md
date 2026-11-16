@@ -6,13 +6,16 @@
 
 ## What this connector supports
 
-**28 objects** declared across **269 fields** (source: `metadata/integration/.totara.integration.json`). 13 declare a write path; 15 are read-only (pull). 0 support incremental sync.
+**33 objects** declared across **301 fields** (source: `metadata/integration/.totara.integration.json`). 13 declare a write path; 20 are read-only (pull). 0 support incremental sync.
+
+**29 objects are Active** and **4 keyless objects are `Status='Disabled'`** (`Activity Completion Status`, `Course Completion Status`, `Course Grades Overview`, `Grade Items` — disabled via `V202609221300__totara__DisableKeylessObjects`).
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
-| Activity Completion Status | ✓ | — (read-only) | — |
+| Activity Completion Status | — (Disabled) | — | — |
 | Blocked Users | ✓ | — (read-only) | — |
 | Calendar Events | ✓ | `CD` | — |
+| Cohort Member Users | ✓ | — (read-only) | — |
 | Cohort Members | ✓ | `CD` | — |
 | Cohorts | ✓ | `CUD` | — |
 | Competencies | ✓ | — (read-only) | — |
@@ -20,13 +23,16 @@
 | Competency Frameworks | ✓ | — (read-only) | — |
 | Contacts | ✓ | `CD` | — |
 | Course Categories | ✓ | `CUD` | — |
-| Course Completion Status | ✓ | — (read-only) | — |
+| Course Completion Status | — (Disabled) | — | — |
+| Course Content Modules | ✓ | — (read-only) | — |
 | Course Contents | ✓ | — (read-only) | — |
 | Course Enrolment Methods | ✓ | — (read-only) | — |
-| Course Grades Overview | ✓ | — (read-only) | — |
+| Course Grades Overview | — (Disabled) | — | — |
 | Courses | ✓ | `CUD` | — |
+| Enrolled User Groups | ✓ | — (read-only) | — |
+| Enrolled User Roles | ✓ | — (read-only) | — |
 | Enrolled Users | ✓ | `CD` | — |
-| Grade Items | ✓ | — (read-only) | — |
+| Grade Items | — (Disabled) | — | — |
 | Group Members | ✓ | `CD` | — |
 | Groupings | ✓ | `CUD` | — |
 | Groups | ✓ | `CD` | — |
@@ -36,8 +42,8 @@
 | Organisations | ✓ | — (read-only) | — |
 | Position Frameworks | ✓ | — (read-only) | — |
 | Positions | ✓ | — (read-only) | — |
-| User Badges | ✓ | — (read-only) | — |
-| Users | ✓ | `CUD` | — |
+
+_First 30 of 33 objects shown, alphabetically. The full catalog is the metadata file cited above._
 
 > **"Declares a write path" is a capability declaration, not a proven behaviour.** What has actually
 > been executed against a live system is in the next section, and nothing else should be read as proven.
@@ -59,7 +65,7 @@
 | Course_Enrolment_Methods | Proven | 4 | MJ_CT48 |
 | Calendar_Events | Proven | 2 | MJ_CT48 |
 
-**Total proven rows: 57,117 (Enrolled_Users still climbing when the run was stopped)** across **10 of 28 declared objects.**
+**Total proven rows: 57,117 (Enrolled_Users still climbing when the run was stopped)** across **10 of 33 declared objects** (`MJ_CT48` ran on `2026-08-05` against the earlier 28-object catalog, prior to 5 child/custom-field additions).
 
 > **`Groups` is new, and it settles a claim this doc used to get wrong.** `Groups`, `Groupings` and `Group Members`
 > all declared a **by-id reader** as their list function, so dispatched bare they answered `[invalidparameter]` on
@@ -120,12 +126,12 @@ remaining cause is a connector defect: both open defects on that run have since 
 > be read at all and 4 cannot be keyed, leaving 11 reachable — 10 with rows, plus `Groupings` proven empty
 > without error. "10 of 28" understates the connector and overstates what any client could reach on this site.
 
-> ✅ **Coverage: 10 of 28 declared / 11 of 11 reachable.** These rows are real and DB-verified. Full-catalog live runs HAVE been executed (`8D59A6B9`, then `9200B480` / `DE595754`), which is what made the attribution table above possible — the remaining zeros are accounted for, not untested, and **not one of them is a connector defect**. What is left is the site's token scope (13), objects the vendor exposes without a derivable key (4), and one object that is reachable and empty.
+> ✅ **Coverage: 10 of 33 declared / 11 of 11 reachable on the `2026-08-05` `MJ_CT48` run.** These rows are real and DB-verified. Full-catalog live runs HAVE been executed (`8D59A6B9`, then `9200B480` / `DE595754`), which is what made the attribution table above possible — the remaining zeros on that 28-object run are accounted for, not untested, and **not one of them is a connector defect**. What is left is the site's token scope (13), objects the vendor exposes without a derivable key (4, now `Status='Disabled'`), one object that is reachable and empty, plus the 5 child/custom-field objects added afterwards (`Cohort Member Users`, `Course Content Modules`, `Enrolled User Groups`, `Enrolled User Roles`, `User Custom Fields`).
 
 ### Push (write / bidirectional)
 
 - **Status: Heavily experimental.** Metadata declares write on several objects; none verified.
-- **Declared write surface (metadata):** 13 of 28 objects declare a substantiated write path (Create/Update/Delete APIPath+Method).
+- **Declared write surface (metadata):** 13 of 33 objects declare a substantiated write path (Create/Update/Delete APIPath+Method).
 - **No live write side-effect has been executed or verified for this integration.** Bidirectional is not claimed as "works".
 
 ## Residual gap (honest)
@@ -133,7 +139,7 @@ remaining cause is a connector defect: both open defects on that run have since 
 - Live **write side-effects** — never executed against a real tenant (needs `allowWrite` + a disposable record).
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
-- **Coverage:** 10 of 28 declared objects have proven rows — every object this site's token can reach and key, plus one (`Groupings`) proven reachable and empty. The other 18 are attributed above (13 token-scope, 4 keyless, 1 empty), not untested.
+- **Coverage:** 10 of 33 declared objects have proven rows in `MJ_CT48` — every object that site's token could reach and key in the 28-object snapshot, plus one (`Groupings`) proven reachable and empty. The other 18 from that run are attributed above (13 token-scope, 4 keyless `Disabled`, 1 empty), and the 5 newer child/custom-field objects have not yet been re-run live.
 - **`Enrolled Users` has never been read to completion on this site** — 64 of 428 courses in 8.6 hours. Every connector defect in that run is fixed and released: the 44% re-read, the rate-limit wait outside the deadline, and the transient-retire in 0.3.0; the `RequestTimeoutMs: 0` opt-out that meant no deadline at all in 0.4.2. Of the 8.6 hours, 3.3 were 15 pathological batches (one reached 1,063,987 ms against a 20,000 ms budget); the 193 healthy batches ran at **68 ms per record, linear in rows**. At that rate the ≈93,000-row site is **≈1.8 hours** of vendor time; the estimate is not yet confirmed by a completed run.
 - **Open product decisions on `Enrolled Users`, deliberately not made in code.** (1) Sending `options.userfields` would cut the per-record cost by roughly the aggregate sub-queries' share, but it drops declared columns — `groups`, `roles`, `preferences`, `customfields`, `enrolledcourses` would stop arriving. The mechanism is one metadata key in the same shape as `orderingParams`; what is missing is a decision about which of the 29 declared fields an enrolment row is for. (2) Whether **course `1`, the Moodle site course, belongs in an enrolment sync at all**: every user on the site is enrolled in it, it is 17,937 of the 29,002 rows landed (62%), and it duplicates the user table.
 - **`Enrolled Users` per-course key: row-level live proof still owed.** The key was widened to (userid, courseid) so enrolments no longer overwrite each other; the catalog side is verified, but one full non-incremental pull is needed to prove the per-course rows separate live.
