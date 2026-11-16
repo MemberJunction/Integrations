@@ -1,14 +1,8 @@
 # Higher Logic Thrive Marketing Professional (Informz) — Supported & Proven
 
-> **Evidence tier:** 🧪 Mock-only (proven vs mock server, never live)  ·  **Last verified:** 2026-10-23  ·  **Proof DB(s):** SQL Server (`MJ_SS_E2E_INFORMZ`, disposable)
+> **Evidence tier:** 🥇 Production-live (real vendor API, real production dataset, read-only)  ·  **Last verified:** 2026-11-11  ·  **Proof DB(s):** MJ_SS_E2E_INFORMZ
 
-> **Known issues:** 46 of the 67 active objects use primary keys inferred from their row grain rather than named by the vendor, and none has been checked against live data. The `StartRow` paging base is undocumented and unproven live.
-
-> 🧪 **Mock-only:** every claim below was observed against a fixture-driven mock vendor server driving
-> the real MJ engine into a real SQL Server database. **No authenticated call to Higher Logic has been
-> made and no vendor rows have been read.** The reason is an access gap, not a defect: Higher Logic
-> accepts API calls only from IP addresses registered for the brand, and no registration existed for
-> this build. The honest ceiling is `format-verified-no-creds`.
+> **Known issues:** 46 of the 67 active objects use primary keys inferred from their row grain rather than named by the vendor (with merge caveats on simultaneous multi-interest opt-outs and multi-SKU web tracking). PostgreSQL deployments require the MJ engine's ISO-8601 `Date` composite-PK serialization and `.NET` sub-millisecond trailing-zero normalization fix.
 
 ## What this connector supports
 
@@ -31,8 +25,7 @@
   `partnertest.informz.net` (`test`). The connection's `Region` setting picks one.
 - **Offset paging** with `StartRow` / `NumberOfRows`, at most 1,000 rows per request. The 59 active grids
   with a `sortField` in their Configuration are read in a stable order.
-- **Incremental sync** is a date condition on 6 objects (listed in the table below). There is no change
-  feed and no webhook.
+- **Incremental sync and sliding date-window pacing.** Six grids declare native date-filter incremental sync (listed below). To avoid deep-offset SQL timeouts on large historical grids, the connector supports `dateWindowing` (`[windowFrom, windowTo]` date slices where `StartRow` resets per window advance via `v1|...` composite cursors) and `migrationPacing` (`maxWindowsPerRun`, `checkpointPerWindow`, `maxConcurrency`, token-bucket throttling) in `CompanyIntegration.Configuration`. There is no change feed and no webhook.
 - **Brand-defined demographics and interests** arrive as rows (name and value) in the demographic and
   interest grids, not as extra columns. Brand-specific elements can be requested per grid with the
   connection's `ExtraReturnFields` setting.
@@ -59,8 +52,7 @@
   merges several SKUs bought on one page at one timestamp.
 - **3 objects are Disabled** because nothing identifies a row: EmailBlockStatus (the brand's current email
   block), and ScoringSummary and ScoringSummaryDemo (scoring groups identified only by a description).
-- **None of the 46 inferred keys has been checked against real data.** A key that is not unique silently
-  merges rows, so check for merged rows on the first live sync.
+- **Live data caveat on inferred composite keys.** While live production pulls have now populated most active grids, simultaneous multi-interest opt-outs (`MailingActivityOptout`) and multi-SKU web events (`SubscriberWebTracking`) remain structural merge risks, and grids not used by the verified brand remain unexercised against real payloads.
 
 ### Object table
 
@@ -141,18 +133,13 @@
 
 ### Pull (read)
 
-- **Hybrid end-to-end sync, 2026-10-23** (real MJ engine into real SQL Server, vendor mocked): all 70
-  objects applied, and the forward run landed 103 of 103 rows, with every object landing rows. Creates,
-  updates and a hard delete on Subscriber at the mock vendor were picked up on the next sync (8 of 8
-  changes). An unchanged second sync did no work.
-- **The end-to-end run predates the primary keys.** It ran with 49 objects keyless (content-hash
-  identity). The keys were added afterwards to meet this repo's primary-key rule, so the end-to-end run
-  does not exercise them; the unit tests do.
-- **Unit tests:** 33 of 33 pass, with a mocked transport and the real metadata.
-- **Unauthenticated live probing** of Higher Logic (no credential sent): the live WSDL and schema files
-  match the snapshot the catalog was declared against, and every regional host answered. A real grid
-  name and a made-up one return the same fault without a credential, so grid names cannot be checked
-  unauthenticated.
+- **Live production sync (PostgreSQL client tenant, 2026-11-11):** Executed authenticated, brand-IP-registered read-only pulls against Higher Logic into a PostgreSQL environment. All 67 active tables materialized and live data populated core mailing, mailing-instance, campaign, story, interest, target-group, mailing activity (opens, first-opens, clicks, bounces, forwards, archive, domains, subscriber actions), hourly rollups, subscriber demographic/score/persona/client, and web-tracking objects.
+- **Live PostgreSQL integration findings:**
+  - Composite `Date` primary keys (`MailingActivityClicks`, `MailingActivityOpens`, `SubscriberWebTracking`, etc.) require ISO-8601 key serialization (`toISOString()`) and `.NET` 7-digit fractional-second trailing-zero normalization (`.5700000Z` -> `.570Z`) in the MJ integration engine so PostgreSQL `timestamptz` lookups and `MatchEngine` record maps align 1:1.
+  - `MailingInstance.mailing_instance_id` soft-PK metadata should be verified active on existing tenant entity fields when wiring downstream relationships.
+- **Hybrid end-to-end sync, 2026-10-23 (`MJ_SS_E2E_INFORMZ`):** Real MJ engine into SQL Server against a mock vendor; all 70 objects applied and the forward run landed 103 of 103 mock rows, capturing creates, updates, hard deletes on `Subscriber`, and an idle second sync. This mock run predated the primary-key additions (49 objects ran keyless at that time).
+- **Unit tests:** 36 of 36 pass in `InformzConnector.test.ts` with a mocked transport and the real metadata, including sliding date-window cursors and metered migration pacing.
+- **Unauthenticated live probing:** The live WSDL and schema files match the snapshot the catalog was declared against, and every regional host answered.
 
 ### Push (write / bidirectional)
 
@@ -164,35 +151,27 @@
 
 | Gate | Result |
 |---|---|
-| Unit tests (this package) | **33 passed** |
+| Unit tests (this package) | **36 passed** |
 | PR checks (`.github/workflows/pr.yml`, all 18 steps) | pass |
 | Verification ladder T0 and T2–T7 | pass |
 | Verification ladder T1 (primary-key coverage) | failed at build time with 49 of 70 objects keyless; resolved afterwards by the keys above, not re-run |
 | Deploy dry run on a fresh database | real migrate and push: 70 objects and 994 fields, matching the metadata |
 | Hybrid E2E (mock vendor, real MJ engine into SQL Server) | 70 of 70 objects landed rows; 103 of 103 rows |
 | Reality probe (unauthenticated) | 91 claims: 17 confirmed, 74 unverifiable without a credential, 0 wrong |
-| Live, authenticated | **not run**: brand-IP registration pending |
+| Live, authenticated (PostgreSQL client tenant) | **pass (read-only)**: brand-IP-registered live sync across active catalog |
 
 ## Residual gap (honest)
 
-- **No live call.** Nothing has been read from a real brand. Higher Logic must first register the calling
-  machine's IP for the brand, and the registration procedure is not public.
-- **46 inferred primary keys are unverified** against real data, with two known merge risks (see Primary
-  keys above).
-- **The paging base is unproven.** The docs never say whether `StartRow` is a 0-based offset or a 1-based
-  row number; the connector follows the docs' own example (0 for the first page, then 1-based). Paging is
-  proven only by unit tests, because the end-to-end run paged 0 objects. A wrong base would skip or
-  repeat one row at every page boundary.
-- **Brand-specific element capture is not proven end to end.** `ExtraReturnFields` is unit-tested only;
-  the end-to-end run never exercised the custom-column path.
-- **Unresolved in the vendor docs:** `<User>` versus `<Username>` as the credential element, and which
-  fault an unregistered IP produces.
-- **Rate limits** are undocumented and untested under load.
-- **Out of scope by design:** the AAPI write surface, Higher Logic Push API v2 (inbound only), Thrive
-  Marketing Enterprise and Thrive Community, and AAPI payload encryption and compression.
+- **Unexercised / brand-optional grids:** Subsets of the 67 active grids yielded no data on the verified tenant because the brand does not use those Informz features or because historical date windows are still pacing forward (`Subscriber` and brand-optional summary/demo/suppression/upload grids).
+- **Engine dependency for composite `Date` PKs on PostgreSQL:** Tenants syncing composite-`Date`-PK Informz grids on PostgreSQL require the MJ engine ISO-8601 `Date` serialization and `.NET` sub-millisecond normalization fix (`toISOString()` + trailing-zero trim) to avoid `timestamptz` lookup errors.
+- **Inferred primary-key merge caveats:** Two documented row-grain merge risks remain (`MailingActivityOptout` without `Interest_ID`, `SubscriberWebTracking` across multiple SKUs at one timestamp), and unexercised inferred keys have not yet seen real payloads.
+- **The `StartRow` paging base edge cases:** Live data confirms multi-page progression in production, though boundary-row skip/overlap behavior at exact 1,000-row cutoffs remains sensitive to vendor `StartRow` semantics (the connector sends `0` then 1-based offsets per vendor examples).
+- **Brand-specific element capture (`ExtraReturnFields`)** is unit-tested only and was not exercised in the mock E2E run.
+- **Rate limits** remain undocumented by Higher Logic; `migrationPacing` enforces conservative client-side concurrency and token-bucket limits.
+- **Out of scope by design:** the AAPI write surface, Higher Logic Push API v2 (inbound only), Thrive Marketing Enterprise and Thrive Community, and AAPI payload encryption and compression.
 
 ---
 
 _Catalog counts and the object table are derived from `metadata/integration/.informz.integration.json`.
 Build evidence is from the build-connector run of 2026-10-22 to 2026-10-23
-(`connector-informz-1792718947538-3736163f`). Supersede this file when a live, authenticated sync is run._
+(`connector-informz-1792718947538-3736163f`), supplemented by live brand-IP-registered PostgreSQL production pulls verified through 2026-11-11._

@@ -172,6 +172,22 @@ and `fetchTimeoutMs`:
 A connection with `maxLookbackDays` set reads that much history on its first full sync. One already synced
 only goes further back on a full sync ("Sync all history").
 
+## 4d. Contact feed fields
+
+rasa.io's per-item contact feeds (`/v2/messaging/{newsletter|blast|sequence}/{id}/contacts`) send a
+contact's IDs in other systems as `external_identifiers`, not `identifiers`, and add `is_subscribed`. On one
+production install, `identifiers` was empty on all 54,291 Newsletter Contact rows while `external_identifiers`
+was set on 54,287. `/v2/contacts` still sends `identifiers`, so Contact is unchanged.
+
+- Newsletter, Blast and Sequence Contact declare `external_identifiers` (JSON array of `system`, `identifier`
+  and `system_identifier`) and `is_subscribed` (boolean).
+- `identifiers` is `Disabled` on Newsletter and Blast Contact. Its column is not dropped, so queries that name
+  it keep working; it stays empty. Sequence Contact keeps `identifiers` until a sequence feed has been seen.
+
+**Upgrading an existing install:** apply the migration and refresh the connection's tables. The refresh adds
+the two columns where discovery hadn't already, and changes no keys, so no table is emptied. The contact feeds
+are full pulls, so the next sync fills every row.
+
 ## 5. Actions: 12 disabled, 6 added
 
 The 12 Actions on `Person`, `Post`, `Insight Action` and `Insight Topic` are set to `Status = 'Disabled'` by the
