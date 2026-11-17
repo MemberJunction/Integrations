@@ -1,5 +1,11 @@
 # @memberjunction/connector-schema-merge
 
+## 1.1.1
+
+### Patch Changes
+
+- 904cc70: Match declared and sampled field names case-insensitively in `mergeDeclaredWithSampledFields` and map `int`/`integer` and `date` to native schema types in NimbleAMS and NetSuite connectors.
+
 ## 1.1.0
 
 ### Minor Changes

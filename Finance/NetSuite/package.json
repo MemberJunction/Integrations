@@ -1,6 +1,6 @@
 {
   "name": "@memberjunction/connector-netsuite",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "MemberJunction NetSuite connector.",
   "type": "module",
   "main": "dist/index.js",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "zod": "~3.24.4",
-    "@memberjunction/connector-schema-merge": "^1.0.0"
+    "@memberjunction/connector-schema-merge": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "24.10.11",
@@ -35,7 +35,7 @@
     "@memberjunction/global": "^5.42.0",
     "@memberjunction/integration-engine": "^5.42.0",
     "@memberjunction/integration-engine-base": "^5.42.0",
-    "@memberjunction/connector-schema-merge": "^1.0.0"
+    "@memberjunction/connector-schema-merge": "^1.1.1"
   },
   "repository": {
     "type": "git",

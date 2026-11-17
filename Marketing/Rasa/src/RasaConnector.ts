@@ -559,7 +559,8 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
     /**
      * HTTP transport with bounded retry: network blips, a 401 (mint a fresh JWT and replay once the
      * cached one has aged out), and 429 honouring `Retry-After` when the vendor sends one. A 404 on a
-     * per-parent read is answered as an empty page (see {@link EmptyPageForMissingParent}).
+     * per-parent read, or a 400 on one parent's contacts, is answered as an empty page
+     * (see {@link EmptyPageForParent}).
      */
     protected async MakeHTTPRequest(
         auth: RESTAuthContext,
@@ -592,8 +593,11 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
                 continue;
             }
             const result = await this.ToRESTResponse(response);
-            if (result.Status === 404 && method.toUpperCase() === 'GET' && this.responseCtx?.ParentScoped) {
-                return this.EmptyPageForMissingParent(result, url);
+            if (method.toUpperCase() === 'GET' && this.responseCtx?.ParentScoped) {
+                if (result.Status === 404) return this.EmptyPageForParent(result, url, 'PARENT_NOT_FOUND');
+                if (result.Status === 400 && this.IsContactsRead(url)) {
+                    return this.EmptyPageForParent(result, url, 'PARENT_NOT_CONFIGURED');
+                }
             }
             return result;
         }
@@ -607,10 +611,14 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      * `/v2/messaging/sequence` each list some of the other's ids, and the insights feed answers
      * "'144' is a sequence, not a blast" (HTTP 404). The parent is skipped with a warning carrying the
      * vendor's message, and the sync moves on to the next parent.
+     *
+     * A 400 on one parent's contacts is skipped the same way ({@link IsContactsRead}). rasa.io answers
+     * 400 when that newsletter, blast or sequence isn't configured to answer the question, e.g. a blast
+     * with no target lists (seen live 2026-11-11: "No target lists configured"). rasa.io says the
+     * message can vary and isn't meant to be matched, so any 400 there counts.
      */
-    private EmptyPageForMissingParent(result: RESTResponse, url: string): RESTResponse {
-        const metadata = this.AsRecord(this.AsRecord(result.Body)?.metadata);
-        const vendorMessage = typeof metadata?.errors === 'string' && metadata.errors.length > 0 ? metadata.errors : null;
+    private EmptyPageForParent(result: RESTResponse, url: string, code: 'PARENT_NOT_FOUND' | 'PARENT_NOT_CONFIGURED'): RESTResponse {
+        const vendorMessage = this.VendorErrorMessage(result);
         let path = url;
         try {
             path = new URL(url).pathname;
@@ -618,13 +626,35 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
             /* keep the raw url */
         }
         this.pendingWarnings.push({
-            Code: 'PARENT_NOT_FOUND',
+            Code: code,
             Message:
-                `"${this.responseCtx?.ObjectName}": HTTP 404 on GET ${path}; skipped this parent` +
+                `"${this.responseCtx?.ObjectName}": HTTP ${result.Status} on GET ${path}; skipped this parent` +
                 (vendorMessage ? ` (rasa.io: ${vendorMessage})` : '') + '.',
             Data: { object: this.responseCtx?.ObjectName, path, vendorMessage },
         });
         return { Status: 200, Body: { results: [], metadata: { next_link: '', record_count: 0 } }, Headers: result.Headers };
+    }
+
+    /**
+     * A per-parent contacts read (`/v2/messaging/{newsletter|blast|sequence}/{id}/contacts`). Every parent
+     * gets the same request (paging only, no dates or filters), so a 400 there is about that parent, not
+     * the request. The action feeds are not covered: they send a date window, and a 400 there can mean
+     * the window was rejected, which must still fail the read.
+     */
+    private IsContactsRead(url: string): boolean {
+        let path = url;
+        try {
+            path = new URL(url).pathname;
+        } catch {
+            /* match the raw url */
+        }
+        return /\/messaging\/(newsletter|blast|sequence)\/[^/?]+\/contacts\/?(\?|$)/.test(path);
+    }
+
+    /** rasa.io puts its error text in `metadata.errors`. */
+    private VendorErrorMessage(result: RESTResponse): string | null {
+        const metadata = this.AsRecord(this.AsRecord(result.Body)?.metadata);
+        return typeof metadata?.errors === 'string' && metadata.errors.length > 0 ? metadata.errors : null;
     }
 
     private BuildRequestInit(method: string, headers: Record<string, string>, body?: unknown): RequestInit {
