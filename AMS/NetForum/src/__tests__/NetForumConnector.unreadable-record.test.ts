@@ -21,34 +21,49 @@ const world: World = {
     },
 };
 
-const rowsOf = (cols: string[], keys: string[]): RESTResponse => ({
+/** A GetQuery answer with one <Result> per row id (`<key>#<n>`), each column's value derived from the row id. */
+const rowsOf = (cols: string[], rowIds: string[]): RESTResponse => ({
     Status: 200,
     Headers: {},
     Body: `<?xml version="1.0"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>` +
         `<GetQueryResponse><GetQueryResult><Results>` +
-        keys.map(k => `<Result>${cols.map(c => `<${c}>${c === 'ind_cst_key' ? k : `${c}-${k}`}</${c}>`).join('')}</Result>`).join('') +
+        rowIds.map(id => `<Result>${cols.map(c => `<${c}>${c === 'ind_cst_key' ? id.split('#')[0] : `${c}-${id}`}</${c}>`).join('')}</Result>`).join('') +
         `</Results></GetQueryResult></GetQueryResponse></soap:Body></soap:Envelope>`,
 });
 
 /** One GetQuery the fake xWeb answered. */
 interface Sent {
     top: number;
+    /** The key of each row the request covered, in order. */
     page: string[];
     faulted: boolean;
+    /** The WHERE clause narrowed the request to one key. */
+    narrowed: boolean;
 }
 
-/** A fake xWeb over `keys`: honours `@TOP n` and `<key> > '<k>'`, and faults any page that names a data column and holds a key in `bad`. */
-function connectorWithBadRecords(root: string, keys: string[], bad: string[], sent: Sent[] = []): NetForumConnector {
+/**
+ * A fake xWeb over `keys`: honours `@TOP n` (rows), `<key> > '<k>'` and `<key> = '<k>'`. Like xWeb, it joins only the
+ * tables a list names: a list that names a co_customer column gets `rowsPerKey[k]` rows for key k (a one-to-many join),
+ * any other list one row per key. A request that names a data column faults when its rows include a row in `bad`: a
+ * key (any of its rows) or one row of it (`<key>#<n>`).
+ */
+function connectorWithBadRecords(root: string, keys: string[], bad: string[], sent: Sent[] = [], rowsPerKey: Record<string, number> = {}): NetForumConnector {
     const c = makeConnector(world, root, []);
     internals(c).SendGetQuery = async (_url: string, args: Record<string, string>) => {
-        const top = Number(/@TOP\s+(\d+)/i.exec(args.szObjectName)?.[1] ?? keys.length);
-        const after = /ind_cst_key > '([^']*)'/.exec(args.szWhereClause ?? '')?.[1];
-        const page = keys.filter(k => after === undefined || k > after).slice(0, top);
+        const top = Number(/@TOP\s+(\d+)/i.exec(args.szObjectName)?.[1] ?? Number.MAX_SAFE_INTEGER);
+        const where = args.szWhereClause ?? '';
+        const after = [...where.matchAll(/ind_cst_key > '([^']*)'/g)].map(m => m[1]);
+        const equal = /ind_cst_key = '([^']*)'/.exec(where)?.[1];
         const cols = (args.szColumnList ?? '').split(',').map(s => s.trim().split('.').pop()!.toLowerCase()).filter(Boolean);
+        const joined = cols.includes('cst_recno');
+        const rowIds = keys
+            .filter(k => after.every(a => k > a) && (equal === undefined || k === equal))
+            .flatMap(k => Array.from({ length: joined ? rowsPerKey[k] ?? 1 : 1 }, (_, i) => `${k}#${i + 1}`))
+            .slice(0, top);
         const keyOnly = cols.every(col => col === 'ind_cst_key');
-        const faulted = !keyOnly && page.some(k => bad.includes(k));
-        sent.push({ top, page, faulted });
-        return faulted ? fault(INVALID_CHARACTER) : rowsOf(cols, page);
+        const faulted = !keyOnly && rowIds.some(id => bad.includes(id) || bad.includes(id.split('#')[0]));
+        sent.push({ top, page: rowIds.map(id => id.split('#')[0]), faulted, narrowed: equal !== undefined });
+        return faulted ? fault(INVALID_CHARACTER) : rowsOf(cols, rowIds);
     };
     return c;
 }
@@ -136,7 +151,7 @@ describe('NetForum: the xWeb faults a record that cannot be written as XML costs
     it('spends at most the daily fault budget on the search, also in the next connector', async () => {
         statics().PROBE_FAULTS_PER_DAY = { ...statics().PROBE_FAULTS_PER_DAY, unreadable: 3 };
         const root = freshRoot();
-        const searchFaults = (sent: Sent[]): number => sent.filter(s => s.faulted && s.top < 8).length;
+        const searchFaults = (sent: Sent[]): number => sent.filter(s => s.faulted && (s.top < 8 || s.narrowed)).length;
         const first: Sent[] = [];
         const read = await readAll(connectorWithBadRecords(root, KEYS, ['k05', 'k07'], first), 8);
         expect(searchFaults(first)).toBe(3);
@@ -147,5 +162,25 @@ describe('NetForum: the xWeb faults a record that cannot be written as XML costs
         const reread = await readAll(connectorWithBadRecords(root, KEYS, ['k05', 'k07'], again), 8);
         expect(searchFaults(again)).toBe(0);
         expect(reread.error).toMatch(/budget/i);
+    });
+});
+
+describe('NetForum: a record xWeb cannot write as XML that spans several rows of the list', () => {
+    const distinct = (r: FetchBatchResult): string[] => [...new Set(r.Records.map(x => x.ExternalID))];
+
+    it('skips the record when the bad value is on a later row of it', async () => {
+        const c = connectorWithBadRecords(freshRoot(), KEYS, ['k05#2'], [], { k03: 2, k05: 2 });
+        const r = await c.FetchChanges(ctx(8));
+        expect(distinct(r)).toEqual(['k01', 'k02', 'k03', 'k04']);
+        expect(r.HasMore).toBe(true);
+        expect(r.NextAfterKeyValue).toBe('k05');
+        expect((r.Warnings ?? []).find(x => x.Code === 'RECORD_UNREADABLE')?.Message).toContain('k05');
+    });
+
+    it('skips the record when the bad value is on its first row', async () => {
+        const c = connectorWithBadRecords(freshRoot(), KEYS, ['k05#1'], [], { k03: 2, k05: 2 });
+        const r = await c.FetchChanges(ctx(8));
+        expect(distinct(r)).toEqual(['k01', 'k02', 'k03', 'k04']);
+        expect(r.NextAfterKeyValue).toBe('k05');
     });
 });

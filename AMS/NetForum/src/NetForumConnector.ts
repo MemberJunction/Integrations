@@ -2037,11 +2037,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
             this.UnreadableReadEnded.set(grantKey, `More than ${NetForumConnector.MAX_UNREADABLE_RECORDS_PER_READ} such records: the read stopped at the next one.`);
             throw this.UnreadableRecordsError(ctx.ObjectName, grantKey);
         }
-        const unreadable = dataFault && canPaginate && sampleTarget === 0 && topRows > 0 && orderingKey
+        const isolation = dataFault && canPaginate && sampleTarget === 0 && topRows > 0 && orderingKey
             ? await this.IsolateUnreadableRecord(faultKey, url, sentArgs, queryObject, topRows, orderingKey, auth.Token, dataFault)
             : null;
-        const searchBudgetSpent = !!dataFault && !unreadable && this.ProbeBudgetLeft(faultKey, 'unreadable') <= 0;
-        if (searchBudgetSpent && skippedSoFar > 0) {
+        const unreadable = isolation && 'Key' in isolation ? isolation : null;
+        const notLocated = isolation && 'Reason' in isolation ? isolation : null;
+        if (notLocated?.BudgetSpent && skippedSoFar > 0) {
             this.UnreadableReadEnded.set(grantKey, "Today's fault budget for finding such records is spent: the read stopped at the next one, and a run on a later UTC day goes on.");
             throw this.UnreadableRecordsError(ctx.ObjectName, grantKey);
         }
@@ -2056,7 +2057,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 : '';
             const dataHint = dataFault
                 ? ' [a value in one record could not be written as XML; nothing was learned against the column list' +
-                    `${searchBudgetSpent ? "; today's fault budget for finding the record is spent, and a run on a later UTC day goes on" : ''}]`
+                    `${notLocated ? `; the record was not located: ${notLocated.Reason}` : ''}]`
                 : '';
             throw new Error(
                 `NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}` +
@@ -2370,13 +2371,14 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * Finds the first record of a faulting page that xWeb cannot write as XML: the largest `@TOP n` of the same request
-     * that reads (a binary search, so about log2(top) requests), then the key of the record after those rows from a
-     * request that names only the key and the WHERE clause's columns (no value there can carry the bad character).
-     * The search requests are sent under the day's 'unreadable' fault budget (see PROBE_FAULTS_PER_DAY).
-     * Returns the readable rows before the record and its key, or null when the record cannot be located safely
-     * (another fault, no key in the list, the key-only read does not list the same records in the same order, or the
-     * budget is spent).
+     * Finds the first record of a faulting page that xWeb cannot write as XML. A binary search on `@TOP n` of the same
+     * request finds the largest page that reads (about log2(top) requests). The row after it belongs to the record on
+     * the last readable row or to the record after that one: xWeb joins only the tables a list names, so one record can
+     * span several rows of the list. Each of the two is checked with the same request narrowed to its key, which faults
+     * only for the record that holds the bad value. The next record's key comes from a request that names only the key
+     * and the WHERE clause's columns (no value there can carry the bad character). Every request that can fault is sent
+     * under the day's 'unreadable' fault budget (see PROBE_FAULTS_PER_DAY).
+     * Returns the readable rows of the other records and the record's key, or why the record was not located.
      */
     private async IsolateUnreadableRecord(
         faultKey: string,
@@ -2387,38 +2389,69 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         orderingKey: string,
         token: string,
         fault: string,
-    ): Promise<{ Rows: Record<string, unknown>[]; Key: string; Fault: string } | null> {
-        const withTop = (n: number, list: string): Record<string, string> => ({ ...sent, szObjectName: `${queryObject} @TOP ${n}`, szColumnList: list });
+    ): Promise<{ Rows: Record<string, unknown>[]; Key: string; Fault: string } | { Reason: string; BudgetSpent?: boolean }> {
+        const keyColumn = sent.szOrderBy;
+        if (!keyColumn) return { Reason: 'the request has no ORDER BY key' };
+        const withTop = (n: number, list: string, predicate?: string): Record<string, string> => {
+            const args: Record<string, string> = { ...sent, szObjectName: `${queryObject} @TOP ${n}`, szColumnList: list };
+            if (predicate) args.szWhereClause = sent.szWhereClause ? `${sent.szWhereClause} AND ${predicate}` : predicate;
+            return args;
+        };
+        const spent = { Reason: "today's fault budget for finding it is spent, and a run on a later UTC day goes on", BudgetSpent: true };
+        const answer = (r: RESTResponse): string => `HTTP ${r.Status}${this.SoapFault(r.Body)}`;
+        const keyOf = (row: Record<string, unknown>): string | undefined => {
+            const v = row[orderingKey] ?? row[orderingKey.toLowerCase()];
+            return v == null ? undefined : String(v);
+        };
+
         let lo = 0;
         let hi = top;
         let readable: Record<string, unknown>[] = [];
         while (hi - lo > 1) {
             const mid = Math.floor((lo + hi) / 2);
             const r = await this.SendBudgetedGetQuery(faultKey, 'unreadable', url, withTop(mid, sent.szColumnList), token);
-            if (!r) return null;
+            if (!r) return spent;
             if (r.Status >= 200 && r.Status < 300) {
                 lo = mid;
                 readable = this.NormalizeResponse(r.Body, null);
             } else if (this.UnreadableValueFault(r.Body)) {
                 hi = mid;
             } else {
-                return null;
+                return { Reason: `a search request drew ${answer(r)}` };
             }
         }
+
+        /** True when the request narrowed to `key` draws the fault, false when it reads, otherwise why neither. */
+        const holdsBadValue = async (key: string): Promise<boolean | { Reason: string; BudgetSpent?: boolean }> => {
+            const narrowed = withTop(top, sent.szColumnList, `${keyColumn} = '${this.EscapeSqlLiteral(key)}'`);
+            const r = await this.SendBudgetedGetQuery(faultKey, 'unreadable', url, narrowed, token);
+            if (!r) return spent;
+            if (r.Status >= 200 && r.Status < 300) return false;
+            return this.UnreadableValueFault(r.Body) ? true : { Reason: `the check of ${key} drew ${answer(r)}` };
+        };
+        const skip = (key: string) => ({ Rows: readable.filter(row => keyOf(row) !== key), Key: key, Fault: fault });
+
+        const lastKey = readable.length > 0 ? keyOf(readable[readable.length - 1]) : undefined;
+        if (readable.length > 0 && !lastKey) return { Reason: `the last readable row has no ${orderingKey}` };
+        if (lastKey) {
+            const held = await holdsBadValue(lastKey);
+            if (held === true) return skip(lastKey);
+            if (held !== false) return held;
+        }
+
         const bare = (item: string): string => item.split('.').pop()!.trim().toLowerCase();
         const whereNames = new Set([...(sent.szWhereClause ?? '').matchAll(/([A-Za-z_]\w*)\s*>=?\s*'/g)].map(m => m[1].toLowerCase()));
         const keyList = sent.szColumnList.split(',').map(s => s.trim())
             .filter(item => bare(item) === orderingKey.toLowerCase() || whereNames.has(bare(item)));
-        if (!keyList.some(item => bare(item) === orderingKey.toLowerCase())) return null;
-        const keysResponse = await this.SendGetQuery(url, withTop(lo + 1, keyList.join(', ')), token);
-        if (keysResponse.Status < 200 || keysResponse.Status >= 300) return null;
-        const keyOf = (row: Record<string, unknown>): string | undefined => {
-            const v = row[orderingKey] ?? row[orderingKey.toLowerCase()];
-            return v == null ? undefined : String(v);
-        };
-        const keys = this.NormalizeResponse(keysResponse.Body, null).map(keyOf);
-        if (keys.length !== lo + 1 || !keys[lo] || readable.some((row, i) => keyOf(row) !== keys[i])) return null;
-        return { Rows: readable, Key: keys[lo]!, Fault: fault };
+        if (!keyList.some(item => bare(item) === orderingKey.toLowerCase())) return { Reason: `the column list does not name ${orderingKey}` };
+        const after = lastKey ? `${keyColumn} > '${this.EscapeSqlLiteral(lastKey)}'` : undefined;
+        const next = await this.SendGetQuery(url, withTop(1, keyList.join(', '), after), token);
+        if (next.Status < 200 || next.Status >= 300) return { Reason: `the key-only read drew ${answer(next)}` };
+        const nextKey = this.NormalizeResponse(next.Body, null).map(keyOf)[0];
+        if (!nextKey) return { Reason: `no record follows ${lastKey ?? 'the cursor'}` };
+        const held = await holdsBadValue(nextKey);
+        if (held === true) return skip(nextKey);
+        return held === false ? { Reason: `neither ${lastKey ?? '(no readable row)'} nor ${nextKey} draws the fault on its own` } : held;
     }
 
     /** The error that ends a read which skipped records xWeb cannot write: the engine then holds the watermark and deletes nothing. */
