@@ -3,10 +3,10 @@
  * holds it: "' ', hexadecimal value 0x02, is an invalid character." The fault is about that record's data, not about
  * the column list, and the page holding it is the same on every read.
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FetchBatchResult, FetchContext, RESTResponse } from '@memberjunction/integration-engine';
-import type { NetForumConnector } from '../NetForumConnector.js';
-import { fault, internals, isolateConnectorState, makeConnector, objOf, type SentCall, type World } from './netforum-fake-xweb.js';
+import { NetForumConnector } from '../NetForumConnector.js';
+import { fault, internals, isolateConnectorState, makeConnector, objOf, statics, type World } from './netforum-fake-xweb.js';
 
 const { freshRoot } = isolateConnectorState();
 
@@ -30,21 +30,30 @@ const rowsOf = (cols: string[], keys: string[]): RESTResponse => ({
         `</Results></GetQueryResult></GetQueryResponse></soap:Body></soap:Envelope>`,
 });
 
-/** A fake xWeb over KEYS: honours `@TOP n` and `<key> > '<k>'`, and faults any page that names a data column and holds BAD. */
-function connectorWithBadRecord(root: string): NetForumConnector {
-    const calls: SentCall[] = [];
-    const c = makeConnector(world, root, calls);
+/** One GetQuery the fake xWeb answered. */
+interface Sent {
+    top: number;
+    page: string[];
+    faulted: boolean;
+}
+
+/** A fake xWeb over `keys`: honours `@TOP n` and `<key> > '<k>'`, and faults any page that names a data column and holds a key in `bad`. */
+function connectorWithBadRecords(root: string, keys: string[], bad: string[], sent: Sent[] = []): NetForumConnector {
+    const c = makeConnector(world, root, []);
     internals(c).SendGetQuery = async (_url: string, args: Record<string, string>) => {
-        const top = Number(/@TOP\s+(\d+)/i.exec(args.szObjectName)?.[1] ?? KEYS.length);
+        const top = Number(/@TOP\s+(\d+)/i.exec(args.szObjectName)?.[1] ?? keys.length);
         const after = /ind_cst_key > '([^']*)'/.exec(args.szWhereClause ?? '')?.[1];
-        const page = KEYS.filter(k => after === undefined || k > after).slice(0, top);
+        const page = keys.filter(k => after === undefined || k > after).slice(0, top);
         const cols = (args.szColumnList ?? '').split(',').map(s => s.trim().split('.').pop()!.toLowerCase()).filter(Boolean);
         const keyOnly = cols.every(col => col === 'ind_cst_key');
-        if (!keyOnly && page.includes(BAD)) return fault(INVALID_CHARACTER);
-        return rowsOf(cols, page);
+        const faulted = !keyOnly && page.some(k => bad.includes(k));
+        sent.push({ top, page, faulted });
+        return faulted ? fault(INVALID_CHARACTER) : rowsOf(cols, page);
     };
     return c;
 }
+
+const connectorWithBadRecord = (root: string): NetForumConnector => connectorWithBadRecords(root, KEYS, [BAD]);
 
 const ctx = (BatchSize: number, AfterKeyValue: string | null = null): FetchContext => ({
     CompanyIntegration: { ID: 'CI1', IntegrationID: 'I1' },
@@ -98,5 +107,45 @@ describe('NetForum: a record xWeb cannot write as XML', () => {
         expect(read.error).toContain(BAD);
         // The engine may retry a failed fetch: the read must not then look complete.
         await expect(c.FetchChanges(ctx(4, 'k11'))).rejects.toThrow(BAD);
+    });
+});
+
+describe('NetForum: the xWeb faults a record that cannot be written as XML costs', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('sends a request that draws this fault once, not again', async () => {
+        const c = new NetForumConnector();
+        (c as unknown as { Sleep: (ms: number) => Promise<void> }).Sleep = async () => undefined;
+        const fetchMock = vi.fn(async () => new Response(String(fault(INVALID_CHARACTER).Body), { status: 500 }));
+        vi.stubGlobal('fetch', fetchMock);
+        const r = await internals(c).SendGetQuery('https://xweb.invalid/x', { szObjectName: 'Individual @TOP 6', szColumnList: 'ind_cst_key, ind_first_name' }, 't');
+        expect(r.Status).toBe(500);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not search for a record past the per-read limit', async () => {
+        const keys = Array.from({ length: 20 }, (_, i) => `k${String(i + 1).padStart(2, '0')}`);
+        const sent: Sent[] = [];
+        const read = await readAll(connectorWithBadRecords(freshRoot(), keys, ['k02', 'k04', 'k06', 'k08', 'k10', 'k12'], sent), 4);
+        expect(read.error).toContain('k10');
+        expect(read.error).not.toContain('k12');
+        // A search for the sixth record would send requests smaller than a page, starting after the fifth.
+        expect(sent.filter(s => s.top < 4 && s.page[0] === 'k11')).toHaveLength(0);
+    });
+
+    it('spends at most the daily fault budget on the search, also in the next connector', async () => {
+        statics().PROBE_FAULTS_PER_DAY = { ...statics().PROBE_FAULTS_PER_DAY, unreadable: 3 };
+        const root = freshRoot();
+        const searchFaults = (sent: Sent[]): number => sent.filter(s => s.faulted && s.top < 8).length;
+        const first: Sent[] = [];
+        const read = await readAll(connectorWithBadRecords(root, KEYS, ['k05', 'k07'], first), 8);
+        expect(searchFaults(first)).toBe(3);
+        expect(read.error).toMatch(/budget/i);
+        expect(read.error).toContain('k05');
+
+        const again: Sent[] = [];
+        const reread = await readAll(connectorWithBadRecords(root, KEYS, ['k05', 'k07'], again), 8);
+        expect(searchFaults(again)).toBe(0);
+        expect(reread.error).toMatch(/budget/i);
     });
 });

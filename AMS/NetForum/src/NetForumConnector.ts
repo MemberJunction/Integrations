@@ -240,7 +240,7 @@ interface NFQueryDefinition {
 }
 
 /** A per-day budget of probe faults (see NetForumConnector.ProbeFaults). */
-type NFProbeKind = 'default' | 'legacy' | 'own';
+type NFProbeKind = 'default' | 'legacy' | 'own' | 'unreadable';
 
 /** Faults spent on one probe kind on one UTC day. */
 interface NFProbeFaultCount {
@@ -648,8 +648,11 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     /** `<connection>|<object>` → keys of the records this read skipped because xWeb could not write them as XML. */
     private readonly UnreadableRecords = new Map<string, string[]>();
 
-    /** `<connection>|<object>` whose read reached its last page with records skipped: every later call ends in UnreadableRecordsError. */
-    private readonly UnreadableReadEnded = new Set<string>();
+    /**
+     * `<connection>|<object>` → how its read ended with records skipped (the last page, the per-read limit, or the
+     * day's search budget): every later call ends in UnreadableRecordsError.
+     */
+    private readonly UnreadableReadEnded = new Map<string, string>();
 
     /** Records one read may skip (IsolateUnreadableRecord) before it stops: each costs a few faults against xWeb's daily limit. */
     private static readonly MAX_UNREADABLE_RECORDS_PER_READ = 5;
@@ -738,12 +741,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Faults per connection per UTC day that requests nothing has vouched for may spend (see ProbeFaults). xWeb
-     * locks the account at ~100 faults a day (MethodsFaultLimitPerDay, cleared only by the vendor); these three
-     * kinds together may spend 40 ('own': an unsendable object's first own-table list, and the learn rounds that
-     * follow it), leaving the rest for faults that teach. An object refused for the budget is tried on a later
-     * day — slower, never a lock.
+     * locks the account at ~100 faults a day (MethodsFaultLimitPerDay, cleared only by the vendor); these kinds
+     * together may spend 60 ('own': an unsendable object's first own-table list, and the learn rounds that follow
+     * it; 'unreadable': the search for a record xWeb cannot write as XML), leaving the rest for faults that teach.
+     * An object refused for the budget is tried on a later day — slower, never a lock.
      */
-    private static readonly PROBE_FAULTS_PER_DAY: Record<NFProbeKind, number> = { default: 15, legacy: 10, own: 15 };
+    private static readonly PROBE_FAULTS_PER_DAY: Record<NFProbeKind, number> = { default: 15, legacy: 10, own: 15, unreadable: 20 };
 
     /** One GetQuery round trip under the concurrency bound, with 429 waited out and retried. */
     private async SendGetQuery(url: string, args: Record<string, string>, token: string): Promise<RESTResponse> {
@@ -2029,9 +2032,19 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         }
 
         // The page holding a record xWeb cannot write faults on every read: read the records around it instead.
+        const skippedSoFar = this.UnreadableRecords.get(grantKey)?.length ?? 0;
+        if (dataFault && skippedSoFar >= NetForumConnector.MAX_UNREADABLE_RECORDS_PER_READ) {
+            this.UnreadableReadEnded.set(grantKey, `More than ${NetForumConnector.MAX_UNREADABLE_RECORDS_PER_READ} such records: the read stopped at the next one.`);
+            throw this.UnreadableRecordsError(ctx.ObjectName, grantKey);
+        }
         const unreadable = dataFault && canPaginate && sampleTarget === 0 && topRows > 0 && orderingKey
-            ? await this.IsolateUnreadableRecord(url, sentArgs, queryObject, topRows, orderingKey, auth.Token, dataFault)
+            ? await this.IsolateUnreadableRecord(faultKey, url, sentArgs, queryObject, topRows, orderingKey, auth.Token, dataFault)
             : null;
+        const searchBudgetSpent = !!dataFault && !unreadable && this.ProbeBudgetLeft(faultKey, 'unreadable') <= 0;
+        if (searchBudgetSpent && skippedSoFar > 0) {
+            this.UnreadableReadEnded.set(grantKey, "Today's fault budget for finding such records is spent: the read stopped at the next one, and a run on a later UTC day goes on.");
+            throw this.UnreadableRecordsError(ctx.ObjectName, grantKey);
+        }
         if (!unreadable && (response.Status < 200 || response.Status >= 300)) {
             if (this.IsSelectNotAuthorizedFault(response)) this.SelectNotAuthorized.add(grantKey);
             // The fault text is SQL Server's or xWeb's; the SHAPE of what we sent is ours to report, or
@@ -2042,7 +2055,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                 ? ` [the watermark predicate "${watermarkField} >= '${watermarkLiteral}'" is what failed to convert; nothing was learned against the column list]`
                 : '';
             const dataHint = dataFault
-                ? ' [a value in one record could not be written as XML; nothing was learned against the column list]'
+                ? ' [a value in one record could not be written as XML; nothing was learned against the column list' +
+                    `${searchBudgetSpent ? "; today's fault budget for finding the record is spent, and a run on a later UTC day goes on" : ''}]`
                 : '';
             throw new Error(
                 `NetForum GetQuery(${ctx.ObjectName}) failed: HTTP ${response.Status}${this.SoapFault(response.Body)}` +
@@ -2065,10 +2079,6 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         if (unreadable) {
             const skipped = [...(this.UnreadableRecords.get(grantKey) ?? []), unreadable.Key];
             this.UnreadableRecords.set(grantKey, skipped);
-            if (skipped.length > NetForumConnector.MAX_UNREADABLE_RECORDS_PER_READ) {
-                this.UnreadableReadEnded.add(grantKey);
-                throw this.UnreadableRecordsError(ctx.ObjectName, grantKey);
-            }
             warnings.push({
                 Code: 'RECORD_UNREADABLE',
                 Message:
@@ -2258,7 +2268,7 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         // The last page of a read that skipped records: the engine applies it, and the next call reports the read
         // incomplete (UnreadableRecordsError), so the watermark is held and no record is taken as deleted.
         const endsIncomplete = !hasMore && (this.UnreadableRecords.get(grantKey)?.length ?? 0) > 0;
-        if (endsIncomplete) this.UnreadableReadEnded.add(grantKey);
+        if (endsIncomplete) this.UnreadableReadEnded.set(grantKey, 'Every other record was read.');
 
         return {
             Records: records,
@@ -2363,10 +2373,13 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
      * Finds the first record of a faulting page that xWeb cannot write as XML: the largest `@TOP n` of the same request
      * that reads (a binary search, so about log2(top) requests), then the key of the record after those rows from a
      * request that names only the key and the WHERE clause's columns (no value there can carry the bad character).
+     * The search requests are sent under the day's 'unreadable' fault budget (see PROBE_FAULTS_PER_DAY).
      * Returns the readable rows before the record and its key, or null when the record cannot be located safely
-     * (another fault, no key in the list, or the key-only read does not list the same records in the same order).
+     * (another fault, no key in the list, the key-only read does not list the same records in the same order, or the
+     * budget is spent).
      */
     private async IsolateUnreadableRecord(
+        faultKey: string,
         url: string,
         sent: Record<string, string>,
         queryObject: string,
@@ -2381,7 +2394,8 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
         let readable: Record<string, unknown>[] = [];
         while (hi - lo > 1) {
             const mid = Math.floor((lo + hi) / 2);
-            const r = await this.SendGetQuery(url, withTop(mid, sent.szColumnList), token);
+            const r = await this.SendBudgetedGetQuery(faultKey, 'unreadable', url, withTop(mid, sent.szColumnList), token);
+            if (!r) return null;
             if (r.Status >= 200 && r.Status < 300) {
                 lo = mid;
                 readable = this.NormalizeResponse(r.Body, null);
@@ -2410,12 +2424,10 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
     /** The error that ends a read which skipped records xWeb cannot write: the engine then holds the watermark and deletes nothing. */
     private UnreadableRecordsError(objectName: string, grantKey: string): Error {
         const keys = this.UnreadableRecords.get(grantKey) ?? [];
-        const stopped = keys.length > NetForumConnector.MAX_UNREADABLE_RECORDS_PER_READ
-            ? ` More than ${NetForumConnector.MAX_UNREADABLE_RECORDS_PER_READ} such records: the read stopped at the last one.`
-            : ' Every other record was read.';
+        const ended = this.UnreadableReadEnded.get(grantKey);
         return new Error(
             `NetForum GetQuery(${objectName}): ${keys.length} record(s) were skipped because xWeb cannot write one of their values ` +
-            `as XML (a control character in the data): ${keys.join(', ')}.${stopped} The read is reported incomplete, so the ` +
+            `as XML (a control character in the data): ${keys.join(', ')}.${ended ? ` ${ended}` : ''} The read is reported incomplete, so the ` +
             `watermark is held and no record is treated as deleted. Remove the character from these records in netFORUM.`,
         );
     }
@@ -3310,11 +3322,12 @@ export class NetForumConnector extends BaseRESTIntegrationConnector {
                     await this.Sleep(this.RetryAfterMs(response, attempt));
                     continue;
                 }
-                if (response.status >= 500 && attempt < MAX_RETRIES) {
+                const text = await response.text();
+                // A value xWeb cannot write as XML faults the same way on every send, and each send counts toward the daily lock.
+                if (response.status >= 500 && attempt < MAX_RETRIES && !this.UnreadableValueFault(text)) {
                     await this.Sleep(Math.min(1000 * Math.pow(2, attempt), 30_000));
                     continue;
                 }
-                const text = await response.text();
                 const h: Record<string, string> = {};
                 response.headers.forEach((v, k) => { h[k.toLowerCase()] = v; });
                 return { Status: response.status, Body: text, Headers: h };
