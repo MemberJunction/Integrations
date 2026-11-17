@@ -43,7 +43,7 @@ export interface FakeDefinition {
     BrokenJoin: string | undefined;
 }
 
-export type ProbeKind = 'default' | 'legacy' | 'own';
+export type ProbeKind = 'default' | 'legacy' | 'own' | 'unreadable';
 
 /** The private members the harness replaces or reads, typed so no `any` is needed. */
 interface ConnectorInternals {
