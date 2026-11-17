@@ -680,7 +680,7 @@
     {
       "name": "Higher Logic Thrive Marketing Professional",
       "displayName": "Higher Logic Thrive Marketing Professional Connector",
-      "description": "Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform used by associations. This connector reads subscriber, mailing, activity and campaign data through the Informz Advanced API (AAPI), a SOAP web service.",
+      "description": "Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform for associations. It reads subscriber, mailing, activity and campaign data and writes subscribers via the Informz AAPI (SOAP).",
       "category": "Marketing",
       "tags": [
         "informz",
@@ -690,7 +690,7 @@
       ],
       "logo": "fa-solid fa-envelope-open-text",
       "navigationBaseURL": "https://support.higherlogic.com/hc/en-us",
-      "objectCount": 70,
+      "objectCount": 69,
       "className": "InformzConnector",
       "npmPackage": "@memberjunction/connector-informz",
       "version": "0.3.0",

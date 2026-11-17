@@ -2,14 +2,17 @@
 
 > **Evidence tier:** 🥇 Production-live (real vendor API, real production dataset, read-only)  ·  **Last verified:** 2026-11-11  ·  **Proof DB(s):** MJ_SS_E2E_INFORMZ
 
-> **Known issues:** 46 of the 67 active objects use primary keys inferred from their row grain rather than named by the vendor (with merge caveats on simultaneous multi-interest opt-outs and multi-SKU web tracking). PostgreSQL deployments require the MJ engine's ISO-8601 `Date` composite-PK serialization and `.NET` sub-millisecond trailing-zero normalization fix.
+> **Known issues:** 45 of the 66 active objects use primary keys inferred from their row grain rather than named by the vendor (with merge caveats on simultaneous multi-interest opt-outs and multi-SKU web tracking). PostgreSQL deployments require the MJ engine's ISO-8601 `Date` composite-PK serialization and `.NET` sub-millisecond trailing-zero normalization fix.
 
 ## What this connector supports
 
-**70 objects** declared across **994 fields** (source: `metadata/integration/.informz.integration.json`). 0 declare a write path; 70 are read-only (pull). 6 support incremental sync.
+**69 objects** declared across **992 fields** (source: `metadata/integration/.informz.integration.json`). 1 declares a write path (`Subscriber`: create and update, no delete); 68 are read-only (pull). 6 support incremental sync.
 
-**67 are Active** and **3 are `Status='Disabled'`** because nothing identifies one of their rows (see
-[Primary keys](#primary-keys)). Every active object declares a primary key.
+**66 are Active** and **3 are `Status='Disabled'`** because nothing identifies one of their rows (see
+[Primary keys](#primary-keys)). Every active object declares a primary key. `MailingActivitySendAFriend` and the
+`send_a_friend_count` field of `MailingActivity` / `MailingActivityDemo` were retired by the vendor (the help-center
+articles dropped them; Higher Logic stopped offering Send a Friend in December 2019) and are no longer declared;
+migration `V202611170749` deprecates the seeded rows on existing installs rather than deleting them.
 
 ### How this vendor actually works
 
@@ -85,7 +88,6 @@
 | MailingActivityOpens | Active | `email` + `mailing_instance_id` + `open_date` (inferred) | `open_date` |
 | MailingActivityOpensByHour | Active | `Day` + `Hour` + `mailing_Instance_id` + `Month` + `Year` (inferred) | — |
 | MailingActivityOptout | Active | `Email` + `mailing_instance_id` + `optout_date` (inferred) | `optout_date` |
-| MailingActivitySendAFriend | Active | `from_email` + `mailing_instance_id` + `friend_email` (inferred) | — |
 | MailingActivitySubscriberActions | Active | `Email` + `mailing_instance_id` (inferred) | — |
 | MailingActivitySubscriberArchive | Active | `Email` + `mailing_instance_id` (inferred) | — |
 | MailingActivityTotals | Active | `activity_date` + `mailing_folder_id` (inferred) | — |
@@ -138,20 +140,39 @@
   - Composite `Date` primary keys (`MailingActivityClicks`, `MailingActivityOpens`, `SubscriberWebTracking`, etc.) require ISO-8601 key serialization (`toISOString()`) and `.NET` 7-digit fractional-second trailing-zero normalization (`.5700000Z` -> `.570Z`) in the MJ integration engine so PostgreSQL `timestamptz` lookups and `MatchEngine` record maps align 1:1.
   - `MailingInstance.mailing_instance_id` soft-PK metadata should be verified active on existing tenant entity fields when wiring downstream relationships.
 - **Hybrid end-to-end sync, 2026-10-23 (`MJ_SS_E2E_INFORMZ`):** Real MJ engine into SQL Server against a mock vendor; all 70 objects applied and the forward run landed 103 of 103 mock rows, capturing creates, updates, hard deletes on `Subscriber`, and an idle second sync. This mock run predated the primary-key additions (49 objects ran keyless at that time).
-- **Unit tests:** 36 of 36 pass in `InformzConnector.test.ts` with a mocked transport and the real metadata, including sliding date-window cursors and metered migration pacing.
+- **Unit tests:** 52 of 52 pass in `InformzConnector.test.ts` with a mocked transport and the real metadata, including sliding date-window cursors, metered migration pacing and the ActionRequest Subscribe write path (pre-write identity read-back, 409 on an ambiguous match, refusal of an identity change, demographic `<Field>` elements, fault classification, the interest-action guard).
+- **Hybrid end-to-end push, 2026-11-17 (MJ worktree, mock vendor, real MJ engine into SQL Server):** engine push loop 12 of 12 cells and 7 of 7 write round trips (create → read-back link, update, idempotent re-push, delete skipped as unsupported). Needs the MJ integration-engine incremental-push fixes in MemberJunction/MJ PR #6699; without them the engine's push loop selects no Record Changes for any connector.
 - **Unauthenticated live probing:** The live WSDL and schema files match the snapshot the catalog was declared against, and every regional host answered.
 
 ### Push (write / bidirectional)
 
-- **Status: Not supported.** The connector is pull-only by design. The AAPI documents 9 write operations
-  (`<ActionRequest>` documents such as `Subscribe` and `CreateMailing`). They are recorded in
-  `Configuration.OutOfScopeObjectFamilies` as an operator decision, and the connector refuses any write.
+- **Status: Supported for `Subscriber` create and update** (mock-proven; no live write has been sent yet). Every
+  other object answers a write with 403 and sends nothing. Push is opt-in per entity map; `DefaultSyncDirection`
+  stays `Pull`.
+- **Mechanics.** One `<ActionRequest>` `Subscribe` document per record, inside the same `PostInformzMessage`
+  envelope, credential block and escaping as a `GridRequest`. The only interest action ever sent is
+  `AddOrUpdateSubscribers`; any other value, from metadata or a connection setting, is refused before a request
+  is made (a list-replacing action would empty the interest for everyone not in the document).
+- **Identity.** The ActionResponse carries no subscriber id, so identity is read back from the `subscriber` grid
+  (`user_id` EQ ID AND `email` EQ Email, 2 rows). A create reads back BEFORE posting: one row links it without a
+  write, several rows is a 409 with nothing sent, none posts the Subscribe and reads back again. An update
+  re-reads the stored row, refuses a change to `user_id` or `email` (409), posts, and confirms the same
+  `subscriber_id` came back. Success is never reported without an ExternalID.
+- **Connection settings (tenant data, never metadata).** `SubscribeInterestNames` (interests every Subscribe
+  joins) and `SubscribeFieldDefinitions` (`{ Name, DataType?, DefaultValue? }` demographic `<Field>` elements).
+  A malformed setting never breaks a read; a write refuses while one exists.
+- **Delete: not supported.** The vendor's nearest operation, `Unsubscribe`, is a global consent status change,
+  not a record delete, so an MJ row delete must never trigger it. `DeleteRecord` returns 405 and sends nothing.
+- **Out of scope** (each with its reason in `Configuration.WriteScope.out`): `BulkUpload`, `CreateMailing`,
+  `CreateMessage`, `Optout`, `ScheduleMailing`, `SetMailingOnHold`, `Unsubscribe`,
+  `UpdateContactMessageCategoryPreference`.
 
 ## Verification performed
 
 | Gate | Result |
 |---|---|
-| Unit tests (this package) | **36 passed** |
+| Unit tests (this package) | **52 passed** |
+| Hybrid E2E push (mock vendor, real MJ engine, 2026-11-17) | 12 of 12 push-loop cells, 7 of 7 write round trips (needs MJ PR #6699) |
 | PR checks (`.github/workflows/pr.yml`, all 18 steps) | pass |
 | Verification ladder T0 and T2–T7 | pass |
 | Verification ladder T1 (primary-key coverage) | failed at build time with 49 of 70 objects keyless; resolved afterwards by the keys above, not re-run |
@@ -168,7 +189,8 @@
 - **The `StartRow` paging base edge cases:** Live data confirms multi-page progression in production, though boundary-row skip/overlap behavior at exact 1,000-row cutoffs remains sensitive to vendor `StartRow` semantics (the connector sends `0` then 1-based offsets per vendor examples).
 - **Brand-specific element capture (`ExtraReturnFields`)** is unit-tested only and was not exercised in the mock E2E run.
 - **Rate limits** remain undocumented by Higher Logic; `migrationPacing` enforces conservative client-side concurrency and token-bucket limits.
-- **Out of scope by design:** the AAPI write surface, Higher Logic Push API v2 (inbound only), Thrive Marketing Enterprise and Thrive Community, and AAPI payload encryption and compression.
+- **Write path is mock-proven only.** No live `Subscribe` has been sent; the vendor's match key is undocumented, which is why the connector reads identity back before and after every write. A single live create/update against a test subscriber is the remaining gap.
+- **Out of scope by design:** every AAPI ActionRequest except `Subscribe`, Higher Logic Push API v2 (inbound only), Thrive Marketing Enterprise and Thrive Community, and AAPI payload encryption and compression.
 
 ---
 

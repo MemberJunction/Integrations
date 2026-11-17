@@ -43,7 +43,7 @@ import {
 // ─── Real metadata + fixtures ─────────────────────────────────────────────────────────────────────
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-// The catalog this package ships, and the doc-derived wire fixtures vendored beside this test.
+// The catalog this package ships, and the doc-derived wire fixtures + vendor action catalog vendored beside this test.
 const METADATA_FILE = resolve(HERE, '../../metadata/integration/.informz.integration.json');
 const FIXTURES_FILE = resolve(HERE, 'fixtures/informz/fixtures.json');
 const CONNECTOR_SOURCE = resolve(HERE, '../InformzConnector.ts');
@@ -74,6 +74,22 @@ interface TransportFacts {
 
 const METADATA_ROOT = (JSON.parse(readFileSync(METADATA_FILE, 'utf8')) as MetadataRow[])[0];
 const FIXTURES = JSON.parse(readFileSync(FIXTURES_FILE, 'utf8')) as FixtureManifest;
+/** The fixture's error-route objects (the builder picks non-priority grids; they move when the catalog changes). */
+const FAULT_OBJECT = String((FIXTURES as unknown as { ErrorRoutes: { ServiceFault: { Object: string } } }).ErrorRoutes.ServiceFault.Object);
+const RETRY_OBJECT = String((FIXTURES as unknown as { ErrorRoutes: { RetryAfter: { Object: string } } }).ErrorRoutes.RetryAfter.Object);
+/** The subscriber_id values the fixture's subscriber page routes serve, in StartRow order (the builder mints them). */
+function fixtureSubscriberIds(): string[] {
+    const pages = FIXTURES.Routes
+        .filter(r => (r.Match ?? []).includes('type=&quot;subscriber&quot;') && (r.Match ?? []).some(m => /^&lt;StartRow&gt;\d+&lt;\/StartRow&gt;$/.test(m)))
+        .map(r => ({ start: Number(/&lt;StartRow&gt;(\d+)/.exec((r.Match ?? []).join(' '))?.[1]), body: r.Body }))
+        .sort((a, b) => a.start - b.start);
+    const ids: string[] = [];
+    for (const page of pages) {
+        const doc = unescapeXml(unescapeXml(page.body));
+        for (const m of doc.matchAll(/<Field element="subscriber_id">(\d+)<\/Field>/g)) if (!ids.includes(m[1])) ids.push(m[1]);
+    }
+    return ids;
+}
 const INTEGRATION_CONFIG = asRecord(parseMaybeJSON(METADATA_ROOT.fields.Configuration));
 const TRANSPORT = INTEGRATION_CONFIG.Transport as TransportFacts;
 const REGION_HOSTS = INTEGRATION_CONFIG.RegionHosts as Record<string, string>;
@@ -130,10 +146,10 @@ function seedRow<T>(fields: Record<string, unknown>, extra: Record<string, unkno
     return { ...row, ...extra } as Partial<T>;
 }
 
-function seedEngine(): void {
+function seedEngine(root: MetadataRow = METADATA_ROOT): void {
     const ios: Array<Partial<MJIntegrationObjectEntity>> = [];
     const iofs: Array<Partial<MJIntegrationObjectFieldEntity>> = [];
-    ioRows().forEach((io, i) => {
+    (root.relatedEntities?.['MJ: Integration Objects'] ?? []).forEach((io, i) => {
         const ioID = `seed-io-${i + 1}`;
         ios.push(seedRow<MJIntegrationObjectEntity>(io.fields, { ID: ioID, IntegrationID: INTEGRATION_ID }));
         (io.relatedEntities?.['MJ: Integration Object Fields'] ?? []).forEach((f, j) => {
@@ -141,7 +157,7 @@ function seedEngine(): void {
         });
     });
     IntegrationEngineBase.Instance.SeedForTesting({
-        Integrations: [seedRow<MJIntegrationEntity>(METADATA_ROOT.fields, { ID: INTEGRATION_ID })],
+        Integrations: [seedRow<MJIntegrationEntity>(root.fields, { ID: INTEGRATION_ID })],
         IntegrationObjects: ios,
         IntegrationObjectFields: iofs,
     });
@@ -282,6 +298,126 @@ function indexesInOrder(text: string, needles: string[]): boolean {
     return true;
 }
 
+// ─── Write-path helpers (mocked transport only — nothing is ever sent anywhere) ─────────────────
+
+interface ActionsCatalog {
+    paths: Record<string, { post?: { 'x-informz-wire'?: { interestActions?: string[] } } }>;
+}
+
+interface FaultClassification {
+    authOrPrecondition?: string[];
+    requestDefect?: string[];
+}
+
+const ACTIONS_CATALOG_FILE = resolve(HERE, 'fixtures/informz/informz.actions.openapi.json');
+const ACTIONS_CATALOG = JSON.parse(readFileSync(ACTIONS_CATALOG_FILE, 'utf8')) as ActionsCatalog;
+const ADD_OR_UPDATE = 'AddOrUpdateSubscribers';
+/**
+ * The documented list-replacing interest action, read from the derived vendor catalog at run time so
+ * its literal never appears anywhere under src (the grep gate allows it only on the connector's refusal line).
+ */
+const LIST_REPLACING_ACTION = (ACTIONS_CATALOG.paths['/actions/Subscribe']?.post?.['x-informz-wire']?.interestActions ?? [])
+    .find(a => a !== ADD_OR_UPDATE) ?? '';
+const WRITE_CONTRACT = asRecord(INTEGRATION_CONFIG.WriteContract);
+const WRITE_FAULT_CLASSES = asRecord(WRITE_CONTRACT.faults).classification as FaultClassification;
+const ERROR_CONTRACT_CODES = asRecord(INTEGRATION_CONFIG.ErrorContract).codes as string[];
+const DELETE_REASONS = asRecord(asRecord(INTEGRATION_CONFIG.WriteScope).deleteDecision).reasons as string[];
+
+type SubscriberRow = [subscriberID: string, email: string, userID: string | null];
+
+const ROW: SubscriberRow = ['950001', 'new.member@example.invalid', '321'];
+const OTHER_ROW: SubscriberRow = ['950009', 'new.member@example.invalid', '321'];
+const ATTRS: Record<string, unknown> = { email: ROW[1], user_id: 321 };
+
+/** Message namespace = the AAPI contract namespace (WCF default Action = <ns><Contract>/<Op>). */
+function messageNamespace(): string {
+    const contract = TRANSPORT.soapAction.slice(0, TRANSPORT.soapAction.lastIndexOf('/'));
+    return contract.slice(0, contract.lastIndexOf('/') + 1);
+}
+
+/** The real metadata with the Subscriber writeActions edited (deep copy; the frozen file is untouched). */
+function metadataWithWriteActions(edit: (writeActions: Record<string, Record<string, unknown>>) => void): MetadataRow {
+    const root = JSON.parse(JSON.stringify(METADATA_ROOT)) as MetadataRow;
+    const io = (root.relatedEntities?.['MJ: Integration Objects'] ?? []).find(r => r.fields.Name === 'Subscriber');
+    if (!io) throw new Error('metadata has no Subscriber IO');
+    const cfg = asRecord(parseMaybeJSON(io.fields.Configuration));
+    edit(cfg.writeActions as Record<string, Record<string, unknown>>);
+    io.fields.Configuration = cfg;
+    return root;
+}
+
+/** An IO that declares no writeActions — read from the metadata, never a baked name. */
+function firstReadOnlyIOName(): string {
+    const row = ioRows().find(r => asRecord(parseMaybeJSON(r.fields.Configuration)).writeActions === undefined);
+    if (!row) throw new Error('metadata has no IO without writeActions');
+    return String(row.fields.Name);
+}
+
+function subscriberRows(rows: SubscriberRow[]): InformzWireResponse {
+    return gridEnvelope('subscriber', rows.map(([id, email, userID], i) => ({
+        Row: i + 1,
+        Fields: [['subscriber_id', id], ['email', email], ['user_id', userID]] as Array<[string, string | null]>,
+    })));
+}
+
+/** The documented ActionResponse shape (360032692392), escaped inside PostInformzMessageResult. */
+function actionEnvelope(options: { Status?: string; Invalid?: number; InvalidXml?: string } = {}): InformzWireResponse {
+    const invalid = options.Invalid ?? 0;
+    const message = `1 total records:\n${invalid > 0 ? 0 : 1} added.\n0 previous subscribers.\n0 previous unsubscribers.\n0 duplicate subscribers.\n${invalid} invalid addresses.`;
+    const doc = '<?xml version="1.0" encoding="utf-8"?><ActionResponse xmlns:xsi="urn:xsi" xmlns="urn:aapi"><Brand id="1" /><User>u</User><Responses><Subscribe>'
+        + `<SubscriberCounts>0</SubscriberCounts><ActionStatus><Status>${options.Status ?? 'success'}</Status>`
+        + `<Message xsi:type="xsd:string">${escapeXml(message)}</Message></ActionStatus>${options.InvalidXml ?? '<InvalidSubscribers />'}`
+        + '</Subscribe></Responses></ActionResponse>';
+    return {
+        Status: 200,
+        Headers: { 'content-type': 'text/xml; charset=utf-8' },
+        Text: `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><PostInformzMessageResponse><PostInformzMessageResult>${escapeXml(doc)}</PostInformzMessageResult></PostInformzMessageResponse></s:Body></s:Envelope>`,
+    };
+}
+
+function isActionRequest(request: CapturedRequest): boolean {
+    return gridRequestOf(request).startsWith('<ActionRequest');
+}
+
+function conditionsOf(request: CapturedRequest): string {
+    return /<Conditions>([\s\S]*?)<\/Conditions>/.exec(gridRequestOf(request))?.[1] ?? '';
+}
+
+function eq(element: string, value: string): string {
+    return `<Condition><Single><DataElement>${element}</DataElement><DataValue>${value}</DataValue><Comparator>EQ</Comparator></Single></Condition>`;
+}
+
+interface WriteScript {
+    /** Rows the identity read-back finds BEFORE any Subscribe was posted. */
+    Before?: SubscriberRow[];
+    /** Rows it finds after a Subscribe. */
+    After?: SubscriberRow[];
+    /** The row GetRecord (subscriber_id EQ) finds. */
+    Stored?: SubscriberRow | null;
+    Action?: (request: CapturedRequest, index: number) => InformzWireResponse;
+}
+
+/** A stateful mock vendor: read-backs see the store before / after the Subscribe, GetRecord sees Stored. */
+function writeResponder(script: WriteScript): Responder {
+    let posted = false;
+    return (request, index) => {
+        if (isActionRequest(request)) {
+            posted = true;
+            return script.Action ? script.Action(request, index) : actionEnvelope();
+        }
+        if (conditionsOf(request).includes('<DataElement>subscriber_id</DataElement>')) return subscriberRows(script.Stored ? [script.Stored] : []);
+        return subscriberRows(posted ? (script.After ?? []) : (script.Before ?? []));
+    };
+}
+
+function createCtx(ci: MJCompanyIntegrationEntity, attributes: Record<string, unknown>, objectName = 'Subscriber') {
+    return { CompanyIntegration: ci, ObjectName: objectName, ContextUser: USER, Attributes: attributes };
+}
+
+function updateCtx(ci: MJCompanyIntegrationEntity, externalID: string, attributes: Record<string, unknown>, objectName = 'Subscriber') {
+    return { CompanyIntegration: ci, ObjectName: objectName, ContextUser: USER, ExternalID: externalID, Attributes: attributes };
+}
+
 // ─── Suite ────────────────────────────────────────────────────────────────────────────────────────
 
 describe('InformzConnector', () => {
@@ -299,15 +435,6 @@ describe('InformzConnector', () => {
             expect(MJGlobal.Instance.ClassFactory.GetRegistration(BaseIntegrationConnector, 'InformzConnector')).not.toBeNull();
         });
 
-        it('declares no write capability and refuses every writer', async () => {
-            expect([connector.SupportsCreate, connector.SupportsUpdate, connector.SupportsDelete, connector.SupportsUpsert]).toEqual([false, false, false, false]);
-            expect(connector.DiscoveryIsAuthoritative).toBe(false);
-            const ctx = { CompanyIntegration: companyIntegration(baseConfig()), ObjectName: 'Subscriber', ContextUser: USER };
-            await expect(connector.CreateRecord({ ...ctx, Attributes: {} })).rejects.toThrow(/pull-only connector \(operator scope\)/);
-            await expect(connector.UpdateRecord({ ...ctx, ExternalID: '1', Attributes: {} })).rejects.toThrow(/pull-only connector \(operator scope\)/);
-            await expect(connector.DeleteRecord({ ...ctx, ExternalID: '1' })).rejects.toThrow(/pull-only connector \(operator scope\)/);
-            expect(connector.Requests).toHaveLength(0);
-        });
     });
 
     describe('SOAP envelope + GridRequest', () => {
@@ -367,7 +494,7 @@ describe('InformzConnector', () => {
             const batch = await connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), 'Subscriber'));
             const pages = connector.Requests.map(r => /<StartRow>(\d+)<\/StartRow><NumberOfRows>(\d+)<\/NumberOfRows>/.exec(gridRequestOf(r))?.slice(1));
             expect(pages).toEqual([['0', '2'], ['3', '2'], ['5', '2']]);
-            expect(batch.Records.map(r => r.ExternalID)).toEqual(['140001', '140002', '140003', '140004']);
+            expect(batch.Records.map(r => r.ExternalID)).toEqual(fixtureSubscriberIds());
             expect(batch.HasMore).toBe(false);
         });
 
@@ -388,7 +515,7 @@ describe('InformzConnector', () => {
             expect(first.HasMore).toBe(true);
             expect(first.NextOffset).toBe(3);
             const second = await connector.FetchChanges(fetchContext(ci, 'Subscriber', { BatchSize: 2, CurrentOffset: first.NextOffset }));
-            expect(second.Records.map(r => r.ExternalID)).toEqual(['140003', '140004']);
+            expect(second.Records.map(r => r.ExternalID)).toEqual(fixtureSubscriberIds().slice(2, 4));
         });
 
         it('computes HasMore / NextOffset from row numbers with a duplicate-page guard', () => {
@@ -469,8 +596,8 @@ describe('InformzConnector', () => {
 
     describe('errors', () => {
         it('classifies the WSDL InformzServiceFault as a non-retryable request defect', async () => {
-            // The fixture's TestConnection-shaped probe route: event at StartRow 0 with NumberOfRows 1.
-            const err = await captureError(connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), 'Event', { BatchSize: 1 })));
+            // The fixture's TestConnection-shaped probe route: the ServiceFault grid at StartRow 0 with NumberOfRows 1.
+            const err = await captureError(connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), FAULT_OBJECT, { BatchSize: 1 })));
             expect(err.Classification).toBe('RequestDefect');
             expect(err.FaultCode).toBe('InvalidGridCategoryException');
             expect(err.Status).toBe(500);
@@ -526,7 +653,7 @@ describe('InformzConnector', () => {
             connector.Responder = (request, index) => index === 0
                 ? { Status: 503, Headers: { 'retry-after': '1' }, Text: '' }
                 : replay(request, index);
-            const batch = await connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), 'EmailBlockStatus'));
+            const batch = await connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), RETRY_OBJECT));
             expect(connector.Sleeps).toEqual([1000]);
             expect(connector.Requests[0].Body).toBe(connector.Requests[1].Body);
             expect(batch.Records.length).toBeGreaterThan(0);
@@ -534,7 +661,7 @@ describe('InformzConnector', () => {
 
         it('surfaces a persistent 503 as a retryable rate-limit error carrying Retry-After', async () => {
             connector.Responder = () => ({ Status: 503, Headers: { 'retry-after': '1' }, Text: '' });
-            const err = await captureError(connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), 'EmailBlockStatus')));
+            const err = await captureError(connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), RETRY_OBJECT)));
             expect(err.Classification).toBe('Throttled');
             expect(ClassifyError(err).Code).toBe('RATE_LIMIT_EXCEEDED');
             expect(connector.ExtractRetryAfterMs(err)).toBe(1000);
@@ -543,7 +670,7 @@ describe('InformzConnector', () => {
 
         it('hands a long Retry-After to the engine instead of sleeping inline', async () => {
             connector.Responder = () => ({ Status: 429, Headers: { 'retry-after': '120' }, Text: '' });
-            const err = await captureError(connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), 'EmailBlockStatus')));
+            const err = await captureError(connector.FetchChanges(fetchContext(companyIntegration(baseConfig()), RETRY_OBJECT)));
             expect(connector.Sleeps).toEqual([]);
             expect(connector.ExtractRetryAfterMs(err)).toBe(120_000);
         });
@@ -610,6 +737,325 @@ describe('InformzConnector', () => {
             const info = await connector.IntrospectSchema(companyIntegration(baseConfig()), USER, { ObjectNames: ['Subscriber'] });
             const names = info.Objects[0].Fields.map(f => f.Name);
             expect(names).toEqual(expect.arrayContaining([...iofNames('Subscriber'), 'fixture_member_level']));
+        });
+    });
+
+    describe('write path (Subscribe ActionRequest, mocked)', () => {
+        it('declares create and update while delete and upsert stay off', () => {
+            expect([connector.SupportsCreate, connector.SupportsUpdate, connector.SupportsDelete, connector.SupportsUpsert]).toEqual([true, true, false, false]);
+            expect(connector.DiscoveryIsAuthoritative).toBe(false);
+            expect(DELETE_REASONS.length).toBeGreaterThan(0);
+        });
+
+        it('creates through one escaped Subscribe ActionRequest in the GridRequest envelope, Email then ID', async () => {
+            connector.Responder = writeResponder({ Before: [], After: [['950001', "o'brien&co@example.invalid", '321']] });
+            const result = await connector.CreateRecord(createCtx(companyIntegration(baseConfig()), { email: "O'Brien&Co@example.invalid", user_id: 321 }));
+            expect(result).toEqual({ Success: true, StatusCode: 200, ExternalID: '950001' });
+            expect(connector.Requests.map(isActionRequest)).toEqual([false, true, false]);
+            const action = connector.Requests[1];
+            expect(action.URL).toBe(`${SERVICE_URL}/`);
+            expect(action.URL).toBe(connector.Requests[0].URL);
+            expect(action.Headers.SOAPAction).toBe(`"${TRANSPORT.soapAction}"`);
+            expect(action.Headers['Content-Type']).toBe('text/xml; charset=utf-8');
+            expect(action.Body).toContain(`<PostInformzMessage xmlns="${messageNamespace()}">`);
+            const doc = gridRequestOf(action);
+            expect(doc.startsWith(`<ActionRequest xmlns="${messageNamespace()}">`)).toBe(true);
+            expect(indexesInOrder(doc, [
+                '<Password>', '<Brand id="1">', '<User>fixture-user</User>', '<Actions><Subscribe>', '<InterestDetails>',
+                `<InterestAction>${ADD_OR_UPDATE}</InterestAction>`, '</InterestDetails>', '<SubscriberData>', '<Subscribers><Subscriber>',
+                '<Email>', '<ID>321</ID>', '</Subscriber></Subscribers></SubscriberData></Subscribe></Actions></ActionRequest>',
+            ])).toBe(true);
+            expect(doc).toContain('<Email>O&apos;Brien&amp;Co@example.invalid</Email><ID>321</ID>');
+            expect(action.Body).toContain('&lt;Email&gt;O&amp;apos;Brien&amp;amp;Co@example.invalid&lt;/Email&gt;');
+            expect(action.Body).not.toContain("O'Brien&Co");
+        });
+
+        it('only ever sends the AddOrUpdateSubscribers interest action, for create and update', async () => {
+            connector.Responder = writeResponder({ Before: [], After: [ROW], Stored: ROW });
+            const ci = companyIntegration(baseConfig());
+            expect((await connector.CreateRecord(createCtx(ci, ATTRS))).Success).toBe(true);
+            expect((await connector.UpdateRecord(updateCtx(ci, ROW[0], ATTRS))).Success).toBe(true);
+            const docs = connector.Requests.filter(isActionRequest).map(gridRequestOf);
+            expect(docs).toHaveLength(2);
+            for (const doc of docs) {
+                expect([...doc.matchAll(/<InterestAction>([^<]*)<\/InterestAction>/g)].map(m => m[1])).toEqual([ADD_OR_UPDATE]);
+            }
+        });
+
+        it('refuses a list-replacing interest action from metadata or connection settings with zero requests', async () => {
+            expect(LIST_REPLACING_ACTION.length).toBeGreaterThan(0);
+            connector.Responder = writeResponder({ Before: [], After: [ROW], Stored: ROW });
+            seedEngine(metadataWithWriteActions(wa => {
+                wa.create.interestAction = LIST_REPLACING_ACTION;
+                wa.update.interestAction = LIST_REPLACING_ACTION;
+            }));
+            const plain = companyIntegration(baseConfig());
+            const results = [await connector.CreateRecord(createCtx(plain, ATTRS)), await connector.UpdateRecord(updateCtx(plain, ROW[0], ATTRS))];
+            seedEngine();
+            for (const key of ['SubscribeInterestAction', 'InterestAction']) {
+                const ci = companyIntegration(baseConfig({ [key]: LIST_REPLACING_ACTION }));
+                results.push(await connector.CreateRecord(createCtx(ci, ATTRS)), await connector.UpdateRecord(updateCtx(ci, ROW[0], ATTRS)));
+            }
+            expect(results).toHaveLength(6);
+            for (const result of results) {
+                expect(result.Success).toBe(false);
+                expect(result.StatusCode).toBe(400);
+                expect(result.ErrorMessage).toMatch(/configuration error/);
+                expect(result.ErrorMessage).toContain(ADD_OR_UPDATE);
+            }
+            expect(connector.Requests).toHaveLength(0);
+        });
+
+        it('never puts the list-replacing interest action into any request body', async () => {
+            const ci = companyIntegration(baseConfig({ SubscribeInterestNames: ['Members'], SubscribeFieldDefinitions: [{ Name: 'First_Name' }] }));
+            connector.Responder = writeResponder({ Before: [], After: [ROW], Stored: ROW });
+            await connector.CreateRecord(createCtx(ci, { ...ATTRS, First_Name: 'Ada' }));
+            await connector.UpdateRecord(updateCtx(ci, ROW[0], { First_Name: 'Ada' }));
+            await connector.DeleteRecord({ CompanyIntegration: ci, ObjectName: 'Subscriber', ContextUser: USER, ExternalID: ROW[0] });
+            connector.Responder = writeResponder({ Before: [], After: [], Action: () => actionEnvelope({ Invalid: 1 }) });
+            await connector.CreateRecord(createCtx(ci, ATTRS));
+            expect(connector.Requests.filter(isActionRequest).length).toBeGreaterThanOrEqual(3);
+            for (const request of connector.Requests) {
+                expect(request.Body).not.toContain(LIST_REPLACING_ACTION);
+                expect(unescapeXml(unescapeXml(request.Body))).not.toContain(LIST_REPLACING_ACTION);
+            }
+        });
+
+        it('links an existing subscriber found by the pre-write read-back without posting', async () => {
+            connector.Responder = writeResponder({ Before: [['950002', 'mixed.case@example.invalid', '322']] });
+            const result = await connector.CreateRecord(createCtx(companyIntegration(baseConfig()), { email: 'Mixed.Case@Example.invalid', user_id: '322' }));
+            expect(result).toEqual({ Success: true, StatusCode: 200, ExternalID: '950002' });
+            expect(connector.Requests).toHaveLength(1);
+            const doc = gridRequestOf(connector.Requests[0]);
+            expect(doc).toContain('<Grid type="subscriber">');
+            expect(doc).toContain('<NumberOfRows>2</NumberOfRows>');
+            // Both conditions EQ, conjunctive; the email lower-cased (the vendor lower-cases incoming addresses).
+            expect(conditionsOf(connector.Requests[0])).toBe(eq('user_id', '322') + eq('email', 'mixed.case@example.invalid'));
+        });
+
+        it('reads the identity back after Subscribe: one row links, zero or several fail with 409 and no ExternalID', async () => {
+            const ci = companyIntegration(baseConfig());
+            const cases: Array<{ After: SubscriberRow[]; Expect: RegExp | null }> = [
+                { After: [ROW], Expect: null },
+                { After: [], Expect: /found no row/ },
+                { After: [ROW, OTHER_ROW], Expect: /ambiguous/ },
+            ];
+            for (const c of cases) {
+                connector.Requests = [];
+                connector.Responder = writeResponder({ Before: [], After: c.After });
+                const result = await connector.CreateRecord(createCtx(ci, ATTRS));
+                expect(connector.Requests.map(isActionRequest)).toEqual([false, true, false]);
+                expect(conditionsOf(connector.Requests[2])).toBe(eq('user_id', '321') + eq('email', ROW[1]));
+                if (c.Expect === null) {
+                    expect(result).toEqual({ Success: true, StatusCode: 200, ExternalID: ROW[0] });
+                    continue;
+                }
+                expect(result.Success).toBe(false);
+                expect(result.StatusCode).toBe(409);
+                expect(result.ExternalID).toBeUndefined();
+                expect(result.ErrorMessage).toMatch(c.Expect);
+            }
+        });
+
+        it('refuses an ambiguous pre-write read-back with 409 and posts nothing', async () => {
+            connector.Responder = writeResponder({ Before: [ROW, OTHER_ROW] });
+            const result = await connector.CreateRecord(createCtx(companyIntegration(baseConfig()), ATTRS));
+            expect(result.Success).toBe(false);
+            expect(result.StatusCode).toBe(409);
+            expect(result.ExternalID).toBeUndefined();
+            expect(result.ErrorMessage).toMatch(/nothing was sent/);
+            expect(connector.Requests.filter(isActionRequest)).toHaveLength(0);
+        });
+
+        it('updates through GetRecord when the attributes carry neither Email nor ID', async () => {
+            const stored: SubscriberRow = ['950003', 'stored@example.invalid', '323'];
+            const ci = companyIntegration(baseConfig({ SubscribeFieldDefinitions: [{ Name: 'First_Name' }] }));
+            connector.Responder = writeResponder({ Stored: stored, After: [stored] });
+            const result = await connector.UpdateRecord(updateCtx(ci, stored[0], { First_Name: 'Ada' }));
+            expect(result).toEqual({ Success: true, StatusCode: 200, ExternalID: stored[0] });
+            expect(connector.Requests.map(isActionRequest)).toEqual([false, true, false]);
+            expect(conditionsOf(connector.Requests[0])).toBe(eq('subscriber_id', stored[0]));
+            const doc = gridRequestOf(connector.Requests[1]);
+            expect(doc).toContain('<FieldDefinitions><FieldDefinition><Name>First_Name</Name><DataType>String</DataType></FieldDefinition></FieldDefinitions>');
+            expect(doc).toContain('<Subscriber><Email>stored@example.invalid</Email><ID>323</ID><Fields><Field element="First_Name">Ada</Field></Fields></Subscriber>');
+            expect(conditionsOf(connector.Requests[2])).toBe(eq('user_id', '323') + eq('email', 'stored@example.invalid'));
+        });
+
+        it('refuses an update that would change the stored email, and a missing row, before posting', async () => {
+            const stored: SubscriberRow = ['950003', 'stored@example.invalid', '323'];
+            const ci = companyIntegration(baseConfig());
+            connector.Responder = writeResponder({ Stored: stored, After: [stored] });
+            const changed = await connector.UpdateRecord(updateCtx(ci, stored[0], { email: 'changed@example.invalid' }));
+            expect(changed.Success).toBe(false);
+            expect(changed.StatusCode).toBe(409);
+            expect(changed.ErrorMessage).toMatch(/identity change is never pushed/);
+            expect(changed.ErrorMessage).not.toContain('changed@example.invalid');
+            expect(connector.Requests.filter(isActionRequest)).toHaveLength(0);
+            // The vendor lower-cases addresses, so a case-only difference is not a change.
+            const sameAddress = await connector.UpdateRecord(updateCtx(ci, stored[0], { email: 'STORED@example.invalid' }));
+            expect(sameAddress).toEqual({ Success: true, StatusCode: 200, ExternalID: stored[0] });
+            connector.Requests = [];
+            connector.Responder = writeResponder({ Stored: null });
+            const missing = await connector.UpdateRecord(updateCtx(ci, '950404', ATTRS));
+            expect(missing.StatusCode).toBe(404);
+            expect(connector.Requests.filter(isActionRequest)).toHaveLength(0);
+        });
+
+        it('never serialises a null or undefined attribute', async () => {
+            const ci = companyIntegration(baseConfig({ SubscribeFieldDefinitions: [{ Name: 'First_Name' }, { Name: 'Last_Name', DefaultValue: 'Customer' }] }));
+            connector.Responder = writeResponder({ Before: [], After: [ROW] });
+            const result = await connector.CreateRecord(createCtx(ci, { ...ATTRS, First_Name: null, Last_Name: undefined, modified_date: null }));
+            expect(result.Success).toBe(true);
+            const doc = gridRequestOf(connector.Requests.filter(isActionRequest)[0]);
+            expect(doc).toContain(`<SubscriberData><Subscribers><Subscriber><Email>${ROW[1]}</Email><ID>321</ID></Subscriber></Subscribers></SubscriberData>`);
+            expect(doc).not.toMatch(/<Fields>|<FieldDefinitions>|First_Name|Last_Name|modified_date/);
+            expect(doc).not.toMatch(/>(null|undefined)</);
+        });
+
+        it('refuses a blank, missing or non-integer Email / ID before any request', async () => {
+            const ci = companyIntegration(baseConfig());
+            connector.Responder = writeResponder({ Before: [], After: [ROW] });
+            const cases: Array<Record<string, unknown>> = [
+                { email: '', user_id: 321 },
+                { email: '   ', user_id: 321 },
+                { email: ROW[1], user_id: null },
+                { email: ROW[1] },
+                { user_id: 321 },
+                { email: ROW[1], user_id: 'not-a-number' },
+            ];
+            for (const attributes of cases) {
+                const result = await connector.CreateRecord(createCtx(ci, attributes));
+                expect(result.Success).toBe(false);
+                expect(result.StatusCode).toBe(422);
+                expect(result.ErrorMessage).toMatch(/nothing was sent/);
+            }
+            expect(connector.Requests).toHaveLength(0);
+        });
+
+        it('answers 403 with no request only for an object without writeActions', async () => {
+            const readOnly = firstReadOnlyIOName();
+            const ci = companyIntegration(baseConfig());
+            const create = await connector.CreateRecord(createCtx(ci, { anything: 'x' }, readOnly));
+            const update = await connector.UpdateRecord(updateCtx(ci, '1', { anything: 'x' }, readOnly));
+            for (const result of [create, update]) {
+                expect(result).toEqual({ Success: false, StatusCode: 403, ErrorMessage: `${readOnly} is read-only in Informz: writes are not supported` });
+            }
+            expect(connector.Requests).toHaveLength(0);
+        });
+
+        it('fails the record with 422 when the ActionResponse reports invalid subscribers or a non-success status', async () => {
+            const ci = companyIntegration(baseConfig());
+            const variants = [
+                actionEnvelope({ Invalid: 1, InvalidXml: `<InvalidSubscribers><Subscriber><Email>${ROW[1]}</Email><ID>321</ID></Subscriber></InvalidSubscribers>` }),
+                actionEnvelope({ InvalidXml: `<InvalidSubscribers><Subscriber><Email>${ROW[1]}</Email></Subscriber></InvalidSubscribers>` }),
+                actionEnvelope({ Invalid: 2 }),
+                actionEnvelope({ Status: 'failure' }),
+            ];
+            for (const variant of variants) {
+                connector.Requests = [];
+                connector.Responder = writeResponder({ Before: [], After: [ROW], Action: () => variant });
+                const result = await connector.CreateRecord(createCtx(ci, ATTRS));
+                expect(result.Success).toBe(false);
+                expect(result.StatusCode).toBe(422);
+                expect(result.ExternalID).toBeUndefined();
+                // pre-write read-back + the Subscribe; no post-write read-back once the vendor refused the record.
+                expect(connector.Requests.map(isActionRequest)).toEqual([false, true]);
+            }
+        });
+
+        it('classifies write faults per ErrorContract + WriteContract: request defect 400, brand-IP precondition 401, never 403', async () => {
+            const ci = companyIntegration(baseConfig());
+            const codes = new Set([...ERROR_CONTRACT_CODES, ...(WRITE_FAULT_CLASSES.authOrPrecondition ?? []), ...(WRITE_FAULT_CLASSES.requestDefect ?? [])]);
+            expect(codes.size).toBeGreaterThanOrEqual(20);
+            const statusOf = new Map<string, number>();
+            for (const code of codes) {
+                connector.Responder = writeResponder({ Before: [], Action: () => faultEnvelope('InformzServiceFault', code, `rejected (${code})`) });
+                const result = await connector.CreateRecord(createCtx(ci, ATTRS));
+                expect(result.Success).toBe(false);
+                expect(result.StatusCode).not.toBe(403);
+                expect(result.ErrorMessage).toContain(code);
+                expect(result.ErrorMessage).not.toContain(String(FIXTURES.Configuration.Password));
+                statusOf.set(code, result.StatusCode);
+            }
+            expect(statusOf.get('InsufficientDataToCreateSubscriberException')).toBe(400);
+            expect(statusOf.get('NoAvailableIPAddressException')).toBe(401);
+            expect(statusOf.get('ConfigurationErrorException')).toBe(401);
+            connector.Responder = writeResponder({ Before: [], Action: () => faultEnvelope('InformzServiceFault', 'NoAvailableIPAddressException', 'No available IP address') });
+            const ip = await connector.CreateRecord(createCtx(ci, ATTRS));
+            expect(ip.StatusCode).toBe(401);
+            expect(ip.ErrorMessage).toMatch(/IP address registered with the brand/);
+            connector.Responder = writeResponder({
+                Before: [],
+                Action: () => ({ Status: 500, Headers: {}, Text: '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultcode>s:Server</faultcode><faultstring>boom</faultstring></s:Fault></s:Body></s:Envelope>' }),
+            });
+            const generic = await connector.CreateRecord(createCtx(ci, ATTRS));
+            expect(generic.StatusCode).toBe(502);
+        });
+
+        it('retries 429/503 honouring Retry-After and transport failures, then reports 503 (never 403)', async () => {
+            const ci = companyIntegration(baseConfig());
+            connector.Responder = writeResponder({ Before: [], Action: () => ({ Status: 503, Headers: { 'retry-after': '2' }, Text: '' }) });
+            const throttled = await connector.CreateRecord(createCtx(ci, ATTRS));
+            expect(throttled.StatusCode).toBe(503);
+            expect(connector.Sleeps).toEqual([2000, 2000, 2000]);
+            expect(connector.Requests.filter(isActionRequest)).toHaveLength(4);
+            connector.Requests = [];
+            connector.Sleeps = [];
+            connector.Responder = writeResponder({ Before: [], Action: () => { throw new TypeError('fetch failed'); } });
+            const transport = await connector.CreateRecord(createCtx(ci, ATTRS));
+            expect(transport.StatusCode).toBe(503);
+            expect(connector.Requests.filter(isActionRequest)).toHaveLength(4);
+            connector.Requests = [];
+            connector.Sleeps = [];
+            let attempts = 0;
+            connector.Responder = writeResponder({ Before: [], After: [ROW], Action: () => (++attempts === 1 ? { Status: 429, Headers: { 'retry-after': '1' }, Text: '' } : actionEnvelope()) });
+            const recovered = await connector.CreateRecord(createCtx(ci, ATTRS));
+            expect(recovered).toEqual({ Success: true, StatusCode: 200, ExternalID: ROW[0] });
+            expect(connector.Sleeps).toEqual([1000]);
+        });
+
+        it('refuses delete with 405, the WriteScope reasons, and sends nothing', async () => {
+            const result = await connector.DeleteRecord({ CompanyIntegration: companyIntegration(baseConfig()), ObjectName: 'Subscriber', ContextUser: USER, ExternalID: ROW[0] });
+            expect(result.Success).toBe(false);
+            expect(result.StatusCode).toBe(405);
+            expect(result.ErrorMessage).toMatch(/not supported/);
+            expect(result.ErrorMessage).toContain(DELETE_REASONS[0]);
+            expect(connector.Requests).toHaveLength(0);
+        });
+
+        it('takes interest names and field definitions only from connection settings', async () => {
+            // Metadata carries neither (tenant data never lives there).
+            const writeActions = asRecord(asRecord(parseMaybeJSON(ioRow('Subscriber').fields.Configuration)).writeActions);
+            expect(JSON.stringify(writeActions)).not.toMatch(/InterestName|FieldDefinition/);
+            connector.Responder = writeResponder({ Before: [], After: [ROW] });
+            await connector.CreateRecord(createCtx(companyIntegration(baseConfig()), { ...ATTRS, modified_date: '2026-01-01T00:00:00Z', subscriber_id: '1' }));
+            const bare = gridRequestOf(connector.Requests.filter(isActionRequest)[0]);
+            expect(bare).toContain(`<InterestDetails><InterestAction>${ADD_OR_UPDATE}</InterestAction></InterestDetails>`);
+            expect(bare).not.toMatch(/<InterestNames>|<FieldDefinitions>|<Fields>|modified_date|subscriber_id/);
+
+            connector.Requests = [];
+            const unconfigured = await connector.CreateRecord(createCtx(companyIntegration(baseConfig()), { ...ATTRS, First_Name: 'Ada' }));
+            expect(unconfigured.StatusCode).toBe(400);
+            expect(unconfigured.ErrorMessage).toMatch(/"First_Name"/);
+            expect(connector.Requests).toHaveLength(0);
+
+            const ci = companyIntegration(baseConfig({
+                SubscribeInterestNames: ['Members & Friends', 'News'],
+                SubscribeFieldDefinitions: [{ Name: 'First_Name', DataType: 'String', DefaultValue: 'Member' }, { Name: 'Last_Name' }],
+            }));
+            connector.Responder = writeResponder({ Before: [], After: [ROW] });
+            expect((await connector.CreateRecord(createCtx(ci, { ...ATTRS, First_Name: 'Ada' }))).Success).toBe(true);
+            const doc = gridRequestOf(connector.Requests.filter(isActionRequest)[0]);
+            expect(doc).toContain(`<InterestDetails><InterestNames><InterestName>Members &amp; Friends</InterestName><InterestName>News</InterestName></InterestNames><InterestAction>${ADD_OR_UPDATE}</InterestAction></InterestDetails>`);
+            expect(doc).toContain('<FieldDefinitions><FieldDefinition><Name>First_Name</Name><DataType>String</DataType><DefaultValue>Member</DefaultValue></FieldDefinition></FieldDefinitions>');
+            expect(doc).toContain('<Fields><Field element="First_Name">Ada</Field></Fields>');
+            expect(doc).not.toContain('Last_Name');
+
+            connector.Requests = [];
+            const malformed = await connector.CreateRecord(createCtx(companyIntegration(baseConfig({ SubscribeInterestNames: 'Members' })), ATTRS));
+            expect(malformed.StatusCode).toBe(400);
+            expect(malformed.ErrorMessage).toMatch(/SubscribeInterestNames/);
+            expect(connector.Requests).toHaveLength(0);
         });
     });
 
