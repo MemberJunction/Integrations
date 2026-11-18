@@ -38,8 +38,9 @@
  * metadata or connection settings alike. Interest names and demographic `<Field>` elements come only
  * from connection settings (`SubscribeInterestNames`, `SubscribeFieldDefinitions`), never metadata.
  * The ActionResponse carries no record id, so identity is READ BACK from the declared grid; a create
- * reads back BEFORE posting too (WRITE_STUDY.md writeDefaultOverrides: the vendor's match key is
- * undocumented, so a re-push must not depend on it). Delete is unsupported: an Unsubscribe is a
+ * reads back each identity key BEFORE posting too (360032697272: the vendor's match key is
+ * undocumented, so a create must neither rewrite an existing subscriber's partner key nor depend on
+ * the match rule). Delete is unsupported: an Unsubscribe is a
  * consent status change, not a record delete. No write failure ever reports StatusCode 403 except a
  * write to a read-only object — the engine treats 403 as a permanent skip and would lose the change.
  *
@@ -97,7 +98,7 @@ const INTEGRATION_NAME = 'Higher Logic Thrive Marketing Professional';
 const SOAP11_ENVELOPE_NAMESPACE = 'http://schemas.xmlsoap.org/soap/envelope/';
 /** The ONLY interest action a per-record push may send (C4 guard): keyed add-or-update, never list-replacing. */
 const ALLOWED_INTEREST_ACTION = 'AddOrUpdateSubscribers';
-/** WRITE_STUDY.md gap 2 safe default for a connection FieldDefinition that names no DataType. */
+/** Safe default DataType (360032692392) when a connection FieldDefinition omits DataType. */
 const DEFAULT_FIELD_DATA_TYPE = 'String';
 /** The only identity mode modelled: the ActionResponse carries no record id, so it is read back from a grid. */
 const IDENTITY_MODE_READBACK = 'readback';
@@ -1279,10 +1280,16 @@ export class InformzConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * Create = pre-write read-back (WRITE_STUDY.md writeDefaultOverrides, 360032697272: the vendor's
-     * match key is undocumented): one row → link it without posting; several → 409, nothing sent;
-     * none → one Subscribe, then a post-write read-back that must find exactly one row. Never
-     * Success without an ExternalID (the engine would re-create the record on every run).
+     * Create = pre-write per-key read-back (360032697272: the vendor's match key is undocumented, so
+     * querying each identity condition separately catches a partial match that would rewrite the other
+     * key):
+     *   - either condition returns >1 row, or the conditions match distinct rows → 409, nothing sent;
+     *   - a matched row carries a non-blank value on another identity key that differs → 409, nothing sent;
+     *   - one row already matches every identity key AND there are no Fields or InterestNames to push →
+     *     link it without posting;
+     *   - otherwise (brand-new subscriber, blank stored `user_id` being filled in, or an existing match
+     *     that also carries Fields / SubscribeInterestNames) → post one Subscribe, then read back and
+     *     confirm the expected single ExternalID. Never Success without an ExternalID.
      */
     private async createViaAction(
         companyIntegration: MJCompanyIntegrationEntity,
@@ -1291,18 +1298,27 @@ export class InformzConnector extends BaseRESTIntegrationConnector {
         draft: WriteDraft,
     ): Promise<CRUDResult> {
         const values = completeElements(spec, draft.Elements);
-        const existing = await this.readBackIdentity(companyIntegration, auth, spec, values);
-        if (existing.length > 1) throw identityConflict(spec, existing.length, 'before posting, so nothing was sent');
-        if (existing.length === 1) return identityResult(spec, existing[0]);
+        const preRead = await this.preReadCreateIdentity(companyIntegration, auth, spec, values);
+        const hasPayloadBeyondIdentity = draft.Fields.length > 0 || spec.InterestNames.length > 0;
+        if (preRead && preRead.Complete && !hasPayloadBeyondIdentity) {
+            return identityResult(spec, preRead.Key);
+        }
         await this.postAction(companyIntegration, auth, spec, values, draft.Fields);
         const created = await this.readBackIdentity(companyIntegration, auth, spec, values);
+        if (preRead) {
+            if (created.length !== 1 || created[0] !== preRead.Key) {
+                throw unconfirmedIdentityConflict(spec, created, preRead.Key);
+            }
+            return identityResult(spec, preRead.Key);
+        }
         if (created.length !== 1) throw identityConflict(spec, created.length, `after ${spec.Label.Request} was accepted`);
         return identityResult(spec, created[0]);
     }
 
     /**
      * Update = re-read the stored row (GetRecord on the ExternalID), fill the elements the attributes
-     * do not carry from it and refuse a change to an identity element (WRITE_STUDY.md gaps 6-7), post
+     * do not carry from it and refuse a change to an identity element (360032697272: whether Subscribe
+     * can change an identity key and which key AddOrUpdateSubscribers matches on are undocumented), post
      * one Subscribe, then read back: the row found must be the same ExternalID.
      */
     private async updateViaAction(
@@ -1324,13 +1340,79 @@ export class InformzConnector extends BaseRESTIntegrationConnector {
         await this.postAction(companyIntegration, auth, spec, values, draft.Fields);
         const landed = await this.readBackIdentity(companyIntegration, auth, spec, values);
         if (landed.length !== 1 || landed[0] !== externalID) {
-            throw new InformzWriteRefusal(
-                `${INTEGRATION_NAME}: ${spec.Label.Request} was accepted, but the identity read-back found ${landed.length} row(s) `
-                + `${landed.length === 1 ? `(${spec.ReadbackKey} ${landed[0] ?? 'missing'}) ` : ''}instead of exactly "${spec.Object.Name}" ${externalID}; the update is not confirmed.`,
-                STATUS_CONFLICT,
-            );
+            throw unconfirmedIdentityConflict(spec, landed, externalID);
         }
         return { Success: true, StatusCode: STATUS_OK, ExternalID: externalID };
+    }
+
+    /**
+     * Queries each `identity.conditions` field on its own before a create posts `AddOrUpdateSubscribers`.
+     * Refuses with 409 (before any write) when a condition is ambiguous, when separate conditions resolve
+     * to different rows, or when an existing row matches one key while holding a different non-blank value
+     * on another identity key (which `AddOrUpdateSubscribers` could otherwise overwrite). A blank stored
+     * key (such as an Informz email subscriber with no `user_id` yet) is permitted (`Complete: false`) so
+     * `Subscribe` can populate it.
+     */
+    private async preReadCreateIdentity(
+        companyIntegration: MJCompanyIntegrationEntity,
+        auth: InformzAuthContext,
+        spec: WriteSpec,
+        values: Map<string, string>,
+    ): Promise<{ Key: string; Complete: boolean } | null> {
+        let matchedKey: string | null = null;
+        let complete = true;
+
+        for (const field of spec.Action.identity.conditions) {
+            const incoming = (values.get(identityElement(spec, field).Element) ?? '').toLowerCase();
+            const read = await this.readSinglePage(
+                companyIntegration,
+                auth,
+                spec.ReadbackObject,
+                [{ DataElement: field, Comparator: 'EQ', DataValue: incoming }],
+                READBACK_ROWS,
+            );
+            if (read.Records.length > 1) {
+                throw identityConflict(spec, read.Records.length, 'before posting, so nothing was sent');
+            }
+            if (read.Records.length === 0) {
+                complete = false;
+                continue;
+            }
+
+            const record = read.Records[0];
+            const rawKey = scalarOrNull(record[spec.ReadbackKey]);
+            if (rawKey === null || rawKey.trim().length === 0) {
+                throw new InformzWriteRefusal(
+                    `${INTEGRATION_NAME}: the identity read-back for "${spec.Object.Name}" returned a row without ${spec.ReadbackKey}; nothing was sent.`,
+                    STATUS_CONFLICT,
+                );
+            }
+            const rowKey = rawKey.trim();
+
+            for (const otherField of spec.Action.identity.conditions) {
+                const otherElement = identityElement(spec, otherField);
+                const storedVal = (scalarOrNull(record[otherElement.Field]) ?? '').trim();
+                const givenVal = (values.get(otherElement.Element) ?? '').trim();
+                if (storedVal.length === 0) {
+                    complete = false;
+                    continue;
+                }
+                if (!sameIdentityValue(givenVal, storedVal)) {
+                    throw new InformzWriteRefusal(
+                        `${INTEGRATION_NAME}: cannot create "${spec.Object.Name}" because Informz already holds "${field}" on row ${rowKey} with a different <${otherElement.Element}> (field "${otherField}"). `
+                        + 'An identity change is never pushed: whether Subscribe can change it and which key AddOrUpdateSubscribers matches on are undocumented; nothing was sent.',
+                        STATUS_CONFLICT,
+                    );
+                }
+            }
+
+            if (matchedKey !== null && matchedKey !== rowKey) {
+                throw identityConflict(spec, 2, 'before posting (separate identity keys matched distinct rows), so nothing was sent');
+            }
+            matchedKey = rowKey;
+        }
+
+        return matchedKey !== null ? { Key: matchedKey, Complete: complete } : null;
     }
 
     /** `identity.conditions`, each EQ its element's value (conjunctive), on the read-back grid; NumberOfRows 2. */
@@ -2004,13 +2086,36 @@ function addField(draft: WriteDraft, definition: InformzSubscribeFieldDefinition
     draft.Fields.push({ Definition: definition, Value: value });
 }
 
-/** Text form of one attribute value; objects/arrays have none and are refused. */
+/** Text form of one attribute value; objects/arrays and XML 1.0 illegal control characters are refused. */
 function scalarText(value: unknown, key: string): string {
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
-    if (typeof value === 'bigint' || typeof value === 'boolean') return String(value);
-    if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
-    throw new InformzWriteRefusal(`${INTEGRATION_NAME}: attribute "${key}" carries a value with no XML text form; nothing was sent.`, STATUS_UNPROCESSABLE);
+    let out: string | null = null;
+    if (typeof value === 'string') out = value;
+    else if (typeof value === 'number' && Number.isFinite(value)) out = String(value);
+    else if (typeof value === 'bigint' || typeof value === 'boolean') out = String(value);
+    else if (value instanceof Date && !Number.isNaN(value.getTime())) out = value.toISOString();
+    if (out === null) {
+        throw new InformzWriteRefusal(`${INTEGRATION_NAME}: attribute "${key}" carries a value with no XML text form; nothing was sent.`, STATUS_UNPROCESSABLE);
+    }
+    if (hasInvalidXml10Char(out)) {
+        throw new InformzWriteRefusal(`${INTEGRATION_NAME}: attribute "${key}" contains a control or surrogate character that is not valid in XML 1.0; nothing was sent.`, STATUS_UNPROCESSABLE);
+    }
+    return out;
+}
+
+/** XML 1.0 §2.2 Char: #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]. */
+function hasInvalidXml10Char(text: string): boolean {
+    for (let i = 0; i < text.length; i++) {
+        const c = text.charCodeAt(i);
+        if (c === 0x09 || c === 0x0a || c === 0x0d) continue;
+        if (c >= 0x20 && c <= 0xd7ff) continue;
+        if (c >= 0xe000 && c <= 0xfffd) continue;
+        if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.length) {
+            const lo = text.charCodeAt(i + 1);
+            if (lo >= 0xdc00 && lo <= 0xdfff) { i++; continue; }
+        }
+        return true;
+    }
+    return false;
 }
 
 /** Required elements present and non-blank; integer-typed elements are integer literals. Before any request. */
@@ -2029,8 +2134,8 @@ function completeElements(spec: WriteSpec, values: Map<string, string>): Map<str
 
 /**
  * Update: an element the attributes do not carry comes from the stored row. An identity element that
- * differs from a stored non-blank value is refused (WRITE_STUDY.md gaps 6-7, 360032697272: whether
- * Subscribe can change it, and which key AddOrUpdate matches on, is undocumented). Values are not echoed.
+ * differs from a stored non-blank value is refused (360032697272: whether Subscribe can change an
+ * identity key, and which key AddOrUpdateSubscribers matches on, are undocumented). Values are not echoed.
  */
 function withStoredIdentity(spec: WriteSpec, given: Map<string, string>, stored: Record<string, unknown>, externalID: string): Map<string, string> {
     const merged = new Map(given);
@@ -2058,7 +2163,7 @@ function sameIdentityValue(a: string, b: string): boolean {
 }
 
 /**
- * The ActionRequest (WRITE_STUDY.md order): credential block (the GridRequest's), then
+ * The ActionRequest element order (360032692392): credential block (the GridRequest's), then
  * Actions > <action> > InterestDetails (InterestNames only when configured, then InterestAction) >
  * SubscriberData (FieldDefinitions only for Fields sent, then Subscribers > Subscriber with the
  * elements in declaration order and Fields last). Every value is escaped; absent values are omitted.
@@ -2141,6 +2246,14 @@ function identityConflict(spec: WriteSpec, rows: number, when: string): InformzW
         : `found ${rows} or more rows, so the record is ambiguous and is never guessed`;
     const conditions = spec.Action.identity.conditions.join(' AND ');
     return new InformzWriteRefusal(`${INTEGRATION_NAME}: the "${spec.Object.Name}" identity read-back (${conditions}) ${why} ${when}. No ExternalID is returned; the record is re-sent on the next push.`, STATUS_CONFLICT);
+}
+
+function unconfirmedIdentityConflict(spec: WriteSpec, landed: Array<string | null>, expectedID: string): InformzWriteRefusal {
+    return new InformzWriteRefusal(
+        `${INTEGRATION_NAME}: ${spec.Label.Request} was accepted, but the identity read-back found ${landed.length} row(s) `
+        + `${landed.length === 1 ? `(${spec.ReadbackKey} ${landed[0] ?? 'missing'}) ` : ''}instead of exactly "${spec.Object.Name}" ${expectedID}; the write is not confirmed.`,
+        STATUS_CONFLICT,
+    );
 }
 
 /** Gap 3 safe default: Status must be success, and neither the Message count nor InvalidSubscribers may report one. */

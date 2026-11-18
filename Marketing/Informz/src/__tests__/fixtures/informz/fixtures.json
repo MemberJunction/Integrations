@@ -3514,7 +3514,7 @@
       "Kind": "synthesized-action",
       "LiveCaptures": 0,
       "GeneratedBy": "packages/Integration/connector-builder-workshop/scripts/gen-fixtures.mjs (SHAPER=aapi-soap, ACTIONS_CATALOG — additive extension)",
-      "Note": "Request/response STRUCTURE from the derived actions catalog (x-informz-wire requestTree/responseTree) and the metadata writeActions; read-back identity from WRITE_STUDY.md identityDecision (cross-checked against writeActions.identity); every value synthetic (ids ≥ 900000, @example.invalid, no documented sample literal). Nothing here is, or claims to be, a live response."
+      "Note": "Request/response STRUCTURE from the derived actions catalog (x-informz-wire requestTree/responseTree) and the metadata writeActions; read-back identity cross-checked against writeActions.identity (help-center articles 360032692392, 360032692332, 360032692452); every value synthetic (ids ≥ 900000, @example.invalid, no documented sample literal). Nothing here is, or claims to be, a live response."
     },
     "Identity": {
       "mode": "readback",
@@ -3530,7 +3530,7 @@
         "360032692452"
       ],
       "ReadbackNumberOfRows": 2,
-      "Source": "WRITE_STUDY.md ## identityDecision",
+      "Source": "help-center articles 360032692392, 360032692332, 360032692452 (Subscribe carries no subscriber_id in ActionResponse)",
       "CrossCheckedAgainst": "IntegrationObject(Subscriber).Configuration.writeActions.{create,update}.identity"
     },
     "DeleteDecision": {
@@ -5350,7 +5350,7 @@
       "user_id": 900002
     },
     "Update": null,
-    "UpdateSkipReason": "every mapped field (BothFieldMaps) is an identity element the connector never changes (identity-change refusal, WRITE_STUDY.md gaps 6-7); an engine update push could only re-send the same identity, so the cell declares no Update",
+    "UpdateSkipReason": "every mapped field (BothFieldMaps) is an identity element the connector never changes (360032697272: whether Subscribe can change an identity key and which key AddOrUpdateSubscribers matches on are undocumented); an engine update push could only re-send the same identity, so the cell declares no Update",
     "Delete": true,
     "CreateBodyMatch": [
       "&lt;Subscribe&gt;",

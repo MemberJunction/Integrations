@@ -6,7 +6,7 @@
 
 ## What this connector supports
 
-**69 objects** declared across **992 fields** (source: `metadata/integration/.informz.integration.json`). 1 declares a write path (`Subscriber`: create and update, no delete); 68 are read-only (pull). 6 support incremental sync.
+**69 objects** declared across **985 fields** (source: `metadata/integration/.informz.integration.json`). 1 declares a write path (`Subscriber`: create and update, no delete); 68 are read-only (pull). 6 support incremental sync.
 
 **66 are Active** and **3 are `Status='Disabled'`** because nothing identifies one of their rows (see
 [Primary keys](#primary-keys)). Every active object declares a primary key. `MailingActivitySendAFriend` and the
@@ -140,7 +140,7 @@ migration `V202611170749` deprecates the seeded rows on existing installs rather
   - Composite `Date` primary keys (`MailingActivityClicks`, `MailingActivityOpens`, `SubscriberWebTracking`, etc.) require ISO-8601 key serialization (`toISOString()`) and `.NET` 7-digit fractional-second trailing-zero normalization (`.5700000Z` -> `.570Z`) in the MJ integration engine so PostgreSQL `timestamptz` lookups and `MatchEngine` record maps align 1:1.
   - `MailingInstance.mailing_instance_id` soft-PK metadata should be verified active on existing tenant entity fields when wiring downstream relationships.
 - **Hybrid end-to-end sync, 2026-10-23 (`MJ_SS_E2E_INFORMZ`):** Real MJ engine into SQL Server against a mock vendor; all 70 objects applied and the forward run landed 103 of 103 mock rows, capturing creates, updates, hard deletes on `Subscriber`, and an idle second sync. This mock run predated the primary-key additions (49 objects ran keyless at that time).
-- **Unit tests:** 52 of 52 pass in `InformzConnector.test.ts` with a mocked transport and the real metadata, including sliding date-window cursors, metered migration pacing and the ActionRequest Subscribe write path (pre-write identity read-back, 409 on an ambiguous match, refusal of an identity change, demographic `<Field>` elements, fault classification, the interest-action guard).
+- **Unit tests:** 55 of 55 pass in `InformzConnector.test.ts` with a mocked transport and the real metadata, including sliding date-window cursors, metered migration pacing and the ActionRequest Subscribe write path (per-key pre-write identity read-back, 409 on ambiguous or partial-key identity collisions, refusal of an identity change or XML 1.0 control characters, demographic `<Field>` elements, fault classification, the interest-action guard).
 - **Hybrid end-to-end push, 2026-11-17 (MJ worktree, mock vendor, real MJ engine into SQL Server):** engine push loop 12 of 12 cells and 7 of 7 write round trips (create → read-back link, update, idempotent re-push, delete skipped as unsupported). Needs the MJ integration-engine incremental-push fixes in MemberJunction/MJ PR #6699; without them the engine's push loop selects no Record Changes for any connector.
 - **Unauthenticated live probing:** The live WSDL and schema files match the snapshot the catalog was declared against, and every regional host answered.
 
@@ -154,10 +154,13 @@ migration `V202611170749` deprecates the seeded rows on existing installs rather
   `AddOrUpdateSubscribers`; any other value, from metadata or a connection setting, is refused before a request
   is made (a list-replacing action would empty the interest for everyone not in the document).
 - **Identity.** The ActionResponse carries no subscriber id, so identity is read back from the `subscriber` grid
-  (`user_id` EQ ID AND `email` EQ Email, 2 rows). A create reads back BEFORE posting: one row links it without a
-  write, several rows is a 409 with nothing sent, none posts the Subscribe and reads back again. An update
-  re-reads the stored row, refuses a change to `user_id` or `email` (409), posts, and confirms the same
-  `subscriber_id` came back. Success is never reported without an ExternalID.
+  (2 rows max). A create queries each identity key on its own (`user_id` EQ ID, then `email` EQ Email) BEFORE
+  posting: if either is ambiguous or matches an existing row with a different non-blank partner key, it returns 409
+  with nothing sent; if one row already matches both keys and no interests or demographic `<Field>`s are present, it
+  links without a write; otherwise (brand-new row, blank stored `user_id` being populated, or an existing match
+  carrying interests or `<Field>`s) it posts `Subscribe` and reads back (`user_id` EQ ID AND `email` EQ Email) to
+  confirm the single `subscriber_id`. An update re-reads the stored row, refuses a change to `user_id` or `email`
+  (409), posts, and confirms the same `subscriber_id` came back. Success is never reported without an ExternalID.
 - **Connection settings (tenant data, never metadata).** `SubscribeInterestNames` (interests every Subscribe
   joins) and `SubscribeFieldDefinitions` (`{ Name, DataType?, DefaultValue? }` demographic `<Field>` elements).
   A malformed setting never breaks a read; a write refuses while one exists.
@@ -171,7 +174,7 @@ migration `V202611170749` deprecates the seeded rows on existing installs rather
 
 | Gate | Result |
 |---|---|
-| Unit tests (this package) | **52 passed** |
+| Unit tests (this package) | **55 passed** |
 | Hybrid E2E push (mock vendor, real MJ engine, 2026-11-17) | 12 of 12 push-loop cells, 7 of 7 write round trips (needs MJ PR #6699) |
 | PR checks (`.github/workflows/pr.yml`, all 18 steps) | pass |
 | Verification ladder T0 and T2–T7 | pass |
