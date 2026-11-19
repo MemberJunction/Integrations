@@ -1,0 +1,1647 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Informz AAPI ActionRequest write surface (derived from the Higher Logic help-center snapshot)",
+    "version": "derived-2026-11-04T18:25:42Z",
+    "description": "Logical write model. One path per documented ActionRequest; every write is one SOAP POST (PostInformzMessage) carrying an ActionRequest document."
+  },
+  "servers": [
+    {
+      "url": "https://partner.informz.ca/aapi/InformzService.svc"
+    },
+    {
+      "url": "https://partner.informz.net/aapi/InformzService.svc"
+    },
+    {
+      "url": "https://partnertest.informz.net/aapi/InformzService.svc"
+    }
+  ],
+  "paths": {
+    "/actions/BulkUpload": {
+      "post": {
+        "operationId": "invokeBulkUpload",
+        "summary": "ActionRequest BulkUpload",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Subscriber"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > BulkUpload"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "BulkUpload",
+          "interestActions": [
+            "AddOrUpdateSubscribers",
+            "ReplaceAllSubscribers",
+            "RemoveSubscribers",
+            "UnsubscribeSubscribers",
+            "ResubscribeSubscribers"
+          ],
+          "elementMap": {},
+          "requiredElements": [
+            "UploadDetails",
+            "InterestName",
+            "InterestAction",
+            "StatusEmailRecipients",
+            "ColumnDelimiter",
+            "HasFieldsEnclosedInQuotes",
+            "FieldDefinitions",
+            "Name",
+            "DataType",
+            "DefaultValue",
+            "ColumnIndex",
+            "FieldType",
+            "DemographicType"
+          ],
+          "responseShape": [
+            "UploadID",
+            "ActionStatus>Status",
+            "ActionStatus>Message"
+          ],
+          "responseTree": {
+            "name": "BulkUpload",
+            "children": [
+              {
+                "name": "UploadID"
+              },
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  },
+                  {
+                    "name": "Message",
+                    "attrs": [
+                      "xsi:type"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "batchMax": null,
+          "articleId": 360032692112,
+          "articleIds": [
+            360032692112,
+            360045044011
+          ],
+          "sync": {
+            "mode": "async",
+            "articleId": 360032692112,
+            "note": "overview 360032692072 says \"performed synchronously\" for BulkUpload; the BulkUpload article says asynchronous and returns an UploadID"
+          },
+          "requestTree": {
+            "name": "BulkUpload",
+            "children": [
+              {
+                "name": "UploadDetails",
+                "children": [
+                  {
+                    "name": "InterestDetails",
+                    "children": [
+                      {
+                        "name": "InterestNames",
+                        "children": [
+                          {
+                            "name": "InterestName"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "InterestAction"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "StatusEmailRecipients",
+                    "children": [
+                      {
+                        "name": "Email"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ColumnDelimiter"
+                  },
+                  {
+                    "name": "HasFieldsEnclosedInQuotes"
+                  },
+                  {
+                    "name": "RemovePersonalInfoIfBlank"
+                  }
+                ]
+              },
+              {
+                "name": "FieldDefinitions",
+                "children": [
+                  {
+                    "name": "FieldDefinition",
+                    "children": [
+                      {
+                        "name": "Name"
+                      },
+                      {
+                        "name": "DataType"
+                      },
+                      {
+                        "name": "ColumnIndex"
+                      },
+                      {
+                        "name": "FieldType"
+                      },
+                      {
+                        "name": "DefaultValue"
+                      },
+                      {
+                        "name": "DemographicType"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "Data"
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "UploadDetails",
+            "FieldDefinitions",
+            "Data"
+          ],
+          "dataTypeChoices": "String, Integer, Float, Date",
+          "requiredEvidence": [
+            {
+              "articleId": 360032692112,
+              "element": "UploadDetails",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "InterestName",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "InterestAction",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "StatusEmailRecipients",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "ColumnDelimiter",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "HasFieldsEnclosedInQuotes",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "FieldDefinitions",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "DataType",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "DefaultValue",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "ColumnIndex",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "FieldType",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "DemographicType",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "UploadDetails",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "InterestName",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "InterestAction",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "StatusEmailRecipients",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "ColumnDelimiter",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "HasFieldsEnclosedInQuotes",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "FieldDefinitions",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "DataType",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "DefaultValue",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "ColumnIndex",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "FieldType",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692112,
+              "element": "DemographicType",
+              "basis": "Req'd column = True"
+            }
+          ],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/CreateMailing": {
+      "post": {
+        "operationId": "invokeCreateMailing",
+        "summary": "ActionRequest CreateMailing",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": null,
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > CreateMailing"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "CreateMailing",
+          "interestActions": [],
+          "elementMap": {},
+          "requiredElements": [
+            "Name",
+            "Subject",
+            "Title"
+          ],
+          "responseShape": [
+            "ActionStatus>Status",
+            "ActionStatus>Message",
+            "MailingID"
+          ],
+          "responseTree": {
+            "name": "CreateMailing",
+            "children": [
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  },
+                  {
+                    "name": "Message",
+                    "attrs": [
+                      "xsi:type"
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "MailingID"
+              }
+            ]
+          },
+          "batchMax": null,
+          "articleId": 360032692272,
+          "articleIds": [
+            360032692272
+          ],
+          "sync": {
+            "mode": null,
+            "articleId": 360032692272
+          },
+          "requestTree": {
+            "name": "CreateMailing",
+            "children": [
+              {
+                "name": "Name"
+              },
+              {
+                "name": "FriendlyFrom"
+              },
+              {
+                "name": "EmailFrom"
+              },
+              {
+                "name": "ReplyTo"
+              },
+              {
+                "name": "Subject"
+              },
+              {
+                "name": "TemplateID"
+              },
+              {
+                "name": "FolderName"
+              },
+              {
+                "name": "Stories",
+                "children": [
+                  {
+                    "name": "Story",
+                    "children": [
+                      {
+                        "name": "StoryID"
+                      },
+                      {
+                        "name": "Title"
+                      },
+                      {
+                        "name": "Rank"
+                      },
+                      {
+                        "name": "HtmlContent"
+                      },
+                      {
+                        "name": "TextOnlyContent"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "Name",
+            "FriendlyFrom",
+            "EmailFrom",
+            "ReplyTo",
+            "Subject",
+            "TemplateID",
+            "FolderName",
+            "Stories"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [
+            {
+              "articleId": 360032692272,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "Subject",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "Title",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            }
+          ],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/CreateMessage": {
+      "post": {
+        "operationId": "invokeCreateMessage",
+        "summary": "ActionRequest CreateMessage",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": null,
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > CreateMessage"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "CreateMessage",
+          "interestActions": [],
+          "elementMap": {},
+          "requiredElements": [
+            "Name",
+            "MessageContentArea",
+            "MessageStories",
+            "Subject",
+            "Title"
+          ],
+          "responseShape": [
+            "ActionStatus>Status",
+            "ActionStatus>Message",
+            "MailingID"
+          ],
+          "responseTree": {
+            "name": "CreateMessage",
+            "children": [
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  },
+                  {
+                    "name": "Message"
+                  }
+                ]
+              },
+              {
+                "name": "MailingID"
+              }
+            ]
+          },
+          "batchMax": null,
+          "articleId": 360038003251,
+          "articleIds": [
+            360038003251
+          ],
+          "sync": {
+            "mode": null,
+            "articleId": 360038003251
+          },
+          "requestTree": {
+            "name": "CreateMessage",
+            "children": [
+              {
+                "name": "Name"
+              },
+              {
+                "name": "FriendlyFrom"
+              },
+              {
+                "name": "EmailFrom"
+              },
+              {
+                "name": "ReplyTo"
+              },
+              {
+                "name": "Subject"
+              },
+              {
+                "name": "TemplateID"
+              },
+              {
+                "name": "FolderName"
+              },
+              {
+                "name": "MessageStories",
+                "children": [
+                  {
+                    "name": "MessageStory",
+                    "children": [
+                      {
+                        "name": "Title"
+                      },
+                      {
+                        "name": "HtmlContent"
+                      },
+                      {
+                        "name": "TextOnlyContent"
+                      },
+                      {
+                        "name": "MessageContentArea"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "Name",
+            "FriendlyFrom",
+            "EmailFrom",
+            "ReplyTo",
+            "Subject",
+            "TemplateID",
+            "FolderName",
+            "MessageStories"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [
+            {
+              "articleId": 360038003251,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "MessageContentArea",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "MessageStories",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "Subject",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "Title",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            }
+          ],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/Optout": {
+      "post": {
+        "operationId": "invokeOptout",
+        "summary": "ActionRequest Optout",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": null,
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > Optout"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "Optout",
+          "interestActions": [],
+          "elementMap": {},
+          "requiredElements": [],
+          "responseShape": [
+            "Optout"
+          ],
+          "responseTree": null,
+          "batchMax": null,
+          "articleId": 360032692392,
+          "articleIds": [
+            360032692392
+          ],
+          "sync": {
+            "mode": "sync",
+            "articleId": 360032692392
+          },
+          "requestTree": {
+            "name": "Optout",
+            "children": [
+              {
+                "name": "InterestNames",
+                "children": [
+                  {
+                    "name": "InterestName"
+                  }
+                ]
+              },
+              {
+                "name": "Subscribers",
+                "children": [
+                  {
+                    "name": "Subscriber",
+                    "children": [
+                      {
+                        "name": "Email"
+                      },
+                      {
+                        "name": "ID"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "InterestNames",
+            "Subscribers"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/ScheduleMailing": {
+      "post": {
+        "operationId": "invokeScheduleMailing",
+        "summary": "ActionRequest ScheduleMailing",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": null,
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > ScheduleMailing"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "ScheduleMailing",
+          "interestActions": [],
+          "elementMap": {},
+          "requiredElements": [
+            "Name",
+            "DataType",
+            "DefaultValue",
+            "IsTest",
+            "MailingID",
+            "PublishDateTime",
+            "ReturnInvalidSubscribers",
+            "ID"
+          ],
+          "responseShape": [
+            "ActionStatus>Status",
+            "ActionStatus>Message",
+            "MailingID"
+          ],
+          "responseTree": {
+            "name": "ScheduleMailing",
+            "children": [
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  },
+                  {
+                    "name": "Message",
+                    "attrs": [
+                      "xsi:type"
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "MailingID"
+              }
+            ]
+          },
+          "batchMax": null,
+          "articleId": 360032692272,
+          "articleIds": [
+            360032692272,
+            360038003251
+          ],
+          "sync": {
+            "mode": null,
+            "articleId": 360032692272
+          },
+          "requestTree": {
+            "name": "ScheduleMailing",
+            "children": [
+              {
+                "name": "MailingID"
+              },
+              {
+                "name": "PublishDateTime"
+              },
+              {
+                "name": "AccountingCode"
+              },
+              {
+                "name": "IsTest"
+              },
+              {
+                "name": "ReturnInvalidSubscribers"
+              },
+              {
+                "name": "TargetGroupAssignment",
+                "children": [
+                  {
+                    "name": "DefaultTargetGroup",
+                    "children": [
+                      {
+                        "name": "TargetGroup",
+                        "children": [
+                          {
+                            "name": "Interest",
+                            "children": [
+                              {
+                                "name": "ReturnInvalidSubscribers"
+                              },
+                              {
+                                "name": "TargetGroupName"
+                              },
+                              {
+                                "name": "SubscriberData",
+                                "children": [
+                                  {
+                                    "name": "FieldDefinitions",
+                                    "children": [
+                                      {
+                                        "name": "FieldDefinition",
+                                        "children": [
+                                          {
+                                            "name": "Name"
+                                          },
+                                          {
+                                            "name": "DataType"
+                                          },
+                                          {
+                                            "name": "DefaultValue"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "name": "Subscribers",
+                                    "children": [
+                                      {
+                                        "name": "Subscriber",
+                                        "children": [
+                                          {
+                                            "name": "Email"
+                                          },
+                                          {
+                                            "name": "ID"
+                                          },
+                                          {
+                                            "name": "Fields",
+                                            "children": [
+                                              {
+                                                "name": "Field",
+                                                "attrs": [
+                                                  "element"
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "MailingID",
+            "PublishDateTime",
+            "AccountingCode",
+            "IsTest",
+            "ReturnInvalidSubscribers",
+            "TargetGroupAssignment"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [
+            {
+              "articleId": 360032692272,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "DataType",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "DefaultValue",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "IsTest",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "MailingID",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "PublishDateTime",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "ReturnInvalidSubscribers",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360032692272,
+              "element": "ID",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "DataType",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "DefaultValue",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "IsTest",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "MailingID",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "Name",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "PublishDateTime",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "ReturnInvalidSubscribers",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "ID",
+              "basis": "Req'd column = True"
+            }
+          ],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/SetMailingOnHold": {
+      "post": {
+        "operationId": "invokeSetMailingOnHold",
+        "summary": "ActionRequest SetMailingOnHold",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": null,
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > SetMailingOnHold"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "SetMailingOnHold",
+          "interestActions": [],
+          "elementMap": {},
+          "requiredElements": [
+            "ID"
+          ],
+          "responseShape": [
+            "Count",
+            "ActionStatus>Status",
+            "ActionStatus>Message"
+          ],
+          "responseTree": {
+            "name": "SetMailingOnHold",
+            "children": [
+              {
+                "name": "Count"
+              },
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  },
+                  {
+                    "name": "Message"
+                  }
+                ]
+              }
+            ]
+          },
+          "batchMax": null,
+          "articleId": 360032692272,
+          "articleIds": [
+            360032692272,
+            360038003251
+          ],
+          "sync": {
+            "mode": null,
+            "articleId": 360032692272
+          },
+          "requestTree": {
+            "name": "SetMailingOnHold",
+            "children": [
+              {
+                "name": "Mailings",
+                "children": [
+                  {
+                    "name": "ID"
+                  }
+                ]
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "Mailings"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [
+            {
+              "articleId": 360032692272,
+              "element": "ID",
+              "basis": "Req'd column = True"
+            },
+            {
+              "articleId": 360038003251,
+              "element": "ID",
+              "basis": "Req'd column = True"
+            }
+          ],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/Subscribe": {
+      "post": {
+        "operationId": "invokeSubscribe",
+        "summary": "ActionRequest Subscribe",
+        "x-informz-logical": true,
+        "x-informz-in-scope": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Subscriber"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > Subscribe"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "Subscribe",
+          "interestActions": [
+            "AddOrUpdateSubscribers",
+            "ReplaceAllSubscribers"
+          ],
+          "elementMap": {
+            "Email": "email",
+            "ID": "user_id"
+          },
+          "requiredElements": [
+            "Email",
+            "ID"
+          ],
+          "responseShape": [
+            "SubscriberCounts",
+            "ActionStatus>Status",
+            "ActionStatus>Message",
+            "InvalidSubscribers"
+          ],
+          "responseTree": {
+            "name": "Subscribe",
+            "children": [
+              {
+                "name": "SubscriberCounts"
+              },
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  },
+                  {
+                    "name": "Message",
+                    "attrs": [
+                      "xsi:type"
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "InvalidSubscribers"
+              }
+            ]
+          },
+          "batchMax": 1000,
+          "articleId": 360032692392,
+          "articleIds": [
+            360032692392
+          ],
+          "sync": {
+            "mode": "sync",
+            "articleId": 360032692072
+          },
+          "requestTree": {
+            "name": "Subscribe",
+            "children": [
+              {
+                "name": "InterestDetails",
+                "children": [
+                  {
+                    "name": "InterestNames",
+                    "children": [
+                      {
+                        "name": "InterestName"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "InterestAction"
+                  }
+                ]
+              },
+              {
+                "name": "SubscriberData",
+                "children": [
+                  {
+                    "name": "FieldDefinitions",
+                    "children": [
+                      {
+                        "name": "FieldDefinition",
+                        "children": [
+                          {
+                            "name": "Name"
+                          },
+                          {
+                            "name": "DataType"
+                          },
+                          {
+                            "name": "DefaultValue"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Subscribers",
+                    "children": [
+                      {
+                        "name": "Subscriber",
+                        "children": [
+                          {
+                            "name": "Email"
+                          },
+                          {
+                            "name": "ID"
+                          },
+                          {
+                            "name": "Fields",
+                            "children": [
+                              {
+                                "name": "Field",
+                                "attrs": [
+                                  "element"
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "InterestDetails",
+            "SubscriberData"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [
+            {
+              "articleId": 360032692392,
+              "element": "Email",
+              "basis": "sentence: \"Both elements are required.\" (Email/ID table)"
+            },
+            {
+              "articleId": 360032692392,
+              "element": "ID",
+              "basis": "sentence: \"Both elements are required.\" (Email/ID table)"
+            }
+          ],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/Unsubscribe": {
+      "post": {
+        "operationId": "invokeUnsubscribe",
+        "summary": "ActionRequest Unsubscribe",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Subscriber"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > Unsubscribe"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "Unsubscribe",
+          "interestActions": [],
+          "elementMap": {},
+          "requiredElements": [],
+          "responseShape": [
+            "SubscriberCounts",
+            "ActionStatus>Status",
+            "ActionStatus>Message"
+          ],
+          "responseTree": {
+            "name": "Unsubscribe",
+            "children": [
+              {
+                "name": "SubscriberCounts"
+              },
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  },
+                  {
+                    "name": "Message",
+                    "attrs": [
+                      "xsi:type"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "batchMax": null,
+          "articleId": 360032692392,
+          "articleIds": [
+            360032692392
+          ],
+          "sync": {
+            "mode": "sync",
+            "articleId": 360032692392
+          },
+          "requestTree": {
+            "name": "Unsubscribe",
+            "children": [
+              {
+                "name": "Subscribers",
+                "children": [
+                  {
+                    "name": "Subscriber",
+                    "children": [
+                      {
+                        "name": "Email"
+                      },
+                      {
+                        "name": "ID"
+                      },
+                      {
+                        "name": "UnsubscribeReason"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "Subscribers"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [],
+          "faults": {
+            "actionSpecific": [],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    },
+    "/actions/UpdateContactMessageCategoryPreference": {
+      "post": {
+        "operationId": "invokeUpdateContactMessageCategoryPreference",
+        "summary": "ActionRequest UpdateContactMessageCategoryPreference",
+        "x-informz-logical": true,
+        "x-informz-in-scope": false,
+        "requestBody": null,
+        "responses": {
+          "200": {
+            "description": "ActionResponse > Responses > UpdateContactMessageCategoryPreference"
+          }
+        },
+        "x-informz-wire": {
+          "method": "POST",
+          "operation": "PostInformzMessage",
+          "document": "ActionRequest",
+          "action": "UpdateContactMessageCategoryPreference",
+          "interestActions": [],
+          "elementMap": {},
+          "requiredElements": [],
+          "responseShape": [
+            "ActionStatus>Status",
+            "ContactId",
+            "Email",
+            "MessageCategoryId",
+            "MessageCategoryName",
+            "PreferenceStatus",
+            "LastModifiedDate"
+          ],
+          "responseTree": {
+            "name": "UpdateContactMessageCategoryPreference",
+            "children": [
+              {
+                "name": "ActionStatus",
+                "children": [
+                  {
+                    "name": "Status"
+                  }
+                ]
+              },
+              {
+                "name": "ContactId"
+              },
+              {
+                "name": "Email"
+              },
+              {
+                "name": "MessageCategoryId"
+              },
+              {
+                "name": "MessageCategoryName"
+              },
+              {
+                "name": "PreferenceStatus"
+              },
+              {
+                "name": "LastModifiedDate"
+              }
+            ]
+          },
+          "batchMax": null,
+          "articleId": 52916120177044,
+          "articleIds": [
+            52916120177044
+          ],
+          "sync": {
+            "mode": null,
+            "articleId": 52916120177044
+          },
+          "requestTree": {
+            "name": "UpdateContactMessageCategoryPreference",
+            "children": [
+              {
+                "name": "Contact",
+                "children": [
+                  {
+                    "name": "ContactId"
+                  }
+                ]
+              },
+              {
+                "name": "MessageCategoryId"
+              },
+              {
+                "name": "PreferenceAction"
+              }
+            ]
+          },
+          "topLevelOrder": [
+            "Contact",
+            "MessageCategoryId",
+            "PreferenceAction"
+          ],
+          "dataTypeChoices": null,
+          "requiredEvidence": [],
+          "faults": {
+            "actionSpecific": [
+              "MissingData",
+              "InvalidData",
+              "ItemNotFound"
+            ],
+            "genericSoapFaultType": "InformzAAPIFault",
+            "genericCodesArticleId": 360044601092
+          },
+          "caseSensitiveTags": true
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  },
+  "x-informz-credential-block": {
+    "articleIds": [
+      360032692112,
+      360032692272,
+      360032692392,
+      360038003251,
+      360045044011,
+      52916120177044
+    ],
+    "headerOrderVariants": [
+      "Brand > User > Password",
+      "Password > Brand > User",
+      "Brand > User"
+    ],
+    "userElementSamples": 14,
+    "usernameElementSamples": 0,
+    "brandIdAttr": true
+  },
+  "x-informz-soap-fault-codes": {
+    "articleId": 360044601092,
+    "codes": [
+      "BrandNotFoundException",
+      "ItemNotFoundException",
+      "ConfigurationErrorException",
+      "MismatchedTargetGroupsException",
+      "ConflictingInformationException",
+      "MultipleDefaultTargetGroupsException",
+      "InsufficientDataToCreateSubscriberException",
+      "NoAvailableIPAddressException",
+      "InsufficientInformationToCompleteActionException",
+      "NoNameSpaceSpecifiedException",
+      "InvalidCredentialsException",
+      "SystemAccessException",
+      "InvalidDataFormatException",
+      "UnexpectedInputException",
+      "InvalidDocumentException",
+      "UnknownActionException",
+      "InvalidGridCategoryException",
+      "UnknownRequestException",
+      "InvalidMessageException",
+      "ValidUserNotFoundException"
+    ]
+  },
+  "x-informz-sample-literals": {
+    "texts": [
+      ",",
+      "0",
+      "1",
+      "10001",
+      "11",
+      "2",
+      "2001",
+      "2009-10-15T19:30:00",
+      "2063",
+      "3",
+      "321",
+      "384",
+      "4",
+      "408",
+      "5143",
+      "6324",
+      "6612",
+      "670",
+      "7003",
+      "8462",
+      "9999",
+      "API_States",
+      "AddOrUpdateSubscribers",
+      "Bla",
+      "Bose",
+      "Brand Name",
+      "Chuck",
+      "Customer",
+      "Demographic",
+      "Email",
+      "Example Brand",
+      "Exciting new fall courses",
+      "FirstName",
+      "First_Name",
+      "FolderName1",
+      "GeneralFund",
+      "HtmlContent1",
+      "HtmlContent2",
+      "HtmlContent3",
+      "ID",
+      "Interest",
+      "Lamb",
+      "Last_Name",
+      "Mary",
+      "McCustomer",
+      "NY",
+      "Nadya test api",
+      "New Fall Course Offerings",
+      "New Interest",
+      "Norris",
+      "Office of the Registrar",
+      "OptIn",
+      "OptOut",
+      "PersonalInfo",
+      "Pineview Registrar",
+      "ReplaceAllSubscribers",
+      "Sample Interest 1",
+      "Sample Interest 2",
+      "Sample Interest 3",
+      "Sanders",
+      "Satyendra",
+      "State",
+      "Steve",
+      "String",
+      "Test Brand",
+      "Test Interest",
+      "TextOnlyContent1",
+      "TextOnlyContent2",
+      "TextOnlyContent3",
+      "Title1",
+      "Title2",
+      "Title3",
+      "TitleMCA",
+      "Unsubscribe reason 1",
+      "Unsubscribe reason 2",
+      "Unsubscribe reason 3",
+      "Valued Customer",
+      "ann@example.com",
+      "apasswordgoeshere",
+      "apiuser",
+      "bose@example.com",
+      "chuck@example.com",
+      "integer",
+      "jim@example.com",
+      "johndoe@example.com",
+      "johndoe@informz.com",
+      "mary@example.com",
+      "mike@example.com",
+      "nadya@test.com",
+      "nadya@test.com1",
+      "ntest@higherlogic.com",
+      "password",
+      "registrar@pineview.edu",
+      "registrar@test.edu",
+      "steve@example.com",
+      "string",
+      "test1@example.com",
+      "test2@example.com",
+      "test3@example.com",
+      "testuser",
+      "yournamehere@informz.com",
+      "~"
+    ],
+    "note": "every sample value (leaf text + attribute values) in the ActionRequest articles; must never appear in metadata"
+  },
+  "x-informz-derivation": {
+    "snapshot": "sources/hc-snapshot-2026-11-16",
+    "actionArticles": [
+      360032692112,
+      360032692272,
+      360032692392,
+      360038003251,
+      360045044011,
+      52916120177044
+    ],
+    "actionsDocumented": [
+      "BulkUpload",
+      "CreateMailing",
+      "CreateMessage",
+      "Optout",
+      "ScheduleMailing",
+      "SetMailingOnHold",
+      "Subscribe",
+      "Unsubscribe",
+      "UpdateContactMessageCategoryPreference"
+    ]
+  }
+}

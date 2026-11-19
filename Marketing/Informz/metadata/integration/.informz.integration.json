@@ -3,33 +3,71 @@
     "fields": {
       "Name": "Higher Logic Thrive Marketing Professional",
       "ClassName": "InformzConnector",
-      "Description": "Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform used by associations. This connector reads subscriber, mailing, activity and campaign data through the Informz Advanced API (AAPI), a SOAP web service.",
+      "Description": "Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform for associations. It reads subscriber, mailing, activity and campaign data and writes subscribers via the Informz AAPI (SOAP).",
       "ImportPath": "@memberjunction/connector-informz",
       "Icon": "fa-solid fa-envelope-open-text",
       "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Informz AAPI",
       "Configuration": {
         "WriteScope": {
-          "mode": "operator-pull-only",
-          "in": [],
-          "out": [
-            "Subscribe",
-            "BulkUpload",
-            "OptOut",
-            "Unsubscribe",
-            "CreateMailing",
-            "CreateMessage",
-            "ScheduleMailing",
-            "SetMailingOnHold",
-            "UpdateContactMessageCategoryPreference"
+          "mode": "operator-bidirectional-subscriber",
+          "in": [
+            "Subscribe"
           ],
-          "reason": "operator decision: unidirectional pull connector"
+          "writableObjects": [
+            "Subscriber"
+          ],
+          "out": [
+            {
+              "op": "BulkUpload",
+              "reason": "Over-1000-row file upload: asynchronous, returns an UploadID with no per-record result (360032692112), so identity read-back and per-record success cannot be established; Subscribe (up to 1000 per document) covers the write need. Promotable."
+            },
+            {
+              "op": "CreateMailing",
+              "reason": "Mailing lifecycle (Mailing Designer 1), not subscriber data; no synced IntegrationObject maps to it (360032692272)."
+            },
+            {
+              "op": "CreateMessage",
+              "reason": "Mailing lifecycle (Message Designer 2), not subscriber data; no synced IntegrationObject maps to it (360038003251)."
+            },
+            {
+              "op": "Optout",
+              "reason": "Interest-level consent change (opt an address out of an interest), not a subscriber record write; no response sample documented (360032692392). Promotable."
+            },
+            {
+              "op": "ScheduleMailing",
+              "reason": "Mailing lifecycle: sends email to a target group, an irreversible outbound communication that an MJ row change must not trigger (360032692272, 360038003251)."
+            },
+            {
+              "op": "SetMailingOnHold",
+              "reason": "Mailing lifecycle operational control, not a record write (360032692272, 360038003251)."
+            },
+            {
+              "op": "Unsubscribe",
+              "reason": "Global consent status change, not a record write: the subscriber row stays with is_unsubscriber (360032692332) and the next pull re-surfaces it; compliance action that must not be triggered implicitly by an MJ change; with an omitted ID and a duplicated email it raises an exception (360032692392). Promotable."
+            },
+            {
+              "op": "UpdateContactMessageCategoryPreference",
+              "reason": "Consent preference change on a message category (52916120177044), not a Subscriber record write; compliance action. Promotable."
+            }
+          ],
+          "deleteDecision": {
+            "supported": false,
+            "reasons": [
+              "Unsubscribe is a global consent status change, not a delete; the subscriber row remains with is_unsubscriber (360032692332)",
+              "It is a compliance action an MJ row delete must not trigger implicitly",
+              "The next pull re-surfaces the row in MJ",
+              "Operator is open to deferral; Unsubscribe with an omitted ID and a duplicated email raises an exception (360032692392)"
+            ],
+            "promotable": true
+          },
+          "reason": "Operator decision (additive run, 2026-11-16): bidirectional for Subscriber only. Subscribers are created and updated with ActionRequest Subscribe (AddOrUpdateSubscribers only); every other documented action stays out with its own reason; delete is unsupported on the first cut. Push is opt-in per entity map (DefaultSyncDirection stays Pull)."
         },
         "WriteCapability": {
           "capability": "read-write",
           "writeCapable": true,
           "ops": [
             "ActionRequest:Subscribe (AddOrUpdateSubscribers) - up to 1,000 records, synchronous",
-            "ActionRequest:BulkUpload (AddOrUpdateSubscribers, ReplaceAllSubscribers, RemoveSubscribers) - over 1,000 records, synchronous",
+            "ActionRequest:BulkUpload (AddOrUpdateSubscribers, ReplaceAllSubscribers, RemoveSubscribers) - over 1,000 records, asynchronous, returns UploadID, no per-record result (360032692112; overview 360032692072 conflicts, article wins)",
             "ActionRequest:OptOut - opt an address out of an interest",
             "ActionRequest:Unsubscribe - set an address to unsubscribed",
             "ActionRequest:CreateMailing (Mailing Designer 1)",
@@ -38,24 +76,57 @@
             "ActionRequest:SetMailingOnHold - place a mailing on hold",
             "ActionRequest:UpdateContactMessageCategoryPreference - update a contact message-category preference"
           ],
-          "note": "Vendor capability only. All ops are ActionRequest documents posted via PostInformzMessage; this connector does not use them."
+          "note": "Vendor capability. This connector uses ONLY ActionRequest Subscribe (AddOrUpdateSubscribers) for Subscriber create/update; all other ops are out of scope per WriteScope.out."
         },
         "OutOfScopeObjectFamilies": [
           {
             "family": "AAPI ActionRequest documents (write surface)",
-            "reason": "operator decision: unidirectional pull connector",
+            "reason": "Subscribe is in scope (Subscriber create/update); the remaining ActionRequests stay out with per-op reasons in WriteScope.out",
             "opsKnown": "packages/Integration/connectors-registry/informz/sources/derived/informz.grids.openapi.json x-informz-action-requests",
             "promotable": true,
             "actionRequests": [
               "BulkUpload",
               "CreateMailing",
               "CreateMessage",
-              "OptOut",
+              "Optout",
               "ScheduleMailing",
-              "Subscribe",
-              "Unsubscribe",
               "SetMailingOnHold",
+              "Unsubscribe",
               "UpdateContactMessageCategoryPreference"
+            ],
+            "opsOutOfScope": [
+              {
+                "op": "BulkUpload",
+                "reason": "Over-1000-row file upload: asynchronous, returns an UploadID with no per-record result (360032692112), so identity read-back and per-record success cannot be established; Subscribe (up to 1000 per document) covers the write need. Promotable."
+              },
+              {
+                "op": "CreateMailing",
+                "reason": "Mailing lifecycle (Mailing Designer 1), not subscriber data; no synced IntegrationObject maps to it (360032692272)."
+              },
+              {
+                "op": "CreateMessage",
+                "reason": "Mailing lifecycle (Message Designer 2), not subscriber data; no synced IntegrationObject maps to it (360038003251)."
+              },
+              {
+                "op": "Optout",
+                "reason": "Interest-level consent change (opt an address out of an interest), not a subscriber record write; no response sample documented (360032692392). Promotable."
+              },
+              {
+                "op": "ScheduleMailing",
+                "reason": "Mailing lifecycle: sends email to a target group, an irreversible outbound communication that an MJ row change must not trigger (360032692272, 360038003251)."
+              },
+              {
+                "op": "SetMailingOnHold",
+                "reason": "Mailing lifecycle operational control, not a record write (360032692272, 360038003251)."
+              },
+              {
+                "op": "Unsubscribe",
+                "reason": "Global consent status change, not a record write: the subscriber row stays with is_unsubscriber (360032692332) and the next pull re-surfaces it; compliance action that must not be triggered implicitly by an MJ change; with an omitted ID and a duplicated email it raises an exception (360032692392). Promotable."
+              },
+              {
+                "op": "UpdateContactMessageCategoryPreference",
+                "reason": "Consent preference change on a message category (52916120177044), not a Subscriber record write; compliance action. Promotable."
+              }
             ]
           },
           {
@@ -84,7 +155,7 @@
           "includedGridCount": 70,
           "excludedGrids": []
         },
-        "ScopeReason": "READ scope: every documented AAPI grid with a proven selector token (all 70 schemas in informz.grids.openapi.json; zero unproven). WRITE scope: none, operator decision (unidirectional pull). Push API v2, other Higher Logic product APIs and payload encryption/compression are out of scope with reasons in OutOfScopeObjectFamilies.",
+        "ScopeReason": "READ scope: every documented AAPI grid with a proven selector token (all 70 schemas in informz.grids.openapi.json; zero unproven). WRITE scope: Subscriber create/update via ActionRequest Subscribe only (operator decision, additive run 2026-11-16); delete unsupported; all other ActionRequests, Push API v2, other Higher Logic product APIs and payload encryption/compression are out of scope with reasons in WriteScope.out and OutOfScopeObjectFamilies.",
         "DefaultSyncDirection": "Pull",
         "DiscoveryIsAuthoritative": false,
         "DiscoveryNote": "No AAPI endpoint enumerates a brand's grids; the documented catalog is the only inventory, so runtime discovery is not authoritative (residualMode deferred-documented).",
@@ -99,7 +170,7 @@
             "wsdl": "InformzServiceFault (Code, Message, Reason)",
             "docs": "InformzAAPIFault (code, reason)"
           },
-          "faultTypeNote": "Sources disagree on the fault type name; both recorded. WSDL is authoritative for the wire; help-center naming is likely stale.",
+          "faultTypeNote": "Sources disagree on the declared fault type's name; both recorded. faultTypes.wsdl is the DECLARED fault contract, not a universal on-the-wire fault detail: the WSDL declares exactly one wsdl:fault for PostInformzMessage (InformzServiceFaultFault -> detail element InformzServiceFault {Code, Message, Reason}, http://schemas.datacontract.org/2004/07/Informz.WebService.Faults), and the help center (360044601092) scopes the typed fault to \"exceptions (i.e., errors) that are caught and handled by AAPI\". Neither source states that every SOAP Fault carries that detail, and neither documents the fault shape for an error AAPI does not catch and handle, so a SOAP Fault without a typed AAPI detail (no code) is outside the documented contract and its code table. For the declared fault's NAME the WSDL bytes are preferred; the help-center name (InformzAAPIFault) is likely stale.",
           "wsdlServiceAddress": "https://partner.informz.net/aapi/informzservice.svc",
           "wsdlSnapshot": [
             {
@@ -372,7 +443,6 @@
               "MailingActivityOpens",
               "MailingActivityClicks",
               "MailingActivityOptout",
-              "MailingActivitySendAFriend",
               "SubscriberMailingHistory",
               "SubscriberMailingHistoryAll",
               "SubscriberInterests",
@@ -412,6 +482,180 @@
               "ScoringSummaryDemo"
             ],
             "note": "No usable key: EmailBlockStatus is the brand’s current email block, and ScoringSummary rows are scoring groups identified only by a description."
+          }
+        },
+        "WriteContract": {
+          "transport": "PostInformzMessage envelope carrying an ActionRequest document",
+          "identity": {
+            "mode": "readback",
+            "grid": "subscriber",
+            "conditions": [
+              "user_id",
+              "email"
+            ],
+            "key": "subscriber_id",
+            "preWriteReadback": "user_id EQ ID AND email EQ Email, NumberOfRows 2: one row returns its subscriber_id without posting; zero posts Subscribe then reads back; more than one gives Success:false",
+            "cite": "360032692392 (response has no subscriber_id); 360032692332 (user_id and email both Conditional=True); 360032692452 (multiple Conditions conjunctive); 360032697272 (match key undocumented)",
+            "postWriteReadback": "After a posted Subscribe, read back with the same Conditions (user_id EQ ID AND email EQ Email), NumberOfRows 2: exactly one row returns ExternalID = its subscriber_id; zero rows, a fault, or a row without subscriber_id returns Success:false with no ExternalID and StatusCode null (non-403), so the engine counts RecordsErrored and holds the watermark. Never return Success:true with an empty ExternalID. The keyed AddOrUpdateSubscribers re-send on the next push is safe because the pre-write read-back short-circuits on a row that already exists."
+          },
+          "interestActionPolicy": "AddOrUpdateSubscribers only; no list-replacing action is emitted",
+          "connectionSettings": [
+            "SubscribeInterestNames",
+            "SubscribeFieldDefinitions"
+          ],
+          "faults": {
+            "codesArticle": 360044601092,
+            "codesDocumentedAs": "some possible; no per-code meaning documented",
+            "classification": {
+              "authOrPrecondition": [
+                "InvalidCredentialsException",
+                "BrandNotFoundException",
+                "ValidUserNotFoundException",
+                "NoAvailableIPAddressException",
+                "SystemAccessException",
+                "ConfigurationErrorException"
+              ],
+              "requestDefect": [
+                "InvalidDocumentException",
+                "UnknownActionException",
+                "InvalidDataFormatException",
+                "UnexpectedInputException",
+                "InvalidMessageException",
+                "NoNameSpaceSpecifiedException",
+                "InsufficientDataToCreateSubscriberException",
+                "InsufficientInformationToCompleteActionException",
+                "ConflictingInformationException",
+                "MismatchedTargetGroupsException",
+                "MultipleDefaultTargetGroupsException",
+                "ItemNotFoundException",
+                "InvalidGridCategoryException",
+                "UnknownRequestException"
+              ],
+              "retryable": [
+                "transport-level only (HTTP 429/503, connection errors); no ActionRequest fault code is documented as retryable"
+              ]
+            },
+            "classificationNote": "Connector design decision over documented code names (the vendor does not classify them); all 20 codes named in 360044601092 are classified. InvalidGridCategoryException and UnknownRequestException fire on the identity read-back GridRequest (not on the ActionRequest) and surface exactly like any request defect: Success:false with code and reason verbatim, StatusCode per statusCodePolicy, no per-code retry.",
+            "successParsing": "Status plus Message counts plus InvalidSubscribers; never rely on SubscriberCounts (360032692392)",
+            "statusCodePolicy": {
+              "rule": "No ActionRequest or GridRequest fault ever sets StatusCode 403. The IntegrationEngine treats 403 as a permanent skip and advances the push watermark, which would silently lose the change; 403 is reserved for a permanently read-only object.",
+              "authOrPrecondition": "StatusCode 401 or null (InvalidCredentials, BrandNotFound, ValidUserNotFound, NoAvailableIPAddress, SystemAccess, ConfigurationError): Success:false, the engine counts the record errored and holds the watermark, so the push is retried.",
+              "requestDefect": "StatusCode 400 or 422 or null: Success:false with code and reason verbatim; counted errored, watermark held.",
+              "transport": "HTTP 429 and 503 and connection errors are retryable and non-403.",
+              "test": "A connector unit test asserts StatusCode !== 403 for every classified code and for the transport cases.",
+              "cite": [
+                360044601092
+              ]
+            }
+          },
+          "residuals": [
+            {
+              "gap": "AddOrUpdateSubscribers match key (Email+Remote ID vs Email)",
+              "safeDefault": "pre-write read-back so correctness does not depend on the key",
+              "cite": 360032697272
+            },
+            {
+              "gap": "Whether Subscribe can change an email",
+              "safeDefault": "never push an email change; an update whose email differs from the stored read value is refused (Success:false)",
+              "cite": 360032697272
+            },
+            {
+              "gap": "InterestDetails required on Subscribe",
+              "safeDefault": "always send InterestDetails with AddOrUpdateSubscribers; InterestNames only when the connection configures them",
+              "cite": 360032692392
+            },
+            {
+              "gap": "FieldDefinitions per Field@element and DataType values",
+              "safeDefault": "one FieldDefinition per Field sent, DataType from connection config (default String); no Field elements unless configured",
+              "cite": 360032692392
+            },
+            {
+              "gap": "InvalidSubscribers child shape",
+              "safeDefault": "fail the record when Status is not success, the Message invalid-address count > 0, or InvalidSubscribers has any child; read-back is the final arbiter",
+              "cite": 360032692392
+            },
+            {
+              "gap": "ActionRequest fault code meanings",
+              "safeDefault": "any fault -> Success:false verbatim, no per-code retry",
+              "cite": 360044601092
+            },
+            {
+              "gap": "Zero rows (or a fault) on the read-back after a posted Subscribe",
+              "safeDefault": "Success:false with no ExternalID and a non-403 StatusCode; the record is re-sent on the next push",
+              "cite": 360032692392
+            },
+            {
+              "gap": "Subscriber grid read-back on user_id EQ ID AND email EQ Email (both Conditional=True, conjunctive) is documented but never exercised against the real endpoint (credential posture B): mock-proven only",
+              "safeDefault": "One live one-record push with a credential is required before the write path is relied on",
+              "cite": [
+                360032692332,
+                360032692452
+              ]
+            }
+          ],
+          "articleIds": [
+            360032692392,
+            360032692072,
+            360032692332,
+            360032692452,
+            360032697272
+          ],
+          "writeGuard": {
+            "object": "Subscriber",
+            "appliesTo": [
+              "CreateRecord",
+              "UpdateRecord",
+              "DeleteRecord"
+            ],
+            "evaluatedBefore": "building any ActionRequest document or issuing the identity read-back",
+            "rules": [
+              {
+                "id": "delete-unsupported",
+                "op": "DeleteRecord",
+                "when": "always (SupportsDelete=false)",
+                "sends": "nothing",
+                "result": "Success:false"
+              },
+              {
+                "id": "empty-attributes",
+                "op": [
+                  "CreateRecord",
+                  "UpdateRecord"
+                ],
+                "when": "Attributes holds no field named in writeActions.<op>.elements and no connection-configured Field element; an MJ delete that reaches the create or update branch arrives this way",
+                "sends": "nothing",
+                "result": "Success:false"
+              },
+              {
+                "id": "required-element-missing",
+                "op": "CreateRecord",
+                "when": "a writeActions.create.requiredElements element maps to a field that is absent, null or blank in Attributes",
+                "sends": "nothing",
+                "result": "Success:false naming the element"
+              },
+              {
+                "id": "required-element-unresolved",
+                "op": "UpdateRecord",
+                "when": "a writeActions.update.requiredElements element is still absent, null or blank after resolving it from Attributes, else GetRecord(subscriber_id)",
+                "sends": "no ActionRequest; the GetRecord read is the only request",
+                "result": "Success:false naming the element"
+              }
+            ],
+            "whenFired": {
+              "Success": false,
+              "StatusCode": null,
+              "neverPosts": [
+                "Subscribe",
+                "Optout",
+                "Unsubscribe"
+              ]
+            },
+            "resultBasis": "Success:false rather than a silent no-op, so an MJ change that cannot be written (including an MJ delete of this object) shows as a failed record; StatusCode stays null because the vendor documents none for these cases",
+            "reason": "Subscribe requires both of its required elements (360032692392), so a call missing either cannot form a valid document. Delete is unsupported (WriteScope.deleteDecision), and Optout/Unsubscribe are out-of-scope consent changes; Unsubscribe without an ID acts on the email alone (360032692392), so no incomplete or delete-routed call may fall back to one. With SupportsDelete=false the integration engine hands an MJ delete (no field values) to UpdateRecord when a record map exists and to CreateRecord when none exists.",
+            "articleIds": [
+              360032692392,
+              360032692332
+            ]
           }
         }
       },
@@ -943,8 +1187,8 @@
             "ID": "051ED05B-0F01-4661-908A-545D7278D8AF"
           },
           "sync": {
-            "lastModified": "2026-10-23T18:14:29.060Z",
-            "checksum": "e6fe9ef810a6b6e2ccec8badb903325e83f85379a2d807ade11a4c05ce7140b2"
+            "lastModified": "2026-11-17T13:48:24.117Z",
+            "checksum": "7f89c9002cf4944ce9cc9c169e4f464cfc7736baed7abf74a64283817b20f9aa"
           }
         },
         {
@@ -2744,8 +2988,8 @@
                   "ID": "F095B0AC-3B02-41CE-A9FC-35FE356677BC"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.631Z",
-                  "checksum": "23aada59abd3df7b40bc0129ed322875ce8f7a197b30f01775f6c675b31f484f"
+                  "lastModified": "2026-11-17T13:48:24.280Z",
+                  "checksum": "6f6a55ee72255fde9588934cd5507077e018cbdeb49c69cfb14d40f87b928d16"
                 }
               },
               {
@@ -2778,8 +3022,8 @@
                   "ID": "B405DA5C-489E-4022-904C-645B3CCBC950"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.641Z",
-                  "checksum": "60d7064445a0a1023f3e2be698058a68fed44b5bda8a6066f7e46ca8483184f1"
+                  "lastModified": "2026-11-17T13:48:24.280Z",
+                  "checksum": "4736076f3d75bdc396052457c0022ab36c15caf7d6e2b868081535719aceedf7"
                 }
               },
               {
@@ -2914,8 +3158,8 @@
                   "ID": "1C643A6B-4214-494A-BF4D-F79C784CD11B"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.679Z",
-                  "checksum": "32ca9efc984bd90d6460f903c053de6d0e38991a14113103ee2076bcb537344f"
+                  "lastModified": "2026-11-17T13:48:24.280Z",
+                  "checksum": "6aae1859a55dabacbee4eb12ab17633319b6597f0c9e66e137fae6423f5b56ed"
                 }
               },
               {
@@ -3276,8 +3520,8 @@
                   "ID": "87398F94-D43A-4832-83EB-76985D87CEA0"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.759Z",
-                  "checksum": "8f8e4ef696d36f38ce05c31d0ed9ca966067fbdf06a50f3270e7ab75230028d4"
+                  "lastModified": "2026-11-17T13:48:24.286Z",
+                  "checksum": "23161b630bfffe59b90bfc1bedec035dcb6146db0359ff0adf18f2cecc5310c2"
                 }
               },
               {
@@ -3310,8 +3554,8 @@
                   "ID": "33193C33-41F4-44B9-BF81-A3EB2F743E01"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.769Z",
-                  "checksum": "abd446bd8e882b0a91e2b350b4c356ab9e043250e1a2d8ecd98df97bb473e5b9"
+                  "lastModified": "2026-11-17T13:48:24.286Z",
+                  "checksum": "8cd680ddb7920a477ed4fb16f02f3f914b99d9672c4283a9220e08aa00cf1b98"
                 }
               },
               {
@@ -3446,8 +3690,8 @@
                   "ID": "12C3B397-13DB-4395-9F3A-4D71936BFE98"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.817Z",
-                  "checksum": "e5cf7bca65c0e6455e3a558a5787d229987823e05de0dca15830feb92a868daa"
+                  "lastModified": "2026-11-17T13:48:24.290Z",
+                  "checksum": "f9c3c33143c09b4db693a81929952c90b385e0ae37e5a22af4cb88d05b0ef848"
                 }
               },
               {
@@ -3782,8 +4026,8 @@
                   "ID": "827F82C3-FB55-46B1-A089-DE1E81E5D492"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.879Z",
-                  "checksum": "aa353bc9120cb9729940d0e8fd0fd6685f2776c6cd15eb8b3f174ef15196d1d6"
+                  "lastModified": "2026-11-17T13:48:24.291Z",
+                  "checksum": "278c738e5bc92077a8e0397896b2dcb421eeb085ab779f6ec38d5c518db0c099"
                 }
               },
               {
@@ -3890,8 +4134,8 @@
                   "ID": "7CDD93D3-9C75-416B-A926-C852DB27A45C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:30.922Z",
-                  "checksum": "508e9b98eb54c14e7166f5fd7a433cab677a5a9628da8dc874d4db1c197080b0"
+                  "lastModified": "2026-11-17T13:48:24.295Z",
+                  "checksum": "175033c5c736381ebd97ff11cfecf476f9560263bed7ead50bc053f3a77784d5"
                 }
               },
               {
@@ -5578,8 +5822,8 @@
             "ID": "75A9B963-07F8-4B37-8558-0F2C98B40B9D"
           },
           "sync": {
-            "lastModified": "2026-10-23T18:14:29.201Z",
-            "checksum": "0dc962b1524101215dcf476a72b1bb1238f3f239060208361cbc0e072c55b7d5"
+            "lastModified": "2026-11-17T13:48:24.129Z",
+            "checksum": "f76a9157edf54a643c2ed1c94b0d28bc80490a8a332bdaaabafb09b05e0ff9e3"
           }
         },
         {
@@ -6416,15 +6660,15 @@
             "ID": "B6593F5A-9249-4259-98CC-DAE4F91AFFA5"
           },
           "sync": {
-            "lastModified": "2026-10-23T18:14:29.215Z",
-            "checksum": "e67fbe901b789ec482d84242c1a442cd69987488149219916d06010eb3f4e71c"
+            "lastModified": "2026-11-17T13:48:24.129Z",
+            "checksum": "ce8005d68c398aebefb4d3df12a676423d94eab043ea9a8474ba1a136e3a655b"
           }
         },
         {
           "fields": {
             "Name": "Subscriber",
             "DisplayName": "Subscriber",
-            "Description": "Rows of AAPI grid \"subscriber\" (Subscriber; help-center article \"GridRequests - Subscribers and Unsubscribers\"). Pull-only GridRequest read, offset-paged (StartRow/NumberOfRows, 1,000 rows per request).",
+            "Description": "Rows of AAPI grid \"subscriber\" (Subscriber; help-center article \"GridRequests - Subscribers and Unsubscribers\"). GridRequest read, offset-paged (StartRow/NumberOfRows, 1,000 rows per request). Created and updated by ActionRequest Subscribe.",
             "Category": "Subscribers and Unsubscribers",
             "APIPath": "/grids/subscriber",
             "ResponseDataKey": null,
@@ -6432,7 +6676,7 @@
             "SupportsPagination": true,
             "PaginationType": "Offset",
             "SupportsIncrementalSync": true,
-            "SupportsWrite": false,
+            "SupportsWrite": true,
             "DefaultQueryParams": null,
             "Configuration": {
               "gridType": "subscriber",
@@ -6525,6 +6769,60 @@
               "fieldSources": {
                 "table": 12,
                 "sample-response": 1
+              },
+              "writeActions": {
+                "create": {
+                  "document": "ActionRequest",
+                  "action": "Subscribe",
+                  "interestAction": "AddOrUpdateSubscribers",
+                  "elements": {
+                    "Email": "email",
+                    "ID": "user_id"
+                  },
+                  "requiredElements": [
+                    "Email",
+                    "ID"
+                  ],
+                  "identity": {
+                    "mode": "readback",
+                    "grid": "subscriber",
+                    "conditions": [
+                      "user_id",
+                      "email"
+                    ],
+                    "key": "subscriber_id"
+                  },
+                  "articleIds": [
+                    360032692392,
+                    360032692072
+                  ]
+                },
+                "update": {
+                  "document": "ActionRequest",
+                  "action": "Subscribe",
+                  "interestAction": "AddOrUpdateSubscribers",
+                  "elements": {
+                    "Email": "email",
+                    "ID": "user_id"
+                  },
+                  "requiredElements": [
+                    "Email",
+                    "ID"
+                  ],
+                  "identity": {
+                    "mode": "readback",
+                    "grid": "subscriber",
+                    "conditions": [
+                      "user_id",
+                      "email"
+                    ],
+                    "key": "subscriber_id"
+                  },
+                  "articleIds": [
+                    360032692392,
+                    360032692072
+                  ]
+                }
               }
             },
             "Sequence": 13,
@@ -6532,8 +6830,8 @@
             "IsCustom": false,
             "IncrementalWatermarkField": "modified_date",
             "MetadataSource": "Declared",
-            "SupportsCreate": false,
-            "SupportsUpdate": false,
+            "SupportsCreate": true,
+            "SupportsUpdate": true,
             "SupportsDelete": false,
             "SyncStrategy": "WatermarkIncremental",
             "ContentHashApplicable": true,
@@ -6541,16 +6839,16 @@
             "WriteAPIPath": null,
             "WriteMethod": null,
             "DeleteMethod": null,
-            "CreateAPIPath": null,
-            "CreateMethod": null,
-            "CreateBodyShape": null,
+            "CreateAPIPath": "/actions/Subscribe",
+            "CreateMethod": "POST",
+            "CreateBodyShape": "literal",
             "CreateBodyKey": null,
-            "CreateIDLocation": null,
-            "UpdateAPIPath": null,
-            "UpdateMethod": null,
-            "UpdateBodyShape": null,
+            "CreateIDLocation": "n/a",
+            "UpdateAPIPath": "/actions/Subscribe",
+            "UpdateMethod": "POST",
+            "UpdateBodyShape": "literal",
             "UpdateBodyKey": null,
-            "UpdateIDLocation": null,
+            "UpdateIDLocation": "body",
             "DeleteAPIPath": null,
             "DeleteIDLocation": null,
             "IntegrationID": "@parent:ID"
@@ -6752,7 +7050,7 @@
                   "DefaultValue": null,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "IsReadOnly": true,
+                  "IsReadOnly": false,
                   "IsRequired": false,
                   "Sequence": 6,
                   "Configuration": {
@@ -6773,8 +7071,8 @@
                   "ID": "5B0A8A3C-519E-48B8-BDE1-E422F4D1723D"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:31.638Z",
-                  "checksum": "67d43fc0887ce098a86c20934a3609b645b5fb5ffc463ef4a9c222e5209df068"
+                  "lastModified": "2026-11-17T13:48:24.374Z",
+                  "checksum": "89a0d5e9a0f35a8134c3d96a1b6c69801845cf8c687177de8f25b81bc1b2eda5"
                 }
               },
               {
@@ -6971,7 +7269,7 @@
                   "DefaultValue": null,
                   "IsPrimaryKey": false,
                   "IsUniqueKey": false,
-                  "IsReadOnly": true,
+                  "IsReadOnly": false,
                   "IsRequired": false,
                   "Sequence": 12,
                   "Configuration": {
@@ -6989,8 +7287,8 @@
                   "ID": "D65C421C-E8BF-4CFA-AF35-357CBC95C953"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:31.707Z",
-                  "checksum": "6615c817a9d918ea80e6333722080b6a758bc3d7931bdfbc58dc4d126cc47448"
+                  "lastModified": "2026-11-17T13:48:24.398Z",
+                  "checksum": "0d1e3ad873989f43bfb2bfc08b65de51d151fb2e7abc46f15a474cd926b8eace"
                 }
               },
               {
@@ -7033,8 +7331,8 @@
             "ID": "6B84ABDC-4E2E-4098-B61F-5DD1D509D39F"
           },
           "sync": {
-            "lastModified": "2026-10-23T18:14:29.229Z",
-            "checksum": "869aa2d7083600f5e94fb84a0872138c6030fa11c0196a655ace4b91954fb0d6"
+            "lastModified": "2026-11-17T13:48:24.192Z",
+            "checksum": "0f8da1c56b9e8a63d7b92e219e53ec3473f72f8441393711ff60512c0eb6b6bc"
           }
         },
         {
@@ -7258,8 +7556,8 @@
                   "ID": "9C1FF2CC-2DBB-4F7D-8A4B-E9D8902E6E63"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:31.749Z",
-                  "checksum": "4e72b51bd77c0cfcb99df5c1d08e9e2434491f46339b57be1ab3cf80f3740e40"
+                  "lastModified": "2026-11-17T13:48:24.384Z",
+                  "checksum": "10737d040ff2178d9761be183723b8f8f24b937b31614cfd9a582e8721d60449"
                 }
               },
               {
@@ -7294,8 +7592,8 @@
                   "ID": "C139CBE6-54B2-41FD-B2DD-3176A907118C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:31.759Z",
-                  "checksum": "d93d66bfac52cb8dda46d7c1003b866613b55459929b4b04a8074abda46078e2"
+                  "lastModified": "2026-11-17T13:48:24.384Z",
+                  "checksum": "fe8562ea656bd897df79d27863fe114e9da8781e5c2745a699dbb3b17308ab44"
                 }
               },
               {
@@ -8283,8 +8581,8 @@
                   "ID": "66765A42-4A11-4FCF-BBC5-4F5891EE5386"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.042Z",
-                  "checksum": "48ca76f44cdb2afcea28075bd0464f40c8da64903e4ef12d3b98db0770e71bd9"
+                  "lastModified": "2026-11-17T13:48:24.413Z",
+                  "checksum": "9b71566c6b470f5b47abf97badf65bb8d77ced0ceddb88ec24d1afefd69733d3"
                 }
               },
               {
@@ -8319,8 +8617,8 @@
                   "ID": "F0048101-6904-4714-948F-AD9BFC706BF7"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.053Z",
-                  "checksum": "656ad71371fefbae657f606e1d451b98f38e37c02bf66ee44f4b96f034e6ee8b"
+                  "lastModified": "2026-11-17T13:48:24.413Z",
+                  "checksum": "b93547f70775dba2bafd72501e32e58d8f6edcc4a774947bf0119bdf925d9be9"
                 }
               },
               {
@@ -10639,8 +10937,8 @@
                   "ID": "DE46413A-AEEA-4F36-8E45-46B9383C34B9"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.666Z",
-                  "checksum": "4022957b7ed805b473d9c21c2897e53ff657209ddc897b49729fb4b29e6cbef0"
+                  "lastModified": "2026-11-17T13:48:24.437Z",
+                  "checksum": "7f7a43ab1268db1b0a516200e10a5b617eeabbccd9db5c3d889c23b4e3e91cba"
                 }
               },
               {
@@ -10673,8 +10971,8 @@
                   "ID": "EC343A23-CB7C-43D7-BBEB-CAF0BC4CE9D0"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.676Z",
-                  "checksum": "722559e4bbab0871516f53582c3b504b2209e0da8db36b6b55307f84ab8b7507"
+                  "lastModified": "2026-11-17T13:48:24.438Z",
+                  "checksum": "f19141a92cb127e499f363e3bbb8739bf9574b4ee70d31d5eaa4e72ce3ba0efa"
                 }
               },
               {
@@ -10707,8 +11005,8 @@
                   "ID": "41D39C16-7A2F-4CD6-A476-C17202D588A8"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.685Z",
-                  "checksum": "0c368551d91a5ecd762d89b6f3845f01018b99fb2389420046fbd3a42e86d93f"
+                  "lastModified": "2026-11-17T13:48:24.438Z",
+                  "checksum": "aa958335b2defdf38dc251a205febac4eeacb9237fd0adf82a0dc847376b0954"
                 }
               },
               {
@@ -10741,8 +11039,8 @@
                   "ID": "EC5EC2A9-6ACE-4D97-B565-3B4C11610A0F"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.694Z",
-                  "checksum": "d2285da8ab7bf0ca40cdff89a72c2ff5b3bfa480983dc6823dc2e9d25824f689"
+                  "lastModified": "2026-11-17T13:48:24.438Z",
+                  "checksum": "064fe3b8e48c1c20fbc94c3d69971b58b6c9488a113a82b39f04806a8c0947c7"
                 }
               },
               {
@@ -10967,8 +11265,8 @@
                   "ID": "9390CD13-4411-49EE-B1DE-8CFDFB92FE09"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.732Z",
-                  "checksum": "65139b3ba86c9d8d905dcbd8a4212858c118c0a2073bbde17588479d86fb2b7d"
+                  "lastModified": "2026-11-17T13:48:24.442Z",
+                  "checksum": "21c1f1692e193b7b9a40783e15439858e596b43c1c866a417ee57d677f17fc54"
                 }
               },
               {
@@ -11001,8 +11299,8 @@
                   "ID": "5B993127-A636-489E-816E-44B791D0E8B5"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.741Z",
-                  "checksum": "96df8202a6576999c50825cdc11357da28c1bdd9bd55f36ed8598d343f03bb46"
+                  "lastModified": "2026-11-17T13:48:24.442Z",
+                  "checksum": "d0932ce121824a64fef33b484c4bcee58d2ec8c286674a8086f4d812b3ec7b84"
                 }
               },
               {
@@ -11035,8 +11333,8 @@
                   "ID": "05CE692B-2829-4938-A69D-ED1695BAB46C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.751Z",
-                  "checksum": "1455611f794e5e97533d2844ae9d5fb9cbe902f81708a3d7ebb50a025ca09de5"
+                  "lastModified": "2026-11-17T13:48:24.442Z",
+                  "checksum": "63273012a909a5dd150a1bb9d2bf6378048fa69fccf3873196b119cc9e990b1f"
                 }
               },
               {
@@ -11069,8 +11367,8 @@
                   "ID": "340333CB-37B9-4523-A73A-62EDA3124174"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.761Z",
-                  "checksum": "80542c4d3ca0f08bd7e03482d4afca60ffeba9744492927960d0bc5be211a6f3"
+                  "lastModified": "2026-11-17T13:48:24.442Z",
+                  "checksum": "11e0f7d4e09fc8f1d6aae1458ae8e68f845b958e5ccd83cdaffa8fb48e1ebd54"
                 }
               },
               {
@@ -11294,8 +11592,8 @@
                   "ID": "460ECD8F-F614-4F24-82BB-A4B4B22D9CEC"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.791Z",
-                  "checksum": "4022957b7ed805b473d9c21c2897e53ff657209ddc897b49729fb4b29e6cbef0"
+                  "lastModified": "2026-11-17T13:48:24.442Z",
+                  "checksum": "7f7a43ab1268db1b0a516200e10a5b617eeabbccd9db5c3d889c23b4e3e91cba"
                 }
               },
               {
@@ -11328,8 +11626,8 @@
                   "ID": "FCE89BC8-242F-4650-B230-30164DA9449A"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.798Z",
-                  "checksum": "722559e4bbab0871516f53582c3b504b2209e0da8db36b6b55307f84ab8b7507"
+                  "lastModified": "2026-11-17T13:48:24.442Z",
+                  "checksum": "f19141a92cb127e499f363e3bbb8739bf9574b4ee70d31d5eaa4e72ce3ba0efa"
                 }
               },
               {
@@ -11362,8 +11660,8 @@
                   "ID": "EED48F0D-0DD3-4E2C-B0BB-840CA1373A6E"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.817Z",
-                  "checksum": "d9fff0fd26f7513d743a22ed7b819a4399bd181e5864978ecd8045552c515e15"
+                  "lastModified": "2026-11-17T13:48:24.446Z",
+                  "checksum": "1861c22d20f63cf0cf32cc5edc214473069f86bd07ca531f51f55bd5c99d88e6"
                 }
               },
               {
@@ -11396,8 +11694,8 @@
                   "ID": "B1006F66-C295-4E2A-AFD7-A9A584ECA49A"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.827Z",
-                  "checksum": "d663e234bff429f2902f235d88aa551603b9132b37f1bc87d4d223076abd3193"
+                  "lastModified": "2026-11-17T13:48:24.446Z",
+                  "checksum": "2ea43a0c9f137ee1ae3a3d0e74c8e8efdba28d62d5634f9e1c2d5f697faac834"
                 }
               },
               {
@@ -11860,8 +12158,8 @@
                   "ID": "FD334077-EAED-44AB-8972-9DC3DCC422BD"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.942Z",
-                  "checksum": "65139b3ba86c9d8d905dcbd8a4212858c118c0a2073bbde17588479d86fb2b7d"
+                  "lastModified": "2026-11-17T13:48:24.450Z",
+                  "checksum": "21c1f1692e193b7b9a40783e15439858e596b43c1c866a417ee57d677f17fc54"
                 }
               },
               {
@@ -11894,8 +12192,8 @@
                   "ID": "36BF5ED8-EEDA-4970-8560-D7C135568AA4"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.953Z",
-                  "checksum": "96df8202a6576999c50825cdc11357da28c1bdd9bd55f36ed8598d343f03bb46"
+                  "lastModified": "2026-11-17T13:48:24.450Z",
+                  "checksum": "d0932ce121824a64fef33b484c4bcee58d2ec8c286674a8086f4d812b3ec7b84"
                 }
               },
               {
@@ -11928,8 +12226,8 @@
                   "ID": "09CA2F65-1B74-47FB-B87F-B2D6E83BA4E0"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.963Z",
-                  "checksum": "d954a276a9d8d2c3e338c57dfad220aa354ae8e8b98516ce0136079c59d235eb"
+                  "lastModified": "2026-11-17T13:48:24.451Z",
+                  "checksum": "a97925909fcb401ca5e95513e499298c20fc410492bb1b0df11e4121114a184f"
                 }
               },
               {
@@ -11962,8 +12260,8 @@
                   "ID": "5B342064-42D4-4D8F-8B91-0E78DB605BF1"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:32.974Z",
-                  "checksum": "f6eb441d16821fc86a966028bae549df9c6dafa9c67202fe6741df55f67e1ba2"
+                  "lastModified": "2026-11-17T13:48:24.451Z",
+                  "checksum": "0da194e4948a4baed3f2dd7c6befb6cae5405886b85d6915a361d387aab7f369"
                 }
               },
               {
@@ -12425,8 +12723,8 @@
                   "ID": "4A034A2A-79BE-4C15-9F65-365E55D23402"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.083Z",
-                  "checksum": "4022957b7ed805b473d9c21c2897e53ff657209ddc897b49729fb4b29e6cbef0"
+                  "lastModified": "2026-11-17T13:48:24.456Z",
+                  "checksum": "7f7a43ab1268db1b0a516200e10a5b617eeabbccd9db5c3d889c23b4e3e91cba"
                 }
               },
               {
@@ -12459,8 +12757,8 @@
                   "ID": "74B2BE74-7A2A-4590-AF4B-E18CC294DBE9"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.093Z",
-                  "checksum": "722559e4bbab0871516f53582c3b504b2209e0da8db36b6b55307f84ab8b7507"
+                  "lastModified": "2026-11-17T13:48:24.456Z",
+                  "checksum": "f19141a92cb127e499f363e3bbb8739bf9574b4ee70d31d5eaa4e72ce3ba0efa"
                 }
               },
               {
@@ -12493,8 +12791,8 @@
                   "ID": "07A815F5-5469-47D0-A984-69126750BA59"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.103Z",
-                  "checksum": "4ad3376f5445a88e659ea9936534ea49cbec8a1c7e7b8a93a2946ca5ed73fd0b"
+                  "lastModified": "2026-11-17T13:48:24.456Z",
+                  "checksum": "640fbd7db6d1d0f7e66560e298d1e5385946f641333b524f2ef5cee303f98da9"
                 }
               },
               {
@@ -12787,8 +13085,8 @@
                   "ID": "B92AEAF9-A26B-405A-92DA-427338C91C64"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.162Z",
-                  "checksum": "65139b3ba86c9d8d905dcbd8a4212858c118c0a2073bbde17588479d86fb2b7d"
+                  "lastModified": "2026-11-17T13:48:24.460Z",
+                  "checksum": "21c1f1692e193b7b9a40783e15439858e596b43c1c866a417ee57d677f17fc54"
                 }
               },
               {
@@ -12821,8 +13119,8 @@
                   "ID": "07163C1F-C4C9-4AC3-8B0D-15B0A4135DD8"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.173Z",
-                  "checksum": "96df8202a6576999c50825cdc11357da28c1bdd9bd55f36ed8598d343f03bb46"
+                  "lastModified": "2026-11-17T13:48:24.460Z",
+                  "checksum": "d0932ce121824a64fef33b484c4bcee58d2ec8c286674a8086f4d812b3ec7b84"
                 }
               },
               {
@@ -12855,8 +13153,8 @@
                   "ID": "574A64AE-2497-4524-8AF5-F698574631CF"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.183Z",
-                  "checksum": "e0d3e044785b73aaf1fa61db9cdeec0707cdca15247cad09f8d3c12fbd828a16"
+                  "lastModified": "2026-11-17T13:48:24.460Z",
+                  "checksum": "06f485446d45474e7351da2e548b9e74b255121c835394ecba2df35edf0e50df"
                 }
               },
               {
@@ -13148,8 +13446,8 @@
                   "ID": "F6C463E9-A5E9-4E39-A0AF-75C19CDD9C15"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.232Z",
-                  "checksum": "4022957b7ed805b473d9c21c2897e53ff657209ddc897b49729fb4b29e6cbef0"
+                  "lastModified": "2026-11-17T13:48:24.461Z",
+                  "checksum": "7f7a43ab1268db1b0a516200e10a5b617eeabbccd9db5c3d889c23b4e3e91cba"
                 }
               },
               {
@@ -13182,8 +13480,8 @@
                   "ID": "E5649C07-D7CF-4C39-939E-6360D8CC6570"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:33.240Z",
-                  "checksum": "722559e4bbab0871516f53582c3b504b2209e0da8db36b6b55307f84ab8b7507"
+                  "lastModified": "2026-11-17T13:48:24.461Z",
+                  "checksum": "f19141a92cb127e499f363e3bbb8739bf9574b4ee70d31d5eaa4e72ce3ba0efa"
                 }
               },
               {
@@ -15788,8 +16086,8 @@
                   "ID": "E87D5357-91D2-4E51-AA96-FCEB9336C42B"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:34.055Z",
-                  "checksum": "65139b3ba86c9d8d905dcbd8a4212858c118c0a2073bbde17588479d86fb2b7d"
+                  "lastModified": "2026-11-17T13:48:24.496Z",
+                  "checksum": "21c1f1692e193b7b9a40783e15439858e596b43c1c866a417ee57d677f17fc54"
                 }
               },
               {
@@ -15822,8 +16120,8 @@
                   "ID": "C065ED59-9FC2-48EB-8B3A-BE8D89DA71CD"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:34.077Z",
-                  "checksum": "96df8202a6576999c50825cdc11357da28c1bdd9bd55f36ed8598d343f03bb46"
+                  "lastModified": "2026-11-17T13:48:24.496Z",
+                  "checksum": "d0932ce121824a64fef33b484c4bcee58d2ec8c286674a8086f4d812b3ec7b84"
                 }
               },
               {
@@ -18411,8 +18709,8 @@
                   "ID": "D77D9BD7-BC41-44FA-A2B9-68017D8D2CE4"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:34.870Z",
-                  "checksum": "30132931ad058d94d06c1ba76840198f670d4fdeb5a13d0a9e397b64636b3077"
+                  "lastModified": "2026-11-17T13:48:24.527Z",
+                  "checksum": "da9b7655d1596051ea655599ec7943cd00e15f8f3887a263e45cf2b2939ba508"
                 }
               },
               {
@@ -18523,8 +18821,8 @@
                   "ID": "EF0B1D2E-A4F2-4C11-8ECE-647C68FBE4CB"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:34.901Z",
-                  "checksum": "8ecd5aede3b12601f06d8b6e3d44407cd3cc0b5984112c2247eb852f87a712e8"
+                  "lastModified": "2026-11-17T13:48:24.527Z",
+                  "checksum": "9b6230ec8e1865031dc387e238db5814672538cbb1bf72ed27d397ef1a652dfa"
                 }
               },
               {
@@ -18559,8 +18857,8 @@
                   "ID": "9988A32F-F59E-4AEF-8EFC-87AAECB65378"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:34.910Z",
-                  "checksum": "ad6b25b9f8af02957857adc9acf5ca6d2b7b399aee99f955f70e0390351fd817"
+                  "lastModified": "2026-11-17T13:48:24.527Z",
+                  "checksum": "d8120b44645c7587d6ba9e56041008ad7774a94b5a58e17d15a07d827688c08f"
                 }
               },
               {
@@ -20533,8 +20831,8 @@
                   "ID": "494694AF-46BD-4E09-9CFE-7EF8F025780B"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.385Z",
-                  "checksum": "86ad995458195a664132db3585a55f212482314c0de71180ea9a9d629d9afd22"
+                  "lastModified": "2026-11-17T13:48:24.547Z",
+                  "checksum": "694d15aca67549b04d9ececd0982cf72e96dd3a2e6d8711f3b393fb34d9c9ee3"
                 }
               },
               {
@@ -20606,8 +20904,8 @@
                   "ID": "A4F5832A-FD79-4606-810E-588FDA2E547C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.419Z",
-                  "checksum": "c16022dcedb7ea9919fc3cbb8171e2927603261f123f304aa11401d2fbd71d58"
+                  "lastModified": "2026-11-17T13:48:24.551Z",
+                  "checksum": "0c92fa29549aca5ebc6aee6c7fe1bb5a653f7d943512c42ba78c7efc29c8d12a"
                 }
               },
               {
@@ -20891,8 +21189,8 @@
                   "ID": "7FE93327-500E-454E-95B1-97ACA0EF2257"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.461Z",
-                  "checksum": "b3dde74a807ba0241d499897455c2830cb92141f97039ca3a37f7acdcbd9b0a4"
+                  "lastModified": "2026-11-17T13:48:24.551Z",
+                  "checksum": "5813a3eb748995f28ca8862efcd3f9a885f15592b8d8fe11b8224331009f96ef"
                 }
               },
               {
@@ -21000,8 +21298,8 @@
                   "ID": "38B7BC4A-69CA-4008-AEE7-F0812F255A2C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.492Z",
-                  "checksum": "a8f92f3e3a3065ac7774893489203d522f13c5aa3efa10e0b4f34618cadfce2b"
+                  "lastModified": "2026-11-17T13:48:24.551Z",
+                  "checksum": "882c55b38efc37118f0ee92f5dadd337c06cbf90b58c8c804888147b417abfea"
                 }
               },
               {
@@ -21073,8 +21371,8 @@
                   "ID": "E4E2BB77-05E5-4A37-AF18-89DE4103DC4D"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.521Z",
-                  "checksum": "e1a35118e14fcfc4515d0915c13c9b92d760df34ba3f4dfd55f7df332789440b"
+                  "lastModified": "2026-11-17T13:48:24.555Z",
+                  "checksum": "173eb941658f1eb3e7a654182fd3cf0c0f4e3bf123803ad0d40d2cb1541f427c"
                 }
               },
               {
@@ -21147,8 +21445,8 @@
                   "ID": "1819A6BA-067C-44C7-B8B4-F1ACCCDB466C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.542Z",
-                  "checksum": "2b2c046bf25ca5285ff9288f8fe21b42460bdf35b3923b6216a7b6a0b9647765"
+                  "lastModified": "2026-11-17T13:48:24.555Z",
+                  "checksum": "dd442ec30001cc54f68aa2e39cdf28ccebdb2d342217e2273b841e71e955cecd"
                 }
               },
               {
@@ -21400,8 +21698,8 @@
                   "ID": "7C432072-F33D-46E9-A72B-95A14C8FDF19"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.573Z",
-                  "checksum": "d408aa02cbf0db8127036da34809cc652445cb3d2dc364762c31e6c9497d4a7e"
+                  "lastModified": "2026-11-17T13:48:24.556Z",
+                  "checksum": "7255315d8faba307d1888cf82f22f471275b534a1ab83617186c2657d22c1ec7"
                 }
               },
               {
@@ -21546,8 +21844,8 @@
                   "ID": "69077E99-BFB2-4055-B52D-6F9EE5DCD2D1"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.611Z",
-                  "checksum": "404e5219a5ca09a09b76b31e71e01170c37fb89d3d7d9b7714ac77f940b67f08"
+                  "lastModified": "2026-11-17T13:48:24.556Z",
+                  "checksum": "8b050ee6c781cd0a5bb1055e82930bb7a4da7a43c964b45affd78a48dfc4d745"
                 }
               },
               {
@@ -21619,8 +21917,8 @@
                   "ID": "A23632D1-428B-4B68-8333-84EC7A79A974"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.640Z",
-                  "checksum": "d622126d3c32298228e55d8b6e2905643d0fb5bec7775ff2fd6e7368d9349f75"
+                  "lastModified": "2026-11-17T13:48:24.560Z",
+                  "checksum": "771499de16f3caeb631e07ca7206dbdc8a10ad9dd7cdcf3752db79b5dff445df"
                 }
               },
               {
@@ -22044,8 +22342,8 @@
                   "ID": "2060D810-FA4E-485F-A01E-A11ABC2E8754"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.719Z",
-                  "checksum": "a757a18932a61e60b7dbfcc0db93b20f4f0e78a4226c6e6a5e94ace50fd339dd"
+                  "lastModified": "2026-11-17T13:48:24.560Z",
+                  "checksum": "75c2002e9b234dd18f46f90a59be03c3f9f12cb9872348a8b9fdc7d1b71acbf9"
                 }
               },
               {
@@ -22513,8 +22811,8 @@
                   "ID": "CC406D72-3D74-4F72-BBF1-6A3B394BDE4B"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.819Z",
-                  "checksum": "a757a18932a61e60b7dbfcc0db93b20f4f0e78a4226c6e6a5e94ace50fd339dd"
+                  "lastModified": "2026-11-17T13:48:24.565Z",
+                  "checksum": "75c2002e9b234dd18f46f90a59be03c3f9f12cb9872348a8b9fdc7d1b71acbf9"
                 }
               },
               {
@@ -22870,8 +23168,8 @@
                   "ID": "4FAF911D-3D70-4557-B9F8-C7C452A89978"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.886Z",
-                  "checksum": "86ad995458195a664132db3585a55f212482314c0de71180ea9a9d629d9afd22"
+                  "lastModified": "2026-11-17T13:48:24.569Z",
+                  "checksum": "694d15aca67549b04d9ececd0982cf72e96dd3a2e6d8711f3b393fb34d9c9ee3"
                 }
               },
               {
@@ -22943,8 +23241,8 @@
                   "ID": "3F9261DB-85F0-4D58-AE87-11C641227A52"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:35.907Z",
-                  "checksum": "c16022dcedb7ea9919fc3cbb8171e2927603261f123f304aa11401d2fbd71d58"
+                  "lastModified": "2026-11-17T13:48:24.569Z",
+                  "checksum": "0c92fa29549aca5ebc6aee6c7fe1bb5a653f7d943512c42ba78c7efc29c8d12a"
                 }
               },
               {
@@ -23762,8 +24060,8 @@
                   "ID": "B609B38F-B852-4E92-A336-7475B5AC6F20"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.082Z",
-                  "checksum": "cde95c1b09d618422d427c1b3fe341417b36dc99d6c5b36545bcd6b6b09242c0"
+                  "lastModified": "2026-11-17T13:48:24.579Z",
+                  "checksum": "de7ca4196c90ffe4899aa89f09c107f3434832924e1eb5325c09404af9654d42"
                 }
               },
               {
@@ -23835,8 +24133,8 @@
                   "ID": "2FD85037-D134-4CAC-AE85-83951C793686"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.103Z",
-                  "checksum": "3b4fc929e6c30bf7b9cf65c53b01550f7305eb26a737b135684f8504f6052347"
+                  "lastModified": "2026-11-17T13:48:24.579Z",
+                  "checksum": "02b3b177b5496df14d55b51ed922f5e277399624ffe8354decf26987b8c019c0"
                 }
               },
               {
@@ -25180,8 +25478,8 @@
                   "ID": "F9A455F8-BB78-490D-B504-661C5A81F72A"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.431Z",
-                  "checksum": "cde95c1b09d618422d427c1b3fe341417b36dc99d6c5b36545bcd6b6b09242c0"
+                  "lastModified": "2026-11-17T13:48:24.592Z",
+                  "checksum": "de7ca4196c90ffe4899aa89f09c107f3434832924e1eb5325c09404af9654d42"
                 }
               },
               {
@@ -25253,8 +25551,8 @@
                   "ID": "2D4A61BE-A879-4568-AF7A-8CC40F0D5A03"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.451Z",
-                  "checksum": "3b4fc929e6c30bf7b9cf65c53b01550f7305eb26a737b135684f8504f6052347"
+                  "lastModified": "2026-11-17T13:48:24.592Z",
+                  "checksum": "02b3b177b5496df14d55b51ed922f5e277399624ffe8354decf26987b8c019c0"
                 }
               },
               {
@@ -25532,8 +25830,8 @@
                   "ID": "96522FD5-1212-42C2-99B3-350CAB17C6D3"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.489Z",
-                  "checksum": "d408aa02cbf0db8127036da34809cc652445cb3d2dc364762c31e6c9497d4a7e"
+                  "lastModified": "2026-11-17T13:48:24.592Z",
+                  "checksum": "7255315d8faba307d1888cf82f22f471275b534a1ab83617186c2657d22c1ec7"
                 }
               },
               {
@@ -25642,8 +25940,8 @@
                   "ID": "CDF6A3EA-FD5A-40E8-BF44-91FA1A64557E"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.518Z",
-                  "checksum": "9692e1ffed6b3b8a3b3ed69025f3119b5f7ae5a942971b237a0fb4346afc3712"
+                  "lastModified": "2026-11-17T13:48:24.596Z",
+                  "checksum": "03331ebfb6f60ffafedfa91952a2e85bc4a42b8c433c96035dd6767a8f9bcd6d"
                 }
               },
               {
@@ -25937,8 +26235,8 @@
                   "ID": "FBA0AE0E-766B-40DC-9F24-5764351CFC01"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.616Z",
-                  "checksum": "001aa898656b3101bf51ddf6de559b5d78fa41cce3334669abbf55ea84e8c7ea"
+                  "lastModified": "2026-11-17T13:48:24.600Z",
+                  "checksum": "99b7fb4c8353d5bb1187c998046a7b1b527c08930f4cd451a4afa1012dd4c7e5"
                 }
               },
               {
@@ -26340,8 +26638,8 @@
                   "ID": "FB00B334-8A6B-4C6A-8C60-A7B5ACF2CA32"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.733Z",
-                  "checksum": "537de44143ecd108564bdb5b4725819c08b139745ef18f7d46e7af771d676d43"
+                  "lastModified": "2026-11-17T13:48:24.605Z",
+                  "checksum": "02528f0b6dd1026cbad794dccfbcec9736ecbaf9eb16cf63ae9def3fbcc85470"
                 }
               }
             ]
@@ -26509,8 +26807,8 @@
                   "ID": "14EC99E8-F76C-4418-A1C2-62277DFAFD77"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.744Z",
-                  "checksum": "b3dde74a807ba0241d499897455c2830cb92141f97039ca3a37f7acdcbd9b0a4"
+                  "lastModified": "2026-11-17T13:48:24.605Z",
+                  "checksum": "5813a3eb748995f28ca8862efcd3f9a885f15592b8d8fe11b8224331009f96ef"
                 }
               },
               {
@@ -26619,8 +26917,8 @@
                   "ID": "218BB831-B46E-487B-B319-7060BF4980EC"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.775Z",
-                  "checksum": "305cf44d2e1efe0096a762b179889013f2aba3ad7cccb4c015203d1822993885"
+                  "lastModified": "2026-11-17T13:48:24.605Z",
+                  "checksum": "f479bb8df3d0b5aed7f6331080f0cfd9f56ebc487f760e00f2d5c4967553d2f9"
                 }
               },
               {
@@ -26914,8 +27212,8 @@
                   "ID": "24455847-8AD7-4368-AA51-C0BAADA348FC"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.868Z",
-                  "checksum": "001aa898656b3101bf51ddf6de559b5d78fa41cce3334669abbf55ea84e8c7ea"
+                  "lastModified": "2026-11-17T13:48:24.610Z",
+                  "checksum": "99b7fb4c8353d5bb1187c998046a7b1b527c08930f4cd451a4afa1012dd4c7e5"
                 }
               },
               {
@@ -26951,8 +27249,8 @@
                   "ID": "80B73463-F4F4-4F15-B2C3-0B7AF0A929A5"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.878Z",
-                  "checksum": "8fcb6f75eee726859428f2b38335d82bf4b4f13137f6935cf482e07a629cbae1"
+                  "lastModified": "2026-11-17T13:48:24.610Z",
+                  "checksum": "bca3d1a37e61bb1c7a474312dbc75c692f84f563d132df3c072fd2fd1df85bc6"
                 }
               },
               {
@@ -26988,8 +27286,8 @@
                   "ID": "22BC50C2-6392-4D10-AF61-EAF1142DE686"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.889Z",
-                  "checksum": "72ae13a6bc9fc2b153a2b792e125759402a124d4c57810a002772b549e620677"
+                  "lastModified": "2026-11-17T13:48:24.610Z",
+                  "checksum": "1afa646e5f87101008de5b977702f95ba1618ad313871f358037fe17f4822363"
                 }
               },
               {
@@ -27194,8 +27492,8 @@
                   "ID": "B683B099-0577-401E-B474-B4AAB070CEC5"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.909Z",
-                  "checksum": "b3dde74a807ba0241d499897455c2830cb92141f97039ca3a37f7acdcbd9b0a4"
+                  "lastModified": "2026-11-17T13:48:24.610Z",
+                  "checksum": "5813a3eb748995f28ca8862efcd3f9a885f15592b8d8fe11b8224331009f96ef"
                 }
               },
               {
@@ -27304,8 +27602,8 @@
                   "ID": "D0CB74CA-F1D1-4ECF-8C58-3178138BBB76"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:36.947Z",
-                  "checksum": "305cf44d2e1efe0096a762b179889013f2aba3ad7cccb4c015203d1822993885"
+                  "lastModified": "2026-11-17T13:48:24.614Z",
+                  "checksum": "f479bb8df3d0b5aed7f6331080f0cfd9f56ebc487f760e00f2d5c4967553d2f9"
                 }
               },
               {
@@ -27599,8 +27897,8 @@
                   "ID": "5AAD2296-8A38-495E-8797-A9AE569BBCF3"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:37.030Z",
-                  "checksum": "001aa898656b3101bf51ddf6de559b5d78fa41cce3334669abbf55ea84e8c7ea"
+                  "lastModified": "2026-11-17T13:48:24.615Z",
+                  "checksum": "99b7fb4c8353d5bb1187c998046a7b1b527c08930f4cd451a4afa1012dd4c7e5"
                 }
               },
               {
@@ -30557,8 +30855,8 @@
                   "ID": "A9551462-B9BD-4E54-85D9-53D5641A477C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:37.738Z",
-                  "checksum": "df69ecb1311e9001e86c10118eaf658488e774733458bd099994ff3503102603"
+                  "lastModified": "2026-11-17T13:48:24.645Z",
+                  "checksum": "845e3e30a7c1ce17f176f4ccb29d2c384580a5a09abb962b3d42be892b2d3d71"
                 }
               },
               {
@@ -30631,42 +30929,6 @@
                 "sync": {
                   "lastModified": "2026-10-23T18:14:37.758Z",
                   "checksum": "94b6cc3270c2caf3bfa5ab2aef042f760596295c19ad7b8e4dda4b98587f6d0c"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "send_a_friend_count",
-                  "DisplayName": "Send A Friend Count",
-                  "Description": "Number of \"Send a Friend\" (forwards) that occurred",
-                  "Category": null,
-                  "Type": "integer",
-                  "Length": null,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "Sequence": 15,
-                  "Configuration": {
-                    "conditional": false,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "Int"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "6F64E59B-93A4-4936-8B7F-4ED917ED930D"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:37.768Z",
-                  "checksum": "10c27bd833f4e0a3b1145dfaedbc607ea9cfd3db5a8563b70b794981f34620a1"
                 }
               },
               {
@@ -32018,8 +32280,8 @@
                   "ID": "7EF1D533-492F-4AE6-8CF5-FB388EB1C3E9"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.134Z",
-                  "checksum": "dc6e3d856aaa61a84d2074473bfa4aa3b7ef96fe270d28def5b4eaa600a45454"
+                  "lastModified": "2026-11-17T13:48:24.660Z",
+                  "checksum": "f16854fb9095186ec626209518c460fe92f5774c09aafc811e17bd0c95fbfa19"
                 }
               },
               {
@@ -32128,8 +32390,8 @@
                   "ID": "1BA5F19F-8284-4147-81AC-4C55EED1C97C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.175Z",
-                  "checksum": "846583b76c32a19a60c183a614bfdc819dd3e26081825d8e64f2f20bf9c7b638"
+                  "lastModified": "2026-11-17T13:48:24.664Z",
+                  "checksum": "10256f5fd6d5fbe7a9b5a52ac565281901e6695fa209973ec021307e56e5e738"
                 }
               },
               {
@@ -32748,8 +33010,8 @@
                   "ID": "6B212F54-2790-4522-BBD3-4D1DA5CFA42C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.288Z",
-                  "checksum": "7a641d93f12bdfa2618c7a2d77fb0fa7e2da9525a93b4fb68cd8337b7f06cb7b"
+                  "lastModified": "2026-11-17T13:48:24.669Z",
+                  "checksum": "e0b6e70c31f29e299fb5adf2a02d592df89010700c121f01d4f869a568279f3f"
                 }
               },
               {
@@ -32786,8 +33048,8 @@
                   "ID": "C434A5BD-AAB3-4E34-9A3E-D4A411A7AB87"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.297Z",
-                  "checksum": "7fceeda1e522791669e7deac0ec68384f05bc54450873f614e625051a96cfcd2"
+                  "lastModified": "2026-11-17T13:48:24.669Z",
+                  "checksum": "eff60d8d11be38ed3ff5b92410dcf8e10f9223203c0d5c25c8fe05b9f01b3cad"
                 }
               },
               {
@@ -32861,8 +33123,8 @@
                   "ID": "9E81D2D6-355F-48BA-86D4-541D2ABDB1FF"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.317Z",
-                  "checksum": "78c73d9ef2dad382101e05d271b18ae2af5ab0ff82e53995f45949bfbc330c44"
+                  "lastModified": "2026-11-17T13:48:24.669Z",
+                  "checksum": "b2d506c74065e7bcea16b33b720dfde21580b0e26322b79896ee3a50f0dd7fe1"
                 }
               },
               {
@@ -32976,8 +33238,8 @@
                   "ID": "36F64BF6-A722-4F98-B19B-D01BD4EFF4F9"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.348Z",
-                  "checksum": "79d731bbff5bc573710abf62935085597b5b5c439aa0e0882f6c08171a5c52ec"
+                  "lastModified": "2026-11-17T13:48:24.669Z",
+                  "checksum": "5610c939146d5153ead03204afc0ec3635d0cc0b5ba7ec70afeca650fe945d56"
                 }
               },
               {
@@ -33213,8 +33475,8 @@
                   "ID": "B761FB54-3AE9-4B04-981C-73640C81614A"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.387Z",
-                  "checksum": "61e0dfd485512438bb6f0cf05ed09697e240787f014f7fc76ef9967e18cb03a3"
+                  "lastModified": "2026-11-17T13:48:24.673Z",
+                  "checksum": "d27083353e7eb2481178ea258970a7afecd6bb9f46045be76f5d8138caec1cb4"
                 }
               },
               {
@@ -33288,8 +33550,8 @@
                   "ID": "851D18FD-7B6E-48A3-B7B0-BD10FCDBCB13"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.407Z",
-                  "checksum": "8003ebad10342feed9fddc4458a96fc3635b83ae114cb11db1f7f4395c0c7492"
+                  "lastModified": "2026-11-17T13:48:24.673Z",
+                  "checksum": "e9a7ffa4ee3077ed0d460fed216d41380e0475b911d4b5871e9dcff08d13fd23"
                 }
               }
             ]
@@ -33457,8 +33719,8 @@
                   "ID": "F6B42CCF-6340-431B-9BA3-3D12514D9CE3"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.417Z",
-                  "checksum": "a3b3bb8164082f1b008a58601d8776a7d4cb0d31ade0e52091fbce1ebbd0797b"
+                  "lastModified": "2026-11-17T13:48:24.673Z",
+                  "checksum": "67fa344e658764cadd790f630d7f4f85cb0a0b4a1c426383d4b8b473982912f0"
                 }
               },
               {
@@ -33571,8 +33833,8 @@
                   "ID": "ADFB5B11-F5F1-40F0-9749-F79A51514CD3"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.449Z",
-                  "checksum": "ec0a8b0f7cc43cb51045ac97230210fb64d3db709bf5c50def6f7d74b825e4a7"
+                  "lastModified": "2026-11-17T13:48:24.674Z",
+                  "checksum": "740e4a350dfb7b0c55cd3f324fd2fa9f58b18fe539e9bd07fd7de5b695878fd9"
                 }
               },
               {
@@ -33887,8 +34149,8 @@
                   "ID": "2D719440-F006-4AB5-B6D2-47DEA5DE283E"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.508Z",
-                  "checksum": "046c67a290b5900217f645757718b08ffef1ccadbfe5ade1f65ea42cde2f82bf"
+                  "lastModified": "2026-11-17T13:48:24.678Z",
+                  "checksum": "4cd9b8cae69ebe26eeafd0fa66a2ebb28f08975e71a6ad2abc549e2a9b6d2e17"
                 }
               },
               {
@@ -33925,8 +34187,8 @@
                   "ID": "639D07D3-4544-4473-B1F5-9BB75CB4F003"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.518Z",
-                  "checksum": "4069d29e960cbfb483de4084be425bbf53ca8f77d2ad9600603a6e2387cff051"
+                  "lastModified": "2026-11-17T13:48:24.678Z",
+                  "checksum": "1e6dc20dfa3c18f4db8af8b46da505e6944e141487d1808ed6f1e4b8d3db52a6"
                 }
               },
               {
@@ -34005,8 +34267,8 @@
                   "ID": "032B314E-8069-4C16-89DA-F7356D773225"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.546Z",
-                  "checksum": "02f7c0452e4ff9b7d4ae535d2e41ef30ed11f4d4b92f928c671b248dba6e14b5"
+                  "lastModified": "2026-11-17T13:48:24.678Z",
+                  "checksum": "4a925dcf5a6753eb24321d0c8ea08197fe60d5d5a0c9acd22f6a9db1014a8269"
                 }
               },
               {
@@ -34043,8 +34305,8 @@
                   "ID": "F5E468D1-04B8-4083-BE56-0EF411396CAE"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.556Z",
-                  "checksum": "e76a122f17b1a2f4622ccf568754ba01ffc04c60e24eda3ac8d8b61d3eb77833"
+                  "lastModified": "2026-11-17T13:48:24.678Z",
+                  "checksum": "6af40b072f20e161014e3bb529abdb87bb24d99babdd474bfb38bc715463885f"
                 }
               },
               {
@@ -34117,8 +34379,8 @@
                   "ID": "CA37FAB4-D42A-461F-9A3B-7C810619DAAA"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.577Z",
-                  "checksum": "5e1d75ab453c7ce3cfca1ea71ae2a69303860511b363b77134fcf1280dfcc060"
+                  "lastModified": "2026-11-17T13:48:24.678Z",
+                  "checksum": "88547719fb064d86885fe386578c362dd315424b1241aac14bb6e9d03168bc52"
                 }
               }
             ]
@@ -34356,8 +34618,8 @@
                   "ID": "DE953D37-FA2F-4210-A3A2-04904C691471"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.617Z",
-                  "checksum": "8003ebad10342feed9fddc4458a96fc3635b83ae114cb11db1f7f4395c0c7492"
+                  "lastModified": "2026-11-17T13:48:24.682Z",
+                  "checksum": "e9a7ffa4ee3077ed0d460fed216d41380e0475b911d4b5871e9dcff08d13fd23"
                 }
               },
               {
@@ -34431,8 +34693,8 @@
                   "ID": "83231613-5359-4A0C-A06A-6B13FF740258"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.637Z",
-                  "checksum": "eaac083052f72fab0a18e5f54b1845a68c08125a65d6e2db18c4f8a2963764dc"
+                  "lastModified": "2026-11-17T13:48:24.682Z",
+                  "checksum": "80361e5e61da3d5bbecb1e0db794ee441faf17e1bf80b34ca2868ab96ed2fd1f"
                 }
               }
             ]
@@ -34606,8 +34868,8 @@
                   "ID": "0AB9E809-1739-4668-9332-0B5FA1D95D9D"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.649Z",
-                  "checksum": "a3b3bb8164082f1b008a58601d8776a7d4cb0d31ade0e52091fbce1ebbd0797b"
+                  "lastModified": "2026-11-17T13:48:24.682Z",
+                  "checksum": "67fa344e658764cadd790f630d7f4f85cb0a0b4a1c426383d4b8b473982912f0"
                 }
               },
               {
@@ -34684,8 +34946,8 @@
                   "ID": "0D155FF6-92F9-4405-9D70-A2C909AA59E9"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.670Z",
-                  "checksum": "ebb235a1e514ca846fe73f1d59c0920d8a733864b93318e75d4564fa95b3decd"
+                  "lastModified": "2026-11-17T13:48:24.683Z",
+                  "checksum": "8642467c3be85425755c5da316204b8bf8d109847b43cacac22b55dd0321f995"
                 }
               },
               {
@@ -34720,8 +34982,8 @@
                   "ID": "237CAAD7-AD68-4AC5-8262-9D9F087E7635"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.680Z",
-                  "checksum": "e15589346627fc299fb3bf9d39b6eb75c1f8b71e68978ac0497257637584a1c7"
+                  "lastModified": "2026-11-17T13:48:24.683Z",
+                  "checksum": "f9c7534cf3584c4b4187115a701f61abc549e8caa02ca2334bf9a7cbb614bd2a"
                 }
               },
               {
@@ -35037,8 +35299,8 @@
                   "ID": "BA8026A0-D1C3-487D-82E0-C0BC940E8D6C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.741Z",
-                  "checksum": "e64bcac6095f5a0f0687965338de02d32e22d5db63dbfc797cdf9646e1261e89"
+                  "lastModified": "2026-11-17T13:48:24.688Z",
+                  "checksum": "80ad6f6e4541730ec1ab03eead772af95f1a508ca8c3627b72d2ada1d413d82c"
                 }
               },
               {
@@ -35075,8 +35337,8 @@
                   "ID": "0CC2E886-42EC-47F8-B104-B98EC2806FD9"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.751Z",
-                  "checksum": "4069d29e960cbfb483de4084be425bbf53ca8f77d2ad9600603a6e2387cff051"
+                  "lastModified": "2026-11-17T13:48:24.688Z",
+                  "checksum": "1e6dc20dfa3c18f4db8af8b46da505e6944e141487d1808ed6f1e4b8d3db52a6"
                 }
               },
               {
@@ -35155,8 +35417,8 @@
                   "ID": "A550E4BA-87C4-4A44-A7BA-B0144931B36A"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.772Z",
-                  "checksum": "02f7c0452e4ff9b7d4ae535d2e41ef30ed11f4d4b92f928c671b248dba6e14b5"
+                  "lastModified": "2026-11-17T13:48:24.688Z",
+                  "checksum": "4a925dcf5a6753eb24321d0c8ea08197fe60d5d5a0c9acd22f6a9db1014a8269"
                 }
               },
               {
@@ -35193,8 +35455,8 @@
                   "ID": "E5B5D8FC-FBBA-4F88-83CF-749E4DD7B7C7"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.782Z",
-                  "checksum": "e76a122f17b1a2f4622ccf568754ba01ffc04c60e24eda3ac8d8b61d3eb77833"
+                  "lastModified": "2026-11-17T13:48:24.688Z",
+                  "checksum": "6af40b072f20e161014e3bb529abdb87bb24d99babdd474bfb38bc715463885f"
                 }
               },
               {
@@ -35267,8 +35529,8 @@
                   "ID": "1568BEEB-1269-4339-8D95-1DE286DB92A2"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.803Z",
-                  "checksum": "5e1d75ab453c7ce3cfca1ea71ae2a69303860511b363b77134fcf1280dfcc060"
+                  "lastModified": "2026-11-17T13:48:24.689Z",
+                  "checksum": "88547719fb064d86885fe386578c362dd315424b1241aac14bb6e9d03168bc52"
                 }
               }
             ]
@@ -35437,8 +35699,8 @@
                   "ID": "0E2A1278-EB76-4FBD-9C8A-EA96BEAFE1CA"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.811Z",
-                  "checksum": "7a641d93f12bdfa2618c7a2d77fb0fa7e2da9525a93b4fb68cd8337b7f06cb7b"
+                  "lastModified": "2026-11-17T13:48:24.689Z",
+                  "checksum": "e0b6e70c31f29e299fb5adf2a02d592df89010700c121f01d4f869a568279f3f"
                 }
               },
               {
@@ -35549,8 +35811,8 @@
                   "ID": "E744B5BF-0613-41F3-BC68-2129EC645949"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.852Z",
-                  "checksum": "ec0a8b0f7cc43cb51045ac97230210fb64d3db709bf5c50def6f7d74b825e4a7"
+                  "lastModified": "2026-11-17T13:48:24.693Z",
+                  "checksum": "740e4a350dfb7b0c55cd3f324fd2fa9f58b18fe539e9bd07fd7de5b695878fd9"
                 }
               },
               {
@@ -35621,8 +35883,8 @@
                   "ID": "9913883B-3D36-479B-B14C-06A218433641"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:38.872Z",
-                  "checksum": "55090a33d591f8087a7aef6e67a943ef3092e8af44480c69fe3245573e6ce913"
+                  "lastModified": "2026-11-17T13:48:24.693Z",
+                  "checksum": "541c37fc654d8509f7caf03576d0e0b739a4b103a393bc3d9720bccdf2ec89ba"
                 }
               },
               {
@@ -35705,398 +35967,6 @@
           "sync": {
             "lastModified": "2026-10-23T18:14:29.883Z",
             "checksum": "cbe8e01fb5b680668f8bafb223479871e02aca09e1c39780f8da73bc183737ce"
-          }
-        },
-        {
-          "fields": {
-            "Name": "MailingActivitySendAFriend",
-            "DisplayName": "Mailing Activity Send A Friend",
-            "Description": "Rows of AAPI grid \"mailing_activity_send_a_friend\" (Mailing Activity Send a Friend; help-center article \"GridRequests - Mailing Activity Bounces\"). Pull-only GridRequest read, offset-paged (StartRow/NumberOfRows, 1,000 rows per request).",
-            "Category": "Mailing Activity Bounces",
-            "APIPath": "/grids/mailing_activity_send_a_friend",
-            "ResponseDataKey": null,
-            "DefaultPageSize": 1000,
-            "SupportsPagination": true,
-            "PaginationType": "Offset",
-            "SupportsIncrementalSync": false,
-            "SupportsWrite": false,
-            "DefaultQueryParams": null,
-            "Configuration": {
-              "gridType": "mailing_activity_send_a_friend",
-              "gridTypeAliases": [],
-              "family": "Mailing Activity Bounces",
-              "article": {
-                "id": 360032692292,
-                "title": "GridRequests - Mailing Activity Bounces",
-                "heading": "Mailing Activity Send a Friend",
-                "url": "https://support.higherlogic.com/hc/en-us/articles/360032692292-GridRequests-Mailing-Activity-Bounces"
-              },
-              "wire": {
-                "operation": "PostInformzMessage",
-                "method": "POST",
-                "requestDocument": "GridRequest",
-                "selector": "Grid type"
-              },
-              "accessPath": {
-                "door": "/grids/mailing_activity_send_a_friend",
-                "depth": 0,
-                "nestingSegments": [],
-                "requiredConditions": []
-              },
-              "paging": {
-                "kind": "offset",
-                "sortFieldElement": "SortField",
-                "startRowElement": "StartRow",
-                "numberOfRowsElement": "NumberOfRows",
-                "maxRowsPerRequest": 1000,
-                "startRowBase": null,
-                "maxRowsArticleId": 360033049251,
-                "gridMaxRowsPerRequest": null,
-                "pageSizeBasis": "global-cap"
-              },
-              "sortField": "mailing_id",
-              "sortFieldBasis": "first-documented-stable-id (table; documented unique, not this record's own id)",
-              "primaryKey": {
-                "deferred": true,
-                "reason": "no element documented as this record's unique id",
-                "candidates": [
-                  "mailing_id"
-                ],
-                "rejected": [
-                  {
-                    "element": "mailing_id",
-                    "reason": "id of entity owned by grid Mailing"
-                  }
-                ],
-                "motifsChecked": [
-                  "explicit \"primary key\" description",
-                  "documented unique id whose stem is the grid record noun",
-                  "row-grain sentence + <noun>_id",
-                  "section-intro subject + <noun>_id (round 1)",
-                  "required-scope row grain composite (round 1)"
-                ]
-              },
-              "watermark": null,
-              "watermarkBasis": "no Conditional=True date-time element",
-              "mutability": "mutable-or-unknown",
-              "deferredForeignKeys": [],
-              "excludedElements": {
-                "aggregate": [
-                  "Count"
-                ],
-                "integrationSpecific": [],
-                "sampleRequestOnly": [],
-                "views": []
-              },
-              "fieldSources": {
-                "table": 7
-              },
-              "identity": {
-                "mode": "content-hash",
-                "reason": "Higher Logic documents no row identifier for this grid (event/activity/report rows); identity is the row content hash",
-                "evidence": [
-                  "https://support.higherlogic.com/hc/en-us/articles/360032692292-GridRequests-Mailing-Activity-Bounces — 'Mailing Activity Send a Friend' data-element table: 7 elements, none documented as the record's unique id"
-                ]
-              }
-            },
-            "Sequence": 64,
-            "Status": "Active",
-            "IsCustom": false,
-            "IncrementalWatermarkField": null,
-            "MetadataSource": "Declared",
-            "SupportsCreate": false,
-            "SupportsUpdate": false,
-            "SupportsDelete": false,
-            "SyncStrategy": "FullPullHashDiff",
-            "ContentHashApplicable": true,
-            "StableOrderingKey": null,
-            "WriteAPIPath": null,
-            "WriteMethod": null,
-            "DeleteMethod": null,
-            "CreateAPIPath": null,
-            "CreateMethod": null,
-            "CreateBodyShape": null,
-            "CreateBodyKey": null,
-            "CreateIDLocation": null,
-            "UpdateAPIPath": null,
-            "UpdateMethod": null,
-            "UpdateBodyShape": null,
-            "UpdateBodyKey": null,
-            "UpdateIDLocation": null,
-            "DeleteAPIPath": null,
-            "DeleteIDLocation": null,
-            "IntegrationID": "@parent:ID"
-          },
-          "relatedEntities": {
-            "MJ: Integration Object Fields": [
-              {
-                "fields": {
-                  "Name": "from_email",
-                  "DisplayName": "From Email",
-                  "Description": "Forwarding email (100-character max.)",
-                  "Category": null,
-                  "Type": "string",
-                  "Length": 100,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": true,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "Sequence": 1,
-                  "Configuration": {
-                    "conditional": true,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "String",
-                    "lengthSource": "documented character maximum in the element description"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "3B010729-770C-4291-9A26-84C847857C38"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:38.904Z",
-                  "checksum": "8e2082d5ac13ce54bb2dc4c9093e1a409b305d3dfe57916f4e4b302ce24d562a"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "mailing_id",
-                  "DisplayName": "Mailing ID",
-                  "Description": "Unique mailing ID",
-                  "Category": null,
-                  "Type": "integer",
-                  "Length": null,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Mailing&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "mailing_id",
-                  "Sequence": 2,
-                  "Configuration": {
-                    "conditional": true,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "Int",
-                    "ReferencedType": "Mailing"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "1042C494-3F66-408B-805D-A30D7B89B24A"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:38.915Z",
-                  "checksum": "f27b0dfc8baa67a1a6cea624fabdf4773d7fc8e8c0228ca15a1e201699119006"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "mailing_instance_id",
-                  "DisplayName": "Mailing Instance ID",
-                  "Description": "Unique mailing instance ID",
-                  "Category": null,
-                  "Type": "integer",
-                  "Length": null,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": true,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=MailingInstance&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "mailing_instance_id",
-                  "Sequence": 3,
-                  "Configuration": {
-                    "conditional": true,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "Int",
-                    "ReferencedType": "MailingInstance"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "A6BEF094-A62B-49C8-83CA-7C96707CF299"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:38.923Z",
-                  "checksum": "8003ebad10342feed9fddc4458a96fc3635b83ae114cb11db1f7f4395c0c7492"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "friend_email",
-                  "DisplayName": "Friend Email",
-                  "Description": "Friend email (100-character max.)",
-                  "Category": null,
-                  "Type": "string",
-                  "Length": 100,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": true,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "Sequence": 4,
-                  "Configuration": {
-                    "conditional": true,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "String",
-                    "lengthSource": "documented character maximum in the element description"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "E20D9C6C-0959-4BBD-AE0A-95D4AAE8C2DC"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:38.942Z",
-                  "checksum": "9eea2608375ec74d836a74454b582fd7cef03e93d6652d492121c47a80f2da78"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "from_user_id",
-                  "DisplayName": "From User ID",
-                  "Description": "Remote Application User ID",
-                  "Category": null,
-                  "Type": "integer",
-                  "Length": null,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "Sequence": 5,
-                  "Configuration": {
-                    "conditional": true,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "Int"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "8B5C9015-7E82-4D06-8DA2-2900C5185995"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:38.952Z",
-                  "checksum": "0d16105d2ee36ef7f6af2d957116da13a57d01fdfa11f3f95cda8a50d3fd6b94"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "friend_message",
-                  "DisplayName": "Friend Message",
-                  "Description": "Message sent to friend",
-                  "Category": null,
-                  "Type": "string",
-                  "Length": null,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "Sequence": 6,
-                  "Configuration": {
-                    "conditional": true,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "String"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "75DFD6F0-9D31-404F-8A11-2DBF83C847DB"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:38.962Z",
-                  "checksum": "877d47b000a4ab54e729d7f82115569cfe064ec9bfd7bda63dacf117a20446e6"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "friend_subscriber_id",
-                  "DisplayName": "Friend Subscriber ID",
-                  "Description": "ID",
-                  "Category": null,
-                  "Type": "integer",
-                  "Length": null,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "Sequence": 7,
-                  "Configuration": {
-                    "conditional": true,
-                    "wireAliases": [],
-                    "source": "table",
-                    "tableType": "Int"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "2A796468-AC69-4077-962C-C328A6166673"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:38.973Z",
-                  "checksum": "5a39676d234345e9fe0094a4f44ef1576ed51f3e436a8f54122b088dbdbe0a9a"
-                }
-              }
-            ]
-          },
-          "primaryKey": {
-            "ID": "31126EB6-27DC-483E-826D-0BDEE29DEEE5"
-          },
-          "sync": {
-            "lastModified": "2026-10-23T18:14:29.896Z",
-            "checksum": "10c56df55b685cba58a538b99126fcf6d4de2ca1082bea537ad2083dbd4abace"
           }
         },
         {
@@ -36321,8 +36191,8 @@
                   "ID": "65A55C2B-B75F-4C13-8CB5-633890221278"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.004Z",
-                  "checksum": "ae4afb96b5648aa059d4976e781a17032f99232ec3a3d393c8959364e2e04972"
+                  "lastModified": "2026-11-17T13:48:24.693Z",
+                  "checksum": "6ac5c6babe81465f80bfecd1efdc731bf67371897c456c08f03a2455266ce819"
                 }
               },
               {
@@ -36360,8 +36230,8 @@
                   "ID": "B6DD1BE5-A696-49F9-8CA2-7DDBB4BB085E"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.015Z",
-                  "checksum": "ec0a8b0f7cc43cb51045ac97230210fb64d3db709bf5c50def6f7d74b825e4a7"
+                  "lastModified": "2026-11-17T13:48:24.693Z",
+                  "checksum": "740e4a350dfb7b0c55cd3f324fd2fa9f58b18fe539e9bd07fd7de5b695878fd9"
                 }
               },
               {
@@ -36674,8 +36544,8 @@
                   "ID": "B8AB5773-F02A-4B66-9D74-3D1736DEA81C"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.076Z",
-                  "checksum": "ae4afb96b5648aa059d4976e781a17032f99232ec3a3d393c8959364e2e04972"
+                  "lastModified": "2026-11-17T13:48:24.697Z",
+                  "checksum": "6ac5c6babe81465f80bfecd1efdc731bf67371897c456c08f03a2455266ce819"
                 }
               },
               {
@@ -36786,8 +36656,8 @@
                   "ID": "7448DE65-AB4C-4273-A638-FDF6AAA3FFDA"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.107Z",
-                  "checksum": "5c86f94669ac3bffa4b0e9ba8c1d4235a356c20c97d68be32168e9883ff903dd"
+                  "lastModified": "2026-11-17T13:48:24.698Z",
+                  "checksum": "bde37863b21d4dccf3f03c07bb3a615308408887657bb680e4633f10cee8c0c3"
                 }
               },
               {
@@ -37299,8 +37169,8 @@
                   "ID": "232822BA-6C32-4F65-A6A9-F9721B950E2E"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.227Z",
-                  "checksum": "9751d6791766003e8af4df076e45d62388fb7c461006dc0b96db9486bb70fef0"
+                  "lastModified": "2026-11-17T13:48:24.702Z",
+                  "checksum": "5db895602792ce54e703dabec296966c614330cc29d00ff59c74aea9f367fb51"
                 }
               },
               {
@@ -37516,8 +37386,8 @@
                   "ID": "91329516-86E0-4F4D-8267-9D9D31404C60"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.287Z",
-                  "checksum": "ba54b3a60512b1f5b5e40bc6c648ce4aed06fdc1d1ed84cbc7a1f2d8b3a551cd"
+                  "lastModified": "2026-11-17T13:48:24.707Z",
+                  "checksum": "f71a4453d18ea3fc52be747f23e6dcea5e8e0bdcee672cbd415f884f0ca874da"
                 }
               },
               {
@@ -37959,8 +37829,8 @@
                   "ID": "EE45653D-C13A-442C-A9B7-1FAAF480266E"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.370Z",
-                  "checksum": "5314e8fd6c3f68ca5ba06d643de6727ef355047a021d4384ac666ed5ddf88d48"
+                  "lastModified": "2026-11-17T13:48:24.712Z",
+                  "checksum": "6ac2d25d4bb724ff0daa44e1b9823348a8742298f534bdf99645a25d6daec3fd"
                 }
               },
               {
@@ -38100,8 +37970,8 @@
                   "ID": "C341C60E-1671-422C-917D-43C7E5E25D0F"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.410Z",
-                  "checksum": "309227a725b7d7c5f6b2b123acb0f5743d5b6121c065e69c7bd9ea079d295752"
+                  "lastModified": "2026-11-17T13:48:24.712Z",
+                  "checksum": "8a4393a87d372deb87efaec4b243e41aa8cb452a31eba3be85a6fa320622952a"
                 }
               },
               {
@@ -38834,8 +38704,8 @@
                   "ID": "91B0A8F5-C347-4567-9AFC-C223F03EC3D4"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.556Z",
-                  "checksum": "30132931ad058d94d06c1ba76840198f670d4fdeb5a13d0a9e397b64636b3077"
+                  "lastModified": "2026-11-17T13:48:24.717Z",
+                  "checksum": "da9b7655d1596051ea655599ec7943cd00e15f8f3887a263e45cf2b2939ba508"
                 }
               },
               {
@@ -38985,8 +38855,8 @@
                   "ID": "E23162BD-D94B-4DA8-9877-D68D7E526FA5"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.609Z",
-                  "checksum": "eaac083052f72fab0a18e5f54b1845a68c08125a65d6e2db18c4f8a2963764dc"
+                  "lastModified": "2026-11-17T13:48:24.723Z",
+                  "checksum": "80361e5e61da3d5bbecb1e0db794ee441faf17e1bf80b34ca2868ab96ed2fd1f"
                 }
               },
               {
@@ -39447,8 +39317,8 @@
                   "ID": "41BFD4AB-157F-4577-88DA-636C0E7738F1"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.712Z",
-                  "checksum": "30132931ad058d94d06c1ba76840198f670d4fdeb5a13d0a9e397b64636b3077"
+                  "lastModified": "2026-11-17T13:48:24.723Z",
+                  "checksum": "da9b7655d1596051ea655599ec7943cd00e15f8f3887a263e45cf2b2939ba508"
                 }
               },
               {
@@ -39523,8 +39393,8 @@
                   "ID": "2B22E60E-603F-4F66-AC4F-63DD151B2598"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.732Z",
-                  "checksum": "ca96ab25ee83d06903279f720e5c158a9657b6fdc7352ab5ae1581d3a53bed22"
+                  "lastModified": "2026-11-17T13:48:24.727Z",
+                  "checksum": "4260a7793957093f2cfde82539ded17664f207313f98663d3025228e85c32618"
                 }
               },
               {
@@ -39598,8 +39468,8 @@
                   "ID": "79597D6C-9EE2-49CF-8CD5-2660DA593578"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.761Z",
-                  "checksum": "eaac083052f72fab0a18e5f54b1845a68c08125a65d6e2db18c4f8a2963764dc"
+                  "lastModified": "2026-11-17T13:48:24.728Z",
+                  "checksum": "80361e5e61da3d5bbecb1e0db794ee441faf17e1bf80b34ca2868ab96ed2fd1f"
                 }
               },
               {
@@ -39778,8 +39648,8 @@
                   "ID": "6DF97775-0BEE-4FBC-B214-51662F57050B"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.815Z",
-                  "checksum": "d076534e38b004b8976276036deebfa47c867284b5bfd8b31194f6a32e098673"
+                  "lastModified": "2026-11-17T13:48:24.728Z",
+                  "checksum": "095368e650eac527e56fe554a4b24d8f869fa95eb77ef08a1ae1a0d539d60a51"
                 }
               },
               {
@@ -40188,8 +40058,8 @@
                   "ID": "6D92A042-C7D1-4ED2-85AD-642A775DB442"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:39.906Z",
-                  "checksum": "b5e907ed7b80eafebdf2631c349bc3eaa847a5cf278feedee4044f10722ee75f"
+                  "lastModified": "2026-11-17T13:48:24.733Z",
+                  "checksum": "9504e30c78959e1c0c8b2be18ce32bf388c867bcbee25140752167297e9c923e"
                 }
               },
               {
@@ -41276,8 +41146,8 @@
                   "ID": "7F3F9734-5AE4-4039-88EB-3E2689B69A08"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:40.231Z",
-                  "checksum": "5d1808b38480794c2af9633336d2086a5531d962f5f165f463540ffe6925360f"
+                  "lastModified": "2026-11-17T13:48:24.746Z",
+                  "checksum": "9280df02db54c612b2223d75f862f8ed4b7c4a6c58c3220e31b2bbecf6b57229"
                 }
               },
               {
@@ -42271,8 +42141,8 @@
                   "ID": "F48F0D2D-11A6-4864-BC17-4C470A101A74"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:40.501Z",
-                  "checksum": "bb17a9d6f37be9c3b6f6b126ee02f7cb013a6b7902cf58dd0d27c13087c1ea2d"
+                  "lastModified": "2026-11-17T13:48:24.755Z",
+                  "checksum": "2b92444eb3a3de22b8ef3e266415edc5554db42a469a9dd19d5da9e40ea2cde0"
                 }
               },
               {
@@ -42373,8 +42243,8 @@
                   "ID": "03D0239D-5538-4749-B44A-88DBA13DE1E2"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:40.540Z",
-                  "checksum": "901b4fec22b3f6a13ec9256b9e866bbe7a645c43892eb49e9d4210ccf239a012"
+                  "lastModified": "2026-11-17T13:48:24.759Z",
+                  "checksum": "ff61332be3300e076a387e1031a39277135bb594988cd6fc63c1e8902deede16"
                 }
               },
               {
@@ -42441,8 +42311,8 @@
                   "ID": "1A6D272D-B704-4F7D-9A7F-F4D80AEB99DA"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:40.560Z",
-                  "checksum": "297001566ebb778fe1fb1f55ce94351869d8a33420c440239cd019a85731a5b3"
+                  "lastModified": "2026-11-17T13:48:24.759Z",
+                  "checksum": "cd83b6e04e1269f61ac68f66be8489f9071a5db6df901edd7d0853d20dd442ac"
                 }
               },
               {
@@ -42475,8 +42345,8 @@
                   "ID": "55EF3AA8-03C3-4B73-AA56-74BD9C0AF4CA"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:40.570Z",
-                  "checksum": "44623132579b299a307176c0c01ab4fbe054c21aeaf332f64c94e6d612c6fdd2"
+                  "lastModified": "2026-11-17T13:48:24.759Z",
+                  "checksum": "dc874ba800efbdee739db79f6d1829d10cef97193cac826aee014dd51166907c"
                 }
               },
               {
@@ -43628,8 +43498,8 @@
                   "ID": "AAF65A0A-C8FE-4B89-9C01-89E7748AEB61"
                 },
                 "sync": {
-                  "lastModified": "2026-10-23T18:14:40.833Z",
-                  "checksum": "24720bdcb3e37dbaa1a3b2a698aa90e473b2798ea05423d05462efe929729e11"
+                  "lastModified": "2026-11-17T13:48:24.770Z",
+                  "checksum": "15cce602e3b5177324e8abfe9aacb02bafd76b748f5c632600e387698ebdd3a5"
                 }
               },
               {
@@ -43702,42 +43572,6 @@
                 "sync": {
                   "lastModified": "2026-10-23T18:14:40.852Z",
                   "checksum": "e2b1bfc72d49e26f03eea69a8b46074a5c67a088e851a10b4957de7389afee83"
-                }
-              },
-              {
-                "fields": {
-                  "Name": "send_a_friend_count",
-                  "DisplayName": "Send A Friend Count",
-                  "Description": "Number of \"Send a Friend\" (forwards) that occurred",
-                  "Category": null,
-                  "Type": "integer",
-                  "Length": null,
-                  "Precision": null,
-                  "Scale": null,
-                  "AllowsNull": true,
-                  "DefaultValue": null,
-                  "IsPrimaryKey": false,
-                  "IsUniqueKey": false,
-                  "IsReadOnly": true,
-                  "IsRequired": false,
-                  "Sequence": 15,
-                  "Configuration": {
-                    "conditional": false,
-                    "wireAliases": [],
-                    "source": "demo-inherited",
-                    "tableType": "Int"
-                  },
-                  "Status": "Active",
-                  "IsCustom": false,
-                  "MetadataSource": "Declared",
-                  "IntegrationObjectID": "@parent:ID"
-                },
-                "primaryKey": {
-                  "ID": "20FF6A6A-19CE-4482-A39E-49741AD89B65"
-                },
-                "sync": {
-                  "lastModified": "2026-10-23T18:14:40.872Z",
-                  "checksum": "8d3959769a7cd20680eeaee69fa4a9066a6f97ab489085b240db76c53ce58424"
                 }
               },
               {
@@ -44943,8 +44777,8 @@
       "ID": "3ADC5201-E832-41B8-952C-27AC9DFC6A84"
     },
     "sync": {
-      "lastModified": "2026-10-23T18:14:28.993Z",
-      "checksum": "9f8c60b1954f0f1448fb8412cab442d43877c96ea9806814ed2e96d56dd532fd"
+      "lastModified": "2026-11-17T13:48:24.109Z",
+      "checksum": "39cdee6f20d0393d7ab8a90c795fb5e123b523af625a2d64c03ec8179b62aeb3"
     }
   }
 ]
