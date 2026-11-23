@@ -126,15 +126,42 @@ describe('nested collections carry their parent key', () => {
 
     it('stamps the parent id with the configuration each nested object ships with', () => {
         const nested = shippedObjects().filter(o => JSON.parse(o.Configuration).parentKeyInjectionRequired);
-        expect(nested).toHaveLength(8);
+        expect(nested).toHaveLength(10);
         for (const obj of nested) {
-            const { nesting, childKeyField } = JSON.parse(obj.Configuration).parentKeyInjectionRequired as {
+            const { nesting, parentKeyField, childKeyField, carryFields = [] } = JSON.parse(obj.Configuration).parentKeyInjectionRequired as {
                 nesting: string[];
+                parentKeyField: string;
                 childKeyField: string;
+                carryFields?: string[];
             };
-            const body = { metadata: { next_link: '' }, results: [{ id: 'p1', [nesting[0]]: [{ name: 'child' }] }] };
-            expect(publishedFor(obj).NormalizeResponse(body, null), obj.Name).toEqual([{ name: 'child', [childKeyField]: 'p1' }]);
+            const carried = Object.fromEntries(carryFields.map(f => [f, `${f}-value`]));
+            const body = { metadata: { next_link: '' }, results: [{ [parentKeyField]: 'p1', ...carried, [nesting[0]]: [{ name: 'child' }] }] };
+            expect(publishedFor(obj).NormalizeResponse(body, null), obj.Name).toEqual([{ name: 'child', ...carried, [childKeyField]: 'p1' }]);
         }
+    });
+
+    it("flattens a newsletter's topic clouds into one row per contact and topic, keyed to the newsletter", () => {
+        const topics = shippedObjects().find(o => o.Name === 'Newsletter Contact Topic')!;
+        const c = publishedFor(topics) as Internals & { unscopedState: { ParentKey: { Field: string; Value: string } | null } };
+        c.unscopedState.ParentKey = { Field: 'newsletter_id', Value: 'n1' };
+        const body = {
+            metadata: { next_link: '' },
+            results: [
+                {
+                    person_id: 'c1',
+                    effective_date: '2026-11-16',
+                    topics: [{ topic: 'Advocacy', num_clicks: 3, weight: 0.75 }, { topic: 'Events', num_clicks: 1, weight: 0.25 }],
+                    categories: [{ topic: 'Policy', num_clicks: 3, weight: 1 }],
+                },
+                { person_id: 'c2', effective_date: '2026-11-16', topics: [], categories: [] },
+            ],
+        };
+        expect(c.NormalizeResponse(body, null)).toEqual([
+            { topic: 'Advocacy', num_clicks: 3, weight: 0.75, effective_date: '2026-11-16', contact_id: 'c1', newsletter_id: 'n1' },
+            { topic: 'Events', num_clicks: 1, weight: 0.25, effective_date: '2026-11-16', contact_id: 'c1', newsletter_id: 'n1' },
+        ]);
+        // A page of 2 clouds is counted by the clouds, not by the 2 topic rows they held.
+        expect(c.ExtractPaginationInfo({ ...body, metadata: { next_link: '/x?skip=2&limit=2' } }, 'Offset', 1, 0, 2).HasMore).toBe(true);
     });
 
     it('pages by the parents, not the children', () => {

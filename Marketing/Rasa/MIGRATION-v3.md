@@ -188,6 +188,29 @@ was set on 54,287. `/v2/contacts` still sends `identifiers`, so Contact is uncha
 the two columns where discovery hadn't already, and changes no keys, so no table is emptied. The contact feeds
 are full pulls, so the next sync fills every row.
 
+## 4e. Per-person topics and sample queries
+
+rasa.io builds a topic cloud for each subscriber of a newsletter from the articles they clicked
+(`/v2/insights/newsletter/{id}/topics`). Two new objects read it, one row per newsletter, contact and topic
+(or category):
+
+- **Newsletter Contact Topic** and **Newsletter Contact Category**: `newsletter_id`, `contact_id`, `topic`,
+  `num_clicks`, `weight` (the topic's share of the contact's clicks), `first_click`, `last_click` and
+  `effective_date` (the week the cloud was built). Only contacts who have clicked have rows.
+- `contact_id` is the cloud's `person_id`. It is the contact's one rasa.io id, the same value as `Contact.id`
+  and `Newsletter Contact.id` (on one production install all 28,000 Newsletter Contact ids were Contact ids),
+  so a topic row joins to Contact for the email.
+- rasa.io rebuilds the clouds weekly and serves only the latest build. These objects are full pulls; filter
+  on the newest `effective_date` if older rows linger.
+
+The connector also ships five approved queries in a `rasa.io` query category, each returning the contact's
+email: topics per newsletter, topics and categories rolled up across newsletters, opens and clicks per
+contact and newsletter, and contacts' IDs in other systems. They read the tables from the `rasa` schema; pass
+`IntegrationSchema` to read another.
+
+**Upgrading an existing install:** apply the migration, then refresh the connection's tables and select the
+two new objects. Nothing existing changes. The queries are usable once the tables exist.
+
 ## 5. Actions: 12 disabled, 6 added
 
 The 12 Actions on `Person`, `Post`, `Insight Action` and `Insight Topic` are set to `Status = 'Disabled'` by the

@@ -1,0 +1,17 @@
+[
+  {
+    "fields": {
+      "Name": "rasa.io",
+      "ParentID": null,
+      "Description": "Sample queries for the rasa.io connector's tables: newsletter engagement and topic interests per contact, with the contact's email for matching to other systems.",
+      "UserID": "@lookup:MJ: Users.Name=System"
+    },
+    "primaryKey": {
+      "ID": "0FDEC5C4-B6B9-47CC-A8D5-F316DF611C4D"
+    },
+    "sync": {
+      "lastModified": "2026-11-23T17:14:51.031Z",
+      "checksum": "fbda64b630e6bcb8fc05cab8ff5b457cd2f6fb7ba2da9ae3bb6c6855d2fed7d3"
+    }
+  }
+]
