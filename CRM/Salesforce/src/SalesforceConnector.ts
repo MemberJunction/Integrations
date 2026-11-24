@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { RegisterClass } from '@memberjunction/global';
+import { NormalizeUUID, RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type {
     MJCompanyIntegrationEntity,
@@ -199,6 +199,14 @@ const SYSTEM_READ_ONLY_FIELDS = new Set([
     'SystemModstamp', 'IsDeleted', 'LastActivityDate', 'LastViewedDate',
     'LastReferencedDate', 'MasterRecordId',
 ]);
+
+/**
+ * SF system audit lookup fields excluded from FK/relationship emission during discovery.
+ * Every SObject carries these pointing to `User`, which collapses IntegrationEngine's
+ * topological layering when `User` is synced alongside objects `User` references.
+ * Matches the seeded catalog and CI lint gate (`scripts/lint-declared-foreign-keys.mjs`).
+ */
+const SYSTEM_AUDIT_FK_FIELDS = new Set(['createdbyid', 'lastmodifiedbyid']);
 
 /** Fields always included in SOQL SELECT */
 const REQUIRED_SOQL_FIELDS = ['Id', 'SystemModstamp', 'IsDeleted', 'LastModifiedById'];
@@ -616,6 +624,11 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
                 // Keep this object's describe fields — sampling is best-effort and never breaks introspection.
             }
         });
+
+        // Keep live-discovered Salesforce FK edges acyclic (matching the seeded catalog and CI lint gate)
+        // so IntegrationSchemaSync does not re-introduce multi-object cycles that degrade
+        // IntegrationEngine topological layering.
+        this.pruneCyclicRelationships(result.Objects, companyIntegration.IntegrationID);
 
         return result;
     }
@@ -2129,6 +2142,7 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         // this, UpsertField's new-field path would persist `Id` with no PK flag
         // and the downstream SoftPKClassifier becomes the only safety net.
         const isPK = f.name === 'Id' || f.type === 'id';
+        const isFK = this.isEligibleForeignKey(f);
         return {
             Name: f.name,
             Label: f.label,
@@ -2138,9 +2152,23 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             IsPrimaryKey: isPK,
             IsUniqueKey: isPK || f.externalId,
             IsReadOnly: f.calculated || !f.updateable || SYSTEM_READ_ONLY_FIELDS.has(f.name),
-            IsForeignKey: f.type === 'reference' && f.referenceTo.length > 0,
-            ForeignKeyTarget: f.referenceTo.length > 0 ? f.referenceTo[0] : null,
+            IsForeignKey: isFK,
+            ForeignKeyTarget: isFK ? f.referenceTo[0] : null,
         };
+    }
+
+    /**
+     * Returns true when a Salesforce `reference` field should be emitted as a DAG-safe FK.
+     * Requires a single-target lookup (`referenceTo.length === 1`, matching the seeded catalog and
+     * excluding polymorphic fields such as `Case.OwnerId -> [Group, User]`, `Task.WhoId`, and
+     * `Task.WhatId`) and excludes system audit lookups (`CreatedById`/`LastModifiedById`).
+     * Self-references (e.g. `Account.ParentId -> Account`) are preserved — `IntegrationEngine`
+     * ignores `target === src` when layering, so they never introduce sync-DAG cycles.
+     */
+    private isEligibleForeignKey(f: SFieldDescribe): boolean {
+        if (f.type !== 'reference' || f.referenceTo.length !== 1) return false;
+        if (SYSTEM_AUDIT_FK_FIELDS.has(f.name.toLowerCase())) return false;
+        return true;
     }
 
     /**
@@ -2343,23 +2371,26 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         const body = response.Body as { fields?: SFieldDescribe[]; label?: string };
         const sfFields = (body.fields ?? []).filter(f => !COMPOUND_FIELD_TYPES.has(f.type));
 
-        const fields: SourceFieldInfo[] = sfFields.map(f => ({
-            Name: f.name,
-            Label: f.label,
-            Description: f.inlineHelpText ?? undefined,
-            SourceType: this.MapSalesforceType(f.type),
-            IsRequired: !f.nillable && !f.defaultedOnCreate,
-            MaxLength: f.length > 0 ? f.length : null,
-            Precision: f.precision > 0 ? f.precision : null,
-            Scale: f.scale > 0 ? f.scale : null,
-            DefaultValue: f.defaultValue != null ? String(f.defaultValue) : null,
-            IsPrimaryKey: f.name === 'Id',
-            IsForeignKey: f.type === 'reference' && f.referenceTo.length > 0,
-            ForeignKeyTarget: f.referenceTo.length > 0 ? f.referenceTo[0] : null,
-        }));
+        const fields: SourceFieldInfo[] = sfFields.map(f => {
+            const isFK = this.isEligibleForeignKey(f);
+            return {
+                Name: f.name,
+                Label: f.label,
+                Description: f.inlineHelpText ?? undefined,
+                SourceType: this.MapSalesforceType(f.type),
+                IsRequired: !f.nillable && !f.defaultedOnCreate,
+                MaxLength: f.length > 0 ? f.length : null,
+                Precision: f.precision > 0 ? f.precision : null,
+                Scale: f.scale > 0 ? f.scale : null,
+                DefaultValue: f.defaultValue != null ? String(f.defaultValue) : null,
+                IsPrimaryKey: f.name === 'Id',
+                IsForeignKey: isFK,
+                ForeignKeyTarget: isFK ? f.referenceTo[0] : null,
+            };
+        });
 
         const relationships: SourceRelationshipInfo[] = sfFields
-            .filter(f => f.type === 'reference' && f.referenceTo.length > 0)
+            .filter(f => this.isEligibleForeignKey(f))
             .map(f => ({
                 FieldName: f.name,
                 TargetObject: f.referenceTo[0],
@@ -2374,6 +2405,203 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             PrimaryKeyFields: ['Id'],
             Relationships: relationships,
         };
+    }
+
+    /**
+     * Loads existing active FK edges (`srcObject -> targetObject`) from `IntegrationEngineBase`
+     * so a scoped `IntrospectSchema` call never emits an edge that creates a cycle against
+     * already-wired catalog relationships.
+     *
+     * Prefers `GetRelatedIntegrationObjectIDs` (added in MJ's per-connection catalog work,
+     * which reads the scope's narrow edge set without requiring warmed field rows under
+     * `WithCatalogScope`) and falls back to `GetIntegrationObjectFields` on older hosts.
+     */
+    private loadExistingCatalogEdges(integrationID: string | null | undefined): Array<{ src: string; target: string }> {
+        if (!integrationID) return [];
+        try {
+            const engine = IntegrationEngineBase.Instance;
+            const objects = engine.GetActiveIntegrationObjects(integrationID);
+            if (!objects || objects.length === 0) return [];
+
+            const nameById = new Map<string, string>();
+            for (const obj of objects) {
+                nameById.set(NormalizeUUID(obj.ID), obj.Name.toLowerCase());
+            }
+
+            const edgeEngine: IntegrationEngineBase & {
+                GetRelatedIntegrationObjectIDs?: (objectID: string) => string[];
+            } = engine;
+            const useEdgeSet = typeof edgeEngine.GetRelatedIntegrationObjectIDs === 'function';
+            const seen = new Set<string>();
+            const edges: Array<{ src: string; target: string }> = [];
+
+            for (const obj of objects) {
+                const src = obj.Name.toLowerCase();
+                const relatedIDs = useEdgeSet
+                    ? edgeEngine.GetRelatedIntegrationObjectIDs!(obj.ID)
+                    : this.readRelatedObjectIDsFromFields(engine, obj.ID);
+
+                for (const relatedID of relatedIDs) {
+                    const target = nameById.get(NormalizeUUID(relatedID));
+                    if (!target || target === src) continue;
+                    const key = `${src}->${target}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        edges.push({ src, target });
+                    }
+                }
+            }
+            return edges;
+        } catch {
+            // Engine cache unavailable (e.g. unit context) — prune solely over this batch.
+            return [];
+        }
+    }
+
+    private readRelatedObjectIDsFromFields(engine: IntegrationEngineBase, objectID: string): string[] {
+        const ids: string[] = [];
+        for (const field of engine.GetIntegrationObjectFields(objectID)) {
+            if (String(field.Status ?? '').toLowerCase() === 'disabled') continue;
+            if (field.RelatedIntegrationObjectID) ids.push(field.RelatedIntegrationObjectID);
+        }
+        return ids;
+    }
+
+    /**
+     * Deterministically removes multi-object cycle-forming back-edges across an introspected
+     * schema (mutating both `Relationships` and the corresponding `Fields` flags) so
+     * IntegrationSchemaSync preserves an acyclic sync DAG.
+     *
+     * Pre-seeds the DAG acyclically from existing catalog edges (so scoped refreshes honor
+     * already-wired FKs without flipping directions, while pre-existing dirty cycles cannot
+     * strip valid high-in-degree parent edges). Remaining candidate edges are ranked by
+     * target in-degree descending (core parents such as `User`, `Account`, `Contact` win
+     * over sparse back-pointers), tie-broken deterministically by name.
+     */
+    private pruneCyclicRelationships(objects: SourceObjectInfo[], integrationID?: string | null): void {
+        const existingEdges = this.loadExistingCatalogEdges(integrationID);
+        const known = new Set(objects.map(o => o.ExternalName.toLowerCase()));
+        for (const edge of existingEdges) {
+            known.add(edge.src);
+            known.add(edge.target);
+        }
+
+        const candidates: Array<{ obj: SourceObjectInfo; src: string; target: string; fieldName: string }> = [];
+        for (const obj of objects) {
+            const src = obj.ExternalName.toLowerCase();
+            for (const rel of obj.Relationships) {
+                const target = rel.TargetObject.toLowerCase();
+                if (target === src || !known.has(target)) continue;
+                candidates.push({ obj, src, target, fieldName: rel.FieldName });
+            }
+        }
+
+        const inDegree = this.computeDistinctTargetInDegree(existingEdges, candidates);
+        const adj = this.seedAcyclicGraph(existingEdges, inDegree);
+
+        candidates.sort((a, b) =>
+            this.compareEdgesByPriority(a, b, inDegree) || a.fieldName.localeCompare(b.fieldName)
+        );
+
+        const droppedByObj = new Map<SourceObjectInfo, Set<string>>();
+        for (const edge of candidates) {
+            if (this.canReachObject(adj, edge.target, edge.src)) {
+                let dropped = droppedByObj.get(edge.obj);
+                if (!dropped) {
+                    dropped = new Set<string>();
+                    droppedByObj.set(edge.obj, dropped);
+                }
+                dropped.add(edge.fieldName.toLowerCase());
+                continue;
+            }
+            this.addGraphEdge(adj, edge.src, edge.target);
+        }
+
+        this.applyDroppedForeignKeys(droppedByObj);
+    }
+
+    private computeDistinctTargetInDegree(
+        existingEdges: ReadonlyArray<{ src: string; target: string }>,
+        candidates: ReadonlyArray<{ src: string; target: string }>
+    ): Map<string, number> {
+        const seen = new Set<string>();
+        const inDegree = new Map<string, number>();
+        const record = (edge: { src: string; target: string }): void => {
+            const key = `${edge.src}->${edge.target}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            inDegree.set(edge.target, (inDegree.get(edge.target) ?? 0) + 1);
+        };
+        for (const e of existingEdges) record(e);
+        for (const e of candidates) record(e);
+        return inDegree;
+    }
+
+    private seedAcyclicGraph(
+        existingEdges: ReadonlyArray<{ src: string; target: string }>,
+        inDegree: ReadonlyMap<string, number>
+    ): Map<string, Set<string>> {
+        const adj = new Map<string, Set<string>>();
+        const sorted = [...existingEdges].sort((a, b) => this.compareEdgesByPriority(a, b, inDegree));
+        for (const edge of sorted) {
+            if (!this.canReachObject(adj, edge.target, edge.src)) {
+                this.addGraphEdge(adj, edge.src, edge.target);
+            }
+        }
+        return adj;
+    }
+
+    private compareEdgesByPriority(
+        a: { src: string; target: string },
+        b: { src: string; target: string },
+        inDegree: ReadonlyMap<string, number>
+    ): number {
+        const targetDiff = (inDegree.get(b.target) ?? 0) - (inDegree.get(a.target) ?? 0);
+        if (targetDiff !== 0) return targetDiff;
+        const srcDiff = (inDegree.get(a.src) ?? 0) - (inDegree.get(b.src) ?? 0);
+        if (srcDiff !== 0) return srcDiff;
+        return a.target.localeCompare(b.target) || a.src.localeCompare(b.src);
+    }
+
+    private addGraphEdge(adj: Map<string, Set<string>>, src: string, target: string): void {
+        let edges = adj.get(src);
+        if (!edges) {
+            edges = new Set<string>();
+            adj.set(src, edges);
+        }
+        edges.add(target);
+    }
+
+    private applyDroppedForeignKeys(droppedByObj: ReadonlyMap<SourceObjectInfo, Set<string>>): void {
+        for (const [obj, droppedFields] of droppedByObj) {
+            obj.Relationships = obj.Relationships.filter(
+                r => !droppedFields.has(r.FieldName.toLowerCase())
+            );
+            for (const field of obj.Fields) {
+                if (droppedFields.has(field.Name.toLowerCase())) {
+                    field.IsForeignKey = false;
+                    field.ForeignKeyTarget = null;
+                }
+            }
+        }
+    }
+
+    private canReachObject(adj: Map<string, Set<string>>, start: string, goal: string): boolean {
+        const visited = new Set<string>([start]);
+        const stack: string[] = [start];
+        while (stack.length > 0) {
+            const cur = stack.pop()!;
+            if (cur === goal) return true;
+            const neighbors = adj.get(cur);
+            if (!neighbors) continue;
+            for (const nxt of neighbors) {
+                if (!visited.has(nxt)) {
+                    visited.add(nxt);
+                    stack.push(nxt);
+                }
+            }
+        }
+        return false;
     }
 
     // ─── Default Field Mappings ──────────────────────────────────────

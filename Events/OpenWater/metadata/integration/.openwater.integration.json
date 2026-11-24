@@ -1826,7 +1826,9 @@
                   "MetadataSource": "Declared",
                   "Configuration": {
                     "ReferencedType": "User"
-                  }
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "DFAB0E15-DB98-4C6A-A512-D1B5FE7EA3FF"
@@ -2196,7 +2198,9 @@
                   "MetadataSource": "Declared",
                   "Configuration": {
                     "ReferencedType": "User"
-                  }
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "A3B659D6-9359-411D-B597-9825999BA857"
@@ -3383,7 +3387,9 @@
                   "MetadataSource": "Declared",
                   "Configuration": {
                     "ReferencedType": "User"
-                  }
+                  },
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=User&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "8A5505CF-B48E-4BC4-9984-E7F35B5BD7C9"

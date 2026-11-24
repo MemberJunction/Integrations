@@ -17,6 +17,7 @@
     "lint:metadata": "node scripts/lint-metadata-fields.mjs",
     "lint:catalog-completeness": "node scripts/lint-catalog-completeness.mjs",
     "lint:writable-pk": "node scripts/lint-writable-pk.mjs",
+    "lint:declared-fks": "node scripts/lint-declared-foreign-keys.mjs",
     "lint:pagination": "node scripts/lint-pagination-honesty.mjs",
     "audit:unlistable": "node scripts/audit-unlistable-objects.mjs",
     "check:catalog-freshness": "node scripts/check-catalog-freshness.mjs",
