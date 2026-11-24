@@ -22,6 +22,7 @@
  * Base resolution: $BASE_SHA (CI passes the PR base) → origin/next → origin/main.
  */
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const git = (...a) => execFileSync('git', a, { encoding: 'utf8' }).trim();
 
@@ -66,6 +67,7 @@ for (const { status, path } of nameStatus) {
 let bad = 0;
 for (const [conn, files] of metaChanged) {
   if (migAdded.has(conn)) continue;
+  if (!existsSync(`${conn}/mj-app.json`)) continue; // connector removed: no tenant-facing delta possible
   bad++;
   console.error(
     `✗ ${conn} — metadata changed (${files.length} file(s)) but NO new migrations/V*.sql was added.\n` +
