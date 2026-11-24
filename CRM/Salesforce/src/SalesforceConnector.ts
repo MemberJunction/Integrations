@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { RegisterClass } from '@memberjunction/global';
+import { NormalizeUUID, RegisterClass } from '@memberjunction/global';
 import { Metadata, type IMetadataProvider, type UserInfo } from '@memberjunction/core';
 import type {
     MJCompanyIntegrationEntity,
@@ -506,7 +506,7 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
 
         return fields
             .filter(f => !COMPOUND_FIELD_TYPES.has(f.type))
-            .map(f => this.MapSFFieldToSchema(f, objectName));
+            .map(f => this.MapSFFieldToSchema(f));
     }
 
     /**
@@ -628,7 +628,7 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         // Keep live-discovered FK edges acyclic (matching the seeded catalog and CI lint gate)
         // so IntegrationSchemaSync does not re-introduce multi-object cycles that degrade
         // IntegrationEngine topological layering. Inherited by FontevaConnector via super.IntrospectSchema.
-        this.pruneCyclicRelationships(result.Objects);
+        this.pruneCyclicRelationships(result.Objects, companyIntegration.IntegrationID);
 
         return result;
     }
@@ -2135,14 +2135,14 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
      * field name — Salesforce standardizes this convention for all custom
      * fields on both standard and custom SObjects.
      */
-    private MapSFFieldToSchema(f: SFieldDescribe, sourceObjectName: string): ExternalFieldSchema {
+    private MapSFFieldToSchema(f: SFieldDescribe): ExternalFieldSchema {
         // Salesforce's `Id` is the universal PK on every SObject (standard + custom).
         // The /describe response sets type='id' on the PK field but doesn't carry
         // an explicit IsPrimaryKey signal, so we have to stamp it here.  Without
         // this, UpsertField's new-field path would persist `Id` with no PK flag
         // and the downstream SoftPKClassifier becomes the only safety net.
         const isPK = f.name === 'Id' || f.type === 'id';
-        const isFK = this.isEligibleForeignKey(f, sourceObjectName);
+        const isFK = this.isEligibleForeignKey(f);
         return {
             Name: f.name,
             Label: f.label,
@@ -2159,12 +2159,13 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Returns true when a Salesforce `reference` field should be emitted as a DAG-safe FK.
-     * Excludes system audit lookups (`CreatedById`/`LastModifiedById`) and self-references.
+     * Excludes system audit lookups (`CreatedById`/`LastModifiedById`). Self-references
+     * (e.g. `Account.ParentId -> Account`) are preserved — `IntegrationEngine` ignores
+     * `target === src` when layering, so they never introduce sync-DAG cycles.
      */
-    private isEligibleForeignKey(f: SFieldDescribe, sourceObjectName: string): boolean {
+    private isEligibleForeignKey(f: SFieldDescribe): boolean {
         if (f.type !== 'reference' || f.referenceTo.length === 0) return false;
         if (SYSTEM_AUDIT_FK_FIELDS.has(f.name.toLowerCase())) return false;
-        if (f.referenceTo[0].toLowerCase() === sourceObjectName.toLowerCase()) return false;
         return true;
     }
 
@@ -2369,7 +2370,7 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         const sfFields = (body.fields ?? []).filter(f => !COMPOUND_FIELD_TYPES.has(f.type));
 
         const fields: SourceFieldInfo[] = sfFields.map(f => {
-            const isFK = this.isEligibleForeignKey(f, objectName);
+            const isFK = this.isEligibleForeignKey(f);
             return {
                 Name: f.name,
                 Label: f.label,
@@ -2387,7 +2388,7 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         });
 
         const relationships: SourceRelationshipInfo[] = sfFields
-            .filter(f => this.isEligibleForeignKey(f, objectName))
+            .filter(f => this.isEligibleForeignKey(f))
             .map(f => ({
                 FieldName: f.name,
                 TargetObject: f.referenceTo[0],
@@ -2405,17 +2406,68 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
+     * Loads existing active FK edges (`srcObject -> targetObject`) from `IntegrationEngineBase`
+     * so a scoped `IntrospectSchema` call never emits an edge that creates a cycle against
+     * already-wired catalog relationships. Returns an empty map if the cache is unavailable.
+     */
+    private loadExistingCatalogEdges(integrationID: string | null | undefined): Map<string, Set<string>> {
+        const adj = new Map<string, Set<string>>();
+        if (!integrationID) return adj;
+        try {
+            const engine = IntegrationEngineBase.Instance;
+            const objects = engine.GetActiveIntegrationObjects(integrationID);
+            if (!objects || objects.length === 0) return adj;
+
+            const nameById = new Map<string, string>();
+            for (const obj of objects) {
+                nameById.set(NormalizeUUID(obj.ID), obj.Name.toLowerCase());
+            }
+
+            for (const obj of objects) {
+                const src = obj.Name.toLowerCase();
+                for (const field of engine.GetIntegrationObjectFields(obj.ID)) {
+                    if (String(field.Status ?? '').toLowerCase() === 'disabled') continue;
+                    if (!field.RelatedIntegrationObjectID) continue;
+                    const target = nameById.get(NormalizeUUID(field.RelatedIntegrationObjectID));
+                    if (!target || target === src) continue;
+                    let edges = adj.get(src);
+                    if (!edges) {
+                        edges = new Set<string>();
+                        adj.set(src, edges);
+                    }
+                    edges.add(target);
+                }
+            }
+        } catch {
+            // Engine cache unavailable (e.g. unit context) — prune solely over this batch.
+        }
+        return adj;
+    }
+
+    /**
      * Deterministically removes multi-object cycle-forming back-edges across an introspected
      * schema (mutating both `Relationships` and the corresponding `Fields` flags) so
      * IntegrationSchemaSync preserves an acyclic sync DAG.
      *
-     * Candidate edges are ranked by target in-degree descending (core parent entities such as
-     * `User`, `Account`, `Contact` win over sparse back-pointers like `Account.PersonReportsToId`
-     * or `Opportunity.LastAmountChangedHistoryId`), tie-broken deterministically by name.
+     * Pre-seeds the DAG with existing catalog edges from `IntegrationEngineBase` so scoped
+     * refreshes cannot flip an edge direction and create a cycle with already-wired FKs.
+     * Remaining candidate edges are ranked by target in-degree descending (core parent entities
+     * such as `User`, `Account`, `Contact` win over sparse back-pointers like
+     * `Account.PersonReportsToId` or `Opportunity.LastAmountChangedHistoryId`), tie-broken
+     * deterministically by name.
      */
-    private pruneCyclicRelationships(objects: SourceObjectInfo[]): void {
+    private pruneCyclicRelationships(objects: SourceObjectInfo[], integrationID?: string | null): void {
+        const adj = this.loadExistingCatalogEdges(integrationID);
         const known = new Set(objects.map(o => o.ExternalName.toLowerCase()));
+        for (const [src, targets] of adj) {
+            known.add(src);
+            for (const t of targets) known.add(t);
+        }
+
         const inDegree = new Map<string, number>();
+        for (const targets of adj.values()) {
+            for (const t of targets) inDegree.set(t, (inDegree.get(t) ?? 0) + 1);
+        }
 
         interface CandidateEdge {
             obj: SourceObjectInfo;
@@ -2447,7 +2499,6 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             return a.fieldName.localeCompare(b.fieldName);
         });
 
-        const adj = new Map<string, Set<string>>();
         const droppedByObj = new Map<SourceObjectInfo, Set<string>>();
 
         for (const edge of candidates) {
