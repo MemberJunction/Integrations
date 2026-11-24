@@ -15356,7 +15356,6 @@
                   "MetadataSource": "Declared",
                   "Description": "Indicates schedule for automation",
                   "Configuration": {
-                    "ReferencedType": "ScheduleDefinition",
                     "sourceType": "xsd:int",
                     "docDataType": "ScheduleDefinition",
                     "evidence": "wsdl+docs"
@@ -19597,7 +19596,6 @@
                   "MetadataSource": "Declared",
                   "Description": "Identifies collection of automation instances within an account",
                   "Configuration": {
-                    "ReferencedType": "AutomationInstance",
                     "sourceType": "xsd:string",
                     "docDataType": "AutomationInstance[]",
                     "evidence": "wsdl+docs"

@@ -355,6 +355,156 @@ describe('SalesforceConnector (mocked API)', () => {
             expect(idField!.IsUniqueKey).toBe(true);
             expect(idField!.IsReadOnly).toBe(true);
         });
+
+        it('should exclude system audit lookups and self-references from FK flags while preserving business FKs', async () => {
+            mockJwtSign();
+            setupAuthAndApiMock([{
+                body: {
+                    fields: [
+                        { name: 'Id', label: 'Record ID', type: 'id', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: false, referenceTo: [], inlineHelpText: null },
+                        { name: 'CreatedById', label: 'Created By', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: false, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'LastModifiedById', label: 'Last Modified By', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: false, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'ParentId', label: 'Parent Account', type: 'reference', nillable: true, defaultedOnCreate: false, externalId: false, calculated: false, updateable: true, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: true, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+            }]);
+
+            const ci = createMockCompanyIntegration(MOCK_CREDENTIALS);
+            const fields = await connector.DiscoverFields(ci, 'Account', contextUser);
+            const byName = new Map(fields.map(f => [f.Name, f]));
+
+            expect(byName.get('CreatedById')?.IsForeignKey).toBe(false);
+            expect(byName.get('CreatedById')?.ForeignKeyTarget).toBeNull();
+            expect(byName.get('LastModifiedById')?.IsForeignKey).toBe(false);
+            expect(byName.get('LastModifiedById')?.ForeignKeyTarget).toBeNull();
+            expect(byName.get('ParentId')?.IsForeignKey).toBe(false);
+            expect(byName.get('ParentId')?.ForeignKeyTarget).toBeNull();
+            expect(byName.get('OwnerId')?.IsForeignKey).toBe(true);
+            expect(byName.get('OwnerId')?.ForeignKeyTarget).toBe('User');
+        });
+    });
+
+    describe('IntrospectSchema — DAG-safe FK emission', () => {
+        it('should omit audit/self-ref FKs and prune multi-object cycle back-edges across Relationships and Fields', async () => {
+            mockJwtSign();
+            const describeByObject: Record<string, { label: string; fields: Array<Record<string, unknown>> }> = {
+                Account: {
+                    label: 'Account',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'ParentId', label: 'Parent', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'CreatedById', label: 'Created By', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'LastModifiedById', label: 'Modified By', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'PersonReportsToId', label: 'Person Reports To', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Contact'], inlineHelpText: null },
+                    ],
+                },
+                Contact: {
+                    label: 'Contact',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                Opportunity: {
+                    label: 'Opportunity',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                Case: {
+                    label: 'Case',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                Lead: {
+                    label: 'Lead',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                User: {
+                    label: 'User',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'ContactId', label: 'Contact', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Contact'], inlineHelpText: null },
+                    ],
+                },
+            };
+
+            fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+                const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+                if (url.includes('/services/oauth2/token')) return mockTokenResponse();
+                if (url.endsWith('/sobjects/')) {
+                    return mockApiResponse({
+                        sobjects: [
+                            { name: 'Account', label: 'Account', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Contact', label: 'Contact', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Opportunity', label: 'Opportunity', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Case', label: 'Case', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Lead', label: 'Lead', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'User', label: 'User', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                        ],
+                    });
+                }
+                const m = url.match(/\/sobjects\/([^/]+)\/describe$/);
+                if (m && describeByObject[m[1]]) {
+                    return mockApiResponse(describeByObject[m[1]]);
+                }
+                return mockApiResponse({ totalSize: 0, done: true, records: [] });
+            });
+
+            const ci = createMockCompanyIntegration(MOCK_CREDENTIALS);
+            const schema = await connector.IntrospectSchema(ci, contextUser, {
+                ObjectNames: ['Account', 'Contact', 'Opportunity', 'Case', 'Lead', 'User'],
+            });
+
+            const byObj = new Map(schema.Objects.map(o => [o.ExternalName, o]));
+            const acct = byObj.get('Account')!;
+            const contact = byObj.get('Contact')!;
+            const user = byObj.get('User')!;
+
+            // Audit columns & self-ref never emitted as FKs
+            expect(acct.Relationships.map(r => r.FieldName)).not.toContain('CreatedById');
+            expect(acct.Relationships.map(r => r.FieldName)).not.toContain('LastModifiedById');
+            expect(acct.Relationships.map(r => r.FieldName)).not.toContain('ParentId');
+
+            // High-in-degree core parents win: Contact.AccountId -> Account and Account.OwnerId -> User survive,
+            // while sparse back-edges (Account.PersonReportsToId, User.AccountId, User.ContactId) are pruned.
+            expect(contact.Relationships.some(r => r.FieldName === 'AccountId' && r.TargetObject === 'Account')).toBe(true);
+            expect(acct.Relationships.some(r => r.FieldName === 'OwnerId' && r.TargetObject === 'User')).toBe(true);
+            expect(acct.Relationships.some(r => r.FieldName === 'PersonReportsToId')).toBe(false);
+            expect(acct.Fields.find(f => f.Name === 'PersonReportsToId')?.IsForeignKey).toBe(false);
+            expect(acct.Fields.find(f => f.Name === 'PersonReportsToId')?.ForeignKeyTarget).toBeNull();
+
+            // User -> Account / Contact cycle back-edges must be pruned from BOTH Relationships and Fields
+            expect(user.Relationships).toHaveLength(0);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.ForeignKeyTarget).toBeNull();
+            expect(user.Fields.find(f => f.Name === 'ContactId')?.IsForeignKey).toBe(false);
+            expect(user.Fields.find(f => f.Name === 'ContactId')?.ForeignKeyTarget).toBeNull();
+
+            // Resulting object graph is strictly acyclic (Kahn's algorithm clears every node)
+            const adj = new Map<string, Set<string>>();
+            for (const o of schema.Objects) {
+                adj.set(o.ExternalName, new Set(o.Relationships.map(r => r.TargetObject)));
+            }
+            const remaining = new Set(schema.Objects.map(o => o.ExternalName));
+            while (remaining.size > 0) {
+                const ready = [...remaining].filter(u => [...(adj.get(u) ?? [])].every(v => !remaining.has(v)));
+                expect(ready.length).toBeGreaterThan(0);
+                for (const u of ready) remaining.delete(u);
+            }
+        });
     });
 
     describe('FetchChanges', () => {

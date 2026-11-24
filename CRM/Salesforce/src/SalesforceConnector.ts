@@ -200,6 +200,14 @@ const SYSTEM_READ_ONLY_FIELDS = new Set([
     'LastReferencedDate', 'MasterRecordId',
 ]);
 
+/**
+ * SF system audit lookup fields excluded from FK/relationship emission during discovery.
+ * Every SObject carries these pointing to `User`, which collapses IntegrationEngine's
+ * topological layering when `User` is synced alongside objects `User` references.
+ * Matches the seeded catalog and CI lint gate (`scripts/lint-declared-foreign-keys.mjs`).
+ */
+const SYSTEM_AUDIT_FK_FIELDS = new Set(['createdbyid', 'lastmodifiedbyid']);
+
 /** Fields always included in SOQL SELECT */
 const REQUIRED_SOQL_FIELDS = ['Id', 'SystemModstamp', 'IsDeleted', 'LastModifiedById'];
 
@@ -498,7 +506,7 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
 
         return fields
             .filter(f => !COMPOUND_FIELD_TYPES.has(f.type))
-            .map(f => this.MapSFFieldToSchema(f));
+            .map(f => this.MapSFFieldToSchema(f, objectName));
     }
 
     /**
@@ -616,6 +624,11 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
                 // Keep this object's describe fields — sampling is best-effort and never breaks introspection.
             }
         });
+
+        // Keep live-discovered FK edges acyclic (matching the seeded catalog and CI lint gate)
+        // so IntegrationSchemaSync does not re-introduce multi-object cycles that degrade
+        // IntegrationEngine topological layering. Inherited by FontevaConnector via super.IntrospectSchema.
+        this.pruneCyclicRelationships(result.Objects);
 
         return result;
     }
@@ -2122,13 +2135,14 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
      * field name — Salesforce standardizes this convention for all custom
      * fields on both standard and custom SObjects.
      */
-    private MapSFFieldToSchema(f: SFieldDescribe): ExternalFieldSchema {
+    private MapSFFieldToSchema(f: SFieldDescribe, sourceObjectName: string): ExternalFieldSchema {
         // Salesforce's `Id` is the universal PK on every SObject (standard + custom).
         // The /describe response sets type='id' on the PK field but doesn't carry
         // an explicit IsPrimaryKey signal, so we have to stamp it here.  Without
         // this, UpsertField's new-field path would persist `Id` with no PK flag
         // and the downstream SoftPKClassifier becomes the only safety net.
         const isPK = f.name === 'Id' || f.type === 'id';
+        const isFK = this.isEligibleForeignKey(f, sourceObjectName);
         return {
             Name: f.name,
             Label: f.label,
@@ -2138,9 +2152,20 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             IsPrimaryKey: isPK,
             IsUniqueKey: isPK || f.externalId,
             IsReadOnly: f.calculated || !f.updateable || SYSTEM_READ_ONLY_FIELDS.has(f.name),
-            IsForeignKey: f.type === 'reference' && f.referenceTo.length > 0,
-            ForeignKeyTarget: f.referenceTo.length > 0 ? f.referenceTo[0] : null,
+            IsForeignKey: isFK,
+            ForeignKeyTarget: isFK ? f.referenceTo[0] : null,
         };
+    }
+
+    /**
+     * Returns true when a Salesforce `reference` field should be emitted as a DAG-safe FK.
+     * Excludes system audit lookups (`CreatedById`/`LastModifiedById`) and self-references.
+     */
+    private isEligibleForeignKey(f: SFieldDescribe, sourceObjectName: string): boolean {
+        if (f.type !== 'reference' || f.referenceTo.length === 0) return false;
+        if (SYSTEM_AUDIT_FK_FIELDS.has(f.name.toLowerCase())) return false;
+        if (f.referenceTo[0].toLowerCase() === sourceObjectName.toLowerCase()) return false;
+        return true;
     }
 
     /**
@@ -2343,23 +2368,26 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
         const body = response.Body as { fields?: SFieldDescribe[]; label?: string };
         const sfFields = (body.fields ?? []).filter(f => !COMPOUND_FIELD_TYPES.has(f.type));
 
-        const fields: SourceFieldInfo[] = sfFields.map(f => ({
-            Name: f.name,
-            Label: f.label,
-            Description: f.inlineHelpText ?? undefined,
-            SourceType: this.MapSalesforceType(f.type),
-            IsRequired: !f.nillable && !f.defaultedOnCreate,
-            MaxLength: f.length > 0 ? f.length : null,
-            Precision: f.precision > 0 ? f.precision : null,
-            Scale: f.scale > 0 ? f.scale : null,
-            DefaultValue: f.defaultValue != null ? String(f.defaultValue) : null,
-            IsPrimaryKey: f.name === 'Id',
-            IsForeignKey: f.type === 'reference' && f.referenceTo.length > 0,
-            ForeignKeyTarget: f.referenceTo.length > 0 ? f.referenceTo[0] : null,
-        }));
+        const fields: SourceFieldInfo[] = sfFields.map(f => {
+            const isFK = this.isEligibleForeignKey(f, objectName);
+            return {
+                Name: f.name,
+                Label: f.label,
+                Description: f.inlineHelpText ?? undefined,
+                SourceType: this.MapSalesforceType(f.type),
+                IsRequired: !f.nillable && !f.defaultedOnCreate,
+                MaxLength: f.length > 0 ? f.length : null,
+                Precision: f.precision > 0 ? f.precision : null,
+                Scale: f.scale > 0 ? f.scale : null,
+                DefaultValue: f.defaultValue != null ? String(f.defaultValue) : null,
+                IsPrimaryKey: f.name === 'Id',
+                IsForeignKey: isFK,
+                ForeignKeyTarget: isFK ? f.referenceTo[0] : null,
+            };
+        });
 
         const relationships: SourceRelationshipInfo[] = sfFields
-            .filter(f => f.type === 'reference' && f.referenceTo.length > 0)
+            .filter(f => this.isEligibleForeignKey(f, objectName))
             .map(f => ({
                 FieldName: f.name,
                 TargetObject: f.referenceTo[0],
@@ -2374,6 +2402,101 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             PrimaryKeyFields: ['Id'],
             Relationships: relationships,
         };
+    }
+
+    /**
+     * Deterministically removes multi-object cycle-forming back-edges across an introspected
+     * schema (mutating both `Relationships` and the corresponding `Fields` flags) so
+     * IntegrationSchemaSync preserves an acyclic sync DAG.
+     *
+     * Candidate edges are ranked by target in-degree descending (core parent entities such as
+     * `User`, `Account`, `Contact` win over sparse back-pointers like `Account.PersonReportsToId`
+     * or `Opportunity.LastAmountChangedHistoryId`), tie-broken deterministically by name.
+     */
+    private pruneCyclicRelationships(objects: SourceObjectInfo[]): void {
+        const known = new Set(objects.map(o => o.ExternalName.toLowerCase()));
+        const inDegree = new Map<string, number>();
+
+        interface CandidateEdge {
+            obj: SourceObjectInfo;
+            src: string;
+            target: string;
+            fieldName: string;
+        }
+        const candidates: CandidateEdge[] = [];
+
+        for (const obj of objects) {
+            const src = obj.ExternalName.toLowerCase();
+            for (const rel of obj.Relationships) {
+                const target = rel.TargetObject.toLowerCase();
+                if (target === src || !known.has(target)) continue;
+                inDegree.set(target, (inDegree.get(target) ?? 0) + 1);
+                candidates.push({ obj, src, target, fieldName: rel.FieldName });
+            }
+        }
+
+        candidates.sort((a, b) => {
+            const targetDiff = (inDegree.get(b.target) ?? 0) - (inDegree.get(a.target) ?? 0);
+            if (targetDiff !== 0) return targetDiff;
+            const srcDiff = (inDegree.get(a.src) ?? 0) - (inDegree.get(b.src) ?? 0);
+            if (srcDiff !== 0) return srcDiff;
+            const tName = a.target.localeCompare(b.target);
+            if (tName !== 0) return tName;
+            const sName = a.src.localeCompare(b.src);
+            if (sName !== 0) return sName;
+            return a.fieldName.localeCompare(b.fieldName);
+        });
+
+        const adj = new Map<string, Set<string>>();
+        const droppedByObj = new Map<SourceObjectInfo, Set<string>>();
+
+        for (const edge of candidates) {
+            if (this.canReachObject(adj, edge.target, edge.src)) {
+                let dropped = droppedByObj.get(edge.obj);
+                if (!dropped) {
+                    dropped = new Set<string>();
+                    droppedByObj.set(edge.obj, dropped);
+                }
+                dropped.add(edge.fieldName.toLowerCase());
+                continue;
+            }
+            let edges = adj.get(edge.src);
+            if (!edges) {
+                edges = new Set<string>();
+                adj.set(edge.src, edges);
+            }
+            edges.add(edge.target);
+        }
+
+        for (const [obj, droppedFields] of droppedByObj) {
+            obj.Relationships = obj.Relationships.filter(
+                r => !droppedFields.has(r.FieldName.toLowerCase())
+            );
+            for (const field of obj.Fields) {
+                if (droppedFields.has(field.Name.toLowerCase())) {
+                    field.IsForeignKey = false;
+                    field.ForeignKeyTarget = null;
+                }
+            }
+        }
+    }
+
+    private canReachObject(adj: Map<string, Set<string>>, start: string, goal: string): boolean {
+        const visited = new Set<string>([start]);
+        const stack: string[] = [start];
+        while (stack.length > 0) {
+            const cur = stack.pop()!;
+            if (cur === goal) return true;
+            const neighbors = adj.get(cur);
+            if (!neighbors) continue;
+            for (const nxt of neighbors) {
+                if (!visited.has(nxt)) {
+                    visited.add(nxt);
+                    stack.push(nxt);
+                }
+            }
+        }
+        return false;
     }
 
     // ─── Default Field Mappings ──────────────────────────────────────
