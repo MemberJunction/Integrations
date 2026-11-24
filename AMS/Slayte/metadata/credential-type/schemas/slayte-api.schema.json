@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Slayte API Credentials",
+  "description": "Credentials for a Slayte workspace using the Slayte REST API v2 (X-Api-Key authentication).",
+  "properties": {
+    "SiteUrl": {
+      "type": "string",
+      "title": "Workspace Site URL",
+      "description": "Your Slayte workspace root URL (e.g. 'https://your-site.slayte.com' or 'https://your-site.slayte.com/api'). Slayte is hosted per workspace with no shared default API host.",
+      "format": "uri",
+      "isSecret": false,
+      "order": 0
+    },
+    "ApiKey": {
+      "type": "string",
+      "title": "API Key",
+      "description": "Primary Slayte API key sent via the X-Api-Key header. Grant read scopes for the surfaces you sync (crm:query, crm:read, committees:read, events:read, directory:read).",
+      "isSecret": true,
+      "order": 1
+    },
+    "QueryApiKey": {
+      "type": "string",
+      "title": "CRM Query API Key (Optional)",
+      "description": "Optional separate Slayte API key with the crm:query scope used specifically for /v2/crm/query/* endpoints when query and REST read scopes are separated across two keys. Defaults to ApiKey when omitted.",
+      "isSecret": true,
+      "order": 2
+    }
+  },
+  "required": [
+    "SiteUrl",
+    "ApiKey"
+  ]
+}

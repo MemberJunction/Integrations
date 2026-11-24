@@ -59,6 +59,7 @@
   ],
   "hold": [
     "AMS/Aptify",
+    "AMS/Slayte",
     "AMS/Wicket",
     "AMS/YourMembership",
     "Events/Whova",

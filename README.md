@@ -270,9 +270,9 @@ Every pull request to `next` or `main` is verified against **16 automated qualit
 <!-- BEGIN GENERATED CONNECTOR DIRECTORY -->
 
 > **Auto-maintained by CI** (`scripts/build-readme-directory.mjs`) from [`connectors-catalog.json`](./connectors-catalog.json), [`scripts/connector-publish-scope.json`](./scripts/connector-publish-scope.json), and per-connector metadata.
-> **55 published Open App connectors** across **8 categories** (5,626+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **7 held connectors**.
+> **55 published Open App connectors** across **8 categories** (5,626+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **8 held connectors**.
 
-[**AMS** (11)](#ams--association-management-systems) · [**CRM** (5)](#crm--customer-relationship-management--fundraising) · [**Events** (6)](#events--conferences-registration-abstracts--awards) · [**Finance** (5)](#finance--accounting-erp-billing--payments) · [**LMS** (3)](#lms--learning-management--credentialing) · [**Marketing** (9)](#marketing--email-automation-engagement--analytics) · [**PM** (2)](#pm--project--time-management) · [**Platform** (14)](#platform--community-content-support-databases--data-warehouses) · [**Shared & Primitives** (4)](#shared-libraries--platform-primitives) · [**Held / In Development** (7)](#held--in-development-connectors)
+[**AMS** (11)](#ams--association-management-systems) · [**CRM** (5)](#crm--customer-relationship-management--fundraising) · [**Events** (6)](#events--conferences-registration-abstracts--awards) · [**Finance** (5)](#finance--accounting-erp-billing--payments) · [**LMS** (3)](#lms--learning-management--credentialing) · [**Marketing** (9)](#marketing--email-automation-engagement--analytics) · [**PM** (2)](#pm--project--time-management) · [**Platform** (14)](#platform--community-content-support-databases--data-warehouses) · [**Shared & Primitives** (4)](#shared-libraries--platform-primitives) · [**Held / In Development** (8)](#held--in-development-connectors)
 
 ### AMS — Association Management Systems
 
@@ -403,6 +403,7 @@ Present in the repository under `scripts/connector-publish-scope.json` (`hold`) 
 | Connector | Category | Package | Docs & Evidence | Description |
 |-----------|----------|---------|-----------------|-------------|
 | [**Aptify**](./AMS/Aptify) | AMS | `@memberjunction/connector-aptify` | — | Aptify (Community Brands / Momentive Software) Web Services API connector. |
+| [**Slayte**](./AMS/Slayte) | AMS | `@memberjunction/connector-slayte` | [🧪 Mock-only](./AMS/Slayte/docs/SUPPORT.md) · [Setup](./AMS/Slayte/docs/credential-setup.html) | Slayte AMS connector for MemberJunction — read-only sync for Individuals and Organizations (via Shared CRM Queries), Committees, Directories, and Events via the Slayte REST API v2. |
 | [**Wicket**](./AMS/Wicket) | AMS | `@memberjunction/connector-wicket` | — | Wicket membership management platform integration for syncing people, organizations, memberships, groups, connections, and contact information via JSON:API |
 | [**YourMembership**](./AMS/YourMembership) | AMS | `@memberjunction/connector-yourmembership` | — | YourMembership AMS integration for syncing members, membership types, events, and registrations |
 | [**Whova**](./Events/Whova) | Events | `@memberjunction/connector-whova` | — | Whova events / conference-management connector. |

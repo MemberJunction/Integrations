@@ -1,0 +1,4722 @@
+[
+  {
+    "fields": {
+      "Name": "Slayte",
+      "ClassName": "@memberjunction/connector-slayte",
+      "ImportPath": "@memberjunction/connector-slayte",
+      "Description": "Slayte AMS and event management platform connector (read-only) — Individuals and Organizations via Shared CRM Queries, plus Committees, Directories, and Events over REST API v2.",
+      "Icon": "fa-solid fa-people-group",
+      "NavigationBaseURL": null,
+      "BatchMaxRequestCount": 600,
+      "BatchRequestWaitTime": 60,
+      "CredentialTypeID": "@lookup:MJ: Credential Types.Name=Slayte API",
+      "Configuration": {
+        "DeclaredAgainst": {
+          "vendorDocsUrl": "https://www.slayte.com/api",
+          "apiVersion": "2026-10-01",
+          "accessedAt": "2026-11-24",
+          "note": "Slayte generates /api/v2/openapi.json per workspace, mixing standard Slayte core fields with workspace custom fields. No public static OpenAPI URL or artifact hash exists; this catalog declares only standard Slayte v2 core fields while runtime IntrospectSchema sample-union discovers workspace custom and query columns."
+        },
+        "AuthFlow": "api-key",
+        "AuthHeaderPattern": "X-Api-Key: <apiKey>",
+        "AuthNote": "Per-workspace X-Api-Key header with granular scopes (crm:query, crm:read, committees:read, events:read, directory:read). Optional QueryApiKey allows separating crm:query from REST read scopes.",
+        "APIBaseURLMode": "per-connection",
+        "APIBaseURLNote": "Slayte is hosted per workspace with no shared default API host. Base URL is normalized from SiteUrl to <origin>/api; all v2 routes begin with /v2/.",
+        "APIVersioningStrategy": "pinned-key-date-header",
+        "APIVersioningNote": "Each API key is pinned to a date-based version (2026-10-01) reported in the X-Api-Version response header.",
+        "PaginationDefaults": {
+          "queryAndDirectory": {
+            "type": "Cursor",
+            "method": "POST",
+            "cursorParam": "cursor",
+            "cursorField": "data.cursor",
+            "dataField": "data.data",
+            "totalField": "data.totalRecordCount"
+          },
+          "restCollections": {
+            "type": "PageNumber",
+            "zeroBasedPage": true,
+            "pageParam": "page",
+            "pageSizeParam": "pageSize",
+            "defaultPageSize": 25,
+            "maxPageSize": 250,
+            "itemsField": "data.items",
+            "totalField": "data.total"
+          }
+        },
+        "IncrementalSyncCapability": {
+          "supported": "partial",
+          "scope": "EventRegistrant supports changedSince (ISO datetime). All other v2 read surfaces are full-pull (FullPullHashDiff)."
+        },
+        "WriteCapability": {
+          "supported": false,
+          "scope": "Connector is read-only (Pull) in v0.1.0."
+        },
+        "DefaultSyncDirection": "Pull",
+        "DefaultConflictResolution": "DestWins",
+        "RateLimitPolicy": {
+          "TokensPerSec": 8,
+          "Burst": 20,
+          "callsPerMinuteCeiling": 600,
+          "windowSeconds": 60,
+          "retryAfterHeaderDocumented": true
+        },
+        "ErrorResponseShape": {
+          "shape": "{ \"success\": false, \"error\": { \"code\": 400, \"type\": \"<ENUM>\", \"message\": \"<string>\", \"field\"?: \"<string>\", \"details\"?: {} } }",
+          "keyTypes": [
+            "RATE_LIMITED",
+            "API_KEY_INVALID",
+            "API_KEY_EXPIRED",
+            "SCOPE_REQUIRED",
+            "NOT_FOUND",
+            "VALIDATION_ERROR"
+          ]
+        },
+        "DiscoveryIsAuthoritative": false
+      }
+    },
+    "relatedEntities": {
+      "MJ: Integration Objects": [
+        {
+          "fields": {
+            "Name": "Individual",
+            "DisplayName": "Individual",
+            "Description": "Slayte CRM Individual records fetched in bulk via a configured Shared CRM Query (POST /v2/crm/query/{queryId}/execute). Core fields are declared; query-specific and custom columns are discovered at runtime.",
+            "APIPath": "/v2/crm/query",
+            "Category": "CRM",
+            "Status": "Active",
+            "Sequence": 1,
+            "PaginationType": "Cursor",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"queryEntityType\":\"ind\",\"getRecordPath\":\"/v2/crm/individual/{uuid}\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data.data"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "individualUuid",
+                  "DisplayName": "Individual Uuid",
+                  "Description": "Unique Slayte UUID for the individual.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "B1C924FA-C7AD-472C-B62C-E72BC526BD5E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "userUuid",
+                  "DisplayName": "User Uuid",
+                  "Description": "Associated Slayte user account UUID.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "F5C1633A-154B-4F4A-A35F-5D03A160CFE9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "recordNumber",
+                  "DisplayName": "Record Number",
+                  "Description": "Slayte CRM record number for the individual.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "60929937-0263-49EF-B40E-FEF3318F2902"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Full display name of the individual.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "3421213B-020E-42BF-8B6E-9E301F701761"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "First name of the individual.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "C93CD470-0473-4D20-BB4B-7918E7DAE551"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "middleName",
+                  "DisplayName": "Middle Name",
+                  "Description": "Middle name of the individual.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "C2349361-5BFD-42D0-92A2-309D98604499"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Last name of the individual.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "ABA3ACD1-3E8E-4CF0-B0CE-99EB0E444962"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "preferredName",
+                  "DisplayName": "Preferred Name",
+                  "Description": "Preferred name or nickname.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "DE9D005E-DB81-4A60-B607-5E2AD16FC03B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "prefix",
+                  "DisplayName": "Prefix",
+                  "Description": "Name prefix or salutation.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 50
+                },
+                "primaryKey": {
+                  "ID": "685C8A6F-9D5B-4221-8EF0-24BFEDE4519A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "suffix",
+                  "DisplayName": "Suffix",
+                  "Description": "Name suffix.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 50
+                },
+                "primaryKey": {
+                  "ID": "F3650B73-EC6C-45A6-9796-1F413D0A0414"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileEmail",
+                  "DisplayName": "Profile Email",
+                  "Description": "Primary profile email address.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
+                },
+                "primaryKey": {
+                  "ID": "010BC240-00B7-43CA-8F0C-A6882D0898E2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileTitle",
+                  "DisplayName": "Profile Title",
+                  "Description": "Job title on the individual profile.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "DAE441FE-776E-4017-8A24-39151E3529E3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "imageUrl",
+                  "DisplayName": "Image Url",
+                  "Description": "Profile image URL.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
+                },
+                "primaryKey": {
+                  "ID": "1DBB58E9-D11A-4033-B636-C8CCCE51D874"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "gender",
+                  "DisplayName": "Gender",
+                  "Description": "Gender value recorded on profile.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "38D0A6B3-B216-4773-A0B5-913EEF0C67AA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "taxExemptNumber",
+                  "DisplayName": "Tax Exempt Number",
+                  "Description": "Tax exemption identifier, if applicable.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "ABB7D00A-8341-41B5-873E-EB53FAC79EE6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "directoryOptOut",
+                  "DisplayName": "Directory Opt Out",
+                  "Description": "Whether the individual opted out of member directories.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0B5639A5-E022-4679-B8AF-D0CEF3BFCBAB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "emailOptOut",
+                  "DisplayName": "Email Opt Out",
+                  "Description": "Whether the individual opted out of email communications.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "458A59F2-B38D-4921-8A1F-F019C8028C9C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isDeceased",
+                  "DisplayName": "Is Deceased",
+                  "Description": "Whether the individual is marked deceased.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1BD6EC90-56C4-4B35-950E-F356486CBF3B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "emails",
+                  "DisplayName": "Emails",
+                  "Description": "Array of email entries associated with the individual.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3DCFEBD8-BA10-4422-BF78-D4923ED400D7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileAddress",
+                  "DisplayName": "Profile Address",
+                  "Description": "Primary profile address object.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BCE87F11-4FD2-4743-8C94-2035D8FF5A96"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "addresses",
+                  "DisplayName": "Addresses",
+                  "Description": "Array of addresses associated with the individual.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F6D7E570-9A41-45D9-A3F5-C2E1A5AFC03B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profilePhoneNumber",
+                  "DisplayName": "Profile Phone Number",
+                  "Description": "Primary profile phone number object.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C14DA81A-C14D-4422-A978-C75196543095"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "phoneNumbers",
+                  "DisplayName": "Phone Numbers",
+                  "Description": "Array of phone numbers associated with the individual.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EEFEA57B-8FA7-4C50-9453-693076272602"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "designations",
+                  "DisplayName": "Designations",
+                  "Description": "Array of professional designations.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "55EC6333-9773-4DF3-8534-ACED15493B1B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "expertises",
+                  "DisplayName": "Expertises",
+                  "Description": "Array of areas of expertise.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "68089EB6-3F5D-4D82-AA8F-9A96A8867779"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "industries",
+                  "DisplayName": "Industries",
+                  "Description": "Array of associated industries.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "349D597C-349C-4881-AE32-282FC5EC232A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "services",
+                  "DisplayName": "Services",
+                  "Description": "Array of offered services.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CA7D6906-67BD-4D63-AFAD-B3018011BB70"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "languages",
+                  "DisplayName": "Languages",
+                  "Description": "Array of spoken languages.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "69E01620-8F28-42E6-AE79-88B5663BC976"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "region",
+                  "DisplayName": "Region",
+                  "Description": "Array of assigned geographic regions.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D6C2CB0A-7EC1-4F03-8D18-3CB7DD4CDF4C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "licenses",
+                  "DisplayName": "Licenses",
+                  "Description": "Array of professional license records.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FC182D99-F589-4A29-8C14-1811E396F999"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "webLinks",
+                  "DisplayName": "Web Links",
+                  "Description": "Array of web and social links.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "856C6CBE-0F40-48D0-9070-ABE63FA1616B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "userAccounts",
+                  "DisplayName": "User Accounts",
+                  "Description": "Array of external login provider accounts.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6C6EB758-0A62-4A62-84DC-84E2E705AC3C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "membership",
+                  "DisplayName": "Membership",
+                  "Description": "Membership rollup summary (status, dates, types).",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C6A080D4-1DCA-44B5-8A45-A45349F8E0A0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileOrg",
+                  "DisplayName": "Profile Org",
+                  "Description": "Primary affiliated organization summary.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3E56B3E5-99DC-407F-B586-A2D8FBFD0FF0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "committees",
+                  "DisplayName": "Committees",
+                  "Description": "Summary array of committee involvements.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "72F00250-84CF-4697-9E9D-E08BCB64589A"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "59E719E1-7D9E-4160-878E-35974119327A"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Organization",
+            "DisplayName": "Organization",
+            "Description": "Slayte CRM Organization records fetched in bulk via a configured Shared CRM Query (POST /v2/crm/query/{queryId}/execute). Core fields are declared; query-specific and custom columns are discovered at runtime.",
+            "APIPath": "/v2/crm/query",
+            "Category": "CRM",
+            "Status": "Active",
+            "Sequence": 2,
+            "PaginationType": "Cursor",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"queryEntityType\":\"org\",\"getRecordPath\":\"/v2/crm/organization/{uuid}\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data.data"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "organizationUuid",
+                  "DisplayName": "Organization Uuid",
+                  "Description": "Unique Slayte UUID for the organization.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "7EB68D0A-FC64-4183-AADE-0364C7CA7E4F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "recordNumber",
+                  "DisplayName": "Record Number",
+                  "Description": "Slayte CRM record number for the organization.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "2D8C42DF-147F-4EB7-8E07-C7DB0F74C456"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Official organization name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "BE2346AA-44F9-400D-914C-0022CE641575"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Organization description.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "8BA6FA21-3614-4EAF-BCF5-E372C2D98105"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "domain",
+                  "DisplayName": "Domain",
+                  "Description": "Organization web domain.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
+                },
+                "primaryKey": {
+                  "ID": "1D4F1D05-CA23-48E4-9AFC-C6F19CD2C271"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileEmail",
+                  "DisplayName": "Profile Email",
+                  "Description": "Primary organization profile email address.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
+                },
+                "primaryKey": {
+                  "ID": "4A62A591-315E-48CC-9238-B1A4F0DBE917"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "imageUrl",
+                  "DisplayName": "Image Url",
+                  "Description": "Organization logo or profile image URL.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
+                },
+                "primaryKey": {
+                  "ID": "FA042398-E068-4D18-967E-1CE1FB9AA8C6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "acronym",
+                  "DisplayName": "Acronym",
+                  "Description": "Organization acronym.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "8FFB8810-CACA-4603-AE1F-6F364C2931F9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "branchName",
+                  "DisplayName": "Branch Name",
+                  "Description": "Branch or office name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "1EABED2A-4F5C-4DC8-B2AA-D0A3668E869E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "organizationType",
+                  "DisplayName": "Organization Type",
+                  "Description": "Organization type classification.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "A07500B9-47F1-4032-9D1B-C0F1A68F8FA7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "employeeRange",
+                  "DisplayName": "Employee Range",
+                  "Description": "Employee count range.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "39E73EAE-08F0-476D-8DCB-93C894CF2A61"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "numberOfOffices",
+                  "DisplayName": "Number Of Offices",
+                  "Description": "Number of offices indicator.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "90AA7711-EE96-4CFD-AFA2-55D6E735FBAC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "taxExemptNumber",
+                  "DisplayName": "Tax Exempt Number",
+                  "Description": "Tax exemption identifier.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "D6EA57F8-41C0-40AB-9226-AF2289E5C8F2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "directoryOptOut",
+                  "DisplayName": "Directory Opt Out",
+                  "Description": "Whether the organization opted out of directories.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AE1E19F9-C503-4EE8-BA3C-7CD381E95F01"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "emailOptOut",
+                  "DisplayName": "Email Opt Out",
+                  "Description": "Whether the organization opted out of email communications.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "41DC55EB-B6BB-4B6D-8A80-88CB4E5C9F54"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isClosed",
+                  "DisplayName": "Is Closed",
+                  "Description": "Whether the organization is marked closed.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F3404E53-DB3D-44A1-96C0-385D028BC583"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "emails",
+                  "DisplayName": "Emails",
+                  "Description": "Array of email entries for the organization.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A58D11E1-BC06-4A0B-9864-3918A59C4612"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileAddress",
+                  "DisplayName": "Profile Address",
+                  "Description": "Primary profile address object.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D3804ED7-F250-4F36-8D04-4ACE1375B973"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "addresses",
+                  "DisplayName": "Addresses",
+                  "Description": "Array of addresses for the organization.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C6F9A08D-05F5-4D51-BC85-A13798C55346"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profilePhoneNumber",
+                  "DisplayName": "Profile Phone Number",
+                  "Description": "Primary profile phone number object.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A24F073F-A077-4D1E-BA3C-31310FFBFAAF"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "phoneNumbers",
+                  "DisplayName": "Phone Numbers",
+                  "Description": "Array of phone numbers for the organization.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "CD6E7163-EF21-4516-BA45-9CE3F21835CB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "expertises",
+                  "DisplayName": "Expertises",
+                  "Description": "Array of areas of expertise.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5ABB2011-1553-410A-927A-710F6C981937"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "industries",
+                  "DisplayName": "Industries",
+                  "Description": "Array of associated industries.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6C8EA430-C0A2-4952-A39C-27B6E1A52D02"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "services",
+                  "DisplayName": "Services",
+                  "Description": "Array of offered services.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "736E6E9A-DF41-4B60-B3FD-D3CC7338A1F1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "region",
+                  "DisplayName": "Region",
+                  "Description": "Array of assigned geographic regions.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "40D7751D-C9F4-43DB-B779-C70014A7C22A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "webLinks",
+                  "DisplayName": "Web Links",
+                  "Description": "Array of web and social links.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4C87EDC8-7643-45A3-A0BB-61BCABF83562"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "membership",
+                  "DisplayName": "Membership",
+                  "Description": "Membership rollup summary (status, dates, types).",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4A9FBCD7-5564-451A-A12F-B2958E311464"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "B7E3309E-8562-4023-9721-FFFEC8E7AEC3"
+          }
+        },
+        {
+          "fields": {
+            "Name": "CRMQuery",
+            "DisplayName": "CRM Query",
+            "Description": "Shared Slayte CRM stored queries available for Individual (ind) and Organization (org) bulk extraction.",
+            "APIPath": "/v2/crm/query",
+            "Category": "CRM",
+            "Status": "Active",
+            "Sequence": 3,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Shared CRM query UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "30959BD9-464D-4518-A2A4-F22F3EC53EA0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Display name of the shared CRM query.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "6DCFFF04-E459-4F2E-9D03-5970271B4244"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Description of what the query returns.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "13503350-DDBD-4A0C-9DB5-F1A4061103F4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "entityType",
+                  "DisplayName": "Entity Type",
+                  "Description": "CRM entity type targeted by this query (ind or org).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 20
+                },
+                "primaryKey": {
+                  "ID": "2FC9F05B-9E19-47BB-8499-130C5EB6C653"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "params",
+                  "DisplayName": "Params",
+                  "Description": "Parameter definitions accepted by this query at execution time.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "DF13CAF4-FFC7-43F3-9052-79FFFC9AAF84"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "09F3E752-4B2F-4054-A34F-336957BA279C"
+          }
+        },
+        {
+          "fields": {
+            "Name": "RelationshipDefinition",
+            "DisplayName": "Relationship Definition",
+            "Description": "Configured CRM relationship definitions describing links between individuals, organizations, and committees.",
+            "APIPath": "/v2/crm/relationship-definition",
+            "Category": "CRM",
+            "Status": "Active",
+            "Sequence": 4,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Unique UUID of the relationship definition.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "1BC48703-21E1-4FCB-8D1D-8CF2DA611105"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Relationship definition name.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "F183CC08-0638-4C4F-8D5E-16C27374F096"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ownRelatedToType",
+                  "DisplayName": "Own Related To Type",
+                  "Description": "Source entity type (ind, org, committee).",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 50
+                },
+                "primaryKey": {
+                  "ID": "C817E5E4-5926-4DC7-81E9-176B8C1BB8D7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "otherRelatedToType",
+                  "DisplayName": "Other Related To Type",
+                  "Description": "Target entity type (ind, org, committee).",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 50
+                },
+                "primaryKey": {
+                  "ID": "F98B00B5-7EB0-427E-B33F-576343BAA88B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "displayOrder",
+                  "DisplayName": "Display Order",
+                  "Description": "Display sort order.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9B22555F-8FA5-4967-B7FF-AF7DA7417C7C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "archiveDate",
+                  "DisplayName": "Archive Date",
+                  "Description": "Archive timestamp if retired.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B785AF8F-2559-4E28-AA34-2321CB3CAC72"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "uniquePerEntity",
+                  "DisplayName": "Unique Per Entity",
+                  "Description": "Whether only one active relationship of this type is allowed per entity.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "45B2F62E-C600-4A31-B46D-D99E985E1491"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "orgManagerCanLink",
+                  "DisplayName": "Org Manager Can Link",
+                  "Description": "Whether organization managers can create links of this type.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2E2F411C-6D34-48DD-8C98-0E2C2C3FEC5F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "orgManagerCanAddContact",
+                  "DisplayName": "Org Manager Can Add Contact",
+                  "Description": "Whether organization managers can add new contacts with this type.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "954F7556-2CAD-40FE-98F9-66788CE4C61F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "reciprocalRelationships",
+                  "DisplayName": "Reciprocal Relationships",
+                  "Description": "Reciprocal relationship definitions.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D4EDF2C3-280E-46D0-B498-C515E3DDA7F9"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "1B358E62-D9D1-403C-88DF-D026B0DD4086"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Committee",
+            "DisplayName": "Committee",
+            "Description": "Slayte CRM committees (0-based page pagination, max 250 per page).",
+            "APIPath": "/v2/crm/committee",
+            "Category": "Committees",
+            "Status": "Active",
+            "Sequence": 5,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "committeeUuid",
+                  "DisplayName": "Committee Uuid",
+                  "Description": "Unique UUID of the committee.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "B9D62FFD-00F0-496E-94D6-EA3E8B978E6F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "recordNumber",
+                  "DisplayName": "Record Number",
+                  "Description": "CRM record number of the committee.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "6D5F3557-F027-4BDA-8ECC-59D707AA3D10"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Committee name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "081959A6-3BCA-49C2-9560-2407CC99E167"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "code",
+                  "DisplayName": "Code",
+                  "Description": "Unique committee code.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "75774587-9C96-4F94-8CDC-620C7A2A351D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Committee description.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "6CEA7946-A07F-4F99-838F-E48CC851D4AD"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "startDate",
+                  "DisplayName": "Start Date",
+                  "Description": "Committee start date.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1FD3AF7E-1EAA-4258-B788-1B886F2C7C7A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "endDate",
+                  "DisplayName": "End Date",
+                  "Description": "Committee end date.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6538764B-19C3-407A-9A30-1A4654157DFF"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Committee status.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "01D3F719-04E9-4C8B-97D7-7BC6D6464BBB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "imageUrl",
+                  "DisplayName": "Image Url",
+                  "Description": "Committee image URL.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 2048
+                },
+                "primaryKey": {
+                  "ID": "824C8438-9DE5-4720-8B9F-6C7ECD9F922A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "directoryOptOut",
+                  "DisplayName": "Directory Opt Out",
+                  "Description": "Whether the committee opts out of directory listing.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B2D9B5D2-8A69-4390-865D-AEABDAB01E97"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "showInDirectory",
+                  "DisplayName": "Show In Directory",
+                  "Description": "Whether the committee is shown in directories.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8F1F6A3F-DF16-40E8-923A-D73C0C801135"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "term",
+                  "DisplayName": "Term",
+                  "Description": "Active term metadata.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "9A4F71F1-E2B1-45F5-8097-27A3FD0E5642"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "availableTerms",
+                  "DisplayName": "Available Terms",
+                  "Description": "Terms configured for this committee.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A98745CE-6EC0-4C9E-9A78-3702F064EB3D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "availablePositions",
+                  "DisplayName": "Available Positions",
+                  "Description": "Positions configured for this committee.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "55BD5DD6-822B-45FD-B2FE-0CE14884C014"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "parentCommitteeUuids",
+                  "DisplayName": "Parent Committee Uuids",
+                  "Description": "UUIDs of parent committees.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1852F06B-7953-4579-BE3E-A860B6377BC9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "parentCommittees",
+                  "DisplayName": "Parent Committees",
+                  "Description": "Parent committee summary references.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "47273B51-AF5C-46F4-88E8-EB2966ABA962"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "category",
+                  "DisplayName": "Category",
+                  "Description": "Committee category labels.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4E0EB5EF-8888-4D24-B607-0EA44BFF5133"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "42E75FA6-E25E-41D2-884B-22CDF025C78A"
+          }
+        },
+        {
+          "fields": {
+            "Name": "CommitteePosition",
+            "DisplayName": "Committee Position",
+            "Description": "Realm-wide configured committee positions.",
+            "APIPath": "/v2/crm/committee/position",
+            "Category": "Committees",
+            "Status": "Active",
+            "Sequence": 6,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Unique UUID of the committee position.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "AEBA932B-5D19-40A7-AECF-F3779285ABC5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "label",
+                  "DisplayName": "Label",
+                  "Description": "Display label of the position.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "1E2F53A4-4829-47AC-9D41-793B33ECB90D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "termMonths",
+                  "DisplayName": "Term Months",
+                  "Description": "Standard term length in months.",
+                  "Type": "Number",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "211EE27E-9925-4806-BEFC-F56E387DA941"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "maxHolders",
+                  "DisplayName": "Max Holders",
+                  "Description": "Maximum concurrent holders allowed.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3496E1DC-583B-4F7A-ACC1-863316713866"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "maxConsecutiveTerms",
+                  "DisplayName": "Max Consecutive Terms",
+                  "Description": "Maximum consecutive terms allowed.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A2B85893-20EB-434E-A57B-5F95A75B33CC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isLeader",
+                  "DisplayName": "Is Leader",
+                  "Description": "Whether this position grants committee leadership status.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "213F251C-1E19-44C5-A9D0-F3F4EBB1C2AD"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isOperator",
+                  "DisplayName": "Is Operator",
+                  "Description": "Whether this position grants committee operator permissions.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C051541E-AFBF-471B-A9C8-FB3CBEEF5ED5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "hasVotingRights",
+                  "DisplayName": "Has Voting Rights",
+                  "Description": "Whether holders have voting rights.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "842F0D23-2028-4AB2-908A-A6B0FF05CC19"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "relationshipDefUuid",
+                  "DisplayName": "Relationship Def Uuid",
+                  "Description": "Backing RelationshipDefinition UUID.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=RelationshipDefinition&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "A152E2AE-DC66-47AA-BF4E-480E8CC52DB0"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "8F8C3DB4-AF50-4D56-8E4F-F9250B39DD47"
+          }
+        },
+        {
+          "fields": {
+            "Name": "CommitteeTerm",
+            "DisplayName": "Committee Term",
+            "Description": "Realm-wide configured committee service terms.",
+            "APIPath": "/v2/crm/committee/term",
+            "Category": "Committees",
+            "Status": "Active",
+            "Sequence": 7,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Unique UUID of the committee term.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "989F4000-7AD8-42A1-8B80-AB2CC4498AA1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "label",
+                  "DisplayName": "Label",
+                  "Description": "Display label of the term.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "1013F584-E5A0-4009-8AE7-2D1919C3650E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "startDate",
+                  "DisplayName": "Start Date",
+                  "Description": "Term start date.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3D48C07B-D232-47E2-AFFC-2E92384B1663"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "endDate",
+                  "DisplayName": "End Date",
+                  "Description": "Term end date.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "99CF79F2-4EEF-4CE7-9B40-A22A07D76C6E"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "A91CDE10-FF09-4EAD-8645-5A55389786F2"
+          }
+        },
+        {
+          "fields": {
+            "Name": "CommitteeAssignedPosition",
+            "DisplayName": "Committee Assigned Position",
+            "Description": "Positions configured and available on a specific committee.",
+            "APIPath": "/v2/crm/committee/{uuid}/position",
+            "Category": "Committees",
+            "Status": "Active",
+            "Sequence": 8,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Committee\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Position UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "95BA9772-1734-47A7-A688-6C5DC74A3D0C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "committeeUuid",
+                  "DisplayName": "Committee Uuid",
+                  "Description": "Parent Committee UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Committee&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "committeeUuid"
+                },
+                "primaryKey": {
+                  "ID": "AE95B541-0DCA-41FA-87EE-89FD74549772"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Position name.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "C8317353-594B-453E-A8B1-D580E62C210E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "committeeName",
+                  "DisplayName": "Committee Name",
+                  "Description": "Parent committee name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "F0C7C563-D979-4723-ACB3-4CDC0D8CF225"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "committeeCode",
+                  "DisplayName": "Committee Code",
+                  "Description": "Parent committee code.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "BCDDCD23-BA18-4393-93B4-9C87F72E997F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isLeader",
+                  "DisplayName": "Is Leader",
+                  "Description": "Whether this position is a leadership role.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "34A8B785-12C6-4869-BB13-693CF8145A97"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isOperator",
+                  "DisplayName": "Is Operator",
+                  "Description": "Whether this position has operator access.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "92615F54-7AB0-40B8-AB19-48AC47DFA14F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "hasVotingRights",
+                  "DisplayName": "Has Voting Rights",
+                  "Description": "Whether this position has voting rights.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4212B857-9ED5-4871-A639-36A2F22E483E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "termMonths",
+                  "DisplayName": "Term Months",
+                  "Description": "Term duration in months.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8FCE0D2F-5F69-4542-8CA8-0436D1D80531"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "maxHolders",
+                  "DisplayName": "Max Holders",
+                  "Description": "Maximum simultaneous holders.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "0DC1F0BC-A00E-459B-B0C6-44067360747E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "maxConsecutiveTerms",
+                  "DisplayName": "Max Consecutive Terms",
+                  "Description": "Maximum consecutive terms.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FAB9FD7E-5310-4E29-9403-95F936D23579"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "86F1F57F-EAE4-4C92-84F5-87C9640B4EBE"
+          }
+        },
+        {
+          "fields": {
+            "Name": "CommitteeMember",
+            "DisplayName": "Committee Member",
+            "Description": "Members serving on a committee with their positions, terms, and affiliated organization.",
+            "APIPath": "/v2/crm/committee/{uuid}/member",
+            "Category": "Committees",
+            "Status": "Active",
+            "Sequence": 9,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Committee\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "committeeMemberUuid",
+                  "DisplayName": "Committee Member Uuid",
+                  "Description": "Unique UUID of the committee membership record.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "923B9BB3-253F-401B-84FE-69FAF6B24839"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "committeeUuid",
+                  "DisplayName": "Committee Uuid",
+                  "Description": "Parent Committee UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Committee&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "committeeUuid"
+                },
+                "primaryKey": {
+                  "ID": "9D187878-2D05-43E3-86F5-AC7BEAA8AEFB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "individualUuid",
+                  "DisplayName": "Individual Uuid",
+                  "Description": "Member Individual UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Individual&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "individualUuid"
+                },
+                "primaryKey": {
+                  "ID": "37A6C712-72D5-45F1-834C-BDE69852B979"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "recordNumber",
+                  "DisplayName": "Record Number",
+                  "Description": "Member CRM record number.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "5E001E4D-C3E5-4AD0-9F4B-E162C369DEA0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "Member first name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "AAF68DA5-E37C-41D2-B33B-849A4F801F44"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Member last name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "28107D5E-D3FC-44DD-AACE-8680FEE0F2F1"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "committeeCode",
+                  "DisplayName": "Committee Code",
+                  "Description": "Parent committee code.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "61B52654-9D84-419D-8EC0-F3EA2C58F5F9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "position",
+                  "DisplayName": "Position",
+                  "Description": "Committee position label.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "4B874FC7-6C37-42FA-A65F-86019F676C46"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "positionUuid",
+                  "DisplayName": "Position Uuid",
+                  "Description": "CommitteePosition UUID.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=CommitteePosition&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "F6C2A0ED-AD0F-4CE2-95C9-0E7452B364EE"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "startDate",
+                  "DisplayName": "Start Date",
+                  "Description": "Membership start date.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "3F6B049C-3DC9-4BE6-ADE4-784606F0516D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "endDate",
+                  "DisplayName": "End Date",
+                  "Description": "Membership end date.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D8CF621A-6438-4BFF-9439-0F964878120B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileOrgName",
+                  "DisplayName": "Profile Org Name",
+                  "Description": "Member primary organization name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "9B8E17A5-F1A7-4DC2-B3EC-6ED4FCD08956"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "profileOrgUuid",
+                  "DisplayName": "Profile Org Uuid",
+                  "Description": "Member primary Organization UUID.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Organization&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "organizationUuid"
+                },
+                "primaryKey": {
+                  "ID": "456CF694-2F67-4CE6-8AD9-70232E056FE5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "terms",
+                  "DisplayName": "Terms",
+                  "Description": "Terms associated with this committee membership.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F7D1AF25-E8EF-495F-8C88-C1FB99B58A0F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "addresses",
+                  "DisplayName": "Addresses",
+                  "Description": "Member addresses.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AE7C09C1-1491-41F5-B5C9-82BDF4CAFAC0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "emails",
+                  "DisplayName": "Emails",
+                  "Description": "Member email addresses.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E1EF4DFB-ED85-457F-9760-7663237DCCCE"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "phones",
+                  "DisplayName": "Phones",
+                  "Description": "Member phone numbers.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "66AC2432-6FC0-48FD-9219-DBF64FA5A422"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "3DDCF1E3-86E9-4067-B570-FE43720066DD"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Directory",
+            "DisplayName": "Directory",
+            "Description": "Configured Slayte member and organization directories.",
+            "APIPath": "/v2/directory",
+            "Category": "Directories",
+            "Status": "Active",
+            "Sequence": 10,
+            "PaginationType": "None",
+            "SupportsPagination": false,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"syncStrategy\":\"FullPullHashDiff\"}",
+            "ResponseDataKey": "data"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Unique UUID of the directory.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "153F72FF-1270-494A-BC3B-7BDCA113C54C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Directory display name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "89FB31D6-1BF8-47BE-954E-5390FAE40FC0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "slug",
+                  "DisplayName": "Slug",
+                  "Description": "Directory slug identifier.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": true,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "F12E2A9F-376E-471C-AB7B-A49189900F84"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Directory description.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "940549D9-9313-4893-A06B-99D48F00D5DB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "entityType",
+                  "DisplayName": "Entity Type",
+                  "Description": "Entity type listed by this directory (ind or org).",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 20
+                },
+                "primaryKey": {
+                  "ID": "CCC69015-F8C5-4653-9638-7C3B276C238B"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "3FD19D30-F0C7-42DE-AA6F-04A98A44847C"
+          }
+        },
+        {
+          "fields": {
+            "Name": "DirectoryEntry",
+            "DisplayName": "Directory Entry",
+            "Description": "Listed entries inside each configured Slayte directory, fetched via cursor-paginated POST /v2/directory/{identifier}.",
+            "APIPath": "/v2/directory/{identifier}",
+            "Category": "Directories",
+            "Status": "Active",
+            "Sequence": 11,
+            "PaginationType": "Cursor",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Directory\",\"parentKeyField\":\"slug\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.data"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "directoryUuid",
+                  "DisplayName": "Directory Uuid",
+                  "Description": "Parent Directory UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Directory&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "1AAE665D-9800-4CFE-9BA7-88CDC59242B4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "entityUuid",
+                  "DisplayName": "Entity Uuid",
+                  "Description": "Listed Individual or Organization UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "0C0DBA0A-CC45-4834-9A03-B35DDD2B6535"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "directorySlug",
+                  "DisplayName": "Directory Slug",
+                  "Description": "Parent directory slug.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "58DA60D8-8657-4456-8119-215704880A2C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "tags",
+                  "DisplayName": "Tags",
+                  "Description": "Tags attached to this directory entry.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "A9073780-29D9-461E-A035-1125DFCE999E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "entity",
+                  "DisplayName": "Entity",
+                  "Description": "Directory-projected columns for the listed entity.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2635830A-9923-465F-8D3B-BAD6192D6F39"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "6BB67AAD-7A08-4107-B1F3-FFE98AB22D5C"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Event",
+            "DisplayName": "Event",
+            "Description": "Slayte events (0-based page pagination, max 250 per page).",
+            "APIPath": "/v2/event",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 12,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Unique UUID of the event.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "07A364CF-7295-47EE-9D78-28A41E255610"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Event name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "F476271B-BFE6-48DF-ABC3-A9C21BF42EE6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "descriptionShort",
+                  "DisplayName": "Description Short",
+                  "Description": "Short event description.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "96107EAD-5B3B-445A-8FC5-298CB1080B3A"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E57D6FF3-DB3C-460B-82A6-E72E952C82A9"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EventSession",
+            "DisplayName": "Event Session",
+            "Description": "Scheduled sessions within a Slayte event.",
+            "APIPath": "/v2/event/{eventUuid}/session",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 13,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Unique UUID of the session.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "BCDB0253-9A47-442C-8426-09BDAB31D0EC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "eventUuid",
+                  "DisplayName": "Event Uuid",
+                  "Description": "Parent Event UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "B475E43A-ED0B-4BD3-99F1-DE1EF0E2A2D5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "title",
+                  "DisplayName": "Title",
+                  "Description": "Session title.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "4B8774F9-DCB7-441A-A954-731BDD16251B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Session description.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "5C84361E-DB1B-457B-9BF6-97D0BE6A1EE4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "begin",
+                  "DisplayName": "Begin",
+                  "Description": "Session start timestamp.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "58A1E50B-40F0-495B-9BC8-FE984D540CAE"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "end",
+                  "DisplayName": "End",
+                  "Description": "Session end timestamp.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4CAD8163-FB7E-4CCD-B01D-79DD71B92FE0"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "categories",
+                  "DisplayName": "Categories",
+                  "Description": "Session category assignments.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F143C055-5D9C-4DA0-87E7-D407259746F2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "speakers",
+                  "DisplayName": "Speakers",
+                  "Description": "Assigned speaker summaries.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "45A56AC8-BA2D-4F3C-B4BC-40C784212456"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sessionType",
+                  "DisplayName": "Session Type",
+                  "Description": "Session type descriptor.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FECB9675-4173-42C7-ACCC-8A2A26601BAC"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "21EE0134-2E2E-4B34-8F85-3F3EDD5D5397"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EventLibrarySession",
+            "DisplayName": "Event Library Session",
+            "Description": "On-demand or library sessions within a Slayte event.",
+            "APIPath": "/v2/event/{eventUuid}/library",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 14,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Unique UUID of the library session.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "DA247478-1FF5-4999-9145-F890311AA14E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "eventUuid",
+                  "DisplayName": "Event Uuid",
+                  "Description": "Parent Event UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "97589551-11C9-4B0A-BE07-37D991DFC3D5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "title",
+                  "DisplayName": "Title",
+                  "Description": "Library session title.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "9FE65669-09C4-447F-9933-6B8244FC33C3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "description",
+                  "DisplayName": "Description",
+                  "Description": "Library session description.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "D60C975F-0FB2-47E3-AF4B-30CF7E4375CC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "begin",
+                  "DisplayName": "Begin",
+                  "Description": "Session start timestamp.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "72713E76-BF89-485F-B5FB-082988F1FF73"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "end",
+                  "DisplayName": "End",
+                  "Description": "Session end timestamp.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "EE25FD14-B4E0-47E4-BDAB-9FF5E2AEBFAB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "categories",
+                  "DisplayName": "Categories",
+                  "Description": "Session category assignments.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "44CCC524-02A4-46FF-9E3B-187A70C86223"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "speakers",
+                  "DisplayName": "Speakers",
+                  "Description": "Assigned speaker summaries.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6BA4F1B7-4E0F-4084-8F31-73CDDE09A012"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sessionType",
+                  "DisplayName": "Session Type",
+                  "Description": "Session type descriptor.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C7E07CFD-2F0D-47A2-B84B-2FAA35032ED5"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "F858D43F-EA9F-4922-AAE4-0232A5947E7C"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EventSpeaker",
+            "DisplayName": "Event Speaker",
+            "Description": "Speakers assigned to a Slayte event.",
+            "APIPath": "/v2/event/{eventUuid}/speaker",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 15,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "eventUuid",
+                  "DisplayName": "Event Uuid",
+                  "Description": "Parent Event UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "5160EFC8-DFED-4A14-9F3D-2404D1148066"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Speaker user UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "CE9B7001-5BE8-4492-8F07-D4D68692E2E3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Full speaker name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "5B7638F9-5477-4703-BA32-73C0512E29B9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Speaker email address.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
+                },
+                "primaryKey": {
+                  "ID": "A452CED1-FA69-411B-8360-0006A409B5C3"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "Speaker first name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "37508DBB-9F4B-402C-A786-1221DCFC419D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Speaker last name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "438FF869-2BF2-4B21-BAF1-BF5D116D0D3A"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "5AA2EE33-79C0-4526-A6B2-BEB8497D1250"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EventCompany",
+            "DisplayName": "Event Company",
+            "Description": "Exhibitors and sponsors participating in a Slayte event.",
+            "APIPath": "/v2/event/{eventUuid}/company",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 16,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "eventUuid",
+                  "DisplayName": "Event Uuid",
+                  "Description": "Parent Event UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "239CE78D-2D3E-4A69-8E95-51B4E17C1391"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "uuid",
+                  "DisplayName": "Uuid",
+                  "Description": "Company UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "CCC03B3A-FFCF-4980-BF63-5D663A581AB9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "name",
+                  "DisplayName": "Name",
+                  "Description": "Company name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 500
+                },
+                "primaryKey": {
+                  "ID": "41B41F0F-58DF-4CF0-BDF9-2B31D06B3B90"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isExhibitor",
+                  "DisplayName": "Is Exhibitor",
+                  "Description": "Whether the company is an exhibitor.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4F0DB93F-D4D8-41A8-BEC4-DFA679E7168B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isSponsor",
+                  "DisplayName": "Is Sponsor",
+                  "Description": "Whether the company is a sponsor.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2D9B6B7D-24AA-490E-97C7-BBEFFF377AF5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "tagline",
+                  "DisplayName": "Tagline",
+                  "Description": "Company tagline.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 4000
+                },
+                "primaryKey": {
+                  "ID": "D58A0390-9D86-4B5B-AAD2-0FAAC1470DD0"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "DC738830-90EA-4DA3-B401-329B576D331E"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EventRegistration",
+            "DisplayName": "Event Registration",
+            "Description": "Registration orders/groups within a Slayte event.",
+            "APIPath": "/v2/event/{eventUuid}/registration",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 17,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "registrationUuid",
+                  "DisplayName": "Registration Uuid",
+                  "Description": "Unique UUID of the event registration.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "7F23C84A-2E91-4B9A-B96A-ADCBA0DE2C6E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "eventUuid",
+                  "DisplayName": "Event Uuid",
+                  "Description": "Parent Event UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "56A4BE8C-ECE4-47A9-A95E-A7F47592C1B7"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registrationCode",
+                  "DisplayName": "Registration Code",
+                  "Description": "Registration confirmation code.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "38AC6173-07BE-4741-9E57-3D10CCF829C6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registrationDate",
+                  "DisplayName": "Registration Date",
+                  "Description": "Timestamp when the registration was created.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "05C10A6B-7989-4B80-8D15-5F8627B91069"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Registration status.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "CE1F87DB-82C5-43AD-A2BD-22EDB10B1045"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ticketCount",
+                  "DisplayName": "Ticket Count",
+                  "Description": "Total tickets in the registration.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "8DF6C253-8D2C-4693-AEBF-CD4E19E92866"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "unassignedCount",
+                  "DisplayName": "Unassigned Count",
+                  "Description": "Number of unassigned seats.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F0E358ED-2611-4879-B294-1257FF014F1A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ownerUuid",
+                  "DisplayName": "Owner Uuid",
+                  "Description": "Registration owner user UUID.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "9A58F44E-03CA-4DC9-BC17-590141BF8320"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ownerName",
+                  "DisplayName": "Owner Name",
+                  "Description": "Registration owner display name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "6DBA4B4A-B360-44A3-9518-D16C0C698B03"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ownerEmail",
+                  "DisplayName": "Owner Email",
+                  "Description": "Registration owner email address.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
+                },
+                "primaryKey": {
+                  "ID": "CFEB421B-EBE0-483C-A792-2CD931581EAA"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isComp",
+                  "DisplayName": "Is Comp",
+                  "Description": "Whether the registration is complimentary.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "D7246BBB-BE45-4329-A99B-2AF48C2AC5FB"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isFree",
+                  "DisplayName": "Is Free",
+                  "Description": "Whether the registration is free.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "822A6D29-4010-4E34-ACC1-3D4F1728829B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isSourced",
+                  "DisplayName": "Is Sourced",
+                  "Description": "Whether the registration came from an external source.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "6FFF3978-BA93-4C21-916F-F172CD78DA4E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sourceProvider",
+                  "DisplayName": "Source Provider",
+                  "Description": "External registration source provider.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "E6F33BDF-760C-4DA8-8669-119F683BCA9A"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "01381538-CDE7-4F18-96E0-C496C79ECC8E"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EventRegistrant",
+            "DisplayName": "Event Registrant",
+            "Description": "Seat-grain event registrants with incremental sync support via the changedSince ISO datetime filter.",
+            "APIPath": "/v2/event/{eventUuid}/registrant",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 18,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": true,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"watermarkParam\":\"changedSince\",\"syncStrategy\":\"IncrementalWatermark\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items",
+            "IncrementalWatermarkField": "registrationDate"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "registrantUuid",
+                  "DisplayName": "Registrant Uuid",
+                  "Description": "Unique UUID of the event registrant.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "24457DF8-5C96-4E0C-830C-A501AF4912A4"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "eventUuid",
+                  "DisplayName": "Event Uuid",
+                  "Description": "Parent Event UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "9C074C15-D469-4DE9-9D09-32DCF95077B5"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registrationUuid",
+                  "DisplayName": "Registration Uuid",
+                  "Description": "Parent EventRegistration UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=EventRegistration&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "registrationUuid"
+                },
+                "primaryKey": {
+                  "ID": "A4DE4EE1-80D8-455C-983B-587B0CCB9C3D"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registrantCode",
+                  "DisplayName": "Registrant Code",
+                  "Description": "Registrant confirmation code.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "23F5861F-FA80-464C-93C3-CCC647A7DBFD"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registrationCode",
+                  "DisplayName": "Registration Code",
+                  "Description": "Parent registration code.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "A0848230-49FC-42C5-8A23-8C0AD6953524"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Registrant status.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "DDACBFF3-AE12-4BAB-96BB-77103D549C6C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "attendeeUserUuid",
+                  "DisplayName": "Attendee User Uuid",
+                  "Description": "Attendee user UUID.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "22878C2F-F6AD-4905-B2E3-B4CD12965F2E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "attendeeName",
+                  "DisplayName": "Attendee Name",
+                  "Description": "Attendee full name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "F8010715-F0DF-4404-87B6-62F248D81ACD"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "attendeeEmail",
+                  "DisplayName": "Attendee Email",
+                  "Description": "Attendee email address.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
+                },
+                "primaryKey": {
+                  "ID": "463094B6-5D1A-4302-9AA1-9FE71674C06A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ticketName",
+                  "DisplayName": "Ticket Name",
+                  "Description": "Assigned ticket type name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "3300AAA8-83C2-447D-8ED0-9793C9B4516E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isAssigned",
+                  "DisplayName": "Is Assigned",
+                  "Description": "Whether the seat is assigned to an attendee.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "95F41161-DA77-4FA5-A49E-AA600BE1600C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registrationDate",
+                  "DisplayName": "Registration Date",
+                  "Description": "Registration timestamp.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "96003501-6DF3-4C4D-876C-296968896A5E"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isNetworking",
+                  "DisplayName": "Is Networking",
+                  "Description": "Whether the registrant opted into event networking.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B2A9A8BC-2746-41F6-B214-130F7B3F3758"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isCheckedIn",
+                  "DisplayName": "Is Checked In",
+                  "Description": "Whether the registrant is checked in.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C96031F2-CC09-4E6F-9684-9F205730D9BC"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isComp",
+                  "DisplayName": "Is Comp",
+                  "Description": "Whether the registrant ticket is complimentary.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "5449A81B-1B01-40E6-BF0A-1C797C4B2358"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isFree",
+                  "DisplayName": "Is Free",
+                  "Description": "Whether the registrant ticket is free.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "41D39895-80E4-488A-9859-97F5224FF497"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "isSourced",
+                  "DisplayName": "Is Sourced",
+                  "Description": "Whether the registrant was externally sourced.",
+                  "Type": "Boolean",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "1EAD0229-C4DF-4C9B-9836-A2D5DE32B43F"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sourceProvider",
+                  "DisplayName": "Source Provider",
+                  "Description": "External registrant source provider.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "F7F9C80C-923A-4DBA-8877-56B64CF4D7DD"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "guests",
+                  "DisplayName": "Guests",
+                  "Description": "Guests linked to this registrant.",
+                  "Type": "json",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "FD721C83-84FD-404A-A489-5F35EE42E134"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E85AB513-05E9-4B69-868F-7927843DB1E2"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EventGuest",
+            "DisplayName": "Event Guest",
+            "Description": "Guests registered under attendees for a Slayte event.",
+            "APIPath": "/v2/event/{eventUuid}/guest",
+            "Category": "Events",
+            "Status": "Active",
+            "Sequence": 19,
+            "PaginationType": "PageNumber",
+            "SupportsPagination": true,
+            "SupportsIncrementalSync": false,
+            "SupportsWrite": false,
+            "IntegrationID": "@parent:ID",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "DefaultPageSize": 100,
+            "ResponseDataKey": "data.items"
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "guestUuid",
+                  "DisplayName": "Guest Uuid",
+                  "Description": "Unique UUID of the event guest.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": true,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "15CFBC5B-320F-4AA7-B475-D162E8051BF2"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "eventUuid",
+                  "DisplayName": "Event Uuid",
+                  "Description": "Parent Event UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "uuid"
+                },
+                "primaryKey": {
+                  "ID": "86E05AB8-65AC-4FCA-8909-98AD2B9F3804"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "ownerRegistrantUuid",
+                  "DisplayName": "Owner Registrant Uuid",
+                  "Description": "Owning EventRegistrant UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=EventRegistrant&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "registrantUuid"
+                },
+                "primaryKey": {
+                  "ID": "4C17BE64-AC12-4E38-8367-77EEAC11A95A"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "registrationUuid",
+                  "DisplayName": "Registration Uuid",
+                  "Description": "Parent EventRegistration UUID.",
+                  "Type": "String",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=EventRegistration&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "registrationUuid"
+                },
+                "primaryKey": {
+                  "ID": "D92027A3-5332-45B1-894C-2FFCBEF79980"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "firstName",
+                  "DisplayName": "First Name",
+                  "Description": "Guest first name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "7E2D6006-8873-482F-8A9A-B14C2EF78183"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "lastName",
+                  "DisplayName": "Last Name",
+                  "Description": "Guest last name.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 255
+                },
+                "primaryKey": {
+                  "ID": "F2BF8CE4-41B5-44A7-9FB4-0DF72C01A142"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "email",
+                  "DisplayName": "Email",
+                  "Description": "Guest email address.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 320
+                },
+                "primaryKey": {
+                  "ID": "881A4F4B-4E58-4F11-BDA1-F91E761A3C0B"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "sessionCount",
+                  "DisplayName": "Session Count",
+                  "Description": "Number of sessions the guest is registered for.",
+                  "Type": "Int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "156638C5-77FE-45BF-97CE-0AB5B3A0041C"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "checkedInAt",
+                  "DisplayName": "Checked In At",
+                  "Description": "Timestamp when the guest checked in.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E000EB2F-5EDE-4A04-9B7D-B1FC4E3D3B06"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "addedAt",
+                  "DisplayName": "Added At",
+                  "Description": "Timestamp when the guest was added.",
+                  "Type": "Datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "B09D0FE0-2268-4332-AD3A-2C34DA966253"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "status",
+                  "DisplayName": "Status",
+                  "Description": "Guest status.",
+                  "Type": "String",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "IntegrationObjectID": "@parent:ID",
+                  "Length": 100
+                },
+                "primaryKey": {
+                  "ID": "045A32C8-F820-4596-8DAF-00344FEF3B81"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "E6EB5BC6-B819-4C9A-B78A-D4159ED55EA6"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "88E42A19-C127-40EF-B1DD-93281632AA78"
+    }
+  }
+]
