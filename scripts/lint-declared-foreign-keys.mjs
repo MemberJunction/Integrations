@@ -75,8 +75,14 @@ function findIntegrationJsonFiles(dir, out = []) {
   return out;
 }
 
+function isDisabled(fields) {
+  return String(fields?.Status ?? '').trim().toLowerCase() === 'disabled';
+}
+
 function resolveTargetFieldName(fieldObj, targetObj) {
-  const targetFields = targetObj.relatedEntities?.['MJ: Integration Object Fields'] ?? [];
+  const targetFields = (targetObj.relatedEntities?.['MJ: Integration Object Fields'] ?? []).filter(
+    (tf) => !isDisabled(tf.fields),
+  );
   const explicit = fieldObj.fields?.RelatedIntegrationObjectFieldName;
   if (explicit) {
     return targetFields.some((tf) => tf.fields?.Name === explicit) ? explicit : null;
@@ -124,19 +130,21 @@ function auditConnector({ connector, jsonPath }) {
   let wiredCount = 0;
 
   for (const root of roots) {
-    const objects = root?.relatedEntities?.['MJ: Integration Objects'] ?? [];
-    const objByName = new Map(objects.filter((o) => o.fields?.Name).map((o) => [o.fields.Name, o]));
+    const objects = (root?.relatedEntities?.['MJ: Integration Objects'] ?? []).filter(
+      (o) => o.fields?.Name && !isDisabled(o.fields),
+    );
+    const objByName = new Map(objects.map((o) => [o.fields.Name, o]));
     const adj = new Map();
 
     for (const obj of objects) {
-      const src = obj.fields?.Name;
-      if (!src) continue;
+      const src = obj.fields.Name;
       for (const field of obj.relatedEntities?.['MJ: Integration Object Fields'] ?? []) {
+        if (isDisabled(field.fields)) continue;
         const lookup = field.fields?.RelatedIntegrationObjectID;
         if (!lookup) continue;
         wiredCount++;
         const m = String(lookup).match(/Name=([^&]+)/);
-        if (m && m[1] !== src) {
+        if (m && m[1] !== src && objByName.has(m[1])) {
           if (!adj.has(src)) adj.set(src, new Set());
           adj.get(src).add(m[1]);
         }
@@ -147,10 +155,10 @@ function auditConnector({ connector, jsonPath }) {
     for (const name of stuck) stuckObjects.add(name);
 
     for (const obj of objects) {
-      const srcName = obj.fields?.Name ?? '';
+      const srcName = obj.fields.Name;
       for (const field of obj.relatedEntities?.['MJ: Integration Object Fields'] ?? []) {
         const fields = field.fields;
-        if (!fields || fields.RelatedIntegrationObjectID) continue;
+        if (!fields || fields.RelatedIntegrationObjectID || isDisabled(fields)) continue;
 
         const cfg = parseConfig(fields.Configuration);
         const ref = cfg && (cfg.ReferencedType || cfg.referencedType || cfg.ForeignKeyTarget);
