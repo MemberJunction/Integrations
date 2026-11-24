@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { z } from 'zod';
 import { RegisterClass } from '@memberjunction/global';
 import { Metadata, type UserInfo } from '@memberjunction/core';
@@ -36,21 +37,26 @@ import { mergeDeclaredWithSampledFields } from '@memberjunction/connector-schema
 // `POST /v2/crm/query/{queryId}/execute?cursor=...` with cursor pagination,
 // where `queryId` comes from `CompanyIntegration.Configuration`
 // (`individualQueryId` / `organizationQueryId`), never from a parent walk.
-// Accordingly, the `Individual` and `Organization` metadata objects declare
-// the untemplated door `/v2/crm/query`, and `FetchChanges` routes them to the
-// configured query execution endpoint.
+// Accordingly, `Individual`, `Organization`, and `DirectoryEntry` declare
+// untemplated doors (`/v2/crm/query`, `/v2/directory`), and `FetchChanges`
+// routes them to their respective `POST` execution endpoints so both sync and
+// `DiscoverFieldsViaFetch` sampling go through the connector.
 //
 // REST collection endpoints (Committees, Events, Sessions, Speakers, Companies,
 // Registrations, Registrants, Guests) use ZERO-based `page` numbering
 // (`page=0` is the first page, `pageSize` max 250) and return
 // `{ success: true, data: { items: [...], total: N } }`. Because
-// `BaseRESTIntegrationConnector` uses 1-based `currentPage`, `BuildPaginatedURL`
-// translates `page = Math.max(0, page - 1)`.
+// `BaseRESTIntegrationConnector` uses 1-based `currentPage` and may pass a
+// varying `effectivePageSize`, `BuildPaginatedURL` translates `page = page - 1`
+// and holds `pageSize` fixed at `obj.DefaultPageSize` (clamped 1..250) so page
+// boundaries never shift mid-scan.
 //
-// Because Slayte workspaces define custom fields and custom CRM query columns,
-// the metadata catalog declares only standard built-in Slayte v2 core fields,
-// and `IntrospectSchema` unions them with live sampled fields via
-// `@memberjunction/connector-schema-merge`.
+// HTTP 429 responses are thrown immediately with `status` and `headers` intact
+// (never slept in the transport) so the engine's AIMD rate limiter and
+// `ExtractRetryAfterMs` own retry/backoff without colliding with the 30s
+// `FetchChangesMs` timeout. HTTP 404 responses on parent-scoped child
+// collections (deleted Committee or Event) are converted to an empty page so
+// one deleted parent never aborts the rest of the object's sync.
 
 // ─── Schemas & Types ────────────────────────────────────────────────────
 
@@ -67,9 +73,8 @@ const RawSlayteCredentialsSchema = z.object({
 
 /**
  * Per-connection settings stored in `CompanyIntegration.Configuration`.
- * All fields are optional at parse time; `individualQueryId` and
- * `organizationQueryId` are strictly required when syncing `Individual` or
- * `Organization`.
+ * All fields are optional at parse time; invalid values raise an explicit
+ * validation error rather than silently discarding valid sibling settings.
  */
 export const SlayteConnectionSettingsSchema = z.object({
     /** Shared CRM query UUID or share-link ID used to bulk-fetch Individuals. */
@@ -92,8 +97,6 @@ export const SlayteConnectionSettingsSchema = z.object({
     apiBaseUrl: z.string().url().optional(),
     /** HTTP request timeout in milliseconds. Default: 30000. */
     requestTimeoutMs: z.number().int().positive().optional(),
-    /** Maximum retry attempts for HTTP 429 / 502 / 503 / 504 responses. Default: 3. */
-    maxRetries: z.number().int().min(0).max(10).optional(),
 }).passthrough();
 
 export type SlayteConnectionSettings = z.infer<typeof SlayteConnectionSettingsSchema>;
@@ -104,6 +107,17 @@ interface SlayteAuthContext extends RESTAuthContext {
     BaseUrl: string;
     Settings: SlayteConnectionSettings;
 }
+
+/** Per-invocation async context passed cleanly through `super.FetchChanges` without mutable instance state. */
+interface SlayteFetchCallState {
+    changedSince?: string;
+    committeeFields?: string;
+}
+
+/** 6.x-compatible extension carrying `SourceTotalRecords` while compiling cleanly against 5.43. */
+type SlayteFetchBatchResult = FetchBatchResult & {
+    SourceTotalRecords?: number;
+};
 
 interface SlayteErrorDetail {
     code?: number;
@@ -151,7 +165,6 @@ interface SlayteDirectoryPageData {
 // ─── Constants ──────────────────────────────────────────────────────────
 
 const DEFAULT_TIMEOUT_MS = 30000;
-const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_REST_PAGE_SIZE = 250;
 const MAX_DIRECTORY_PAGE_SIZE = 1000;
@@ -198,6 +211,8 @@ const QUERY_OBJECTS: Record<string, {
     },
 };
 
+const fetchCallContext = new AsyncLocalStorage<SlayteFetchCallState>();
+
 // ─── SlayteConnector ────────────────────────────────────────────────────
 
 /**
@@ -209,12 +224,6 @@ const QUERY_OBJECTS: Record<string, {
 @RegisterClass(BaseIntegrationConnector, '@memberjunction/connector-slayte')
 @RegisterClass(BaseIntegrationConnector, 'SlayteConnector')
 export class SlayteConnector extends BaseRESTIntegrationConnector {
-
-    /** Active incremental `changedSince` value scoped to one `super.FetchChanges` call. */
-    private activeChangedSince: string | null = null;
-
-    /** Active committee `fields` override scoped to one `super.FetchChanges` call. */
-    private activeCommitteeFields: string | null = null;
 
     public override get IntegrationName(): string {
         return 'Slayte';
@@ -356,6 +365,14 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
 
     // ── HTTP Transport ──────────────────────────────────────────────────
 
+    /**
+     * Executes a single HTTP request against Slayte without sleeping on 429:
+     * - HTTP 429 throws immediately with `{ status: 429, headers }` attached so the
+     *   engine's AIMD rate limiter and `ExtractRetryAfterMs` control retry/backoff
+     *   without tripping `FetchChangesMs`.
+     * - HTTP 404 on a parent-scoped child collection (deleted Committee or Event)
+     *   returns an empty `200` page so one deleted parent never aborts the object.
+     */
     protected override async MakeHTTPRequest(
         auth: RESTAuthContext,
         url: string,
@@ -365,63 +382,46 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
     ): Promise<RESTResponse> {
         const slayteAuth = auth as SlayteAuthContext;
         const timeoutMs = slayteAuth.Settings?.requestTimeoutMs ?? DEFAULT_TIMEOUT_MS;
-        const maxRetries = slayteAuth.Settings?.maxRetries ?? DEFAULT_MAX_RETRIES;
 
-        let lastResponse: RESTResponse | null = null;
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            const init: RequestInit = {
-                method,
-                headers,
-                signal: AbortSignal.timeout(timeoutMs),
-            };
-            if (body !== undefined && method !== 'GET' && method !== 'HEAD') {
-                init.body = typeof body === 'string' ? body : JSON.stringify(body);
-            }
-
-            const resp = await fetch(url, init);
-            const respHeaders: Record<string, string> = {};
-            resp.headers.forEach((value, key) => {
-                respHeaders[key.toLowerCase()] = value;
-            });
-
-            const text = await resp.text();
-            let parsedBody: unknown = text;
-            if (text.length > 0) {
-                try {
-                    parsedBody = JSON.parse(text);
-                } catch {
-                    parsedBody = text;
-                }
-            } else {
-                parsedBody = null;
-            }
-
-            const result: RESTResponse = {
-                Status: resp.status,
-                Body: parsedBody,
-                Headers: respHeaders,
-            };
-
-            const retryable = resp.status === 429 || resp.status === 502 || resp.status === 503 || resp.status === 504;
-            if (!retryable || attempt === maxRetries) {
-                return result;
-            }
-
-            lastResponse = result;
-            const retryAfterMs = parseRetryDelayMs(respHeaders);
-            const backoffMs = retryAfterMs !== undefined
-                ? Math.min(retryAfterMs, timeoutMs)
-                : Math.min(500 * Math.pow(2, attempt), 8000);
-            await this.sleep(backoffMs);
+        const init: RequestInit = {
+            method,
+            headers,
+            signal: AbortSignal.timeout(timeoutMs),
+        };
+        if (body !== undefined && method !== 'GET' && method !== 'HEAD') {
+            init.body = typeof body === 'string' ? body : JSON.stringify(body);
         }
 
-        return lastResponse!;
-    }
+        const resp = await fetch(url, init);
+        const respHeaders: Record<string, string> = {};
+        resp.headers.forEach((value, key) => {
+            respHeaders[key.toLowerCase()] = value;
+        });
 
-    /** Seam for deterministic backoff unit tests. */
-    protected sleep(ms: number): Promise<void> {
-        if (ms <= 0) return Promise.resolve();
-        return new Promise((resolve) => setTimeout(resolve, ms));
+        const text = await resp.text();
+        let parsedBody: unknown = null;
+        if (text.length > 0) {
+            try {
+                parsedBody = JSON.parse(text);
+            } catch {
+                parsedBody = text;
+            }
+        }
+
+        const result: RESTResponse = {
+            Status: resp.status,
+            Body: parsedBody,
+            Headers: respHeaders,
+        };
+
+        if (resp.status === 429) {
+            throw Object.assign(
+                new Error(`Slayte HTTP 429 rate limited (${method} ${url}): ${formatSlayteError(result)}`),
+                { status: 429, headers: respHeaders, response: result }
+            );
+        }
+
+        return deletedParentAsEmpty(url, method, result);
     }
 
     // ── Response Normalization & Pagination ─────────────────────────────
@@ -502,7 +502,6 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                     TotalRecords: total,
                 };
             }
-            // Fallback when total is absent: another page may exist iff a full page was returned
             const hasMore = items.length >= effectiveSize;
             return {
                 HasMore: hasMore,
@@ -514,9 +513,12 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
     }
 
     /**
-     * Translates MJ's 1-based `page` into Slayte's 0-based `page` (`minimum: 0`,
-     * `pageSize` clamped to 1..250), and attaches `includeids=true` / `fields` on
-     * Committee list calls and `changedSince` on incremental `EventRegistrant` calls.
+     * Translates MJ's 1-based `page` into Slayte's 0-based `page` (`minimum: 0`).
+     *
+     * Deliberately IGNORES `effectivePageSize` for `PageNumber` pagination and uses a
+     * fixed `obj.DefaultPageSize` (clamped 1..250, default 100): the base class passes
+     * remaining batch capacity as `effectivePageSize`, and changing `pageSize` between
+     * pages shifts page boundaries in page-number APIs, causing skipped/duplicate rows.
      */
     protected override BuildPaginatedURL(
         basePath: string,
@@ -524,32 +526,34 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         page: number,
         _offset: number,
         cursor?: string,
-        effectivePageSize?: number
+        _effectivePageSize?: number
     ): string {
         const params = new URLSearchParams();
         const paginationType = (obj.PaginationType ?? 'None') as PaginationType;
-        const pageSize = Math.min(
+        const fixedPageSize = Math.min(
             MAX_REST_PAGE_SIZE,
-            Math.max(1, effectivePageSize ?? obj.DefaultPageSize ?? DEFAULT_PAGE_SIZE)
+            Math.max(1, obj.DefaultPageSize ?? DEFAULT_PAGE_SIZE)
         );
 
         if (paginationType === 'PageNumber') {
             const zeroBasedPage = Math.max(0, (page || 1) - 1);
             params.set('page', String(zeroBasedPage));
-            params.set('pageSize', String(pageSize));
+            params.set('pageSize', String(fixedPageSize));
         } else if (paginationType === 'Cursor' && cursor) {
             params.set('cursor', cursor);
         }
 
+        const callState = fetchCallContext.getStore();
+
         if (obj.Name === 'Committee') {
             params.set('includeids', 'true');
-            if (this.activeCommitteeFields) {
-                params.set('fields', this.activeCommitteeFields);
+            if (callState?.committeeFields) {
+                params.set('fields', callState.committeeFields);
             }
         }
 
-        if (obj.Name === 'EventRegistrant' && this.activeChangedSince) {
-            params.set('changedSince', this.activeChangedSince);
+        if (obj.Name === 'EventRegistrant' && callState?.changedSince) {
+            params.set('changedSince', callState.changedSince);
         }
 
         const qs = params.toString();
@@ -567,6 +571,9 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
      * Validates credentials, workspace connectivity, and (when `individualQueryId`
      * and/or `organizationQueryId` are configured) probes the configured Shared CRM
      * Queries and fails with an actionable error if returned rows lack a primary key column.
+     *
+     * When `QueryApiKey` differs from `ApiKey`, both keys are verified independently.
+     * `ServerVersion` is reported only when the server returns an `X-Api-Version` header.
      */
     public override async TestConnection(
         companyIntegration: MJCompanyIntegrationEntity,
@@ -584,6 +591,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
 
         let apiVersion: string | undefined;
         const checkedNotes: string[] = [];
+        const keysDiffer = auth.ApiKey !== auth.QueryApiKey;
 
         // 1. Validate any configured bulk Shared CRM Queries (and fail if rows omit a key column)
         for (const [objectName, spec] of Object.entries(QUERY_OBJECTS)) {
@@ -622,25 +630,46 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             checkedNotes.push(`${objectName} query verified (${rows.length} row(s) on first page)`);
         }
 
-        // 2. Validate primary ApiKey when no queries were configured OR QueryApiKey differs from ApiKey
-        const needPrimaryProbe = checkedNotes.length === 0 || auth.ApiKey !== auth.QueryApiKey;
+        // 2. If keys differ and no query IDs were configured, verify QueryApiKey against GET /v2/crm/query
+        if (keysDiffer && checkedNotes.length === 0) {
+            try {
+                const qResp = await this.MakeHTTPRequest(
+                    auth,
+                    `${auth.BaseUrl}/v2/crm/query?entityType=ind`,
+                    'GET',
+                    this.buildQueryHeaders(auth)
+                );
+                if (qResp.Status < 200 || qResp.Status >= 300) {
+                    return {
+                        Success: false,
+                        Message: `Slayte QueryApiKey validation failed (HTTP ${qResp.Status}): ${formatSlayteError(qResp)}`,
+                    };
+                }
+                apiVersion = apiVersion ?? qResp.Headers['x-api-version'];
+                checkedNotes.push('QueryApiKey verified');
+            } catch (err) {
+                return {
+                    Success: false,
+                    Message: `Slayte QueryApiKey validation failed: ${err instanceof Error ? err.message : String(err)}`,
+                };
+            }
+        }
+
+        // 3. Validate primary ApiKey whenever keys differ OR no query probe ran yet
+        const needPrimaryProbe = checkedNotes.length === 0 || keysDiffer;
         if (needPrimaryProbe) {
-            const probePaths = [
-                '/v2/crm/query?entityType=ind',
-                '/v2/event?page=0&pageSize=1',
-                '/v2/crm/committee?page=0&pageSize=1',
-                '/v2/directory',
-            ];
+            // When keys differ, probe non-query REST routes first with ApiKey; otherwise include /v2/crm/query
+            const probePaths = keysDiffer
+                ? ['/v2/event?page=0&pageSize=1', '/v2/crm/committee?page=0&pageSize=1', '/v2/directory', '/v2/crm/relationship-definition']
+                : ['/v2/crm/query?entityType=ind', '/v2/event?page=0&pageSize=1', '/v2/crm/committee?page=0&pageSize=1', '/v2/directory'];
+
             let primaryOk = false;
             let lastFailure = '';
 
             for (const path of probePaths) {
-                const headers = path.startsWith('/v2/crm/query') && checkedNotes.length === 0
-                    ? this.buildQueryHeaders(auth)
-                    : this.BuildHeaders(auth);
                 let resp: RESTResponse;
                 try {
-                    resp = await this.MakeHTTPRequest(auth, `${auth.BaseUrl}${path}`, 'GET', headers);
+                    resp = await this.MakeHTTPRequest(auth, `${auth.BaseUrl}${path}`, 'GET', this.BuildHeaders(auth));
                 } catch (err) {
                     return {
                         Success: false,
@@ -655,11 +684,9 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                 }
 
                 lastFailure = `HTTP ${resp.Status}: ${formatSlayteError(resp)}`;
-                // Auth failures (invalid/expired key) are fatal across every route — fail immediately
                 if (resp.Status === 401) {
                     return { Success: false, Message: `Slayte authentication failed (${lastFailure})` };
                 }
-                // 403 SCOPE_REQUIRED on one surface → try the next read probe before failing
                 if (resp.Status !== 403) {
                     return { Success: false, Message: `Slayte connection test failed (${lastFailure})` };
                 }
@@ -677,7 +704,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         return {
             Success: true,
             Message: `Connected to Slayte API v2${detail}`,
-            ServerVersion: apiVersion ?? '2026-10-01',
+            ...(apiVersion ? { ServerVersion: apiVersion } : {}),
         };
     }
 
@@ -695,27 +722,21 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         }
 
         // Standard REST GET collections (Committee, Event, EventRegistrant, etc.)
+        // Uses AsyncLocalStorage so concurrent sibling FetchChanges calls never collide.
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
-        this.activeChangedSince = ctx.ObjectName === 'EventRegistrant' && ctx.WatermarkValue
-            ? ctx.WatermarkValue
-            : null;
-        this.activeCommitteeFields = ctx.ObjectName === 'Committee'
-            ? (auth.Settings.committeeFields ?? null)
-            : null;
+        const callState: SlayteFetchCallState = {
+            changedSince: ctx.ObjectName === 'EventRegistrant' && ctx.WatermarkValue
+                ? ctx.WatermarkValue
+                : undefined,
+            committeeFields: ctx.ObjectName === 'Committee'
+                ? auth.Settings.committeeFields
+                : undefined,
+        };
 
-        try {
-            const result = await super.FetchChanges(ctx);
-            if (ctx.ObjectName === 'EventRegistrant' && !result.HasMore) {
-                const maxDate = computeMaxIsoTimestamp(result.Records, 'registrationDate');
-                if (maxDate) {
-                    result.NewWatermarkValue = maxDate;
-                }
-            }
-            return result;
-        } finally {
-            this.activeChangedSince = null;
-            this.activeCommitteeFields = null;
-        }
+        // For EventRegistrant, deliberately do NOT override NewWatermarkValue with registrationDate:
+        // leaving it unset lets the engine record sync start ("now"), which matches Slayte's
+        // `changedSince` semantics without regressing the watermark to an old registration date.
+        return await fetchCallContext.run(callState, () => super.FetchChanges(ctx));
     }
 
     /**
@@ -728,7 +749,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
     private async fetchCRMQueryObject(
         ctx: FetchContext,
         objectName: 'Individual' | 'Organization'
-    ): Promise<FetchBatchResult> {
+    ): Promise<SlayteFetchBatchResult> {
         const spec = QUERY_OBJECTS[objectName];
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const queryId = auth.Settings[spec.configKey];
@@ -752,15 +773,6 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         try {
             resp = await this.MakeHTTPRequest(auth, url, 'POST', this.buildQueryHeaders(auth), body);
         } catch (err) {
-            ctx.RateLimitReport?.(err);
-            throw err;
-        }
-
-        if (resp.Status === 429) {
-            const err = Object.assign(
-                new Error(`Slayte rate limit hit (HTTP 429) on ${objectName} query '${queryId}': ${formatSlayteError(resp)}`),
-                { status: 429, headers: resp.Headers }
-            );
             ctx.RateLimitReport?.(err);
             throw err;
         }
@@ -798,6 +810,9 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             ? queryData.cursor
             : undefined;
         const hasMore = Boolean(nextCursor && rawRows.length > 0);
+        const totalRecordCount = typeof queryData.totalRecordCount === 'number' && Number.isFinite(queryData.totalRecordCount)
+            ? queryData.totalRecordCount
+            : undefined;
 
         const warnings: FetchWarning[] = [];
         if (Array.isArray(queryData.warnings)) {
@@ -812,12 +827,16 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             }
         }
 
-        return {
+        const result: SlayteFetchBatchResult = {
             Records: records,
             HasMore: hasMore,
             NextCursor: hasMore ? nextCursor : undefined,
             Warnings: warnings.length > 0 ? warnings : undefined,
         };
+        if (totalRecordCount !== undefined) {
+            result.SourceTotalRecords = totalRecordCount;
+        }
+        return result;
     }
 
     /** Lists all shared CRM queries across both `entityType=ind` and `entityType=org`. */
@@ -828,12 +847,10 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         for (const entityType of ['ind', 'org'] as const) {
             if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
             const url = `${auth.BaseUrl}/v2/crm/query?entityType=${entityType}`;
-            const resp = await this.MakeHTTPRequest(auth, url, 'GET', this.buildQueryHeaders(auth));
-            if (resp.Status === 429) {
-                const err = Object.assign(
-                    new Error(`Slayte rate limit hit (HTTP 429) listing CRM queries (${entityType}): ${formatSlayteError(resp)}`),
-                    { status: 429, headers: resp.Headers }
-                );
+            let resp: RESTResponse;
+            try {
+                resp = await this.MakeHTTPRequest(auth, url, 'GET', this.buildQueryHeaders(auth));
+            } catch (err) {
                 ctx.RateLimitReport?.(err);
                 throw err;
             }
@@ -863,7 +880,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Fetches `DirectoryEntry` rows across all configured directories via cursor-paginated
-     * `POST /v2/directory/{identifier}?cursor=...`. Resumes across calls via
+     * `POST /v2/directory/{slug}?cursor=...`. Resumes across calls via
      * `AfterKeyValue` (`<dirIndex>|<cursor>`) and respects `IsDiscoverySample` /
      * `SampleTargetRecords` / `DeadlineMs`.
      */
@@ -871,10 +888,16 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const headers = this.BuildHeaders(auth);
 
-        // Fetch directory list once per call to resolve slugs & UUIDs
         if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
-        const dirResp = await this.MakeHTTPRequest(auth, `${auth.BaseUrl}/v2/directory`, 'GET', headers);
-        ctx.RateLimitReport?.(dirResp.Status === 429 ? dirResp : undefined);
+        let dirResp: RESTResponse;
+        try {
+            dirResp = await this.MakeHTTPRequest(auth, `${auth.BaseUrl}/v2/directory`, 'GET', headers);
+        } catch (err) {
+            ctx.RateLimitReport?.(err);
+            throw err;
+        }
+        ctx.RateLimitReport?.();
+
         if (dirResp.Status < 200 || dirResp.Status >= 300) {
             throw new Error(`Slayte GET /v2/directory failed (HTTP ${dirResp.Status}): ${formatSlayteError(dirResp)}`);
         }
@@ -913,7 +936,6 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         const records: ExternalRecord[] = [];
         let currentIdx = dirIndex;
         let currentCursor = cursor;
-
         const sampleCtx = ctx as FetchContext & {
             IsDiscoverySample?: boolean;
             SampleTargetRecords?: number;
@@ -934,12 +956,10 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             const url = `${auth.BaseUrl}/v2/directory/${encodeURIComponent(dir.slug)}${qs}`;
 
             if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
-            const resp = await this.MakeHTTPRequest(auth, url, 'POST', headers, { pageSize });
-            if (resp.Status === 429) {
-                const err = Object.assign(
-                    new Error(`Slayte rate limit hit (HTTP 429) on directory '${dir.slug}': ${formatSlayteError(resp)}`),
-                    { status: 429, headers: resp.Headers }
-                );
+            let resp: RESTResponse;
+            try {
+                resp = await this.MakeHTTPRequest(auth, url, 'POST', headers, { pageSize });
+            } catch (err) {
                 ctx.RateLimitReport?.(err);
                 throw err;
             }
@@ -975,7 +995,6 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                 : undefined;
 
             if (nextCursor && entries.length > 0) {
-                // One page per batch keeps memory bounded and hands control back to the engine
                 return {
                     Records: records,
                     HasMore: true,
@@ -983,7 +1002,6 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                 };
             }
 
-            // Finished this directory — advance to next
             currentIdx++;
             currentCursor = undefined;
 
@@ -1113,15 +1131,57 @@ export function normalizeSlayteBaseUrl(rawUrl: string): string {
     return normalized;
 }
 
+/**
+ * Parses and validates `CompanyIntegration.Configuration`.
+ * Throws an actionable error on malformed JSON or invalid setting values instead of
+ * silently discarding valid sibling keys such as `individualQueryId`.
+ */
 export function parseConnectionSettings(rawConfig: string | null | undefined): SlayteConnectionSettings {
     if (!rawConfig || !rawConfig.trim()) return {};
+    let parsed: unknown;
     try {
-        const parsed = JSON.parse(rawConfig) as unknown;
-        const result = SlayteConnectionSettingsSchema.safeParse(parsed);
-        return result.success ? result.data : {};
-    } catch {
-        return {};
+        parsed = JSON.parse(rawConfig);
+    } catch (err) {
+        throw new Error(
+            `Invalid JSON in Slayte CompanyIntegration.Configuration: ${err instanceof Error ? err.message : String(err)}`
+        );
     }
+    const result = SlayteConnectionSettingsSchema.safeParse(parsed);
+    if (!result.success) {
+        const issues = result.error.issues
+            .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
+            .join('; ');
+        throw new Error(`Invalid Slayte CompanyIntegration.Configuration: ${issues}`);
+    }
+    return result.data;
+}
+
+/**
+ * Converts HTTP 404 on a parent-scoped child collection (`GET /v2/crm/committee/<id>/(position|member)`
+ * or `GET /v2/event/<id>/(session|library|speaker|company|registrant|guest|registration)`) into an
+ * empty 200 page. A deleted Committee or Event may still exist in MJ's synced parent table; treating
+ * its 404 as "no children" prevents one deleted parent from aborting the entire child object sync.
+ * Single-record GETs and top-level lists are left untouched.
+ */
+export function deletedParentAsEmpty(url: string, method: string, response: RESTResponse): RESTResponse {
+    if (response.Status !== 404 || method.toUpperCase() !== 'GET') return response;
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return response;
+    }
+    const path = parsed.pathname.replace(/\/+$/, '');
+    const isCommitteeChild = /\/v2\/crm\/committee\/[^/]+\/(position|member)$/.test(path);
+    const isEventChild = /\/v2\/event\/[^/]+\/(session|library|speaker|company|registrant|guest|registration)$/.test(path);
+    if (!isCommitteeChild && !isEventChild) return response;
+
+    console.warn(`[Slayte] ${path}: HTTP 404 — parent record no longer exists in Slayte; treating as 0 child records.`);
+    return {
+        Status: 200,
+        Body: { success: true, data: { items: [], total: 0 } },
+        Headers: response.Headers,
+    };
 }
 
 function validateQueryRowKey(
@@ -1224,21 +1284,6 @@ function parseRetryDelayMs(headers: Record<string, string>): number | undefined 
         }
     }
     return undefined;
-}
-
-function computeMaxIsoTimestamp(records: ExternalRecord[], fieldName: string): string | undefined {
-    let maxMs = -Infinity;
-    let maxVal: string | undefined;
-    for (const r of records) {
-        const raw = r.Fields[fieldName];
-        if (typeof raw !== 'string' || !raw) continue;
-        const ms = Date.parse(raw);
-        if (Number.isFinite(ms) && ms > maxMs) {
-            maxMs = ms;
-            maxVal = raw;
-        }
-    }
-    return maxVal;
 }
 
 function readDotPath(obj: Record<string, unknown>, path: string): unknown {

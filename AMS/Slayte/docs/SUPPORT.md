@@ -38,20 +38,21 @@
 - **Per-workspace host:** Slayte has no shared API host; each workspace serves `<SiteUrl>/api/v2/...` authenticated with `X-Api-Key`.
 - **Shared CRM Queries for bulk Individuals & Organizations:** Slayte API v2 exposes no REST list route for individuals or organizations. Bulk sync executes workspace-configured Shared CRM Queries (`POST /v2/crm/query/{queryId}/execute?cursor=...`) using `CompanyIntegration.Configuration.individualQueryId` and `organizationQueryId` (and optional `QueryApiKey` when `crm:query` is scoped separately from `crm:read`).
 - **Strict key-column validation:** Because a Shared CRM Query returns only the columns configured on that query, both `TestConnection` and `FetchChanges` fail with an actionable error if the query ID is missing or if returned rows omit a recognized UUID primary key column (`individualUuid` / `organizationUuid` / `uuid` / `id`).
-- **Zero-based REST paging:** Committee and Event collections use 0-based `page` numbering (`page=0` is the first page, `pageSize` max `250`); the connector translates MJ's 1-based page counter automatically.
-- **Hybrid schema discovery:** Metadata declares only built-in Slayte v2 core fields; workspace custom fields and saved-query columns are discovered automatically via `IntrospectSchema` sample-union (`@memberjunction/connector-schema-merge`).
+- **Zero-based REST paging (fixed page size):** Committee and Event collections use 0-based `page` numbering (`page=0` is the first page, fixed `pageSize` clamped `<= 250` regardless of batch capacity); the connector translates MJ's 1-based page counter automatically so page boundaries never shift.
+- **Rate limits & deleted parents:** HTTP `429` throws immediately with `Retry-After` / `X-RateLimit-Reset` headers intact so the engine's AIMD rate limiter controls backoff; HTTP `404` on parent-scoped Committee/Event child routes returns an empty page so one deleted parent does not abort the object sync.
+- **Hybrid schema discovery:** Metadata declares only built-in Slayte v2 core fields; workspace custom fields, saved-query columns, and `DirectoryEntry` `entity.*` columns are discovered automatically via `IntrospectSchema` sample-union (`@memberjunction/connector-schema-merge`).
 
 ## What is proven
 
 ### Pull (read)
 
 - **Status: Mock-only (unit tests).** No live Slayte workspace has been synced yet.
-- Verified in Vitest (`src/__tests__/SlayteConnector.test.ts`):
-  - Credential & `SiteUrl` normalization (`/api` and `/v2` deduplication, dual `ApiKey`/`QueryApiKey` routing)
-  - `TestConnection` (success with `X-Api-Version`, `401 API_KEY_EXPIRED`, `403 SCOPE_REQUIRED`, missing key column failure)
-  - Cursor-paginated Shared CRM Query execution (`Individual`, `Organization`), parameter forwarding, warning surfacing, missing query ID / missing key column errors
-  - `CRMQuery` catalog listing (`ind` + `org`) and cursor-paginated `DirectoryEntry` walks
-  - 0-based REST page translation, `total`-based `HasMore` termination, point-lookup `GetRecord`, `Retry-After` extraction, and `IntrospectSchema` sample-union merge
+- Verified in Vitest (`src/__tests__/SlayteConnector.test.ts` — 19 tests):
+  - Credential & `SiteUrl` normalization (`/api` and `/v2` deduplication, dual `ApiKey`/`QueryApiKey` routing, strict config validation)
+  - `TestConnection` (success with `X-Api-Version`, dual-key verification, `401 API_KEY_EXPIRED`, `403 SCOPE_REQUIRED`, missing key column failure)
+  - Cursor-paginated Shared CRM Query execution (`Individual`, `Organization`), `SourceTotalRecords`, parameter forwarding, warning surfacing, missing query ID / missing key column errors
+  - `BaseRESTIntegrationConnector` (`super.FetchChanges`) integration paths: fixed `pageSize` across `BatchSize: 300`, `{committeeUuid}` child `uuid` preservation, `EventRegistrant` `changedSince` forwarding without stale watermark regression, and deleted-parent `404` handling
+  - Immediate HTTP `429` propagation with `Retry-After` headers for `ExtractRetryAfterMs`, `CRMQuery` catalog listing (`ind` + `org`), cursor-paginated `DirectoryEntry` walks, point-lookup `GetRecord`, and `IntrospectSchema` sample-union merge
 
 ### Push (write / bidirectional)
 

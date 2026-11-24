@@ -38,7 +38,7 @@
             "zeroBasedPage": true,
             "pageParam": "page",
             "pageSizeParam": "pageSize",
-            "defaultPageSize": 25,
+            "defaultPageSize": 100,
             "maxPageSize": 250,
             "itemsField": "data.items",
             "totalField": "data.total"
@@ -112,7 +112,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "B1C924FA-C7AD-472C-B62C-E72BC526BD5E"
+                  "ID": "5FECF01C-E23F-48B6-8123-AD7ED0914CDD"
                 }
               },
               {
@@ -131,7 +131,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "F5C1633A-154B-4F4A-A35F-5D03A160CFE9"
+                  "ID": "E1F07A86-E89B-4F34-B2A0-EC34CD398E28"
                 }
               },
               {
@@ -150,7 +150,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "60929937-0263-49EF-B40E-FEF3318F2902"
+                  "ID": "4F822435-435D-440A-B5C6-FB84B7D2EA4A"
                 }
               },
               {
@@ -169,7 +169,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "3421213B-020E-42BF-8B6E-9E301F701761"
+                  "ID": "DA9262EA-D198-48CA-BE19-28EE18A2DE54"
                 }
               },
               {
@@ -188,7 +188,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "C93CD470-0473-4D20-BB4B-7918E7DAE551"
+                  "ID": "6206CE3D-8449-4424-A3BC-78D397748078"
                 }
               },
               {
@@ -207,7 +207,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "C2349361-5BFD-42D0-92A2-309D98604499"
+                  "ID": "9A3FDED5-3572-4FED-87FD-0A28F61A1E79"
                 }
               },
               {
@@ -226,7 +226,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "ABA3ACD1-3E8E-4CF0-B0CE-99EB0E444962"
+                  "ID": "27723CA5-5D23-48F2-A6CF-3BAEB38267E0"
                 }
               },
               {
@@ -245,7 +245,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "DE9D005E-DB81-4A60-B607-5E2AD16FC03B"
+                  "ID": "1B7BA8C3-E6C2-4A0C-972F-14F3015EAD4A"
                 }
               },
               {
@@ -264,7 +264,7 @@
                   "Length": 50
                 },
                 "primaryKey": {
-                  "ID": "685C8A6F-9D5B-4221-8EF0-24BFEDE4519A"
+                  "ID": "2128645A-2D61-416C-B487-93E590A8E12F"
                 }
               },
               {
@@ -283,7 +283,7 @@
                   "Length": 50
                 },
                 "primaryKey": {
-                  "ID": "F3650B73-EC6C-45A6-9796-1F413D0A0414"
+                  "ID": "5FBA6ECF-DE6F-42BF-A127-E0A5C8A30FFD"
                 }
               },
               {
@@ -302,7 +302,7 @@
                   "Length": 320
                 },
                 "primaryKey": {
-                  "ID": "010BC240-00B7-43CA-8F0C-A6882D0898E2"
+                  "ID": "B514BC7E-68B4-4B38-9339-70C3B35C3D64"
                 }
               },
               {
@@ -321,7 +321,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "DAE441FE-776E-4017-8A24-39151E3529E3"
+                  "ID": "3F13221C-B63D-4A8A-B019-7C192A26A85E"
                 }
               },
               {
@@ -340,7 +340,7 @@
                   "Length": 2048
                 },
                 "primaryKey": {
-                  "ID": "1DBB58E9-D11A-4033-B636-C8CCCE51D874"
+                  "ID": "239418C1-8E64-44CA-994C-64F9573E1CDB"
                 }
               },
               {
@@ -359,7 +359,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "38D0A6B3-B216-4773-A0B5-913EEF0C67AA"
+                  "ID": "ECC68F57-CC2E-47BA-BEC8-F3E26D70B3C0"
                 }
               },
               {
@@ -378,7 +378,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "ABB7D00A-8341-41B5-873E-EB53FAC79EE6"
+                  "ID": "9AFA6ADF-9466-4EA3-A8DC-2D2484004669"
                 }
               },
               {
@@ -396,7 +396,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "0B5639A5-E022-4679-B8AF-D0CEF3BFCBAB"
+                  "ID": "0EF64DAD-B29A-46AF-9801-57DE996BF71C"
                 }
               },
               {
@@ -414,7 +414,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "458A59F2-B38D-4921-8A1F-F019C8028C9C"
+                  "ID": "437C4DD2-D96B-412E-AB33-172965EAC3E6"
                 }
               },
               {
@@ -432,7 +432,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "1BD6EC90-56C4-4B35-950E-F356486CBF3B"
+                  "ID": "8EE9A376-C3E6-4980-A19E-5D684E4F22D5"
                 }
               },
               {
@@ -450,7 +450,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "3DCFEBD8-BA10-4422-BF78-D4923ED400D7"
+                  "ID": "2291B103-1A08-4CD4-8EA3-AABD0F97A979"
                 }
               },
               {
@@ -468,7 +468,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "BCE87F11-4FD2-4743-8C94-2035D8FF5A96"
+                  "ID": "B2D99871-872B-45C0-8126-2E90642DBC2A"
                 }
               },
               {
@@ -486,7 +486,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "F6D7E570-9A41-45D9-A3F5-C2E1A5AFC03B"
+                  "ID": "A768049D-B52D-44EB-9D21-19857470F562"
                 }
               },
               {
@@ -504,7 +504,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "C14DA81A-C14D-4422-A978-C75196543095"
+                  "ID": "DFABD7E7-84BE-4A1F-B1DB-C5F69B174CDF"
                 }
               },
               {
@@ -522,7 +522,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "EEFEA57B-8FA7-4C50-9453-693076272602"
+                  "ID": "A87538A9-EB8D-4F49-9444-35816052BE55"
                 }
               },
               {
@@ -540,7 +540,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "55EC6333-9773-4DF3-8534-ACED15493B1B"
+                  "ID": "E9D8EB9E-0460-414E-85CC-8D166260B725"
                 }
               },
               {
@@ -558,7 +558,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "68089EB6-3F5D-4D82-AA8F-9A96A8867779"
+                  "ID": "4D91A948-4B7E-47B9-AB73-438D46B72E0C"
                 }
               },
               {
@@ -576,7 +576,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "349D597C-349C-4881-AE32-282FC5EC232A"
+                  "ID": "95C61C43-6142-42C5-BC67-EC3F4394A41C"
                 }
               },
               {
@@ -594,7 +594,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "CA7D6906-67BD-4D63-AFAD-B3018011BB70"
+                  "ID": "6FD34CC5-3FF7-4C6C-9605-F237692CE7A8"
                 }
               },
               {
@@ -612,7 +612,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "69E01620-8F28-42E6-AE79-88B5663BC976"
+                  "ID": "37F0F48A-39C6-4316-836E-7E1476AF94A4"
                 }
               },
               {
@@ -630,7 +630,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "D6C2CB0A-7EC1-4F03-8D18-3CB7DD4CDF4C"
+                  "ID": "23DEE27F-94B4-40FF-BC29-BB8CD478DC8F"
                 }
               },
               {
@@ -648,7 +648,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "FC182D99-F589-4A29-8C14-1811E396F999"
+                  "ID": "2F8F121A-78F9-4E8B-A0F1-9FF34CE4AE60"
                 }
               },
               {
@@ -666,7 +666,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "856C6CBE-0F40-48D0-9070-ABE63FA1616B"
+                  "ID": "EE17586D-499D-48A5-9DA9-42461280A2DA"
                 }
               },
               {
@@ -684,7 +684,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "6C6EB758-0A62-4A62-84DC-84E2E705AC3C"
+                  "ID": "37D97B9B-0A7B-40DC-AEE9-E78BEE0E7DB9"
                 }
               },
               {
@@ -702,7 +702,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "C6A080D4-1DCA-44B5-8A45-A45349F8E0A0"
+                  "ID": "A8A84937-0B85-49D6-BD4F-808FAF7A5E61"
                 }
               },
               {
@@ -720,7 +720,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "3E56B3E5-99DC-407F-B586-A2D8FBFD0FF0"
+                  "ID": "8D6375CD-DCF2-491E-A9E0-7C94D08101AA"
                 }
               },
               {
@@ -738,13 +738,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "72F00250-84CF-4697-9E9D-E08BCB64589A"
+                  "ID": "D037D29B-D1E0-446B-AB63-AEBA61217118"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "59E719E1-7D9E-4160-878E-35974119327A"
+            "ID": "80B5F5DF-3F13-4605-A4DA-561F6DFBD2D9"
           }
         },
         {
@@ -782,7 +782,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "7EB68D0A-FC64-4183-AADE-0364C7CA7E4F"
+                  "ID": "8A4D1522-6A88-410A-98C1-F8C3A25A3762"
                 }
               },
               {
@@ -801,7 +801,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "2D8C42DF-147F-4EB7-8E07-C7DB0F74C456"
+                  "ID": "442D94FA-19A4-4E58-A828-E4E7434DE8AE"
                 }
               },
               {
@@ -820,7 +820,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "BE2346AA-44F9-400D-914C-0022CE641575"
+                  "ID": "E86D87B7-1143-46A4-85FD-C589987FE9B0"
                 }
               },
               {
@@ -839,7 +839,7 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "8BA6FA21-3614-4EAF-BCF5-E372C2D98105"
+                  "ID": "3A19436F-7934-40E3-AB87-46C9F731C8B3"
                 }
               },
               {
@@ -858,7 +858,7 @@
                   "Length": 2048
                 },
                 "primaryKey": {
-                  "ID": "1D4F1D05-CA23-48E4-9AFC-C6F19CD2C271"
+                  "ID": "18065A80-D96D-43A1-88FF-618F71DEB940"
                 }
               },
               {
@@ -877,7 +877,7 @@
                   "Length": 320
                 },
                 "primaryKey": {
-                  "ID": "4A62A591-315E-48CC-9238-B1A4F0DBE917"
+                  "ID": "E886BD5C-237A-4C17-85D2-F03407EFFC2F"
                 }
               },
               {
@@ -896,7 +896,7 @@
                   "Length": 2048
                 },
                 "primaryKey": {
-                  "ID": "FA042398-E068-4D18-967E-1CE1FB9AA8C6"
+                  "ID": "1CF7B01E-16E7-4DAA-822F-AAD6F27A26F8"
                 }
               },
               {
@@ -915,7 +915,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "8FFB8810-CACA-4603-AE1F-6F364C2931F9"
+                  "ID": "40D6C18B-5F7F-41C4-BFEF-A74065A24C6F"
                 }
               },
               {
@@ -934,7 +934,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "1EABED2A-4F5C-4DC8-B2AA-D0A3668E869E"
+                  "ID": "FF838BCD-98BF-47D5-97AA-F6EC1139D4C3"
                 }
               },
               {
@@ -953,7 +953,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "A07500B9-47F1-4032-9D1B-C0F1A68F8FA7"
+                  "ID": "9405089B-E7FC-465E-BE17-FAEA71C94D7B"
                 }
               },
               {
@@ -972,7 +972,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "39E73EAE-08F0-476D-8DCB-93C894CF2A61"
+                  "ID": "9F40D843-68C2-493B-862E-0740E38676C7"
                 }
               },
               {
@@ -991,7 +991,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "90AA7711-EE96-4CFD-AFA2-55D6E735FBAC"
+                  "ID": "B8F930B7-6396-4A59-A9B4-E0B04E5BAA21"
                 }
               },
               {
@@ -1010,7 +1010,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "D6EA57F8-41C0-40AB-9226-AF2289E5C8F2"
+                  "ID": "6BE429F7-D5C3-45A1-BA3D-F79BFB5C24F6"
                 }
               },
               {
@@ -1028,7 +1028,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "AE1E19F9-C503-4EE8-BA3C-7CD381E95F01"
+                  "ID": "E67E661F-CBEE-4E16-94A4-1A17D9DA3DDB"
                 }
               },
               {
@@ -1046,7 +1046,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "41DC55EB-B6BB-4B6D-8A80-88CB4E5C9F54"
+                  "ID": "02296866-196E-4E53-BECF-763CC75223FD"
                 }
               },
               {
@@ -1064,7 +1064,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "F3404E53-DB3D-44A1-96C0-385D028BC583"
+                  "ID": "F5C42170-36E0-45FB-8598-E2B9069930C3"
                 }
               },
               {
@@ -1082,7 +1082,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "A58D11E1-BC06-4A0B-9864-3918A59C4612"
+                  "ID": "33298071-6966-4782-A753-DCFCFC3D0E77"
                 }
               },
               {
@@ -1100,7 +1100,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "D3804ED7-F250-4F36-8D04-4ACE1375B973"
+                  "ID": "3DA90C80-D4F4-431D-AC13-AE5507C30403"
                 }
               },
               {
@@ -1118,7 +1118,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "C6F9A08D-05F5-4D51-BC85-A13798C55346"
+                  "ID": "57C7E903-AAC3-4500-B39B-21D8089EBFB3"
                 }
               },
               {
@@ -1136,7 +1136,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "A24F073F-A077-4D1E-BA3C-31310FFBFAAF"
+                  "ID": "848AAF63-8765-4F06-B480-8A72607798BA"
                 }
               },
               {
@@ -1154,7 +1154,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "CD6E7163-EF21-4516-BA45-9CE3F21835CB"
+                  "ID": "644EC1EF-6427-42EA-96FD-0EBD89B616B1"
                 }
               },
               {
@@ -1172,7 +1172,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "5ABB2011-1553-410A-927A-710F6C981937"
+                  "ID": "99BBB359-514B-465F-93CF-7E27FCECF72C"
                 }
               },
               {
@@ -1190,7 +1190,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "6C8EA430-C0A2-4952-A39C-27B6E1A52D02"
+                  "ID": "72B522ED-8D26-48B9-8EE0-B4670D103AF9"
                 }
               },
               {
@@ -1208,7 +1208,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "736E6E9A-DF41-4B60-B3FD-D3CC7338A1F1"
+                  "ID": "1015096F-4A98-4EA2-9E34-311E6FABD3E3"
                 }
               },
               {
@@ -1226,7 +1226,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "40D7751D-C9F4-43DB-B779-C70014A7C22A"
+                  "ID": "CCDAEBE0-FE34-4DC7-BCCC-5F7A7E101FCB"
                 }
               },
               {
@@ -1244,7 +1244,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "4C87EDC8-7643-45A3-A0BB-61BCABF83562"
+                  "ID": "CC49A001-510D-4B17-9E19-584F6620E92E"
                 }
               },
               {
@@ -1262,13 +1262,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "4A9FBCD7-5564-451A-A12F-B2958E311464"
+                  "ID": "33C5E124-E029-42BA-BAB7-39647869E1E9"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "B7E3309E-8562-4023-9721-FFFEC8E7AEC3"
+            "ID": "CA12596F-8914-48A9-848F-4F30E61777F0"
           }
         },
         {
@@ -1306,7 +1306,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "30959BD9-464D-4518-A2A4-F22F3EC53EA0"
+                  "ID": "30BDDFA8-E643-4FA1-9E6F-23CECC65A8B0"
                 }
               },
               {
@@ -1325,7 +1325,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "6DCFFF04-E459-4F2E-9D03-5970271B4244"
+                  "ID": "035E3DB2-C6A0-40F3-95B7-FB55FA285F23"
                 }
               },
               {
@@ -1344,7 +1344,7 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "13503350-DDBD-4A0C-9DB5-F1A4061103F4"
+                  "ID": "1D90AA6E-595A-443C-B160-286E488272AE"
                 }
               },
               {
@@ -1363,7 +1363,7 @@
                   "Length": 20
                 },
                 "primaryKey": {
-                  "ID": "2FC9F05B-9E19-47BB-8499-130C5EB6C653"
+                  "ID": "EECF4D11-30E2-4995-96E1-9F1F9DE5BAE2"
                 }
               },
               {
@@ -1381,13 +1381,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "DF13CAF4-FFC7-43F3-9052-79FFFC9AAF84"
+                  "ID": "B4C0BDCF-C49F-47F3-9F45-4309E3FC9F15"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "09F3E752-4B2F-4054-A34F-336957BA279C"
+            "ID": "3223898B-0855-4EF7-8E1C-CBCB80E7CC97"
           }
         },
         {
@@ -1425,7 +1425,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "1BC48703-21E1-4FCB-8D1D-8CF2DA611105"
+                  "ID": "8B6A4DBD-955E-4EF2-BB2A-EAC08AB44407"
                 }
               },
               {
@@ -1444,7 +1444,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "F183CC08-0638-4C4F-8D5E-16C27374F096"
+                  "ID": "EBCD19DA-CCA0-4A00-BEB1-7E136689B46E"
                 }
               },
               {
@@ -1463,7 +1463,7 @@
                   "Length": 50
                 },
                 "primaryKey": {
-                  "ID": "C817E5E4-5926-4DC7-81E9-176B8C1BB8D7"
+                  "ID": "328E8F8B-5498-493C-961B-F2274BE6AFF8"
                 }
               },
               {
@@ -1482,7 +1482,7 @@
                   "Length": 50
                 },
                 "primaryKey": {
-                  "ID": "F98B00B5-7EB0-427E-B33F-576343BAA88B"
+                  "ID": "55B5D7A2-05A6-4D16-8888-2F0EBD34675C"
                 }
               },
               {
@@ -1490,7 +1490,7 @@
                   "Name": "displayOrder",
                   "DisplayName": "Display Order",
                   "Description": "Display sort order.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -1500,7 +1500,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "9B22555F-8FA5-4967-B7FF-AF7DA7417C7C"
+                  "ID": "B8092029-2E0C-43A4-B394-B993590BA188"
                 }
               },
               {
@@ -1518,7 +1518,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "B785AF8F-2559-4E28-AA34-2321CB3CAC72"
+                  "ID": "AD0AFE2E-67D8-41F6-9D01-1DE57C9499BC"
                 }
               },
               {
@@ -1536,7 +1536,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "45B2F62E-C600-4A31-B46D-D99E985E1491"
+                  "ID": "D9CAE20D-7EFD-4842-8AE8-F977E9DD927E"
                 }
               },
               {
@@ -1554,7 +1554,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "2E2F411C-6D34-48DD-8C98-0E2C2C3FEC5F"
+                  "ID": "36456FD1-E587-4D4B-B0AC-D317592CF9AB"
                 }
               },
               {
@@ -1572,7 +1572,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "954F7556-2CAD-40FE-98F9-66788CE4C61F"
+                  "ID": "3D417AF1-291A-4B32-A6D1-174842C9EA4B"
                 }
               },
               {
@@ -1590,13 +1590,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "D4EDF2C3-280E-46D0-B498-C515E3DDA7F9"
+                  "ID": "23CDFD1B-4DCC-4C29-A705-11FC036606C6"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "1B358E62-D9D1-403C-88DF-D026B0DD4086"
+            "ID": "ABD0CDE4-C294-4D67-A513-A7328F63D31B"
           }
         },
         {
@@ -1635,7 +1635,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "B9D62FFD-00F0-496E-94D6-EA3E8B978E6F"
+                  "ID": "0FA21000-4429-44C2-9261-2C71BB940748"
                 }
               },
               {
@@ -1654,7 +1654,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "6D5F3557-F027-4BDA-8ECC-59D707AA3D10"
+                  "ID": "4C17C5D7-C25C-408F-AA91-40F7426F343A"
                 }
               },
               {
@@ -1673,7 +1673,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "081959A6-3BCA-49C2-9560-2407CC99E167"
+                  "ID": "A95EBB01-E9A5-4676-8940-CD0FEE6016E8"
                 }
               },
               {
@@ -1692,7 +1692,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "75774587-9C96-4F94-8CDC-620C7A2A351D"
+                  "ID": "4A4910AD-2929-4CBA-8EB1-AB96A3708A7F"
                 }
               },
               {
@@ -1711,7 +1711,7 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "6CEA7946-A07F-4F99-838F-E48CC851D4AD"
+                  "ID": "1C35AE97-6558-4382-9267-E9AAAD9CB4AB"
                 }
               },
               {
@@ -1729,7 +1729,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "1FD3AF7E-1EAA-4258-B788-1B886F2C7C7A"
+                  "ID": "A7ECB7E0-4DE2-440C-8504-B6294142404F"
                 }
               },
               {
@@ -1747,7 +1747,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "6538764B-19C3-407A-9A30-1A4654157DFF"
+                  "ID": "BFF12BE4-B2D8-4025-A9F0-72090AEB47C5"
                 }
               },
               {
@@ -1766,7 +1766,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "01D3F719-04E9-4C8B-97D7-7BC6D6464BBB"
+                  "ID": "50C654E4-438F-423C-8F34-3155F3DF9FD1"
                 }
               },
               {
@@ -1785,7 +1785,7 @@
                   "Length": 2048
                 },
                 "primaryKey": {
-                  "ID": "824C8438-9DE5-4720-8B9F-6C7ECD9F922A"
+                  "ID": "343663EB-C7C8-4B4D-81F2-254A18A39DF9"
                 }
               },
               {
@@ -1803,7 +1803,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "B2D9B5D2-8A69-4390-865D-AEABDAB01E97"
+                  "ID": "90FC95A4-09F0-4F5E-A7DE-151BD412874D"
                 }
               },
               {
@@ -1821,7 +1821,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "8F1F6A3F-DF16-40E8-923A-D73C0C801135"
+                  "ID": "199C6F98-34B0-4A7B-BF88-7D78B2462E06"
                 }
               },
               {
@@ -1839,7 +1839,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "9A4F71F1-E2B1-45F5-8097-27A3FD0E5642"
+                  "ID": "4B7F782E-0258-4696-B824-4E5179447A5F"
                 }
               },
               {
@@ -1857,7 +1857,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "A98745CE-6EC0-4C9E-9A78-3702F064EB3D"
+                  "ID": "0B1BB786-7C1C-42F5-9B4A-4D470DA88CEA"
                 }
               },
               {
@@ -1875,7 +1875,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "55BD5DD6-822B-45FD-B2FE-0CE14884C014"
+                  "ID": "174BCE1F-6C3A-4A75-B6A0-D1BFA485D959"
                 }
               },
               {
@@ -1893,7 +1893,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "1852F06B-7953-4579-BE3E-A860B6377BC9"
+                  "ID": "0F6E4D77-39AE-4FBC-8D75-F0B3F86781BA"
                 }
               },
               {
@@ -1911,7 +1911,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "47273B51-AF5C-46F4-88E8-EB2966ABA962"
+                  "ID": "4F1DF031-B60F-441E-ADA0-32A484F416D2"
                 }
               },
               {
@@ -1929,13 +1929,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "4E0EB5EF-8888-4D24-B607-0EA44BFF5133"
+                  "ID": "C527DB62-9D9E-4695-85D8-2C9D5C4F1101"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "42E75FA6-E25E-41D2-884B-22CDF025C78A"
+            "ID": "24C58380-1600-4613-9BE8-316E899488FA"
           }
         },
         {
@@ -1973,7 +1973,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "AEBA932B-5D19-40A7-AECF-F3779285ABC5"
+                  "ID": "E2BB9EAC-B8E2-43B2-883C-183930ECC04B"
                 }
               },
               {
@@ -1992,7 +1992,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "1E2F53A4-4829-47AC-9D41-793B33ECB90D"
+                  "ID": "93A035F2-E649-4832-8063-1A2B88738A9B"
                 }
               },
               {
@@ -2000,7 +2000,7 @@
                   "Name": "termMonths",
                   "DisplayName": "Term Months",
                   "Description": "Standard term length in months.",
-                  "Type": "Number",
+                  "Type": "Decimal",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -2010,7 +2010,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "211EE27E-9925-4806-BEFC-F56E387DA941"
+                  "ID": "65952440-AE2C-49E7-9D46-DCF4424A23F6"
                 }
               },
               {
@@ -2018,7 +2018,7 @@
                   "Name": "maxHolders",
                   "DisplayName": "Max Holders",
                   "Description": "Maximum concurrent holders allowed.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -2028,7 +2028,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "3496E1DC-583B-4F7A-ACC1-863316713866"
+                  "ID": "8D0D2C3D-6FF2-4BE6-9196-192D49975100"
                 }
               },
               {
@@ -2036,7 +2036,7 @@
                   "Name": "maxConsecutiveTerms",
                   "DisplayName": "Max Consecutive Terms",
                   "Description": "Maximum consecutive terms allowed.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -2046,7 +2046,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "A2B85893-20EB-434E-A57B-5F95A75B33CC"
+                  "ID": "55BBFDBE-0C77-46B6-94F8-0914530F1B05"
                 }
               },
               {
@@ -2064,7 +2064,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "213F251C-1E19-44C5-A9D0-F3F4EBB1C2AD"
+                  "ID": "61F2F8CD-B5C1-4178-BBD5-D6B10EA55F5E"
                 }
               },
               {
@@ -2082,7 +2082,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "C051541E-AFBF-471B-A9C8-FB3CBEEF5ED5"
+                  "ID": "76236C63-D670-4D14-A0C1-8E77FF5701E6"
                 }
               },
               {
@@ -2100,7 +2100,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "842F0D23-2028-4AB2-908A-A6B0FF05CC19"
+                  "ID": "6446347C-283C-4027-8F83-17C2A607AA07"
                 }
               },
               {
@@ -2121,13 +2121,13 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "A152E2AE-DC66-47AA-BF4E-480E8CC52DB0"
+                  "ID": "BD18C27E-0981-4E42-8E7E-216A0B5B06EF"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "8F8C3DB4-AF50-4D56-8E4F-F9250B39DD47"
+            "ID": "68ED0148-AD11-4258-993A-9C9777AA8A6A"
           }
         },
         {
@@ -2165,7 +2165,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "989F4000-7AD8-42A1-8B80-AB2CC4498AA1"
+                  "ID": "A18920FE-9400-4A01-8576-876DC1B91429"
                 }
               },
               {
@@ -2184,7 +2184,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "1013F584-E5A0-4009-8AE7-2D1919C3650E"
+                  "ID": "85A73D48-5882-4D53-BA06-A957CA7A9763"
                 }
               },
               {
@@ -2202,7 +2202,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "3D48C07B-D232-47E2-AFFC-2E92384B1663"
+                  "ID": "81CE2F50-6792-464F-A4DB-FFB4253DAA74"
                 }
               },
               {
@@ -2220,13 +2220,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "99CF79F2-4EEF-4CE7-9B40-A22A07D76C6E"
+                  "ID": "1283B05B-75E4-4B5F-93ED-B1DB1406FF9E"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "A91CDE10-FF09-4EAD-8645-5A55389786F2"
+            "ID": "F06C84E4-545A-4223-B39D-25B306CDF7DA"
           }
         },
         {
@@ -2234,7 +2234,7 @@
             "Name": "CommitteeAssignedPosition",
             "DisplayName": "Committee Assigned Position",
             "Description": "Positions configured and available on a specific committee.",
-            "APIPath": "/v2/crm/committee/{uuid}/position",
+            "APIPath": "/v2/crm/committee/{committeeUuid}/position",
             "Category": "Committees",
             "Status": "Active",
             "Sequence": 8,
@@ -2243,7 +2243,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Committee\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Committee\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/crm/committee/{committeeUuid}/position\"}",
             "ResponseDataKey": "data.items"
           },
           "relatedEntities": {
@@ -2264,7 +2264,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "95BA9772-1734-47A7-A688-6C5DC74A3D0C"
+                  "ID": "3BDBAD03-73E0-4AD8-A83B-8AB53DAB5EB6"
                 }
               },
               {
@@ -2285,7 +2285,7 @@
                   "RelatedIntegrationObjectFieldName": "committeeUuid"
                 },
                 "primaryKey": {
-                  "ID": "AE95B541-0DCA-41FA-87EE-89FD74549772"
+                  "ID": "69FC8398-3608-4A36-9633-F42ACF93DD86"
                 }
               },
               {
@@ -2304,7 +2304,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "C8317353-594B-453E-A8B1-D580E62C210E"
+                  "ID": "1EE6A543-4B49-4ED0-A2F4-53853E6824B4"
                 }
               },
               {
@@ -2323,7 +2323,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "F0C7C563-D979-4723-ACB3-4CDC0D8CF225"
+                  "ID": "A2D3F73F-0889-48DE-AEAE-05F703D9FD79"
                 }
               },
               {
@@ -2342,7 +2342,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "BCDDCD23-BA18-4393-93B4-9C87F72E997F"
+                  "ID": "98460428-EDE4-40F6-AD7D-8772BBC74BAD"
                 }
               },
               {
@@ -2360,7 +2360,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "34A8B785-12C6-4869-BB13-693CF8145A97"
+                  "ID": "930C1F99-5539-4FE6-A9FA-177DDD43407D"
                 }
               },
               {
@@ -2378,7 +2378,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "92615F54-7AB0-40B8-AB19-48AC47DFA14F"
+                  "ID": "F2E83CD7-E35C-4F39-93D0-F574D308F5ED"
                 }
               },
               {
@@ -2396,7 +2396,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "4212B857-9ED5-4871-A639-36A2F22E483E"
+                  "ID": "C5715DFB-0E88-4554-8EC9-0A739119D539"
                 }
               },
               {
@@ -2404,7 +2404,7 @@
                   "Name": "termMonths",
                   "DisplayName": "Term Months",
                   "Description": "Term duration in months.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -2414,7 +2414,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "8FCE0D2F-5F69-4542-8CA8-0436D1D80531"
+                  "ID": "173F9BBE-5714-4937-8AB2-7FC1F5A5CCB3"
                 }
               },
               {
@@ -2422,7 +2422,7 @@
                   "Name": "maxHolders",
                   "DisplayName": "Max Holders",
                   "Description": "Maximum simultaneous holders.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -2432,7 +2432,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "0DC1F0BC-A00E-459B-B0C6-44067360747E"
+                  "ID": "773220BB-7332-4C6E-9D7A-2A60E5361A6F"
                 }
               },
               {
@@ -2440,7 +2440,7 @@
                   "Name": "maxConsecutiveTerms",
                   "DisplayName": "Max Consecutive Terms",
                   "Description": "Maximum consecutive terms.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -2450,13 +2450,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "FAB9FD7E-5310-4E29-9403-95F936D23579"
+                  "ID": "EA109C23-DB7F-4996-B040-AF597AC7AE46"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "86F1F57F-EAE4-4C92-84F5-87C9640B4EBE"
+            "ID": "9AB44309-976B-4A1E-87E8-2809D6281FE6"
           }
         },
         {
@@ -2464,7 +2464,7 @@
             "Name": "CommitteeMember",
             "DisplayName": "Committee Member",
             "Description": "Members serving on a committee with their positions, terms, and affiliated organization.",
-            "APIPath": "/v2/crm/committee/{uuid}/member",
+            "APIPath": "/v2/crm/committee/{committeeUuid}/member",
             "Category": "Committees",
             "Status": "Active",
             "Sequence": 9,
@@ -2473,7 +2473,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Committee\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Committee\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/crm/committee/{committeeUuid}/member\"}",
             "ResponseDataKey": "data.items"
           },
           "relatedEntities": {
@@ -2494,7 +2494,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "923B9BB3-253F-401B-84FE-69FAF6B24839"
+                  "ID": "29CD5746-6FB5-45A1-A6CB-94A9C92C565A"
                 }
               },
               {
@@ -2515,7 +2515,7 @@
                   "RelatedIntegrationObjectFieldName": "committeeUuid"
                 },
                 "primaryKey": {
-                  "ID": "9D187878-2D05-43E3-86F5-AC7BEAA8AEFB"
+                  "ID": "582BFADC-DF7A-4374-A4A2-031CFE403D33"
                 }
               },
               {
@@ -2536,7 +2536,7 @@
                   "RelatedIntegrationObjectFieldName": "individualUuid"
                 },
                 "primaryKey": {
-                  "ID": "37A6C712-72D5-45F1-834C-BDE69852B979"
+                  "ID": "EEDE11DF-1779-480B-B52C-4819139591B9"
                 }
               },
               {
@@ -2555,7 +2555,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "5E001E4D-C3E5-4AD0-9F4B-E162C369DEA0"
+                  "ID": "8A564C43-8721-45D8-9DE1-352955C01EBC"
                 }
               },
               {
@@ -2574,7 +2574,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "AAF68DA5-E37C-41D2-B33B-849A4F801F44"
+                  "ID": "9E5FD4CF-2140-4DC8-8D39-8EFDB0B044ED"
                 }
               },
               {
@@ -2593,7 +2593,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "28107D5E-D3FC-44DD-AACE-8680FEE0F2F1"
+                  "ID": "EE5AE9A7-EF9F-41D8-976F-F7CB2F8EB783"
                 }
               },
               {
@@ -2612,7 +2612,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "61B52654-9D84-419D-8EC0-F3EA2C58F5F9"
+                  "ID": "B22FE3CA-689A-4682-A115-CCB0192958B1"
                 }
               },
               {
@@ -2631,7 +2631,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "4B874FC7-6C37-42FA-A65F-86019F676C46"
+                  "ID": "C5110FAA-9370-4E2C-B6C3-7E725F3825DA"
                 }
               },
               {
@@ -2652,7 +2652,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "F6C2A0ED-AD0F-4CE2-95C9-0E7452B364EE"
+                  "ID": "3FBF39C9-32D9-41BF-BA96-471AA98C0EB2"
                 }
               },
               {
@@ -2670,7 +2670,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "3F6B049C-3DC9-4BE6-ADE4-784606F0516D"
+                  "ID": "B6BFCCFF-E6C1-4C9D-BA97-60EE091D894E"
                 }
               },
               {
@@ -2688,7 +2688,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "D8CF621A-6438-4BFF-9439-0F964878120B"
+                  "ID": "A4A4514D-ACE7-483F-BFF6-883193D04ADA"
                 }
               },
               {
@@ -2707,7 +2707,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "9B8E17A5-F1A7-4DC2-B3EC-6ED4FCD08956"
+                  "ID": "EF170F93-3BCB-4472-8AF2-5BECDCA553C2"
                 }
               },
               {
@@ -2728,7 +2728,7 @@
                   "RelatedIntegrationObjectFieldName": "organizationUuid"
                 },
                 "primaryKey": {
-                  "ID": "456CF694-2F67-4CE6-8AD9-70232E056FE5"
+                  "ID": "859B0AD6-A4AA-46E6-A994-FFDF289366FA"
                 }
               },
               {
@@ -2746,7 +2746,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "F7D1AF25-E8EF-495F-8C88-C1FB99B58A0F"
+                  "ID": "BDECE6B1-EE23-440D-9257-B9A95BE949A6"
                 }
               },
               {
@@ -2764,7 +2764,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "AE7C09C1-1491-41F5-B5C9-82BDF4CAFAC0"
+                  "ID": "289EA277-93BD-42B9-8133-3BB45C29C352"
                 }
               },
               {
@@ -2782,7 +2782,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "E1EF4DFB-ED85-457F-9760-7663237DCCCE"
+                  "ID": "D7A96B13-AEE1-4455-8437-A9BAAB38AA64"
                 }
               },
               {
@@ -2800,13 +2800,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "66AC2432-6FC0-48FD-9219-DBF64FA5A422"
+                  "ID": "D13969D8-F203-43DB-988A-7C081BEDD589"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "3DDCF1E3-86E9-4067-B570-FE43720066DD"
+            "ID": "521E4BE5-5EAB-4BD2-86CB-98388804B942"
           }
         },
         {
@@ -2844,7 +2844,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "153F72FF-1270-494A-BC3B-7BDCA113C54C"
+                  "ID": "9F0A68FA-C925-4711-BF20-7F937361D3B5"
                 }
               },
               {
@@ -2863,7 +2863,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "89FB31D6-1BF8-47BE-954E-5390FAE40FC0"
+                  "ID": "326F5045-59D7-447C-ADFE-1ECB7011FD5C"
                 }
               },
               {
@@ -2882,7 +2882,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "F12E2A9F-376E-471C-AB7B-A49189900F84"
+                  "ID": "8E0A3E78-2D50-4A28-9094-4852EDC4D4DC"
                 }
               },
               {
@@ -2901,7 +2901,7 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "940549D9-9313-4893-A06B-99D48F00D5DB"
+                  "ID": "B508B7F8-F5A0-4C14-9F4B-43CCD3CFF7B6"
                 }
               },
               {
@@ -2920,21 +2920,21 @@
                   "Length": 20
                 },
                 "primaryKey": {
-                  "ID": "CCC69015-F8C5-4653-9638-7C3B276C238B"
+                  "ID": "DA8CE621-7991-4A41-B386-51E51C074843"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "3FD19D30-F0C7-42DE-AA6F-04A98A44847C"
+            "ID": "A1A1F3FF-74F7-478A-81B4-3F80D380CEB7"
           }
         },
         {
           "fields": {
             "Name": "DirectoryEntry",
             "DisplayName": "Directory Entry",
-            "Description": "Listed entries inside each configured Slayte directory, fetched via cursor-paginated POST /v2/directory/{identifier}.",
-            "APIPath": "/v2/directory/{identifier}",
+            "Description": "Listed entries inside each configured Slayte directory, fetched via cursor-paginated POST /v2/directory/{slug}.",
+            "APIPath": "/v2/directory",
             "Category": "Directories",
             "Status": "Active",
             "Sequence": 11,
@@ -2943,7 +2943,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Directory\",\"parentKeyField\":\"slug\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"directoryEntriesRoute\":\"/v2/directory/{slug}\",\"parentObjectName\":\"Directory\",\"parentKeyField\":\"slug\",\"syncStrategy\":\"FullPullHashDiff\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.data"
           },
@@ -2967,7 +2967,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "1AAE665D-9800-4CFE-9BA7-88CDC59242B4"
+                  "ID": "BA1CD618-6335-45F4-A77A-7598F20E02D1"
                 }
               },
               {
@@ -2986,7 +2986,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "0C0DBA0A-CC45-4834-9A03-B35DDD2B6535"
+                  "ID": "188E5E83-DF6D-4A8B-B1E1-D4F2FA21EAD5"
                 }
               },
               {
@@ -3005,7 +3005,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "58DA60D8-8657-4456-8119-215704880A2C"
+                  "ID": "EDB7A249-6DA0-43C4-9920-D50CD9626C47"
                 }
               },
               {
@@ -3023,7 +3023,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "A9073780-29D9-461E-A035-1125DFCE999E"
+                  "ID": "7A851E7B-2F04-4911-AAB8-98510AB17B5E"
                 }
               },
               {
@@ -3041,13 +3041,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "2635830A-9923-465F-8D3B-BAD6192D6F39"
+                  "ID": "AE579EAE-3EAD-4294-A4D6-4B5A47B1FBA6"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "6BB67AAD-7A08-4107-B1F3-FFE98AB22D5C"
+            "ID": "FBE0C8E0-E841-47E8-8BEF-79C14787DC24"
           }
         },
         {
@@ -3086,7 +3086,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "07A364CF-7295-47EE-9D78-28A41E255610"
+                  "ID": "16397DDC-E48F-4C99-884B-7DAC0637C605"
                 }
               },
               {
@@ -3105,7 +3105,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "F476271B-BFE6-48DF-ABC3-A9C21BF42EE6"
+                  "ID": "8D435C4E-C57B-4210-A2A6-CD64BFCF4BDE"
                 }
               },
               {
@@ -3124,13 +3124,13 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "96107EAD-5B3B-445A-8FC5-298CB1080B3A"
+                  "ID": "5C222330-5628-4971-AD1A-3D811F0B402D"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "E57D6FF3-DB3C-460B-82A6-E72E952C82A9"
+            "ID": "82C7515B-B6F6-4014-866D-8D14E60D074B"
           }
         },
         {
@@ -3147,7 +3147,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/event/{eventUuid}/session\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.items"
           },
@@ -3169,7 +3169,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "BCDB0253-9A47-442C-8426-09BDAB31D0EC"
+                  "ID": "9DA3CCA7-DF8B-43BB-8BC3-A41DCB6BA617"
                 }
               },
               {
@@ -3190,7 +3190,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "B475E43A-ED0B-4BD3-99F1-DE1EF0E2A2D5"
+                  "ID": "7DD90CA3-C9E2-44FA-BCAF-38CCD2142703"
                 }
               },
               {
@@ -3209,7 +3209,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "4B8774F9-DCB7-441A-A954-731BDD16251B"
+                  "ID": "2AC4F35C-7D02-441E-BD52-F949A123C0CE"
                 }
               },
               {
@@ -3228,7 +3228,7 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "5C84361E-DB1B-457B-9BF6-97D0BE6A1EE4"
+                  "ID": "55C5A0A1-A058-42CE-B88D-6A82308BCBD9"
                 }
               },
               {
@@ -3246,7 +3246,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "58A1E50B-40F0-495B-9BC8-FE984D540CAE"
+                  "ID": "BE432AD5-F6F5-4DA5-A08C-90CAEEA58166"
                 }
               },
               {
@@ -3264,7 +3264,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "4CAD8163-FB7E-4CCD-B01D-79DD71B92FE0"
+                  "ID": "845CF4F9-2112-4E2D-9D17-D61947EFD043"
                 }
               },
               {
@@ -3282,7 +3282,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "F143C055-5D9C-4DA0-87E7-D407259746F2"
+                  "ID": "2C9610AB-0D8C-4902-93C5-3247FEA04B20"
                 }
               },
               {
@@ -3300,7 +3300,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "45A56AC8-BA2D-4F3C-B4BC-40C784212456"
+                  "ID": "266621BB-050B-4783-9CF5-86D57ABA0FE0"
                 }
               },
               {
@@ -3318,13 +3318,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "FECB9675-4173-42C7-ACCC-8A2A26601BAC"
+                  "ID": "09D1891B-004D-4395-811C-5B4E81C21D89"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "21EE0134-2E2E-4B34-8F85-3F3EDD5D5397"
+            "ID": "E49B6C1F-60BD-491A-A2F1-24D56C53DF37"
           }
         },
         {
@@ -3341,7 +3341,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/event/{eventUuid}/library\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.items"
           },
@@ -3363,7 +3363,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "DA247478-1FF5-4999-9145-F890311AA14E"
+                  "ID": "C0586811-CE3A-481A-8D94-8913777123CB"
                 }
               },
               {
@@ -3384,7 +3384,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "97589551-11C9-4B0A-BE07-37D991DFC3D5"
+                  "ID": "DA0A850D-CB14-4533-87E1-AA82E6F2A543"
                 }
               },
               {
@@ -3403,7 +3403,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "9FE65669-09C4-447F-9933-6B8244FC33C3"
+                  "ID": "8B51B973-96D9-4DE0-B6B0-88B93502D4C1"
                 }
               },
               {
@@ -3422,7 +3422,7 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "D60C975F-0FB2-47E3-AF4B-30CF7E4375CC"
+                  "ID": "E865F467-B370-4D29-8AF2-BD8022A6B5E9"
                 }
               },
               {
@@ -3440,7 +3440,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "72713E76-BF89-485F-B5FB-082988F1FF73"
+                  "ID": "C0BAFFF8-76CE-4E75-948D-6494209FB08C"
                 }
               },
               {
@@ -3458,7 +3458,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "EE25FD14-B4E0-47E4-BDAB-9FF5E2AEBFAB"
+                  "ID": "5CB7F05C-1F16-4371-AC77-66C09F1F9E6B"
                 }
               },
               {
@@ -3476,7 +3476,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "44CCC524-02A4-46FF-9E3B-187A70C86223"
+                  "ID": "8A730705-0881-4A49-ADF6-F19B724E5A73"
                 }
               },
               {
@@ -3494,7 +3494,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "6BA4F1B7-4E0F-4084-8F31-73CDDE09A012"
+                  "ID": "3A5BF676-5E7F-4C7C-B921-41FBE15AF25D"
                 }
               },
               {
@@ -3512,13 +3512,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "C7E07CFD-2F0D-47A2-B84B-2FAA35032ED5"
+                  "ID": "C4BCCC5A-9626-4C52-91D6-E4D25F7F1F28"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "F858D43F-EA9F-4922-AAE4-0232A5947E7C"
+            "ID": "51A26A15-3105-42B7-A13C-B5F36758C2D6"
           }
         },
         {
@@ -3535,7 +3535,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/event/{eventUuid}/speaker\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.items"
           },
@@ -3559,7 +3559,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "5160EFC8-DFED-4A14-9F3D-2404D1148066"
+                  "ID": "8ACFCAAC-BE2E-4777-9DF0-01873B841FCC"
                 }
               },
               {
@@ -3578,7 +3578,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "CE9B7001-5BE8-4492-8F07-D4D68692E2E3"
+                  "ID": "137211E1-F75C-45C0-B0EE-545B2669F02A"
                 }
               },
               {
@@ -3597,7 +3597,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "5B7638F9-5477-4703-BA32-73C0512E29B9"
+                  "ID": "3D3EF29D-12AD-4A97-8D70-814FD019F31F"
                 }
               },
               {
@@ -3616,7 +3616,7 @@
                   "Length": 320
                 },
                 "primaryKey": {
-                  "ID": "A452CED1-FA69-411B-8360-0006A409B5C3"
+                  "ID": "A0F762D0-C6C3-4632-968D-281966A7830B"
                 }
               },
               {
@@ -3635,7 +3635,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "37508DBB-9F4B-402C-A786-1221DCFC419D"
+                  "ID": "A1C0D469-8620-4329-8822-591B6675FA5F"
                 }
               },
               {
@@ -3654,13 +3654,13 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "438FF869-2BF2-4B21-BAF1-BF5D116D0D3A"
+                  "ID": "31E7E6D0-84FA-40B5-96BB-11735669B560"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "5AA2EE33-79C0-4526-A6B2-BEB8497D1250"
+            "ID": "84BDBFDF-D129-4A05-945A-B879216E167E"
           }
         },
         {
@@ -3677,7 +3677,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/event/{eventUuid}/company\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.items"
           },
@@ -3701,7 +3701,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "239CE78D-2D3E-4A69-8E95-51B4E17C1391"
+                  "ID": "40BB1307-2A11-4C0A-9A66-F69C5EA7BC5C"
                 }
               },
               {
@@ -3720,7 +3720,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "CCC03B3A-FFCF-4980-BF63-5D663A581AB9"
+                  "ID": "51B3AEB9-FABA-45A3-80CC-9BBD4AD34723"
                 }
               },
               {
@@ -3739,7 +3739,7 @@
                   "Length": 500
                 },
                 "primaryKey": {
-                  "ID": "41B41F0F-58DF-4CF0-BDF9-2B31D06B3B90"
+                  "ID": "28FD8BCA-DF6A-4740-ADDD-42D97DA04E7D"
                 }
               },
               {
@@ -3757,7 +3757,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "4F0DB93F-D4D8-41A8-BEC4-DFA679E7168B"
+                  "ID": "EBB8D2F3-E53C-4D73-A2AB-8617410769B9"
                 }
               },
               {
@@ -3775,7 +3775,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "2D9B6B7D-24AA-490E-97C7-BBEFFF377AF5"
+                  "ID": "2B0FC21F-132E-47D3-9FFE-22D04D973FD7"
                 }
               },
               {
@@ -3794,13 +3794,13 @@
                   "Length": 4000
                 },
                 "primaryKey": {
-                  "ID": "D58A0390-9D86-4B5B-AAD2-0FAAC1470DD0"
+                  "ID": "18626579-BD7C-4D16-83F3-671640ED3084"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "DC738830-90EA-4DA3-B401-329B576D331E"
+            "ID": "97D30678-A6FA-49AE-ABDC-7DFEF954C0A7"
           }
         },
         {
@@ -3817,7 +3817,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/event/{eventUuid}/registration\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.items"
           },
@@ -3839,7 +3839,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "7F23C84A-2E91-4B9A-B96A-ADCBA0DE2C6E"
+                  "ID": "170A51C6-D7CA-429C-AB50-D6E835D66499"
                 }
               },
               {
@@ -3860,7 +3860,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "56A4BE8C-ECE4-47A9-A95E-A7F47592C1B7"
+                  "ID": "548DDC04-0F14-4013-A0F3-694DE3EA2121"
                 }
               },
               {
@@ -3879,7 +3879,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "38AC6173-07BE-4741-9E57-3D10CCF829C6"
+                  "ID": "E101F797-3843-43B3-B543-97F1EF2DD008"
                 }
               },
               {
@@ -3897,7 +3897,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "05C10A6B-7989-4B80-8D15-5F8627B91069"
+                  "ID": "B9118676-DAC1-4C6B-B3CE-4A685C65CF73"
                 }
               },
               {
@@ -3916,7 +3916,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "CE1F87DB-82C5-43AD-A2BD-22EDB10B1045"
+                  "ID": "23A4847E-67C0-427B-954E-7626E5866F62"
                 }
               },
               {
@@ -3924,7 +3924,7 @@
                   "Name": "ticketCount",
                   "DisplayName": "Ticket Count",
                   "Description": "Total tickets in the registration.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -3934,7 +3934,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "8DF6C253-8D2C-4693-AEBF-CD4E19E92866"
+                  "ID": "7537D572-31A3-47F8-8E9F-308680D6A410"
                 }
               },
               {
@@ -3942,7 +3942,7 @@
                   "Name": "unassignedCount",
                   "DisplayName": "Unassigned Count",
                   "Description": "Number of unassigned seats.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -3952,7 +3952,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "F0E358ED-2611-4879-B294-1257FF014F1A"
+                  "ID": "FD23F6E0-6F7C-4D0E-BF48-D12B40D03A91"
                 }
               },
               {
@@ -3971,7 +3971,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "9A58F44E-03CA-4DC9-BC17-590141BF8320"
+                  "ID": "59FE934D-1012-4F7B-9F0E-5DFC4B17FA74"
                 }
               },
               {
@@ -3990,7 +3990,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "6DBA4B4A-B360-44A3-9518-D16C0C698B03"
+                  "ID": "D1FF3DE3-E1DC-4F7F-878D-CB9A22711210"
                 }
               },
               {
@@ -4009,7 +4009,7 @@
                   "Length": 320
                 },
                 "primaryKey": {
-                  "ID": "CFEB421B-EBE0-483C-A792-2CD931581EAA"
+                  "ID": "8231410E-E8FC-4023-98A0-14DFB9C4DEB9"
                 }
               },
               {
@@ -4027,7 +4027,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "D7246BBB-BE45-4329-A99B-2AF48C2AC5FB"
+                  "ID": "F4560DFC-B3F0-4B64-BC7C-7B8EAC0DBFB2"
                 }
               },
               {
@@ -4045,7 +4045,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "822A6D29-4010-4E34-ACC1-3D4F1728829B"
+                  "ID": "1866E202-9808-4655-B402-01823B1A2562"
                 }
               },
               {
@@ -4063,7 +4063,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "6FFF3978-BA93-4C21-916F-F172CD78DA4E"
+                  "ID": "47BE72AB-F887-490B-80DE-F4CCF4812778"
                 }
               },
               {
@@ -4082,13 +4082,13 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "E6F33BDF-760C-4DA8-8669-119F683BCA9A"
+                  "ID": "C63F4143-04D9-46D7-A831-402F7CFC7E1B"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "01381538-CDE7-4F18-96E0-C496C79ECC8E"
+            "ID": "E5622425-BAF4-469C-8FE0-56E0294584FD"
           }
         },
         {
@@ -4105,7 +4105,7 @@
             "SupportsIncrementalSync": true,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Event\",\"watermarkParam\":\"changedSince\",\"syncStrategy\":\"IncrementalWatermark\"}",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"watermarkParam\":\"changedSince\",\"syncStrategy\":\"IncrementalWatermark\",\"apiPath\":\"/v2/event/{eventUuid}/registrant\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.items",
             "IncrementalWatermarkField": "registrationDate"
@@ -4128,7 +4128,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "24457DF8-5C96-4E0C-830C-A501AF4912A4"
+                  "ID": "C02B454B-51E2-4F2D-86DD-AD854F74D740"
                 }
               },
               {
@@ -4149,7 +4149,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "9C074C15-D469-4DE9-9D09-32DCF95077B5"
+                  "ID": "67834F7A-8D88-42FE-8FBC-661B736FF7AB"
                 }
               },
               {
@@ -4170,7 +4170,7 @@
                   "RelatedIntegrationObjectFieldName": "registrationUuid"
                 },
                 "primaryKey": {
-                  "ID": "A4DE4EE1-80D8-455C-983B-587B0CCB9C3D"
+                  "ID": "127D4BEA-93E8-4F9E-B07B-BB414DF7BF96"
                 }
               },
               {
@@ -4189,7 +4189,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "23F5861F-FA80-464C-93C3-CCC647A7DBFD"
+                  "ID": "06CF55DE-9FC5-4310-B203-CF1DC43AE2EE"
                 }
               },
               {
@@ -4208,7 +4208,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "A0848230-49FC-42C5-8A23-8C0AD6953524"
+                  "ID": "1E165543-13F1-4EB3-8B50-16B0CAA0FCB8"
                 }
               },
               {
@@ -4227,7 +4227,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "DDACBFF3-AE12-4BAB-96BB-77103D549C6C"
+                  "ID": "8081EE18-6A5C-4948-9283-D5AE7097F08B"
                 }
               },
               {
@@ -4246,7 +4246,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "22878C2F-F6AD-4905-B2E3-B4CD12965F2E"
+                  "ID": "75433121-8327-4209-A3AE-65369D565486"
                 }
               },
               {
@@ -4265,7 +4265,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "F8010715-F0DF-4404-87B6-62F248D81ACD"
+                  "ID": "22FB7960-F616-4485-87A4-8428B8076146"
                 }
               },
               {
@@ -4284,7 +4284,7 @@
                   "Length": 320
                 },
                 "primaryKey": {
-                  "ID": "463094B6-5D1A-4302-9AA1-9FE71674C06A"
+                  "ID": "5F5520BC-664D-46FA-87ED-F1107BD0397B"
                 }
               },
               {
@@ -4303,7 +4303,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "3300AAA8-83C2-447D-8ED0-9793C9B4516E"
+                  "ID": "FED978A8-E524-4D58-B168-EB1EDADD7B06"
                 }
               },
               {
@@ -4321,7 +4321,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "95F41161-DA77-4FA5-A49E-AA600BE1600C"
+                  "ID": "59E8AF1B-6DE6-47E9-8E84-253340CF53A1"
                 }
               },
               {
@@ -4339,7 +4339,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "96003501-6DF3-4C4D-876C-296968896A5E"
+                  "ID": "DFB2A739-F546-42B4-ABBD-6E438CE99CA5"
                 }
               },
               {
@@ -4357,7 +4357,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "B2A9A8BC-2746-41F6-B214-130F7B3F3758"
+                  "ID": "A762ADB0-276F-49B9-B1ED-CEFFC5370507"
                 }
               },
               {
@@ -4375,7 +4375,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "C96031F2-CC09-4E6F-9684-9F205730D9BC"
+                  "ID": "69A930D6-70F9-4366-B3D8-FFB52353E6D0"
                 }
               },
               {
@@ -4393,7 +4393,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "5449A81B-1B01-40E6-BF0A-1C797C4B2358"
+                  "ID": "362DD2E4-1873-414C-903C-3A6D08A2BA28"
                 }
               },
               {
@@ -4411,7 +4411,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "41D39895-80E4-488A-9859-97F5224FF497"
+                  "ID": "A1E03748-673E-45F7-A983-368F4FD9CC31"
                 }
               },
               {
@@ -4429,7 +4429,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "1EAD0229-C4DF-4C9B-9836-A2D5DE32B43F"
+                  "ID": "91275DE6-919A-44DC-88DD-7E4559254EAD"
                 }
               },
               {
@@ -4448,7 +4448,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "F7F9C80C-923A-4DBA-8877-56B64CF4D7DD"
+                  "ID": "6778503D-802E-409A-88C6-6F27119E53BE"
                 }
               },
               {
@@ -4466,13 +4466,13 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "FD721C83-84FD-404A-A489-5F35EE42E134"
+                  "ID": "37AC52D2-50A3-4465-A8EE-6ED18B04100F"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "E85AB513-05E9-4B69-868F-7927843DB1E2"
+            "ID": "0BAC15E1-100C-46B8-9CEC-840F12B4C83B"
           }
         },
         {
@@ -4489,7 +4489,7 @@
             "SupportsIncrementalSync": false,
             "SupportsWrite": false,
             "IntegrationID": "@parent:ID",
-            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\"}",
+            "Configuration": "{\"parentObjectName\":\"Event\",\"syncStrategy\":\"FullPullHashDiff\",\"apiPath\":\"/v2/event/{eventUuid}/guest\"}",
             "DefaultPageSize": 100,
             "ResponseDataKey": "data.items"
           },
@@ -4511,7 +4511,7 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "15CFBC5B-320F-4AA7-B475-D162E8051BF2"
+                  "ID": "82EB40F8-7D19-4E80-A165-CF1EA1D91FD7"
                 }
               },
               {
@@ -4532,7 +4532,7 @@
                   "RelatedIntegrationObjectFieldName": "uuid"
                 },
                 "primaryKey": {
-                  "ID": "86E05AB8-65AC-4FCA-8909-98AD2B9F3804"
+                  "ID": "1D30E7AA-C898-4485-BE2A-1ED5DBA97989"
                 }
               },
               {
@@ -4553,7 +4553,7 @@
                   "RelatedIntegrationObjectFieldName": "registrantUuid"
                 },
                 "primaryKey": {
-                  "ID": "4C17BE64-AC12-4E38-8367-77EEAC11A95A"
+                  "ID": "10039AF0-A15D-44CE-BD4A-E3A113629F71"
                 }
               },
               {
@@ -4574,7 +4574,7 @@
                   "RelatedIntegrationObjectFieldName": "registrationUuid"
                 },
                 "primaryKey": {
-                  "ID": "D92027A3-5332-45B1-894C-2FFCBEF79980"
+                  "ID": "1EAEB9B5-0C38-4EF2-8003-F6D4F70048A1"
                 }
               },
               {
@@ -4593,7 +4593,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "7E2D6006-8873-482F-8A9A-B14C2EF78183"
+                  "ID": "EA4102C2-44E4-4DD9-93EF-09FB8B945A7E"
                 }
               },
               {
@@ -4612,7 +4612,7 @@
                   "Length": 255
                 },
                 "primaryKey": {
-                  "ID": "F2BF8CE4-41B5-44A7-9FB4-0DF72C01A142"
+                  "ID": "BE77FF24-E938-4E73-A8C5-39342B0CCCC2"
                 }
               },
               {
@@ -4631,7 +4631,7 @@
                   "Length": 320
                 },
                 "primaryKey": {
-                  "ID": "881A4F4B-4E58-4F11-BDA1-F91E761A3C0B"
+                  "ID": "59DC6832-EA9E-49F1-9154-5DE475B14C31"
                 }
               },
               {
@@ -4639,7 +4639,7 @@
                   "Name": "sessionCount",
                   "DisplayName": "Session Count",
                   "Description": "Number of sessions the guest is registered for.",
-                  "Type": "Int",
+                  "Type": "Integer",
                   "IsRequired": false,
                   "IsReadOnly": true,
                   "IsPrimaryKey": false,
@@ -4649,7 +4649,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "156638C5-77FE-45BF-97CE-0AB5B3A0041C"
+                  "ID": "FD943990-46C7-4EA1-83E0-9FE073AF37A6"
                 }
               },
               {
@@ -4667,7 +4667,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "E000EB2F-5EDE-4A04-9B7D-B1FC4E3D3B06"
+                  "ID": "E80F05C0-9844-43BE-A615-3906B2B2B628"
                 }
               },
               {
@@ -4685,7 +4685,7 @@
                   "IntegrationObjectID": "@parent:ID"
                 },
                 "primaryKey": {
-                  "ID": "B09D0FE0-2268-4332-AD3A-2C34DA966253"
+                  "ID": "FB0404D1-CAEF-4ADE-A0DE-06F9F4D6CA7F"
                 }
               },
               {
@@ -4704,19 +4704,19 @@
                   "Length": 100
                 },
                 "primaryKey": {
-                  "ID": "045A32C8-F820-4596-8DAF-00344FEF3B81"
+                  "ID": "16CE64E7-418D-4240-A73B-B1BF702CBDB0"
                 }
               }
             ]
           },
           "primaryKey": {
-            "ID": "E6EB5BC6-B819-4C9A-B78A-D4159ED55EA6"
+            "ID": "8D6AEE4B-F429-4655-A435-FFC16DC754AE"
           }
         }
       ]
     },
     "primaryKey": {
-      "ID": "88E42A19-C127-40EF-B1DD-93281632AA78"
+      "ID": "072871A2-7779-4E9B-9AAB-6BAB850BC88F"
     }
   }
 ]
