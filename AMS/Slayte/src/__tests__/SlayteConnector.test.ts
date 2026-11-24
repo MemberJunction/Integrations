@@ -38,11 +38,11 @@ class FetchBackedSlayteConnector extends SlayteConnector {
         ApiKey: 'test-primary-key',
     };
 
-    protected override async loadRawCredentials(): Promise<Record<string, unknown>> {
+    protected override async LoadRawCredentials(): Promise<Record<string, unknown>> {
         return this.mockCreds;
     }
 
-    protected override sleep(): Promise<void> {
+    protected override Sleep(): Promise<void> {
         return Promise.resolve();
     }
 }
@@ -347,6 +347,34 @@ describe('SlayteConnector', () => {
             expect(recorded[1].url).toBe('https://workspace.example.org/api/v2/crm/query/q-ind-all/execute?cursor=cur-page-2');
         });
 
+        it('backfills empty/whitespace primary key column from fallback uuid and avoids double rate-limit spend/report', async () => {
+            const acquire = vi.fn().mockResolvedValue(undefined);
+            const report = vi.fn();
+            fetchHandler = () =>
+                jsonResponse({
+                    success: true,
+                    data: { data: [{ individualUuid: '   ', uuid: 'u-blank', firstName: 'Ada' }], cursor: null },
+                });
+
+            const res = await connector.FetchChanges(
+                makeFetchCtx('Individual', { individualQueryId: 'q-1' }, { RateLimitAcquire: acquire, RateLimitReport: report })
+            );
+            expect(res.Records[0].ExternalID).toBe('u-blank');
+            expect(res.Records[0].Fields.individualUuid).toBe('u-blank');
+            // Single request covered by governedFetch's outer token — no inner acquire or report
+            expect(acquire).not.toHaveBeenCalled();
+            expect(report).not.toHaveBeenCalled();
+
+            // On 429, do NOT pre-report before rethrowing to governedFetch
+            fetchHandler = () =>
+                jsonResponse({ success: false, error: { code: 429, type: 'RATE_LIMITED', message: 'Slow down' } }, 429, { 'retry-after': '5' });
+            await expect(
+                connector.FetchChanges(makeFetchCtx('Individual', { individualQueryId: 'q-1' }, { RateLimitAcquire: acquire, RateLimitReport: report }))
+            ).rejects.toThrow(/429/);
+            expect(acquire).not.toHaveBeenCalled();
+            expect(report).not.toHaveBeenCalled();
+        });
+
         it('throws on FetchChanges when a query row omits any recognized primary key column', async () => {
             fetchHandler = () =>
                 jsonResponse({ success: true, data: { data: [{ name: 'No Key Corp', domain: 'example.org' }], cursor: null } });
@@ -401,10 +429,14 @@ describe('SlayteConnector', () => {
                 return jsonResponse({ success: true, data: { items, total: 550 } });
             };
 
+            const credSpy = vi.spyOn(connector, 'LoadRawCredentials' as never);
+
             const seenIds: string[] = [];
             let page: number | undefined = 1;
             let hasMore = true;
+            let batchCount = 0;
             while (hasMore) {
+                batchCount++;
                 const batch = await connector.FetchChanges(
                     makeFetchCtx('Event', {}, { BatchSize: 300, CurrentPage: page })
                 );
@@ -418,6 +450,8 @@ describe('SlayteConnector', () => {
             expect(recorded.map((r) => new URL(r.url).searchParams.get('page'))).toEqual(['0', '1', '2']);
             expect(new Set(seenIds).size).toBe(550);
             expect(seenIds.length).toBe(550);
+            // Authenticate/LoadRawCredentials called once per batch (no duplicate pre-load in FetchChanges)
+            expect(credSpy).toHaveBeenCalledTimes(batchCount);
         });
 
         it('preserves child uuid on CommitteeAssignedPosition when walking parent Committee via {committeeUuid}', async () => {
@@ -637,7 +671,9 @@ describe('SlayteConnector', () => {
     });
 
     describe('CRMQuery, DirectoryEntry, & IntrospectSchema sample-union', () => {
-        it('fetches CRMQuery catalog across both ind and org entity types', async () => {
+        it('fetches CRMQuery catalog across ind and org, acquiring rate limit only for the second request', async () => {
+            const acquire = vi.fn().mockResolvedValue(undefined);
+            const report = vi.fn();
             fetchHandler = (req) =>
                 jsonResponse({
                     success: true,
@@ -646,19 +682,33 @@ describe('SlayteConnector', () => {
                         : [{ uuid: 'q-2', name: 'All Orgs', params: [] }],
                 });
 
-            const res = await connector.FetchChanges(makeFetchCtx('CRMQuery'));
+            const res = await connector.FetchChanges(
+                makeFetchCtx('CRMQuery', {}, { RateLimitAcquire: acquire, RateLimitReport: report })
+            );
             expect(res.HasMore).toBe(false);
             expect(res.Records).toHaveLength(2);
             expect(res.Records[0].Fields.entityType).toBe('ind');
             expect(res.Records[1].Fields.entityType).toBe('org');
+            expect(acquire).toHaveBeenCalledTimes(1);
+            expect(report).toHaveBeenCalledTimes(1);
         });
 
-        it('paginates DirectoryEntry across configured directories via cursor and AfterKeyValue', async () => {
+        it('sorts directories by uuid, caches GET /v2/directory across cursor pages, skips 404 directories, and uses | ExternalID', async () => {
+            let listCalls = 0;
             fetchHandler = (req) => {
                 if (req.method === 'GET' && req.url.endsWith('/v2/directory')) {
-                    return jsonResponse({ success: true, data: [{ uuid: 'dir-1', slug: 'members', entityType: 'ind' }] });
+                    listCalls++;
+                    // Intentionally unsorted order: dir-2 before dir-1, plus dir-gone
+                    return jsonResponse({
+                        success: true,
+                        data: [
+                            { uuid: 'dir-2', slug: 'gone-dir', entityType: 'org' },
+                            { uuid: 'dir-3', slug: 'orgs', entityType: 'org' },
+                            { uuid: 'dir-1', slug: 'members', entityType: 'ind' },
+                        ],
+                    });
                 }
-                if (req.method === 'POST' && !req.url.includes('cursor=')) {
+                if (req.url.includes('/v2/directory/members') && !req.url.includes('cursor=')) {
                     return jsonResponse({
                         success: true,
                         data: {
@@ -667,10 +717,22 @@ describe('SlayteConnector', () => {
                         },
                     });
                 }
+                if (req.url.includes('/v2/directory/members') && req.url.includes('cursor=dir-cur-2')) {
+                    return jsonResponse({
+                        success: true,
+                        data: {
+                            data: [{ entityUuid: 'e-2', tags: [], entity: { displayName: 'John' } }],
+                            cursor: null,
+                        },
+                    });
+                }
+                if (req.url.includes('/v2/directory/gone-dir')) {
+                    return jsonResponse({ success: false, error: { code: 404, type: 'NOT_FOUND', message: 'Deleted' } }, 404);
+                }
                 return jsonResponse({
                     success: true,
                     data: {
-                        data: [{ entityUuid: 'e-2', tags: [], entity: { displayName: 'John' } }],
+                        data: [{ entityUuid: 'o-1', tags: [], entity: { displayName: 'Acme' } }],
                         cursor: null,
                     },
                 });
@@ -678,15 +740,46 @@ describe('SlayteConnector', () => {
 
             const batch1 = await connector.FetchChanges(makeFetchCtx('DirectoryEntry'));
             expect(batch1.HasMore).toBe(true);
-            expect(batch1.NextAfterKeyValue).toBe('0|dir-cur-2');
-            expect(batch1.Records[0].ExternalID).toBe('dir-1::e-1');
+            // Sorted first directory is dir-1, keyed by dir.uuid (not array index)
+            expect(batch1.NextAfterKeyValue).toBe('dir-1|dir-cur-2');
+            expect(batch1.Records[0].ExternalID).toBe('dir-1|e-1');
             expect(batch1.Records[0].Fields.displayName).toBe('Jane');
 
+            // Resumed call reuses cached directory list (no 2nd GET /v2/directory), skips 404 dir-2 with warning, finishes dir-3
             const batch2 = await connector.FetchChanges(
                 makeFetchCtx('DirectoryEntry', {}, { AfterKeyValue: batch1.NextAfterKeyValue })
             );
+            expect(listCalls).toBe(1);
             expect(batch2.HasMore).toBe(false);
-            expect(batch2.Records[0].ExternalID).toBe('dir-1::e-2');
+            expect(batch2.Records.map((r) => r.ExternalID)).toEqual(['dir-1|e-2', 'dir-3|o-1']);
+            expect(batch2.Warnings?.[0].Code).toBe('DIRECTORY_NOT_FOUND');
+        });
+
+        it('handles cold-restart DirectoryEntry resume when the resumed directory uuid was removed without misapplying its cursor', async () => {
+            fetchHandler = (req) => {
+                if (req.method === 'GET' && req.url.endsWith('/v2/directory')) {
+                    return jsonResponse({
+                        success: true,
+                        data: [
+                            { uuid: 'dir-1', slug: 'first', entityType: 'ind' },
+                            { uuid: 'dir-3', slug: 'third', entityType: 'org' },
+                        ],
+                    });
+                }
+                return jsonResponse({
+                    success: true,
+                    data: { data: [{ entityUuid: 'o-3', tags: [], entity: { name: 'Third' } }], cursor: null },
+                });
+            };
+
+            // Resuming at deleted dir-2 with stale cursor — must advance to dir-3 WITHOUT sending ?cursor=stale-cur
+            const res = await connector.FetchChanges(
+                makeFetchCtx('DirectoryEntry', {}, { AfterKeyValue: 'dir-2|stale-cur' })
+            );
+            expect(res.HasMore).toBe(false);
+            expect(res.Records.map((r) => r.ExternalID)).toEqual(['dir-3|o-3']);
+            const postReq = recorded.find((r) => r.method === 'POST')!;
+            expect(postReq.url).toBe('https://example.slayte.test/api/v2/directory/third');
         });
 
         it('merges declared core fields with live sampled custom columns and widens MaxLength', async () => {

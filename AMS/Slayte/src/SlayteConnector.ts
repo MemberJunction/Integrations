@@ -238,6 +238,13 @@ const fetchCallContext = new AsyncLocalStorage<SlayteFetchCallState>();
 @RegisterClass(BaseIntegrationConnector, 'SlayteConnector')
 export class SlayteConnector extends BaseRESTIntegrationConnector {
 
+    /**
+     * Per-connection cache of sorted Slayte directories, populated at the start of a
+     * `DirectoryEntry` walk (`!AfterKeyValue`) and reused across resumed cursor pages so
+     * multi-page directory syncs do not re-fetch `GET /v2/directory` on every page.
+     */
+    private readonly directoryListCache = new Map<string, SlayteDirectoryRecord[]>();
+
     public override get IntegrationName(): string {
         return 'Slayte';
     }
@@ -312,7 +319,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         contextUser: UserInfo
     ): Promise<SlayteAuthContext> {
         const settings = parseConnectionSettings(companyIntegration.Configuration);
-        const rawCreds = await this.loadRawCredentials(companyIntegration, contextUser);
+        const rawCreds = await this.LoadRawCredentials(companyIntegration, contextUser);
         const parsed = RawSlayteCredentialsSchema.safeParse(rawCreds);
         if (!parsed.success) {
             throw new Error(`Invalid Slayte credentials: ${parsed.error.message}`);
@@ -356,7 +363,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         };
     }
 
-    protected buildQueryHeaders(auth: SlayteAuthContext): Record<string, string> {
+    protected BuildQueryHeaders(auth: SlayteAuthContext): Record<string, string> {
         return {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -439,7 +446,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
 
             const isTransientGateway = resp.status === 502 || resp.status === 503 || resp.status === 504;
             if (isTransientGateway && attempt === 0) {
-                await this.sleep(TRANSIENT_5XX_RETRY_DELAY_MS);
+                await this.Sleep(TRANSIENT_5XX_RETRY_DELAY_MS);
                 continue;
             }
 
@@ -450,7 +457,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
     }
 
     /** Seam for deterministic unit tests of the single transient 5xx retry. */
-    protected sleep(ms: number): Promise<void> {
+    protected Sleep(ms: number): Promise<void> {
         if (ms <= 0) return Promise.resolve();
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
@@ -634,7 +641,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             const body = params && Object.keys(params).length > 0 ? { params } : {};
             let resp: RESTResponse;
             try {
-                resp = await this.MakeHTTPRequest(auth, url, 'POST', this.buildQueryHeaders(auth), body);
+                resp = await this.MakeHTTPRequest(auth, url, 'POST', this.BuildQueryHeaders(auth), body);
             } catch (err) {
                 return {
                     Success: false,
@@ -668,7 +675,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                     auth,
                     `${auth.BaseUrl}/v2/crm/query?entityType=ind`,
                     'GET',
-                    this.buildQueryHeaders(auth)
+                    this.BuildQueryHeaders(auth)
                 );
                 if (qResp.Status < 200 || qResp.Status >= 300) {
                     return {
@@ -753,17 +760,18 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         }
 
         // Standard REST GET collections (Committee, Event, EventRegistrant, etc.)
-        // Uses AsyncLocalStorage so concurrent sibling FetchChanges calls never collide.
-        const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
-        const overlapMs = auth.Settings.registrantOverlapMinutes !== undefined
-            ? auth.Settings.registrantOverlapMinutes * 60 * 1000
+        // Read non-secret settings directly from Configuration (avoiding a duplicate
+        // MJ: Credentials DB load before super.FetchChanges calls Authenticate).
+        const settings = parseConnectionSettings(ctx.CompanyIntegration.Configuration);
+        const overlapMs = settings.registrantOverlapMinutes !== undefined
+            ? settings.registrantOverlapMinutes * 60 * 1000
             : REGISTRANT_WATERMARK_OVERLAP_MS;
         const callState: SlayteFetchCallState = {
             changedSince: ctx.ObjectName === 'EventRegistrant' && ctx.WatermarkValue
                 ? computeChangedSinceWithOverlap(ctx.WatermarkValue, overlapMs)
                 : undefined,
             committeeFields: ctx.ObjectName === 'Committee'
-                ? auth.Settings.committeeFields
+                ? settings.committeeFields
                 : undefined,
         };
 
@@ -778,6 +786,11 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
      *
      * Throws explicitly when the query ID is not configured OR when returned rows omit
      * a recognized primary key column — never returns a silent 0-row success.
+     *
+     * Rate limiting: `IntegrationEngine.governedFetch` already acquires one token before
+     * calling `FetchChanges` and reports thrown 429s via `reportRateOutcome`, so this
+     * single-request path deliberately does NOT call `ctx.RateLimitAcquire` or pre-report
+     * errors on `ctx.RateLimitReport`.
      */
     private async fetchCRMQueryObject(
         ctx: FetchContext,
@@ -795,21 +808,12 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             );
         }
 
-        if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
-
         const qs = ctx.CurrentCursor ? `?cursor=${encodeURIComponent(ctx.CurrentCursor)}` : '';
         const url = `${auth.BaseUrl}/v2/crm/query/${encodeURIComponent(queryId)}/execute${qs}`;
         const params = auth.Settings[spec.paramsKey];
         const body = params && Object.keys(params).length > 0 ? { params } : {};
 
-        let resp: RESTResponse;
-        try {
-            resp = await this.MakeHTTPRequest(auth, url, 'POST', this.buildQueryHeaders(auth), body);
-        } catch (err) {
-            ctx.RateLimitReport?.(err);
-            throw err;
-        }
-        ctx.RateLimitReport?.();
+        const resp = await this.MakeHTTPRequest(auth, url, 'POST', this.BuildQueryHeaders(auth), body);
 
         if (resp.Status < 200 || resp.Status >= 300) {
             throw new Error(
@@ -828,7 +832,12 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             }
             const idValue = extractFirstNonEmptyString(row, spec.keyCandidates)!;
             const normalizedFields: Record<string, unknown> = { ...row };
-            if (normalizedFields[spec.primaryKeyField] === undefined || normalizedFields[spec.primaryKeyField] === null) {
+            const existingPk = normalizedFields[spec.primaryKeyField];
+            if (
+                existingPk === undefined ||
+                existingPk === null ||
+                (typeof existingPk === 'string' && existingPk.trim().length === 0)
+            ) {
                 normalizedFields[spec.primaryKeyField] = idValue;
             }
             records.push({
@@ -876,18 +885,16 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
     private async fetchCRMQueryCatalog(ctx: FetchContext): Promise<FetchBatchResult> {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const records: ExternalRecord[] = [];
+        const entityTypes = ['ind', 'org'] as const;
 
-        for (const entityType of ['ind', 'org'] as const) {
-            if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
+        for (let i = 0; i < entityTypes.length; i++) {
+            const entityType = entityTypes[i];
+            // Request 0 uses governedFetch's outer token; acquire only for additional requests in this batch.
+            if (i > 0 && ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
             const url = `${auth.BaseUrl}/v2/crm/query?entityType=${entityType}`;
-            let resp: RESTResponse;
-            try {
-                resp = await this.MakeHTTPRequest(auth, url, 'GET', this.buildQueryHeaders(auth));
-            } catch (err) {
-                ctx.RateLimitReport?.(err);
-                throw err;
-            }
-            ctx.RateLimitReport?.();
+            // Let thrown 429s propagate directly to governedFetch without pre-reporting.
+            const resp = await this.MakeHTTPRequest(auth, url, 'GET', this.BuildQueryHeaders(auth));
+            if (i > 0) ctx.RateLimitReport?.();
 
             if (resp.Status < 200 || resp.Status >= 300) {
                 throw new Error(
@@ -913,43 +920,64 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Fetches `DirectoryEntry` rows across all configured directories via cursor-paginated
-     * `POST /v2/directory/{slug}?cursor=...`. Resumes across calls via
-     * `AfterKeyValue` (`<dirIndex>|<cursor>`) and respects `IsDiscoverySample` /
-     * `SampleTargetRecords` / `DeadlineMs`.
+     * `POST /v2/directory/{slug}?cursor=...`.
+     *
+     * - Directories are sorted deterministically by `uuid` and cached per connection at the
+     *   start of a walk (`!AfterKeyValue`), avoiding redundant `GET /v2/directory` calls on
+     *   every resumed cursor page.
+     * - `AfterKeyValue` is keyed by `<dirUuid>|<cursor>` rather than positional array index,
+     *   so adding/removing a directory mid-sync never shifts indices or sends one directory's
+     *   cursor to another.
+     * - Per-directory HTTP `404` logs a warning, emits `DIRECTORY_NOT_FOUND`, and skips to
+     *   the next directory rather than aborting the sync.
+     * - Rate limiting: the first outbound HTTP request in each `FetchChanges` call uses
+     *   `governedFetch`'s outer token; only additional requests acquire via `ctx.RateLimitAcquire`.
      */
     private async fetchDirectoryEntries(ctx: FetchContext): Promise<FetchBatchResult> {
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
         const headers = this.BuildHeaders(auth);
+        const cacheKey = `${ctx.CompanyIntegration.ID}|${auth.BaseUrl}`;
+        let firstRequest = true;
 
-        if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
-        let dirResp: RESTResponse;
-        try {
-            dirResp = await this.MakeHTTPRequest(auth, `${auth.BaseUrl}/v2/directory`, 'GET', headers);
-        } catch (err) {
-            ctx.RateLimitReport?.(err);
-            throw err;
+        const acquireIfAdditional = async (): Promise<boolean> => {
+            if (firstRequest) {
+                firstRequest = false;
+                return false;
+            }
+            if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
+            return true;
+        };
+
+        let directories = ctx.AfterKeyValue ? this.directoryListCache.get(cacheKey) : undefined;
+        if (!directories) {
+            const wasAdditional = await acquireIfAdditional();
+            const dirResp = await this.MakeHTTPRequest(auth, `${auth.BaseUrl}/v2/directory`, 'GET', headers);
+            if (wasAdditional) ctx.RateLimitReport?.();
+
+            if (dirResp.Status < 200 || dirResp.Status >= 300) {
+                throw new Error(`Slayte GET /v2/directory failed (HTTP ${dirResp.Status}): ${formatSlayteError(dirResp)}`);
+            }
+
+            directories = this.NormalizeResponse(dirResp.Body, 'data')
+                .map((d): SlayteDirectoryRecord | null => {
+                    const uuid = typeof d.uuid === 'string' ? d.uuid.trim() : '';
+                    const slug = typeof d.slug === 'string' ? d.slug.trim() : '';
+                    if (!uuid || !slug) return null;
+                    return {
+                        uuid,
+                        slug,
+                        name: typeof d.name === 'string' ? d.name : undefined,
+                        entityType: typeof d.entityType === 'string' ? d.entityType : undefined,
+                    };
+                })
+                .filter((d): d is SlayteDirectoryRecord => d !== null)
+                .sort((a, b) => a.uuid.localeCompare(b.uuid));
+
+            this.directoryListCache.set(cacheKey, directories);
         }
-        ctx.RateLimitReport?.();
-
-        if (dirResp.Status < 200 || dirResp.Status >= 300) {
-            throw new Error(`Slayte GET /v2/directory failed (HTTP ${dirResp.Status}): ${formatSlayteError(dirResp)}`);
-        }
-
-        const directories = this.NormalizeResponse(dirResp.Body, 'data')
-            .map((d): SlayteDirectoryRecord | null => {
-                const uuid = typeof d.uuid === 'string' ? d.uuid.trim() : '';
-                const slug = typeof d.slug === 'string' ? d.slug.trim() : '';
-                if (!uuid || !slug) return null;
-                return {
-                    uuid,
-                    slug,
-                    name: typeof d.name === 'string' ? d.name : undefined,
-                    entityType: typeof d.entityType === 'string' ? d.entityType : undefined,
-                };
-            })
-            .filter((d): d is SlayteDirectoryRecord => d !== null);
 
         if (directories.length === 0) {
+            this.directoryListCache.delete(cacheKey);
             return {
                 Records: [],
                 HasMore: false,
@@ -960,15 +988,24 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             };
         }
 
-        const { dirIndex, cursor } = parseDirectoryResumeKey(ctx.AfterKeyValue);
-        if (dirIndex >= directories.length) {
-            return { Records: [], HasMore: false };
+        const resume = parseDirectoryResumeKey(ctx.AfterKeyValue);
+        let currentIdx = 0;
+        let currentCursor: string | undefined = undefined;
+        if (resume.dirUuid) {
+            // Find the resumed directory by UUID; if it was deleted mid-sync, advance to the
+            // first directory with uuid > resume.dirUuid and discard the stale cursor.
+            const idx = directories.findIndex((d) => d.uuid.localeCompare(resume.dirUuid!) >= 0);
+            if (idx < 0) {
+                this.directoryListCache.delete(cacheKey);
+                return { Records: [], HasMore: false };
+            }
+            currentIdx = idx;
+            currentCursor = directories[idx].uuid === resume.dirUuid ? resume.cursor : undefined;
         }
 
         const pageSize = Math.min(MAX_DIRECTORY_PAGE_SIZE, Math.max(1, ctx.BatchSize || DEFAULT_PAGE_SIZE));
         const records: ExternalRecord[] = [];
-        let currentIdx = dirIndex;
-        let currentCursor = cursor;
+        const warnings: FetchWarning[] = [];
         const sampleCtx = ctx as FetchContext & {
             IsDiscoverySample?: boolean;
             SampleTargetRecords?: number;
@@ -976,27 +1013,35 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         };
 
         while (currentIdx < directories.length) {
+            const dir = directories[currentIdx];
             if (sampleCtx.DeadlineMs && Date.now() >= sampleCtx.DeadlineMs) {
                 return {
                     Records: records,
                     HasMore: true,
-                    NextAfterKeyValue: encodeDirectoryResumeKey(currentIdx, currentCursor),
+                    NextAfterKeyValue: encodeDirectoryResumeKey(dir.uuid, currentCursor),
+                    Warnings: warnings.length > 0 ? warnings : undefined,
                 };
             }
 
-            const dir = directories[currentIdx];
             const qs = currentCursor ? `?cursor=${encodeURIComponent(currentCursor)}` : '';
             const url = `${auth.BaseUrl}/v2/directory/${encodeURIComponent(dir.slug)}${qs}`;
 
-            if (ctx.RateLimitAcquire) await ctx.RateLimitAcquire();
-            let resp: RESTResponse;
-            try {
-                resp = await this.MakeHTTPRequest(auth, url, 'POST', headers, { pageSize });
-            } catch (err) {
-                ctx.RateLimitReport?.(err);
-                throw err;
+            const wasAdditional = await acquireIfAdditional();
+            const resp = await this.MakeHTTPRequest(auth, url, 'POST', headers, { pageSize });
+            if (wasAdditional) ctx.RateLimitReport?.();
+
+            if (resp.Status === 404) {
+                const msg = `Slayte directory '${dir.slug}' (${dir.uuid}) returned HTTP 404; skipping directory.`;
+                console.warn(`[Slayte] ${msg}`);
+                warnings.push({
+                    Code: 'DIRECTORY_NOT_FOUND',
+                    Message: msg,
+                    Data: { directoryUuid: dir.uuid, directorySlug: dir.slug },
+                });
+                currentIdx++;
+                currentCursor = undefined;
+                continue;
             }
-            ctx.RateLimitReport?.();
 
             if (resp.Status < 200 || resp.Status >= 300) {
                 throw new Error(`Slayte POST /v2/directory/${dir.slug} failed (HTTP ${resp.Status}): ${formatSlayteError(resp)}`);
@@ -1009,7 +1054,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                 if (!entityUuid) continue;
                 const entityCols = isPlainObject(entry.entity) ? entry.entity : {};
                 records.push({
-                    ExternalID: `${dir.uuid}::${entityUuid}`,
+                    ExternalID: `${dir.uuid}|${entityUuid}`,
                     ObjectType: 'DirectoryEntry',
                     Fields: {
                         ...entityCols,
@@ -1031,7 +1076,8 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                 return {
                     Records: records,
                     HasMore: true,
-                    NextAfterKeyValue: encodeDirectoryResumeKey(currentIdx, nextCursor),
+                    NextAfterKeyValue: encodeDirectoryResumeKey(dir.uuid, nextCursor),
+                    Warnings: warnings.length > 0 ? warnings : undefined,
                 };
             }
 
@@ -1039,12 +1085,15 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
             currentCursor = undefined;
 
             if (sampleCtx.IsDiscoverySample && sampleCtx.SampleTargetRecords && records.length >= sampleCtx.SampleTargetRecords) {
+                const moreDirs = currentIdx < directories.length;
+                if (!moreDirs) this.directoryListCache.delete(cacheKey);
                 return {
                     Records: records,
-                    HasMore: currentIdx < directories.length,
-                    NextAfterKeyValue: currentIdx < directories.length
-                        ? encodeDirectoryResumeKey(currentIdx, undefined)
+                    HasMore: moreDirs,
+                    NextAfterKeyValue: moreDirs
+                        ? encodeDirectoryResumeKey(directories[currentIdx].uuid, undefined)
                         : undefined,
+                    Warnings: warnings.length > 0 ? warnings : undefined,
                 };
             }
 
@@ -1052,12 +1101,18 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
                 return {
                     Records: records,
                     HasMore: true,
-                    NextAfterKeyValue: encodeDirectoryResumeKey(currentIdx, undefined),
+                    NextAfterKeyValue: encodeDirectoryResumeKey(directories[currentIdx].uuid, undefined),
+                    Warnings: warnings.length > 0 ? warnings : undefined,
                 };
             }
         }
 
-        return { Records: records, HasMore: false };
+        this.directoryListCache.delete(cacheKey);
+        return {
+            Records: records,
+            HasMore: false,
+            Warnings: warnings.length > 0 ? warnings : undefined,
+        };
     }
 
     // ── Single-Record GetRecord ─────────────────────────────────────────
@@ -1120,7 +1175,7 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
     // ── Credential Loading ──────────────────────────────────────────────
 
     /** Loads credential JSON from `MJCredentialEntity` (with `Configuration` fallback for tests). */
-    protected async loadRawCredentials(
+    protected async LoadRawCredentials(
         companyIntegration: MJCompanyIntegrationEntity,
         contextUser: UserInfo
     ): Promise<Record<string, unknown>> {
@@ -1269,23 +1324,23 @@ function extractDirectoryPageData(body: unknown): SlayteDirectoryPageData {
     return body as SlayteDirectoryPageData;
 }
 
-function parseDirectoryResumeKey(raw: string | null | undefined): { dirIndex: number; cursor?: string } {
-    if (!raw) return { dirIndex: 0 };
+function parseDirectoryResumeKey(raw: string | null | undefined): { dirUuid?: string; cursor?: string } {
+    if (!raw) return {};
     const sep = raw.indexOf('|');
     if (sep < 0) {
-        const n = Number.parseInt(raw, 10);
-        return { dirIndex: Number.isFinite(n) && n >= 0 ? n : 0 };
+        const trimmed = raw.trim();
+        return trimmed.length > 0 ? { dirUuid: trimmed } : {};
     }
-    const idx = Number.parseInt(raw.slice(0, sep), 10);
+    const dirUuid = raw.slice(0, sep).trim();
     const cur = raw.slice(sep + 1);
     return {
-        dirIndex: Number.isFinite(idx) && idx >= 0 ? idx : 0,
+        dirUuid: dirUuid.length > 0 ? dirUuid : undefined,
         cursor: cur.length > 0 ? cur : undefined,
     };
 }
 
-function encodeDirectoryResumeKey(dirIndex: number, cursor: string | undefined): string {
-    return `${dirIndex}|${cursor ?? ''}`;
+function encodeDirectoryResumeKey(dirUuid: string, cursor: string | undefined): string {
+    return `${dirUuid}|${cursor ?? ''}`;
 }
 
 function formatSlayteError(response: RESTResponse): string {

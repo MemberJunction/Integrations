@@ -47,7 +47,7 @@
 ### Pull (read)
 
 - **Status: Mock-only (unit tests).** No live Slayte workspace has been synced yet.
-- Verified in Vitest (`src/__tests__/SlayteConnector.test.ts` — 20 tests):
+- Verified in Vitest (`src/__tests__/SlayteConnector.test.ts` — 22 tests):
   - Credential & `SiteUrl` normalization (`/api` and `/v2` deduplication, dual `ApiKey`/`QueryApiKey` routing, strict config validation)
   - `TestConnection` (success with `X-Api-Version`, dual-key verification, `401 API_KEY_EXPIRED`, `403 SCOPE_REQUIRED`, missing key column failure)
   - Cursor-paginated Shared CRM Query execution (`Individual`, `Organization`), `SourceTotalRecords`, parameter forwarding, warning surfacing, missing query ID / missing key column errors
