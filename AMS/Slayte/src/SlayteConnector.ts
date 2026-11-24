@@ -97,6 +97,8 @@ export const SlayteConnectionSettingsSchema = z.object({
     apiBaseUrl: z.string().url().optional(),
     /** HTTP request timeout in milliseconds. Default: 30000. */
     requestTimeoutMs: z.number().int().positive().optional(),
+    /** Overlap lookback in minutes subtracted from EventRegistrant changedSince watermark. Default: 15. */
+    registrantOverlapMinutes: z.number().int().min(0).max(1440).optional(),
 }).passthrough();
 
 export type SlayteConnectionSettings = z.infer<typeof SlayteConnectionSettingsSchema>;
@@ -169,6 +171,17 @@ const DEFAULT_PAGE_SIZE = 100;
 const MAX_REST_PAGE_SIZE = 250;
 const MAX_DIRECTORY_PAGE_SIZE = 1000;
 const INTROSPECT_CONCURRENCY = 4;
+
+/**
+ * Overlap lookback subtracted from `WatermarkValue` when building `EventRegistrant`'s
+ * `changedSince` filter. Because the engine saves wall-clock "now" after the walk
+ * finishes, any registrant updated mid-walk after its event was scanned would otherwise
+ * fall behind the saved watermark. Upserts by `registrantUuid` make re-reading harmless.
+ */
+export const REGISTRANT_WATERMARK_OVERLAP_MS = 15 * 60 * 1000;
+
+/** Single short delay (ms) before one retry on transient gateway 502/503/504 responses. */
+const TRANSIENT_5XX_RETRY_DELAY_MS = 500;
 
 /** Standard built-in core fields requested on `GetRecord` when no custom `fields` group is configured. */
 const DEFAULT_INDIVIDUAL_CORE_FIELDS = [
@@ -366,10 +379,12 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
     // ── HTTP Transport ──────────────────────────────────────────────────
 
     /**
-     * Executes a single HTTP request against Slayte without sleeping on 429:
-     * - HTTP 429 throws immediately with `{ status: 429, headers }` attached so the
-     *   engine's AIMD rate limiter and `ExtractRetryAfterMs` control retry/backoff
-     *   without tripping `FetchChangesMs`.
+     * Executes an HTTP request against Slayte:
+     * - HTTP 429 throws immediately with `{ status: 429, headers }` attached (no sleep)
+     *   so the engine's AIMD rate limiter and `ExtractRetryAfterMs` control backoff
+     *   without colliding with `FetchChangesMs`.
+     * - Transient gateway 502/503/504 responses get a single short retry (500ms),
+     *   comfortably inside the 30s `FetchChangesMs` budget.
      * - HTTP 404 on a parent-scoped child collection (deleted Committee or Event)
      *   returns an empty `200` page so one deleted parent never aborts the object.
      */
@@ -383,45 +398,61 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         const slayteAuth = auth as SlayteAuthContext;
         const timeoutMs = slayteAuth.Settings?.requestTimeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-        const init: RequestInit = {
-            method,
-            headers,
-            signal: AbortSignal.timeout(timeoutMs),
-        };
-        if (body !== undefined && method !== 'GET' && method !== 'HEAD') {
-            init.body = typeof body === 'string' ? body : JSON.stringify(body);
-        }
-
-        const resp = await fetch(url, init);
-        const respHeaders: Record<string, string> = {};
-        resp.headers.forEach((value, key) => {
-            respHeaders[key.toLowerCase()] = value;
-        });
-
-        const text = await resp.text();
-        let parsedBody: unknown = null;
-        if (text.length > 0) {
-            try {
-                parsedBody = JSON.parse(text);
-            } catch {
-                parsedBody = text;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const init: RequestInit = {
+                method,
+                headers,
+                signal: AbortSignal.timeout(timeoutMs),
+            };
+            if (body !== undefined && method !== 'GET' && method !== 'HEAD') {
+                init.body = typeof body === 'string' ? body : JSON.stringify(body);
             }
+
+            const resp = await fetch(url, init);
+            const respHeaders: Record<string, string> = {};
+            resp.headers.forEach((value, key) => {
+                respHeaders[key.toLowerCase()] = value;
+            });
+
+            const text = await resp.text();
+            let parsedBody: unknown = null;
+            if (text.length > 0) {
+                try {
+                    parsedBody = JSON.parse(text);
+                } catch {
+                    parsedBody = text;
+                }
+            }
+
+            const result: RESTResponse = {
+                Status: resp.status,
+                Body: parsedBody,
+                Headers: respHeaders,
+            };
+
+            if (resp.status === 429) {
+                throw Object.assign(
+                    new Error(`Slayte HTTP 429 rate limited (${method} ${url}): ${formatSlayteError(result)}`),
+                    { status: 429, headers: respHeaders, response: result }
+                );
+            }
+
+            const isTransientGateway = resp.status === 502 || resp.status === 503 || resp.status === 504;
+            if (isTransientGateway && attempt === 0) {
+                await this.sleep(TRANSIENT_5XX_RETRY_DELAY_MS);
+                continue;
+            }
+
+            return deletedParentAsEmpty(url, method, result);
         }
 
-        const result: RESTResponse = {
-            Status: resp.status,
-            Body: parsedBody,
-            Headers: respHeaders,
-        };
+        throw new Error(`Slayte request exhausted retry loop (${method} ${url})`);
+    }
 
-        if (resp.status === 429) {
-            throw Object.assign(
-                new Error(`Slayte HTTP 429 rate limited (${method} ${url}): ${formatSlayteError(result)}`),
-                { status: 429, headers: respHeaders, response: result }
-            );
-        }
-
-        return deletedParentAsEmpty(url, method, result);
+    /** Seam for deterministic unit tests of the single transient 5xx retry. */
+    protected sleep(ms: number): Promise<void> {
+        if (ms <= 0) return Promise.resolve();
+        return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
     // ── Response Normalization & Pagination ─────────────────────────────
@@ -724,18 +755,20 @@ export class SlayteConnector extends BaseRESTIntegrationConnector {
         // Standard REST GET collections (Committee, Event, EventRegistrant, etc.)
         // Uses AsyncLocalStorage so concurrent sibling FetchChanges calls never collide.
         const auth = await this.Authenticate(ctx.CompanyIntegration, ctx.ContextUser);
+        const overlapMs = auth.Settings.registrantOverlapMinutes !== undefined
+            ? auth.Settings.registrantOverlapMinutes * 60 * 1000
+            : REGISTRANT_WATERMARK_OVERLAP_MS;
         const callState: SlayteFetchCallState = {
             changedSince: ctx.ObjectName === 'EventRegistrant' && ctx.WatermarkValue
-                ? ctx.WatermarkValue
+                ? computeChangedSinceWithOverlap(ctx.WatermarkValue, overlapMs)
                 : undefined,
             committeeFields: ctx.ObjectName === 'Committee'
                 ? auth.Settings.committeeFields
                 : undefined,
         };
 
-        // For EventRegistrant, deliberately do NOT override NewWatermarkValue with registrationDate:
-        // leaving it unset lets the engine record sync start ("now"), which matches Slayte's
-        // `changedSince` semantics without regressing the watermark to an old registration date.
+        // Leave NewWatermarkValue unset so the engine records wall-clock "now" after the walk
+        // completes; subtracting `overlapMs` above prevents missing edits made mid-walk.
         return await fetchCallContext.run(callState, () => super.FetchChanges(ctx));
     }
 
@@ -1129,6 +1162,17 @@ export function normalizeSlayteBaseUrl(rawUrl: string): string {
         normalized = `${normalized}/api`;
     }
     return normalized;
+}
+
+/**
+ * Subtracts `overlapMs` from an ISO watermark timestamp so records modified mid-walk
+ * (before the engine writes its post-walk "now" watermark) are caught on the next run.
+ */
+export function computeChangedSinceWithOverlap(watermark: string, overlapMs: number): string {
+    if (overlapMs <= 0) return watermark;
+    const ms = Date.parse(watermark);
+    if (!Number.isFinite(ms)) return watermark;
+    return new Date(ms - overlapMs).toISOString();
 }
 
 /**

@@ -41,6 +41,10 @@ class FetchBackedSlayteConnector extends SlayteConnector {
     protected override async loadRawCredentials(): Promise<Record<string, unknown>> {
         return this.mockCreds;
     }
+
+    protected override sleep(): Promise<void> {
+        return Promise.resolve();
+    }
 }
 
 const INTEGRATION_ID = '00000000-0000-0000-0000-000000000003';
@@ -536,17 +540,37 @@ describe('SlayteConnector', () => {
                 makeFetchCtx('EventRegistrant', {}, { WatermarkValue: '2026-11-01T00:00:00Z' })
             );
 
-            // Both event requests carried changedSince, deleted event 404 did not abort sync, and old registrationDate is NOT emitted as NewWatermarkValue
+            // Both event requests carried changedSince shifted back by the 15-minute overlap window,
+            // deleted event 404 did not abort sync, and old registrationDate is NOT emitted as NewWatermarkValue
             expect(recorded).toHaveLength(2);
-            expect(new URL(recorded[0].url).searchParams.get('changedSince')).toBe('2026-11-01T00:00:00Z');
-            expect(new URL(recorded[1].url).searchParams.get('changedSince')).toBe('2026-11-01T00:00:00Z');
+            expect(new URL(recorded[0].url).searchParams.get('changedSince')).toBe('2026-10-31T23:45:00.000Z');
+            expect(new URL(recorded[1].url).searchParams.get('changedSince')).toBe('2026-10-31T23:45:00.000Z');
             expect(batch.Records).toHaveLength(1);
             expect(batch.Records[0].ExternalID).toBe('r-1');
             expect(batch.NewWatermarkValue).toBeUndefined();
         });
     });
 
-    describe('HTTP 429 Propagation, Deleted-Parent 404, & GetRecord', () => {
+    describe('HTTP 429 Propagation, 5xx Single Retry, Deleted-Parent 404, & GetRecord', () => {
+        it('retries transient HTTP 503 once and succeeds without touching 429 semantics', async () => {
+            let calls = 0;
+            fetchHandler = () => {
+                calls++;
+                if (calls === 1) {
+                    return jsonResponse({ success: false, error: { code: 503, type: 'UNEXPECTED_ERROR', message: 'Gateway busy' } }, 503);
+                }
+                return jsonResponse({
+                    success: true,
+                    data: { data: [{ individualUuid: 'u-retry-ok', firstName: 'Recovered' }], cursor: null },
+                });
+            };
+
+            const batch = await connector.FetchChanges(makeFetchCtx('Individual', { individualQueryId: 'q-1' }));
+            expect(recorded).toHaveLength(2);
+            expect(batch.Records).toHaveLength(1);
+            expect(batch.Records[0].ExternalID).toBe('u-retry-ok');
+        });
+
         it('throws immediately on HTTP 429 with Retry-After headers intact (no transport sleep) so ExtractRetryAfterMs sees it', async () => {
             fetchHandler = () =>
                 jsonResponse(
