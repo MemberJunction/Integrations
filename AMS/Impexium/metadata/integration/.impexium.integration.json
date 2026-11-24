@@ -10783,7 +10783,9 @@
                   "Sequence": 1,
                   "Status": "Active",
                   "Configuration": "{\"IsForeignKey\":true,\"ReferencedType\":\"Individuals\",\"ReferencedFieldName\":\"id\"}",
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Individuals&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "62BBC75F-6CCB-4D80-9793-156FC43F390C"

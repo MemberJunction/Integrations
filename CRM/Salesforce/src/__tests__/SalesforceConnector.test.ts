@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SalesforceConnector } from '../SalesforceConnector.js';
-import type { MJCompanyIntegrationEntity } from '@memberjunction/core-entities';
+import { IntegrationEngineBase } from '@memberjunction/integration-engine-base';
+import type { MJCompanyIntegrationEntity, MJIntegrationObjectEntity, MJIntegrationObjectFieldEntity } from '@memberjunction/core-entities';
 import type { UserInfo } from '@memberjunction/core';
 import type { FetchContext, CreateRecordContext, UpdateRecordContext, DeleteRecordContext, GetRecordContext, SearchContext } from '@memberjunction/integration-engine';
 
@@ -354,6 +355,372 @@ describe('SalesforceConnector (mocked API)', () => {
             const idField = fields.find(f => f.Name === 'Id');
             expect(idField!.IsUniqueKey).toBe(true);
             expect(idField!.IsReadOnly).toBe(true);
+        });
+
+        it('should exclude system audit and polymorphic lookups from FK flags while preserving single-target FKs and self-references', async () => {
+            mockJwtSign();
+            setupAuthAndApiMock([{
+                body: {
+                    fields: [
+                        { name: 'Id', label: 'Record ID', type: 'id', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: false, referenceTo: [], inlineHelpText: null },
+                        { name: 'CreatedById', label: 'Created By', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: false, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'LastModifiedById', label: 'Last Modified By', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: false, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'ParentId', label: 'Parent Account', type: 'reference', nillable: true, defaultedOnCreate: false, externalId: false, calculated: false, updateable: true, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: true, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'WhoId', label: 'Name ID', type: 'reference', nillable: true, defaultedOnCreate: false, externalId: false, calculated: false, updateable: true, referenceTo: ['Contact', 'Lead'], inlineHelpText: null },
+                    ],
+                },
+            }]);
+
+            const ci = createMockCompanyIntegration(MOCK_CREDENTIALS);
+            const fields = await connector.DiscoverFields(ci, 'Account', contextUser);
+            const byName = new Map(fields.map(f => [f.Name, f]));
+
+            expect(byName.get('CreatedById')?.IsForeignKey).toBe(false);
+            expect(byName.get('CreatedById')?.ForeignKeyTarget).toBeNull();
+            expect(byName.get('LastModifiedById')?.IsForeignKey).toBe(false);
+            expect(byName.get('LastModifiedById')?.ForeignKeyTarget).toBeNull();
+            // Polymorphic multi-target lookups (referenceTo.length > 1) are left unwired to match seeded metadata
+            expect(byName.get('WhoId')?.IsForeignKey).toBe(false);
+            expect(byName.get('WhoId')?.ForeignKeyTarget).toBeNull();
+            // Self-references (Account.ParentId -> Account) do not cycle in IntegrationEngine and should be kept
+            expect(byName.get('ParentId')?.IsForeignKey).toBe(true);
+            expect(byName.get('ParentId')?.ForeignKeyTarget).toBe('Account');
+            expect(byName.get('OwnerId')?.IsForeignKey).toBe(true);
+            expect(byName.get('OwnerId')?.ForeignKeyTarget).toBe('User');
+        });
+    });
+
+    describe('IntrospectSchema — DAG-safe FK emission', () => {
+        it('should omit audit FKs, preserve self-references, and prune multi-object cycle back-edges across Relationships and Fields', async () => {
+            mockJwtSign();
+            const describeByObject: Record<string, { label: string; fields: Array<Record<string, unknown>> }> = {
+                Account: {
+                    label: 'Account',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'ParentId', label: 'Parent', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'CreatedById', label: 'Created By', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'LastModifiedById', label: 'Modified By', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'PersonReportsToId', label: 'Person Reports To', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Contact'], inlineHelpText: null },
+                    ],
+                },
+                Contact: {
+                    label: 'Contact',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                Opportunity: {
+                    label: 'Opportunity',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                Case: {
+                    label: 'Case',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                Lead: {
+                    label: 'Lead',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                    ],
+                },
+                User: {
+                    label: 'User',
+                    fields: [
+                        { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                        { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        { name: 'ContactId', label: 'Contact', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Contact'], inlineHelpText: null },
+                    ],
+                },
+            };
+
+            fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+                const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+                if (url.includes('/services/oauth2/token')) return mockTokenResponse();
+                if (url.endsWith('/sobjects/')) {
+                    return mockApiResponse({
+                        sobjects: [
+                            { name: 'Account', label: 'Account', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Contact', label: 'Contact', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Opportunity', label: 'Opportunity', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Case', label: 'Case', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'Lead', label: 'Lead', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'User', label: 'User', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                        ],
+                    });
+                }
+                const m = url.match(/\/sobjects\/([^/]+)\/describe$/);
+                if (m && describeByObject[m[1]]) {
+                    return mockApiResponse(describeByObject[m[1]]);
+                }
+                return mockApiResponse({ totalSize: 0, done: true, records: [] });
+            });
+
+            const ci = createMockCompanyIntegration(MOCK_CREDENTIALS);
+            const schema = await connector.IntrospectSchema(ci, contextUser, {
+                ObjectNames: ['Account', 'Contact', 'Opportunity', 'Case', 'Lead', 'User'],
+            });
+
+            const byObj = new Map(schema.Objects.map(o => [o.ExternalName, o]));
+            const acct = byObj.get('Account')!;
+            const contact = byObj.get('Contact')!;
+            const user = byObj.get('User')!;
+
+            // Audit columns never emitted as FKs; self-reference (Account.ParentId -> Account) is preserved
+            expect(acct.Relationships.map(r => r.FieldName)).not.toContain('CreatedById');
+            expect(acct.Relationships.map(r => r.FieldName)).not.toContain('LastModifiedById');
+            expect(acct.Relationships.some(r => r.FieldName === 'ParentId' && r.TargetObject === 'Account')).toBe(true);
+
+            // High-in-degree core parents win: Contact.AccountId -> Account and Account.OwnerId -> User survive,
+            // while sparse back-edges (Account.PersonReportsToId, User.AccountId, User.ContactId) are pruned.
+            expect(contact.Relationships.some(r => r.FieldName === 'AccountId' && r.TargetObject === 'Account')).toBe(true);
+            expect(acct.Relationships.some(r => r.FieldName === 'OwnerId' && r.TargetObject === 'User')).toBe(true);
+            expect(acct.Relationships.some(r => r.FieldName === 'PersonReportsToId')).toBe(false);
+            expect(acct.Fields.find(f => f.Name === 'PersonReportsToId')?.IsForeignKey).toBe(false);
+            expect(acct.Fields.find(f => f.Name === 'PersonReportsToId')?.ForeignKeyTarget).toBeNull();
+
+            // User -> Account / Contact cycle back-edges must be pruned from BOTH Relationships and Fields
+            expect(user.Relationships).toHaveLength(0);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.ForeignKeyTarget).toBeNull();
+            expect(user.Fields.find(f => f.Name === 'ContactId')?.IsForeignKey).toBe(false);
+            expect(user.Fields.find(f => f.Name === 'ContactId')?.ForeignKeyTarget).toBeNull();
+
+            // Resulting multi-object graph is strictly acyclic (Kahn's algorithm ignoring self-edges clears every node)
+            const adj = new Map<string, Set<string>>();
+            for (const o of schema.Objects) {
+                adj.set(o.ExternalName, new Set(o.Relationships.map(r => r.TargetObject).filter(t => t !== o.ExternalName)));
+            }
+            const remaining = new Set(schema.Objects.map(o => o.ExternalName));
+            while (remaining.size > 0) {
+                const ready = [...remaining].filter(u => [...(adj.get(u) ?? [])].every(v => !remaining.has(v)));
+                expect(ready.length).toBeGreaterThan(0);
+                for (const u of ready) remaining.delete(u);
+            }
+        });
+
+        it('should honor existing catalog edges during a scoped IntrospectSchema so a subset refresh cannot flip a cycle', async () => {
+            mockJwtSign();
+            // Simulate a seeded catalog that already wires Account.OwnerId -> User (mixed-case UUIDs)
+            const acctObjId = '9ED16491-3832-414F-856A-EBAFE44F6AB8';
+            const userObjId = '11111111-2222-3333-4444-555555555555';
+            vi.spyOn(IntegrationEngineBase, 'Instance', 'get').mockReturnValue({
+                GetActiveIntegrationObjects: () => [
+                    { ID: acctObjId, Name: 'Account', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: userObjId.toUpperCase(), Name: 'User', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                ],
+                GetIntegrationObjectFields: (objID: string) => {
+                    if (objID === acctObjId) {
+                        return [
+                            { Name: 'OwnerId', Status: 'Active', RelatedIntegrationObjectID: userObjId.toLowerCase() } as unknown as MJIntegrationObjectFieldEntity,
+                        ];
+                    }
+                    return [];
+                },
+            } as unknown as IntegrationEngineBase);
+
+            fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+                const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+                if (url.includes('/services/oauth2/token')) return mockTokenResponse();
+                if (url.endsWith('/sobjects/')) {
+                    return mockApiResponse({
+                        sobjects: [
+                            { name: 'Account', label: 'Account', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'User', label: 'User', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/Account/describe')) {
+                    return mockApiResponse({
+                        label: 'Account',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/User/describe')) {
+                    return mockApiResponse({
+                        label: 'User',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                return mockApiResponse({ totalSize: 0, done: true, records: [] });
+            });
+
+            const ci = {
+                ...createMockCompanyIntegration(MOCK_CREDENTIALS),
+                IntegrationID: 'sf-integration-id',
+            } as unknown as MJCompanyIntegrationEntity;
+
+            // Only 2 objects in scope (tied 1-to-1 in-degree without catalog pre-seeding):
+            // existing Account.OwnerId -> User MUST stay wired and User.AccountId -> Account MUST be pruned.
+            const schema = await connector.IntrospectSchema(ci, contextUser, {
+                ObjectNames: ['Account', 'User'],
+            });
+            const byObj = new Map(schema.Objects.map(o => [o.ExternalName, o]));
+            const acct = byObj.get('Account')!;
+            const user = byObj.get('User')!;
+
+            expect(acct.Relationships.some(r => r.FieldName === 'OwnerId' && r.TargetObject === 'User')).toBe(true);
+            expect(user.Relationships).toHaveLength(0);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.ForeignKeyTarget).toBeNull();
+        });
+
+        it('should read per-connection catalog edges via GetRelatedIntegrationObjectIDs when field rows are not resident', async () => {
+            mockJwtSign();
+            const acctObjId = '9ED16491-3832-414F-856A-EBAFE44F6AB8';
+            const userObjId = '11111111-2222-3333-4444-555555555555';
+
+            // Simulate MJ per-connection catalog under WithCatalogScope (MJ-RUN-43):
+            // GetIntegrationObjectFields returns [] (cold) / throws if warmed scope is enforced,
+            // while GetRelatedIntegrationObjectIDs answers from the scope's narrow edge set.
+            vi.spyOn(IntegrationEngineBase, 'Instance', 'get').mockReturnValue({
+                GetActiveIntegrationObjects: () => [
+                    { ID: acctObjId, Name: 'Account', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: userObjId, Name: 'User', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                ],
+                GetRelatedIntegrationObjectIDs: (objID: string) =>
+                    objID === acctObjId ? [userObjId.toLowerCase()] : [],
+                GetIntegrationObjectFields: () => {
+                    throw new Error('PER_CONNECTION_CATALOG_OBJECT_COLD');
+                },
+            } as unknown as IntegrationEngineBase);
+
+            fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+                const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+                if (url.includes('/services/oauth2/token')) return mockTokenResponse();
+                if (url.endsWith('/sobjects/')) {
+                    return mockApiResponse({
+                        sobjects: [
+                            { name: 'User', label: 'User', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/User/describe')) {
+                    return mockApiResponse({
+                        label: 'User',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                return mockApiResponse({ totalSize: 0, done: true, records: [] });
+            });
+
+            const ci = {
+                ...createMockCompanyIntegration(MOCK_CREDENTIALS),
+                IntegrationID: 'sf-integration-id',
+            } as unknown as MJCompanyIntegrationEntity;
+
+            // Single-object scoped refresh of User MUST still prune User.AccountId -> Account
+            // using the Account -> User edge loaded via GetRelatedIntegrationObjectIDs.
+            const schema = await connector.IntrospectSchema(ci, contextUser, {
+                ObjectNames: ['User'],
+            });
+            const user = schema.Objects.find(o => o.ExternalName === 'User')!;
+            expect(user.Relationships).toHaveLength(0);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.ForeignKeyTarget).toBeNull();
+        });
+
+        it('should preserve high-in-degree parent edges instead of dropping both directions when the existing catalog already has a cycle', async () => {
+            mockJwtSign();
+            const acctObjId = '10000000-0000-0000-0000-000000000001';
+            const contactObjId = '10000000-0000-0000-0000-000000000002';
+            const caseObjId = '10000000-0000-0000-0000-000000000003';
+            const userObjId = '10000000-0000-0000-0000-000000000004';
+
+            // Pre-existing dirty catalog from pre-PR live discovery:
+            // Account, Contact, and Case point to User, AND User.AccountId points back to Account.
+            vi.spyOn(IntegrationEngineBase, 'Instance', 'get').mockReturnValue({
+                GetActiveIntegrationObjects: () => [
+                    { ID: acctObjId, Name: 'Account', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: contactObjId, Name: 'Contact', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: caseObjId, Name: 'Case', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: userObjId, Name: 'User', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                ],
+                GetRelatedIntegrationObjectIDs: (objID: string) => {
+                    if (objID === acctObjId || objID === contactObjId || objID === caseObjId) return [userObjId];
+                    if (objID === userObjId) return [acctObjId];
+                    return [];
+                },
+                GetIntegrationObjectFields: () => [],
+            } as unknown as IntegrationEngineBase);
+
+            fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+                const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+                if (url.includes('/services/oauth2/token')) return mockTokenResponse();
+                if (url.endsWith('/sobjects/')) {
+                    return mockApiResponse({
+                        sobjects: [
+                            { name: 'Account', label: 'Account', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'User', label: 'User', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/Account/describe')) {
+                    return mockApiResponse({
+                        label: 'Account',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                            { name: 'PolymorphicOwnerId', label: 'Poly Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Group', 'User'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/User/describe')) {
+                    return mockApiResponse({
+                        label: 'User',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                return mockApiResponse({ totalSize: 0, done: true, records: [] });
+            });
+
+            const ci = {
+                ...createMockCompanyIntegration(MOCK_CREDENTIALS),
+                IntegrationID: 'sf-integration-id',
+            } as unknown as MJCompanyIntegrationEntity;
+
+            const schema = await connector.IntrospectSchema(ci, contextUser, {
+                ObjectNames: ['Account', 'User'],
+            });
+            const byObj = new Map(schema.Objects.map(o => [o.ExternalName, o]));
+            const acct = byObj.get('Account')!;
+            const user = byObj.get('User')!;
+
+            // High-in-degree Account.OwnerId -> User MUST survive; dirty back-edge User.AccountId -> Account
+            // and polymorphic lookup Account.PolymorphicOwnerId MUST be omitted.
+            expect(acct.Relationships).toEqual([
+                { FieldName: 'OwnerId', TargetObject: 'User', TargetField: 'Id' },
+            ]);
+            expect(acct.Fields.find(f => f.Name === 'OwnerId')?.IsForeignKey).toBe(true);
+            expect(acct.Fields.find(f => f.Name === 'PolymorphicOwnerId')?.IsForeignKey).toBe(false);
+            expect(acct.Fields.find(f => f.Name === 'PolymorphicOwnerId')?.ForeignKeyTarget).toBeNull();
+            expect(user.Relationships).toHaveLength(0);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
         });
     });
 

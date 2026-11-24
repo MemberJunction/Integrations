@@ -32,6 +32,12 @@ jobs:
       - name: Parent declarations resolvable
         run: node scripts/validate-parent-declarations.mjs
 
+      # Declared scalar FKs must be wired into RelatedIntegrationObjectID (not stranded in
+      # Configuration.ReferencedType), and wired FKs must not introduce sync-DAG cycles that
+      # collapse IntegrationEngine topological layering.
+      - name: Declared foreign keys wired and acyclic
+        run: npm run lint:declared-fks
+
       # Same silent-failure family as the parent-declaration gate, on the KEY side.
       # WRITABLE: an object with no IsPrimaryKey field yields a keyless derived
       # entity, and on Postgres every save then fails with `syntax error at or

@@ -11896,7 +11896,8 @@
                   "Configuration": {
                     "ReferencedType": "Ideas"
                   },
-                  "IntegrationObjectID": "@parent:ID"
+                  "IntegrationObjectID": "@parent:ID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Ideas&IntegrationID=@parent:IntegrationID"
                 },
                 "primaryKey": {
                   "ID": "0E10D779-09DD-48CB-8A9E-8683E166A609"

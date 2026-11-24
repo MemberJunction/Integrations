@@ -311,7 +311,9 @@
                   "Status": "Active",
                   "Sequence": 3,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Term\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Term&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "22E54917-F32B-4787-BE3F-8066972C3D3F"
@@ -337,7 +339,9 @@
                   "Status": "Active",
                   "Sequence": 4,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "A265BC28-8749-41CC-A961-06DC57C676AE"
@@ -363,7 +367,9 @@
                   "Status": "Active",
                   "Sequence": 5,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Subscription\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "0F132B2B-15F2-40F9-93A0-01931C7B7D36"
@@ -389,7 +395,9 @@
                   "Status": "Active",
                   "Sequence": 6,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SubscriptionLine\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SubscriptionLine&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "B8869925-BBD5-4D9C-BBAA-9BFC45A59148"
@@ -415,7 +423,9 @@
                   "Status": "Active",
                   "Sequence": 7,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrderLine\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrderLine&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "BC0A0626-F0A4-4A93-B783-D95ABF90743E"
@@ -441,7 +451,9 @@
                   "Status": "Active",
                   "Sequence": 8,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"AssignmentRole\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=AssignmentRole&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "EB060262-8CBF-44B4-82F4-30A571502771"
@@ -867,7 +879,9 @@
                   "Status": "Active",
                   "Sequence": 4,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BadgeType\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BadgeType&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "307AF408-7394-4939-AD82-414B81041365"
@@ -1266,7 +1280,9 @@
                   "Status": "Active",
                   "Sequence": 5,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BadgeType\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BadgeType&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "5E12E821-3842-4B6C-BD04-1E8E10B703E9"
@@ -1292,7 +1308,9 @@
                   "Status": "Active",
                   "Sequence": 6,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "EFFF789F-947D-43B3-BE08-12F76380F515"
@@ -3304,7 +3322,9 @@
                   "Status": "Active",
                   "Sequence": 5,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BusinessGroup\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BusinessGroup&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "41EE2DE5-CA4A-4FCB-A55C-7245AD7B325D"
@@ -3458,7 +3478,9 @@
                   "Status": "Active",
                   "Sequence": 11,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Invoice\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "37C5A399-1DBA-49C6-A236-EC82597B6E7A"
@@ -4163,7 +4185,9 @@
                   "Status": "Active",
                   "Sequence": 20,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Invoice\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "97D6CA16-32DC-464E-A58B-882A7DB1F23F"
@@ -4888,7 +4912,9 @@
                   "Status": "Active",
                   "Sequence": 2,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Event\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "28666C31-95EF-44C6-8E02-8A64D1AB1CD0"
@@ -5314,7 +5340,9 @@
                   "Status": "Active",
                   "Sequence": 14,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Term\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Term&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "B48AE2FF-17B8-46D6-A764-7595AC3DEF51"
@@ -5340,7 +5368,9 @@
                   "Status": "Active",
                   "Sequence": 15,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Subscription\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "A2CE6BFC-B9D4-4007-A9BA-C4218EA86C65"
@@ -5366,7 +5396,9 @@
                   "Status": "Active",
                   "Sequence": 16,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrder\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrder&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "B43EED04-5911-42B9-9B29-29F03BA3B786"
@@ -5468,7 +5500,9 @@
                   "Status": "Active",
                   "Sequence": 20,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BusinessGroup\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BusinessGroup&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "C4AD7D4E-AD80-4D41-8807-5D832612D7F9"
@@ -7250,7 +7284,9 @@
                   "Status": "Active",
                   "Sequence": 12,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BusinessGroup\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BusinessGroup&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "3C18E245-F533-4E7A-BA43-1A4C55163A91"
@@ -10465,7 +10501,9 @@
                   "Status": "Active",
                   "Sequence": 4,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BusinessGroup\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BusinessGroup&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "A3E9D2CA-BCE6-4E1B-AB71-965AA4DC19CF"
@@ -10768,7 +10806,9 @@
                   "Status": "Active",
                   "Sequence": 17,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrder\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrder&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "40C2CE2B-5FDB-4A29-9274-AB49C8EC84D9"
@@ -10869,7 +10909,9 @@
                   "Status": "Active",
                   "Sequence": 21,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PaymentMethod\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PaymentMethod&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "968020CD-546F-40FE-81B6-74EAA22C747A"
@@ -10895,7 +10937,9 @@
                   "Status": "Active",
                   "Sequence": 22,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PaymentGateway\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PaymentGateway&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "87B7582B-22F0-4EA0-A9AB-B3B6C35F70B1"
@@ -11648,7 +11692,9 @@
                   "Status": "Active",
                   "Sequence": 3,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Receipt\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Receipt&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "97891A40-B1FC-495A-90C6-DC9168F4D2EF"
@@ -11674,7 +11720,9 @@
                   "Status": "Active",
                   "Sequence": 4,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Invoice\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "3C01D081-4391-4618-8AA3-B703F7D1DDD1"
@@ -11700,7 +11748,9 @@
                   "Status": "Active",
                   "Sequence": 5,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "21B76AC8-F5EB-4139-880C-9C09C85A62CC"
@@ -12001,7 +12051,9 @@
                   "Status": "Active",
                   "Sequence": 5,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BusinessGroup\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BusinessGroup&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "DB15D265-E708-4516-B9F8-8287DC57EDE4"
@@ -12781,7 +12833,9 @@
                   "Status": "Active",
                   "Sequence": 12,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "2614C3A0-E8FE-4851-AF48-82CE0F88CF37"
@@ -12807,7 +12861,9 @@
                   "Status": "Active",
                   "Sequence": 13,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PriceRule\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PriceRule&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "A48DB0F0-52AE-4C50-AEC9-6B686BC690C1"
@@ -12883,7 +12939,9 @@
                   "Status": "Active",
                   "Sequence": 16,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrder\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrder&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "3FBC4F0D-A414-438C-AED5-30CFA996C497"
@@ -13363,7 +13421,9 @@
                   "Status": "Active",
                   "Sequence": 35,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Subscription\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "2F7E18E1-3ED3-460B-A2C9-0C6F6E943DD4"
@@ -13415,7 +13475,9 @@
                   "Status": "Active",
                   "Sequence": 37,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SubscriptionPlan\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SubscriptionPlan&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "B1989CD1-4649-409C-906D-1D64689FF72F"
@@ -13491,7 +13553,9 @@
                   "Status": "Active",
                   "Sequence": 40,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Event\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Event&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "D9968FCF-B899-42AE-85B5-674F29624A24"
@@ -13642,7 +13706,9 @@
                   "Status": "Active",
                   "Sequence": 46,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BusinessGroup\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BusinessGroup&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "13A1AAFC-9AF2-46BE-B9AE-1DB8EBBC0EFC"
@@ -14147,7 +14213,9 @@
                   "Status": "Active",
                   "Sequence": 66,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PaymentMethod\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PaymentMethod&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "E4D8B3B7-7AD5-45C9-9841-6A91280F4128"
@@ -14698,7 +14766,9 @@
                   "Status": "Active",
                   "Sequence": 3,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Invoice\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Invoice&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "AA7DEBFD-105D-4308-8FBE-DDF3EBD1BFC0"
@@ -14799,7 +14869,9 @@
                   "Status": "Active",
                   "Sequence": 7,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Term\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Term&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "D195DB64-2989-468A-B817-305D6137E36F"
@@ -14825,7 +14897,9 @@
                   "Status": "Active",
                   "Sequence": 8,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Subscription\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "21E235E1-4AA7-41E0-A815-B97F1E3BEC83"
@@ -14851,7 +14925,9 @@
                   "Status": "Active",
                   "Sequence": 9,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PaymentMethod\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PaymentMethod&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "6DF81F16-B8AB-49BC-B98E-E4D5DA4E88CD"
@@ -15077,7 +15153,9 @@
                   "Status": "Active",
                   "Sequence": 18,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PaymentGateway\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PaymentGateway&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "28E4EE88-723A-4724-B914-3CB0EE0A9B1A"
@@ -15103,7 +15181,9 @@
                   "Status": "Active",
                   "Sequence": 19,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrder\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrder&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "0453C245-1E48-44BF-9BCE-54893C4E3933"
@@ -15480,7 +15560,9 @@
                   "Status": "Active",
                   "Sequence": 9,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"ScheduledPayment\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=ScheduledPayment&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "BD0ED606-09B8-40FA-A78C-C9690479FF0F"
@@ -15556,7 +15638,9 @@
                   "Status": "Active",
                   "Sequence": 12,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"BusinessGroup\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=BusinessGroup&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "0DE7809C-27E8-4C3A-B1F7-1355E0F90DF3"
@@ -15760,7 +15844,9 @@
                   "Status": "Active",
                   "Sequence": 20,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "6B5EBA99-E13F-441D-9526-9C42B8A9CB19"
@@ -15836,7 +15922,9 @@
                   "Status": "Active",
                   "Sequence": 23,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PriceRule\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PriceRule&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "127ED20D-7448-4CC8-AAEF-CBFCFB29C9DD"
@@ -15912,7 +16000,9 @@
                   "Status": "Active",
                   "Sequence": 26,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrderLine\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrderLine&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "5C9E5E33-328F-4EA9-9AC1-A492F39A6BED"
@@ -15964,7 +16054,9 @@
                   "Status": "Active",
                   "Sequence": 28,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SubscriptionPlan\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SubscriptionPlan&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "7984E27B-87F9-4D7F-98FF-C94810709E09"
@@ -15990,7 +16082,9 @@
                   "Status": "Active",
                   "Sequence": 29,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Subscription\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "581260C0-3E46-468B-A8BE-76F92FA12598"
@@ -16665,7 +16759,9 @@
                   "Status": "Active",
                   "Sequence": 9,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "3FC4C56C-5F00-44EF-80F5-EA4A46F97C88"
@@ -16821,7 +16917,9 @@
                   "Status": "Active",
                   "Sequence": 15,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"PaymentMethod\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=PaymentMethod&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "970678DB-1339-4BD5-9B70-7CEB3A8DADFA"
@@ -17321,7 +17419,9 @@
                   "Status": "Active",
                   "Sequence": 2,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Subscription\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "E91225AD-6C3A-4FA5-BC2E-4E6F4B90C91B"
@@ -17373,7 +17473,9 @@
                   "Status": "Active",
                   "Sequence": 4,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrderLine\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrderLine&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "9DEE791D-D321-4CB9-ABEF-72126873E0D1"
@@ -17399,7 +17501,9 @@
                   "Status": "Active",
                   "Sequence": 5,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "307B3817-BB78-49AE-8F25-430AB44ED810"
@@ -17451,7 +17555,9 @@
                   "Status": "Active",
                   "Sequence": 7,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Term\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Term&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "362C1011-E93D-4145-8240-D72D2C589D04"
@@ -18276,7 +18382,9 @@
                   "Status": "Active",
                   "Sequence": 6,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Subscription\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Subscription&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "AEE0839E-8F85-4107-B50A-3FDEFC6C5AD2"
@@ -18302,7 +18410,9 @@
                   "Status": "Active",
                   "Sequence": 7,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SubscriptionPlan\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SubscriptionPlan&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "E99BFAF3-9B31-4E9C-8238-F7E132BD421E"
@@ -18380,7 +18490,9 @@
                   "Status": "Active",
                   "Sequence": 10,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Item\"}",
-                  "Length": 18
+                  "Length": 18,
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Item&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id"
                 },
                 "primaryKey": {
                   "ID": "6B33BEA2-65E0-4F98-B87F-EEA71BF60A2F"
