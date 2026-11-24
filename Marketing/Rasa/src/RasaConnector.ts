@@ -191,6 +191,8 @@ const RasaObjectConfigSchema = z.object({
             parentKeyField: z.string(),
             nesting: z.array(z.string()).min(1),
             childKeyField: z.string().optional(),
+            /** Other parent fields copied onto each child (a topic cloud's `effective_date`). */
+            carryFields: z.array(z.string()).optional(),
         })
         .optional(),
 }).passthrough();
@@ -250,6 +252,8 @@ interface RasaNestedChild {
     /** The parent's key field (`id`) and the child field that receives it (`contact_id`). */
     ParentKeyField: string;
     ChildKeyField: string;
+    /** Parent fields copied onto each child under the same name. */
+    CarryFields: string[];
 }
 
 /** Everything one fetch call publishes for the base's object-less hooks to read back. */
@@ -721,10 +725,14 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
      */
     protected NormalizeResponse(rawBody: unknown, responseDataKey: string | null): Record<string, unknown>[] {
         const ctx = this.responseCtx;
-        if (ctx?.NestedChild) return this.ExtractNestedChildren(rawBody, ctx.NestedChild);
-        const path = ctx ? ctx.DataPath : responseDataKey;
-        const records = this.ExtractByPath(rawBody, path);
-        if (ctx && !ctx.UnwrapDeclared) this.FlagUndeclaredEnvelope(ctx.ObjectName, records);
+        let records: Record<string, unknown>[];
+        if (ctx?.NestedChild) {
+            records = this.ExtractNestedChildren(rawBody, ctx.NestedChild);
+        } else {
+            records = this.ExtractByPath(rawBody, ctx ? ctx.DataPath : responseDataKey);
+            if (ctx && !ctx.UnwrapDeclared) this.FlagUndeclaredEnvelope(ctx.ObjectName, records);
+        }
+        // A parent-scoped read stamps the parent's id (`newsletter_id`), nested children included.
         const parentKey = this.fetchState.ParentKey;
         if (parentKey) for (const record of records) record[parentKey.Field] = parentKey.Value;
         return records;
@@ -741,8 +749,10 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
         for (const parent of this.ExtractByPath(rawBody, nested.ParentPath)) {
             const key = parent[nested.ParentKeyField];
             if (key == null || key === '') continue;
+            const carried: Record<string, unknown> = {};
+            for (const field of nested.CarryFields) carried[field] = parent[field];
             for (const child of this.ExtractByPath(parent, nested.ChildPath)) {
-                children.push({ ...child, [nested.ChildKeyField]: key });
+                children.push({ ...child, ...carried, [nested.ChildKeyField]: key });
             }
         }
         return children;
@@ -1312,6 +1322,7 @@ export class RasaConnector extends BaseRESTIntegrationConnector {
             ChildPath: childPath,
             ParentKeyField: inject.parentKeyField,
             ChildKeyField: inject.childKeyField,
+            CarryFields: inject.carryFields ?? [],
         };
     }
 
