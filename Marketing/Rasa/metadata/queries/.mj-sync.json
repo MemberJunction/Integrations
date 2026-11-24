@@ -1,0 +1,13 @@
+{
+  "entity": "MJ: Queries",
+  "filePattern": "**/.*.json",
+  "defaults": {
+    "Status": "Approved"
+  },
+  "lookupFields": {
+    "CategoryID": {
+      "entity": "MJ: Query Categories",
+      "field": "Name"
+    }
+  }
+}

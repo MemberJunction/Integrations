@@ -515,7 +515,7 @@
           "fields": {
             "Name": "Contact",
             "DisplayName": "Contact",
-            "Description": "A person in the rasa.io account, one row per contact (id). can_email says whether rasa.io may email them, and can_email_code why that last changed. The contact's IDs in other systems are in Contact External Identifier; their events are in Newsletter, Blast and Sequence Action (contact_id).",
+            "Description": "A person in the rasa.io account, one row per contact (id). id is the contact's one rasa.io id: the same value appears as id in Newsletter, Blast and Sequence Contact and as contact_id in every other table, so join on it to get the email anywhere. can_email says whether rasa.io may email them, and can_email_code why that last changed. The contact's IDs in other systems are in Contact External Identifier; their events are in Newsletter, Blast and Sequence Action; their interests are in Newsletter Contact Topic and Newsletter Contact Category (all by contact_id).",
             "APIPath": "/v2/contacts",
             "SupportsWrite": true,
             "SupportsIncrementalSync": false,
@@ -1023,8 +1023,8 @@
             "ID": "0A768C79-4408-4E76-8A7B-8CA42D21577F"
           },
           "sync": {
-            "lastModified": "2026-11-04T19:22:10.036Z",
-            "checksum": "caf4af617224f7037a7a96403d81921afb3f45f0f66e6091e734ab656cd0208d"
+            "lastModified": "2026-11-23T17:14:50.251Z",
+            "checksum": "941aa38f212d61e8b163bb16b00a1d0e62afcfad56affe13e8caf39906184397"
           }
         },
         {
@@ -3647,7 +3647,7 @@
           "fields": {
             "Name": "Newsletter Action",
             "DisplayName": "Newsletter Action",
-            "Description": "Engagement events for a newsletter: one row per event (open, click, delivered, ...), with the contact (contact_id, email) and when it happened. rasa.io serves the last 24 months. Clicks with confidence 0 looked automated.",
+            "Description": "Engagement events for a newsletter: one row per event (open, click, delivered, ...), with the contact (contact_id, email) and when it happened. How far back rasa.io serves events is set per account (24 months by default; the connection's maxLookbackDays reads further when rasa.io allows it). Clicks with confidence 0 looked automated.",
             "APIPath": "/v2/insights/newsletter/{id}/actions",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -4119,15 +4119,15 @@
             "ID": "CAA8C6B2-9DB2-4A43-BD63-89EF359A2055"
           },
           "sync": {
-            "lastModified": "2026-11-04T19:22:10.296Z",
-            "checksum": "552a62644f113b636162c58119336df998e182810ae70ac1ba9319642b1d0d9c"
+            "lastModified": "2026-11-23T17:14:50.291Z",
+            "checksum": "d19f66243d6a2ecbb8ebc2a2e820dae94c5dfde37c3bd85a23813888813a9d90"
           }
         },
         {
           "fields": {
             "Name": "Newsletter Contact",
             "DisplayName": "Newsletter Contact",
-            "Description": "A newsletter's subscribers: one row per newsletter and contact (newsletter_id + id), with the contact's details and segment for that newsletter. id is Contact.id.",
+            "Description": "A newsletter's subscribers: one row per newsletter and contact (newsletter_id + id), with the contact's details and segment for that newsletter. id is Contact.id (the contact's one rasa.io id, not a separate subscriber id), so a contact in two newsletters has two rows with the same id.",
             "APIPath": "/v2/messaging/newsletter/{id}/contacts",
             "SupportsWrite": false,
             "SupportsIncrementalSync": false,
@@ -4687,15 +4687,15 @@
             "ID": "EC65B56A-AF9F-4B3D-8192-43575B4D418A"
           },
           "sync": {
-            "lastModified": "2026-11-04T19:22:10.318Z",
-            "checksum": "c85883ea481b2cad6fd9c64611d7836e7a8171d48ea96176a6687f48a8acc344"
+            "lastModified": "2026-11-23T17:14:50.314Z",
+            "checksum": "6f2600051f7fe23e6b13b1e14ac410ac77d7c8d2d2394d2d9280c4f03f5199e1"
           }
         },
         {
           "fields": {
             "Name": "Blast Action",
             "DisplayName": "Blast Action",
-            "Description": "Engagement events for a blast: one row per event (open, click, delivered, ...), with the contact (contact_id, email) and when it happened. rasa.io serves the last 24 months. Clicks with confidence 0 looked automated.",
+            "Description": "Engagement events for a blast: one row per event (open, click, delivered, ...), with the contact (contact_id, email) and when it happened. How far back rasa.io serves events is set per account (24 months by default; the connection's maxLookbackDays reads further when rasa.io allows it). Clicks with confidence 0 looked automated.",
             "APIPath": "/v2/insights/blast/{id}/actions",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -5167,8 +5167,8 @@
             "ID": "F3B63652-9B6C-4B17-BADD-210EA3388A3A"
           },
           "sync": {
-            "lastModified": "2026-11-04T19:22:10.338Z",
-            "checksum": "7e9bb5da9a2d5e017dfb89c8fdf4494bcd747af2fba7678c2733aee05ccca903"
+            "lastModified": "2026-11-23T17:14:50.334Z",
+            "checksum": "950d370ae15773317b121745ef6dfae61f146a82d99654641f48d13c145306ce"
           }
         },
         {
@@ -5741,7 +5741,7 @@
           "fields": {
             "Name": "Sequence Action",
             "DisplayName": "Sequence Action",
-            "Description": "Engagement events for a sequence: one row per event (open, click, delivered, ...), with the contact (contact_id, email) and when it happened. rasa.io serves the last 24 months. Clicks with confidence 0 looked automated.",
+            "Description": "Engagement events for a sequence: one row per event (open, click, delivered, ...), with the contact (contact_id, email) and when it happened. How far back rasa.io serves events is set per account (24 months by default; the connection's maxLookbackDays reads further when rasa.io allows it). Clicks with confidence 0 looked automated.",
             "APIPath": "/v2/insights/sequence/{id}/actions",
             "SupportsWrite": false,
             "SupportsIncrementalSync": true,
@@ -6213,8 +6213,8 @@
             "ID": "C8A9C2EF-BAA5-4C11-8A50-6F188807CDD7"
           },
           "sync": {
-            "lastModified": "2026-11-04T19:22:10.373Z",
-            "checksum": "55840218eb1502c5739f4798592f96d62b33005632df6e44a7759b5ae2711b8a"
+            "lastModified": "2026-11-23T17:14:50.347Z",
+            "checksum": "c06bc9072354b6c7f0f6ec1405a1ec5acef4844dffab38718631532a0c191f82"
           }
         },
         {
@@ -7159,6 +7159,556 @@
           "sync": {
             "lastModified": "2026-11-04T19:22:10.421Z",
             "checksum": "af715d1726ee6108d97b48e26661c30f0ab96d754235923092747938abc35976"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Newsletter Contact Topic",
+            "DisplayName": "Newsletter Contact Topic",
+            "Description": "Each contact's interests in a newsletter: one row per newsletter, contact and topic, from the topic cloud rasa.io builds from the articles the contact clicked. contact_id is Contact.id, so join to Contact (or Newsletter Contact) for the email; group by contact_id across newsletters for the person's interests overall. weight ranks topics within one contact. Only contacts who have clicked have rows.",
+            "APIPath": "/v2/insights/newsletter/{id}/topics",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Category": "v2 Insights",
+            "ResponseDataKey": "results[].topics",
+            "PaginationType": "Offset",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": null,
+            "Sequence": 43,
+            "Status": "Active",
+            "IntegrationID": "@parent:ID",
+            "Configuration": {
+              "apiVersion": "v2",
+              "apiBaseURL": "https://api.rasa.io",
+              "recordSchemas": [
+                "InsightsTopic"
+              ],
+              "accessPath": {
+                "door": "/v2/insights/newsletter/{id}/topics",
+                "alternateDoors": [],
+                "nesting": [
+                  "topics"
+                ],
+                "parentObject": "Newsletter",
+                "parentKeyField": "id",
+                "doorArgs": [
+                  "skip",
+                  "limit"
+                ]
+              },
+              "watermarkParam": null,
+              "pkField": "newsletter_id+contact_id+topic",
+              "pkStrength": "FullTuple",
+              "parentObjectName": "Newsletter",
+              "parentObjectIDFieldName": "newsletter_id",
+              "parentKeyInjectionRequired": {
+                "parentObject": "Contact",
+                "parentKeyField": "person_id",
+                "nesting": [
+                  "topics"
+                ],
+                "childKeyField": "contact_id",
+                "carryFields": [
+                  "effective_date"
+                ]
+              },
+              "buildNote": "One row per newsletter, contact and topic, flattened from each subscriber's stored topic cloud (results[].topics). The cloud's person_id is the rasa.io contact id (the same id as Contact.id and Newsletter Contact.id; verified on a production install, 2026-11-21), stored here as contact_id. rasa.io rebuilds the clouds weekly and sends only the latest build (effective_date); a subscriber with no clicks has an empty cloud and no rows. Page size is modest because each record is a whole cloud."
+            }
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "newsletter_id",
+                  "DisplayName": "Newsletter Id",
+                  "Description": "The newsletter this row belongs to (Newsletter.id).",
+                  "Type": "string",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Newsletter&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Configuration": {
+                    "ReferencedType": "Newsletter"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "374E1D15-81BE-44EC-B7A0-BDE9F1B72E19"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.535Z",
+                  "checksum": "a29168f422be076edbe9e1ad022645996fbe629b5830c8633f2ef652a10ff023"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "contact_id",
+                  "DisplayName": "Contact Id",
+                  "Description": "The rasa.io contact this topic belongs to (Contact.id, the same id as Newsletter Contact.id). rasa.io sends it as the cloud's person_id. Join to Contact or Newsletter Contact on this id for the email.",
+                  "Type": "string",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contact&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Configuration": {
+                    "ReferencedType": "Contact"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "2756C4EF-37F4-4F3C-A324-F18BCBC2FF00"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.574Z",
+                  "checksum": "67340ec8327d71167adabd88b6a7247c311c82594748a2638745d6c9868af1a9"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "topic",
+                  "DisplayName": "Topic",
+                  "Description": "The topic's name, as rasa.io tags the articles the contact clicked.",
+                  "Type": "string",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "2590120A-1A32-41B8-A67A-C202EA9E57CC"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.549Z",
+                  "checksum": "85dd5a693cf3987e37a7de08ad7e62b2e5f40b5a775a504d2507a5c29ef7c3a6"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "num_clicks",
+                  "DisplayName": "Num Clicks",
+                  "Description": "How many clicks the contact made on articles with this topic, in this newsletter.",
+                  "Type": "int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "F199E651-5252-46A4-9599-03D45DBF6DB5"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.563Z",
+                  "checksum": "04d0846cdb677ca2adfd8520dd7f00cae374c1d185cdb44cbbeb50d4d166b21e"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "weight",
+                  "DisplayName": "Weight",
+                  "Description": "This topic's share of the contact's clicks in this newsletter (0 to 1). The weights of one contact's topics add up to about 1, so weight ranks interests within a person.",
+                  "Type": "decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C1CA6D9C-2472-4255-95A2-020C6BCEB845"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.600Z",
+                  "checksum": "b1ff2652d2b2ef685e4c543879be4f602ea5f123c558361815a91bf0f9e86b78"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "first_click",
+                  "DisplayName": "First Click",
+                  "Description": "When the contact first clicked an article with this topic.",
+                  "Type": "datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "33DDCA99-4640-4368-A756-467ECAED18D1"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.613Z",
+                  "checksum": "3ae0b5d8817bb38625fa5316372ce1d0a5cdfb1efa12a90aaa7c8d3e69fd6d63"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "last_click",
+                  "DisplayName": "Last Click",
+                  "Description": "When the contact last clicked an article with this topic.",
+                  "Type": "datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "47479CD7-585B-4EE2-B5B8-AAABC6288489"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.627Z",
+                  "checksum": "350c5760634e43481f755afeae283a02de5701d0daf962af9e116d142278ef41"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "effective_date",
+                  "DisplayName": "Effective Date",
+                  "Description": "The week this topic cloud was built for. rasa.io rebuilds clouds weekly and sends only the latest build, so all current rows share one date; rows with an older date are from a build rasa.io no longer sends.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E5AB6D75-4C4B-4CEE-81A6-75F8E96E0D23"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.641Z",
+                  "checksum": "57698f470e4e870f661f2e4bab6901f88e62dcf556b0c5e19a4ac4400942e89c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "06D9E51F-46E6-4967-96C6-C4453B312999"
+          },
+          "sync": {
+            "lastModified": "2026-11-23T17:14:50.405Z",
+            "checksum": "78696927ec4a61f4e9fb2bacc6e7d2910fc68879022e17913dab9379336522cc"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Newsletter Contact Category",
+            "DisplayName": "Newsletter Contact Category",
+            "Description": "Each contact's interests in a newsletter at the category level: one row per newsletter, contact and category (broader than Newsletter Contact Topic). contact_id is Contact.id, so join to Contact (or Newsletter Contact) for the email. weight ranks categories within one contact. Only contacts who have clicked have rows.",
+            "APIPath": "/v2/insights/newsletter/{id}/topics",
+            "SupportsWrite": false,
+            "SupportsIncrementalSync": false,
+            "Category": "v2 Insights",
+            "ResponseDataKey": "results[].categories",
+            "PaginationType": "Offset",
+            "DefaultPageSize": 100,
+            "SupportsPagination": true,
+            "IncrementalWatermarkField": null,
+            "SupportsCreate": false,
+            "SupportsUpdate": false,
+            "SupportsDelete": false,
+            "SyncStrategy": "FullPullHashDiff",
+            "ContentHashApplicable": true,
+            "StableOrderingKey": null,
+            "Sequence": 44,
+            "Status": "Active",
+            "IntegrationID": "@parent:ID",
+            "Configuration": {
+              "apiVersion": "v2",
+              "apiBaseURL": "https://api.rasa.io",
+              "recordSchemas": [
+                "InsightsTopic"
+              ],
+              "accessPath": {
+                "door": "/v2/insights/newsletter/{id}/topics",
+                "alternateDoors": [],
+                "nesting": [
+                  "categories"
+                ],
+                "parentObject": "Newsletter",
+                "parentKeyField": "id",
+                "doorArgs": [
+                  "skip",
+                  "limit"
+                ]
+              },
+              "watermarkParam": null,
+              "pkField": "newsletter_id+contact_id+topic",
+              "pkStrength": "FullTuple",
+              "parentObjectName": "Newsletter",
+              "parentObjectIDFieldName": "newsletter_id",
+              "parentKeyInjectionRequired": {
+                "parentObject": "Contact",
+                "parentKeyField": "person_id",
+                "nesting": [
+                  "categories"
+                ],
+                "childKeyField": "contact_id",
+                "carryFields": [
+                  "effective_date"
+                ]
+              },
+              "buildNote": "One row per newsletter, contact and category, flattened from each subscriber's stored topic cloud (results[].categories). The cloud's person_id is the rasa.io contact id (the same id as Contact.id and Newsletter Contact.id; verified on a production install, 2026-11-21), stored here as contact_id. rasa.io rebuilds the clouds weekly and sends only the latest build (effective_date); a subscriber with no clicks has an empty cloud and no rows. Page size is modest because each record is a whole cloud."
+            }
+          },
+          "relatedEntities": {
+            "MJ: Integration Object Fields": [
+              {
+                "fields": {
+                  "Name": "newsletter_id",
+                  "DisplayName": "Newsletter Id",
+                  "Description": "The newsletter this row belongs to (Newsletter.id).",
+                  "Type": "string",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 1,
+                  "IntegrationObjectID": "@parent:ID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Newsletter&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Configuration": {
+                    "ReferencedType": "Newsletter"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "8FC79E32-6A59-4C43-A0E3-9B4F26C44BA6"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.654Z",
+                  "checksum": "a29168f422be076edbe9e1ad022645996fbe629b5830c8633f2ef652a10ff023"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "contact_id",
+                  "DisplayName": "Contact Id",
+                  "Description": "The rasa.io contact this category belongs to (Contact.id, the same id as Newsletter Contact.id). rasa.io sends it as the cloud's person_id. Join to Contact or Newsletter Contact on this id for the email.",
+                  "Type": "string",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 2,
+                  "IntegrationObjectID": "@parent:ID",
+                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Contact&IntegrationID=@parent:IntegrationID",
+                  "RelatedIntegrationObjectFieldName": "id",
+                  "Configuration": {
+                    "ReferencedType": "Contact"
+                  }
+                },
+                "primaryKey": {
+                  "ID": "977826F2-5494-454E-845E-C4B915A37D8C"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.668Z",
+                  "checksum": "3398a8ca4c7ebf19a0616b72d4488b4c54e7e8c46dc2f7a6be524ea89acfbf39"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "topic",
+                  "DisplayName": "Category",
+                  "Description": "The category's name (rasa.io sends it under topic on this feed). Categories group topics into broader subjects.",
+                  "Type": "string",
+                  "IsRequired": true,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": true,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": false,
+                  "Status": "Active",
+                  "Sequence": 3,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C7ACC64F-74CE-44C6-9D64-BF61A3FC7B28"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.683Z",
+                  "checksum": "1e3b966f1d85c8927097d197b0b62c001506e0296ae8551cc9c327114bc24a72"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "num_clicks",
+                  "DisplayName": "Num Clicks",
+                  "Description": "How many clicks the contact made on articles with this category, in this newsletter.",
+                  "Type": "int",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 4,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "BABDB26C-F163-4A06-95F8-1C8CEA1F541E"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.697Z",
+                  "checksum": "c8c453f72e0f525f907e69f7b1bb95658d9f67df9e9fb1d1fd5fbb55baaaec51"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "weight",
+                  "DisplayName": "Weight",
+                  "Description": "This category's share of the contact's clicks in this newsletter (0 to 1). The weights of one contact's categories add up to about 1, so weight ranks interests within a person.",
+                  "Type": "decimal",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 5,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "E0AD6F57-A5E2-4BED-93E4-ECD3167309FA"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.711Z",
+                  "checksum": "ebe5f56f88cf0e1328633b2283003f2e2947cb352b11933b895ce18c6e074b98"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "first_click",
+                  "DisplayName": "First Click",
+                  "Description": "When the contact first clicked an article with this category.",
+                  "Type": "datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 6,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "AD9C3C01-784D-4094-9A10-689BB586DDCE"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.722Z",
+                  "checksum": "c45578d5663d41a3055771453fc565431f3cd5c138f066af93ca41b2184cca2a"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "last_click",
+                  "DisplayName": "Last Click",
+                  "Description": "When the contact last clicked an article with this category.",
+                  "Type": "datetime",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 7,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "C0188972-91B8-4EC8-A1BB-6FE03D7931C4"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.740Z",
+                  "checksum": "e18e9a97001eae80ff81eec1056ff97858c10905b8f3cea3bd345e8b2350d842"
+                }
+              },
+              {
+                "fields": {
+                  "Name": "effective_date",
+                  "DisplayName": "Effective Date",
+                  "Description": "The week this topic cloud was built for. rasa.io rebuilds clouds weekly and sends only the latest build, so all current rows share one date; rows with an older date are from a build rasa.io no longer sends.",
+                  "Type": "string",
+                  "IsRequired": false,
+                  "IsReadOnly": true,
+                  "IsPrimaryKey": false,
+                  "IsUniqueKey": false,
+                  "Length": null,
+                  "AllowsNull": true,
+                  "Status": "Active",
+                  "Sequence": 8,
+                  "IntegrationObjectID": "@parent:ID"
+                },
+                "primaryKey": {
+                  "ID": "4E2AAB1F-6DB9-4D00-8D7B-4B3C997F9F98"
+                },
+                "sync": {
+                  "lastModified": "2026-11-23T17:14:50.751Z",
+                  "checksum": "57698f470e4e870f661f2e4bab6901f88e62dcf556b0c5e19a4ac4400942e89c"
+                }
+              }
+            ]
+          },
+          "primaryKey": {
+            "ID": "63C436CA-DBEC-497A-9C84-1452D69BD3B4"
+          },
+          "sync": {
+            "lastModified": "2026-11-23T17:14:50.425Z",
+            "checksum": "c63be8080abb269b3cc4ad592c089dd47ac01f2addef9ba58fed63689619c3d9"
           }
         }
       ]

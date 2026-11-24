@@ -14,7 +14,7 @@
 
 ## What this connector supports
 
-**23 objects** declared across **226 fields** (source: `metadata/integration/.rasa.integration.json`). 2 declare a write path; 21 are read-only (pull). 5 support incremental sync.
+**25 objects** declared across **242 fields** (source: `metadata/integration/.rasa.integration.json`). 2 declare a write path; 23 are read-only (pull). 5 support incremental sync.
 
 | Object | Pull | Push (C/U/D) | Incremental |
 |---|---|---|---|
@@ -28,6 +28,8 @@
 | Newsletter | ✓ | — (read-only) | — |
 | Newsletter Action | ✓ | — (read-only) | ✓ |
 | Newsletter Contact | ✓ | — (read-only) | — |
+| Newsletter Contact Category | ✓ | — (read-only) | — |
+| Newsletter Contact Topic | ✓ | — (read-only) | — |
 | Newsletter Deleted Contact | ✓ | — (read-only) | ✓ |
 | Newsletter List | ✓ | — (read-only) | — |
 | Newsletter Subscription Type | ✓ | — (read-only) | — |
@@ -63,7 +65,7 @@
   row count, field-shape sample, or write side-effect has been observed against a real tenant.
 - **Deletes / tombstoning**, conflict / echo-loop resolution — not exercised.
 - **Rate-limit / backoff under load** — not stress-tested.
-- **Coverage:** 0 of 23 declared objects have proven rows.
+- **Coverage:** 0 of 25 declared objects have proven rows.
 
 ---
 

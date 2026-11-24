@@ -1,0 +1,651 @@
+[
+  {
+    "fields": {
+      "Name": "rasa.io - Contact Topics by Newsletter",
+      "CategoryID": "@lookup:MJ: Query Categories.Name=rasa.io",
+      "UserQuestion": "What topics is each contact interested in, in each newsletter, and what is their email?",
+      "Description": "Each contact's topic interests per newsletter, from the topic clouds rasa.io builds from the articles they clicked, with the contact's email and the newsletter's name.",
+      "SQL": "@file:SQL/contact-topics-by-newsletter.sql",
+      "TechnicalDescription": "Newsletter_Contact_Topic joined to Contact on contact_id = Contact.id for the email, and to Newsletter for its name. One row per newsletter, contact and topic. Weight is the topic's share of the contact's clicks in that newsletter. Only contacts who have clicked have rows.",
+      "Status": "Approved",
+      "QualityRank": 8,
+      "ExecutionCostRank": 3,
+      "Reusable": false
+    },
+    "relatedEntities": {},
+    "collections": {
+      "Parameters": [
+        {
+          "fields": {
+            "Name": "IntegrationSchema",
+            "Type": "string",
+            "IsRequired": false,
+            "DefaultValue": "rasa",
+            "SampleValue": "rasa",
+            "Description": "The schema that holds the rasa.io tables. Leave it empty for the default, rasa; set it only when the tables were created under another schema.",
+            "IsServerSet": false,
+            "ValidationFilters": null,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "DBF6FEA2-9707-4B69-AA45-3821BC37955E"
+          }
+        }
+      ],
+      "Fields": [
+        {
+          "fields": {
+            "Name": "NewsletterID",
+            "Description": "The newsletter's id (Newsletter.id).",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "60FC157B-DC4E-4FBB-AD51-C993DCC74A3E"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Newsletter",
+            "Description": "The newsletter's name.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "DA586B35-24E8-4B3C-B89A-308BC72C7E7A"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ContactID",
+            "Description": "The rasa.io contact id (Contact.id). The same id is used in every rasa.io table, so it links a contact's rows across newsletters.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "F1C1C2ED-9540-41F9-8F81-789EDC5ACDD4"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Email",
+            "Description": "The contact's email address, from Contact. Use it to match the contact to people in other systems.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "EDD0BA97-EB7B-4723-B4AE-167534AFBD04"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Topic",
+            "Description": "The topic's name.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "F3943578-AEBD-4B9B-A3CC-1EFCE1F74DCD"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Clicks",
+            "Description": "Clicks on articles with this topic, in this newsletter.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "AC01A34A-ADD9-4997-B9A0-79FF0075B5C1"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Weight",
+            "Description": "The topic's share of the contact's clicks in this newsletter (0 to 1).",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "DBF4BBD3-605F-4FAE-97B1-3227B566CD97"
+          }
+        },
+        {
+          "fields": {
+            "Name": "FirstClick",
+            "Description": "When the contact first clicked an article with this subject.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "A3AC7D73-EF60-4A4C-8872-F7A380024766"
+          }
+        },
+        {
+          "fields": {
+            "Name": "LastClick",
+            "Description": "When the contact last clicked an article with this subject.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "97266EBA-FC00-4BD0-990A-FFCFBDF2B8CE"
+          }
+        },
+        {
+          "fields": {
+            "Name": "EffectiveDate",
+            "Description": "The week rasa.io built this topic cloud for.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "47924C02-71D1-4E2D-AB6D-F612EED21969"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "47D2FED2-9F80-49AA-8C28-563E1F9B3CD0"
+    },
+    "sync": {
+      "lastModified": "2026-11-23T17:14:52.838Z",
+      "checksum": "b2521ee1c28e3b10a77dcc7881d51d923eced608dbd89f60f732fe133c507c3a"
+    }
+  },
+  {
+    "fields": {
+      "Name": "rasa.io - Contact Topics Across Newsletters",
+      "CategoryID": "@lookup:MJ: Query Categories.Name=rasa.io",
+      "UserQuestion": "What is each person interested in across all our newsletters, by email?",
+      "Description": "Each person's topic interests rolled up across every newsletter, one row per contact and topic, with the email. Clicks are summed and the strongest weight is kept.",
+      "SQL": "@file:SQL/contact-topics-across-newsletters.sql",
+      "TechnicalDescription": "Newsletter_Contact_Topic grouped by contact_id and topic, joined to Contact for the email. Clicks = SUM(num_clicks), Weight = MAX(weight), first/last click widened across newsletters: the same merge rasa.io uses for one contact's topics. Rank a person's interests by Clicks or Weight.",
+      "Status": "Approved",
+      "QualityRank": 9,
+      "ExecutionCostRank": 3,
+      "Reusable": false
+    },
+    "relatedEntities": {},
+    "collections": {
+      "Parameters": [
+        {
+          "fields": {
+            "Name": "IntegrationSchema",
+            "Type": "string",
+            "IsRequired": false,
+            "DefaultValue": "rasa",
+            "SampleValue": "rasa",
+            "Description": "The schema that holds the rasa.io tables. Leave it empty for the default, rasa; set it only when the tables were created under another schema.",
+            "IsServerSet": false,
+            "ValidationFilters": null,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "1E36BA11-F654-4EBD-948A-68162A1C6E80"
+          }
+        }
+      ],
+      "Fields": [
+        {
+          "fields": {
+            "Name": "ContactID",
+            "Description": "The rasa.io contact id (Contact.id). The same id is used in every rasa.io table, so it links a contact's rows across newsletters.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "A057A97B-7BAB-4F6F-B957-5025EFC5ADFB"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Email",
+            "Description": "The contact's email address, from Contact. Use it to match the contact to people in other systems.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "CEA072DC-E8CA-4DC2-BB3F-E28A8E2B6AED"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Topic",
+            "Description": "The topic's name.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "C95F891A-696A-45B1-83EB-036D733DADE9"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Clicks",
+            "Description": "Clicks on articles with this topic, summed across newsletters.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "021FEC74-E13E-4EDE-A46C-169D214E508E"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Weight",
+            "Description": "The strongest share of clicks this topic had in any one newsletter (0 to 1).",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "C2535AE7-7880-43C7-AC52-581DEACC3BA8"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Newsletters",
+            "Description": "How many newsletters the contact showed this interest in.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "1900255B-CED5-4A5B-ACDF-FE54570EB301"
+          }
+        },
+        {
+          "fields": {
+            "Name": "FirstClick",
+            "Description": "When the contact first clicked an article with this subject.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "97A248BA-E948-4AD1-A0ED-C3BCC4D779EC"
+          }
+        },
+        {
+          "fields": {
+            "Name": "LastClick",
+            "Description": "When the contact last clicked an article with this subject.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "A10845A7-9925-4E38-AAF7-F2C0CE67F3C9"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "27AD4DD3-AAE8-461D-8909-7D4A73952FF8"
+    },
+    "sync": {
+      "lastModified": "2026-11-23T17:14:52.855Z",
+      "checksum": "2ac7125fc8637ad21645fde8c1dc69f55e1fbc575053c94cd8f264da03510e1b"
+    }
+  },
+  {
+    "fields": {
+      "Name": "rasa.io - Contact Categories Across Newsletters",
+      "CategoryID": "@lookup:MJ: Query Categories.Name=rasa.io",
+      "UserQuestion": "Which broad subject areas is each person interested in across all our newsletters, by email?",
+      "Description": "Each person's interests at the category level (broader than topics), rolled up across every newsletter, with the email.",
+      "SQL": "@file:SQL/contact-categories-across-newsletters.sql",
+      "TechnicalDescription": "Newsletter_Contact_Category grouped by contact_id and category, joined to Contact for the email. Merged the same way as the topic query.",
+      "Status": "Approved",
+      "QualityRank": 8,
+      "ExecutionCostRank": 3,
+      "Reusable": false
+    },
+    "relatedEntities": {},
+    "collections": {
+      "Parameters": [
+        {
+          "fields": {
+            "Name": "IntegrationSchema",
+            "Type": "string",
+            "IsRequired": false,
+            "DefaultValue": "rasa",
+            "SampleValue": "rasa",
+            "Description": "The schema that holds the rasa.io tables. Leave it empty for the default, rasa; set it only when the tables were created under another schema.",
+            "IsServerSet": false,
+            "ValidationFilters": null,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "13657E30-096F-4A86-8BDF-466BCD64DAE2"
+          }
+        }
+      ],
+      "Fields": [
+        {
+          "fields": {
+            "Name": "ContactID",
+            "Description": "The rasa.io contact id (Contact.id). The same id is used in every rasa.io table, so it links a contact's rows across newsletters.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "51A275F5-2F62-4019-BDDD-81D6B7FA1BD1"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Email",
+            "Description": "The contact's email address, from Contact. Use it to match the contact to people in other systems.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "E8DC1F6C-0C86-481F-B691-70F3FD0C394B"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Category",
+            "Description": "The category's name.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "9D73A651-02D7-49DC-8E27-0B42C01D56EB"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Clicks",
+            "Description": "Clicks on articles in this category, summed across newsletters.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "E9E44E6A-A2D6-4E81-B905-D345A2B6B326"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Weight",
+            "Description": "The strongest share of clicks this category had in any one newsletter (0 to 1).",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "61C5AD1D-A1C7-4A52-9A10-A4772AB864B2"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Newsletters",
+            "Description": "How many newsletters the contact showed this interest in.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "652617EA-85F2-4AC9-9B69-6813F5904032"
+          }
+        },
+        {
+          "fields": {
+            "Name": "FirstClick",
+            "Description": "When the contact first clicked an article with this subject.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "8B0B41B2-CF75-4D5C-A00E-54EFDB305604"
+          }
+        },
+        {
+          "fields": {
+            "Name": "LastClick",
+            "Description": "When the contact last clicked an article with this subject.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "8EDE0AAB-AA10-47E7-BC16-A88717DDE278"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "8B30286A-F9F5-4DFA-AE5C-F0CAA5D1E9B9"
+    },
+    "sync": {
+      "lastModified": "2026-11-23T17:14:52.886Z",
+      "checksum": "4e35c0b11d8c4043cd6c2594a2fb66cbc5a3e25315f56c89ffd7bb389addf893"
+    }
+  },
+  {
+    "fields": {
+      "Name": "rasa.io - Newsletter Engagement by Contact",
+      "CategoryID": "@lookup:MJ: Query Categories.Name=rasa.io",
+      "UserQuestion": "How many opens and clicks has each contact made in each newsletter, and what is their email?",
+      "Description": "Opens and clicks per contact and newsletter, with the contact's email and first and last activity. Clicks rasa.io judged automated are left out.",
+      "SQL": "@file:SQL/newsletter-engagement-by-contact.sql",
+      "TechnicalDescription": "Newsletter_Action grouped by newsletter_id and contact_id, joined to Contact for the email (an event's own email can be empty) and Newsletter for its name. Clicks with confidence 0 are excluded.",
+      "Status": "Approved",
+      "QualityRank": 8,
+      "ExecutionCostRank": 3,
+      "Reusable": false
+    },
+    "relatedEntities": {},
+    "collections": {
+      "Parameters": [
+        {
+          "fields": {
+            "Name": "IntegrationSchema",
+            "Type": "string",
+            "IsRequired": false,
+            "DefaultValue": "rasa",
+            "SampleValue": "rasa",
+            "Description": "The schema that holds the rasa.io tables. Leave it empty for the default, rasa; set it only when the tables were created under another schema.",
+            "IsServerSet": false,
+            "ValidationFilters": null,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "2F9D02B2-A026-4CF5-94BE-BF5096895F27"
+          }
+        }
+      ],
+      "Fields": [
+        {
+          "fields": {
+            "Name": "NewsletterID",
+            "Description": "The newsletter's id (Newsletter.id).",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "C0B74E23-9119-4FE6-948C-DC9F2209B2A8"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Newsletter",
+            "Description": "The newsletter's name.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "A0DAB61C-05A9-43DE-B100-BE485A7EA764"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ContactID",
+            "Description": "The rasa.io contact id (Contact.id). The same id is used in every rasa.io table, so it links a contact's rows across newsletters.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "5C7B031A-B575-4432-A073-7581B8DEEC7D"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Email",
+            "Description": "The contact's email address, from Contact. Use it to match the contact to people in other systems.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "B6F3141A-ED4B-4560-A865-85B65D8B04E1"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Opens",
+            "Description": "Open events.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "8C0919F5-7425-4645-B781-50B6BB61955F"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Clicks",
+            "Description": "Click events, leaving out clicks rasa.io judged automated.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "E80F4B7E-DB7D-48E8-ABFF-8BC1B9759C66"
+          }
+        },
+        {
+          "fields": {
+            "Name": "FirstActivity",
+            "Description": "The contact's first open or click in this newsletter.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "0F4CE764-8C30-4061-884E-9D0B86DC8019"
+          }
+        },
+        {
+          "fields": {
+            "Name": "LastActivity",
+            "Description": "The contact's latest open or click in this newsletter.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "2EA4E6F0-A9ED-44E2-A3B6-ECA60C02CCDB"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "44A4AFBC-5D28-4047-A32B-3B64077CA6FD"
+    },
+    "sync": {
+      "lastModified": "2026-11-23T17:14:52.900Z",
+      "checksum": "606c6e9db2db0267f426043e4ec5b1200aa461eeed00b9cc8a0c96fb43222047"
+    }
+  },
+  {
+    "fields": {
+      "Name": "rasa.io - Contact External IDs",
+      "CategoryID": "@lookup:MJ: Query Categories.Name=rasa.io",
+      "UserQuestion": "What are each rasa.io contact's IDs in our other systems?",
+      "Description": "Each contact's IDs in other systems (for example a CRM or AMS), with the email, for matching rasa.io contacts to records elsewhere.",
+      "SQL": "@file:SQL/contact-external-ids.sql",
+      "TechnicalDescription": "Contact_External_Identifier joined to Contact on contact_id for the email. One row per contact and external ID.",
+      "Status": "Approved",
+      "QualityRank": 7,
+      "ExecutionCostRank": 3,
+      "Reusable": false
+    },
+    "relatedEntities": {},
+    "collections": {
+      "Parameters": [
+        {
+          "fields": {
+            "Name": "IntegrationSchema",
+            "Type": "string",
+            "IsRequired": false,
+            "DefaultValue": "rasa",
+            "SampleValue": "rasa",
+            "Description": "The schema that holds the rasa.io tables. Leave it empty for the default, rasa; set it only when the tables were created under another schema.",
+            "IsServerSet": false,
+            "ValidationFilters": null,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "332A8264-2A03-4931-B55E-29E346D44722"
+          }
+        }
+      ],
+      "Fields": [
+        {
+          "fields": {
+            "Name": "ContactID",
+            "Description": "The rasa.io contact id (Contact.id). The same id is used in every rasa.io table, so it links a contact's rows across newsletters.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "80E71879-3CB2-4DBC-8E90-36AB44335A55"
+          }
+        },
+        {
+          "fields": {
+            "Name": "Email",
+            "Description": "The contact's email address, from Contact. Use it to match the contact to people in other systems.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "E9FBB15E-091E-4424-A3C4-3632F90611B8"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ExternalSystem",
+            "Description": "The other system's name, as rasa.io records it.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "7EA14954-B089-4348-ACB1-BDDDBD968FC6"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ExternalID",
+            "Description": "The contact's ID in that system.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "E6055594-5AC5-42D6-A440-0CDDE0CD14A1"
+          }
+        },
+        {
+          "fields": {
+            "Name": "ExternalSystemIdentifier",
+            "Description": "An identifier within that system, such as an account or namespace.",
+            "IsSummary": false,
+            "DetectionMethod": "Manual"
+          },
+          "primaryKey": {
+            "ID": "F36A6519-BAFE-4612-B367-51B1AE7C26B6"
+          }
+        }
+      ]
+    },
+    "primaryKey": {
+      "ID": "AAD37858-DC86-442D-8F77-15329EF3081D"
+    },
+    "sync": {
+      "lastModified": "2026-11-23T17:14:52.871Z",
+      "checksum": "743afdda6d49dc4cf20358d8cd9b8c34c8718a1bd83ed0da6d8a8c257c78333d"
+    }
+  }
+]

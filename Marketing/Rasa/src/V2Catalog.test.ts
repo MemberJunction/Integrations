@@ -289,7 +289,7 @@ describe('keys (3.0.3)', () => {
     it('stamps every nested collection with its parent key, declared as a field linked to the parent', async () => {
         const all = await catalog();
         const nested = [...all.values()].filter(o => (o.obj.Configuration.accessPath as { nesting?: string[] } | undefined)?.nesting?.length);
-        expect(nested.map(o => o.obj.Name).sort()).toHaveLength(8);
+        expect(nested.map(o => o.obj.Name).sort()).toHaveLength(10);
         for (const { obj, fields } of nested) {
             const inject = obj.Configuration.parentKeyInjectionRequired as { parentObject: string; childKeyField: string };
             expect(inject?.childKeyField, obj.Name).toBeTruthy();

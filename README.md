@@ -270,7 +270,7 @@ Every pull request to `next` or `main` is verified against **16 automated qualit
 <!-- BEGIN GENERATED CONNECTOR DIRECTORY -->
 
 > **Auto-maintained by CI** (`scripts/build-readme-directory.mjs`) from [`connectors-catalog.json`](./connectors-catalog.json), [`scripts/connector-publish-scope.json`](./scripts/connector-publish-scope.json), and per-connector metadata.
-> **55 published Open App connectors** across **8 categories** (5,624+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **7 held connectors**.
+> **55 published Open App connectors** across **8 categories** (5,626+ declared integration objects, plus live-introspected database/CRM schemas), **4 shared/base packages**, and **7 held connectors**.
 
 [**AMS** (11)](#ams--association-management-systems) · [**CRM** (5)](#crm--customer-relationship-management--fundraising) · [**Events** (6)](#events--conferences-registration-abstracts--awards) · [**Finance** (5)](#finance--accounting-erp-billing--payments) · [**LMS** (3)](#lms--learning-management--credentialing) · [**Marketing** (9)](#marketing--email-automation-engagement--analytics) · [**PM** (2)](#pm--project--time-management) · [**Platform** (14)](#platform--community-content-support-databases--data-warehouses) · [**Shared & Primitives** (4)](#shared-libraries--platform-primitives) · [**Held / In Development** (7)](#held--in-development-connectors)
 
@@ -351,7 +351,7 @@ Campaigns, mailings, subscribers, recipient-level sends/opens/clicks/bounces, li
 | [**Higher Logic Thrive Marketing Professional**](./Marketing/Informz) | `@memberjunction/connector-informz` | `0.3.0` | 69 | [🥇 Production-live](./Marketing/Informz/docs/SUPPORT.md) | Higher Logic Thrive Marketing Professional (formerly Informz) is an email-marketing platform for associations. |
 | [**Mailchimp**](./Marketing/Mailchimp) | `@memberjunction/connector-mailchimp` | `2.0.2` | 76 | [🟢 Live-vendor](./Marketing/Mailchimp/docs/SUPPORT.md) · [Setup](./Marketing/Mailchimp/docs/credential-setup.html) | Campaigns, contacts, lists and automation workflows from Mailchimp. |
 | [**PropFuel**](./Marketing/PropFuel) | `@memberjunction/connector-propfuel` | `1.2.5` | 1 | [🟢 Live-vendor](./Marketing/PropFuel/docs/SUPPORT.md) · [Setup](./Marketing/PropFuel/docs/credential-setup.html) | Member insight and engagement results, delivered as an hourly data export feed. |
-| [**rasa.io**](./Marketing/Rasa) | `@memberjunction/connector-rasa-io` | `3.0.6` | 23 | [🟡 Baseline](./Marketing/Rasa/docs/SUPPORT.md) | Subscribers and their actions, topics, sends and attributes, plus newsletter content. |
+| [**rasa.io**](./Marketing/Rasa) | `@memberjunction/connector-rasa-io` | `3.0.6` | 25 | [🟡 Baseline](./Marketing/Rasa/docs/SUPPORT.md) | Subscribers and their actions, topics, sends and attributes, plus newsletter content. |
 | [**Reply.io**](./Marketing/Reply) | `@memberjunction/connector-reply` | `1.0.2` | 84 | [🟢 Live-vendor](./Marketing/Reply/docs/SUPPORT.md) | Contacts, accounts, sequences, outreach channels, tasks and inbox activity. |
 | [**Salesforce Marketing Cloud Engagement**](./Marketing/SFMC) | `@memberjunction/connector-sfmc` | `1.0.0` | 225 | [🧪 Mock-only](./Marketing/SFMC/docs/SUPPORT.md) | Salesforce Marketing Cloud Engagement (ExactTarget/Fuel) — dual REST+SOAP marketing platform: Data Extensions, Contacts, Journeys, Content Builder, Transactional… |
 
