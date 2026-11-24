@@ -5424,9 +5424,7 @@
                   "Status": "Active",
                   "Sequence": 17,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"ScheduledPayment\"}",
-                  "Length": 18,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=ScheduledPayment&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id"
+                  "Length": 18
                 },
                 "primaryKey": {
                   "ID": "0ADA4BF4-B32B-4D1B-96E1-F2FFE9FCE747"
@@ -11543,9 +11541,7 @@
                   "Status": "Active",
                   "Sequence": 46,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Receipt\"}",
-                  "Length": 18,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Receipt&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id"
+                  "Length": 18
                 },
                 "primaryKey": {
                   "ID": "1D86CB44-3CBA-4373-A096-C15FBB92727B"
@@ -12461,9 +12457,7 @@
                   "Status": "Active",
                   "Sequence": 22,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"Receipt\"}",
-                  "Length": 18,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=Receipt&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id"
+                  "Length": 18
                 },
                 "primaryKey": {
                   "ID": "82E7C8B9-583F-4801-B94A-08A069F3CCA8"
@@ -12788,9 +12782,7 @@
                   "Status": "Active",
                   "Sequence": 10,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrderLine\"}",
-                  "Length": 18,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrderLine&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id"
+                  "Length": 18
                 },
                 "primaryKey": {
                   "ID": "362DA49A-E42F-4305-A15A-C2569AE8ACFA"
@@ -16036,9 +16028,7 @@
                   "Status": "Active",
                   "Sequence": 27,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"ScheduledPaymentLine\"}",
-                  "Length": 18,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=ScheduledPaymentLine&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id"
+                  "Length": 18
                 },
                 "primaryKey": {
                   "ID": "B4ED1268-E556-49BA-A4FA-4B89914ACF81"
@@ -16875,9 +16865,7 @@
                   "Status": "Active",
                   "Sequence": 13,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SalesOrderLine\"}",
-                  "Length": 18,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SalesOrderLine&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id"
+                  "Length": 18
                 },
                 "primaryKey": {
                   "ID": "A116493C-AE71-4918-BCF8-8A866903740F"
@@ -17459,9 +17447,7 @@
                   "Status": "Active",
                   "Sequence": 3,
                   "Configuration": "{\"SObjectFieldConvention\": \"{namespace}__{Pascal_Snake}__c\", \"ReferencedType\": \"SubscriptionLine\"}",
-                  "Length": 18,
-                  "RelatedIntegrationObjectID": "@lookup:MJ: Integration Objects.Name=SubscriptionLine&IntegrationID=@parent:IntegrationID",
-                  "RelatedIntegrationObjectFieldName": "id"
+                  "Length": 18
                 },
                 "primaryKey": {
                   "ID": "412D899A-4299-413C-935B-94050601CB1A"

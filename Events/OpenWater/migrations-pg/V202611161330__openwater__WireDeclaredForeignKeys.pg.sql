@@ -1,30 +1,47 @@
 -- ============================================================================
-
 -- MemberJunction PostgreSQL Migration
-
--- Events/OpenWater: wire 3 declared foreign-key relationship(s) into IntegrationObjectField.
-
+-- Converted from SQL Server using TypeScript conversion pipeline
 -- ============================================================================
 
+-- Extensions
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Schema
 CREATE SCHEMA IF NOT EXISTS __mj;
-
 SET search_path TO __mj, public;
 
+-- Ensure backslashes in string literals are treated literally (not as escape sequences)
 SET standard_conforming_strings = on;
 
--- ===================== Data (UPDATE) =====================
+-- NOTE: Earlier converter versions made INTEGER to BOOLEAN cast implicit by
+-- modifying the system catalog so SS-style INSERT INTO bool_col VALUES (1)
+-- would work. That modification required pg_catalog write privileges, which
+-- managed PG (RDS, Aurora, Cloud SQL, Azure) does not grant. As of v5.30 all
+-- bulk INSERTs are emitted with native TRUE/FALSE values directly, so the
+-- cast modification is no longer needed. Removed to support managed-PG
+-- installs out of the box.
 
-UPDATE "__mj"."IntegrationObjectField" AS iof
-SET "RelatedIntegrationObjectID" = v.target_id::uuid,
-    "RelatedIntegrationObjectFieldName" = v.target_field
-FROM (VALUES
-    ('DFAB0E15-DB98-4C6A-A512-D1B5FE7EA3FF', '5E4FBD5E-2633-429D-9510-21E36CBC6FA7', 'id'), -- DeletedSession.deletedByUserId -> User.id
-    ('A3B659D6-9359-411D-B597-9825999BA857', '5E4FBD5E-2633-429D-9510-21E36CBC6FA7', 'id'), -- Evaluation.judgeUserId -> User.id
-    ('8A5505CF-B48E-4BC4-9984-E7F35B5BD7C9', '5E4FBD5E-2633-429D-9510-21E36CBC6FA7', 'id') -- FundTransaction.approvedByUserId -> User.id
-) AS v(field_id, target_id, target_field)
-WHERE iof."ID" = v.field_id::uuid;
 
+-- ===================== Data (INSERT/UPDATE/DELETE) =====================
+
+-- Events/OpenWater: wire 3 declared DAG-safe scalar foreign-key relationship(s) into IntegrationObjectField.
+--
+-- These fields carried Configuration.ReferencedType pointing to sibling IntegrationObjects
+-- in the same connector, but RelatedIntegrationObjectID was left NULL when the catalog was
+-- originally authored/seeded. System audit columns (CreatedById/LastModifiedById), self-references,
+-- and cycle-forming back-edges are excluded so the sync DAG stays acyclic.
+--
+-- DELTA migration, deliberately not a re-seed: existing installed tenants keep their seeded row
+-- IDs and Flyway checksums intact. Idempotent (guarded with RelatedIntegrationObjectID IS NULL).
+
+-- Target: User.id (3 field(s))
+UPDATE __mj."IntegrationObjectField"
+SET "RelatedIntegrationObjectID" = '5E4FBD5E-2633-429D-9510-21E36CBC6FA7',
+    "RelatedIntegrationObjectFieldName" = 'id'
+WHERE "RelatedIntegrationObjectID" IS NULL
+  AND "ID" IN (
+    'DFAB0E15-DB98-4C6A-A512-D1B5FE7EA3FF', -- DeletedSession.deletedByUserId
+    'A3B659D6-9359-411D-B597-9825999BA857', -- Evaluation.judgeUserId
+    '8A5505CF-B48E-4BC4-9984-E7F35B5BD7C9' -- FundTransaction.approvedByUserId
+  );

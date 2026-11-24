@@ -116,10 +116,12 @@ function onlyAllowedKeysDiffer(relPath, allowed) {
 // across 11 already-published connectors.
 //
 // "Never ships" is DERIVED from the connector's own package.json `files`, not assumed:
-// if a connector ever starts publishing docs/, its docs stop being exempt automatically.
-// The allowlist stays deliberately narrow — docs/ and root-level markdown. src/ is NOT
-// on it: it isn't in `files` either, but it BUILDS into dist/, so it does reach consumers.
-const NON_SHIPPING_PATTERNS = [/^docs\//, /^[^/]+\.md$/];
+// if a connector ever starts publishing docs/ or metadata/, they stop being exempt
+// automatically. The allowlist stays deliberately narrow — docs/, root-level markdown, and
+// legacy orphaned metadata/additionalSchemaInfo.json slices (which are neither read by
+// OpenApp/IntegrationEngine nor included in dist/ or migrations/). src/ is NOT on it: it
+// isn't in `files` either, but it BUILDS into dist/, so it does reach consumers.
+const NON_SHIPPING_PATTERNS = [/^docs\//, /^[^/]+\.md$/, /^metadata\/additionalSchemaInfo\.json$/];
 
 /** True iff `rel` (connector-relative) is covered by a package.json `files` entry. */
 function isPublished(rel, pkgFiles) {
@@ -143,7 +145,7 @@ function isExempt(dirAbs) {
   if (files.length === 0) return null;
   const pkgFiles = JSON.parse(readFileSync(join(dirAbs, 'package.json'), 'utf8')).files;
 
-  if (files.every((f) => isNonShipping(f, pkgFiles))) return 'does not ship (docs / markdown only)';
+  if (files.every((f) => isNonShipping(f, pkgFiles))) return 'does not ship (non-shipping docs / legacy metadata only)';
 
   if (!files.every((f) => RELEASE_META_FILES.has(f) || isNonShipping(f, pkgFiles))) return null;
   for (const [file, allowed] of Object.entries(RELEASE_META_KEYS)) {

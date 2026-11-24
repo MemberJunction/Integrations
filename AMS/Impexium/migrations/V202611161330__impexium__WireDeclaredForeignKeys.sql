@@ -1,25 +1,18 @@
--- AMS/Impexium: wire 1 declared foreign-key relationship(s) into IntegrationObjectField.
-
+-- AMS/Impexium: wire 1 declared DAG-safe scalar foreign-key relationship(s) into IntegrationObjectField.
 --
-
--- These fields carried Configuration.ReferencedType (and IsForeignKey metadata) pointing to
-
--- sibling IntegrationObjects in the same connector, but RelatedIntegrationObjectID was left NULL
-
--- when the catalog was originally authored/seeded.
-
+-- These fields carried Configuration.ReferencedType pointing to sibling IntegrationObjects
+-- in the same connector, but RelatedIntegrationObjectID was left NULL when the catalog was
+-- originally authored/seeded. System audit columns (CreatedById/LastModifiedById), self-references,
+-- and cycle-forming back-edges are excluded so the sync DAG stays acyclic.
 --
-
 -- DELTA migration, deliberately not a re-seed: existing installed tenants keep their seeded row
+-- IDs and Flyway checksums intact. Idempotent (guarded with RelatedIntegrationObjectID IS NULL).
 
--- IDs and Flyway checksums intact. Idempotent (updates directly by seeded IntegrationObjectField.ID).
-
-UPDATE iof
-SET RelatedIntegrationObjectID = CAST(v.TargetObjectID AS UNIQUEIDENTIFIER),
-    RelatedIntegrationObjectFieldName = v.TargetFieldName
-FROM [__mj].[IntegrationObjectField] AS iof
-INNER JOIN (VALUES
-    ('62BBC75F-6CCB-4D80-9793-156FC43F390C', '55D39FBE-3B74-432C-AF5B-9050C196562B', N'id') -- CustomFieldValues.individualId -> Individuals.id
-) AS v(FieldID, TargetObjectID, TargetFieldName)
-    ON iof.ID = CAST(v.FieldID AS UNIQUEIDENTIFIER);
-
+-- Target: Individuals.id (1 field(s))
+UPDATE [__mj].[IntegrationObjectField]
+SET [RelatedIntegrationObjectID] = '55D39FBE-3B74-432C-AF5B-9050C196562B',
+    [RelatedIntegrationObjectFieldName] = N'id'
+WHERE [RelatedIntegrationObjectID] IS NULL
+  AND [ID] IN (
+    '62BBC75F-6CCB-4D80-9793-156FC43F390C' -- CustomFieldValues.individualId
+  );
