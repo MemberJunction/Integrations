@@ -357,7 +357,7 @@ describe('SalesforceConnector (mocked API)', () => {
             expect(idField!.IsReadOnly).toBe(true);
         });
 
-        it('should exclude system audit lookups from FK flags while preserving business FKs and self-references', async () => {
+        it('should exclude system audit and polymorphic lookups from FK flags while preserving single-target FKs and self-references', async () => {
             mockJwtSign();
             setupAuthAndApiMock([{
                 body: {
@@ -367,6 +367,7 @@ describe('SalesforceConnector (mocked API)', () => {
                         { name: 'LastModifiedById', label: 'Last Modified By', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: false, referenceTo: ['User'], inlineHelpText: null },
                         { name: 'ParentId', label: 'Parent Account', type: 'reference', nillable: true, defaultedOnCreate: false, externalId: false, calculated: false, updateable: true, referenceTo: ['Account'], inlineHelpText: null },
                         { name: 'OwnerId', label: 'Owner', type: 'reference', nillable: false, defaultedOnCreate: true, externalId: false, calculated: false, updateable: true, referenceTo: ['User'], inlineHelpText: null },
+                        { name: 'WhoId', label: 'Name ID', type: 'reference', nillable: true, defaultedOnCreate: false, externalId: false, calculated: false, updateable: true, referenceTo: ['Contact', 'Lead'], inlineHelpText: null },
                     ],
                 },
             }]);
@@ -379,6 +380,9 @@ describe('SalesforceConnector (mocked API)', () => {
             expect(byName.get('CreatedById')?.ForeignKeyTarget).toBeNull();
             expect(byName.get('LastModifiedById')?.IsForeignKey).toBe(false);
             expect(byName.get('LastModifiedById')?.ForeignKeyTarget).toBeNull();
+            // Polymorphic multi-target lookups (referenceTo.length > 1) are left unwired to match seeded metadata
+            expect(byName.get('WhoId')?.IsForeignKey).toBe(false);
+            expect(byName.get('WhoId')?.ForeignKeyTarget).toBeNull();
             // Self-references (Account.ParentId -> Account) do not cycle in IntegrationEngine and should be kept
             expect(byName.get('ParentId')?.IsForeignKey).toBe(true);
             expect(byName.get('ParentId')?.ForeignKeyTarget).toBe('Account');
@@ -578,6 +582,145 @@ describe('SalesforceConnector (mocked API)', () => {
             expect(user.Relationships).toHaveLength(0);
             expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
             expect(user.Fields.find(f => f.Name === 'AccountId')?.ForeignKeyTarget).toBeNull();
+        });
+
+        it('should read per-connection catalog edges via GetRelatedIntegrationObjectIDs when field rows are not resident', async () => {
+            mockJwtSign();
+            const acctObjId = '9ED16491-3832-414F-856A-EBAFE44F6AB8';
+            const userObjId = '11111111-2222-3333-4444-555555555555';
+
+            // Simulate MJ per-connection catalog under WithCatalogScope (MJ-RUN-43):
+            // GetIntegrationObjectFields returns [] (cold) / throws if warmed scope is enforced,
+            // while GetRelatedIntegrationObjectIDs answers from the scope's narrow edge set.
+            vi.spyOn(IntegrationEngineBase, 'Instance', 'get').mockReturnValue({
+                GetActiveIntegrationObjects: () => [
+                    { ID: acctObjId, Name: 'Account', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: userObjId, Name: 'User', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                ],
+                GetRelatedIntegrationObjectIDs: (objID: string) =>
+                    objID === acctObjId ? [userObjId.toLowerCase()] : [],
+                GetIntegrationObjectFields: () => {
+                    throw new Error('PER_CONNECTION_CATALOG_OBJECT_COLD');
+                },
+            } as unknown as IntegrationEngineBase);
+
+            fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+                const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+                if (url.includes('/services/oauth2/token')) return mockTokenResponse();
+                if (url.endsWith('/sobjects/')) {
+                    return mockApiResponse({
+                        sobjects: [
+                            { name: 'User', label: 'User', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/User/describe')) {
+                    return mockApiResponse({
+                        label: 'User',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                return mockApiResponse({ totalSize: 0, done: true, records: [] });
+            });
+
+            const ci = {
+                ...createMockCompanyIntegration(MOCK_CREDENTIALS),
+                IntegrationID: 'sf-integration-id',
+            } as unknown as MJCompanyIntegrationEntity;
+
+            // Single-object scoped refresh of User MUST still prune User.AccountId -> Account
+            // using the Account -> User edge loaded via GetRelatedIntegrationObjectIDs.
+            const schema = await connector.IntrospectSchema(ci, contextUser, {
+                ObjectNames: ['User'],
+            });
+            const user = schema.Objects.find(o => o.ExternalName === 'User')!;
+            expect(user.Relationships).toHaveLength(0);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.ForeignKeyTarget).toBeNull();
+        });
+
+        it('should preserve high-in-degree parent edges instead of dropping both directions when the existing catalog already has a cycle', async () => {
+            mockJwtSign();
+            const acctObjId = '10000000-0000-0000-0000-000000000001';
+            const contactObjId = '10000000-0000-0000-0000-000000000002';
+            const caseObjId = '10000000-0000-0000-0000-000000000003';
+            const userObjId = '10000000-0000-0000-0000-000000000004';
+
+            // Pre-existing dirty catalog from pre-PR live discovery:
+            // Account, Contact, and Case point to User, AND User.AccountId points back to Account.
+            vi.spyOn(IntegrationEngineBase, 'Instance', 'get').mockReturnValue({
+                GetActiveIntegrationObjects: () => [
+                    { ID: acctObjId, Name: 'Account', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: contactObjId, Name: 'Contact', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: caseObjId, Name: 'Case', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                    { ID: userObjId, Name: 'User', Status: 'Active' } as unknown as MJIntegrationObjectEntity,
+                ],
+                GetRelatedIntegrationObjectIDs: (objID: string) => {
+                    if (objID === acctObjId || objID === contactObjId || objID === caseObjId) return [userObjId];
+                    if (objID === userObjId) return [acctObjId];
+                    return [];
+                },
+                GetIntegrationObjectFields: () => [],
+            } as unknown as IntegrationEngineBase);
+
+            fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+                const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+                if (url.includes('/services/oauth2/token')) return mockTokenResponse();
+                if (url.endsWith('/sobjects/')) {
+                    return mockApiResponse({
+                        sobjects: [
+                            { name: 'Account', label: 'Account', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                            { name: 'User', label: 'User', queryable: true, createable: true, updateable: true, deletable: true, custom: false },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/Account/describe')) {
+                    return mockApiResponse({
+                        label: 'Account',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'OwnerId', label: 'Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: ['User'], inlineHelpText: null },
+                            { name: 'PolymorphicOwnerId', label: 'Poly Owner', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Group', 'User'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                if (url.endsWith('/sobjects/User/describe')) {
+                    return mockApiResponse({
+                        label: 'User',
+                        fields: [
+                            { name: 'Id', label: 'Id', type: 'id', length: 18, precision: 0, scale: 0, nillable: false, defaultedOnCreate: true, defaultValue: null, referenceTo: [], inlineHelpText: null },
+                            { name: 'AccountId', label: 'Account', type: 'reference', length: 18, precision: 0, scale: 0, nillable: true, defaultedOnCreate: false, defaultValue: null, referenceTo: ['Account'], inlineHelpText: null },
+                        ],
+                    });
+                }
+                return mockApiResponse({ totalSize: 0, done: true, records: [] });
+            });
+
+            const ci = {
+                ...createMockCompanyIntegration(MOCK_CREDENTIALS),
+                IntegrationID: 'sf-integration-id',
+            } as unknown as MJCompanyIntegrationEntity;
+
+            const schema = await connector.IntrospectSchema(ci, contextUser, {
+                ObjectNames: ['Account', 'User'],
+            });
+            const byObj = new Map(schema.Objects.map(o => [o.ExternalName, o]));
+            const acct = byObj.get('Account')!;
+            const user = byObj.get('User')!;
+
+            // High-in-degree Account.OwnerId -> User MUST survive; dirty back-edge User.AccountId -> Account
+            // and polymorphic lookup Account.PolymorphicOwnerId MUST be omitted.
+            expect(acct.Relationships).toEqual([
+                { FieldName: 'OwnerId', TargetObject: 'User', TargetField: 'Id' },
+            ]);
+            expect(acct.Fields.find(f => f.Name === 'OwnerId')?.IsForeignKey).toBe(true);
+            expect(acct.Fields.find(f => f.Name === 'PolymorphicOwnerId')?.IsForeignKey).toBe(false);
+            expect(acct.Fields.find(f => f.Name === 'PolymorphicOwnerId')?.ForeignKeyTarget).toBeNull();
+            expect(user.Relationships).toHaveLength(0);
+            expect(user.Fields.find(f => f.Name === 'AccountId')?.IsForeignKey).toBe(false);
         });
     });
 

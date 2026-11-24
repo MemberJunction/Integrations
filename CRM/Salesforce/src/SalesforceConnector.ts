@@ -625,9 +625,9 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
             }
         });
 
-        // Keep live-discovered FK edges acyclic (matching the seeded catalog and CI lint gate)
+        // Keep live-discovered Salesforce FK edges acyclic (matching the seeded catalog and CI lint gate)
         // so IntegrationSchemaSync does not re-introduce multi-object cycles that degrade
-        // IntegrationEngine topological layering. Inherited by FontevaConnector via super.IntrospectSchema.
+        // IntegrationEngine topological layering.
         this.pruneCyclicRelationships(result.Objects, companyIntegration.IntegrationID);
 
         return result;
@@ -2159,12 +2159,14 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
 
     /**
      * Returns true when a Salesforce `reference` field should be emitted as a DAG-safe FK.
-     * Excludes system audit lookups (`CreatedById`/`LastModifiedById`). Self-references
-     * (e.g. `Account.ParentId -> Account`) are preserved — `IntegrationEngine` ignores
-     * `target === src` when layering, so they never introduce sync-DAG cycles.
+     * Requires a single-target lookup (`referenceTo.length === 1`, matching the seeded catalog and
+     * excluding polymorphic fields such as `Case.OwnerId -> [Group, User]`, `Task.WhoId`, and
+     * `Task.WhatId`) and excludes system audit lookups (`CreatedById`/`LastModifiedById`).
+     * Self-references (e.g. `Account.ParentId -> Account`) are preserved — `IntegrationEngine`
+     * ignores `target === src` when layering, so they never introduce sync-DAG cycles.
      */
     private isEligibleForeignKey(f: SFieldDescribe): boolean {
-        if (f.type !== 'reference' || f.referenceTo.length === 0) return false;
+        if (f.type !== 'reference' || f.referenceTo.length !== 1) return false;
         if (SYSTEM_AUDIT_FK_FIELDS.has(f.name.toLowerCase())) return false;
         return true;
     }
@@ -2408,40 +2410,61 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
     /**
      * Loads existing active FK edges (`srcObject -> targetObject`) from `IntegrationEngineBase`
      * so a scoped `IntrospectSchema` call never emits an edge that creates a cycle against
-     * already-wired catalog relationships. Returns an empty map if the cache is unavailable.
+     * already-wired catalog relationships.
+     *
+     * Prefers `GetRelatedIntegrationObjectIDs` (added in MJ's per-connection catalog work,
+     * which reads the scope's narrow edge set without requiring warmed field rows under
+     * `WithCatalogScope`) and falls back to `GetIntegrationObjectFields` on older hosts.
      */
-    private loadExistingCatalogEdges(integrationID: string | null | undefined): Map<string, Set<string>> {
-        const adj = new Map<string, Set<string>>();
-        if (!integrationID) return adj;
+    private loadExistingCatalogEdges(integrationID: string | null | undefined): Array<{ src: string; target: string }> {
+        if (!integrationID) return [];
         try {
             const engine = IntegrationEngineBase.Instance;
             const objects = engine.GetActiveIntegrationObjects(integrationID);
-            if (!objects || objects.length === 0) return adj;
+            if (!objects || objects.length === 0) return [];
 
             const nameById = new Map<string, string>();
             for (const obj of objects) {
                 nameById.set(NormalizeUUID(obj.ID), obj.Name.toLowerCase());
             }
 
+            const edgeEngine: IntegrationEngineBase & {
+                GetRelatedIntegrationObjectIDs?: (objectID: string) => string[];
+            } = engine;
+            const useEdgeSet = typeof edgeEngine.GetRelatedIntegrationObjectIDs === 'function';
+            const seen = new Set<string>();
+            const edges: Array<{ src: string; target: string }> = [];
+
             for (const obj of objects) {
                 const src = obj.Name.toLowerCase();
-                for (const field of engine.GetIntegrationObjectFields(obj.ID)) {
-                    if (String(field.Status ?? '').toLowerCase() === 'disabled') continue;
-                    if (!field.RelatedIntegrationObjectID) continue;
-                    const target = nameById.get(NormalizeUUID(field.RelatedIntegrationObjectID));
+                const relatedIDs = useEdgeSet
+                    ? edgeEngine.GetRelatedIntegrationObjectIDs!(obj.ID)
+                    : this.readRelatedObjectIDsFromFields(engine, obj.ID);
+
+                for (const relatedID of relatedIDs) {
+                    const target = nameById.get(NormalizeUUID(relatedID));
                     if (!target || target === src) continue;
-                    let edges = adj.get(src);
-                    if (!edges) {
-                        edges = new Set<string>();
-                        adj.set(src, edges);
+                    const key = `${src}->${target}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        edges.push({ src, target });
                     }
-                    edges.add(target);
                 }
             }
+            return edges;
         } catch {
             // Engine cache unavailable (e.g. unit context) — prune solely over this batch.
+            return [];
         }
-        return adj;
+    }
+
+    private readRelatedObjectIDsFromFields(engine: IntegrationEngineBase, objectID: string): string[] {
+        const ids: string[] = [];
+        for (const field of engine.GetIntegrationObjectFields(objectID)) {
+            if (String(field.Status ?? '').toLowerCase() === 'disabled') continue;
+            if (field.RelatedIntegrationObjectID) ids.push(field.RelatedIntegrationObjectID);
+        }
+        return ids;
     }
 
     /**
@@ -2449,58 +2472,38 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
      * schema (mutating both `Relationships` and the corresponding `Fields` flags) so
      * IntegrationSchemaSync preserves an acyclic sync DAG.
      *
-     * Pre-seeds the DAG with existing catalog edges from `IntegrationEngineBase` so scoped
-     * refreshes cannot flip an edge direction and create a cycle with already-wired FKs.
-     * Remaining candidate edges are ranked by target in-degree descending (core parent entities
-     * such as `User`, `Account`, `Contact` win over sparse back-pointers like
-     * `Account.PersonReportsToId` or `Opportunity.LastAmountChangedHistoryId`), tie-broken
-     * deterministically by name.
+     * Pre-seeds the DAG acyclically from existing catalog edges (so scoped refreshes honor
+     * already-wired FKs without flipping directions, while pre-existing dirty cycles cannot
+     * strip valid high-in-degree parent edges). Remaining candidate edges are ranked by
+     * target in-degree descending (core parents such as `User`, `Account`, `Contact` win
+     * over sparse back-pointers), tie-broken deterministically by name.
      */
     private pruneCyclicRelationships(objects: SourceObjectInfo[], integrationID?: string | null): void {
-        const adj = this.loadExistingCatalogEdges(integrationID);
+        const existingEdges = this.loadExistingCatalogEdges(integrationID);
         const known = new Set(objects.map(o => o.ExternalName.toLowerCase()));
-        for (const [src, targets] of adj) {
-            known.add(src);
-            for (const t of targets) known.add(t);
+        for (const edge of existingEdges) {
+            known.add(edge.src);
+            known.add(edge.target);
         }
 
-        const inDegree = new Map<string, number>();
-        for (const targets of adj.values()) {
-            for (const t of targets) inDegree.set(t, (inDegree.get(t) ?? 0) + 1);
-        }
-
-        interface CandidateEdge {
-            obj: SourceObjectInfo;
-            src: string;
-            target: string;
-            fieldName: string;
-        }
-        const candidates: CandidateEdge[] = [];
-
+        const candidates: Array<{ obj: SourceObjectInfo; src: string; target: string; fieldName: string }> = [];
         for (const obj of objects) {
             const src = obj.ExternalName.toLowerCase();
             for (const rel of obj.Relationships) {
                 const target = rel.TargetObject.toLowerCase();
                 if (target === src || !known.has(target)) continue;
-                inDegree.set(target, (inDegree.get(target) ?? 0) + 1);
                 candidates.push({ obj, src, target, fieldName: rel.FieldName });
             }
         }
 
-        candidates.sort((a, b) => {
-            const targetDiff = (inDegree.get(b.target) ?? 0) - (inDegree.get(a.target) ?? 0);
-            if (targetDiff !== 0) return targetDiff;
-            const srcDiff = (inDegree.get(a.src) ?? 0) - (inDegree.get(b.src) ?? 0);
-            if (srcDiff !== 0) return srcDiff;
-            const tName = a.target.localeCompare(b.target);
-            if (tName !== 0) return tName;
-            const sName = a.src.localeCompare(b.src);
-            if (sName !== 0) return sName;
-            return a.fieldName.localeCompare(b.fieldName);
-        });
+        const inDegree = this.computeDistinctTargetInDegree(existingEdges, candidates);
+        const adj = this.seedAcyclicGraph(existingEdges, inDegree);
+
+        candidates.sort((a, b) =>
+            this.compareEdgesByPriority(a, b, inDegree) || a.fieldName.localeCompare(b.fieldName)
+        );
 
         const droppedByObj = new Map<SourceObjectInfo, Set<string>>();
-
         for (const edge of candidates) {
             if (this.canReachObject(adj, edge.target, edge.src)) {
                 let dropped = droppedByObj.get(edge.obj);
@@ -2511,14 +2514,65 @@ export class SalesforceConnector extends BaseRESTIntegrationConnector {
                 dropped.add(edge.fieldName.toLowerCase());
                 continue;
             }
-            let edges = adj.get(edge.src);
-            if (!edges) {
-                edges = new Set<string>();
-                adj.set(edge.src, edges);
-            }
-            edges.add(edge.target);
+            this.addGraphEdge(adj, edge.src, edge.target);
         }
 
+        this.applyDroppedForeignKeys(droppedByObj);
+    }
+
+    private computeDistinctTargetInDegree(
+        existingEdges: ReadonlyArray<{ src: string; target: string }>,
+        candidates: ReadonlyArray<{ src: string; target: string }>
+    ): Map<string, number> {
+        const seen = new Set<string>();
+        const inDegree = new Map<string, number>();
+        const record = (edge: { src: string; target: string }): void => {
+            const key = `${edge.src}->${edge.target}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            inDegree.set(edge.target, (inDegree.get(edge.target) ?? 0) + 1);
+        };
+        for (const e of existingEdges) record(e);
+        for (const e of candidates) record(e);
+        return inDegree;
+    }
+
+    private seedAcyclicGraph(
+        existingEdges: ReadonlyArray<{ src: string; target: string }>,
+        inDegree: ReadonlyMap<string, number>
+    ): Map<string, Set<string>> {
+        const adj = new Map<string, Set<string>>();
+        const sorted = [...existingEdges].sort((a, b) => this.compareEdgesByPriority(a, b, inDegree));
+        for (const edge of sorted) {
+            if (!this.canReachObject(adj, edge.target, edge.src)) {
+                this.addGraphEdge(adj, edge.src, edge.target);
+            }
+        }
+        return adj;
+    }
+
+    private compareEdgesByPriority(
+        a: { src: string; target: string },
+        b: { src: string; target: string },
+        inDegree: ReadonlyMap<string, number>
+    ): number {
+        const targetDiff = (inDegree.get(b.target) ?? 0) - (inDegree.get(a.target) ?? 0);
+        if (targetDiff !== 0) return targetDiff;
+        const srcDiff = (inDegree.get(a.src) ?? 0) - (inDegree.get(b.src) ?? 0);
+        if (srcDiff !== 0) return srcDiff;
+        return a.target.localeCompare(b.target) || a.src.localeCompare(b.src);
+    }
+
+    private addGraphEdge(adj: Map<string, Set<string>>, src: string, target: string): void {
+        let edges = adj.get(src);
+        if (!edges) {
+            edges = new Set<string>();
+            adj.set(src, edges);
+        }
+        edges.add(target);
+    }
+
+    private applyDroppedForeignKeys(droppedByObj: ReadonlyMap<SourceObjectInfo, Set<string>>): void {
         for (const [obj, droppedFields] of droppedByObj) {
             obj.Relationships = obj.Relationships.filter(
                 r => !droppedFields.has(r.FieldName.toLowerCase())

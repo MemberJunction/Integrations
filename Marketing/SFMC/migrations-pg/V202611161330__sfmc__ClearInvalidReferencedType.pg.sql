@@ -25,10 +25,24 @@ SET standard_conforming_strings = on;
 
 -- ===================== Data (INSERT/UPDATE/DELETE) =====================
 
+-- Marketing/SFMC: remove invalid ReferencedType hints on two non-FK scalar fields.
+--
+-- During initial WSDL+docs extraction, two scalar fields picked up shifted docDataType values as
+-- ReferencedType:
+--   - AutomationActivity.Sequence (xsd:int — step sequence number, not a ScheduleDefinition FK)
+--   - AutomationNotification.Address (xsd:string — notification email address, not an AutomationInstance FK)
+--
+-- HAND-AUTHORED PG BODY (same pattern as LMS/Totara/migrations-pg/V202608041327__totara__UsersIdWindowScan.pg.sql).
+-- The SQL Server source uses JSON_MODIFY / JSON_VALUE / ISJSON, which `mj migrate convert` does
+-- not translate (and full-JSON string replacement was previously mangled by the converter, turning
+-- "xsd:int" into "xsd:INTEGER"). The jsonb `- 'ReferencedType'` operator removes only that key and
+-- preserves all other Configuration keys verbatim, including tenant-added ones.
+
 UPDATE __mj."IntegrationObjectField"
-SET "Configuration" = '{"sourceType":"xsd:INTEGER","docDataType":"ScheduleDefinition","evidence":"wsdl+docs"}'
+SET "Configuration" = (("Configuration")::jsonb - 'ReferencedType')::text
 WHERE "Name" = 'Sequence'
-  AND "Configuration" LIKE '%ReferencedType%'
+  AND ("Configuration") IS JSON
+  AND ("Configuration")::jsonb ? 'ReferencedType'
   AND "IntegrationObjectID" IN (
     SELECT o."ID"
     FROM __mj."IntegrationObject" o
@@ -38,9 +52,10 @@ WHERE "Name" = 'Sequence'
   );
 
 UPDATE __mj."IntegrationObjectField"
-SET "Configuration" = '{"sourceType":"xsd:string","docDataType":"AutomationInstance[]","evidence":"wsdl+docs"}'
+SET "Configuration" = (("Configuration")::jsonb - 'ReferencedType')::text
 WHERE "Name" = 'Address'
-  AND "Configuration" LIKE '%ReferencedType%'
+  AND ("Configuration") IS JSON
+  AND ("Configuration")::jsonb ? 'ReferencedType'
   AND "IntegrationObjectID" IN (
     SELECT o."ID"
     FROM __mj."IntegrationObject" o
@@ -48,17 +63,3 @@ WHERE "Name" = 'Address'
     WHERE LOWER(i."Name") = 'sfmc'
       AND o."Name" = 'AutomationNotification'
   );
-
-
--- ===================== Other =====================
-
--- Marketing/SFMC: remove invalid ReferencedType hints on two non-FK scalar fields.
---
--- During initial WSDL+docs extraction, two scalar fields picked up shifted docDataType values as
--- ReferencedType:
---   - AutomationActivity.Sequence (xsd:INTEGER — step sequence number, not a ScheduleDefinition FK)
---   - AutomationNotification.Address (xsd:string — notification email address, not an AutomationInstance FK)
---
--- Written with full JSON replacement (no JSON_MODIFY, which does not translate to PostgreSQL) and
--- matched by (LOWER(Integration.Name), IntegrationObject.Name, IntegrationObjectField.Name) so it
--- applies cleanly across both OpenApp-seeded and pre-existing tenants. Idempotent by WHERE guard.
